@@ -9,7 +9,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
-create PROCEDURE [Vendor].[SP_AllVendorHistory]
+create PROCEDURE [Vendor].[SP_EntityIDhistory]
 
 @Customer VARCHAR(255)
 
@@ -20,7 +20,8 @@ IF (@Customer is not null) --Begin sub path where all product and services but o
 		--Copy the start of your query here
 		SELECT 
 			C.fiscal_year
-				,C.AllContractor
+				,C.EntityID
+				,C.parentid
 				,C.ContractorDisplayName
 				,C.jointventure
 				,c.UnknownCompany
@@ -36,7 +37,8 @@ IF (@Customer is not null) --Begin sub path where all product and services but o
 		GROUP BY 
 				C.fiscal_year
 				,c.Customer
-				,C.AllContractor
+				,C.EntityID
+				,C.parentid
 				,C.ContractorDisplayName
 				,C.jointventure
 				,c.UnknownCompany
@@ -53,7 +55,8 @@ ELSE --Begin sub path where all products and services amd all Customers will be 
 		--Copy the start of your query here
 		SELECT 
 			C.fiscal_year
-				,C.AllContractor
+				,C.EntityID
+				,C.parentid
 				,C.ContractorDisplayName
 				,C.jointventure
 				,c.UnknownCompany
@@ -67,7 +70,8 @@ ELSE --Begin sub path where all products and services amd all Customers will be 
 		--Copy the end of your query here
 		GROUP BY 
 			C.fiscal_year
-				,C.AllContractor
+				,C.EntityID
+				,C.parentid
 				,C.ContractorDisplayName
 				,C.jointventure
 				,c.UnknownCompany

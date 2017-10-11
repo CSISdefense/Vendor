@@ -11,13 +11,22 @@ GO
 
 
 
-Create VIEW [Vendor].[VendorHistoryNaicsPlatformSubCustomer]
+Alter VIEW [Vendor].[VendorHistoryNaicsPlatformSubCustomer]
 AS
 
 SELECT C.Fiscal_year
 , ISNULL(Agency.Customer, Agency.AGENCYIDText) as Customer
 , Agency.SubCustomer
 ,coalesce(proj.PlatformPortfolio, Agency.PlatformPortfolio, cpc.PlatformPortfolio, psc.platformPortfolio) as platformPortfolio
+,	 CASE
+		WHEN Parent.ParentID is not null and isnull(Parent.UnknownCompany,0)=0 
+		THEN Parent.EntityID 
+		WHEN c.parentdunsnumber is not null and isnull(ParentSquared.UnknownCompany,0)=0 
+		THEN ParentDuns.EntityID
+		WHEN c.dunsnumber is not null and isnull(Parent.UnknownCompany,0)=0 
+		THEN DUNS.EntityID
+		ELSE coalesce(vn.EntityID,Duns.entityID)
+		 end  as EntityID
 , isnull(parent.parentid,C.dunsnumber) AS AllContractor 
 , parent.parentid
 , Parent.UnknownCompany
@@ -40,11 +49,11 @@ SELECT C.Fiscal_year
 FROM Contract.FPDS as C
 			left outer join FPDSTypeTable.AgencyID AS Agency
 			ON C.contractingofficeagencyid = Agency.AgencyID 
-		LEFT JOIN Contractor.DunsnumberToParentContractorHistory as Dunsnumber
-			ON (C.DUNSNumber=Dunsnumber.DUNSNUMBER) 
-			AND (C.fiscal_year=Dunsnumber.FiscalYear) 
+		LEFT JOIN Contractor.DunsnumberToParentContractorHistory as DtPCH
+			ON (C.DUNSNumber=DtPCH.DUNSNUMBER) 
+			AND (C.fiscal_year=DtPCH.FiscalYear) 
 		LEFT JOIN Contractor.ParentContractor as Parent
-			ON Dunsnumber.ParentID=Parent.ParentID	
+			ON DtPCH.ParentID=Parent.ParentID	
 		LEFT JOIN FPDSTypeTable.ProductOrServiceCode AS PSC 
 			ON PSC.ProductOrServiceCode = C.productorservicecode
 		left outer join FPDSTypeTable.ClaimantProgramCode cpc
@@ -74,8 +83,22 @@ FROM Contract.FPDS as C
 		ON Parent.ParentID = PCN.ParentID
 		AND C.Fiscal_Year = PCN.FiscalYear
 	left outer join FPDSTypeTable.NAICScode n
-		on c.principalnaicscode=n.NAICS_Code;
+		on c.principalnaicscode=n.NAICS_Code
+	--Vendor specific things
+		left outer join contract.UnlabeledDunsnumberUniqueTransactionIDentityIDhistory u
+		on u.unique_transaction_id=c.unique_transaction_id
 	
+			LEFT OUTER JOIN Contractor.Dunsnumber as DUNS
+			ON DUNS.Dunsnumber=DtPCH.Dunsnumber
+					left outer join Vendor.VendorName vn
+		on vn.VendorName=u.StandardizedVendorName
+	
+			LEFT OUTER JOIN Contractor.DunsnumbertoParentContractorHistory as ParentDtPCH
+			ON ParentDtPCH.FiscalYear=C.fiscal_year  AND  ParentDtPCH.DUNSnumber=C.parentdunsnumber
+		LEFT OUTER JOIN Contractor.Dunsnumber as ParentDUNS
+			ON ParentDUNS.Dunsnumber=ParentDtPCH.Dunsnumber
+		LEFT OUTER JOIN Contractor.ParentContractor as PARENTsquared
+			ON PARENTsquared.ParentID= ParentDtPCH.ParentID ;
 
 
 

@@ -186,6 +186,7 @@ end
 	select
 	'ParentDunsnumber only matches' as SourceTable
 	,[Parentdunsnumber]
+	,d.ParentID
 	,d.ParentDunsnumberParentID
 	,[DUNSnumber]
       ,min([FiscalYear]) as MinOfFiacalYear
@@ -207,7 +208,8 @@ end
 	  ,d.TopCountryName
 	  ,sum(topISO3countrytotalamount) as SumOftopISO3countrytotalamount
 	from [Vendor].[DunsnumberAlternateParentID] d
-	where (d.ParentDunsnumberParentID like ('%'+@parentid+'%') or d.ParentDunsnumberParentID =@parentid)
+	where (d.ParentDunsnumberParentID like ('%'+@parentid+'%') or 
+			d.ParentDunsnumberParentID =@parentid)
 		and not (d.parentid like ('%'+@parentid+'%') or d.parentid =@parentid)
 	group by [DUNSnumber]
       ,[ParentID]
