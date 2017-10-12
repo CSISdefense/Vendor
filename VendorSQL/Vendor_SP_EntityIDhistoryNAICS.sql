@@ -9,7 +9,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
-ALTER PROCEDURE [Vendor].[SP_AllVendorNAICS]
+ALTER PROCEDURE [Vendor].[SP_EntityIDhistoryNAICS]
 
 @Customer VARCHAR(255)
 
@@ -22,7 +22,8 @@ IF (@Customer is not null) --Begin sub path where all product and services but o
 			C.fiscal_year
 				,c.NAICS_Code
 				,c.Industry_TEXT
-				,C.AllContractor
+				,C.EntityID
+				,C.parentid
 				,C.ContractorDisplayName
 				,C.jointventure
 				,c.UnknownCompany
@@ -40,7 +41,8 @@ IF (@Customer is not null) --Begin sub path where all product and services but o
 				,c.Customer
 				,c.NAICS_Code
 				,c.Industry_TEXT
-				,C.AllContractor
+				,C.EntityID
+				,C.parentid
 				,C.ContractorDisplayName
 				,C.jointventure
 				,c.UnknownCompany
@@ -60,7 +62,8 @@ ELSE --Begin sub path where all products and services amd all Customers will be 
 			C.fiscal_year
 				,c.NAICS_Code
 				,c.Industry_TEXT
-				,C.AllContractor
+				,C.EntityID
+				,C.parentid
 				,C.ContractorDisplayName
 				,C.jointventure
 				,c.UnknownCompany
@@ -76,7 +79,8 @@ ELSE --Begin sub path where all products and services amd all Customers will be 
 			C.fiscal_year
 				,c.NAICS_Code
 				,c.Industry_TEXT
-				,C.AllContractor
+				,C.EntityID
+				,C.parentid
 				,C.ContractorDisplayName
 				,C.jointventure
 				,c.UnknownCompany

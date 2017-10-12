@@ -9,7 +9,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
-create PROCEDURE [Vendor].[SP_EntityIDhistory]
+alter PROCEDURE [Vendor].[SP_EntityIDhistory]
 
 @Customer VARCHAR(255)
 
