@@ -6,8 +6,8 @@ library(tidyverse)
 library(csis360)
 
   
-Path<-"C:\\Users\\gsand_000.ALPHONSE\\Documents\\Development\\R-scripts-and-data\\"
-# Path<-"K:\\2007-01 PROFESSIONAL SERVICES\\R scripts and data\\"
+# Path<-"C:\\Users\\gsand_000.ALPHONSE\\Documents\\Development\\R-scripts-and-data\\"
+Path<-"K:\\2007-01 PROFESSIONAL SERVICES\\R scripts and data\\"
 source(paste(Path,"lookups.r",sep=""))
 
 
@@ -17,6 +17,7 @@ file<-unz("Data\\Defense_Vendor_EntityIDhistoryNAICS.zip",
 #                           col_names = TRUE,
 #                           na = c("","NA","NULL"))
 
+#Import Defense vendor list by NAICS.
 defense_naics_vendor <- read.table(file,
                            header = TRUE,
                            na.strings = c("","NA","NULL"),
@@ -25,7 +26,7 @@ defense_naics_vendor <- read.table(file,
 
 defense_naics_vendor<-apply_lookups(Path,defense_naics_vendor)
 
-
+#Import Defense Vendor list.
 file<-unz("Data\\Defense_Vendor_EntityIDhistory.zip",
           filename="Defense_Vendor_EntityIDhistory.txt")
 
@@ -36,8 +37,6 @@ defense_vendor <- read.table(file,
                                    sep = "\t")
 
 defense_vendor<-apply_lookups(Path,defense_vendor)
-
-
 
 save(defense_naics_vendor,defense_vendor,file="defense_naics_vendor.Rdata")
 
@@ -58,6 +57,17 @@ names[toupper(names) %in% toupper(c(
 "Aurora Flight Sciences" #Check but redownload
 ))]
 
+
+
+defense_vendor<-csis360::read_and_join(defense_vendor,
+  "Lookup_ParentID.csv",
+  path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+  by="ParentID",
+  directory="vendor//",
+  new_var_checked=FALSE,
+  add_var="Abbreviation"
+  # NA.check.columns="Fair.Competed"
+)
 
 # Filter defense_naics_vendor to only include fical year ranging from 2008 to 2016
 
@@ -113,6 +123,20 @@ updated_vendor$ParentLabel[updated_vendor$Sample=="Merged"]<-""
 
 
 
+library(ggrepel)
+
+
+debug(csis360::read_and_join)
+csis360::read_and_join(updated_vendor,
+  "Lookup_ParentID.csv",
+  path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+  by="ParentID",
+  directory="vendor//",
+  new_var_checked=FALSE,
+  add_var="Abbreviation"
+  # NA.check.columns="Fair.Competed"
+)
+
 
 ggplot(subset(updated_vendor,pos<=10),
        aes(x=Sample,
@@ -120,7 +144,10 @@ ggplot(subset(updated_vendor,pos<=10),
            color=ParentID,
            group=ParentID))+
   geom_line()+
-  geom_text(aes(label=ParentLabel))+
+  geom_label_repel(aes(label = Abbreviation),
+    nudge_x = 1,
+    na.rm = TRUE)+
+  # geom_text(aes(label=ParentLabel,hjust=0))+
   theme(legend.position="none")
 
 # Transform some columns of interest into factor or integer and deflating
