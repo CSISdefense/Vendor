@@ -1,0 +1,106 @@
+---
+title: "M&A Examination"
+author: "Gregory Sanders"
+date: "October 16, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(ggrepel)
+library(plyr)
+
+load(file="data//defense_naics_vendor.Rdata")
+
+```
+
+## Identify Companies of Interest
+
+```{r names}
+names<-unique(defense_vendor$ParentID)
+
+
+names[toupper(names) %in% toupper(c(
+"MDA",  #Check
+"DigitalGlobe", #Check
+"United Tech", #Check
+"Rockwell Collins",  #Check
+"Northrop Grumman",  #Check
+"Orbital Sciences",
+"Boeing", #Check
+"Aurora Flight Sciences" #Check but redownload
+))]
+
+```
+
+##Prepare 206 data
+
+```{r Key Vendors, echo=TRUE}
+# Filter defense_naics_vendor to only include fical year ranging from 2008 to 2016
+
+key_vendor<-subset(defense_vendor,pos<=10 |
+         toupper(ParentID) %in% toupper(c("MDA",  #Check
+       "DigitalGlobe", #Check
+       "United Tech", #Check
+       "Rockwell Collins",  #Check
+       "Northrop Grumman",  #Check
+       "Orbital Sciences",
+       "Boeing", #Check
+       "Aurora Flight Sciences" #Check but redownload
+)))
+
+
+
+updated_vendor<-subset(key_vendor,Fiscal.Year==as.Date("2016-01-01"))
+key_vendor$Sample<-paste(key_vendor$Fiscal.Year,"Original")
+updated_vendor$Sample<-"2016 Merged"
+updated_vendor<-rbind(key_vendor,updated_vendor)
+updated_vendor$VendorName<-updated_vendor$ParentID
+updated_vendor$VendorName[toupper(updated_vendor$ParentID)==
+                            toupper("DigitalGlobe")&
+                            updated_vendor$Sample=="Merged"]<-"MDA"
+updated_vendor$VendorName[toupper(updated_vendor$ParentID)==
+                            toupper("Rockwell Collins")&
+                            updated_vendor$Sample=="Merged"]<-"UNITED TECH"
+updated_vendor$VendorName[toupper(updated_vendor$ParentID)==
+                            toupper("Orbital Sciences")&
+                            updated_vendor$Sample=="Merged"]<-"NORTHROP GRUMMAN"
+updated_vendor$VendorName[toupper(updated_vendor$ParentID)==
+                            toupper("Aurora Flight Sciences")&
+                            updated_vendor$Sample=="Merged"]<-"BOEING"
+
+
+
+# MDA buying Digital Globe, UTC buying Collins, Northrop buying Orbital, and Boeing buying Aurora
+
+updated_vendor<-ddply(updated_vendor,
+                           .(Fiscal.Year,VendorName,Sample),
+                           transform, 
+                      Merged.2016 = sum(Obligation.2016)
+)
+
+updated_vendor$ParentLabel<-as.character(updated_vendor$Abbreviation)
+updated_vendor$ParentLabel[updated_vendor$Sample!="2016 Merged"]<-""
+
+# updated_vendor$Sample<-ordered(updated_vendor$Sample,c("Original","Merged"))
+```
+
+
+##Overall Merger Plot
+```{r Overall Merger Plot}
+overall_merger<-ggplot(subset(updated_vendor,pos<=10),
+       aes(x=Sample,
+           y=Merged.2016,
+           color=ParentID,
+           group=ParentID))+
+  geom_line()+
+  geom_label_repel(aes(label = ParentLabel),
+                   segment.color = 'grey50',
+    nudge_x = 0.1,
+    na.rm = TRUE)+
+  # geom_text(aes(label=ParentLabel,hjust=0))+
+  theme(legend.position="none")
+
+
+overall_merger
+
+```
