@@ -6,9 +6,10 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+library(ggplot2)
 library(ggrepel)
 library(plyr)
-
+library(lubridate)
 load(file="data//defense_naics_vendor.Rdata")
 
 ```
@@ -52,7 +53,7 @@ key_vendor<-subset(defense_vendor, Fiscal.Year >=as.Date("2009-01-01")&
 
 
 updated_vendor<-subset(key_vendor,Fiscal.Year==as.Date("2016-01-01"))
-key_vendor$Sample<-paste(key_vendor$Fiscal.Year,"Original")
+key_vendor$Sample<-paste(lubridate::year(key_vendor$Fiscal.Year),"Original")
 updated_vendor$Sample<-"2016 Merged"
 updated_vendor<-rbind(key_vendor,updated_vendor)
 updated_vendor$VendorName<-updated_vendor$ParentID
@@ -122,8 +123,11 @@ overall_merger<-ggplot(subset(updated_vendor,pos<=10),
                    segment.color = 'grey50',
     nudge_x = 0.1,
     na.rm = TRUE)+
+  
   # geom_text(aes(label=ParentLabel,hjust=0))+
-  theme(legend.position="none")
+  theme(legend.position="none")+ 
+  scale_y_continuous("Percent of DoD Contract Obligations",labels = scales::percent)+
+  scale_x_discrete("Fiscal Year")
 
 
 overall_merger
