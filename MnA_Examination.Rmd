@@ -36,7 +36,7 @@ names[toupper(names) %in% toupper(c(
 ##Prepare 206 data
 
 ```{r Key Vendors, echo=TRUE}
-# Filter defense_naics_vendor to only include fical year ranging from 2008 to 2016
+# Filter defense_naics_vendor to only include fical year ranging from 2009 to 2016
 
 key_vendor<-subset(defense_vendor, Fiscal.Year >=as.Date("2009-01-01")&
   (pos<=8 |
@@ -53,8 +53,8 @@ key_vendor<-subset(defense_vendor, Fiscal.Year >=as.Date("2009-01-01")&
 
 
 updated_vendor<-subset(key_vendor,Fiscal.Year==as.Date("2016-01-01"))
-key_vendor$Sample<-paste(lubridate::year(key_vendor$Fiscal.Year),"Original")
-updated_vendor$Sample<-"2016 Merged"
+key_vendor$Sample<-year(key_vendor$Fiscal.Year)
+updated_vendor$Sample<-"Merged"
 updated_vendor<-rbind(key_vendor,updated_vendor)
 updated_vendor$VendorName<-updated_vendor$ParentID
 updated_vendor$VendorName[toupper(updated_vendor$ParentID)==
@@ -82,7 +82,7 @@ updated_vendor<-ddply(updated_vendor,
 )
 
 updated_vendor$ParentLabel<-as.character(updated_vendor$Abbreviation)
-updated_vendor$ParentLabel[updated_vendor$Sample!="2016 Merged"]<-""
+updated_vendor$ParentLabel[updated_vendor$Sample!="2009"]<-""
 
 # updated_vendor$Sample<-ordered(updated_vendor$Sample,c("Original","Merged"))
 ```
@@ -121,15 +121,18 @@ overall_merger<-ggplot(subset(updated_vendor,pos<=10),
   geom_line()+
   geom_label_repel(aes(label = ParentLabel),
                    segment.color = 'grey50',
-    nudge_x = 0.1,
+    nudge_x = -0.5,
     na.rm = TRUE)+
   
   # geom_text(aes(label=ParentLabel,hjust=0))+
   theme(legend.position="none")+ 
   scale_y_continuous("Percent of DoD Contract Obligations",labels = scales::percent)+
-  scale_x_discrete("Fiscal Year")
+  scale_x_discrete("Fiscal Year")+
+  theme(axis.text.x = element_text(angle = 45))
 
 
 overall_merger
+
+ggsave("top8.png",overall_merger, width=3, height=6)
 
 ```
