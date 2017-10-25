@@ -37,7 +37,8 @@ names[toupper(names) %in% toupper(c(
 ```{r Key Vendors, echo=TRUE}
 # Filter defense_naics_vendor to only include fical year ranging from 2008 to 2016
 
-key_vendor<-subset(defense_vendor,pos<=10 |
+key_vendor<-subset(defense_vendor, Fiscal.Year >=as.Date("2009-01-01")&
+  (pos<=8 |
          toupper(ParentID) %in% toupper(c("MDA",  #Check
        "DigitalGlobe", #Check
        "United Tech", #Check
@@ -46,7 +47,7 @@ key_vendor<-subset(defense_vendor,pos<=10 |
        "Orbital Sciences",
        "Boeing", #Check
        "Aurora Flight Sciences" #Check but redownload
-)))
+))))
 
 
 
@@ -75,7 +76,8 @@ updated_vendor$VendorName[toupper(updated_vendor$ParentID)==
 updated_vendor<-ddply(updated_vendor,
                            .(Fiscal.Year,VendorName,Sample),
                            transform, 
-                      Merged.2016 = sum(Obligation.2016)
+                      Merged.2016 = sum(Obligation.2016),
+                      Merged.pct= sum(pct)
 )
 
 updated_vendor$ParentLabel<-as.character(updated_vendor$Abbreviation)
@@ -90,6 +92,29 @@ updated_vendor$ParentLabel[updated_vendor$Sample!="2016 Merged"]<-""
 overall_merger<-ggplot(subset(updated_vendor,pos<=10),
        aes(x=Sample,
            y=Merged.2016,
+           color=ParentID,
+           group=ParentID))+
+  geom_line()+
+  geom_label_repel(aes(label = ParentLabel),
+                   segment.color = 'grey50',
+    nudge_x = 0.1,
+    na.rm = TRUE)+
+  # geom_text(aes(label=ParentLabel,hjust=0))+
+  theme(legend.position="none")
+
+
+overall_merger
+
+```
+
+
+
+
+##Percentage Merger Plot
+```{r Overall Merger Plot}
+overall_merger<-ggplot(subset(updated_vendor,pos<=10),
+       aes(x=Sample,
+           y=Merged.pct,
            color=ParentID,
            group=ParentID))+
   geom_line()+

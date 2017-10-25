@@ -57,7 +57,8 @@ defense_vendor<-ddply(defense_vendor,
                       .(Fiscal.Year),
                       transform, 
                       pos = rank(-Action.Obligation,
-                                 ties.method ="min"))
+                                 ties.method ="min"),
+                      pct = Action.Obligation / sum(Action.Obligation))
 
 
 save(defense_naics_vendor,defense_vendor,file="data//defense_naics_vendor.Rdata")
