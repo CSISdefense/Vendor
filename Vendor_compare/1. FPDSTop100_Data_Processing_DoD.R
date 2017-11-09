@@ -7,7 +7,6 @@ library(dplyr)
 library(readr)
 library(readxl)
 
-
 # read xls files
 data2016 <- read_excel("Top100/Top_100_Contractors_Report_Fiscal_Year_2016.xls", sheet = "DoD (9700)")
 data2015 <- read_excel("Top100/Top_100_Contractors_Report_Fiscal_Year_2015.xls", sheet = "DoD (9700)")
@@ -70,7 +69,7 @@ globalname <- unique(fulldata[2])
 # join wo tables by vendor name
 rm(maptable)
 maptable <- left_join(globalname,VendorName[1:3], by = c("Global Vendor Name" = "vendorname"))
-
+  
 write_csv(maptable, "maptable.csv")
 
 # read standardized vendor names
