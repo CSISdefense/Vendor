@@ -54,8 +54,14 @@ key_vendor<-subset(defense_vendor, Fiscal.Year >=as.Date("2009-01-01")&
 
 updated_vendor<-subset(key_vendor,Fiscal.Year==as.Date("2016-01-01"))
 key_vendor$Sample<-year(key_vendor$Fiscal.Year)
+vendor_2016<-subset(key_vendor,Fiscal.Year==as.Date("2016-01-01"))
 updated_vendor$Sample<-"Merged"
-updated_vendor<-rbind(key_vendor,updated_vendor)
+
+key_vendor$line_type<-"Actual"
+vendor_2016$line_type<-"Estimate"
+updated_vendor$line_type<-"Estimate"
+updated_vendor<-rbind(key_vendor,vendor_2016,updated_vendor)
+rm(vendor_2016)
 updated_vendor$VendorName<-updated_vendor$ParentID
 updated_vendor$VendorName[toupper(updated_vendor$ParentID)==
                             toupper("DigitalGlobe")&
@@ -75,7 +81,7 @@ updated_vendor$VendorName[toupper(updated_vendor$ParentID)==
 # MDA buying Digital Globe, UTC buying Collins, Northrop buying Orbital, and Boeing buying Aurora
 
 updated_vendor<-ddply(updated_vendor,
-                           .(Fiscal.Year,VendorName,Sample),
+                           .(Fiscal.Year,VendorName,Sample, line_type),
                            transform, 
                       Merged.2016 = sum(Obligation.2016),
                       Merged.pct= sum(pct)
@@ -85,16 +91,22 @@ updated_vendor$ParentLabel<-as.character(updated_vendor$Abbreviation)
 updated_vendor$ParentLabel[updated_vendor$Sample!="2009"]<-""
 
 # updated_vendor$Sample<-ordered(updated_vendor$Sample,c("Original","Merged"))
+
+
+updated_vendor$ParentID_line_type<-paste(updated_vendor$ParentID,
+                                         updated_vendor$line_type)
 ```
 
 
 ##Overall Merger Plot
 ```{r Overall Merger Plot}
+
 overall_merger<-ggplot(subset(updated_vendor,pos<=10),
        aes(x=Sample,
            y=Merged.2016,
            color=ParentID,
-           group=ParentID))+
+           group=ParentID_line_type,
+           linetype=line_type))+
   geom_line()+
   geom_label_repel(aes(label = ParentLabel),
                    segment.color = 'grey50',
@@ -117,7 +129,8 @@ pct_merger<-ggplot(subset(updated_vendor,pos<=10),
        aes(x=Sample,
            y=Merged.pct,
            color=ParentID,
-           group=ParentID))+
+           group=ParentID_line_type,
+           linetype=line_type))+
   geom_line()+
   geom_label_repel(aes(label = ParentLabel),
                    segment.color = 'grey50',
