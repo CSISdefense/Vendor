@@ -7,8 +7,8 @@ library(csis360)
 library(dplyr)
 
 
-# Path<-"C:\\Users\\gsand_000.ALPHONSE\\Documents\\Development\\R-scripts-and-data\\"
-Path<-"K:\\2007-01 PROFESSIONAL SERVICES\\R scripts and data\\"
+Path<-"C:\\Users\\gsand_000.ALPHONSE\\Documents\\Development\\R-scripts-and-data\\"
+# Path<-"K:\\2007-01 PROFESSIONAL SERVICES\\R scripts and data\\"
 source(paste(Path,"lookups.r",sep=""))
 
 
@@ -63,9 +63,13 @@ defense_naics_vendor<-csis360::read_and_join(defense_naics_vendor,
   # NA.check.columns="Fair.Competed"
 )
 
-defense_vendor<- defense_vendor %>%
-  group_by(Fiscal.Year) %>%
-  transform(percentage = sum(Action.Obligation))
+
+defense_vendor<-ddply(defense_vendor,
+                      .(Fiscal.Year),
+                      transform,
+                      pos = rank(-Action.Obligation,
+                                 ties.method ="min"),
+                      pct = Action.Obligation / sum(Action.Obligation))
 
 
 defense_vendor<-ddply(defense_vendor,
@@ -74,6 +78,17 @@ defense_vendor<-ddply(defense_vendor,
                       pos = rank(-Action.Obligation,
                                  ties.method ="min"),
                       pct = Action.Obligation / sum(Action.Obligation))
+
+defense_vendor<-defense_vendor %>% group_by(Fiscal.Year)
+
+
+# It changes how it acts with the other dplyr verbs:
+View(defense_vendor %>% transform(
+  pos = rank(-Action.Obligation,
+             ties.method ="min"),
+  pct = Action.Obligation / sum(Action.Obligation)
+)
+
 
 defense_naics_vendor<- defense_naics_vendor %>%
   group_by(Fiscal.Year,NAICS_Code) %>%
