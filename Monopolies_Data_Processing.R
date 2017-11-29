@@ -21,7 +21,7 @@ file<-unz("Data\\Defense_Vendor_EntityIDhistoryNAICS.zip",
 #Import Defense vendor list by NAICS.
 defense_naics_vendor <- read.table(file,
                            header = TRUE,
-                           NA.strings = c("","NA","NULL"),
+                           na.strings = c("","NA","NULL"),
                            quote="\"",#Necessary because there are some 's in the names.
                            sep = "\t")
 
@@ -33,7 +33,7 @@ file<-unz("Data\\Defense_Vendor_EntityIDhistory.zip",
 
 defense_vendor <- read.table(file,
                                    header = TRUE,
-                                   NA.strings = c("","NA","NULL"),
+                                   na.strings = c("","NA","NULL"),
                                    quote="\"",#Necessary because there are some 's in the names.
                                    sep = "\t")
 
@@ -66,24 +66,23 @@ defense_naics_vendor<-csis360::read_and_join(defense_naics_vendor,
 
 defense_vendor<-defense_vendor %>% group_by(Fiscal.Year)
 
-defense_vendor<-defense_vendor %>% dplyr::mutate(
-  pos = rank(-Action.Obligation,
-             ties.method ="min"),
-  pct = Action.Obligation / sum(Action.Obligation, na.rm=TRUE)
-)
-
-
-
-
-
-
+defense_vendor<-defense_vendor %>%
+  dplyr::mutate(
+    pos = rank(-Obligation.2016,
+               ties.method ="min"),
+    pct = ifelse(Action.Obligation>0,
+                 Action.Obligation / sum(Action.Obligation[Action.Obligation>0]),
+                 NA
+    )
+  )
 
 
 annual_summary<-defense_vendor %>%
-  summarize(
+  dplyr::summarize(
   Action.Obligation = sum(Action.Obligation),
+  Obligation.2016 = sum(Obligation.2016),
   vendor_count=length(Fiscal.Year),
-  hh_index=sum((pct*100)^2),
+  hh_index=sum((pct*100)^2,na.rm=TRUE),
   top4=sum(ifelse(pos<=4,pct,NA),na.rm=TRUE),
   top8=sum(ifelse(pos<=8,pct,NA),na.rm=TRUE),
   top12=sum(ifelse(pos<=8,pct,NA),na.rm=TRUE),
@@ -112,8 +111,9 @@ defense_naics_vendor<-defense_naics_vendor %>% #filter(Action.Obligation>0) %>%
 annual_naics_summary<-defense_naics_vendor %>% group_by(Fiscal.Year,NAICS_Code) %>%
   dplyr::summarize( 
   Action.Obligation = sum(Action.Obligation),
+  Obligation.2016 = sum(Obligation.2016),
   vendor_count=length(Fiscal.Year),
-  hh_index=sum((pct*100)^2),
+  hh_index=sum((pct*100)^2,na.rm=TRUE),
   pct_sum_check=sum(pct),
   top4=sum(pct[pos<=4],na.rm=TRUE),
   top8=sum(pct[pos<=8],na.rm=TRUE),
@@ -127,3 +127,8 @@ save(defense_naics_vendor,
   annual_summary,
   annual_naics_summary,
   file="data//defense_naics_vendor.Rdata")
+
+write.csv(defense_naics_vendor,"data//defense_naics_vendor.csv")
+write.csv(defense_vendor,"data//defense_vendor.csv")
+write.csv(annual_naics_summary,"data//annual_naics_summary.csv")
+write.csv(annual_summary,"data//annual_summary.csv")

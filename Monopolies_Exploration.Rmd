@@ -2,195 +2,244 @@
 title: "Monoplies Data Exploration"
 author: "Gregory Sanders"
 date: "November 29, 2017"
-output: html_document
+output: 
+  html_document: 
+    keep_md: yes
+    toc: yes
 ---
 
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(csis360)
 library(dplyr)
+library(gridExtra)
+library(hexbin)
 load("data//defense_naics_vendor.Rdata")
 annual_naics_summary<-subset(annual_naics_summary,Fiscal.Year>="2007-01-01")
 
+#Converting Obligation.2016 back to actual dollars rather than millions
+annual_naics_summary$Obligation.2016<-annual_naics_summary$Obligation.2016*1e9
+annual_summary$Obligation.2016<-annual_summary$Obligation.2016*1e9
+
 ```
 
-## R Markdown
+##Sector Size
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+The present unit of analysis is the dyad of fiscal year and industrial sector, as defined by 6 digit NAICS code. The average annual obligations for is hundreds of millions of dollars (`r prettyNum(mean(annual_naics_summary$Obligation.2016,na.rm=TRUE),big.mark=",")`).
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+However, there is a fair amount of diversity in the obligations by sector. A fair number of these categories have minimal DoD contract spending, e.g. `r scales::percent(nrow(filter(annual_naics_summary, Obligation.2016 <1e6))/nrow(annual_naics_summary))` under \$1,000,000 and `r scales::percent(nrow(filter(annual_naics_summary, Obligation.2016 <1e7))/nrow(annual_naics_summary))` under \$10,000,000. For the `r prettyNum(nrow(filter(annual_naics_summary, vendor_count==1)),big.mark=",")` cases with only a single vendor, the average size is `r prettyNum(mean(filter(annual_naics_summary,vendor_count==1)$Obligation.2016,na.rm=TRUE),big.mark=",")` which suggests that smaller cases will often be high consolidated in a manner that likely reflects a minimal number of contracts rather than a genuinely consolidated industrial sector.
 
-```{r sector_size}
+The study team is presently considering ways to handle these small datasets, for example eliminating them from the sample, or bundling them to a higher level on the heirarchy of NACIS codes.
 
+```{r sector_size, echo=FALSE, fig.width=6.5, fig.height=8}
 
-ggplot(annual_naics_summary,
-       aes(x=Action.Obligation))+geom_histogram()+
+dollar_hist<-ggplot(annual_naics_summary,
+       aes(x=Obligation.2016))+geom_histogram()+
   # scale_y_continuous(trans="log10",labels=scales::comma_format())+
   scale_x_continuous(trans="log10",labels=scales::comma_format(),
                      breaks=c(1,1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
   theme(axis.text.x = element_text(angle = 45,hjust=1))
 
 
-ggplot(annual_naics_summary,
+vendor_hist<-ggplot(annual_naics_summary,
        aes(x=vendor_count))+geom_histogram()+
   # scale_y_continuous(trans="log10",labels=scales::comma_format())+
   scale_x_continuous(trans="log10",labels=scales::comma_format(),
                      breaks=c(1,4,8,12,20,50, 1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
-  theme(axis.text.x = element_text(angle = 45,hjust=1))
+    theme(axis.text.x = element_text(angle = 45,hjust=1))
 
 
-ggplot(annual_naics_summary,
-       aes(x=Action.Obligation,
-           y=vendor_count,
-           color=Fiscal.Year))+geom_point()+
-  scale_y_continuous(trans="log10",labels=scales::comma_format())+
-  scale_x_continuous(trans="log10",labels=scales::comma_format())
+dollar_vendor_scat<-ggplot(annual_naics_summary,
+       aes(x=Obligation.2016,
+           y=vendor_count))+geom_point(alpha=0.01)+
+  scale_y_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,4,8,12,20,50, 1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+    theme(axis.text.x = element_text(angle = 45,hjust=1))
+
   
-max(annual_naics_summary$Action.Obligation)
+max(annual_naics_summary$Obligation.2016)
 
-filter(annual_naics_summary,Action.Obligation==max(annual_naics_summary$Action.Obligation))
+filter(annual_naics_summary,Obligation.2016==max(annual_naics_summary$Obligation.2016))
 
+
+lay <- rbind(c(1,2),
+             c(3,3))
+grid.arrange(dollar_hist, 
+             vendor_hist,
+             dollar_vendor_scat,
+             layout_matrix = lay)
 
 ```
 
-## Including Plots
+## Examining consolidation measures
 
-You can also embed plots, for example:
+The study team has replicated a ranged of measures used by the U.S. census department. The Herfindahl-Hirschman index (HH-index) is calculated by taking the square of the market share percentage of each participant in a sector. The other measures used are concentration ratios which are based on calculating the share held by the top vendors in a sector (i.e. top 4, top 8, top 12, top 20, and top 50). 
 
-```{r consolidation_measures}
+```{r consolidation_measures, echo=FALSE, fig.width=6.5, fig.height=9}
 
-ggplot(annual_naics_summary,
-       aes(x=hh_index))+geom_histogram()+
-  # scale_y_continuous(trans="log10",labels=scales::comma_format())+
+top_scale<-nrow(filter(annual_naics_summary,top50>=0.995))
+
+hh_hist<-ggplot(annual_naics_summary,
+       aes(x=hh_index))+geom_histogram(binwidth=100)+
+  scale_y_continuous(labels=scales::comma_format(),limits=c(0,top_scale))+
   scale_x_continuous(labels=scales::comma_format())
 
 #, echo=FALSE
-ggplot(annual_naics_summary,
-       aes(x=Action.Obligation,
-           y=hh_index,
-           color=Fiscal.Year))+geom_point()+
-  scale_x_continuous(trans="log10",labels=scales::comma_format())+
+hh_scat<-ggplot(annual_naics_summary,
+       aes(x=Obligation.2016,
+           y=hh_index))+geom_point(alpha=0.01)+
+  scale_x_continuous(trans="log10")+
   scale_y_continuous(labels=scales::comma_format())
+
+
+top4_hist<-ggplot(annual_naics_summary,
+       aes(x=top4))+geom_histogram(binwidth=0.01)+
+  scale_y_continuous(labels=scales::comma_format(),limits=c(0,top_scale))+
+  scale_x_continuous(labels=scales::percent_format())
+
+top4_scat<-ggplot(annual_naics_summary,
+       aes(x=Obligation.2016,
+           y=top4))+geom_point(alpha=0.01)+
+  scale_x_continuous(trans="log10")+
+  scale_y_continuous(labels=scales::percent_format())
+
+
+top8_hist<-ggplot(annual_naics_summary,
+       aes(x=top8))+geom_histogram(binwidth=0.01)+
+  scale_y_continuous(labels=scales::comma_format(),limits=c(0,top_scale))+
+  scale_x_continuous(labels=scales::percent_format())
+
+
+top8_scat<-ggplot(annual_naics_summary,
+       aes(x=Obligation.2016,
+           y=top8))+geom_point(alpha=0.01)+
+  scale_x_continuous(trans="log10")+
+  scale_y_continuous(labels=scales::percent_format())
+
+
+top12_hist<-ggplot(annual_naics_summary,
+       aes(x=top12))+geom_histogram(binwidth=0.01)+
+  scale_y_continuous(labels=scales::comma_format(),limits=c(0,top_scale))+
+  scale_x_continuous(labels=scales::percent_format())
+
+
+
+top12_scat<-ggplot(annual_naics_summary,
+       aes(x=Obligation.2016,
+           y=top12))+geom_point(alpha=0.01)+
+  scale_x_continuous(trans="log10")+
+  scale_y_continuous(labels=scales::percent_format())
+
+
+
+top20_hist<-ggplot(annual_naics_summary,
+       aes(x=top20))+geom_histogram(binwidth=0.01)+
+  scale_y_continuous(labels=scales::comma_format(),limits=c(0,top_scale))+
+  scale_x_continuous(labels=scales::percent_format())
+
+
+top20_scat<-ggplot(annual_naics_summary,
+       aes(x=Obligation.2016,
+           y=top20))+geom_point(alpha=0.01)+
+  scale_x_continuous(trans="log10")+
+  scale_y_continuous(labels=scales::percent_format())
+
+
+
+
+top50_hist<-ggplot(annual_naics_summary,
+       aes(x=top50))+geom_histogram(binwidth=0.01)+
+  scale_y_continuous(labels=scales::comma_format(),limits=c(0,top_scale))+
+  scale_x_continuous(labels=scales::percent_format())
+
+
+top50_scat<-ggplot(annual_naics_summary,
+       aes(x=Obligation.2016,
+           y=top50))+geom_point(alpha=0.01)+
+  scale_x_continuous(trans="log10")+
+  scale_y_continuous(labels=scales::percent_format())
+
+
+
+
+
+lay <- rbind(c(1,1,2,2,2),
+             c(3,3,4,4,4),
+             c(5,5,6,6,6),
+             c(7,7,8,8,8),
+             c(9,9,10,10,10),
+             c(11,11,12,12,12))
+grid.arrange(hh_hist, 
+             hh_scat,
+             top4_hist, 
+             top4_scat,
+             top8_hist, 
+             top8_scat,
+             top12_hist, 
+             top12_scat,
+             top20_hist, 
+             top20_scat,
+             top50_hist, 
+             top50_scat,
+             layout_matrix = lay)
   
-
-
-ggplot(annual_naics_summary,
-       aes(x=top4))+geom_histogram()+
-  # scale_y_continuous(trans="log10",labels=scales::comma_format())+
-  scale_x_continuous(labels=scales::percent_format())
-
-ggplot(annual_naics_summary,
-       aes(x=Action.Obligation,
-           y=top4,
-           color=Fiscal.Year))+geom_point()+
-  scale_x_continuous(trans="log10",labels=scales::comma_format())+
-  scale_y_continuous(labels=scales::percent_format())
-
-
-ggplot(annual_naics_summary,
-       aes(x=top8))+geom_histogram()+
-  # scale_y_continuous(trans="log10",labels=scales::comma_format())+
-  scale_x_continuous(labels=scales::percent_format())
-
-
-ggplot(annual_naics_summary,
-       aes(x=Action.Obligation,
-           y=top8,
-           color=Fiscal.Year))+geom_point()+
-  scale_x_continuous(trans="log10",labels=scales::comma_format())+
-  scale_y_continuous(labels=scales::percent_format())
-
-
-ggplot(annual_naics_summary,
-       aes(x=top12))+geom_histogram()+
-  # scale_y_continuous(trans="log10",labels=scales::comma_format())+
-  scale_x_continuous(labels=scales::percent_format())
-
-
-
-ggplot(annual_naics_summary,
-       aes(x=Action.Obligation,
-           y=top12,
-           color=Fiscal.Year))+geom_point()+
-  scale_x_continuous(trans="log10",labels=scales::comma_format())+
-  scale_y_continuous(labels=scales::percent_format())
-
-
-
-ggplot(annual_naics_summary,
-       aes(x=top20))+geom_histogram()+
-  # scale_y_continuous(trans="log10",labels=scales::comma_format())+
-  scale_x_continuous(labels=scales::percent_format())
-
-
-ggplot(annual_naics_summary,
-       aes(x=Action.Obligation,
-           y=top20,
-           color=Fiscal.Year))+geom_point()+
-  scale_x_continuous(trans="log10",labels=scales::comma_format())+
-  scale_y_continuous(labels=scales::percent_format())
-
-
-
-
-ggplot(annual_naics_summary,
-       aes(x=top50))+geom_histogram()+
-  # scale_y_continuous(trans="log10",labels=scales::comma_format())+
-  scale_x_continuous(labels=scales::percent_format())
-
-
-ggplot(annual_naics_summary,
-       aes(x=Action.Obligation,
-           y=top50,
-           color=Fiscal.Year))+geom_point()+
-  scale_x_continuous(trans="log10",labels=scales::comma_format())+
-  scale_y_continuous(labels=scales::percent_format())
-
-
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-```{r CrossValidation}
 
-ggplot(annual_naics_summary,
+## Comparing Consolidation Measures
+The HH-index is correlated with the marketshare held by top firms, but is also a more granular measure. However, the census bureau only provides the HH-index for manufacturing sectors. As a result when comparing defense industry consolidation to consolidation in the wider economy, it will be necessary to mix and match measures or to lose the granularity availabile for the defense sector. These comparison graphs are used to help determine which of the available measures to use.
+
+Upon examination, the consolidation ratio for the top 4 firms appears to offer the most granularity. Mathematically, all of the concentration ratios top out at 100% and provide no differentiating detail between different markets with the same ratio (for example the both a market dominated by a single firm and evenly divided between 8 firms would have a top 8 concentration ratio of 100%). A top 4 ratio of 100% lines up with a minimum HH-index of 2,500. That is also the threshhold for a highly concentrated market. This suggests that the top 4 concentration ratio is the best choice for comparison with the HH-index, because all of the other concentration ratios used by the census bureau sometimes regularly  100% concentration when the HH-index would report only a moderately concentrated market (HH-index 1,500 to 2,500).
+
+```{r CrossValidation,echo=FALSE}
+
+top4_hh_scat<-ggplot(annual_naics_summary,
        aes(x=hh_index,
-           y=top4,
-           color=Fiscal.Year))+geom_point()+
+           y=top4))+geom_point(alpha=0.01)+
   scale_x_continuous(labels=scales::comma_format())+
   scale_y_continuous(labels=scales::percent_format())
 
 
-ggplot(annual_naics_summary,
+top8_hh_scat<-ggplot(annual_naics_summary,
        aes(x=hh_index,
-           y=top8,
-           color=Fiscal.Year))+geom_point()+
+           y=top8))+geom_point(alpha=0.01)+
   scale_x_continuous(labels=scales::comma_format())+
   scale_y_continuous(labels=scales::percent_format())
 
 
-ggplot(annual_naics_summary,
+top12_hh_scat<-ggplot(annual_naics_summary,
        aes(x=hh_index,
-           y=top12,
-           color=Fiscal.Year))+geom_point()+
-  scale_x_continuous(labels=scales::comma_format())+
-  scale_y_continuous(labels=scales::percent_format())
-
-
-
-ggplot(annual_naics_summary,
-       aes(x=hh_index,
-           y=top20,
-           color=Fiscal.Year))+geom_point()+
+           y=top12))+geom_point(alpha=0.01)+
   scale_x_continuous(labels=scales::comma_format())+
   scale_y_continuous(labels=scales::percent_format())
 
 
 
-ggplot(annual_naics_summary,
+top20_hh_scat<-ggplot(annual_naics_summary,
        aes(x=hh_index,
-           y=top50,
-           color=Fiscal.Year))+geom_point()+
+           y=top20))+geom_point(alpha=0.01)+
   scale_x_continuous(labels=scales::comma_format())+
   scale_y_continuous(labels=scales::percent_format())
+
+
+
+top50_hh_scat<-ggplot(annual_naics_summary,
+       aes(x=hh_index,
+           y=top50))+geom_point(alpha=0.01)+
+  scale_x_continuous(labels=scales::comma_format())+
+  scale_y_continuous(labels=scales::percent_format())
+
+lay <- rbind(c(1,2),
+             c(3,4),
+             c(5,NA))
+grid.arrange(top4_hh_scat,
+             top8_hh_scat,
+             top12_hh_scat,
+             top20_hh_scat,
+             top50_hh_scat,
+             layout_matrix = lay)
+  
 
 ```
