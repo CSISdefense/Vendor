@@ -16,12 +16,12 @@ file<-unz("Data\\Defense_Vendor_EntityIDhistoryNAICS.zip",
           filename="Defense_Vendor_EntityIDhistoryNAICS.txt")
 # defense_naics_vendor <- read_tsv(file,
 #                           col_names = TRUE,
-#                           na = c("","NA","NULL"))
+#                           NA = c("","NA","NULL"))
 
 #Import Defense vendor list by NAICS.
 defense_naics_vendor <- read.table(file,
                            header = TRUE,
-                           na.strings = c("","NA","NULL"),
+                           NA.strings = c("","NA","NULL"),
                            quote="\"",#Necessary because there are some 's in the names.
                            sep = "\t")
 
@@ -33,7 +33,7 @@ file<-unz("Data\\Defense_Vendor_EntityIDhistory.zip",
 
 defense_vendor <- read.table(file,
                                    header = TRUE,
-                                   na.strings = c("","NA","NULL"),
+                                   NA.strings = c("","NA","NULL"),
                                    quote="\"",#Necessary because there are some 's in the names.
                                    sep = "\t")
 
@@ -64,111 +64,66 @@ defense_naics_vendor<-csis360::read_and_join(defense_naics_vendor,
 )
 
 
-defense_vendor<-ddply(defense_vendor,
-                      .(Fiscal.Year),
-                      transform,
-                      pos = rank(-Action.Obligation,
-                                 ties.method ="min"),
-                      pct = Action.Obligation / sum(Action.Obligation))
-
-
-defense_vendor<-ddply(defense_vendor,
-                      .(Fiscal.Year),
-                      transform,
-                      pos = rank(-Action.Obligation,
-                                 ties.method ="min"),
-                      pct = Action.Obligation / sum(Action.Obligation))
-
 defense_vendor<-defense_vendor %>% group_by(Fiscal.Year)
 
-
-# It changes how it acts with the other dplyr verbs:
-View(defense_vendor %>% transform(
+defense_vendor<-defense_vendor %>% dplyr::mutate(
   pos = rank(-Action.Obligation,
              ties.method ="min"),
-  pct = Action.Obligation / sum(Action.Obligation)
+  pct = Action.Obligation / sum(Action.Obligation, na.rm=TRUE)
 )
 
 
-defense_naics_vendor<- defense_naics_vendor %>%
-  group_by(Fiscal.Year,NAICS_Code) %>%
-  transform(pct = Action.Obligation / sum(Action.Obligation))
-  # dplyr::ddply(defense_naics_vendor,
-  # .(Fiscal.Year,NAICS_Code),
-  # transform, 
-  # pos = rank(-Action.Obligation,
-  #   ties.method ="min"),
-  # pct = Action.Obligation / sum(Action.Obligation))
 
 
-annual_summary<-ddply(defense_vendor,
-  .(Fiscal.Year),
-  summarize, 
+
+
+
+
+annual_summary<-defense_vendor %>%
+  summarize(
   Action.Obligation = sum(Action.Obligation),
   vendor_count=length(Fiscal.Year),
-  hh_index=sum((pct*100)^2)
+  hh_index=sum((pct*100)^2),
+  top4=sum(ifelse(pos<=4,pct,NA),na.rm=TRUE),
+  top8=sum(ifelse(pos<=8,pct,NA),na.rm=TRUE),
+  top12=sum(ifelse(pos<=8,pct,NA),na.rm=TRUE),
+  top20=sum(ifelse(pos<=20,pct,NA),na.rm=TRUE),
+  top50=sum(ifelse(pos<=50,pct,NA),na.rm=TRUE)
 )
 
-annual_naics_summary<-ddply(defense_naics_vendor,
-  .(Fiscal.Year,NAICS_Code,Industry_Text),
-  summarize, 
+
+defense_naics_vendor<-defense_naics_vendor %>% group_by(Fiscal.Year,NAICS_Code)
+group_vars(defense_naics_vendor)
+
+defense_naics_vendor<-defense_naics_vendor %>% #filter(Action.Obligation>0) %>%
+ dplyr::mutate(
+  pos = rank(-Action.Obligation,
+             ties.method ="min"),
+  pct = ifelse(Action.Obligation>0,
+               Action.Obligation / sum(Action.Obligation[Action.Obligation>0]),
+               NA
+               )
+)
+
+
+#Learned the filtering approach from
+# https://stackoverflow.com/questions/23438476/dplyr-idiom-for-summarize-a-filtered-group-by-and-also-replace-any-nas-due-to
+
+annual_naics_summary<-defense_naics_vendor %>% group_by(Fiscal.Year,NAICS_Code) %>%
+  dplyr::summarize( 
   Action.Obligation = sum(Action.Obligation),
   vendor_count=length(Fiscal.Year),
-  hh_index=sum((pct*100)^2)
+  hh_index=sum((pct*100)^2),
+  pct_sum_check=sum(pct),
+  top4=sum(pct[pos<=4],na.rm=TRUE),
+  top8=sum(pct[pos<=8],na.rm=TRUE),
+  top12=sum(pct[pos<=12],na.rm=TRUE),
+  top20=sum(pct[pos<=20],na.rm=TRUE),
+  top50=sum(pct[pos<=50],na.rm=TRUE)
 )
-
 
 save(defense_naics_vendor,
   defense_vendor,
   annual_summary,
+  annual_naics_summary,
   file="data//defense_naics_vendor.Rdata")
-
-
-
-
-
-
-
-
-
-
-
-# # Transform some columns of interest into factor or integer and deflating
-# 
-# # sequestration<-deflate(sequestration,
-# #   money_var = "PrimeOrSubObligatedAmount",
-# #   deflator_var="Deflator.2016"
-# # )
-# 
-# 
-# 
-# # Aggregating sequestration by Fiscal.Year, Platform Portfolio and IsSubContract
-# 
-#   #This suddenly stopped working after R / package updates. ??
-# sequestration_Facet<- sequestration %>% dplyr::group_by(Fiscal.Year,
-#                                                   PlatformPortfolio,
-#                                                 #  IsSubContract,
-#                                                   SubCustomer.sum,
-#                                                 SubCustomer.platform,
-#                                                 Pricing.Mechanism.sum,
-#                                                 Pricing.Mechanism.Fee,
-#                                                 ProductServiceOrRnDarea,
-#                                                 ProductServiceOrRnDarea.sum,
-#                                                   Faceting,
-#                                                 Vendor.Size.sum,
-#                                                 Shiny.VendorSize,
-#                                                 IsFSRSreportable) %>%
-#     dplyr::summarise(PrimeOrSubTotalAmount.2016 = sum(PrimeOrSubObligatedAmount.2016)/1e+9)
-# 
-# # Rename 'IsSubContract' column
-# #sequestration_Facet$IsSubContract <- ifelse(sequestration_Facet$IsSubContract == 1,
-# #                                            "SubContract", 
-# #                                            "Prime Contract")
-# # colnames(sequestration_Facet)[3] <- "SubCustomer.sum"
-# 
-# full_data<- sequestration_Facet
-# labels_and_colors<-prepare_labels_and_colors(full_data)
-# 
-# column_key<-csis360::get_column_key(full_data)
-# 
-# save(labels_and_colors,column_key,full_data,file="Shiny Apps//SubContracts//subcontract_full_data.RData")
