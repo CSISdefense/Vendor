@@ -17,7 +17,7 @@ sql_data_processing <- function(
   library(dplyr)
   library(readr)
   # Read the data
-  rawdata <- read.csv("Top100/Vendor_SP_EntityIDHistoryAgency.csv")
+  rawdata <- read.csv("Top100data/Vendor_SP_EntityIDHistoryAgency.csv")
   names(rawdata)[1] <- "fiscal_year"
   
   # extract the data from specific year range
@@ -55,6 +55,18 @@ Airforcedata <- sql_data_processing(2006,2016,5700)
 Navydata <- sql_data_processing(2006,2016,1700)
 
 # save data
-write_csv(Armydata, "army_sql_data.csv")
-write_csv(Airforcedata, "airforce_sql_data.csv")
-write_csv(Navydata, "navy_sql_data.csv")
+write_csv(Armydata, "csis_army_sql_data.csv")
+write_csv(Airforcedata, "csis_airforce_sql_data.csv")
+write_csv(Navydata, "csis_navy_sql_data.csv")
+
+###############################################################
+# combine into one table
+# Read saved csv files
+csisnavy <- read.csv("csis_navy_sql_data.csv")
+csisarmy <- read.csv("csis_army_sql_data.csv")
+csisairforce <- read.csv("csis_airforce_sql_data.csv")
+csisdod <- read.csv("csis_dod_sql_data.csv")
+library(dplyr)
+library(readr)
+fulldata <- bind_rows(csisnavy,csisarmy,csisairforce,csisdod)
+write_csv(fulldata, "csis_full_sql_data.csv")

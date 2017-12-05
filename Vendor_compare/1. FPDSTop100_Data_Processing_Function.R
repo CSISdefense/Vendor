@@ -89,9 +89,13 @@ combine_data_from_xlsx("./Top100data","Top_100_Contractors_Report_Fiscal_Year.*\
 navydata <- read.csv("Top_100_data_Navy.csv")
 armydata <- read.csv("Top_100_data_Army.csv")
 airforcedata <- read.csv("Top_100_data_AirForce.csv")
+doddata <- read.csv("Top_100_data_Global.csv")
 
 # combine into one file
-fulldata <- bind_rows(navydata,armydata,airforcedata)
+library(dplyr)
+library(readr)
+fulldata <- bind_rows(navydata,armydata,airforcedata,doddata)
+write_csv(fulldata, "FPDS_gov_full_data.csv")
 govvendernames <- unique(fulldata[2])
 write_csv(govvendernames, "FPDS_gov_vendor_names.csv")
 
@@ -100,11 +104,12 @@ library(readxl)
 govsdvendor <- read_excel("FPDS_gov_vendor_names.xlsx",sheet="FPDS_gov_vendor_names")
 
 # Read vender name table in csis database
-library(dplyr)
 VendorName <- read.csv("Vendor_VendorName.csv")
 VendorNametb <- VendorName[!duplicated(VendorName[2:3]),2:3]
+
 # map through StandardizedVendorName
 mappingtable <- left_join(govsdvendor,VendorNametb, by = c("StandardizedVendorName"="standardizedvendorname"))
 # save result to csv
-library(readr)
-write_csv(mappingtable, "mappingtable.csv")
+write_csv(mappingtable, "mappingtable_v2.csv")
+library(openxlsx)
+write.xlsx(mappingtable, "mappingtable_v2.xlsx")

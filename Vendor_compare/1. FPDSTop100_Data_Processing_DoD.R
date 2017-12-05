@@ -57,7 +57,7 @@ write_csv(fulldata, "Top_100_data_Global.csv")
 #####################################################################
 # creating the lookup table
 
-fulldata <- read.csv("Top_100_data.csv")
+fulldata <- read.csv("Top_100_data_Global.csv")
 
 # read VendorName file
 VendorName <- read.csv("Top100/Vendor_VendorName.csv")
