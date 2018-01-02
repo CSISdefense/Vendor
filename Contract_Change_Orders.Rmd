@@ -7,7 +7,7 @@ output:
     keep_md: yes
 --- 
 
-Modeling Likelihood of Contract Termination
+Modeling Likely Number of Change Orders
 ============================================================================
 
 #Setup
@@ -62,8 +62,8 @@ After the data is loaded, we perform a series of transformations, creating deriv
 * nFixed transforms the factor that reports whether a contract was fixed price or cost-based (FxCB) to a numberical value. 0 for cost-based, 0.5 or "combination or other", 1 for any fixed price (excluding fixed-price level of effort which is classified as cost-based).
 * nIncent transforms the factor that reports the fee type (Fee) to a numerical value. 1 for incentive fee or cost sharing, 0.5 or "combination or other", 0 for all remaining types
 *  nComp transforms the factor that reports the fee type (Comp) to a numerical value. 1 for Competed, 0 for not competed.
-*  nIntl transforms the factor that reports the location (Intl) to a numerical value. 1 for Any International obligations, 0 for All in U.S.
-*  nIntl transforms the factor that reports the use of undefinitized contract awards (UCA) to a numerical value. 1 for UCA, 0 for otherwise.
+*  Intl sets switches the International label for unlabled to NA, as unlabeled shouldn't be treated as a seperate category.
+*  nUCA transforms the factor that reports the use of undefinitized contract awards (UCA) to a numerical value. 1 for UCA, 0 for otherwise.
 *  lOffer is the natural log of the number of offers received. Uncompeted contracts are classified as having received one offer.
 
 
@@ -81,8 +81,6 @@ DefenseModelAndDetail$lCeil[is.infinite(DefenseModelAndDetail$lCeil)]<-NA
 DefenseModelAndDetail$lDays<-log(DefenseModelAndDetail$UnmodifiedDays)
 DefenseModelAndDetail$lDays[is.infinite(DefenseModelAndDetail$lDays)]<-NA
 
-#Intl
-DefenseModelAndDetail$nIntl[DefenseModelAndDetail$nIntl=="Unlabeled"]<-NA
 
 #nFixed
 
@@ -106,14 +104,8 @@ DefenseModelAndDetail$nComp<-DefenseModelAndDetail$SingleOffer #Fix in Rdata, an
 levels(DefenseModelAndDetail$nComp)
 
 
-#nIntl
-DefenseModelAndDetail$nIntl<-DefenseModelAndDetail$Intl
-DefenseModelAndDetail$nIntl[DefenseModelAndDetail$nIntl=="Unlabeled"]<-NA
-levels(DefenseModelAndDetail$nIntl) <-
-  list("0"=c("Just U.S."), 
-       "1"=c("Any International"))
-DefenseModelAndDetail$nIntl<-as.integer(as.character(DefenseModelAndDetail$nIntl))
-
+#Intl
+DefenseModelAndDetail$Intl[DefenseModelAndDetail$Intl=="Unlabeled"]<-NA
 
 
 #nUCA
@@ -182,7 +174,8 @@ There's a strong relationship between cost ceiling and number of change orders.
 ###Model 2: Maximum Duration
 
 ```{r Model02}
-NChg02 <- glmer (NChg ~ lCeil + 
+NChg02 <- glmer (data=NChg_smp,
+  NChg ~ lCeil + 
                lDays  +
                (1 | Who) + (1 | PSR)  + (1 | What) + (1 | Intl ) + (1 | StartFY) + (1 | Veh), family=poisson)
 display(NChg02)
