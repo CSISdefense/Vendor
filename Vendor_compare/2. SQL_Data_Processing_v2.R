@@ -7,7 +7,7 @@ library(dplyr)
 library(readr)
 
 # Read the data
-sqldata <- read.csv("Top100/Vendor_SP_EntityIDHistoryAgency.csv")
+sqldata <- read.csv("Top100data/Vendor_SP_EntityIDHistoryAgency.csv")
 names(sqldata)[1] <- "fiscal_year"
 
 # extract the data from 2006 to 2016
@@ -28,4 +28,4 @@ DoDdata <- DoDdata %>%
             FreqCount = sum(FreqCount))
 
 # save data
-write_csv(DoDdata, "csis_sql_data.csv")
+write_csv(DoDdata, "csis_dod_sql_data.csv")
