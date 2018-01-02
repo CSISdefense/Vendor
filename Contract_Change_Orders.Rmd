@@ -1,0 +1,346 @@
+---
+title: "ContractTermination"
+author: "Greg Sanders"
+date: "Wednesday, February 8, 2017"
+output:
+  html_document:
+    keep_md: yes
+--- 
+
+Modeling Likelihood of Contract Termination
+============================================================================
+
+#Setup
+```{r InputFiles, echo = TRUE}
+library(csis360)
+library(ggplot2)
+library(scales)
+library(Hmisc)
+library(plyr)
+library(arm)
+library(R2WinBUGS)
+library(lme4)
+
+axis.text.size<-10
+strip.text.size<-10
+legend.text.size<-8
+# table.text.size<-5.75
+title.text.size<-12
+geom.text.size<-12
+
+main.text.size<-1
+note.text.size<-1.40
+
+
+```
+
+## Contract Terminations
+
+Contract terminations and the number of change orders can be calculated for the entire sample.  Change orders are  determined using the *Reason for Modification* field in FPDS.  A transaction is considered to be change order if it has one of two values: 
+
+* "Change Order"
+* "Definitize Change Order"
+
+The number of change orders is the number of transactions in FPDS reporting these values for a given contract.
+
+##Prepare Data
+First we load the data. The dataset used is a U.S. Defense Contracting dataset derived from FPDS.
+
+```{r ReadInData, echo = TRUE}
+  load(file="Data/defense_contract_CSIScontractID_detail.Rdata")
+  
+
+head(DefenseModelAndDetail)
+```
+
+###Data Transformations
+After the data is loaded, we perform a series of transformations, creating derived variables that fit our purposes.
+
+
+* lCeil is the natural log of the initial contract cost ceiling (UnmodifiedContractBaseAndAllOptionsValue).
+* lDays is the natural log of the initial maximum contract duration in days (UnmodifiedDays)
+* nFixed transforms the factor that reports whether a contract was fixed price or cost-based (FxCB) to a numberical value. 0 for cost-based, 0.5 or "combination or other", 1 for any fixed price (excluding fixed-price level of effort which is classified as cost-based).
+* nIncent transforms the factor that reports the fee type (Fee) to a numerical value. 1 for incentive fee or cost sharing, 0.5 or "combination or other", 0 for all remaining types
+*  nComp transforms the factor that reports the fee type (Comp) to a numerical value. 1 for Competed, 0 for not competed.
+*  nIntl transforms the factor that reports the location (Intl) to a numerical value. 1 for Any International obligations, 0 for All in U.S.
+*  nIntl transforms the factor that reports the use of undefinitized contract awards (UCA) to a numerical value. 1 for UCA, 0 for otherwise.
+*  lOffer is the natural log of the number of offers received. Uncompeted contracts are classified as having received one offer.
+
+
+In addition, lCeil and lDays are rescaled to have an average value of 0 and a standard deviation of one. This standardizes interpretation and prevents a "very large eigen value" error later when lCeil:lDay is introduced.
+
+```{r TransformData}
+#NChg
+DefenseModelAndDetail$NChg<-DefenseModelAndDetail$SumOfisChangeOrder
+
+#lCeil
+DefenseModelAndDetail$lCeil<-log(DefenseModelAndDetail$UnmodifiedContractBaseAndAllOptionsValue)
+DefenseModelAndDetail$lCeil[is.infinite(DefenseModelAndDetail$lCeil)]<-NA
+
+#lDays
+DefenseModelAndDetail$lDays<-log(DefenseModelAndDetail$UnmodifiedDays)
+DefenseModelAndDetail$lDays[is.infinite(DefenseModelAndDetail$lDays)]<-NA
+
+#Intl
+DefenseModelAndDetail$nIntl[DefenseModelAndDetail$nIntl=="Unlabeled"]<-NA
+
+#nFixed
+
+DefenseModelAndDetail$nFixed<-DefenseModelAndDetail$FxCb
+levels(DefenseModelAndDetail$nFixed)<- list("1"=c("Fixed-Price"), 
+       "0.5"=c("Combination or Other"),
+       "0"=c("Cost-Based"))
+DefenseModelAndDetail$nFixed<-as.integer(as.character(DefenseModelAndDetail$nFixed))
+
+ #nIncent
+DefenseModelAndDetail$nIncent<-factor(DefenseModelAndDetail$Fee)
+levels(DefenseModelAndDetail$nIncent) <-
+  list("1"=c("Incentive"), 
+       "0.5"=c("Combination or Other"),
+       "0"=c("Award Fee", "FFP or No Fee", "Fixed Fee"))
+DefenseModelAndDetail$nIncent<-as.integer(as.character(DefenseModelAndDetail$nIncent))
+
+
+#nComp
+DefenseModelAndDetail$nComp<-DefenseModelAndDetail$SingleOffer #Fix in Rdata, and add back comp
+levels(DefenseModelAndDetail$nComp)
+
+
+#nIntl
+DefenseModelAndDetail$nIntl<-DefenseModelAndDetail$Intl
+DefenseModelAndDetail$nIntl[DefenseModelAndDetail$nIntl=="Unlabeled"]<-NA
+levels(DefenseModelAndDetail$nIntl) <-
+  list("0"=c("Just U.S."), 
+       "1"=c("Any International"))
+DefenseModelAndDetail$nIntl<-as.integer(as.character(DefenseModelAndDetail$nIntl))
+
+
+
+#nUCA
+DefenseModelAndDetail$nUCA<-DefenseModelAndDetail$UCA
+levels(DefenseModelAndDetail$nUCA) <-
+  list("0"=c("Not UCA"), 
+       "1"=c("UCA"))
+DefenseModelAndDetail$nUCA<-as.integer(as.character(DefenseModelAndDetail$nUCA))
+
+
+
+
+#lOffer
+DefenseModelAndDetail$lOffer<-log(DefenseModelAndDetail$UnmodifiedNumberOfOffersReceived)
+DefenseModelAndDetail$lOffer[is.infinite(DefenseModelAndDetail$lDays)]<-NA
+
+# DefenseModelAndDetail$DecisionTree<-as.character(DefenseModelAndDetail$MaxOfDecisionTree)
+# DefenseModelAndDetail$DecisionTree[
+#   DefenseModelAndDetail$DecisionTree=="Excluded"|
+#     is.na(DefenseModelAndDetail$DecisionTree)]<-"All Other"
+# DefenseModelAndDetail$DecisionTree<-factor(DefenseModelAndDetail$DecisionTree,levels=c("OCO","Disaster","ARRA","All Other"))
+# 
+# if(!"Is.Defense" %in% colnames(DefenseModelAndDetail)){
+#   DefenseModelAndDetail$Is.Defense<-as.character(DefenseModelAndDetail$Who)
+#   DefenseModelAndDetail$Is.Defense[DefenseModelAndDetail$Is.Defense %in%
+#                                      c("Air Force","Army",
+#                                        "Navy","Other DoD","Uncategorized"  )
+#                                    ]<-"Defense"
+#   DefenseModelAndDetail$Is.Defense<-factor(DefenseModelAndDetail$Is.Defense)
+# }
+
+
+```
+
+###Computational Sample Creation
+
+Next, we eliminate missing data entries and then draw a sample. The final computation uses all of the data, but as a computation shortcut, only a subset of the data is needed to allow for processing of models in minutes rather than hours.
+
+```{r Sample}
+NChg_smp<-DefenseModelAndDetail[!is.na(DefenseModelAndDetail$NChg  ),]
+
+NChg_smp[,names(NChg_smp) %in% c("lCeil","lDays")]<-scale(NChg_smp[,names(NChg_smp) %in% c("lCeil","lDays")])
+
+NChg_smp<-NChg_smp[sample(nrow(NChg_smp),250000),]
+```
+
+#Estimate Model
+
+##Scope Variables
+###Model 1: Cost Ceiling
+
+The model starts by examing the influence of large ceilings on contracts, the core idea here, as observed in the fixed priced paper, is that larger contracts are at greater risk of termination. This can be explained by both the inherent risk in the contract and high transaction costs of contract termination which discourage making the effort for smaller contracts.
+
+```{r Model01}
+
+NChg01 <- glmer (data=NChg_smp,
+                 NChg ~ lCeil +
+               (1 | PSR) + (1 | What) + (1 | Veh) + (1 | Who) + (1 | StartFY), family=poisson)
+display(NChg01)
+
+
+```
+
+
+There's a strong relationship between cost ceiling and number of change orders.
+###Model 2: Maximum Duration
+
+```{r Model02}
+NChg02 <- glmer (NChg ~ lCeil + 
+               lDays  +
+               (1 | Who) + (1 | PSR)  + (1 | What) + (1 | Intl ) + (1 | StartFY) + (1 | Veh), family=poisson)
+display(NChg02)
+
+```
+Both the relationship of days and ceiling is strong with number of change orders, with ceiling being the more pronounced of the two. The next step is to compare their interaction.
+
+###Model 3: Interation of Ceiling and Duration
+```{r Model03}
+
+NChg03 <- glmer (data=NChg_smp,
+                 NChg ~ lCeil + 
+               lDays + lCeil:lDays +
+               (1 | Who) + (1 | PSR)  + (1 | What) + (1 | Intl ) + (1 | StartFY) + (1 | Veh), family=poisson)
+display(NChg03)
+```
+
+The combination of ceiling and duration does not add much to the model but is significant in its own right. It does emphasize that longer ceilings by themselves have the greatest influence on the number of change orders.
+##Type of Contract Variables
+###Model 4: Fixed-Price Contracts
+
+The next step adds a measure for whether the contract was cost-based or fixed-price. Prior CSIS research has found that fixed-price contracts do face a higher risk of termination across the board.
+
+```{r Model04}
+
+NChg04 <- glmer (data=NChg_smp,
+                 NChg ~ lCeil + 
+               lDays + lCeil:lDays + nFixed+
+               (1 | Who) + (1 | PSR)  + (1 | What) + (1 | Intl ) + (1 | StartFY) + (1 | Veh), family=poisson)
+display(NChg04)
+```
+
+Fixed price contracts do have a notably higher change order rate, though the effect size is not as large as it is for terminations.
+
+###Model 5: Fixed-Price and Maximum Duration
+Past CSIS research has found that fixed-price contracts do appear to be at higher risk if they have a longer maximum duration. Fixed-price contracting does require upfront estimation of likely costs, and thus a longer duration means more opportunity for changed circumstance.
+
+```{r Model05}
+
+NChg05 <- glmer (data=NChg_smp,
+                 NChg ~ lCeil + 
+               lDays + lCeil:lDays + nFixed+ lDays:nFixed +
+               (1 | Who) + (1 | PSR)  + (1 | What) + (1 | Intl ) + (1 | StartFY) + (1 | Veh), family=poisson)
+display(NChg05)
+
+```
+The relationship is the opposite of what is expected and is not particularly strong. It can be left out.
+###Model 6: Incentive Fees
+
+```{r Model06}
+
+NChg06 <- glmer (data=NChg_smp,
+                 NChg ~ lCeil + 
+               lDays + lCeil:lDays + nFixed+ nIncent +
+               (1 | Who) + (1 | PSR)  + (1 | What) + (1 | Intl ) + (1 | StartFY) + (1 | Veh), family=poisson)
+display(NChg06)
+```
+Fee type appears to be correlated with more change orders. This is surprising as incentive fees are associated with less cost growth according to the Performance of the Defense Acquisition system. 
+
+###Model 7: Fixed Price and Incentive Fee
+
+```{r Model07}
+
+NChg07 <- glmer (data=NChg_smp,
+                 NChg ~ lCeil + 
+               lDays + lCeil:lDays + nFixed+ nIncent + nFixed:nIncent +
+               (1 | Who) + (1 | PSR)  + (1 | What) + (1 | Intl ) + (1 | StartFY) + (1 | Veh), family=poisson)
+display(NChg07)
+
+```
+
+Adding the intersection of Fixed and Incent does not improve the model.
+
+###Model 8: Undefinitized Contract Awards
+Undefinitized Contract Awards allow for quick action in situations where there is not time or information to establish all of a contracts properties at the time of signing. They have been found by the GAO and the Performance of the Defense Acquisition studies to contain notable risks, primarily relating to cost overruns. Will these risks also carry into terminations?
+
+```{r Model08}
+
+NChg08 <- glmer (data=NChg_smp,
+                 NChg ~ lCeil + 
+               lDays + lCeil:lDays + nFixed+ nIncent + nUCA +
+               (1 | Who) + (1 | PSR)  + (1 | What) + (1 | Intl ) + (1 | StartFY) + (1 | Veh), family=poisson)
+display(NChg08)
+
+```
+As expected, UCAs are notably more likely to have change orders. One of the two types of change orders in the reason for modification field are definitize change orders, which convert a UCA to a conventional contrat.
+##Competition Variables
+###Model 9: Competition
+
+
+```{r Model09}
+
+NChg09 <- glmer (data=NChg_smp,
+                 NChg ~ lCeil + 
+               lDays + lCeil:lDays + nFixed+ nIncent + nUCA + Comp +
+               (1 | Who) + (1 | PSR)  + (1 | What) + (1 | Intl ) + (1 | StartFY) + (1 | Veh), family=poisson)
+display(NChg09)
+
+```
+
+Competition appears to have no affect on the number of change orders
+
+###Model 10: Number of offers for Competed Contracts
+
+```{r Model10}
+NChg11 <- glmer (data=subset(NChg_smp,Comp==1),
+              NChg ~ lCeil + 
+               lDays + lCeil:lDays + nFixed+ nIncent  + nUCA +  lOffer +
+               (1 | Who) + (1 | PSR)  + (1 | What) + (1 | Intl ) + (1 | StartFY) + (1 | Veh), family=poisson)
+display(NChg10)
+
+```
+Interestingly, while competition itself doesn't have an effect number of offers on competed contracts does, slightly reducing the occurance of change orders. This makes it worth exploring whether number of offers would be meaningful on its own in the main model.
+
+###Model 11: Number of offers for all contracts
+
+```{r Model11}
+NChg11 <- glmer (data=NChg_smp,
+              NChg ~ lCeil + 
+               lDays + lCeil:lDays + nFixed+ nIncent  + nUCA +  lOffer +
+               (1 | Who) + (1 | PSR)  + (1 | What) + (1 | Intl ) + (1 | StartFY) + (1 | Veh), family=poisson)
+display(NChg11)
+
+```
+
+For all contracts the number of offers retains a slight effect reducing the number of change orders. That effect exceeds the standard deviation, so it will be kept. One possibility is that number of offers particularly matters for fixed price contracts, as the contractor's view as to how easily they might be replaced could influence their flexibility.
+
+###Model 12: Fixed Price and Number of Offers
+
+```{r Model12}
+NChg12 <- glmer (data=NChg_smp,
+              NChg ~ lCeil + 
+               lDays + lCeil:lDays + nFixed+ nIncent + nUCA +  lOffer + lOffer:nFixed +
+               (1 | Who) + (1 | PSR)  + (1 | What) + (1 | Intl ) + (1 | StartFY) + (1 | Veh), family=poisson)
+display(NChg12)
+```
+
+Fixed-price contracts do appear to be a complicating factor for the benefits of recieving more offers. One possibility is that  this is because of a hidden third variable, namely that certain types of products and services are more prone to be fixed price and have multiple offers. The Product/Service/R&D and the platform portfolio ("what") variables may not be granular enough to capture this phenomenon. Another possibility might be aggressive bidding on fixed price contracts. To check this the next model will look exclusively at the number of offers received for fixed price contracts.
+
+###Model 13: Number of offers for fixed price contracts
+```{r Model13}
+NChg13 <- glmer (data=subset(NChg_smp,nFixed=1),
+              NChg ~ lCeil + 
+               lDays + lCeil:lDays + nIncent + nUCA +  lOffer  +
+               (1 | Who) + (1 | PSR)  + (1 | What) + (1 | Intl ) + (1 | StartFY) + (1 | Veh), family=poisson)
+display(NChg13)
+```
+
+For fixed price contracts, number of offers received shows no relationship to the number of change orders. This helps explain why the intersection of fixed price and competition is negative in the overall model. It appears that more offer may help reduce the number of change orders, but that effect is concentrated amongst cost-based contracts.
+
+
+##Selection: Model 12 
+
+The combination of number of offers and fixed price contracting does not appear to be spurious, so the final selected model is number 12.
+
+```{r Final Model}
+NChgModel<-NChg12
+display(NChgModel)
+
+
+```
