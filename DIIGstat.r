@@ -1,5 +1,5 @@
 #DIIGstat.r
-source(arm)
+library(arm)
 
 #This will likely be folded into CSIS360
 #But for now, using it to create and refine functions for regression analysis.
@@ -66,9 +66,10 @@ contract$n_Incent<-as.integer(as.character(contract$n_Incent))
 
 
 #n_Comp
-contract$n_Comp<-contract$SingleOffer #Fix in Rdata, and add back comp
-levels(contract$n_Comp)
-
+#Right now comp is not actually a factor, so don't need to process it
+contract$b_Comp<-contract$Comp #Fix in Rdata, and add back comp
+contract$n_Comp[contract$b_Comp==1]<-
+  ifelse(contract$SingleOffer[contract$b_Comp==1]=="Single",0.5,1)
 
 #n_Intl
 contract$n_Intl<-contract$Intl

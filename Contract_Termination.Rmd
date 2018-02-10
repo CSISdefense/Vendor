@@ -60,7 +60,7 @@ After the data is loaded, we perform a series of transformations, creating deriv
 * b_Term transforms the factor that reports whether a contract was terminated (Term) to a numerical variable, 0 for no terminations, 1 for any partial or complete terminations.
 * n_Fixed transforms the factor that reports whether a contract was fixed price or cost-based (FxCB) to a numberical value. 0 for cost-based, 0.5 or "combination or other", 1 for any fixed price (excluding fixed-price level of effort which is classified as cost-based).
 * nIncent transforms the factor that reports the fee type (Fee) to a numerical value. 1 for incentive fee or cost sharing, 0.5 or "combination or other", 0 for all remaining types
-*  nComp transforms the factor that reports the fee type (Comp) to a numerical value. 1 for Competed, 0 for not competed.
+*  nComp transforms the factor that reports the fee type (cb_Comp) to a numerical value. 1 for Competed, 0 for not competed.
 *  n_UCA transforms the factor that reports the use of undefinitized contract awards (UCA) to a numerical value. 1 for UCA, 0 for otherwise.
 *  lOffer is the natural log of the number of offers received. Uncompeted contracts are classified as having received one offer.
 
@@ -83,60 +83,190 @@ Next, we eliminate missing data entries and then draw a sample. The final comput
 
 ###Computational Sample Creation
 ```{r Sample}
-Term_smp<-DefenseModelAndDetail[!is.na(DefenseModelAndDetail$b_Term),]
-
-Term_smp[,names(Term_smp) %in% c("l_Ceil","l_Days")]<-scale(Term_smp[,names(Term_smp) %in% c("l_Ceil","l_Days")])
+Term_smp<-DefenseModelAndDetail[!is.na(DefenseModelAndDetail$b_Term)&
+                                  !is.na(DefenseModelAndDetail$Comp),]
 
 
 Term_smp<-Term_smp[sample(nrow(Term_smp),250000),]
+
+
+Term_smp$cl_Ceil<-scale(Term_smp$l_Ceil)
+Term_smp$cl_Days<-scale(Term_smp$l_Days)
+Term_smp$cb_Comp<-scale(Term_smp$b_Comp)
+Term_smp$cn_Comp<-scale(Term_smp$n_Comp)
+
+
+head(Term_smp)
+
 ```
 
 #Estimate Model
 
+##Study Variable: Competition
+Competition has the potential to reduce terminations by giving the government more options in vendors and encouraging better behavior from the contractor that was chosen. 
+###Model 01A: No Competition / Competition
+```{r Model01A}
+
+#First a quick frequency plot for terminations
+Term_bar_01A<-ggplot(data=Term_smp,
+       aes(x=Term))+geom_histogram(stat="count")+facet_wrap(~Comp,scales="free_y")
+Term_bar_01A
+
+Term01A <- glm (data=Term_smp,
+                 b_Term ~ cb_Comp, family=binomial(link="logit"))
+display(Term01A)
+coef(Term01A)
+
+
+#Plot the 
+Term_scat_01A<-ggplot(data=Term_smp,
+       aes(y=j_Term,x=cb_Comp))+geom_jitter(alpha=0.01,height=0)
+
+#Add the fitted regression line
+Term_scat_01A<-Term_scat_01A+ stat_function(fun = fit_curve, args=list(a=coef(Term01A)[1],
+                                                        b=coef(Term01A)[2]),
+                             color="blue")
+Term_scat_01A
+
+Term_data_01A<-data.frame(fitted=fitted(Term01A),
+                       residuals=residuals(Term01A),
+                       b_Term=Term01A$model$b_Term,
+                       cb_Comp=Term01A$model$cb_Comp
+                       )
+
+#Save this for a future GLM
+# Term_data_01A<-data.frame(fitted=fitted(Term01A),
+#                        residuals=residuals(Term01A),
+#                        nTerm=Term01A@frame$nTerm,
+#                        cb_Comp=Term01A@frame$cb_Comp
+#                        )
+
+Term_data_01A<-Term_data_01A[order(Term_data_01A$fitted),]
+
+Term_res_01A<-ggplot(data=Term_data_01A,
+       aes(y=b_Term,x=fitted))+geom_point(alpha=0.01)
+Term_res_01A
+# +
+  # scale_x_continuous(limits=c(0,1))+
+  # scale_y_continuous(limits=c(0,1))
+  # position_jitter(width = NULL, height = NULL)
+
+
+```
+Competition alone has a very slight, but significant, negative correlation with terminations. The next step is to check alternate formulations. There's not yet enough in this model for any meaningful residual models. The next step is to look at a more detailed model, where single offer competition is broken out as a middle option between competition and no competion.
+
+###Model 01B: No Competition / Competition
+```{r Model01B}
+
+#First a quick frequency plot for terminations
+Term_bar_01B<-ggplot(data=Term_smp,
+       aes(x=Term))+geom_histogram(stat="count")+facet_wrap(~Comp,scales="free_y")
+Term_bar_01B
+
+Term01B <- glm (data=Term_smp,
+                 b_Term ~ cb_Comp, family=binomial(link="logit"))
+display(Term01B)
+coef(Term01B)
+
+
+#Plot the 
+Term_scat_01B<-ggplot(data=Term_smp,
+       aes(y=j_Term,x=cb_Comp))+geom_jitter(alpha=0.01,height=0)
+
+#Add the fitted regression line
+Term_scat_01B<-Term_scat_01B+ stat_function(fun = fit_curve, args=list(a=coef(Term01B)[1],
+                                                        b=coef(Term01B)[2]),
+                             color="blue")
+Term_scat_01B
+
+Term_data_01B<-data.frame(fitted=fitted(Term01B),
+                       residuals=residuals(Term01B),
+                       b_Term=Term01B$model$b_Term,
+                       cb_Comp=Term01B$model$cb_Comp
+                       )
+
+
+Term_data_01B<-Term_data_01B[order(Term_data_01B$fitted),]
+
+Term_res_01B<-ggplot(data=Term_data_01B,
+       aes(y=b_Term,x=fitted))+geom_point(alpha=0.01)
+Term_res_01B
+
+
+```
+
+
+```{r Model15A}
+
+Term15A <- glmer (data=Term_smp,b_Term ~ l_Ceil + l_Days + 
+                   SIDV + MIDV + OIDV + SIDV:l_Days + 
+                   n_Fixed  + n_UCA +
+                   cb_Comp +
+               (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
+display(Term15A)
+```
+
+Surprisingly, competition raises the risk of termination to such a degree that it exceeds the standard error. This result is in line with secondary results in prior reports, and in a review article on DoD competiton, but stands against larger economic theory. 
+
+###Model 15B: Number of offers for Competed Contracts
+
+```{r Model15B}
+Term15B <- glmer (data=subset(Term_smp,cb_Comp==1),
+                  b_Term ~ l_Ceil + l_Days +
+                   SIDV + MIDV + OIDV + SIDV:l_Days + 
+                   n_Fixed  + n_UCA +
+                   lOffer +
+               (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
+display(Term15B)
+```
+
+The results are quite surprising, even setting aside the existing finding that competition leads to higher risk of termination, those competed contracts with more offers were at even greater risk. Bid protests, which can result in a partial or complete terminations, may be one driver although the magnitude is unlikely to be sufficient to explain the phenomenon. Another may be that when multiple offers are available, there are more alternatives for the government to turn to rather than being stuck in a contract.
+
+
 ##Scope Variables
-###Model 1A: Cost Ceiling
+###Model 11A: Cost Ceiling
 
 The model starts by examing the influence of large ceilings on contracts, the core idea here, as observed in the fixed priced paper, is that larger contracts are at greater risk of termination. This can be explained by both the inherent risk in the contract and high transaction costs of contract termination which discourage making the effort for smaller contracts.
 
-```{r Model01A}
+```{r Model11A}
 
-Term01A <- glmer (data=Term_smp,
+Term11A <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil +
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term01A)
+display(Term11A)
 
 
-Term01A_s <- glm (data=Term_smp,
+Term11A_s <- glm (data=Term_smp,
                  b_Term ~ l_Ceil, family=binomial(link="logit"))
 
 
-coef(Term01A)
-coef(Term01A_s)[1]
+coef(Term11A)
+coef(Term11A_s)[1]
 
 
 Term_plot_01A<-ggplot(data=Term_smp,
        aes(y=j_Term,x=l_Ceil))+geom_point(alpha=0.01)
 
 
-Term_plot_01A+ stat_function(fun = fit_curve, args=list(a=coef(Term01A_s)[1],
-                                                        b=coef(Term01A_s)[2]),
+Term_plot_01A+ stat_function(fun = fit_curve, args=list(a=coef(Term11A_s)[1],
+                                                        b=coef(Term11A_s)[2]),
                              color="blue")
 
 
 ggplot(data=Term_smp,
-       aes(y=b_Term,x=l_Ceil,color=Comp))+geom_point()+scale_color_continuous(low="red",high="blue")
+       aes(y=b_Term,x=l_Ceil,color=cb_Comp))+geom_point()+scale_color_continuous(low="red",high="blue")
 
 
-Term05data<-data.frame(fitted=fitted(Term05H),
-                       residuals=residuals(Term05H),
-                       nTerm=Term05H@frame$nTerm,
-                       Comp=Term05H@frame$Comp
+Term15data<-data.frame(fitted=fitted(Term15H),
+                       residuals=residuals(Term15H),
+                       nTerm=Term15H@frame$nTerm,
+                       cb_Comp=Term15H@frame$cb_Comp
                        )
 
-Term05data<-Term05data[order(Term05data$fitted),]
+Term15data<-Term15data[order(Term15data$fitted),]
 
-ggplot(data=Term05data,
-       aes(y=nTerm,x=fitted,color=Comp))+geom_point(alpha=0.01)+scale_color_continuous(low="red",high="blue")+
+ggplot(data=Term15data,
+       aes(y=nTerm,x=fitted,color=cb_Comp))+geom_point(alpha=0.01)+scale_color_continuous(low="red",high="blue")+
   scale_x_continuous(limits=c(0,1))+
   scale_y_continuous(limits=c(0,1))
   # position_jitter(width = NULL, height = NULL)
@@ -145,26 +275,26 @@ ggplot(data=Term05data,
 
 ```
 
-###Model 1B: Maximum Duration
+###Model 11B: Maximum Duration
 
-```{r Model01B}
-Term01B <- glmer (data=Term_smp,
+```{r Model11B}
+Term11B <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil + 
                l_Days  +
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term01B)
+display(Term11B)
 
 ```
 The initial model results are as expected, but the relationship between initial contract ceiling and terminations is weak compared to what was observed in data exploration. This may be because of the interaction between the two terms. Both initial ceiling and duration are seperately associated with a higher risk of termination, but what is the influence of contracts that are expected to be both long lasting and large?
 
-###Model 1C: Interation of Ceiling and Duration
-```{r Model01C}
+###Model 11C: Interation of Ceiling and Duration
+```{r Model11C}
 
-Term01C <- glmer (data=Term_smp,
+Term11C <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil + 
                l_Days + l_Ceil:l_Days +
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term01C)
+display(Term11C)
 ```
 
 The combination of ceiling and duration has a pronounced impact on reducing the risk of termination. The increase to the coefficient for cost ceiling is particularly pronounced. This is consistent with the idea that large but short time frame contracts are especially high risk.
@@ -172,175 +302,175 @@ The combination of ceiling and duration has a pronounced impact on reducing the 
 ##Contract Vehicle
 Our dataset includes both stand alone contract awards and task orders that are under larger indefinite delivery vehilces (IDVs). 
 
-###Model 2A: Any IDV
-```{r Model02A}
+###Model 12A: Any IDV
+```{r Model12A}
 
-Term02A <- glmer (data=Term_smp,
+Term12A <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil + l_Days + l_Ceil:l_Days + 
                    IDV +
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term02A)
+display(Term12A)
 ```
 The first check lumps all forms of IDVs together, and finds that IDVs face notably lower risks of termination. This may reflect that the Ceiling and Days entries reflect only the task order and not the larger contract. The next step is to check the intersections with ceiling.
 
 
-###Model 2B: Any IDV and contract ceiling
-```{r Model02B}
+###Model 12B: Any IDV and contract ceiling
+```{r Model12B}
 
-Term02B <- glmer (data=Term_smp,
+Term12B <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil + l_Days + l_Ceil:l_Days + 
                    IDV + IDV:l_Ceil+
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term02B)
+display(Term12B)
 ```
 
 The lower rate of task order termination did not prove to be relevant to contract ceiling. The next step is to see whether there is any relationship to maximum duration. Under this theory, the fact that IDVs make it simpler to do multiple short task orders could mask any risk when task order duratio grows longer.
 
-###Model 2C: Any IDV and Maximum Duration
-```{r Model02C}
+###Model 12C: Any IDV and Maximum Duration
+```{r Model12C}
 
-Term02C <- glmer (data=Term_smp,
+Term12C <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil + l_Days + l_Ceil:l_Days + 
                    IDV + IDV:l_Days+
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term02C)
+display(Term12C)
 ```
 
 The results a dramatic, longer IDVs do face higher risks of termination. That said, the termination risk reduction for all IDVs has grown even further as a result, so even longer task orders may not face greater termination risks than comparable contract awards. With this addition, the intersection of contract ceiling and maximum duration is no longer significant, the next step will be testing its removal from the equation.
 
-###Model 2D: Trimming the intersection of duration and ceiling
-```{r Model02D}
+###Model 12D: Trimming the intersection of duration and ceiling
+```{r Model12D}
 
-Term02D <- glmer (data=Term_smp,
+Term12D <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil + l_Days + 
                    IDV + IDV:l_Days+
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term02D)
+display(Term12D)
 ```
 
 The removal has little effect on the AIC or DIC but does simplify the model.
 
 Subsequent steps will explore the difference between multiple-award IDVs, where the government can choose from a pre-qualified pool of vendors, and single-award IDVs, where the government only has one option. 
 
-###Model 2E: Single-Award IDV
-```{r Model02E}
+###Model 12E: Single-Award IDV
+```{r Model12E}
 
-Term02E <- glmer (data=Term_smp,
+Term12E <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil + l_Days + 
                    SIDV + 
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term02E)
+display(Term12E)
 ```
 
 Single-award IDVs closely align with the role played by IDVs as a whole, and increase the predictive power of the model, as measured by AIC and DIC. 
 
-###Model 2F: Multiple-Award IDVs
-```{r Model02F}
+###Model 12F: Multiple-Award IDVs
+```{r Model12F}
 
-Term02F <- glmer (data=Term_smp,
+Term12F <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil + l_Days + 
                    SIDV + MIDV +
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term02F)
+display(Term12F)
 ```
 
 Multiple-Award IDVs also reduce the termination rate, but not to nearly the same extent as single-awrd IDVs. However, coefficient is sufficient to merit inclusion in the model.
 
-###Model 2G: Other IDVs
-```{r Model02G}
+###Model 12G: Other IDVs
+```{r Model12G}
 
-Term02G <- glmer (data=Term_smp,
+Term12G <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil + l_Days + 
                    SIDV + MIDV + OIDV +
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term02G)
+display(Term12G)
 ```
 Other IDVs has the weakest relationship of the three, but still is significant. The next step is to test if interactions with maximum duration still add value to the model, starting with single-award.
 
 
-###Model 2H: Single-Award IDVs and Maximum duration
-```{r Model02H}
+###Model 12H: Single-Award IDVs and Maximum duration
+```{r Model12H}
 
-Term02H <- glmer (data=Term_smp,
+Term12H <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil + l_Days + 
                    SIDV + MIDV + OIDV + SIDV:l_Days +
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term02H)
+display(Term12H)
 ```
 
 The pattern for single-award IDVs and duration is a slightly magnified version of the phenonemon for IDVs overall shown in mdel 2C. 
 
-###Model 2I: Single-Award IDVs and Maximum duration
+###Model 12I: Single-Award IDVs and Maximum duration
 
-```{r Model02I}
+```{r Model12I}
 
-Term02I <- glmer (data=Term_smp,
+Term12I <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil + l_Days + 
                    SIDV + MIDV + OIDV + SIDV:l_Days + MIDV:l_Days +
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term02I)
+display(Term12I)
 ```
 The error is a bit higher for multiple source IDVs interacting with duration, as compared to single-award IDVs. In addition, the model failed to converge, so leaving out this interaction.
 
-###Model 2J: Other IDVs and Maximum duration
+###Model 12J: Other IDVs and Maximum duration
 
-```{r Model02J}
+```{r Model12J}
 
-Term02J <- glmer (data=Term_smp,
+Term12J <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil + l_Days + 
                    SIDV + MIDV + OIDV + SIDV:l_Days + OIDV:l_Days +
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term02J)
+display(Term12J)
 ```
 Interesting enough, other IDVs have the opposite interaction with single-award IDVs as does single-award IDVs. Shorter duration other IDVs slightly raise termination risks while longer reduce them relative to other sorts of vehicles. However, the coefficient for other IDVs no longer exceeds the standard error, so leaving this parameter out.
 
 ##Type of Contract Variables
-###Model 3A: Fixed-Price Contracts
+###Model 13A: Fixed-Price Contracts
 
 The next step adds a measure for whether the contract was cost-based or fixed-price. Prior CSIS research has found that fixed-price contracts do face a higher risk of termination across the board.
 
-```{r Model03A}
+```{r Model13A}
 
-Term03A <- glmer (data=Term_smp,
+Term13A <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil + l_Days + 
                    SIDV + MIDV + OIDV + SIDV:l_Days + 
                    n_Fixed +
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term03A)
+display(Term13A)
 ```
 
 And fixed price contracts do indeed have a appreciably higher average termination rate. This does not improve the overall AIC of the model, but it captures another important dynamic and has a coefficient that greatly exceeds its standard error. 
 
-###Model 3B: Fixed-Price and Maximum Duration
+###Model 13B: Fixed-Price and Maximum Duration
 Past CSIS research has found that fixed-price contracts do appear to be at higher risk if they have a longer maximum duration. Fixed-price contracting does require upfront estimation of likely costs, and thus a longer duration means more opportunity for changed circumstance.
 
-```{r Model03B}
+```{r Model13B}
 
-Term03B <- glmer (data=Term_smp,
+Term13B <- glmer (data=Term_smp,
                   b_Term ~ l_Ceil + l_Days + 
                    SIDV + MIDV + OIDV + SIDV:l_Days + 
                    n_Fixed + l_Days:n_Fixed +
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term03B)
+display(Term13B)
 
 ```
 The model failed to converge and the coefficient, while large, did not exceed the standard error. That said, it is worth noting that the sign went in the opposite direction from what was expected, with longer fixed-price contracts not being associated with disproprtionately higher terminations rates. Thus, the earlier finding is not replicated. 
 
-###Model 3C: Incentive Fees
+###Model 13C: Incentive Fees
 
 In the performance of the defense acquisition system report, the benefits found were reduced cost overruns. That could help avoid terminations, but it's an indirect connection at best. 
 
-```{r Model03C}
+```{r Model13C}
 
-Term03C <- glmer (data=Term_smp,
+Term13C <- glmer (data=Term_smp,
                   b_Term ~ l_Ceil + l_Days + 
                    SIDV + MIDV + OIDV + SIDV:l_Days + 
                    n_Fixed + nIncent +
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term03C)
+display(Term13C)
 ```
 
-###Model 3D: Undefinitized Contract Awards
+###Model 13D: Undefinitized Contract Awards
 Undefinitized Contract Awards allow for quick action in situations where there is not time or information to establish all of a contracts properties at the time of signing. They have been found by the GAO and the Performance of the Defense Acquisition studies to contain notable risks, primarily relating to cost overruns. Will these risks also carry into terminations?
 
 ```{r Model3D}
@@ -357,7 +487,7 @@ display(Term3D)
 Use of UCA significantly increases risks of termination, well in excess of the error term. Interestingly, while this addition further reduceds the AIC and DIC of the model, it also increases the coefficient for fixed price contracts.
 
 ##Place of Performance
-###Model 4A: Any International
+###Model 14A: Any International
 
 ```{r Model4A}
 
@@ -374,87 +504,62 @@ display(Term4A)
 International performance of contract proved to not be an effective predictor of contract termination. In addition, the model failed to converge. This variable will not be added.
 
 ##Competition Variables
-###Model 5A: Competition
+###Model 15A: Competition
 
 
-```{r Model05A}
 
-Term05A <- glmer (data=Term_smp,b_Term ~ l_Ceil + l_Days + 
-                   SIDV + MIDV + OIDV + SIDV:l_Days + 
-                   n_Fixed  + n_UCA +
-                   Comp +
-               (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term05A)
-```
-
-Surprisingly, competition raises the risk of termination to such a degree that it exceeds the standard error. This result is in line with secondary results in prior reports, and in a review article on DoD competiton, but stands against larger economic theory. 
-
-###Model 5B: Number of offers for Competed Contracts
-
-```{r Model05B}
-Term05B <- glmer (data=subset(Term_smp,Comp==1),
-                  b_Term ~ l_Ceil + l_Days +
-                   SIDV + MIDV + OIDV + SIDV:l_Days + 
-                   n_Fixed  + n_UCA +
-                   lOffer +
-               (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term05B)
-```
-
-The results are quite surprising, even setting aside the existing finding that competition leads to higher risk of termination, those competed contracts with more offers were at even greater risk. Bid protests, which can result in a partial or complete terminations, may be one driver although the magnitude is unlikely to be sufficient to explain the phenomenon. Another may be that when multiple offers are available, there are more alternatives for the government to turn to rather than being stuck in a contract.
-
-###Model 5C: Competition and Fixed Price 
+###Model 15C: Competition and Fixed Price 
 
 ```{r Model5C}
-Term05C <- glmer (data=Term_smp,b_Term ~ l_Ceil + l_Days + 
+Term15C <- glmer (data=Term_smp,b_Term ~ l_Ceil + l_Days + 
                    SIDV + MIDV + OIDV + SIDV:l_Days + 
                    n_Fixed  + n_UCA +
-                   Comp + Comp:n_Fixed +
+                   cb_Comp + cb_Comp:n_Fixed +
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term05C)
+display(Term15C)
 
 ```
 THese results are not sufficiently signficiant to justify inclusion, but the interaction between fixed price and competition is potentially interesting and suggests that the demographics of competed contrats may be one factor driving their increase in termination risk. Specifically, one possibility may be that competitive fixed-price contracts are at greater risk of aggressive bids that increase contract risk. 
 
-###Model 5D: Fixed Price and Number of Offers for Competed Contracts
+###Model 15D: Fixed Price and Number of Offers for Competed Contracts
 
-```{r Term05D}
-Term05D <- glmer (data=subset(Term_smp,Comp==1),
+```{r Term15D}
+Term15D <- glmer (data=subset(Term_smp,cb_Comp==1),
               b_Term ~ l_Ceil + l_Days + 
                 SIDV + MIDV + OIDV + SIDV:l_Days + 
                    n_Fixed  + n_UCA +  lOffer + lOffer:n_Fixed +
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term05D)
+display(Term15D)
 
 ```
 
 Focusing again on only those contracts that were competed, there does not appear to be a relationship between fixed price contracting and the number of offers. This undercuts the idea that the competition dynamics can be explained as simply relating to aggressive bidding on fixed price contracts.
 
-###Model 5E: Competition and Contract Ceiling
-```{r Term05E}
-Term05E <- glmer (data=Term_smp,
+###Model 15E: Competition and Contract Ceiling
+```{r Term15E}
+Term15E <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil + l_Days +
                    SIDV + MIDV + OIDV + SIDV:l_Days +
                 n_Fixed  + n_UCA +  
-                  Comp + Comp:l_Ceil +
+                  cb_Comp + cb_Comp:l_Ceil +
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term05E)
+display(Term15E)
 
 
 ```
 The coefficient for the interaction of Ceiling and Competition exceeds the standard error, but only minimally. The model also fails to converge, so we'll leave out this interaction.
 
-###Model 5F: Single-Award IDVs and Competition 
+###Model 15F: Single-Award IDVs and Competition 
 The next step is to check interactions with the contract vehicles. Each has a slightly different approach to competition. For example, the competition for a Single-Award IDV happens at the start of the IDV, after that, contracts awarded through that vehicle go to that single winning vendor.
 
-```{r Term05F}
-Term05F <- glmer (data=Term_smp,
+```{r Term15F}
+Term15F <- glmer (data=Term_smp,
                 b_Term ~ l_Ceil + l_Days +
                 SIDV + MIDV + OIDV + SIDV:l_Days +
                 n_Fixed  + n_UCA +  
-                Comp + Comp:SIDV + 
+                cb_Comp + cb_Comp:SIDV + 
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term05F)
+display(Term15F)
 
 
 ```
@@ -462,64 +567,64 @@ That result proved stronger than expected and does seem to show that that compet
 
 Next, we'll check the same relationship, but with number of offers instead.
 
-###Model 5G: Single-Award IDVs and Number of Offers 
+###Model 15G: Single-Award IDVs and Number of Offers 
 
-```{r Term05G}
-Term05G <- glmer (data=Term_smp,
+```{r Term15G}
+Term15G <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil + l_Days +
                 SIDV + MIDV + OIDV + SIDV:l_Days +
                 n_Fixed  + n_UCA +
                 lOffer + lOffer:SIDV + 
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term05G)
+display(Term15G)
 
 ```
 The model likewise failed to converge with number of offers and the number of offers proved a less powerful interaction variable than extent of competition.
 
 
-###Model 5H: Multiple-Award IDVs and Competition
+###Model 15H: Multiple-Award IDVs and Competition
 
-```{r Term05H}
-Term05H <- glmer (data=Term_smp,
+```{r Term15H}
+Term15H <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil + l_Days +
                 SIDV + MIDV + OIDV + SIDV:l_Days +
                 n_Fixed  + n_UCA +
-                Comp + Comp:MIDV + 
+                cb_Comp + cb_Comp:MIDV + 
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term05H)
+display(Term15H)
 nrow(Term_smp[!is.na(Term_smp$l_Ceil) &
                 !is.na(Term_smp$lDays) &
                 !is.na(Term_smp$IDV) &
               !is.na(Term_smp$nUCA) & 
                 !is.na(Term_smp$Fixed)
-                !is.na(Term_smp$Comp),])
+                !is.na(Term_smp$cb_Comp),])
 
 ```
 The combination of competition and multiple-award IDVs is powerful. Multiple-award IDVs entirely explains the competition 
 
-###Model 5I: Multiple-Award IDVs and Number of Offers
-```{r Term05I}
-Term05I <- glmer (data=Term_smp,
+###Model 15I: Multiple-Award IDVs and Number of Offers
+```{r Term15I}
+Term15I <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil + l_Days +
                 SIDV + MIDV + OIDV + SIDV:l_Days +
                 n_Fixed  + n_UCA +
                 lOffer + MIDV:lOffer + 
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term05I)
+display(Term15I)
 
 ```
-###Model 5J: Other IDVs and Competition
+###Model 15J: Other IDVs and Competition
 
 Unlike the existance of competition, having more offers does not have the same dramatic relationship with multi-award IDVs that it does with competition. This does raise the question as to whether the long tail of high numbers of offers might be undercutting the relationship. However, for now, we will stick with competition. 
 
-```{r Term05J}
-Term05J <- glmer (data=Term_smp,
+```{r Term15J}
+Term15J <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil + l_Days +
                 SIDV + MIDV + OIDV + SIDV:l_Days +
                 n_Fixed  + n_UCA +
-                Comp + Comp:MIDV + Comp:OIDV +
+                cb_Comp + cb_Comp:MIDV + cb_Comp:OIDV +
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term05J)
+display(Term15J)
 
 ```
 Competition and Other IDVs only slightly exceeds the standard error.
@@ -530,8 +635,8 @@ Competition and Other IDVs only slightly exceeds the standard error.
 While the direction of competition is still puzzling, the interaction with Multiple-Award clarifies it somewhat. The study team will use model 05A going forward.
 
 ```{r Final Model}
-TermModel<-Term05H
-display(Term05H)
+TermModel<-Term15H
+display(Term15H)
 
 
 ```
