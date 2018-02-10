@@ -1,4 +1,6 @@
 #DIIGstat.r
+source(arm)
+
 #This will likely be folded into CSIS360
 #But for now, using it to create and refine functions for regression analysis.
 
@@ -12,6 +14,19 @@ contract$PSR_What<-factor(paste(as.character(contract$PSR),
 #b_Crai
 contract$b_Crai<-ifelse(contract$pChangeOrderUnmodifiedBaseAndAll>0,1,NA)
 contract$b_Crai[contract$pChangeOrderUnmodifiedBaseAndAll<=0]<-0
+
+#Create a jittered version of Crai for display purposes
+#Unlike geom_jitter, this caps values at 0 and 1
+contract$j_Crai<-jitter.binary(contract$b_Crai)
+
+
+#b_Term
+contract$b_Term<-ifelse(contract$Term=="Terminated",1,NA)
+contract$b_Term[contract$Term=="Unterminated"]<-0
+
+#Create a jittered version of Term for display purposes
+#Unlike geom_jitter, this caps values at 0 and 1
+contract$j_Term<-jitter.binary(contract$b_Term)
 
 #n_Crai
 #Should include this in the original data frame but for now can drive it.
@@ -126,3 +141,11 @@ contract$OIDV<-as.integer(as.character(contract$OIDV))
 
 contract
 }
+
+
+#From Gelman and Hill
+jitter.binary<-function(a, jitt=0.05){
+  ifelse(a==0,runif(length(a),0,jitt),runif(length(a),1-jitt,1))
+}
+
+fit_curve<-function(x, a, b){invlogit(b *  x +a)}
