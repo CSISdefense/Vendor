@@ -116,6 +116,16 @@ Term_bar_01A<-ggplot(data=Term_smp,
        aes(x=Term))+geom_histogram(stat="count")+facet_wrap(~Comp,scales="free_y")
 Term_bar_01A
 
+
+
+#Plot the percent terminated across b_Comp
+Term_01A_line<-ggplot(data=subset(Term_smp,!is.na(b_Comp)) %>% 
+  group_by(b_Comp) %>% 
+  summarise (mean_Term = mean(b_Term)),
+       aes(y=mean_Term,x=b_Comp))+geom_line()
+Term_01A_line
+
+
 Term01A <- glm (data=Term_smp,
                  b_Term ~ cb_Comp, family=binomial(link="logit"))
 display(Term01A)
@@ -167,6 +177,14 @@ Term_bar_01B<-ggplot(data=Term_smp,
        aes(x=Term))+geom_histogram(stat="count")+facet_wrap(~n_Comp,scales="free_y")
 Term_bar_01B
 
+#Plot the percent terminated across n_Comp
+Term_01B_line<-ggplot(data=subset(Term_smp,!is.na(n_Comp)) %>% 
+  group_by(n_Comp) %>% 
+  summarise (mean_Term = mean(b_Term)),
+       aes(y=mean_Term,x=n_Comp))+geom_line()
+Term_01B_line
+
+
 Term01B <- glm (data=Term_smp,
                  b_Term ~ cn_Comp, family=binomial(link="logit"))
 display(Term01B)
@@ -210,10 +228,21 @@ Term_01C_bar<-ggplot(data=Term_smp,
        aes(x=Term))+geom_histogram(stat="count")+facet_wrap(~n_Offr,scales="free_y")
 Term_01C_bar
 
+
+#Plot the percent terminated across n_Offr 
+Term_01C_line<-ggplot(data=subset(Term_smp,!is.na(n_Offr)) %>% 
+  group_by(n_Offr) %>% 
+  summarise (mean_Term = mean(b_Term)),
+       aes(y=mean_Term,x=n_Offr))+geom_line()
+Term_01C_line
+
+
+
 Term01C <- glm (data=Term_smp,
                  b_Term ~ cn_Offr, family=binomial(link="logit"))
 display(Term01C)
 coef(Term01C)
+
 
 
 #Plot the 
@@ -248,25 +277,24 @@ Becuse the 5+ offers category has a higher termination rate than 2 and 3-4, the 
 ###Model 01D: Number of Offer Categories 
 ```{r Model01D}
 
+
+#First a quick frequency plot for terminations
+Term_01D_bar<-ggplot(data=Term_smp,
+       aes(x=l_Offer))+geom_bar(stat="count")+facet_wrap(~Term,ncol=1,scales="free_y")
+Term_01D_bar
+Term_01D_bar+facet_grid(Term~PSR,scales="free_y")
+Term_01D_bar+facet_grid(Term~FxCb,scales="free_y")
+Term_01D_bar+facet_grid(Term~Veh,scales="free_y")
+Term_01D_bar+facet_grid(Term~PSR_What,scales="free_y")+
+  theme(strip.text.x = element_text(angle = 90))
+
 #Plot the percent terminated across offers 
-
-
-
 Term_01D_line<-ggplot(data=subset(Term_smp,!is.na(l_Offer)) %>% 
   group_by(l_Offer) %>% 
   summarise (mean_Term = mean(b_Term)),
        aes(y=mean_Term,x=l_Offer))+geom_line()
 Term_01D_line
 
-
-Term_01D_bar<-ggplot(data=subset(Term_smp,b_Term==1),
-       aes(x=l_Offer))+geom_bar(stat="count")
-Term_01D_bar
-
-#First a quick frequency plot for terminations
-Term_01D_bar<-ggplot(data=Term_smp,
-       aes(x=cl_Offer))+geom_histogram(stat="count")+facet_wrap(~Term,scales="free_y")
-Term_01D_bar
 
 Term01D <- glm (data=Term_smp,
                  b_Term ~ cl_Offer, family=binomial(link="logit"))
@@ -300,34 +328,7 @@ Term_01D_res
 
 ```
 
-
-
-
-```{r Model15A}
-
-Term15A <- glmer (data=Term_smp,b_Term ~ l_Ceil + l_Days + 
-                   SIDV + MIDV + OIDV + SIDV:l_Days + 
-                   n_Fixed  + n_UCA +
-                   cb_Comp +
-               (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term15A)
-```
-
-Surprisingly, competition raises the risk of termination to such a degree that it exceeds the standard error. This result is in line with secondary results in prior reports, and in a review article on DoD competiton, but stands against larger economic theory. 
-
-###Model 15B: Number of offers for Competed Contracts
-
-```{r Model15B}
-Term15B <- glmer (data=subset(Term_smp,cb_Comp==1),
-                  b_Term ~ l_Ceil + l_Days +
-                   SIDV + MIDV + OIDV + SIDV:l_Days + 
-                   n_Fixed  + n_UCA +
-                   lOffer +
-               (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term15B)
-```
-
-The results are quite surprising, even setting aside the existing finding that competition leads to higher risk of termination, those competed contracts with more offers were at even greater risk. Bid protests, which can result in a partial or complete terminations, may be one driver although the magnitude is unlikely to be sufficient to explain the phenomenon. Another may be that when multiple offers are available, there are more alternatives for the government to turn to rather than being stuck in a contract.
+Closer examination further undercuts the idea that more offers is associated with a lower termination risk. The difference between single-offer and effective competition is worth exploring, even if it lowers the significance of the starting model. However, lacking a specific theoretical argument for the importance of a greater number of offers, and given the results, the more detailed competition breakdowns will not be used. This may be an issue worth exploring more in a future work.
 
 
 ##Scope Variables
