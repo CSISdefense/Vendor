@@ -94,6 +94,8 @@ Term_smp$cl_Ceil<-scale(Term_smp$l_Ceil)
 Term_smp$cl_Days<-scale(Term_smp$l_Days)
 Term_smp$cb_Comp<-scale(Term_smp$b_Comp)
 Term_smp$cn_Comp<-scale(Term_smp$n_Comp)
+Term_smp$cn_Offr<-scale(Term_smp$n_Offr)
+Term_smp$cl_Offer<-scale(Term_smp$l_Offer)
 
 
 head(Term_smp)
@@ -144,7 +146,7 @@ Term_data_01A<-data.frame(fitted=fitted(Term01A),
 Term_data_01A<-Term_data_01A[order(Term_data_01A$fitted),]
 
 Term_res_01A<-ggplot(data=Term_data_01A,
-       aes(y=b_Term,x=fitted))+geom_point(alpha=0.01)
+       aes(y=b_Term,x=fitted))+geom_jitter(alpha=0.01)
 Term_res_01A
 # +
   # scale_x_continuous(limits=c(0,1))+
@@ -155,23 +157,23 @@ Term_res_01A
 ```
 Competition alone has a very slight, but significant, negative correlation with terminations. The next step is to check alternate formulations. There's not yet enough in this model for any meaningful residual models. The next step is to look at a more detailed model, where single offer competition is broken out as a middle option between competition and no competion.
 
-###Model 01B: No Competition / Competition
+###Model 01B: No Competition / Single Offer / Competition
 ```{r Model01B}
 
 #First a quick frequency plot for terminations
 Term_bar_01B<-ggplot(data=Term_smp,
-       aes(x=Term))+geom_histogram(stat="count")+facet_wrap(~Comp,scales="free_y")
+       aes(x=Term))+geom_histogram(stat="count")+facet_wrap(~n_Comp,scales="free_y")
 Term_bar_01B
 
 Term01B <- glm (data=Term_smp,
-                 b_Term ~ cb_Comp, family=binomial(link="logit"))
+                 b_Term ~ cn_Comp, family=binomial(link="logit"))
 display(Term01B)
 coef(Term01B)
 
 
 #Plot the 
 Term_scat_01B<-ggplot(data=Term_smp,
-       aes(y=j_Term,x=cb_Comp))+geom_jitter(alpha=0.01,height=0)
+       aes(y=j_Term,x=cn_Comp))+geom_jitter(alpha=0.01,height=0)
 
 #Add the fitted regression line
 Term_scat_01B<-Term_scat_01B+ stat_function(fun = fit_curve, args=list(a=coef(Term01B)[1],
@@ -182,18 +184,121 @@ Term_scat_01B
 Term_data_01B<-data.frame(fitted=fitted(Term01B),
                        residuals=residuals(Term01B),
                        b_Term=Term01B$model$b_Term,
-                       cb_Comp=Term01B$model$cb_Comp
+                       cn_Comp=Term01B$model$cn_Comp
                        )
 
 
 Term_data_01B<-Term_data_01B[order(Term_data_01B$fitted),]
 
 Term_res_01B<-ggplot(data=Term_data_01B,
-       aes(y=b_Term,x=fitted))+geom_point(alpha=0.01)
+       aes(y=b_Term,x=fitted))+geom_jitter(alpha=0.01)
 Term_res_01B
 
 
 ```
+
+
+The correltion between the three categories of competition has a smaller coefficent, but is still signficant. In the next step, the multiple award competition is broken down in greater detail.
+
+###Model 01C: No Competition / Number of Offer Categories 
+```{r Model01C}
+
+#First a quick frequency plot for terminations
+Term_01C_bar<-ggplot(data=Term_smp,
+       aes(x=Term))+geom_histogram(stat="count")+facet_wrap(~n_Offr,scales="free_y")
+Term_01C_bar
+
+Term01C <- glm (data=Term_smp,
+                 b_Term ~ cn_Offr, family=binomial(link="logit"))
+display(Term01C)
+coef(Term01C)
+
+
+#Plot the 
+Term_01C_scat<-ggplot(data=Term_smp,
+       aes(y=j_Term,x=cn_Offr))+geom_jitter(alpha=0.01,height=0)
+
+#Add the fitted regression line
+Term_01C_scat<-Term_01C_scat+ stat_function(fun = fit_curve, args=list(a=coef(Term01C)[1],
+                                                        b=coef(Term01C)[2]),
+                             color="blue")
+Term_01C_scat
+
+Term_01C_data<-data.frame(fitted=fitted(Term01C),
+                       residuals=residuals(Term01C),
+                       b_Term=Term01C$model$b_Term,
+                       cn_Offr=Term01C$model$cn_Offr
+                       )
+
+
+Term_01C_data<-Term_01C_data[order(Term_01C_data$fitted),]
+
+Term_01C_res<-ggplot(data=Term_01C_data,
+       aes(y=b_Term,x=fitted))+geom_jitter(alpha=0.01)
+Term_01C_res
+
+
+```
+
+Becuse the 5+ offers category has a higher termination rate than 2 and 3-4, the coefficient for the five category breakdown on competition is smaller than the three. In theory, this could be because of non-liner relationship, for example higher number of offers competition may be more vulnerable to aggressive bidding beavior. However, this explaination would likely be better captured by other hidden variables such as competition methods rather than having a direct relationship with an increased number of offers. As a result, we are not testing offers as a categorical variable with dummies. Instead, the last variant to be checked is the number of offers directly. This is handled logarithmicly because the differences between number of offers at the bottom end of the scle mtters much more than at the high end of the scale. In this method, contracts that were not open to competition are grouped with contracts that received only a single offer.
+
+
+###Model 01D: Number of Offer Categories 
+```{r Model01D}
+
+#Plot the percent terminated across offers 
+
+
+
+Term_01D_line<-ggplot(data=subset(Term_smp,!is.na(l_Offer)) %>% 
+  group_by(l_Offer) %>% 
+  summarise (mean_Term = mean(b_Term)),
+       aes(y=mean_Term,x=l_Offer))+geom_line()
+Term_01D_line
+
+
+Term_01D_bar<-ggplot(data=subset(Term_smp,b_Term==1),
+       aes(x=l_Offer))+geom_bar(stat="count")
+Term_01D_bar
+
+#First a quick frequency plot for terminations
+Term_01D_bar<-ggplot(data=Term_smp,
+       aes(x=cl_Offer))+geom_histogram(stat="count")+facet_wrap(~Term,scales="free_y")
+Term_01D_bar
+
+Term01D <- glm (data=Term_smp,
+                 b_Term ~ cl_Offer, family=binomial(link="logit"))
+display(Term01D)
+coef(Term01D)
+
+
+#Plot the 
+Term_01D_scat<-ggplot(data=Term_smp,
+       aes(y=j_Term,x=cl_Offer))+geom_jitter(alpha=0.01,height=0)
+
+#Add the fitted regression line
+Term_01D_scat<-Term_01D_scat+ stat_function(fun = fit_curve, args=list(a=coef(Term01D)[1],
+                                                        b=coef(Term01D)[2]),
+                             color="blue")
+Term_01D_scat
+
+Term_01D_data<-data.frame(fitted=fitted(Term01D),
+                       residuals=residuals(Term01D),
+                       b_Term=Term01D$model$b_Term,
+                       cl_Offer=Term01D$model$cl_Offer
+                       )
+
+
+Term_01D_data<-Term_01D_data[order(Term_01D_data$fitted),]
+
+Term_01D_res<-ggplot(data=Term_01D_data,
+       aes(y=b_Term,x=fitted))+geom_jitter(alpha=0.01)
+Term_01D_res
+
+
+```
+
+
 
 
 ```{r Model15A}
