@@ -14,7 +14,6 @@ Modeling Likelihood of Contract Termination
 ```{r Libraries, echo = FALSE}
 library(csis360)
 library(ggplot2)
-library(Hmisc)
 library(dplyr)
 library(arm)
 library(R2WinBUGS)
@@ -283,10 +282,7 @@ Term_01D_bar<-ggplot(data=Term_smp,
                      aes(x=l_Offer))+geom_histogram(bins =20)+
   facet_wrap(~Term,ncol=1,scales="free_y")
 Term_01D_bar
-Term_01D_bar+facet_grid(Term~PSR,scales="free_y")
-Term_01D_bar+facet_grid(Term~FxCb,scales="free_y")
 Term_01D_bar+facet_grid(Term~Veh,scales="free_y")
-Term_01D_bar+facet_grid(Term~PSR_What,scales="free_y")+
   theme(strip.text.x = element_text(angle = 90))
 
 Term_smp$bin_Offer<-cut(Term_smp$l_Offer,20)
@@ -299,14 +295,29 @@ Term_01D_line<-ggplot(data=subset(Term_smp,!is.na(bin_Offer)) %>%
        aes(y=mean_Term,x=mean_l_Offer))+geom_point()
 Term_01D_line
 
-#Plot the percent terminated across offers 
-Term_01D_line<-ggplot(data=subset(Term_smp,!is.na(bin_Offer)) %>% 
+#Plot the percent terminated across offers and fixed price/cost based
+Term_01D_line_FxCb<-ggplot(data=subset(Term_smp,!is.na(bin_Offer) & !is.na(FxCb)) %>% 
   group_by(bin_Offer,FxCb) %>% 
   summarise (mean_Term = mean(b_Term),
              mean_l_Offer =mean(l_Offer)),
-       aes(y=mean_Term,x=mean_l_Offer))+geom_point()+facet_wrap(FxCb)
-Term_01D_line
+       aes(y=mean_Term,x=mean_l_Offer))+geom_point()+facet_wrap(~FxCb)
+Term_01D_line_FxCb
 
+#Plot the percent terminated across offers and Product/Service/R&D
+Term_01D_line_PSR<-ggplot(data=subset(Term_smp,!is.na(bin_Offer) & !is.na(PSR)) %>% 
+  group_by(bin_Offer,PSR) %>% 
+  summarise (mean_Term = mean(b_Term),
+             mean_l_Offer =mean(l_Offer)),
+       aes(y=mean_Term,x=mean_l_Offer))+geom_point()+facet_wrap(~PSR)
+Term_01D_line_PSR
+
+#Plot the percent terminated across Vehicle
+Term_01D_line_Veh<-ggplot(data=subset(Term_smp,!is.na(bin_Offer) & !is.na(Veh) ) %>% 
+  group_by(bin_Offer,Veh) %>% 
+  summarise (mean_Term = mean(b_Term),
+             mean_l_Offer =mean(l_Offer)),
+       aes(y=mean_Term,x=mean_l_Offer))+geom_point()+facet_wrap(~Veh)
+Term_01D_line_Veh
 
 
 Term01D <- glm (data=Term_smp,
@@ -341,7 +352,9 @@ Term_01D_res
 
 ```
 
-Closer examination further undercuts the idea that more offers is associated with a lower termination risk. The difference between single-offer and effective competition is worth exploring, even if it lowers the significance of the starting model. However, lacking a specific theoretical argument for the importance of a greater number of offers, and given the results, the more detailed competition breakdowns will not be used. This may be an issue worth exploring more in a future work.
+Closer examination further undercuts the idea that more offers is associated with a lower termination risk. A variety of binned percent terminated graphs found that in the middle range of the number of offers, there is often an increase in the percent terminated. The study team had expected that this phenomenon may prove isolated to a certain type of contracting mechanism or product/service, but that did not prove to be the case.
+
+The difference between single-offer and effective competition is worth exploring, even if it lowers the significance of the starting model. However, lacking a specific theoretical argument for the importance of a greater number of offers, and given the results, the more detailed competition breakdowns will not be used. This may be an issue worth exploring more in a future work.
 
 
 ##Scope Variables

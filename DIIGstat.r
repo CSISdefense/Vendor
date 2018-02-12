@@ -10,6 +10,7 @@ transform_contract<-function(
 #PSR_What
 contract$PSR_What<-factor(paste(as.character(contract$PSR),
                                              as.character(contract$What),sep="."))
+contract$PSR_What[contract$PSR_What=="Unlabeled"]<-NA
 
 #b_Crai
 contract$b_Crai<-ifelse(contract$pChangeOrderUnmodifiedBaseAndAll>0,1,NA)
