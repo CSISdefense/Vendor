@@ -336,28 +336,45 @@ Closer examination further undercuts the idea that more offers is associated wit
 
 The model starts by examing the influence of large ceilings on contracts, the core idea here, as observed in the fixed priced paper, is that larger contracts are at greater risk of termination. This can be explained by both the inherent risk in the contract and high transaction costs of contract termination which discourage making the effort for smaller contracts.
 
-```{r Model11A}
+```{r Model02A}
 
-Term11A <- glmer (data=Term_smp,
+#First a quick frequency plot for terminations
+Term_01D_bar<-ggplot(data=Term_smp,
+       aes(x=l_Offer))+geom_bar(stat="count")+facet_wrap(~Term,ncol=1,scales="free_y")
+Term_01D_bar
+Term_01D_bar+facet_grid(Term~PSR,scales="free_y")
+Term_01D_bar+facet_grid(Term~FxCb,scales="free_y")
+Term_01D_bar+facet_grid(Term~Veh,scales="free_y")
+Term_01D_bar+facet_grid(Term~PSR_What,scales="free_y")+
+  theme(strip.text.x = element_text(angle = 90))
+
+#Plot the percent terminated across offers 
+Term_01D_line<-ggplot(data=subset(Term_smp,!is.na(l_Offer)) %>% 
+  group_by(l_Offer) %>% 
+  summarise (mean_Term = mean(b_Term)),
+       aes(y=mean_Term,x=l_Offer))+geom_line()
+Term_01D_line
+
+Term_02A <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil +
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term11A)
+display(Term_02A)
 
 
-Term11A_s <- glm (data=Term_smp,
+Term_02A_s <- glm (data=Term_smp,
                  b_Term ~ l_Ceil, family=binomial(link="logit"))
 
 
-coef(Term11A)
-coef(Term11A_s)[1]
+coef(Term_02A)
+coef(Term_02A_s)[1]
 
 
 Term_plot_01A<-ggplot(data=Term_smp,
        aes(y=j_Term,x=l_Ceil))+geom_point(alpha=0.01)
 
 
-Term_plot_01A+ stat_function(fun = fit_curve, args=list(a=coef(Term11A_s)[1],
-                                                        b=coef(Term11A_s)[2]),
+Term_plot_01A+ stat_function(fun = fit_curve, args=list(a=coef(Term_02A_s)[1],
+                                                        b=coef(Term_02A_s)[2]),
                              color="blue")
 
 
@@ -385,24 +402,24 @@ ggplot(data=Term15data,
 
 ###Model 11B: Maximum Duration
 
-```{r Model11B}
-Term11B <- glmer (data=Term_smp,
+```{r Model02B}
+Term_02B <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil + 
                l_Days  +
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term11B)
+display(Term_02B)
 
 ```
 The initial model results are as expected, but the relationship between initial contract ceiling and terminations is weak compared to what was observed in data exploration. This may be because of the interaction between the two terms. Both initial ceiling and duration are seperately associated with a higher risk of termination, but what is the influence of contracts that are expected to be both long lasting and large?
 
 ###Model 11C: Interation of Ceiling and Duration
-```{r Model11C}
+```{r Model02C}
 
-Term11C <- glmer (data=Term_smp,
+Term_02C <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil + 
                l_Days + l_Ceil:l_Days +
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term11C)
+display(Term_02C)
 ```
 
 The combination of ceiling and duration has a pronounced impact on reducing the risk of termination. The increase to the coefficient for cost ceiling is particularly pronounced. This is consistent with the idea that large but short time frame contracts are especially high risk.
