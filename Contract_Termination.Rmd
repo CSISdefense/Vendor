@@ -280,7 +280,8 @@ Becuse the 5+ offers category has a higher termination rate than 2 and 3-4, the 
 
 #First a quick frequency plot for terminations
 Term_01D_bar<-ggplot(data=Term_smp,
-       aes(x=l_Offer))+geom_bar(stat="count")+facet_wrap(~Term,ncol=1,scales="free_y")
+                     aes(x=l_Offer))+geom_histogram(bins =20)+
+  facet_wrap(~Term,ncol=1,scales="free_y")
 Term_01D_bar
 Term_01D_bar+facet_grid(Term~PSR,scales="free_y")
 Term_01D_bar+facet_grid(Term~FxCb,scales="free_y")
@@ -288,12 +289,24 @@ Term_01D_bar+facet_grid(Term~Veh,scales="free_y")
 Term_01D_bar+facet_grid(Term~PSR_What,scales="free_y")+
   theme(strip.text.x = element_text(angle = 90))
 
+Term_smp$bin_Offer<-cut(Term_smp$l_Offer,20)
+
 #Plot the percent terminated across offers 
-Term_01D_line<-ggplot(data=subset(Term_smp,!is.na(l_Offer)) %>% 
-  group_by(l_Offer) %>% 
-  summarise (mean_Term = mean(b_Term)),
-       aes(y=mean_Term,x=l_Offer))+geom_line()
+Term_01D_line<-ggplot(data=subset(Term_smp,!is.na(bin_Offer)) %>% 
+  group_by(bin_Offer) %>% 
+  summarise (mean_Term = mean(b_Term),
+             mean_l_Offer =mean(l_Offer)),
+       aes(y=mean_Term,x=mean_l_Offer))+geom_point()
 Term_01D_line
+
+#Plot the percent terminated across offers 
+Term_01D_line<-ggplot(data=subset(Term_smp,!is.na(bin_Offer)) %>% 
+  group_by(bin_Offer,FxCb) %>% 
+  summarise (mean_Term = mean(b_Term),
+             mean_l_Offer =mean(l_Offer)),
+       aes(y=mean_Term,x=mean_l_Offer))+geom_point()+facet_wrap(FxCb)
+Term_01D_line
+
 
 
 Term01D <- glm (data=Term_smp,
@@ -332,54 +345,46 @@ Closer examination further undercuts the idea that more offers is associated wit
 
 
 ##Scope Variables
-###Model 11A: Cost Ceiling
+###Model 02A: Cost Ceiling
 
 The model starts by examing the influence of large ceilings on contracts, the core idea here, as observed in the fixed priced paper, is that larger contracts are at greater risk of termination. This can be explained by both the inherent risk in the contract and high transaction costs of contract termination which discourage making the effort for smaller contracts.
 
 ```{r Model02A}
 
 #First a quick frequency plot for terminations
-Term_01D_bar<-ggplot(data=Term_smp,
-       aes(x=l_Offer))+geom_bar(stat="count")+facet_wrap(~Term,ncol=1,scales="free_y")
-Term_01D_bar
-Term_01D_bar+facet_grid(Term~PSR,scales="free_y")
-Term_01D_bar+facet_grid(Term~FxCb,scales="free_y")
-Term_01D_bar+facet_grid(Term~Veh,scales="free_y")
-Term_01D_bar+facet_grid(Term~PSR_What,scales="free_y")+
-  theme(strip.text.x = element_text(angle = 90))
+Term_02A_bar<-ggplot(data=Term_smp,
+       aes(x=l_Offer))+geom_histogram(bins=20)+facet_wrap(~Term,ncol=1,scales="free_y")
+Term_02A_bar
 
 #Plot the percent terminated across offers 
-Term_01D_line<-ggplot(data=subset(Term_smp,!is.na(l_Offer)) %>% 
+Term_02A_line<-ggplot(data=subset(Term_smp,!is.na(l_Offer)) %>% 
   group_by(l_Offer) %>% 
   summarise (mean_Term = mean(b_Term)),
        aes(y=mean_Term,x=l_Offer))+geom_line()
-Term_01D_line
+Term_02A_line
 
-Term_02A <- glmer (data=Term_smp,
-                 b_Term ~ l_Ceil +
-               (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
+Term_02A <- glm (data=Term_smp,
+                 b_Term ~n_Comp + l_Ceil, family=binomial(link="logit"))
 display(Term_02A)
 
 
-Term_02A_s <- glm (data=Term_smp,
-                 b_Term ~ l_Ceil, family=binomial(link="logit"))
 
-
-coef(Term_02A)
-coef(Term_02A_s)[1]
-
-
-Term_plot_01A<-ggplot(data=Term_smp,
+Term_02A_plot<-ggplot(data=Term_smp,
        aes(y=j_Term,x=l_Ceil))+geom_point(alpha=0.01)
 
+Term_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(Term_02A))}
 
-Term_plot_01A+ stat_function(fun = fit_curve, args=list(a=coef(Term_02A_s)[1],
-                                                        b=coef(Term_02A_s)[2]),
-                             color="blue")
+Term_02A_plot+ stat_function(fun = Term_02A_curve, 
+                             args=list(Comp=0),color="blue")+
+  stat_function(fun = Term_02A_curve, 
+                             args=list(Comp=1),color="blue")
+
 
 
 ggplot(data=Term_smp,
        aes(y=b_Term,x=l_Ceil,color=cb_Comp))+geom_point()+scale_color_continuous(low="red",high="blue")
+
+
 
 
 Term15data<-data.frame(fitted=fitted(Term15H),
@@ -400,14 +405,82 @@ ggplot(data=Term15data,
 
 ```
 
-###Model 11B: Maximum Duration
+###Model 02B: Cost Ceiling and Competition
+
+
 
 ```{r Model02B}
-Term_02B <- glmer (data=Term_smp,
+
+Term_02B <- glm (data=Term_smp,
+                 b_Term ~n_Comp + l_Ceil + n_Comp:l_Ceil, family=binomial(link="logit"))
+display(Term_02B)
+
+
+
+Term_02B_plot<-ggplot(data=Term_smp,
+       aes(y=j_Term,x=l_Ceil))+geom_point(alpha=0.01)
+
+Term_02B_curve<-function(x, Comp){invlogit(cbind(1,Comp,x,Comp*x) %*%  coef(Term_02B))}
+
+Term_02B_plot+ stat_function(fun = Term_02B_curve, 
+                             args=list(Comp=0),color="blue")+
+  stat_function(fun = Term_02B_curve, 
+                             args=list(Comp=1),color="blue")
+
+
+
+ggplot(data=Term_smp,
+       aes(y=b_Term,x=l_Ceil,color=cb_Comp))+geom_point()+scale_color_continuous(low="red",high="blue")
+
+
+
+
+Term15data<-data.frame(fitted=fitted(Term15H),
+                       residuals=residuals(Term15H),
+                       nTerm=Term15H@frame$nTerm,
+                       cb_Comp=Term15H@frame$cb_Comp
+                       )
+
+Term15data<-Term15data[order(Term15data$fitted),]
+
+ggplot(data=Term15data,
+       aes(y=nTerm,x=fitted,color=cb_Comp))+geom_point(alpha=0.01)+scale_color_continuous(low="red",high="blue")+
+  scale_x_continuous(limits=c(0,1))+
+  scale_y_continuous(limits=c(0,1))
+  # position_jitter(width = NULL, height = NULL)
+
+
+
+```
+The interaction went in the expected direction, but is surprisingly powerful. Competition heightens the importance of contract ceiling, and larger contract ceilings mitigate the importance of competition. The other powerful part of this interaction was the dramatic increase in the coefficient for competition and the comparative reduction in the correlation of ceiling.
+
+###Model 02C: Maximum Duration
+
+```{r Model02C}
+
+
+Term_02C <- glm (data=Term_smp,
+                 b_Term ~n_Comp + l_Ceil + n_Comp:l_Ceil + l_Days, family=binomial(link="logit"))
+display(Term_02C)
+
+
+
+Term_02C_plot<-ggplot(data=Term_smp,
+       aes(y=j_Term,x=l_Ceil))+geom_point(alpha=0.01)
+
+Term_02C_curve<-function(x, Comp){invlogit(cbind(1,Comp,x,Comp*x) %*%  coef(Term_02C))}
+
+Term_02C_plot+ stat_function(fun = Term_02C_curve, 
+                             args=list(Comp=0),color="blue")+
+  stat_function(fun = Term_02C_curve, 
+                             args=list(Comp=1),color="blue")
+
+
+Term_02C <- glmer (data=Term_smp,
                  b_Term ~ l_Ceil + 
                l_Days  +
                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-display(Term_02B)
+display(Term_02C)
 
 ```
 The initial model results are as expected, but the relationship between initial contract ceiling and terminations is weak compared to what was observed in data exploration. This may be because of the interaction between the two terms. Both initial ceiling and duration are seperately associated with a higher risk of termination, but what is the influence of contracts that are expected to be both long lasting and large?
