@@ -166,3 +166,45 @@ jitter.binary<-function(a, jitt=0.05){
 }
 
 fit_curve<-function(x, a, b){invlogit(b *  x +a)}
+
+
+bin_df<-function(data,rank_col,group_col=NULL,n=20,ties.method="random"){
+  #https://stats.stackexchange.com/questions/34008/how-does-ties-method-argument-of-rs-rank-function-work
+  if(!is.null(group_col)){
+    # Convert character vector to list of symbols
+    dots <- lapply(group_col, as.symbol)
+    
+    # Group by
+    data %>%
+      group_by_(.dots=dots) 
+  }
+  #Calculate rank, this allows cut_number to work even when some answers have to be broken up into multiple bins
+  bin<-rank(data[,colnames(data)==rank_col],ties.method=ties.method)
+  cut_number(bin,n)
+}
+
+# bin_plot<-function(data,x_col,y_col,group_col=NULL,n=20,ties.method="random")
+# 
+# 
+# data$bin_plot<-bin_df(data,rank_col=x_col,group_col=group_col)
+# data<-data[,!is.na(data[,colnames(data)==x_col]) &
+#              !is.na(data[,colnames(data)==y_col])
+#            !is.na(data[,colnames(data)==group_col])
+#            ]
+# dots <- lapply(c(x_col,y_col,group_col), as.symbol)
+# 
+# # Group by
+# data %>%
+#   group_by_(.dots=dots) 
+# 
+# 
+# 
+# 
+# 
+# Term_01D_line_FxCb<-ggplot(data=subset(Term_smp,!is.na(l_Offer) & !is.na(FxCb)) %>% 
+#                              group_by(bin_Offer_FxCb,FxCb) %>% 
+#                              summarise (mean_Term = mean(b_Term),
+#                                         mean_l_Offer =mean(l_Offer)),
+#                            aes(y=mean_Term,x=mean_l_Offer))+geom_point()+facet_wrap(~FxCb)
+# 
+# }
