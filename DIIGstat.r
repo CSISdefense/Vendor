@@ -208,3 +208,24 @@ bin_df<-function(data,rank_col,group_col=NULL,n=20,ties.method="random"){
 #                            aes(y=mean_Term,x=mean_l_Offer))+geom_point()+facet_wrap(~FxCb)
 # 
 # }
+
+#From Gelman and Hill
+#http://www.stat.columbia.edu/~gelman/arm/software/
+binned.resids <- function (x, y, nclass=sqrt(length(x))){
+  breaks.index <- floor(length(x)*(1:(nclass-1))/nclass)
+  breaks <- c (-Inf, sort(x)[breaks.index], Inf)
+  output <- NULL
+  xbreaks <- NULL
+  x.binned <- as.numeric (cut (x, breaks))
+  for (i in 1:nclass){
+    items <- (1:length(x))[x.binned==i]
+    x.range <- range(x[items])
+    xbar <- mean(x[items])
+    ybar <- mean(y[items])
+    n <- length(items)
+    sdev <- sd(y[items])
+    output <- rbind (output, c(xbar, ybar, n, x.range, 2*sdev/sqrt(n)))
+  }
+  colnames (output) <- c ("xbar", "ybar", "n", "x.lo", "x.hi", "2se")
+  return (list (binned=output, xbreaks=xbreaks))
+}

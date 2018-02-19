@@ -110,18 +110,24 @@ Competition has the potential to reduce terminations by giving the government mo
 ###Model 01A: No Competition / Competition
 ```{r Model01A}
 
-#First a quick frequency plot for terminations
+#Frequency Plot
 ggplot(data=Term_smp,
-       aes(x=Term))+geom_histogram(stat="count")+facet_wrap(~Comp,scales="free_y")
+       aes(x=Term))+geom_histogram(stat="count",bins=20) + 
+  scale_y_continuous(labels = scales::comma) +facet_wrap(~Comp,scales="free_y")+
+  labs(title="Termination Frequency by Competition",
+          caption="Source: FPDS, CSIS Analysis")
 
 
 
 
-#Plot the percent terminated across b_Comp
+#Percent Terminated Plot
 ggplot(data=subset(Term_smp,!is.na(b_Comp)) %>% 
   group_by(b_Comp) %>% 
   summarise (mean_Term = mean(b_Term)),
-       aes(y=mean_Term,x=b_Comp))+geom_line()
+       aes(y=mean_Term,x=b_Comp))+geom_line(group=1)+
+  scale_y_continuous(labels =  scales::percent)+
+  labs(title="Percent Terminated by Competition",
+          caption="Source: FPDS, CSIS Analysis")
 
 
 
@@ -132,7 +138,7 @@ display(Term_01A)
 
 #Plot the new variable and coefficients
 Term_plot_01A<-ggplot(data=Term_smp,
-       aes(y=j_Term,x=cb_Comp))+geom_jitter(alpha=0.01,height=0)+scale_y_sqrt()
+       aes(y=j_Term,x=cb_Comp))+geom_jitter(alpha=0.01,height=0)+scale_y_sqrt() + labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
 
 #Add the fitted regression line
 Term_plot_01A+ stat_function(fun = fit_curve, args=list(a=coef(Term_01A)[1],
@@ -153,16 +159,6 @@ Term_data_01A<-data.frame(fitted=fitted(Term_01A),
 #                        cb_Comp=Term_01A@frame$cb_Comp
 #                        )
 
-Term_data_01A<-Term_data_01A[order(Term_data_01A$fitted),]
-
-Term_res_01A<-ggplot(data=Term_data_01A,
-       aes(y=b_Term,x=fitted))+geom_jitter(alpha=0.01)
-Term_res_01A
-# +
-  # scale_x_continuous(limits=c(0,1))+
-  # scale_y_continuous(limits=c(0,1))
-  # position_jitter(width = NULL, height = NULL)
-
 
 ```
 Competition alone has a very slight, but significant, negative correlation with terminations. The next step is to check alternate formulations. There's not yet enough in this model for any meaningful residual models. The next step is to look at a more detailed model, where single offer competition is broken out as a middle option between competition and no competion.
@@ -170,16 +166,23 @@ Competition alone has a very slight, but significant, negative correlation with 
 ###Model 01B: No Competition / Single Offer / Competition
 ```{r Model01B}
 
-#First a quick frequency plot for terminations
+#Frequency Plot
 ggplot(data=Term_smp,
-       aes(x=Term))+geom_histogram(stat="count")+facet_wrap(~n_Comp,scales="free_y")
+       aes(x=Term))+geom_histogram(stat="count",bins=20) +
+  scale_y_continuous(labels = scales::comma) +facet_wrap(~n_Comp,scales="free_y")+
+  labs(title="Termination Frequency by Competition",
+          caption="Source: FPDS, CSIS Analysis")
 
 
-#Plot the percent terminated across n_Comp
+
+#Percent Terminated Plot
 ggplot(data=subset(Term_smp,!is.na(n_Comp)) %>% 
   group_by(n_Comp) %>% 
   summarise (mean_Term = mean(b_Term)),
-       aes(y=mean_Term,x=n_Comp))+geom_line()
+       aes(y=mean_Term,x=n_Comp))+geom_line(group=1)+
+  scale_y_continuous(labels =  scales::percent)+
+  labs(title="Percent Terminated by Competition",
+          caption="Source: FPDS, CSIS Analysis")
 
 
 
@@ -189,9 +192,11 @@ display(Term_01B)
 coef(Term_01B)
 
 
-#Plot the 
+#Plot the Fitted
 Term_plot_01B<-ggplot(data=Term_smp,
-       aes(y=j_Term,x=cn_Comp))+geom_jitter(alpha=0.01,height=0)+scale_y_sqrt()
+       aes(y=j_Term,x=cn_Comp))+geom_jitter(alpha=0.01,height=0)+scale_y_sqrt() +
+  labs(title="Fitted Linear Model",
+          caption="Source: FPDS, CSIS Analysis")
 
 #Add the fitted regression line
 Term_plot_01B+ stat_function(fun = fit_curve, args=list(a=coef(Term_01B)[1],
@@ -199,18 +204,6 @@ Term_plot_01B+ stat_function(fun = fit_curve, args=list(a=coef(Term_01B)[1],
                              color="blue")
 
 
-Term_data_01B<-data.frame(fitted=fitted(Term_01B),
-                       residuals=residuals(Term_01B),
-                       b_Term=Term_01B$model$b_Term,
-                       cn_Comp=Term_01B$model$cn_Comp
-                       )
-
-
-Term_data_01B<-Term_data_01B[order(Term_data_01B$fitted),]
-
-Term_res_01B<-ggplot(data=Term_data_01B,
-       aes(y=b_Term,x=fitted))+geom_jitter(alpha=0.01)
-Term_res_01B
 
 
 ```
@@ -223,16 +216,22 @@ The correltion between the three categories of competition has a smaller coeffic
 
 
 
-#First a quick frequency plot for terminations
+#Frequency Plot
 ggplot(data=Term_smp,
-       aes(x=Term))+geom_histogram(stat="count")+facet_wrap(~n_Offr,scales="free_y")
+       aes(x=Term))+geom_histogram(stat="count",bins=20) +
+  scale_y_continuous(labels = scales::comma) + facet_wrap(~n_Offr,scales="free_y")+
+  labs(title="Termination Frequency by Competition",
+          caption="Source: FPDS, CSIS Analysis")
 
 
-#Plot the percent terminated across n_Offr 
+#Percent Terminated Plot 
 ggplot(data=subset(Term_smp,!is.na(n_Offr)) %>% 
   group_by(n_Offr) %>% 
   summarise (mean_Term = mean(b_Term)),
-       aes(y=mean_Term,x=n_Offr))+geom_line()
+       aes(y=mean_Term,x=n_Offr))+geom_line(group=1)+
+  scale_y_continuous(labels =  scales::percent)+
+  labs(title="Percent Terminated by Competition",
+          caption="Source: FPDS, CSIS Analysis")
 
 
 
@@ -246,27 +245,13 @@ coef(Term_01C)
 
 #Plot the 
 Term_01C_plot<-ggplot(data=Term_smp,
-       aes(y=j_Term,x=cn_Offr))+geom_jitter(alpha=0.01,height=0)+scale_y_sqrt()
+       aes(y=j_Term,x=cn_Offr))+geom_jitter(alpha=0.01,height=0)+scale_y_sqrt() + labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
 
 #Add the fitted regression line
 Term_01C_plot+ stat_function(fun = fit_curve, args=list(a=coef(Term_01C)[1],
                                                         b=coef(Term_01C)[2]),
                              color="blue")
 
-Term_01C_data<-data.frame(fitted=fitted(Term_01C),
-                       residuals=residuals(Term_01C),
-                       b_Term=Term_01C$model$b_Term,
-                       cn_Offr=Term_01C$model$cn_Offr
-                       )
-
-
-Term_01C_data<-Term_01C_data[order(Term_01C_data$fitted),]
-
-Term_01C_res<-ggplot(data=Term_01C_data,
-       aes(y=b_Term,x=fitted))+geom_jitter(alpha=0.01)
-Term_01C_res
-
-summary(Term_smp$Offr)
 
 
 ```
@@ -278,22 +263,26 @@ Becuse the 5+ offers category has a higher termination rate than 2 and 3-4, the 
 ```{r Model01D}
 
 
-#First a quick frequency plot for terminations
+#Frequency Plot
 ggplot(data=Term_smp,
                      aes(x=l_Offer))+geom_histogram(bins =20)+
-  facet_wrap(~Term,ncol=1,scales="free_y")
+  facet_wrap(~Term,ncol=1,scales="free_y")+
+  labs(title="Termination Frequency by Number of Offers",
+          caption="Source: FPDS, CSIS Analysis")
 
 
-#Plot the percent terminated across offers 
+#Percent Terminated Plot 
 Term_smp$bin_Offer<-bin_df(Term_smp,"l_Offer")
 ggplot(data=subset(Term_smp,!is.na(bin_Offer)) %>% 
   group_by(bin_Offer) %>% 
   summarise (mean_Term = mean(b_Term),
              mean_l_Offer =mean(l_Offer)),
-       aes(y=mean_Term,x=mean_l_Offer))+geom_point()
+       aes(y=mean_Term,x=mean_l_Offer))+geom_point()+
+  labs(title="Percent Terminated for Contracts Binned by Number of Offers",
+          caption="Source: FPDS, CSIS Analysis")
 
 
-#Plot the percent terminated across offers and fixed price/cost based
+#Percent Terminated Plot
 
 Term_smp$bin_Offer_FxCb<-bin_df(Term_smp,rank_col="l_Offer",group_col="FxCb")
 ggplot(data=subset(Term_smp,!is.na(l_Offer) & !is.na(FxCb)) %>% 
@@ -302,7 +291,7 @@ ggplot(data=subset(Term_smp,!is.na(l_Offer) & !is.na(FxCb)) %>%
              mean_l_Offer =mean(l_Offer)),
        aes(y=mean_Term,x=mean_l_Offer))+geom_point()+facet_wrap(~FxCb)
 
-#Plot the percent terminated across offers and Product/Service/R&D
+#Percent Terminated Plot
 Term_smp$bin_Offer_PSR<-bin_df(Term_smp,rank_col="l_Offer",group_col="PSR")
 ggplot(data=subset(Term_smp,!is.na(l_Offer) & !is.na(PSR)) %>% 
   group_by(bin_Offer_PSR,PSR) %>% 
@@ -310,7 +299,7 @@ ggplot(data=subset(Term_smp,!is.na(l_Offer) & !is.na(PSR)) %>%
              mean_l_Offer =mean(l_Offer)),
        aes(y=mean_Term,x=mean_l_Offer))+geom_point()+facet_wrap(~PSR)
 
-#Plot the percent terminated across Vehicle
+#Percent Terminated Plot
 Term_smp$bin_Offer_Veh<-bin_df(Term_smp,rank_col="l_Offer",group_col="Veh")
 ggplot(data=subset(Term_smp,!is.na(l_Offer) & !is.na(Veh) ) %>% 
   group_by(bin_Offer_Veh,Veh) %>% 
@@ -331,7 +320,8 @@ display(Term_01E)
 
 #Plot the data and fitted curve
 Term_01D_plot<-ggplot(data=Term_smp,
-       aes(y=j_Term,x=cl_Offer))+geom_jitter(alpha=0.01,height=0)+scale_y_sqrt()
+       aes(y=j_Term,x=cl_Offer))+geom_jitter(alpha=0.01,height=0)+scale_y_sqrt() +
+  labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
 
 #Add the fitted regression line
 Term_01D_plot+ stat_function(fun = fit_curve, args=list(a=coef(Term_01D)[1],
@@ -352,7 +342,9 @@ ggplot(data=subset(Term_01D_data,!is.na(fitted) & !is.na(b_Term) ) %>%
   group_by(bin_fitted) %>% 
   summarise (mean_Term = mean(b_Term),
              mean_fitted =mean(fitted)),
-       aes(y=mean_Term,x=mean_fitted))+geom_point()
+       aes(y=mean_Term,x=mean_fitted))+geom_point()+
+  labs(title="Binned Fitted Linear Model",
+          caption="Source: FPDS, CSIS Analysis")
 
 ```
 
@@ -369,18 +361,22 @@ The model starts by examing the influence of large ceilings on contracts, the co
 
 ```{r Model02A}
 
-#First a quick frequency plot for terminations by ceiling size
+#Frequency Plot
 ggplot(data=Term_smp,
-       aes(x=l_Ceil))+geom_histogram(bins=20)+facet_wrap(~Term,ncol=1,scales="free_y")
+       aes(x=l_Ceil))+geom_histogram(bins=20) + scale_y_continuous(labels = scales::comma) + facet_wrap(~Term,ncol=1,scales="free_y")+
+  labs(title="Initial Cost Ceiling Frequency by Termination",
+          caption="Source: FPDS, CSIS Analysis")
 
 
-#Plot the percent terminated across cost ceiling 
+#Percent Terminated Plot
 Term_smp$bin_Offer<-bin_df(Term_smp,"l_Ceil")
-ggplot(data=subset(Term_smp,!is.na(bin_Offer)) %>% 
+ggplot(data=subset(Term_smp,!is.na(l_Ceil)) %>% 
   group_by(bin_Offer) %>% 
   summarise (mean_Term = mean(b_Term),
              mean_l_Ceil =mean(l_Ceil)),
-       aes(y=mean_Term,x=mean_l_Ceil))+geom_point()
+       aes(y=mean_Term,x=mean_l_Ceil))+geom_point()+
+  labs(title="Percent Terminated for Contracts Binned by Initial Cost Ceiling",
+          caption="Source: FPDS, CSIS Analysis")
 
 
 Term_02A <- glm (data=Term_smp,
@@ -390,7 +386,8 @@ display(Term_02A)
 
 
 Term_02A_plot<-ggplot(data=Term_smp,
-       aes(y=j_Term,x=cl_Ceil))+geom_point(alpha=0.01)+scale_x_sqrt()
+       aes(y=j_Term,x=cl_Ceil))+geom_point(alpha=0.01)+scale_y_sqrt() +
+  labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
 
 Term_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(Term_02A))}
 
@@ -416,7 +413,7 @@ ggplot(data=subset(Term_02A_data,!is.na(fitted) & !is.na(b_Term) ) %>%
   group_by(bin_fitted) %>% 
   summarise (mean_Term = mean(b_Term),
              mean_fitted =mean(fitted)),
-       aes(y=mean_Term,x=mean_fitted))+geom_point()
+       aes(y=mean_Term,x=mean_fitted))+geom_point() + labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 
 
 ```
@@ -428,9 +425,11 @@ ggplot(data=subset(Term_02A_data,!is.na(fitted) & !is.na(b_Term) ) %>%
 ```{r Model02B}
 
 
-#First a quick frequency plot for terminations by ceiling and Competition
+#Frequency Plot
 ggplot(data=subset(Term_smp,!is.na(n_Comp)),
-       aes(x=l_Ceil))+geom_histogram(bins=20)+facet_grid(Term~n_Comp,scales="free_y")
+       aes(x=l_Ceil))+geom_histogram(bins=20) + scale_y_continuous(labels = scales::comma) + facet_grid(Term~n_Comp,scales="free_y")+
+  labs(title="Initial Cost Ceiling Frequency by Competition Termination",
+          caption="Source: FPDS, CSIS Analysis")
 
 
 
@@ -440,7 +439,9 @@ ggplot(data=subset(Term_smp,!is.na(n_Comp)&!is.na(bin_Ceil_Comp)) %>%
   group_by(bin_Ceil_Comp,n_Comp) %>% 
   summarise (mean_Term = mean(b_Term),
              mean_l_Ceil =mean(l_Ceil)),
-       aes(y=mean_Term,x=mean_l_Ceil))+geom_point()+facet_wrap(~n_Comp)
+       aes(y=mean_Term,x=mean_l_Ceil))+geom_point()+facet_wrap(~n_Comp)+
+  labs(title="Percent Terminated for Contracts Binned by Initial Cost Ceiling and Faceted by Competion",
+          caption="Source: FPDS, CSIS Analysis")
 
 
 #Create the model
@@ -451,7 +452,8 @@ display(Term_02B)
 
 
 Term_02B_plot<-ggplot(data=Term_smp,
-       aes(y=j_Term,x=cl_Ceil))+geom_point(alpha=0.01)+scale_x_sqrt()
+       aes(y=j_Term,x=cl_Ceil))+geom_point(alpha=0.01)+scale_y_sqrt() + 
+  labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
 
 Term_02B_curve<-function(x, Comp){invlogit(cbind(1,Comp,x,Comp*x) %*%  coef(Term_02B))}
 
@@ -477,7 +479,7 @@ ggplot(data=subset(Term_02B_data,!is.na(fitted) & !is.na(b_Term) ) %>%
   group_by(bin_fitted) %>% 
   summarise (mean_Term = mean(b_Term),
              mean_fitted =mean(fitted)),
-       aes(y=mean_Term,x=mean_fitted))+geom_point()
+       aes(y=mean_Term,x=mean_fitted))+geom_point() + labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 
 
 
@@ -490,19 +492,23 @@ The interaction went in the expected direction, but is surprisingly powerful. Co
 ```{r Model02C}
 
 
-#First a quick frequency plot for terminations by duration
+#Frequency Plot
 ggplot(data=Term_smp,
-       aes(x=l_Days))+geom_histogram(bins=20)+facet_wrap(~Term,ncol=1,scales="free_y")
+       aes(x=l_Days))+geom_histogram(bins=20) + scale_y_continuous(labels = scales::comma) + facet_wrap(~Term,ncol=1,scales="free_y")+
+  labs(title="Initial Maximum Duration by Termination",
+          caption="Source: FPDS, CSIS Analysis")
 
 
 
-#Plot the percent terminated across duration 
+#Percent Terminated Plot
 Term_smp$bin_Offer<-bin_df(Term_smp,"l_Days")
 ggplot(data=subset(Term_smp,!is.na(bin_Offer)) %>% 
   group_by(bin_Offer) %>% 
   summarise (mean_Term = mean(b_Term),
              mean_l_Days =mean(l_Days)),
-       aes(y=mean_Term,x=mean_l_Days))+geom_point()
+       aes(y=mean_Term,x=mean_l_Days))+geom_point()+
+  labs(title="Percent Terminated for Contracts Binned by Initial Maximum Duration",
+          caption="Source: FPDS, CSIS Analysis")
 
 
 
@@ -513,7 +519,8 @@ display(Term_02C)
 
 
 Term_02C_plot<-ggplot(data=Term_smp,
-       aes(y=j_Term,x=cl_Days))+geom_point(alpha=0.01)+scale_x_sqrt()
+       aes(y=j_Term,x=cl_Days))+geom_point(alpha=0.01)+scale_y_sqrt() + 
+  labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
 
 Term_02C_curve<-function(x, Comp,Ceil){invlogit(cbind(1,Comp,Ceil,Comp*Ceil,x) %*%  coef(Term_02C))}
 
@@ -546,7 +553,7 @@ ggplot(data=subset(Term_02C_data,!is.na(fitted) & !is.na(b_Term) ) %>%
   group_by(bin_fitted) %>% 
   summarise (mean_Term = mean(b_Term),
              mean_fitted =mean(fitted)),
-       aes(y=mean_Term,x=mean_fitted))+geom_point()
+       aes(y=mean_Term,x=mean_fitted))+geom_point() + labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 
 
 ```
@@ -558,7 +565,9 @@ The initial model results are surprising as ceiling change direction, reducing a
 
 #First a quick scatter plot for terminations by duration and ceiling
 ggplot(data=subset(Term_smp,!is.na(l_Ceil)),
-       aes(x=l_Days,y=l_Ceil))+geom_point(alpha=0.1)+facet_grid(Term~.)
+       aes(x=l_Days,y=l_Ceil))+geom_point(alpha=0.1)+facet_grid(Term~.)+
+  labs(title="Initial Maximum Duration and Cost Ceiling by Termination",
+          caption="Source: FPDS, CSIS Analysis")
 
 
 
@@ -572,7 +581,8 @@ display(Term_02D)
 
 
 Term_02D_plot<-ggplot(data=Term_smp,
-       aes(y=j_Term,x=cl_Days))+geom_point(alpha=0.01)+scale_x_sqrt()
+       aes(y=j_Term,x=cl_Days))+geom_point(alpha=0.01)+scale_y_sqrt() +
+  labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
 
 Term_02D_curve<-function(x, Comp,Ceil){invlogit(cbind(1,Comp,Ceil,x,Comp*Ceil,x*Ceil) %*%  coef(Term_02D))}
 
@@ -599,7 +609,7 @@ ggplot(data=subset(Term_02D_data,!is.na(fitted) & !is.na(b_Term) ) %>%
   group_by(bin_fitted) %>% 
   summarise (mean_Term = mean(b_Term),
              mean_fitted =mean(fitted)),
-       aes(y=mean_Term,x=mean_fitted))+geom_point()
+       aes(y=mean_Term,x=mean_fitted))+geom_point() + labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 
 
 ```
@@ -612,9 +622,11 @@ The interaction of ceiling and duration is correlated with a lower rate of termi
 ```{r Mode02E}
 
 
-#First a quick frequency plot for terminations by duration and Competition
+#Frequency Plot
 ggplot(data=subset(Term_smp,!is.na(n_Comp)),
-       aes(x=l_Days))+geom_histogram(bins=20)+facet_grid(Term~n_Comp,scales="free_y")
+       aes(x=l_Days))+geom_histogram(bins=20)+facet_grid(Term~n_Comp,scales="free_y")+
+  labs(title="Initial Maximum Duration and Competition by Termination",
+          caption="Source: FPDS, CSIS Analysis")
 
 
 
@@ -624,7 +636,9 @@ ggplot(data=subset(Term_smp,!is.na(n_Comp)&!is.na(bin_Days_Comp)) %>%
   group_by(bin_Days_Comp,n_Comp) %>% 
   summarise (mean_Term = mean(b_Term),
              mean_l_Days =mean(l_Days)),
-       aes(y=mean_Term,x=mean_l_Days))+geom_point()+facet_wrap(~n_Comp)
+       aes(y=mean_Term,x=mean_l_Days))+geom_point()+facet_wrap(~n_Comp)+facet_wrap(~n_Comp)+
+  labs(title="Percent Terminated for Contracts Binned by Initial Maximum Duration and Faceted by Competion",
+          caption="Source: FPDS, CSIS Analysis")
 
 
 #Create the model
@@ -639,7 +653,8 @@ display(Term_02E)
 
 #Create the Model
 Term_02E_plot<-ggplot(data=Term_smp,
-       aes(y=j_Term,x=cl_Days))+geom_point(alpha=0.01)+scale_x_sqrt()
+       aes(y=j_Term,x=cl_Days))+geom_point(alpha=0.01)+scale_y_sqrt() +
+  labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
 
 Term_02E_curve<-function(x, Comp,Ceil){invlogit(cbind(1,Comp,Ceil,x,Comp*Ceil,x*Ceil,x*Comp) %*%  coef(Term_02E))}
 
@@ -666,7 +681,7 @@ ggplot(data=subset(Term_02E_data,!is.na(fitted) & !is.na(b_Term) ) %>%
   group_by(bin_fitted) %>% 
   summarise (mean_Term = mean(b_Term),
              mean_fitted =mean(fitted)),
-       aes(y=mean_Term,x=mean_fitted))+geom_point()
+       aes(y=mean_Term,x=mean_fitted))+geom_point() + labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 
 
 ```
@@ -679,16 +694,22 @@ Our dataset includes both stand alone contract awards and task orders that are u
 
 
 ```{r Model03A}
-#First a quick frequency plot for terminations
+#Frequency Plot
 ggplot(data=Term_smp,
-       aes(x=Term))+geom_histogram(stat="count")+facet_wrap(~IDV,scales="free_y")
+       aes(x=Term))+geom_histogram(stat="count",bins=20) +
+  scale_y_continuous(labels = scales::comma) +facet_wrap(~Veh,scales="free_y")+
+  labs(title="Termination Frequency by Contract Vehicle",
+          caption="Source: FPDS, CSIS Analysis")
 
 
 #Plot the percent terminated across IDV 
-ggplot(data=subset(Term_smp,!is.na(IDV)) %>% 
-  group_by(IDV) %>% 
+ggplot(data=subset(Term_smp,!is.na(Veh)) %>% 
+  group_by(Veh) %>% 
   summarise (mean_Term = mean(b_Term)),
-       aes(y=mean_Term,x=IDV))+geom_line()
+       aes(y=mean_Term,x=Veh))+geom_line(group=1)+
+  scale_y_continuous(labels =  scales::percent)+
+  labs(title="Percent Terminated by Contract Vehcile",
+          caption="Source: FPDS, CSIS Analysis")
 
 
 
@@ -703,7 +724,8 @@ display(Term_03A)
 
 #Plot the model and IDV
 Term_03A_plot<-ggplot(data=Term_smp,
-       aes(y=j_Term,x=IDV))+geom_jitter(alpha=0.01,height=0)+scale_y_sqrt()
+       aes(y=j_Term,x=IDV))+geom_jitter(alpha=0.01,height=0)+scale_y_sqrt() +
+  labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
 
 Term_03A_curve<-function(x, Comp,Ceil,Days){invlogit(cbind(1,Comp,
                                                       Ceil,Days,x,
@@ -734,7 +756,7 @@ ggplot(data=subset(Term_03A_data,!is.na(fitted) & !is.na(b_Term) ) %>%
   group_by(bin_fitted) %>% 
   summarise (mean_Term = mean(b_Term),
              mean_fitted =mean(fitted)),
-       aes(y=mean_Term,x=mean_fitted))+geom_point()
+       aes(y=mean_Term,x=mean_fitted))+geom_point() + labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 
 
 ```
@@ -745,7 +767,7 @@ The first check lumps all forms of IDVs together, and finds that IDVs face notab
 ###Model 03B: Any IDV and contract duration
 ```{r Model03B}
 
-#First a quick frequency plot for terminations by duration and IDV
+#Frequency Plot
 ggplot(data=subset(Term_smp,!is.na(IDV)),
        aes(x=l_Days))+geom_histogram(bins=20)+facet_grid(Term~IDV,scales="free_y")
 
@@ -775,7 +797,8 @@ display(Term_03B)
 
 #Plot the model and IDV
 Term_03B_plot<-ggplot(data=Term_smp,
-       aes(y=j_Term,x=IDV))+geom_point(alpha=0.01)+scale_x_sqrt()
+       aes(y=j_Term,x=IDV))+geom_point(alpha=0.01)+scale_y_sqrt() +
+  labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
 
 Term_03B_curve<-function(x, Comp,Ceil,Days){invlogit(cbind(1,Comp,
                                                       Ceil,Days,x,
@@ -805,7 +828,7 @@ ggplot(data=subset(Term_03B_data,!is.na(fitted) & !is.na(b_Term) ) %>%
   group_by(bin_fitted) %>% 
   summarise (mean_Term = mean(b_Term),
              mean_fitted =mean(fitted)),
-       aes(y=mean_Term,x=mean_fitted))+geom_point()
+       aes(y=mean_Term,x=mean_fitted))+geom_point() + labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 
 
 ```
