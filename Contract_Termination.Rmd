@@ -239,7 +239,6 @@ ggplot(data=subset(Term_smp,!is.na(n_Offr)) %>%
 Term_01C <- glm (data=Term_smp,
                  b_Term ~ cn_Offr, family=binomial(link="logit"))
 display(Term_01C)
-coef(Term_01C)
 
 
 
@@ -256,7 +255,9 @@ Term_01C_plot+ stat_function(fun = fit_curve, args=list(a=coef(Term_01C)[1],
 
 ```
 
-Becuse the 5+ offers category has a higher termination rate than 2 and 3-4, the coefficient for the five category breakdown on competition is smaller than the three. In theory, this could be because of non-liner relationship, for example higher number of offers competition may be more vulnerable to aggressive bidding beavior. However, this explaination would likely be better captured by other hidden variables such as competition methods rather than having a direct relationship with an increased number of offers. As a result, we are not testing offers as a categorical variable with dummies. Instead, the last variant to be checked is the number of offers directly. This is handled logarithmicly because the differences between number of offers at the bottom end of the scle mtters much more than at the high end of the scale. In this method, contracts that were not open to competition are grouped with contracts that received only a single offer.
+As measured by residual deviance, this variable has slightly less predictive power than random noise. That can likely be attributed to the fact that 5+ offers category has a higher termination rate than 2 and 3-4. In theory, this could be because of non-liner relationship, for example higher number of offers competition may be more vulnerable to aggressive bidding beavior. However, this explaination would likely be better captured by other hidden variables such as competition methods rather than having a direct relationship with an increased number of offers. As a result, we are not testing offers as a categorical variable with dummies. 
+
+Instead, the last variant to be checked is the number of offers directly. This is handled logarithmicly because the differences between number of offers at the bottom end of the scale mtters much more than at the high end of the scale. In this method, contracts that were not open to competition are grouped with contracts that received only a single offer.
 
 
 ###Model 01D: Number of Offer Categories 
@@ -283,7 +284,6 @@ ggplot(data=subset(Term_smp,!is.na(bin_Offer)) %>%
 
 
 #Percent Terminated Plot
-
 Term_smp$bin_Offer_FxCb<-bin_df(Term_smp,rank_col="l_Offer",group_col="FxCb")
 ggplot(data=subset(Term_smp,!is.na(l_Offer) & !is.na(FxCb)) %>% 
   group_by(bin_Offer_FxCb,FxCb) %>% 
@@ -346,11 +346,31 @@ ggplot(data=subset(Term_01D_data,!is.na(fitted) & !is.na(b_Term) ) %>%
   labs(title="Binned Fitted Linear Model",
           caption="Source: FPDS, CSIS Analysis")
 
+
+#Plot the Residualts
+debug(binned.resids)
+Term_01D_res<-binned.resids (Term_01D_data$fitted,
+                              Term_01D_data$fitted-Term_01D_data$b_Term, nclass=3)$binned
+
+ggplot(data=Term_01D_res,
+       aes(x=xbar,y-ybar))+
+  geom_point(aes(y=ybar))+ #Residuals
+  geom_line(aes(y=se2),col="grey")+
+  geom_line(aes(y=-se2),col="grey")+
+  labs(title="Binned residual plot",
+       x="Estimated  Pr (Termination)",
+       y="Average residual")
+
+
+
+
 ```
 
-Closer examination further undercuts the idea that more offers is associated with a lower termination risk. A variety of binned percent terminated graphs found that in the middle range of the number of offers, there is often an increase in the percent terminated. The study team had expected that this phenomenon may prove isolated to a certain type of contracting mechanism or product/service, but that did not prove to be the case.
+Closer examination further undercuts the idea that more offers is associated with a lower termination risk. As measured by deviance, the number offers adds less to the model than random noise. A quick experiment also found that use of number of offer squared only made the model slightly better than noise.
 
-The difference between single-offer and effective competition is worth exploring, even if it lowers the significance of the starting model. However, lacking a specific theoretical argument for the importance of a greater number of offers, and given the results, the more detailed competition breakdowns will not be used. This may be an issue worth exploring more in a future work.
+A variety of binned percent terminated graphs found that in the middle range of the number of offers, there is often an increase in the percent terminated. The study team had expected that this phenomenon may prove isolated to a certain type of contracting mechanism or product/service, but that did not prove to be the case.
+
+The difference between single-offer and effective competition is worth exploring, even if it lowers the significance of the starting model. Happily, this decision is supported by the fact that this three category variable offers the greatest reduction in residual deviance. However, lacking a specific theoretical argument for the importance of a greater number of offers, and given the results, the more detailed competition breakdowns will not be used. This may be an issue worth exploring more in a future work.
 
 The greatest distinctiveness can be found in types of indefinite delivery vehicles. Definitive contracts and purchase orders show a higher termination rate as the number of offers increase. However, for single and multiple award IDVs, there's a decline in terminations rates correlated with low levels of competition, that often fades and even reverses as the number of offers increases. However, the results do not seem consistent with am exponential relationship.
 
@@ -361,10 +381,18 @@ The model starts by examing the influence of large ceilings on contracts, the co
 
 ```{r Model02A}
 
+
+#Frequency Plot
+ggplot(data=subset(Term_smp,UnmodifiedContractBaseAndAllOptionsValue<100000000),
+       aes(x=UnmodifiedContractBaseAndAllOptionsValue))+geom_histogram(bins=1000) + scale_y_continuous(labels = scales::comma) + facet_wrap(~Term,ncol=1,scales="free_y")+
+  labs(title="Frequency by Termination",
+          caption="Source: FPDS, CSIS Analysis")
+
+
 #Frequency Plot
 ggplot(data=Term_smp,
        aes(x=l_Ceil))+geom_histogram(bins=20) + scale_y_continuous(labels = scales::comma) + facet_wrap(~Term,ncol=1,scales="free_y")+
-  labs(title="Initial Cost Ceiling Frequency by Termination",
+  labs(title="Frequency by Termination",
           caption="Source: FPDS, CSIS Analysis")
 
 
@@ -416,48 +444,76 @@ ggplot(data=subset(Term_02A_data,!is.na(fitted) & !is.na(b_Term) ) %>%
        aes(y=mean_Term,x=mean_fitted))+geom_point() + labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 
 
+Term_02A_res<-binned.resids (Term_02A_data$fitted,
+                              Term_02A_data$fitted-Term_02A_data$b_Term, nclass=40)$binned
+
+ggplot(data=Term_02A_res,
+       aes(x=xbar,y-ybar))+
+  geom_point(aes(y=ybar))+ #Residuals
+  geom_line(aes(y=se2),col="grey")+
+  geom_line(aes(y=-se2),col="grey")+
+  labs(title="Binned residual plot",
+       x="Estimated  Pr (Termination)",
+       y="Average residual")
+
+
+Term_02A_res<-binned.resids (Term_02A_data$cl_Ceil,
+                              Term_02A_data$fitted-Term_02A_data$b_Term, nclass=40)$binned
+
+ggplot(data=Term_02A_res,
+       aes(x=xbar,y-ybar))+
+  geom_point(aes(y=ybar))+ #Residuals
+  geom_line(aes(y=se2),col="grey")+
+  geom_line(aes(y=-se2),col="grey")+
+  labs(title="Binned residual plot",
+       x="Centered Log(Ceiling)",
+       y="Average residual")
+
+
+
 ```
 
-###Model 02B: Cost Ceiling and Competition
+Contract ceiling has a significant relationship, though the residuals show a possible non-linear patterns. When the initial contract ceiling is particularly low or high, the fitted model underestimates the risk of terminations. This suggests that addding the log(Ceil)^2 might better capture the underlying data.
 
 
+
+###Model 02B: Cost Ceiling Squared
 
 ```{r Model02B}
 
+Term_smp$clsqr_Ceil<-Term_smp$cl_Ceil^2
 
 #Frequency Plot
-ggplot(data=subset(Term_smp,!is.na(n_Comp)),
-       aes(x=l_Ceil))+geom_histogram(bins=20) + scale_y_continuous(labels = scales::comma) + facet_grid(Term~n_Comp,scales="free_y")+
-  labs(title="Initial Cost Ceiling Frequency by Competition Termination",
+ggplot(data=Term_smp,
+       aes(x=l_Ceil^2))+geom_histogram(bins=20) + scale_y_continuous(labels = scales::comma) + facet_wrap(~Term,ncol=1,scales="free_y")+
+  labs(title="Frequency by Termination",
           caption="Source: FPDS, CSIS Analysis")
 
 
-
-#Plot the percent terminated across cost ceiling and competition
-Term_smp$bin_Ceil_Comp<-bin_df(Term_smp,"l_Ceil")
-ggplot(data=subset(Term_smp,!is.na(n_Comp)&!is.na(bin_Ceil_Comp)) %>% 
-  group_by(bin_Ceil_Comp,n_Comp) %>% 
+#Percent Terminated Plot
+Term_smp$bin_Offer<-bin_df(Term_smp,"cl_Ceil")
+ggplot(data=subset(Term_smp,!is.na(l_Ceil)) %>% 
+  group_by(bin_Offer) %>% 
   summarise (mean_Term = mean(b_Term),
-             mean_l_Ceil =mean(l_Ceil)),
-       aes(y=mean_Term,x=mean_l_Ceil))+geom_point()+facet_wrap(~n_Comp)+
-  labs(title="Percent Terminated for Contracts Binned by Initial Cost Ceiling and Faceted by Competion",
+             mean_lsqr_Ceil =mean(l_Ceil^2)),
+       aes(y=mean_Term,x=mean_lsqr_Ceil))+geom_point()+
+  labs(title="Average Termination Rate",
           caption="Source: FPDS, CSIS Analysis")
 
 
-#Create the model
 Term_02B <- glm (data=Term_smp,
-                 b_Term ~n_Comp + cl_Ceil + n_Comp:cl_Ceil, family=binomial(link="logit"))
+                 b_Term ~n_Comp + cl_Ceil + clsqr_Ceil, family=binomial(link="logit"))
 display(Term_02B)
 
 
 
 Term_02B_plot<-ggplot(data=Term_smp,
-       aes(y=j_Term,x=cl_Ceil))+geom_point(alpha=0.01)+scale_y_sqrt() + 
+       aes(y=j_Term,x=cl_Ceil))+geom_point(alpha=0.01)+scale_y_sqrt() +
   labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
 
-Term_02B_curve<-function(x, Comp){invlogit(cbind(1,Comp,x,Comp*x) %*%  coef(Term_02B))}
+Term_02B_curve<-function(x, Comp){invlogit(cbind(1,Comp,x, x^2) %*%  coef(Term_02B))}
 
-#Competition Curves
+#Competition curves
 Term_02B_plot+ stat_function(fun = Term_02B_curve, 
                              args=list(Comp=0),color="blue")+
   stat_function(fun = Term_02B_curve, 
@@ -482,8 +538,114 @@ ggplot(data=subset(Term_02B_data,!is.na(fitted) & !is.na(b_Term) ) %>%
        aes(y=mean_Term,x=mean_fitted))+geom_point() + labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 
 
+Term_02B_res<-binned.resids (Term_02B_data$fitted,
+                              Term_02B_data$fitted-Term_02B_data$b_Term, nclass=40)$binned
+
+ggplot(data=Term_02B_res,
+       aes(x=xbar,y-ybar))+
+  geom_point(aes(y=ybar))+ #Residuals
+  geom_line(aes(y=se2),col="grey")+
+  geom_line(aes(y=-se2),col="grey")+
+  labs(title="Binned residual plot",
+       x="Estimated  Pr (Termination)",
+       y="Average residual")
 
 
+Term_02B_res<-binned.resids (Term_02B_data$cl_Ceil,
+                              Term_02B_data$fitted-Term_02B_data$b_Term, nclass=40)$binned
+
+ggplot(data=Term_02B_res,
+       aes(x=xbar,y-ybar))+
+  geom_point(aes(y=ybar))+ #Residuals
+  geom_line(aes(y=se2),col="grey")+
+  geom_line(aes(y=-se2),col="grey")+
+  labs(title="Binned residual plot",
+       x="Centered Log(Ceiling)",
+       y="Average residual")
+
+
+
+```
+
+Contracts with very small or very large ceilings appear have a negative coefficient for calculating termination. On the upper end, this might represent contracts that are "too large to fail"" or simply that above a certain size, risk stops rising. Adding the log(Ceiling) squared greatly reduces the apparent pattern in the residuals, although more than 5 percent of the binned residuals still fall outside the 95% confidence interval.
+
+###Model 02C: Cost Ceiling and Competition
+
+
+
+```{r Model02C}
+
+
+#Frequency Plot
+ggplot(data=subset(Term_smp,!is.na(n_Comp)),
+       aes(x=l_Ceil))+geom_histogram(bins=20) + scale_y_continuous(labels = scales::comma) + facet_grid(Term~n_Comp,scales="free_y")+
+  labs(title="Initial Cost Ceiling Frequency by Competition Termination",
+          caption="Source: FPDS, CSIS Analysis")
+
+
+
+#Plot the percent terminated across cost ceiling and competition
+Term_smp$bin_Ceil_Comp<-bin_df(Term_smp,"l_Ceil")
+ggplot(data=subset(Term_smp,!is.na(n_Comp)&!is.na(bin_Ceil_Comp)) %>% 
+  group_by(bin_Ceil_Comp,n_Comp) %>% 
+  summarise (mean_Term = mean(b_Term),
+             mean_l_Ceil =mean(l_Ceil)),
+       aes(y=mean_Term,x=mean_l_Ceil))+geom_point()+facet_wrap(~n_Comp)+
+  labs(title="Average Termination Rate",
+          caption="Source: FPDS, CSIS Analysis")
+
+
+#Create the model
+Term_02C <- glm (data=Term_smp,
+                 b_Term ~n_Comp + cl_Ceil + clsqr_Ceil + n_Comp:cl_Ceil, family=binomial(link="logit"))
+display(Term_02C)
+
+
+
+Term_02C_plot<-ggplot(data=Term_smp,
+       aes(y=j_Term,x=cl_Ceil))+geom_point(alpha=0.01)+scale_y_sqrt() + 
+  labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
+
+Term_02C_curve<-function(x, Comp){invlogit(cbind(1,Comp,x,x^2,Comp*x) %*%  coef(Term_02C))}
+
+#Competition Curves
+Term_02C_plot+ stat_function(fun = Term_02C_curve, 
+                             args=list(Comp=0),color="blue")+
+  stat_function(fun = Term_02C_curve, 
+                             args=list(Comp=2),color="blue")
+
+
+
+#Plot the fitted values vs actual results
+Term_02C_data<-data.frame(fitted=fitted(Term_02C),
+                       residuals=residuals(Term_02C),
+                       b_Term=Term_02C$model$b_Term,
+                       n_Comp=Term_02C$model$n_Comp,
+                       cl_Ceil=Term_02C$model$cl_Ceil
+                       )
+
+
+Term_02C_data$bin_fitted<-bin_df(Term_02C_data,rank_col="fitted")
+ggplot(data=subset(Term_02C_data,!is.na(fitted) & !is.na(b_Term) ) %>% 
+  group_by(bin_fitted) %>% 
+  summarise (mean_Term = mean(b_Term),
+             mean_fitted =mean(fitted)),
+       aes(y=mean_Term,x=mean_fitted))+geom_point() + labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+
+
+
+#Plot the residuals
+Term_02C_res<-binned.resids (Term_02C_data$fitted,
+                              Term_02C_data$fitted-Term_02C_data$b_Term, nclass=40)$binned
+
+ggplot(data=Term_02C_res,
+       aes(x=xbar,y-ybar))+
+  geom_point(aes(y=ybar))+ #Residuals
+  geom_line(aes(y=se2),col="grey")+
+  geom_line(aes(y=-se2),col="grey")+
+  labs(title="Binned residual plot",
+       x="Estimated  Pr (Termination)",
+       y="Average residual")
 ```
 The interaction went in the expected direction, but is surprisingly powerful. Competition heightens the importance of contract ceiling, and larger contract ceilings mitigate the importance of competition. The other powerful part of this interaction was the dramatic increase in the coefficient for competition and the comparative reduction in the correlation of ceiling.
 
@@ -495,7 +657,7 @@ The interaction went in the expected direction, but is surprisingly powerful. Co
 #Frequency Plot
 ggplot(data=Term_smp,
        aes(x=l_Days))+geom_histogram(bins=20) + scale_y_continuous(labels = scales::comma) + facet_wrap(~Term,ncol=1,scales="free_y")+
-  labs(title="Initial Maximum Duration by Termination",
+  labs(title="Frequency by Termination",
           caption="Source: FPDS, CSIS Analysis")
 
 
@@ -507,13 +669,13 @@ ggplot(data=subset(Term_smp,!is.na(bin_Offer)) %>%
   summarise (mean_Term = mean(b_Term),
              mean_l_Days =mean(l_Days)),
        aes(y=mean_Term,x=mean_l_Days))+geom_point()+
-  labs(title="Percent Terminated for Contracts Binned by Initial Maximum Duration",
+  labs(title="Average Termination Rate",
           caption="Source: FPDS, CSIS Analysis")
 
 
 
 Term_02C <- glm (data=Term_smp,
-                 b_Term ~n_Comp + cl_Ceil + cl_Days+ n_Comp:cl_Ceil , family=binomial(link="logit"))
+                 b_Term ~n_Comp + cl_Ceil + clsqr_Ceil + cl_Days+ n_Comp:cl_Ceil , family=binomial(link="logit"))
 display(Term_02C)
 
 
@@ -556,6 +718,20 @@ ggplot(data=subset(Term_02C_data,!is.na(fitted) & !is.na(b_Term) ) %>%
        aes(y=mean_Term,x=mean_fitted))+geom_point() + labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 
 
+#Plot the residuals
+Term_02C_res<-binned.resids (Term_02C_data$fitted,
+                              Term_02C_data$fitted-Term_02C_data$b_Term, nclass=40)$binned
+
+ggplot(data=Term_02C_res,
+       aes(x=xbar,y-ybar))+
+  geom_point(aes(y=ybar))+ #Residuals
+  geom_line(aes(y=se2),col="grey")+
+  geom_line(aes(y=-se2),col="grey")+
+  labs(title="Binned residual plot",
+       x="Estimated  Pr (Termination)",
+       y="Average residual")
+
+
 ```
 The initial model results are surprising as ceiling change direction, reducing and correlates with a lower risk of termiation now, although the interaction between competition and ceiling remains roughly the same. The graph of the fitted values shows that this model The next step will be to look at the interaction of ceiling and duration. 
 
@@ -566,7 +742,7 @@ The initial model results are surprising as ceiling change direction, reducing a
 #First a quick scatter plot for terminations by duration and ceiling
 ggplot(data=subset(Term_smp,!is.na(l_Ceil)),
        aes(x=l_Days,y=l_Ceil))+geom_point(alpha=0.1)+facet_grid(Term~.)+
-  labs(title="Initial Maximum Duration and Cost Ceiling by Termination",
+  labs(title="Frequency by Termination",
           caption="Source: FPDS, CSIS Analysis")
 
 
@@ -611,6 +787,19 @@ ggplot(data=subset(Term_02D_data,!is.na(fitted) & !is.na(b_Term) ) %>%
              mean_fitted =mean(fitted)),
        aes(y=mean_Term,x=mean_fitted))+geom_point() + labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 
+#Plot the residuals
+Term_02D_res<-binned.resids (Term_02D_data$fitted,
+                              Term_02D_data$fitted-Term_02D_data$b_Term, nclass=40)$binned
+
+ggplot(data=Term_02D_res,
+       aes(x=xbar,y-ybar))+
+  geom_point(aes(y=ybar))+ #Residuals
+  geom_line(aes(y=se2),col="grey")+
+  geom_line(aes(y=-se2),col="grey")+
+  labs(title="Binned residual plot",
+       x="Estimated  Pr (Termination)",
+       y="Average residual")
+
 
 ```
 
@@ -625,7 +814,7 @@ The interaction of ceiling and duration is correlated with a lower rate of termi
 #Frequency Plot
 ggplot(data=subset(Term_smp,!is.na(n_Comp)),
        aes(x=l_Days))+geom_histogram(bins=20)+facet_grid(Term~n_Comp,scales="free_y")+
-  labs(title="Initial Maximum Duration and Competition by Termination",
+  labs(title="Frequency by Termination",
           caption="Source: FPDS, CSIS Analysis")
 
 
@@ -637,7 +826,7 @@ ggplot(data=subset(Term_smp,!is.na(n_Comp)&!is.na(bin_Days_Comp)) %>%
   summarise (mean_Term = mean(b_Term),
              mean_l_Days =mean(l_Days)),
        aes(y=mean_Term,x=mean_l_Days))+geom_point()+facet_wrap(~n_Comp)+facet_wrap(~n_Comp)+
-  labs(title="Percent Terminated for Contracts Binned by Initial Maximum Duration and Faceted by Competion",
+  labs(title="Average Termination Rate",
           caption="Source: FPDS, CSIS Analysis")
 
 
@@ -684,6 +873,22 @@ ggplot(data=subset(Term_02E_data,!is.na(fitted) & !is.na(b_Term) ) %>%
        aes(y=mean_Term,x=mean_fitted))+geom_point() + labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 
 
+
+#Plot the residuals
+Term_02E_res<-binned.resids (Term_02E_data$fitted,
+                              Term_02E_data$fitted-Term_02E_data$b_Term, nclass=40)$binned
+
+ggplot(data=Term_02E_res,
+       aes(x=xbar,y-ybar))+
+  geom_point(aes(y=ybar))+ #Residuals
+  geom_line(aes(y=se2),col="grey")+
+  geom_line(aes(y=-se2),col="grey")+
+  labs(title="Binned residual plot",
+       x="Estimated  Pr (Termination)",
+       y="Average residual")
+
+
+
 ```
 This interaction finds that that the already significant coefficient for duration becomes even more important for competed contracts. Conversely, competition's coefficient reverses itself as when contract duration goes long enough. This is consistent with an explaination that the benefits of competition wear off over time. 
 
@@ -708,7 +913,7 @@ ggplot(data=subset(Term_smp,!is.na(Veh)) %>%
   summarise (mean_Term = mean(b_Term)),
        aes(y=mean_Term,x=Veh))+geom_line(group=1)+
   scale_y_continuous(labels =  scales::percent)+
-  labs(title="Percent Terminated by Contract Vehcile",
+  labs(title="Average Termination Rate",
           caption="Source: FPDS, CSIS Analysis")
 
 
@@ -1034,7 +1239,7 @@ THese results are not sufficiently signficiant to justify inclusion, but the int
 
 ###Model 15D: Fixed Price and Number of Offers for Competed Contracts
 
-```{r Term_02D}
+```{r Term_02E}
 Term_02D <- glmer (data=subset(Term_smp,cb_Comp==1),
               b_Term ~ l_Ceil + l_Days + 
                 SIDV + MIDV + OIDV + SIDV:l_Days + 

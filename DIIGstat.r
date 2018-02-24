@@ -214,7 +214,12 @@ bin_df<-function(data,rank_col,group_col=NULL,n=20,ties.method="random"){
 binned.resids <- function (x, y, nclass=sqrt(length(x))){
   breaks.index <- floor(length(x)*(1:(nclass-1))/nclass)
   breaks <- c (-Inf, sort(x)[breaks.index], Inf)
-  output <- NULL
+  output <- data.frame(xbar=double(),
+                       ybar=double(),
+                       n=integer(), 
+                       x.lo=double(),
+                       x.hi=double(),
+                       se2=double())
   xbreaks <- NULL
   x.binned <- as.numeric (cut (x, breaks))
   for (i in 1:nclass){
@@ -224,8 +229,27 @@ binned.resids <- function (x, y, nclass=sqrt(length(x))){
     ybar <- mean(y[items])
     n <- length(items)
     sdev <- sd(y[items])
-    output <- rbind (output, c(xbar, ybar, n, x.range, 2*sdev/sqrt(n)))
+    output <- rbind (output, data.frame(xbar=xbar,
+                                           ybar=ybar,
+                                           n=n, 
+                                           x.lo=x.range[1],
+                                           x.hi=x.range[2],
+                                           se2=2*sdev/sqrt(n)))
   }
-  colnames (output) <- c ("xbar", "ybar", "n", "x.lo", "x.hi", "2se")
+  # colnames (output) <- c ("xbar", "ybar", "n", "x.lo", "x.hi", "se2")
   return (list (binned=output, xbreaks=xbreaks))
 }
+
+
+Term_02A_res<-binned.resids (Term_02A_data$cl_Ceil,
+                             Term_02A_data$fitted-Term_02A_data$b_Term, nclass=40)$binned
+
+ggplot(data=Term_02A_res,
+       aes(x=xbar,y-ybar))+
+  geom_point(aes(y=ybar))+ #Residuals
+  geom_line(aes(y=se2),col="grey")+
+  geom_line(aes(y=-se2),col="grey")+
+  labs(title="Binned residual plot",
+       x="Centered Log(Ceiling)",
+       y="Average residual")
+
