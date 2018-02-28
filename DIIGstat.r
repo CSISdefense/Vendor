@@ -240,16 +240,74 @@ binned.resids <- function (x, y, nclass=sqrt(length(x))){
   return (list (binned=output, xbreaks=xbreaks))
 }
 
+binned_fitted_versus_residuals<-function(model){
+  data <-data.frame(
+    fitted=fitted(model),
+    residuals=residuals(model),
+    b_Term=model$model$b_Term
+  )
 
-Term_02A_res<-binned.resids (Term_02A_data$cl_Ceil,
-                             Term_02A_data$fitted-Term_02A_data$b_Term, nclass=40)$binned
+  data$bin_fitted<-bin_df(data,rank_col="fitted")
+  
+  data<-subset(data,!is.na(fitted) & !is.na(residuals) )
+  
+  ggplot(data= data %>% 
+           group_by(bin_fitted) %>% 
+           summarise (mean_Term = mean(b_Term),
+                      mean_fitted =mean(fitted)),
+         aes(y=mean_Term,x=mean_fitted))+geom_point() +
+    labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+}
 
-ggplot(data=Term_02A_res,
-       aes(x=xbar,y-ybar))+
-  geom_point(aes(y=ybar))+ #Residuals
-  geom_line(aes(y=se2),col="grey")+
-  geom_line(aes(y=-se2),col="grey")+
-  labs(title="Binned residual plot",
-       x="Centered Log(Ceiling)",
-       y="Average residual")
+residuals_term_plot<-function(model,x_col="fitted"){
+  #Plot the fitted values vs actual results
+  data<-data.frame(fitted=fitted(model),
+                            residuals=residuals(model),
+                            b_Term=model$model$b_Term
+  )
+  if (x_col!="fitted"){
+    data$x_col<-
+      test<-model$model[,x_col]
+    colnames(data)[colnames(data)=="x_col"]<-x_col
+  }
+  
+  
+  data<-binned.resids (data[,x_col],
+                       data$fitted-data$b_Term, nclass=40)$binned
+
+   ggplot(data=data,
+         aes(x=xbar,y-ybar))+
+    geom_point(aes(y=ybar))+ #Residuals
+    geom_line(aes(y=se2),col="grey")+
+    geom_line(aes(y=-se2),col="grey")+
+    labs(title="Binned residual plot",
+         y="Average residual")
+
+  
+}
+
+freq_term_plot<-function(data,x_col,bins=20){
+ggplot(data=data,
+       aes_string(x=x_col))+geom_histogram(bins=bins) + scale_y_continuous(labels = scales::comma) + facet_wrap(~Term,ncol=1,scales="free_y")+
+  labs(title="Frequency by Termination",
+       caption="Source: FPDS, CSIS Analysis")
+}
+
+binned_percent_term_plot<-function(data,x_col){
+  data<-data[!is.na(data[,x_col]),]
+  data$bin_x<-bin_df(data,x_col)
+  ggplot(data=data %>%
+           group_by(bin_x) %>%
+           summarise_ (   mean_Term = "mean(b_Term)"   
+                          , mean_x =  paste( "mean(" ,  x_col  ,")"  ))     ,
+         aes(y=mean_Term,x=mean_x))+geom_point()+
+    labs(title="Percent Terminated for Contracts Binned by Initial Cost Ceiling",
+         caption="Source: FPDS, CSIS Analysis")
+}
+
+fitted_term_model<-function(data,x_col){
+  ggplot(data=data,
+         aes_string(y="j_Term",x=x_col))+geom_point(alpha=0.01)+scale_y_sqrt() +
+    labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
+}
 
