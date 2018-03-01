@@ -286,12 +286,20 @@ residuals_term_plot<-function(model,x_col="fitted"){
   
 }
 
-freq_term_plot<-function(data,x_col,bins=20){
+freq_discrete_term_plot<-function(data,x_col,bins=20){
 ggplot(data=data,
-       aes_string(x=x_col))+geom_histogram(bins=bins) + scale_y_continuous(labels = scales::comma) + facet_wrap(~Term,ncol=1,scales="free_y")+
+       aes_string(x=x_col))+geom_histogram(stat="count") + scale_y_continuous(labels = scales::comma) + facet_wrap(~Term,ncol=1,scales="free_y")+
   labs(title="Frequency by Termination",
        caption="Source: FPDS, CSIS Analysis")
 }
+
+freq_continuous_term_plot<-function(data,x_col,bins=20){
+  ggplot(data=data,
+         aes_string(x=x_col))+geom_histogram(bins=bins) + scale_y_continuous(labels = scales::comma) + facet_wrap(~Term,ncol=1,scales="free_y")+
+    labs(title="Frequency by Termination",
+         caption="Source: FPDS, CSIS Analysis")
+}
+
 
 binned_percent_term_plot<-function(data,x_col){
   data<-data[!is.na(data[,x_col]),]
@@ -301,7 +309,18 @@ binned_percent_term_plot<-function(data,x_col){
            summarise_ (   mean_Term = "mean(b_Term)"   
                           , mean_x =  paste( "mean(" ,  x_col  ,")"  ))     ,
          aes(y=mean_Term,x=mean_x))+geom_point()+
-    labs(title="Percent Terminated for Contracts Binned by Initial Cost Ceiling",
+    labs(title="Percent Terminated",
+         caption="Source: FPDS, CSIS Analysis")
+}
+
+
+discrete_percent_term_plot<-function(data,x_col){
+  ggplot(data=data %>%
+           group_by_(x_col) %>%
+           summarise (   mean_Term = mean(b_Term)),
+         aes_string(y="mean_Term",x=x_col))+
+    geom_point()+
+    labs(title="Percent Terminated",
          caption="Source: FPDS, CSIS Analysis")
 }
 

@@ -658,7 +658,7 @@ residuals_term_plot(Term_02G,"cl_Ceil")+
 
 While the effect on the residual deviance is fairly minor, it does still appear that the ceiling^2 does reduce the incidence of non-linear patterns in the residuals. So for now we will be leaving it in.
 
-###Model 02H: Interation of Duration and Competition
+###Model 02H: Interaction of Duration and Competition
 ```{r Mode02H}
 
 
@@ -735,40 +735,46 @@ Term_03A <- glm (data=Term_smp,
 display(Term_03A)
 
 #Plot the model and Vehicle for SIDV
-Term_03A_SIDV_curve<-function(x, Comp,Ceil,MIDV,OIDV){invlogit(
-  cbind(1,Comp,Ceil,Ceil^2,cl_Days,x,MIDV,OIDV,cl_Days^2,
-        Comp*Ceil,cl_Days*Ceil,cl_Days*Comp) %*%  coef(Term_03A))}
+Term_03A_SIDV_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,x,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp) %*%  coef(Term_03A))}
 
 #Competition curves
 discrete_fitted_term_model(Term_smp,"SIDV") +
   stat_function(fun = Term_03A_SIDV_curve, 
-                             args=list(Comp=0,Ceil=0,MIDV=0,OIDV=0),color="blue")+
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,OIDV=0),color="blue")+
   stat_function(fun = Term_03A_SIDV_curve, 
-                             args=list(Comp=2,Ceil=0,MIDV=0,OIDV=0),color="blue")
+                             args=list(Comp=2,Ceil=0,Days=0,
+                                       MIDV=0,OIDV=0),color="blue")
 
-Term_03A_MIDV_curve<-function(x, Comp,Ceil,SIDV,OIDV){invlogit(
-  cbind(1,Comp,Ceil,Ceil^2,cl_Days,SIDV,x,OIDV,cl_Days^2,
-        Comp*Ceil,cl_Days*Ceil,cl_Days*Comp) %*%  coef(Term_03A))}
+Term_03A_MIDV_curve<-function(x, Comp,Ceil,Days,SIDV,OIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,x,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp) %*%  coef(Term_03A))}
 
 #Plot the model and Vehicle for MIDV
 #Competition curves
 discrete_fitted_term_model(Term_smp,"MIDV") +
   stat_function(fun = Term_03A_MIDV_curve, 
-                             args=list(Comp=0,Ceil=0,SIDV=0,OIDV=0),color="blue")+
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       SIDV=0,OIDV=0),color="blue")+
   stat_function(fun = Term_03A_MIDV_curve, 
-                             args=list(Comp=2,Ceil=0,SIDV=0,OIDV=0),color="blue")
+                             args=list(Comp=2,Ceil=0,Days=0,
+                                       SIDV=0,OIDV=0),color="blue")
 
-Term_03A_OIDV_curve<-function(x, Comp,Ceil,SIDV,MIDV){invlogit(
-  cbind(1,Comp,Ceil,Ceil^2,cl_Days,SIDV,MIDV,x,cl_Days^2,
-        Comp*Ceil,cl_Days*Ceil,cl_Days*Comp) %*%  coef(Term_03A))}
+Term_03A_OIDV_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,MIDV,x,
+        Comp*Ceil,Days*Ceil,Days*Comp) %*%  coef(Term_03A))}
 
 #Plot the model and Vehicle for OIDV
 #Competition curves
 discrete_fitted_term_model(Term_smp,"OIDV") +
   stat_function(fun = Term_03A_OIDV_curve, 
-                             args=list(Comp=0,Ceil=0,SIDV=0,MIDV=0),color="blue")+
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       SIDV=0,MIDV=0),color="blue")+
   stat_function(fun = Term_03A_OIDV_curve, 
-                             args=list(Comp=2,Ceil=0,SIDV=0,MIDV=0),color="blue")
+                             args=list(Comp=2,Ceil=0,Days=0,
+                                       SIDV=0,MIDV=0),color="blue")
 
 
 
@@ -789,80 +795,209 @@ The first check lumps looks at three categories of IDVs, each facing a notably l
 This may reflect that the Ceiling and Days entries reflect only the task order and not the larger contract. The next step is to check the intersections with ceiling.
 
 
-###Model 03B: Any IDV and contract duration
+###Model 03B: Vehicle and Contract Duration
 ```{r Model03B}
 
-# #Frequency Plot
-# ggplot(data=subset(Term_smp,!is.na(IDV)),
-#        aes(x=l_Days))+geom_histogram(bins=20)+facet_grid(Term~IDV,scales="free_y")
-# 
-# 
-# 
-# #Plot the percent terminated across duration and IDV
-# Term_smp$bin_Days_IDV<-bin_df(Term_smp,"l_Days")
-# ggplot(data=subset(Term_smp,!is.na(IDV)&!is.na(bin_Days_IDV)) %>% 
-#   group_by(bin_Days_IDV,IDV) %>% 
-#   summarise (mean_Term = mean(b_Term),
-#              mean_l_Days =mean(l_Days)),
-#        aes(y=mean_Term,x=mean_l_Days))+geom_point()+facet_wrap(~IDV)
-# 
-# 
-# 
-# 
-# 
-# #Create the model
-# Term_03B <- glm (data=Term_smp,
-#                  b_Term ~ n_Comp +
-#                  cl_Ceil + cl_Days +
-#                  n_Comp:cl_Ceil  + cl_Ceil:cl_Days + n_Comp:cl_Days +
-#                    IDV +
-#                    IDV:cl_Days
-#                    , family=binomial(link="logit"))
-# display(Term_03B)
-# 
-# #Plot the model and IDV
-# Term_03B_plot<-ggplot(data=Term_smp,
-#        aes(y=j_Term,x=IDV))+geom_point(alpha=0.01)+scale_y_sqrt() +
-#   labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
-# 
-# Term_03B_curve<-function(x, Comp,Ceil,Days){invlogit(cbind(1,Comp,
-#                                                       Ceil,Days,x,
-#                                                       Comp*Ceil,Days*Ceil,Days*Comp,x*Days) %*%  coef(Term_03B))}
-# 
-# Term_03B_plot+ stat_function(fun = Term_03B_curve, 
-#                              args=list(Comp=0,Ceil=0,Days=0),color="blue")+
-#   stat_function(fun = Term_03B_curve, 
-#                              args=list(Comp=0,Ceil=0,Days=1),color="blue")
-# 
-# 
-# 
-# 
-# #Plot the fitted values vs actual results
-# Term_03B_data<-data.frame(fitted=fitted(Term_03B),
-#                        residuals=residuals(Term_03B),
-#                        b_Term=Term_03B$model$b_Term,
-#                        n_Comp=Term_03B$model$n_Comp,
-#                        cl_Ceil=Term_03B$model$cl_Ceil,
-#                        cl_Days=Term_03B$model$cl_Days,
-#                        IDV=Term_03B$model$IDV
-#                        )
-# 
-# 
-# Term_03B_data$bin_fitted<-bin_df(Term_03B_data,rank_col="fitted")
-# ggplot(data=subset(Term_03B_data,!is.na(fitted) & !is.na(b_Term) ) %>% 
-#   group_by(bin_fitted) %>% 
-#   summarise (mean_Term = mean(b_Term),
-#              mean_fitted =mean(fitted)),
-#        aes(y=mean_Term,x=mean_fitted))+geom_point() + labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+#Frequency Plot
+ggplot(data=subset(Term_smp,!is.na(Veh)),
+       aes(x=l_Days))+geom_histogram(bins=20)+facet_grid(Term~Veh,scales="free_y")+
+  labs(title="Frequency by Termination",
+          caption="Source: FPDS, CSIS Analysis")
 
+
+
+#Plot the percent terminated across duration and competition
+Term_smp$bin_Days_Veh<-bin_df(Term_smp,"l_Days","Veh")
+ggplot(data=subset(Term_smp,!is.na(n_Comp)&!is.na(bin_Days_Comp)) %>% 
+  group_by(bin_Days_Veh,Veh) %>% 
+  summarise (mean_Term = mean(b_Term),
+             mean_l_Days =mean(cl_Days)),
+       aes(y=mean_Term,x=mean_l_Days))+geom_point()+facet_wrap(~Veh)+
+  labs(title="Average Termination Rate",
+          caption="Source: FPDS, CSIS Analysis")
+
+#Create the model
+Term_03B <- glm (data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                 SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days, family=binomial(link="logit"))
+display(Term_03B)
+
+# Plot the model and Vehicle for SIDV
+Term_03B_SIDV_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,x,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*x,Days*MIDV,Days*OIDV) %*%  coef(Term_03B))}
+
+#Duration curves
+discrete_fitted_term_model(Term_smp,"SIDV") +
+  stat_function(fun = Term_03B_SIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=-1,
+                                       MIDV=0,OIDV=0),color="blue")+
+  stat_function(fun = Term_03B_SIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=1,
+                                       MIDV=0,OIDV=0),color="blue")
+
+
+Term_03B_MIDV_curve<-function(x, Comp,Ceil,Days,SIDV,OIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,x,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*SIDV,Days*x,Days*OIDV) %*%  coef(Term_03B))}
+
+#Plot the model and Vehicle for MIDV
+#Duration Curves
+discrete_fitted_term_model(Term_smp,"MIDV") +
+  stat_function(fun = Term_03B_MIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=-1,
+                                       SIDV=0,OIDV=0),color="blue")+
+  stat_function(fun = Term_03B_MIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=1,
+                                       SIDV=0,OIDV=0),color="blue")
+
+
+Term_03B_OIDV_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,MIDV,x,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*SIDV,Days*MIDV,Days*x) %*%  coef(Term_03B))}
+
+#Plot the model and Vehicle for OIDV
+#Duration curves
+discrete_fitted_term_model(Term_smp,"OIDV") +
+  stat_function(fun = Term_03B_OIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=-1,
+                                       SIDV=0,MIDV=0),color="blue")+
+  stat_function(fun = Term_03B_OIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=1,
+                                       SIDV=0,MIDV=0),color="blue")
+
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_03B)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_03B)+
+  labs(x="Estimated  Pr (Termination)")
+
+# residuals_term_plot(Term_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
 
 ```
 
-The vast majority of very short duration contracts are IDVs
+The vast majority of very short duration contracts are IDVs. The distribution in each of the categories is typically not normal, Other IDVs in particularly being prone to two peaks. Interestingly enough, definitive contracts and purchase orders have the most consistent relationship with terminations, and single-award IDVs the most noisy. For the MIDVs and OIDVs, below l_days=2, or about the average point, there's almost no risk of termination, but that risk steadily rises above that level. 
 
-The lower rate of task order termination did not prove to be relevant to contract ceiling. The next step is to see whether there is any relationship to maximum duration. Under this theory, the fact that IDVs make it simpler to do multiple short task orders could mask any risk when task order duratioN grows longer.
+Interactions:
+* Single-Award IDVs have a large negative coefficient, but as the duration grows longer this affect is diminished and the importance of duration grows. 
+* Multiple-Award IDVs now have the largest negative coefficient, but to an even greater degree than with Single-Award IDVs, as the duration grows longer this affect is diminished and the importance of duration grows. 
+* Other IDVs now have a no longer signicant risk of termination, but the relationship with duration is the reverse of the other two, OIDVs dampen the rise in termination risk for longer contracts.
 
-###Model 03C: Any IDV and Maximum Duration
+
+
+###Model 03B: Vehicle and Competition
+```{r Model03B}
+
+#Frequency Plot
+ggplot(data=subset(Term_smp,!is.na(Veh)),
+       aes(x=n_Comp))+geom_histogram(bins=20)+facet_grid(Term~Veh,scales="free_y")+
+  labs(title="Frequency by Termination",
+          caption="Source: FPDS, CSIS Analysis")
+
+
+
+#Plot the percent terminated across duration and competition
+Term_smp$bin_n_Comp_Veh<-bin_df(Term_smp,"n_Comp","Veh")
+ggplot(data=subset(Term_smp,!is.na(n_Comp)&!is.na(bin_n_Comp_Veh)) %>% 
+  group_by(bin_n_Comp_Veh,Veh) %>% 
+  summarise (mean_Term = mean(b_Term),
+             mean_n_Comp =mean(n_Comp)),
+       aes(y=mean_Term,x=mean_n_Comp))+geom_point()+facet_wrap(~Veh)+
+  labs(title="Average Termination Rate",
+          caption="Source: FPDS, CSIS Analysis")
+
+#Create the model
+Term_03B <- glm (data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                 SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp , family=binomial(link="logit"))
+display(Term_03B)
+
+# Plot the model and Vehicle for SIDV
+Term_03B_SIDV_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,x,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*x,Days*MIDV,Days*OIDV,
+        Comp*x,Comp*MIDV,Comp*OIDV) %*%  coef(Term_03B))}
+
+#Competition curves
+discrete_fitted_term_model(Term_smp,"SIDV") +
+  stat_function(fun = Term_03B_SIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,OIDV=0),color="blue")+
+  stat_function(fun = Term_03B_SIDV_curve,
+                             args=list(Comp=2,Ceil=0,Days=0,
+                                       MIDV=0,OIDV=0),color="blue")
+
+
+Term_03B_MIDV_curve<-function(x, Comp,Ceil,Days,SIDV,OIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,x,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*SIDV,Days*x,Days*OIDV,
+        Comp*SIDV,Comp*x,Comp*OIDV) %*%  coef(Term_03B))}
+
+#Plot the model and Vehicle for MIDV
+#Competition Curves
+discrete_fitted_term_model(Term_smp,"MIDV") +
+  stat_function(fun = Term_03B_MIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       SIDV=0,OIDV=0),color="blue")+
+  stat_function(fun = Term_03B_MIDV_curve,
+                             args=list(Comp=2,Ceil=0,Days=0,
+                                       SIDV=0,OIDV=0),color="blue")
+
+
+Term_03B_OIDV_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,MIDV,x,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*SIDV,Days*MIDV,Days*x,
+        Comp*SIDV,Comp*MIDV,Comp*x) %*%  coef(Term_03B))}
+
+#Plot the model and Vehicle for OIDV
+#Competition curves
+discrete_fitted_term_model(Term_smp,"OIDV") +
+  stat_function(fun = Term_03B_OIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       SIDV=0,MIDV=0),color="blue")+
+  stat_function(fun = Term_03B_OIDV_curve,
+                             args=list(Comp=2,Ceil=0,Days=0,
+                                       SIDV=0,MIDV=0),color="blue")
+
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_03B)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_03B)+
+  labs(x="Estimated  Pr (Termination)")
+
+# residuals_term_plot(Term_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
+
+```
+The average plots did show varying relationships and slopes between different types of vehicles. However, 
+the coeficient for competition itself remains negative, though not significant, despite the baseline vehicle state, definitive/purchase, having higher termination rates among competed contracts. Given the other interactions, this suggests that this phenomenon is already captured by other inputs and interactions in the dataset. 
+
+Interactions
+* For single-award IDVs, competition magnifies the lower termination coeffient. This is somewhat surprising, as competition reflects the competed status of the IDV, not the individual task order. Nonetheless, that rate appears to very much matter, and suggests that uncompeted IDVs lose some of their termination reduction correlation.
+* For multiple-award IDVs, competition also dampens the termination rate. This also magnificies the import of duration for multiple-award IDVs, which now can complete overcome the base termination coefficient of the vehicle.
+* Competition dampens the termination reduction coefficient for other IDVs. It is not significant, I am tempted to leave it out, though it may be appropriate to always leave in the triples.
+
+###Model 03C: Any IDV and Contract ceiling
 ```{r Model03C}
 
 # Term_03C <- glmer (data=Term_smp,
@@ -873,6 +1008,9 @@ The lower rate of task order termination did not prove to be relevant to contrac
 ```
 
 The results a dramatic, longer IDVs do face higher risks of termination. That said, the termination risk reduction for all IDVs has grown even further as a result, so even longer task orders may not face greater termination risks than comparable contract awards. With this addition, the intersection of contract ceiling and maximum duration is no longer significant, the next step will be testing its removal from the equation.
+
+
+The lower rate of task order termination did not prove to be relevant to contract ceiling. The next step is to see whether there is any relationship to maximum duration. Under this theory, the fact that IDVs make it simpler to do multiple short task orders could mask any risk when task order duratioN grows longer.
 
 ###Model 03D: Trimming the intersection of duration and ceiling
 ```{r Model03D}
@@ -888,77 +1026,6 @@ The removal has little effect on the AIC or DIC but does simplify the model.
 
 Subsequent steps will explore the difference between multiple-award IDVs, where the government can choose from a pre-qualified pool of vendors, and single-award IDVs, where the government only has one option. 
 
-###Model 03E: Single-Award IDV
-```{r Model03E}
-
-# Term_03E <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + 
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_03E)
-```
-
-Single-award IDVs closely align with the role played by IDVs as a whole, and increase the predictive power of the model, as measured by AIC and DIC. 
-
-###Model 03F: Multiple-Award IDVs
-```{r Model03F}
-
-# Term_03F <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + MIDV +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_03F)
-```
-
-Multiple-Award IDVs also reduce the termination rate, but not to nearly the same extent as single-awrd IDVs. However, coefficient is sufficient to merit inclusion in the model.
-
-###Model 03G: Other IDVs
-```{r Model03G}
-
-# Term_03G <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + MIDV + OIDV +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_03G)
-```
-Other IDVs has the weakest relationship of the three, but still is significant. The next step is to test if interactions with maximum duration still add value to the model, starting with single-award.
-
-
-###Model 03H: Single-Award IDVs and Maximum duration
-```{r Model03H}
-
-# Term_03H <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + MIDV + OIDV + SIDV:l_Days +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_03H)
-```
-
-The pattern for single-award IDVs and duration is a slightly magnified version of the phenonemon for IDVs overall shown in mdel 2C. 
-
-###Model 03I: Single-Award IDVs and Maximum duration
-
-```{r Model03I}
-# 
-# Term_03I <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + MIDV + OIDV + SIDV:l_Days + MIDV:l_Days +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_03I)
-```
-The error is a bit higher for multiple source IDVs interacting with duration, as compared to single-award IDVs. In addition, the model failed to converge, so leaving out this interaction.
-
-###Model 03J: Other IDVs and Maximum duration
-
-```{r Model12J}
-
-# Term_12J <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + MIDV + OIDV + SIDV:l_Days + OIDV:l_Days +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_12J)
-```
-Interesting enough, other IDVs have the opposite interaction with single-award IDVs as does single-award IDVs. Shorter duration other IDVs slightly raise termination risks while longer reduce them relative to other sorts of vehicles. However, the coefficient for other IDVs no longer exceeds the standard error, so leaving this parameter out.
 
 ##Type of Contract
 ###Model 13A: Fixed-Price Contracts
