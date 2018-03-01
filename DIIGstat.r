@@ -311,3 +311,9 @@ fitted_term_model<-function(data,x_col){
     labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
 }
 
+discrete_fitted_term_model<-function(data,x_col){
+  ggplot(data=data,
+         aes_string(y="j_Term",x=x_col))+geom_jitter(alpha=0.01,height=0)+scale_y_sqrt() +
+    labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
+}
+
