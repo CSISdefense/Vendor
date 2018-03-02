@@ -293,14 +293,27 @@ ggplot(data=data,
        caption="Source: FPDS, CSIS Analysis")
 }
 
-binned_percent_term_plot<-function(data,x_col){
+binned_percent_term_plot<-function(data,x_col,group_col=NA){
   data<-data[!is.na(data[,x_col]),]
-  data$bin_x<-bin_df(data,x_col)
-  ggplot(data=data %>%
+  if(is.na(group_col)){
+    data$bin_x<-bin_df(data,x_col)
+    plot<-ggplot(data=data %>%
            group_by(bin_x) %>%
            summarise_ (   mean_Term = "mean(b_Term)"   
                           , mean_x =  paste( "mean(" ,  x_col  ,")"  ))     ,
-         aes(y=mean_Term,x=mean_x))+geom_point()+
+         aes(y=mean_Term,x=mean_x))
+  }
+  else{
+    data$bin_x<-bin_df(data,rank_col=x_col,group_col=group_col)
+    plot<-ggplot(data=data %>%
+                   group_by_("bin_x",group_col) %>%
+                   summarise_ (   mean_Term = "mean(b_Term)"   
+                                  , mean_x =  paste( "mean(" ,  x_col  ,")"  ))     ,
+                 aes(y=mean_Term,x=mean_x))+facet_wrap(~.dot(group_col))
+    
+
+  }
+    plot+geom_point()+
     labs(title="Percent Terminated for Contracts Binned by Initial Cost Ceiling",
          caption="Source: FPDS, CSIS Analysis")
 }
