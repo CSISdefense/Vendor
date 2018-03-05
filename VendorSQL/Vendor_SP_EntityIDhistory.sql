@@ -1,4 +1,4 @@
-USE [DIIG]
+USE CSIS360
 GO
 
 /****** Object:  StoredProcedure [Vendor].[SP_TopVendorHistoryPlatformSubCustomer]    Script Date: 10/5/2017 9:43:57 PM ******/
@@ -65,8 +65,6 @@ ELSE --Begin sub path where all products and services amd all Customers will be 
 				,Sum(C.obligatedAmount) AS obligatedAmount
 			,Sum(C.numberOfActions) AS numberOfActions
 			FROM [Vendor].[VendorHistoryNaicsPlatformSubCustomer] as C
-		--Here's the where clause for @IsService is null and Customer is not null
-		WHERE C.Customer=@Customer 
 		--Copy the end of your query here
 		GROUP BY 
 			C.fiscal_year
