@@ -1680,6 +1680,186 @@ residuals_term_plot(Term_05A)+
 
 ```
 
-International performance of contract proved to not be an effective predictor of contract termination. In addition, the model failed to converge. This variable will not be added.
+International performance of contract unexpectedly had a negative coefficent. It is a variable of interest  to the study and will be left in.
+
+###Model 05A: Fixed Price and Any International
+
+```{r Model05A}
+
+#Frequency Plot
+freq_discrete_term_plot(Term_smp,"Intl","FxCb")
+
+#Percent Terminated Plot 
+discrete_percent_term_plot(Term_smp,"Intl","FxCb")
+
+
+
+#Create the model
+Term_05A <- glm (data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   n_Fixed + n_UCA + 
+                   n_Intl + 
+                   SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
+                   n_UCA:n_Comp+
+                   n_Fixed:n_Intl
+                    , family=binomial(link="logit"))
+display(Term_05A)
+
+# Plot the model and Vehicle 
+Term_05A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Fixed,UCA,x,
+        Days*x,Days*MIDV,Days*OIDV,
+        Comp*x,Comp*MIDV,Comp*OIDV,
+        UCA*Comp) %*%  coef(Term_05A))}
+
+#Days curves
+discrete_fitted_term_model(Term_smp,"SIDV") +
+  stat_function(fun = Term_05A_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1,UCA=0),color="blue")+
+  stat_function(fun = Term_05A_curve,
+                             args=list(Comp=2,Ceil=0,Days=1,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1,UCA=0),color="blue")
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_05A)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_05A)+
+  labs(x="Estimated  Pr (Termination)")
+
+# residuals_term_plot(Term_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
+
+```
+
+###Model 05C: Vehicle and Any International
+
+```{r Model05A}
+
+#Frequency Plot
+freq_discrete_term_plot(Term_smp,"Intl","Veh")
+
+#Percent Terminated Plot 
+discrete_percent_term_plot(Term_smp,"Intl","Veh")
+
+
+
+#Create the model
+Term_05A <- glm (data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   n_Fixed + n_UCA + 
+                   n_Intl + 
+                   SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
+                   n_UCA:n_Comp+
+                   SIDV:n_Intl+MIDV:n_Intl+OIDV:n_Intl
+                    , family=binomial(link="logit"))
+display(Term_05A)
+
+# Plot the model and Vehicle 
+Term_05A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Fixed,UCA,x,
+        Days*x,Days*MIDV,Days*OIDV,
+        Comp*x,Comp*MIDV,Comp*OIDV,
+        UCA*Comp) %*%  coef(Term_05A))}
+
+#Days curves
+discrete_fitted_term_model(Term_smp,"SIDV") +
+  stat_function(fun = Term_05A_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1,UCA=0),color="blue")+
+  stat_function(fun = Term_05A_curve,
+                             args=list(Comp=2,Ceil=0,Days=1,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1,UCA=0),color="blue")
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_05A)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_05A)+
+  labs(x="Estimated  Pr (Termination)")
+
+# residuals_term_plot(Term_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
+
+```
 
 #Multi-Level Model
+
+##What
+###Model 06A: Product/Service/R&D
+```{r Model06A}
+
+#Frequency Plot
+freq_discrete_term_plot(Term_smp,"PSR")
+
+#Percent Terminated Plot 
+discrete_percent_term_plot(Term_smp,"PSR")
+
+
+
+#Create the model
+Term_06A <- glmer(data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   n_Fixed + n_UCA + 
+                   n_Intl + 
+                   SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
+                   n_UCA:n_Comp+
+                   (1 | PSR)
+                    , family=binomial(link="logit"))
+display(Term_06A)
+
+# Plot the model and Vehicle 
+Term_06A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Fixed,UCA,x,
+        Days*x,Days*MIDV,Days*OIDV,
+        Comp*x,Comp*MIDV,Comp*OIDV,
+        UCA*Comp) %*%  coef(Term_06A))}
+
+#Days curves
+discrete_fitted_term_model(Term_smp,"SIDV") +
+  stat_function(fun = Term_06A_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1,UCA=0),color="blue")+
+  stat_function(fun = Term_06A_curve,
+                             args=list(Comp=2,Ceil=0,Days=1,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1,UCA=0),color="blue")
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_06A)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_06A)+
+  labs(x="Estimated  Pr (Termination)")
+
+# residuals_term_plot(Term_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
+
+```
