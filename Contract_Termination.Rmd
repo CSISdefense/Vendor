@@ -71,7 +71,7 @@ In addition, l_Ceil and l_Days are rescaled to have an average value of 0 and a 
   
 
 head(DefenseModelAndDetail)
-debug(transform_contract)
+# undebug(transform_contract)
 DefenseModelAndDetail<-transform_contract(DefenseModelAndDetail)
 
 
@@ -766,7 +766,7 @@ freq_continuous_term_plot(Term_smp,"l_Days","Veh")
 
 
 #Percent Terminated Plot 
-binned_percent_term_plot(Term_smp,"l_Ceil","Veh")
+binned_percent_term_plot(Term_smp,"l_Days","Veh")
 
 #Create the model
 Term_03B <- glm (data=Term_smp,
@@ -1132,8 +1132,8 @@ residuals_term_plot(Term_03E)+
 residuals_term_plot(Term_03F)+
   labs(x="Estimated  Pr (Termination)")
 
-residuals_term_plot(Term_03E,"cl_Days")+
-  labs(x="Centered Log(Duration)")
+# residuals_term_plot(Term_03E,"cl_Days")+
+  # labs(x="Centered Log(Duration)")
 
 
 residuals_term_plot(Term_03F,"cl_Days")+
@@ -1445,7 +1445,7 @@ residuals_term_plot(Term_04E)+
 Looking at Incentive Fees and Fixed-Price interactions undercuts the significance of both base variables. Incentive will not be added to the model.
 
 ###Model 04F: Undefinitized Contract Awards
-Undefinitized Contract Awards allow for quick action in situations where there is not time or information to establish all of a contracts properties at the time of signing. They have been found by the GAO and the Performance of the Defense Acquisition studies to contain notable risks, primarily relating to cost overruns. Will these risks also carry into terminations?
+Undefinitized Contract Awards allow for quick action in situations where there is not time or information to establish all of a contracts properties at the time of signing. They have been found by the GAO and the Performance of the Defense Acquisition studies to contain notable risks, primarily    relating to cost overruns. Will these risks also carry into terminations?
 
 ```{r Model04F}
 
@@ -1500,89 +1500,183 @@ residuals_term_plot(Term_04F)+
 #   labs(x="Centered Log(Days)")
 
 ```
+###Model 04G: UCA and Competition
 
 
-```{r Model04F}
+```{r Model04G}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp,"UCA","FxCb")
+freq_discrete_term_plot(Term_smp,"UCA","n_Comp")
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp,"UCA","FxCb")
+discrete_percent_term_plot(Term_smp,"UCA","n_Comp")
 
 
 
 #Create the model
-Term_04F <- glm (data=Term_smp,
+Term_04G <- glm (data=Term_smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
                    n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
                    n_Fixed + n_UCA + 
                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp 
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp +
+                   n_UCA:n_Comp
+                 
                     , family=binomial(link="logit"))
-display(Term_04F)
+display(Term_04G)
 
 # Plot the model and Vehicle 
-Term_04F_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
+Term_04G_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
   cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
         Comp*Ceil,Days*Ceil,Days*Comp,
         Fixed,x,
         Days*x,Days*MIDV,Days*OIDV,
-        Comp*x,Comp*MIDV,Comp*OIDV) %*%  coef(Term_04F))}
+        Comp*x,Comp*MIDV,Comp*OIDV) %*%  coef(Term_04G))}
 
 #Days curves
 discrete_fitted_term_model(Term_smp,"SIDV") +
-  stat_function(fun = Term_04F_curve,
+  stat_function(fun = Term_04G_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,OIDV=0,
                                        Fixed=1),color="blue")+
-  stat_function(fun = Term_04F_curve,
+  stat_function(fun = Term_04G_curve,
                              args=list(Comp=2,Ceil=0,Days=1,
                                        MIDV=0,SIDV=0,OIDV=0,
                                        Fixed=1),color="blue")
 
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(Term_04F)
+binned_fitted_versus_residuals(Term_04G)
 
 #Plot residuals versus fittedO
-residuals_term_plot(Term_04F)+
+residuals_term_plot(Term_04G)+
   labs(x="Estimated  Pr (Termination)")
 
 # residuals_term_plot(Term_02F,"cl_days")+
-#   labs(x="Centered Log(Days)")
+  # labs(x="Centered Log(Days)")
 
 ```
+The interaction of UCA and Comp does align with the findings of the GAO as to the heightened risk of uncompeted UCA. The magnitude of the coefficentsis is considerable, although the rarity of UCAs means the effect on deviation is fairly small. This can also be seen in the residuals where there is a substantial gap between 0.03 and 0.05 in estimated risk of termination.
+
+###Model 04H: UCA and Duration
 
 
-```{r Model3D}
-#Run through stopped here
-# Term3D <- glmer (data=Term_smp,
-#                   b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + MIDV + OIDV + SIDV:l_Days + 
-#                    n_Fixed  + n_UCA +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term3D)
+```{r Model04H}
+
+#Frequency Plot
+freq_continuous_term_plot(Term_smp,"l_Days","UCA")
+
+#Percent Terminated Plot 
+binned_percent_term_plot(Term_smp,"l_Days","UCA")
+
+
+#Create the model
+Term_04H <- glm (data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   n_Fixed + n_UCA + 
+                   SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp +
+                   n_UCA:n_Comp + 
+                  n_UCA:l_Days
+                    , family=binomial(link="logit"))
+display(Term_04H)
+
+# Plot the model and Vehicle 
+Term_04H_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Fixed,x,
+        Days*x,Days*MIDV,Days*OIDV,
+        Comp*x,Comp*MIDV,Comp*OIDV,
+        Comp*x,Days*x) %*%  coef(Term_04H))}
+
+#Days curves
+discrete_fitted_term_model(Term_smp,"SIDV") +
+  stat_function(fun = Term_04H_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1),color="blue")+
+  stat_function(fun = Term_04H_curve,
+                             args=list(Comp=2,Ceil=0,Days=1,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1),color="blue")
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_04H)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_04H)+
+  labs(x="Estimated  Pr (Termination)")
+
+# residuals_term_plot(Term_02F,"cl_days")+
+  # labs(x="Centered Log(Days)")
 
 ```
-
-Use of UCA significantly increases risks of termination, well in excess of the error term. Interestingly, while this addition further reduceds the AIC and DIC of the model, it also increases the coefficient for fixed price contracts.
-
+The intersection of initial duration and UCA had a negative coefficient that was not significant. This is the opposite of what we would expect from the literature, which notes the risks of long periods under an undefinitized contract. This may simply reflect a limitation of the variable, which tracks the initial maximum duration and would not differentiate between a contract that went a day before being definitized and one that went a year. This interaction will not be added to the model.
 
 ##Place of Performance
 ###Model 05A: Any International
 
 ```{r Model05A}
 
-# Term05A <- glmer (data=Term_smp,
-#                   b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + MIDV + OIDV + SIDV:l_Days + 
-#                    n_Fixed  + n_UCA +
-#                    nIntl +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term05A)
+#Frequency Plot
+freq_discrete_term_plot(Term_smp,"Intl")
+
+#Percent Terminated Plot 
+discrete_percent_term_plot(Term_smp,"Intl")
+
+
+
+#Create the model
+Term_05A <- glm (data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   n_Fixed + n_UCA + 
+                   n_Intl + 
+                   SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
+                   n_UCA:n_Comp
+                    , family=binomial(link="logit"))
+display(Term_05A)
+
+# Plot the model and Vehicle 
+Term_05A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Fixed,UCA,x,
+        Days*x,Days*MIDV,Days*OIDV,
+        Comp*x,Comp*MIDV,Comp*OIDV,
+        UCA*Comp) %*%  coef(Term_05A))}
+
+#Days curves
+discrete_fitted_term_model(Term_smp,"SIDV") +
+  stat_function(fun = Term_05A_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1,UCA=0),color="blue")+
+  stat_function(fun = Term_05A_curve,
+                             args=list(Comp=2,Ceil=0,Days=1,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1,UCA=0),color="blue")
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_05A)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_05A)+
+  labs(x="Estimated  Pr (Termination)")
+
+# residuals_term_plot(Term_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
 
 ```
 
