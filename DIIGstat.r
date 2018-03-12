@@ -61,17 +61,43 @@ contract$n_Fixed<-as.integer(as.character(contract$n_Fixed))
 contract$n_Incent<-contract$Fee
 levels(contract$n_Incent) <-
   list("1"=c("Incentive"), 
-       "0.5"=c("Combination or Other"),
+       "0.5"=c("Combination or Other Fee"),
        "0"=c("Award Fee", "FFP or No Fee", "Fixed Fee"))
 contract$n_Incent<-as.integer(as.character(contract$n_Incent))
 
+#n_NoFee
+contract$n_NoFee<-contract$Fee
+levels(contract$n_NoFee) <-
+  list("1"=c("FFP or No Fee"), 
+       "0.5"=c("Combination or Other Fee"),
+       "0"=c("Award Fee", "Incentive", "Fixed Fee"))
+contract$n_NoFee<-as.integer(as.character(contract$n_NoFee))
+
 
 #n_Comp
+if (all(levels(factor(contract$Comp))==c("0","1"))){
+  contract$Comp<-factor(contract$Comp)
+  levels(contract$Comp) <-
+  list("No Competition"="0",
+       "Competition"="1")
+}
+
 #Right now comp is not actually a factor, so don't need to process it
 contract$b_Comp<-contract$Comp #Fix in Rdata, and add back comp
+levels(contract$b_Comp) <-
+  list("0"="No Competition",
+       "1"="Competition")
+contract$b_Comp<-as.integer(as.character(contract$b_Comp))
+
+
 contract$n_Comp<-contract$b_Comp
 contract$n_Comp[contract$b_Comp==1 & !is.na(contract$b_Comp)]<-
   ifelse(contract$SingleOffer[contract$b_Comp==1 & !is.na(contract$b_Comp)]=="Multi",2,1)
+contract$EffComp<-factor(contract$n_Comp)
+levels(contract$EffComp) <-
+  list("No Competition"="0",
+       "1 Offer"="1",
+       "2+ Offer"="2")
 
 contract$n_Offr<-contract$Offr
 levels(contract$n_Offr) <-
@@ -81,11 +107,18 @@ levels(contract$n_Offr) <-
        "4"=c("[  5,999]"))
 contract$n_Offr<-as.integer(as.character(contract$n_Offr))
 contract$n_Offr[contract$b_Comp==0 & !is.na(contract$b_Comp)]<-0
-
-
-
-
-summary(DefenseModelAndDetail$Offr)
+levels(contract$Offr) <-
+  list("1"="  1", 
+       "2"="  2",
+       "3-4"="[  3,  5)",
+       "5+"="[  5,999]")
+contract$CompOffr<-factor(contract$n_Offr)
+levels(contract$CompOffr) <-
+  list("No Competition"="0",
+       "1 offer"="1", 
+       "2 offers"="2",
+       "3-4 offers"="3",
+       "5+ offers"="4")
 
 #n_Intl
 contract$n_Intl<-contract$Intl
@@ -259,7 +292,7 @@ binned_fitted_versus_residuals<-function(model){
     labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 }
 
-residuals_term_plot<-function(model,x_col="fitted"){
+residuals_term_plot<-function(model,x_col="fitted",bins=40){
   #Plot the fitted values vs actual results
   data<-data.frame(fitted=fitted(model),
                             residuals=residuals(model),
@@ -273,7 +306,7 @@ residuals_term_plot<-function(model,x_col="fitted"){
   
   
   data<-binned.resids (data[,x_col],
-                       data$fitted-data$b_Term, nclass=40)$binned
+                       data$fitted-data$b_Term, nclass=bins)$binned
 
    ggplot(data=data,
          aes(x=xbar,y-ybar))+
@@ -286,42 +319,91 @@ residuals_term_plot<-function(model,x_col="fitted"){
   
 }
 
-freq_discrete_term_plot<-function(data,x_col,bins=20){
-ggplot(data=data,
-       aes_string(x=x_col))+geom_histogram(stat="count") + scale_y_continuous(labels = scales::comma) + facet_wrap(~Term,ncol=1,scales="free_y")+
-  labs(title="Frequency by Termination",
-       caption="Source: FPDS, CSIS Analysis")
-}
-
-freq_continuous_term_plot<-function(data,x_col,bins=20){
-  ggplot(data=data,
-         aes_string(x=x_col))+geom_histogram(bins=bins) + scale_y_continuous(labels = scales::comma) + facet_wrap(~Term,ncol=1,scales="free_y")+
+freq_discrete_term_plot<-function(data,x_col,group_col=NA){
+  if(is.na(group_col)){
+    plot<-ggplot(data=data,
+           aes_string(x=x_col))+
+    facet_wrap(~Term,ncol=1,scales="free_y")
+  }
+  else{
+    plot<-ggplot(data=data,
+           aes_string(x=x_col))+
+      facet_grid(as.formula(paste("Term~",group_col)),scales="free_y")
+  }
+  plot+geom_histogram(stat="count") +
+    scale_y_continuous(labels = scales::comma) +
     labs(title="Frequency by Termination",
-         caption="Source: FPDS, CSIS Analysis")
+            caption="Source: FPDS, CSIS Analysis")
+  
+}
+
+freq_continuous_term_plot<-function(data,x_col,group_col=NA,bins=20){
+  if(is.na(group_col)){
+    plot<-ggplot(data=data,
+         aes_string(x=x_col))+
+      facet_wrap(~Term,ncol=1,scales="free_y")
+  }
+  else{
+    plot<-ggplot(data=data,
+           aes_string(x=x_col))+geom_histogram(bins=bins) +
+      facet_grid(as.formula(paste("Term~",group_col)),scales="free_y")
+      
+  }
+  plot+labs(title="Frequency by Termination",
+            caption="Source: FPDS, CSIS Analysis")+
+    scale_y_continuous(labels = scales::comma) + 
+    geom_histogram(bins=bins) 
 }
 
 
-binned_percent_term_plot<-function(data,x_col){
+binned_percent_term_plot<-function(data,x_col,group_col=NA){
   data<-data[!is.na(data[,x_col]),]
-  data$bin_x<-bin_df(data,x_col)
-  ggplot(data=data %>%
+  if(is.na(group_col)){
+    data$bin_x<-bin_df(data,x_col)
+    plot<-ggplot(data=data %>%
            group_by(bin_x) %>%
            summarise_ (   mean_Term = "mean(b_Term)"   
                           , mean_x =  paste( "mean(" ,  x_col  ,")"  ))     ,
-         aes(y=mean_Term,x=mean_x))+geom_point()+
+         aes(y=mean_Term,x=mean_x))
+  }
+  else{
+    data<-data[!is.na(data[,group_col]),]
+    data$bin_x<-bin_df(data,rank_col=x_col,group_col=group_col)
+    plot<-ggplot(data=data %>%
+                   group_by_("bin_x",group_col) %>%
+                   summarise_ (   mean_Term = "mean(b_Term)"   
+                                  , mean_x =  paste( "mean(" ,  x_col  ,")"  ))     ,
+                 aes(y=mean_Term,x=mean_x))+
+      facet_wrap(as.formula(paste("~",group_col)))
+  }
+  plot+geom_point()+
     labs(title="Percent Terminated",
          caption="Source: FPDS, CSIS Analysis")
 }
 
 
-discrete_percent_term_plot<-function(data,x_col){
-  ggplot(data=data %>%
-           group_by_(x_col) %>%
-           summarise (   mean_Term = mean(b_Term)),
-         aes_string(y="mean_Term",x=x_col))+
-    geom_point()+
+discrete_percent_term_plot<-function(data,x_col,group_col=NA){
+  data<-data[!is.na(data[,x_col]),]
+    if(is.na(group_col)){
+    plot<-ggplot(data=data %>%
+             group_by_(x_col) %>%
+             summarise (   mean_Term = mean(b_Term)),
+           aes_string(y="mean_Term",x=x_col))
+      
+  }
+  else{
+    data<-data[!is.na(data[,group_col]),]
+    plot<-ggplot(data=data %>%
+                   group_by_(x_col,group_col) %>%
+                   summarise (   mean_Term = mean(b_Term)),
+                 aes_string(y="mean_Term",x=x_col))+
+      facet_wrap(as.formula(paste("~",group_col)))
+    
+  }
+  plot+    geom_point()+
     labs(title="Percent Terminated",
          caption="Source: FPDS, CSIS Analysis")
+  
 }
 
 fitted_term_model<-function(data,x_col){
