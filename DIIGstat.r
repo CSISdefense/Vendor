@@ -274,11 +274,31 @@ binned.resids <- function (x, y, nclass=sqrt(length(x))){
 }
 
 binned_fitted_versus_residuals<-function(model){
+  
+  #Save this for a future GLM
+  # Term_data_01A<-data.frame(fitted=fitted(Term_01A),
+  #                        residuals=residuals(Term_01A),
+  #                        nTerm=Term_01A@frame$nTerm,
+  #                        cb_Comp=Term_01A@frame$cb_Comp
+  #                        )
+  
+  if(class(model)=="glmerMod")
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_Term=model@frame$b_Term
+    )
+    
+  }
+  else
+  {
   data <-data.frame(
     fitted=fitted(model),
     residuals=residuals(model),
     b_Term=model$model$b_Term
   )
+  }
 
   data$bin_fitted<-bin_df(data,rank_col="fitted")
   
@@ -294,10 +314,27 @@ binned_fitted_versus_residuals<-function(model){
 
 residuals_term_plot<-function(model,x_col="fitted",bins=40){
   #Plot the fitted values vs actual results
-  data<-data.frame(fitted=fitted(model),
-                            residuals=residuals(model),
-                            b_Term=model$model$b_Term
-  )
+  
+  
+  if(class(model)=="glmerMod")
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_Term=model@frame$b_Term
+    )
+    
+  }
+  else
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_Term=model$model$b_Term
+    )
+  }
+  
+  
   if (x_col!="fitted"){
     data$x_col<-
       test<-model$model[,x_col]
