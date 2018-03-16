@@ -50,21 +50,9 @@ These four catetegories and the "Close Out" category are used to mark a contract
 First we load the data. The dataset used is a U.S. Defense Contracting dataset derived from   FPDS.
 
 
-###Data Transformations
-After the data is loaded, we perform a series of transformations, creating derived variables that fit our purposes.
-
-* l_Ceil is the natural log of the initial contract cost ceiling (UnmodifiedContractBaseAndAllOptionsValue).
-* l_Days is the natural log of the initial maximum contract duration in days (UnmodifiedDays)
-* Changing the unlabeled option for International to NA as it should not be seperately computed.
-* b_Term transforms the factor that reports whether a contract was terminated (Term) to a numerical variable, 0 for no terminations, 1 for any partial or complete terminations.
-* n_Fixed transforms the factor that reports whether a contract was fixed price or cost-based (FxCB) to a numberical value. 0 for cost-based, 0.5 or "combination or other", 1 for any fixed price (excluding fixed-price level of effort which is classified as cost-based).
-* nIncent transforms the factor that reports the fee type (Fee) to a numerical value. 1 for incentive fee or cost sharing, 0.5 or "combination or other", 0 for all remaining types
-*  nComp transforms the factor that reports the fee type (cb_Comp) to a numerical value. 1 for Competed, 0 for not competed.
-*  n_UCA transforms the factor that reports the use of undefinitized contract awards (UCA) to a numerical value. 1 for UCA, 0 for otherwise.
-*  lOffer is the natural log of the number of offers received. Uncompeted contracts are classified as having received one offer.
+###Data Transformations and Summary
 
 
-In addition, l_Ceil and l_Days are rescaled to have an average value of 0 and a standard deviation of one. This standardizes interpretation and prevents a "very large eigen value" error later when l_Ceil:lDay is introduced.
 
 ```{r ReadInData, echo = TRUE}
   load(file="Data/defense_contract_CSIScontractID_detail.Rdata")
@@ -77,6 +65,43 @@ DefenseModelAndDetail<-transform_contract(DefenseModelAndDetail)
 
 ```
 
+
+DefenseModelAndDetails$
+
+
+NA_stats(DefenseModelAndDetail,"b_Term")
+
+* b_Term is a binary variable that has a value of 1 for any contracts that have experienced a partial or complete termination, 0 otherwise. ('r summary(DefenseModelAndDetail$b_Term)
+NA_stats(DefenseModelAndDetail,"b_Term"))
+* b_Comp is a binary variable based on competition. It has a value of 0 for uncompeted contracts and a value of 1 for competition, regardless of number of offers. 'r  summary(DefenseModelAndDetail$b_Comp);
+NA_stats(DefenseModelAndDetail,"b_Comp")'
+* n_Comp is a numeric variable based on competition and number of offers. It has a value of 0 for uncompeted contracts and a value of 1 for single-offer competition, and a value of 2 for multi-offer competition. 'r summary(DefenseModelAndDetail$n_Comp);
+NA_stats(DefenseModelAndDetail,"n_Comp")'
+* n_Offr is a numeric variable based on competition and with more granularity on number offers. It has a value of 0 for uncompeted contracts and a value of 1 for single-offer competition, and a value of 2 for 2-offers, 3 for 3-4 offers, and 4 for 5+ offers. 'r summary(DefenseModelAndDetail$n_Offr);
+NA_stats(DefenseModelAndDetail,"n_Offr")'
+* l_Offr is the natural log of the number of offers received. Uncompeted contracts are classified as having received one offer. 'r summary(DefenseModelAndDetail$l_Offr);
+NA_stats(DefenseModelAndDetail,"l_Offr")'
+* cl_Ceil is the natural log of the initial contract cost ceiling, in then-year dollars. 'r centered_log_description(DefenseModelAndDetail$l_Ceil,"dollars");
+NA_stats(DefenseModelAndDetail,"l_Ceil")'
+* cl_Days is the natural log of the initial maximum duration of the contract, in days. The variable is centered, by subtracting its mean ('r centered_log_description(DefenseModelAndDetail$l_Days,"days");
+NA_stats(DefenseModelAndDetail,"l_Days")' 
+* SIDV, MIDV, and OIDV are dummy variables based on the contract vehicle. They correspond to Single-Award IDVs, Multi-Award IDVs, and Other IDVs, respectively, having a value of 1 when the task order has that vehicle type, and having a 0 other. The remaining types, definitive contracts and purchase orders, are intentionally left out. ('r summary(DefenseModelAndDetail$SIDV);
+summary(DefenseModelAndDetail$MIDV);
+summary(DefenseModelAndDetail$OIDV);
+NA_stats(DefenseModelAndDetail,"Veh")'
+* n_Fixed is a numeric variable based on contract pricing. It has a value of 0 for cost-based, 0.5 or "combination or other", 1 for any fixed price (excluding fixed-price level of effort which is classified as cost-based). ('r summary(DefenseModelAndDetail$n_Fixed);
+NA_stats(DefenseModelAndDetail,"n_Fixed")')
+* n_Incent is a numeric variable based on fee type. Ig has a value. 1 for incentive fee or cost sharing, 0.5 or "combination or other", 0 for all remaining types. ('r summary(DefenseModelAndDetail$n_Incent);
+NA_stats(DefenseModelAndDetail,"n_Incent")')
+* b_UCA is a binary variable with a value of 1 for contracts/task orders that begin as letter contracts or undefinitized contract awards (UCA) and a value of 0 otherwise. 'r
+summary(DefenseModelAndDetail$b_UCA);
+NA_stats(DefenseModelAndDetail,"b_UCA")'
+* b_Intl is a binary variable with a value of 1 for contracts/task orders with any transactions performed internationally and a value of 0 otherwise. 'r
+summary(DefenseModelAndDetail$b_Intl);
+NA_stats(DefenseModelAndDetail,"b_Intl")'
+
+
+In addition, l_Ceil and l_Days are rescaled to have an average value of 0 and a standard deviation of one. This standardizes interpretation and prevents a "very large eigen value" error later when l_Ceil:lDay is introduced.
 
 
 Next, we eliminate missing data entries and then draw a sample. The final computation uses all of the data, but as a computation shortcut, only a subset of the data is needed to allow for processing of models in minutes rather than hours.
@@ -92,17 +117,6 @@ Term_smp<-Term_smp[sample(nrow(Term_smp),250000),]
 
 
 
-Term_smp$cl_Ceil<-scale(Term_smp$l_Ceil)
-Term_smp$cl_Days<-scale(Term_smp$l_Days)
-Term_smp$cb_Comp<-scale(Term_smp$b_Comp)
-Term_smp$cn_Comp<-scale(Term_smp$n_Comp)
-Term_smp$cn_Offr<-scale(Term_smp$n_Offr)
-Term_smp$cl_Offer<-scale(Term_smp$l_Offer)
-Term_smp$clsqr_Ceil<-Term_smp$cl_Ceil^2
-Term_smp$lsqr_Ceil<-Term_smp$l_Ceil^2
-
-Term_smp$clsqr_Days<-Term_smp$cl_Days^2
-Term_smp$lsqr_Days<-Term_smp$l_Days^2
 
 summary(Term_smp$b_Comp )
 summary(Term_smp$n_Comp )
@@ -184,12 +198,6 @@ display(Term_01A)
 discrete_fitted_term_model(Term_smp,"cb_Comp") + 
   stat_function(fun = fit_curve, args=list(a=coef(Term_01A)[1],                                                        b=coef(Term_01A)[2]),color="blue")
 
-#Save this for a future GLM
-# Term_data_01A<-data.frame(fitted=fitted(Term_01A),
-#                        residuals=residuals(Term_01A),
-#                        nTerm=Term_01A@frame$nTerm,
-#                        cb_Comp=Term_01A@frame$cb_Comp
-#                        )
 
 
 ```
@@ -259,40 +267,40 @@ Instead, the last variant to be checked is the number of offers directly. This i
 ```{r Model01D}
 
 #Frequency Plot
-freq_continuous_term_plot(Term_smp,"l_Offer")
+freq_continuous_term_plot(Term_smp,"l_Offr")
 
 #Percent Terminated Plot 
-binned_percent_term_plot(Term_smp,"l_Offer")
+binned_percent_term_plot(Term_smp,"l_Offr")
 
 #Percent Terminated Plot
-binned_percent_term_plot(Term_smp,"l_Offer","FxCb")
+binned_percent_term_plot(Term_smp,"l_Offr","FxCb")
 
 #Percent Terminated Plot
-binned_percent_term_plot(Term_smp,"l_Offer","PSR")
+binned_percent_term_plot(Term_smp,"l_Offr","PSR")
 
 #Percent Terminated Plot
-binned_percent_term_plot(Term_smp,"l_Offer","Veh")
+binned_percent_term_plot(Term_smp,"l_Offr","Veh")
 
 
 #Model
 Term_01D <- glm (data=Term_smp,
-                 b_Term ~ cl_Offer, family=binomial(link="logit"))
+                 b_Term ~ cl_Offr, family=binomial(link="logit"))
 display(Term_01D)
 
 #Variant Model
-Term_smp$clsqr_Offer<-Term_smp$cl_Offer^2
+Term_smp$clsqr_Offer<-Term_smp$cl_Offr^2
 Term_01E <- glm (data=Term_smp,
-                 b_Term ~ cl_Offer +clsqr_Offer, family=binomial(link="logit"))
+                 b_Term ~ cl_Offr +clsqr_Offer, family=binomial(link="logit"))
 display(Term_01E)
 
 #Plot the data and fitted curve
 Term_01D_plot<-ggplot(data=Term_smp,
-       aes(y=j_Term,x=cl_Offer))+geom_jitter(alpha=0.01,height=0)+scale_y_sqrt() +
+       aes(y=j_Term,x=cl_Offr))+geom_jitter(alpha=0.01,height=0)+scale_y_sqrt() +
   labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
 
 #Plot the Fitted
 #Add the fitted regression line
-discrete_fitted_term_model(Term_smp,"cl_Offer") +
+discrete_fitted_term_model(Term_smp,"cl_Offr") +
   stat_function(fun = fit_curve, args=list(a=coef(Term_01D)[1],
                                            b=coef(Term_01D)[2]),
                              color="blue")
@@ -1312,21 +1320,9 @@ residuals_term_plot(Term_04C)+
 The interactions are not significant and do little to reduce the residual deviance. They will not be added to the model.
 
 
-```{r Model13B}
-
-# Term_13B <- glmer (data=Term_smp,
-#                   b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + MIDV + OIDV + SIDV:l_Days + 
-#                    n_Fixed + l_Days:n_Fixed +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_13B)
-
-```
-The model failed to converge and the coefficient, while large, did not exceed the standard error. That said, it is worth noting that the sign went in the opposite direction from what was expected, with longer fixed-price contracts not being associated with disproprtionately higher terminations rates. Thus, the earlier finding is not replicated. 
-
 ###Model 04D: Incentive Fees
 
-In the performance of the defense acquisition system report, the benefits found were reduced cost overruns. That could help avoid terminations, but it's an indirect connection at best. 
+In the performance of the defense acquisition system report, the benefits found were reduced cost overruns. That could help avoid terminations, but it's an indirect connection at best. Unfortunately, incentive fees are incredibly rare, which makes them challenging to examine directly.
 
 
 ```{r Model04D}
@@ -1463,7 +1459,7 @@ Term_04F <- glm (data=Term_smp,
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
                    n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                   n_Fixed + n_UCA + 
+                   n_Fixed + b_UCA + 
                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
                    SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp 
                     , family=binomial(link="logit"))
@@ -1519,10 +1515,10 @@ Term_04G <- glm (data=Term_smp,
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
                    n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                   n_Fixed + n_UCA + 
+                   n_Fixed + b_UCA + 
                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
                    SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp +
-                   n_UCA:n_Comp
+                   b_UCA:n_Comp
                  
                     , family=binomial(link="logit"))
 display(Term_04G)
@@ -1578,11 +1574,11 @@ Term_04H <- glm (data=Term_smp,
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
                    n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                   n_Fixed + n_UCA + 
+                   n_Fixed + b_UCA + 
                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
                    SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp +
-                   n_UCA:n_Comp + 
-                  n_UCA:l_Days
+                   b_UCA:n_Comp + 
+                  b_UCA:l_Days
                     , family=binomial(link="logit"))
 display(Term_04H)
 
@@ -1639,11 +1635,11 @@ Term_05A <- glm (data=Term_smp,
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
                    n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                   n_Fixed + n_UCA + 
-                   n_Intl + 
+                   n_Fixed + b_UCA + 
+                   b_Intl + 
                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
                    SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
-                   n_UCA:n_Comp
+                   b_UCA:n_Comp
                     , family=binomial(link="logit"))
 display(Term_05A)
 
@@ -1682,9 +1678,9 @@ residuals_term_plot(Term_05A)+
 
 International performance of contract unexpectedly had a negative coefficent. It is a variable of interest  to the study and will be left in.
 
-###Model 05A: Fixed Price and Any International
+###Model 05B: Fixed Price and Any International
 
-```{r Model05A}
+```{r Model05B}
 
 #Frequency Plot
 freq_discrete_term_plot(Term_smp,"Intl","FxCb")
@@ -1700,12 +1696,12 @@ Term_05A <- glm (data=Term_smp,
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
                    n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                   n_Fixed + n_UCA + 
-                   n_Intl + 
+                   n_Fixed + b_UCA + 
+                   b_Intl + 
                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
                    SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
-                   n_UCA:n_Comp+
-                   n_Fixed:n_Intl
+                   b_UCA:n_Comp+
+                   n_Fixed:b_Intl
                     , family=binomial(link="logit"))
 display(Term_05A)
 
@@ -1744,7 +1740,7 @@ residuals_term_plot(Term_05A)+
 
 ###Model 05C: Vehicle and Any International
 
-```{r Model05A}
+```{r Model05C}
 
 #Frequency Plot
 freq_discrete_term_plot(Term_smp,"Intl","Veh")
@@ -1755,46 +1751,46 @@ discrete_percent_term_plot(Term_smp,"Intl","Veh")
 
 
 #Create the model
-Term_05A <- glm (data=Term_smp,
+Term_05C <- glm (data=Term_smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
                    n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                   n_Fixed + n_UCA + 
-                   n_Intl + 
+                   n_Fixed + b_UCA + 
+                   b_Intl + 
                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
                    SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
-                   n_UCA:n_Comp+
-                   SIDV:n_Intl+MIDV:n_Intl+OIDV:n_Intl
+                   b_UCA:n_Comp+
+                   SIDV:b_Intl+MIDV:b_Intl+OIDV:b_Intl
                     , family=binomial(link="logit"))
-display(Term_05A)
+display(Term_05C)
 
 # Plot the model and Vehicle 
-Term_05A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
+Term_05C_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
   cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
         Comp*Ceil,Days*Ceil,Days*Comp,
         Fixed,UCA,x,
         Days*x,Days*MIDV,Days*OIDV,
         Comp*x,Comp*MIDV,Comp*OIDV,
-        UCA*Comp) %*%  coef(Term_05A))}
+        UCA*Comp) %*%  coef(Term_05C))}
 
 #Days curves
 discrete_fitted_term_model(Term_smp,"SIDV") +
-  stat_function(fun = Term_05A_curve,
+  stat_function(fun = Term_05C_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,OIDV=0,
                                        Fixed=1,UCA=0),color="blue")+
-  stat_function(fun = Term_05A_curve,
+  stat_function(fun = Term_05C_curve,
                              args=list(Comp=2,Ceil=0,Days=1,
                                        MIDV=0,SIDV=0,OIDV=0,
                                        Fixed=1,UCA=0),color="blue")
 
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(Term_05A)
+binned_fitted_versus_residuals(Term_05C)
 
 #Plot residuals versus fittedO
-residuals_term_plot(Term_05A)+
+residuals_term_plot(Term_05C)+
   labs(x="Estimated  Pr (Termination)")
 
 # residuals_term_plot(Term_02F,"cl_days")+
@@ -1802,54 +1798,63 @@ residuals_term_plot(Term_05A)+
 
 ```
 
-#Multi-Level Model
 
-##What
-###Model 06A: Product/Service/R&D
+##Who
+Adding who resulted in a range of models that failed to converge. The one exception was combining Product/Service/R&D alone and Who, which did require removing multiple interactions from the model before convergence could be reached, but did allow the continued inclusion of  the combination of Product/Service/R&D and competition. All other models have been commented out to allow for the Markdown file  to  be created in a manageable amount of time. The study team initially considered using start year or contracting office identity as additional non-nested levels. However, those models failed to converge or had eigenvalue related challenges. As a result, the study team chose to focus on the question of what is being acquired. Who is acquiring is instead being handled by individual dummy variables or group level summary variables where appropriate, but not by seperate intercepts or slopes. Start year is not included in the model because of the complicatitons related to durations. Namely longer duration contracts from recent years have not yet had the opportunity to live out their natural life span. This means  that recent years will have an artificially high termination rate for longer contracts, because we only know about those that ended before their maximum duration, often due to termination.
+
+
+###Model 06A: Sub Customer other DoD
+Other DoD stands out for its sheer quantity of contracts and task orders and also its lower termination rate. 
 ```{r Model06A}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp,"PSR")
+freq_discrete_term_plot(Term_smp,"Who")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp,"PSR")
+discrete_percent_term_plot(Term_smp,"Who")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 
+Term_smp$b_ODoD<-Term_smp$Who
+levels(Term_smp$b_ODoD)<- list("1"=c("Other DoD"), 
+                                "0"=c("Air Force","Army","Navy"))
+Term_smp$b_ODoD[Term_smp$b_ODoD=="Uncategorized"]<-NA
+Term_smp$b_ODoD<-as.integer(as.character(Term_smp$b_ODoD))
 
 #Create the model
-Term_06A <- glmer(data=Term_smp,
+Term_06A <- glm (data=Term_smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
                    n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                   n_Fixed + n_UCA + 
-                   n_Intl + 
+                   n_Fixed + b_UCA + 
+                   b_Intl + b_ODoD +
                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
                    SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
-                   n_UCA:n_Comp+
-                   (1 | PSR)
+                   b_UCA:n_Comp
                     , family=binomial(link="logit"))
 display(Term_06A)
 
+
 # Plot the model and Vehicle 
-Term_06A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
+Term_06A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA,Intl){invlogit(
   cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
         Comp*Ceil,Days*Ceil,Days*Comp,
-        Fixed,UCA,x,
+        Fixed,UCA,Intl,x,
         Days*x,Days*MIDV,Days*OIDV,
         Comp*x,Comp*MIDV,Comp*OIDV,
         UCA*Comp) %*%  coef(Term_06A))}
 
 #Days curves
-discrete_fitted_term_model(Term_smp,"SIDV") +
+discrete_fitted_term_model(Term_smp,"b_ODoD") +
   stat_function(fun = Term_06A_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,OIDV=0,
-                                       Fixed=1,UCA=0),color="blue")+
+                                       Fixed=1,UCA=0,Intl=0),color="blue")+
   stat_function(fun = Term_06A_curve,
                              args=list(Comp=2,Ceil=0,Days=1,
                                        MIDV=0,SIDV=0,OIDV=0,
-                                       Fixed=1,UCA=0),color="blue")
+                                       Fixed=1,UCA=0,Intl=0),color="blue")
 
 
 #Plot the fitted values vs actual results
@@ -1863,3 +1868,311 @@ residuals_term_plot(Term_06A)+
 #   labs(x="Centered Log(Days)")
 
 ```
+
+After inclusion of DLA, the Competition correlates significantly predicts a greater risk of termination. Studying that interaction will be our next step.
+
+#Other DoD & Competition
+```{r Model06B}
+
+#Frequency Plot
+freq_discrete_term_plot(Term_smp,"EffComp","Who")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+#Percent Terminated Plot 
+discrete_percent_term_plot(Term_smp,"EffComp","Who")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+Term_smp$b_ODoD<-Term_smp$Who
+levels(Term_smp$b_ODoD)<- list("1"=c("Other DoD"), 
+                                "0"=c("Air Force","Army","Navy"))
+Term_smp$b_ODoD[Term_smp$b_ODoD=="Uncategorized"]<-NA
+Term_smp$b_ODoD<-as.integer(as.character(Term_smp$b_ODoD))
+
+#Create the model
+Term_06B <- glm (data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   n_Fixed + b_UCA + 
+                   b_Intl + b_ODoD +
+                   SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
+                   b_UCA:n_Comp+
+                   b_ODoD:n_Comp
+                    , family=binomial(link="logit"))
+display(Term_06B)
+
+
+# Plot the model and Vehicle 
+Term_06B_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA,Intl){invlogit(
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Fixed,UCA,Intl,x,
+        Days*x,Days*MIDV,Days*OIDV,
+        Comp*x,Comp*MIDV,Comp*OIDV,
+        UCA*Comp) %*%  coef(Term_06B))}
+
+#Days curves
+discrete_fitted_term_model(Term_smp,"b_ODoD") +
+  stat_function(fun = Term_06B_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1,UCA=0,Intl=0),color="blue")+
+  stat_function(fun = Term_06B_curve,
+                             args=list(Comp=2,Ceil=0,Days=1,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1,UCA=0,Intl=0),color="blue")
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_06B)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_06B)+
+  labs(x="Estimated  Pr (Termination)")
+
+# residuals_term_plot(Term_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
+
+```
+
+#Multi-Level Model
+
+##What
+###Model 08A: Product/Service/R&D
+```{r Model08A}
+
+#Frequency Plot
+freq_discrete_term_plot(Term_smp,"PSR")
+
+#Percent Terminated Plot 
+discrete_percent_term_plot(Term_smp,"PSR")
+
+
+
+#Create the model
+Term_08A <- glmer(data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   n_Fixed + b_UCA + 
+                   b_Intl + 
+                   SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
+                   b_UCA:n_Comp+
+                   (1 | PSR)
+                    , family=binomial(link="logit"))
+display(Term_08A)
+
+# Plot the model and Vehicle 
+Term_08A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Fixed,UCA,x,
+        Days*x,Days*MIDV,Days*OIDV,
+        UCA*Comp) %*%  coef(Term_08A))}
+
+#Days curves
+discrete_fitted_term_model(Term_smp,"SIDV") +
+  stat_function(fun = Term_08A_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1,UCA=0),color="blue")+
+  stat_function(fun = Term_08A_curve,
+                             args=list(Comp=2,Ceil=0,Days=1,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1,UCA=0),color="blue")
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_08A)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_08A)+
+  labs(x="Estimated  Pr (Termination)")
+
+# residuals_term_plot(Term_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
+
+```
+
+Unfortunately, after including Start Fiscal Year, the model again failed to converge. The standard deviation of Who is 0 while it is notably higher for determining the slope of competition via PSR and for Start Fiscal Year. This suggests that who is adding little to the model and that it is time to go back to model 6C as a starter.
+
+###Model 08B: Product/Service/R&D and Platform
+```{r Model08B}
+
+#Frequency Plot
+freq_discrete_term_plot(Term_smp,"PSR_What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+#Percent Terminated Plot 
+discrete_percent_term_plot(Term_smp,"PSR_What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+
+#Create the model
+Term_08B <- glmer(data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  +
+                   # cl_Ceil:cl_Days  + 
+                   n_Comp:cl_Days +
+                   n_Fixed + b_UCA + 
+                   b_Intl + 
+                   SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
+                   b_UCA:n_Comp+
+                   (1 | PSR) + (1 | PSR_What)
+                    , family=binomial(link="logit"))
+display(Term_08B)
+
+# Plot the model and Vehicle 
+Term_08B_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Fixed,UCA,x,
+        Days*x,Days*MIDV,Days*OIDV,
+        UCA*Comp) %*%  coef(Term_08B))}
+
+#Days curves
+discrete_fitted_term_model(Term_smp,"SIDV") +
+  stat_function(fun = Term_08B_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1,UCA=0),color="blue")+
+  stat_function(fun = Term_08B_curve,
+                             args=list(Comp=2,Ceil=0,Days=1,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1,UCA=0),color="blue")
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_08B)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_08B)+
+  labs(x="Estimated  Pr (Termination)")
+
+# residuals_term_plot(Term_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
+
+```
+
+###Model 08C: Interactions
+```{r Model 6 Exploration}
+#, fig.height = 10, fig.width = 6.5
+#Effective Competition
+#Frequency Plot
+freq_discrete_term_plot(Term_smp,"PSR_What","EffComp")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+#Percent Terminated Plot 
+discrete_percent_term_plot(Term_smp,"EffComp","PSR")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+discrete_percent_term_plot(Term_smp,"EffComp","What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+discrete_percent_term_plot(Term_smp,"EffComp","PSR_What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+#Effective Competition
+#Frequency Plot
+freq_discrete_term_plot(Term_smp,"PSR_What","Veh")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+#Percent Terminated Plot 
+discrete_percent_term_plot(Term_smp,"Veh","PSR")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+discrete_percent_term_plot(Term_smp,"Veh","What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+discrete_percent_term_plot(Term_smp,"Veh","PSR_What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+#FxCb
+#Frequency Plot
+freq_discrete_term_plot(Term_smp,"PSR_What","FxCb")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+#Percent Terminated Plot 
+discrete_percent_term_plot(Term_smp,"FxCb","PSR")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+discrete_percent_term_plot(Term_smp,"FxCb","What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+discrete_percent_term_plot(Term_smp,"FxCb","PSR_What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+Term_08C <- glmer(data=Term_smp,
+                 b_Term ~ #n_Comp + 
+                   cl_Ceil + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  +
+                   # cl_Ceil:cl_Days  + 
+                   n_Comp:cl_Days +
+                   n_Fixed + b_UCA + 
+                   b_Intl + 
+                   SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
+                   b_UCA:n_Comp+
+                   (1 + n_Comp | PSR) + (1 | PSR_What)
+                    , family=binomial(link="logit"))
+display(Term_08C)
+
+
+Term_08D <- glmer(data=Term_smp,
+                 b_Term ~ n_Comp + 
+                   cl_Ceil + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  +
+                   # cl_Ceil:cl_Days  + 
+                   n_Comp:cl_Days +
+                   n_Fixed + b_UCA + 
+                   b_Intl + 
+                   SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
+                   b_UCA:n_Comp+
+                   (1  | PSR) + (1 + n_Comp| PSR_What)
+                    , family=binomial(link="logit"))
+display(Term_08D)
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_08C)
+
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_08C)+
+  labs(x="Estimated  Pr (Termination)")
+
+
+# Term_08E <- glmer(data=Term_smp,
+#                  b_Term ~ n_Comp + 
+#                    cl_Ceil + cl_Days+ 
+#                    SIDV + MIDV + OIDV +
+#                    n_Comp:cl_Ceil  +
+#                    # cl_Ceil:cl_Days  + 
+#                    n_Comp:cl_Days +
+#                    n_Fixed + b_UCA + 
+#                    b_Intl + 
+#                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+#                    SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
+#                    b_UCA:n_Comp+
+#                    (1+n_Comp  | PSR) + (1+ n_Comp | PSR_What)
+#                     , family=binomial(link="logit"))
+# display(Term_08E)
+# failure to converge in 10000 evaluations
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_08C)
+
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_08C)+
+  labs(x="Estimated  Pr (Termination)")
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_08D)
+
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_08D)+
+  labs(x="Estimated  Pr (Termination)")
+
+```
+The use of Comp as 
+

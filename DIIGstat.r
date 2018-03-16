@@ -47,6 +47,12 @@ contract$l_Ceil[is.infinite(contract$l_Ceil)]<-NA
 contract$l_Days<-log(contract$UnmodifiedDays)
 contract$l_Days[is.infinite(contract$l_Days)]<-NA
 
+#b_ODoD
+contract$b_ODoD<-contract$Who
+levels(contract$b_ODoD)<- list("1"=c("Other DoD"), 
+                                "0"=c("Air Force","Army","Navy"))
+contract$b_ODoD[contract$b_ODoD=="Uncategorized"]<-NA
+contract$b_ODoD<-as.integer(as.character(contract$b_ODoD))
 
 
 #n_Fixed
@@ -120,29 +126,29 @@ levels(contract$CompOffr) <-
        "3-4 offers"="3",
        "5+ offers"="4")
 
-#n_Intl
-contract$n_Intl<-contract$Intl
-contract$n_Intl[contract$n_Intl=="Unlabeled"]<-NA
-levels(contract$n_Intl) <-
+#b_Intl
+contract$b_Intl<-contract$Intl
+contract$b_Intl[contract$b_Intl=="Unlabeled"]<-NA
+levels(contract$b_Intl) <-
   list("0"=c("Just U.S."), 
        "1"=c("Any International"))
-contract$n_Intl<-as.integer(as.character(contract$n_Intl))
+contract$b_Intl<-as.integer(as.character(contract$b_Intl))
 
 
 
-#n_UCA
-contract$n_UCA<-contract$UCA
-levels(contract$n_UCA) <-
+#b_UCA
+contract$b_UCA<-contract$UCA
+levels(contract$b_UCA) <-
   list("0"=c("Not UCA"), 
        "1"=c("UCA"))
-contract$n_UCA<-as.integer(as.character(contract$n_UCA))
+contract$b_UCA<-as.integer(as.character(contract$b_UCA))
 
 
 
 
-#l_Offer
-contract$l_Offer<-log(contract$UnmodifiedNumberOfOffersReceived)
-contract$l_Offer[is.infinite(contract$l_Days)]<-NA
+#l_Offr
+contract$l_Offr<-log(contract$UnmodifiedNumberOfOffersReceived)
+contract$l_Offr[is.infinite(contract$l_Days)]<-NA
 
 # contract$DecisionTree<-as.character(contract$MaxOfDecisionTree)
 # contract$DecisionTree[
@@ -189,6 +195,20 @@ levels(contract$OIDV) <-
        "0"=c("Def/Pur","SINGLE AWARD", "MULTIPLE AWARD"))
 contract$OIDV<-as.integer(as.character(contract$OIDV))
 
+
+contract$cl_Ceil<-scale(contract$l_Ceil)
+contract$cl_Days<-scale(contract$l_Days)
+contract$cb_Comp<-scale(contract$b_Comp)
+contract$cn_Comp<-scale(contract$n_Comp)
+contract$cn_Offr<-scale(contract$n_Offr)
+contract$cl_Offr<-scale(contract$l_Offr)
+contract$clsqr_Ceil<-contract$cl_Ceil^2
+contract$lsqr_Ceil<-contract$l_Ceil^2
+
+contract$clsqr_Days<-contract$cl_Days^2
+contract$lsqr_Days<-contract$l_Days^2
+
+
 contract
 }
 
@@ -234,11 +254,11 @@ bin_df<-function(data,rank_col,group_col=NULL,n=20,ties.method="random"){
 # 
 # 
 # 
-# Term_01D_line_FxCb<-ggplot(data=subset(Term_smp,!is.na(l_Offer) & !is.na(FxCb)) %>% 
+# Term_01D_line_FxCb<-ggplot(data=subset(Term_smp,!is.na(l_Offr) & !is.na(FxCb)) %>% 
 #                              group_by(bin_Offer_FxCb,FxCb) %>% 
 #                              summarise (mean_Term = mean(b_Term),
-#                                         mean_l_Offer =mean(l_Offer)),
-#                            aes(y=mean_Term,x=mean_l_Offer))+geom_point()+facet_wrap(~FxCb)
+#                                         mean_l_Offr =mean(l_Offr)),
+#                            aes(y=mean_Term,x=mean_l_Offr))+geom_point()+facet_wrap(~FxCb)
 # 
 # }
 
@@ -274,11 +294,31 @@ binned.resids <- function (x, y, nclass=sqrt(length(x))){
 }
 
 binned_fitted_versus_residuals<-function(model){
+  
+  #Save this for a future GLM
+  # Term_data_01A<-data.frame(fitted=fitted(Term_01A),
+  #                        residuals=residuals(Term_01A),
+  #                        nTerm=Term_01A@frame$nTerm,
+  #                        cb_Comp=Term_01A@frame$cb_Comp
+  #                        )
+  
+  if(class(model)=="glmerMod")
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_Term=model@frame$b_Term
+    )
+    
+  }
+  else
+  {
   data <-data.frame(
     fitted=fitted(model),
     residuals=residuals(model),
     b_Term=model$model$b_Term
   )
+  }
 
   data$bin_fitted<-bin_df(data,rank_col="fitted")
   
@@ -294,10 +334,27 @@ binned_fitted_versus_residuals<-function(model){
 
 residuals_term_plot<-function(model,x_col="fitted",bins=40){
   #Plot the fitted values vs actual results
-  data<-data.frame(fitted=fitted(model),
-                            residuals=residuals(model),
-                            b_Term=model$model$b_Term
-  )
+  
+  
+  if(class(model)=="glmerMod")
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_Term=model@frame$b_Term
+    )
+    
+  }
+  else
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_Term=model$model$b_Term
+    )
+  }
+  
+  
   if (x_col!="fitted"){
     data$x_col<-
       test<-model$model[,x_col]
@@ -418,3 +475,32 @@ discrete_fitted_term_model<-function(data,x_col){
     labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
 }
 
+
+centered_log_description<-function(x,units=NA){
+  xbar<-mean(x,na.rm=TRUE)
+    xsd<-sd(x,na.rm=TRUE)
+  paste("The variable is centered, by subtracting its mean (",
+        format(xbar,digits=3,big.mark=","),
+        ") and dividing by its standard deviation (",
+        format(xsd,digits=3,big.mark=","),
+        "). Values of -1, 0, 1, and 2 correspond to ",
+        format(exp(xbar-xsd),digits=2,big.mark=","), ", ",
+        format(exp(xbar),digits=2,big.mark=","),", ",
+        format(exp(xbar+xsd),digits=2,big.mark=","),", and ",
+        format(exp(xbar+2*xsd),digits=2,big.mark=","),
+        ifelse(is.na(units),"",paste("",units)),
+        " respectively.",sep="")
+}
+
+
+NA_stats<-function(data,col){
+  data<-DefenseModelAndDetail
+  paste("Data is missing for ",
+        format(sum(is.na(data[,col]))/nrow(data),digits=3),
+        " of records and ",
+        format(sum(data$Action.Obligation[is.na(data[,col])],na.rm=TRUE)/
+                 sum(data$Action.Obligation,na.rm=TRUE),digits=3),
+        " of obligated dollars."
+              ,sep="")
+
+}
