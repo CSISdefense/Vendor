@@ -7,7 +7,16 @@ library(arm)
 transform_contract<-function(
   contract
 ){
-#PSR_What
+
+  #Newwork and change
+  contract$pNewWork3Sig<-round(
+    contract$pNewWorkUnmodifiedBaseAndAll,3)
+  contract$pChange3Sig<-round(
+    contract$pChangeOrderUnmodifiedBaseAndAll,3)
+  
+  
+  
+  #PSR_What
 contract$PSR_What<-factor(paste(as.character(contract$PSR),
                                              as.character(contract$What),sep="."))
 contract$PSR_What[contract$PSR_What=="Unlabeled"]<-NA
@@ -43,9 +52,71 @@ contract$l_Crai[contract$b_Crai==1 & !is.na(contract$b_Crai)]<-
 contract$l_Ceil<-log(contract$UnmodifiedContractBaseAndAllOptionsValue)
 contract$l_Ceil[is.infinite(contract$l_Ceil)]<-NA
 
+
+contract<-ddply(contract,
+                              .(Ceil),
+                              plyr::mutate,
+                              ceil.median.wt = median(UnmodifiedContractBaseAndAllOptionsValue)
+)
+
+contract$Ceil.Simple<-as.character(contract$Ceil)
+
+contract$Ceil.Simple[contract$Ceil.Simple %in% c(
+  "75m+",
+  "10m - <75m")]<-"10m+"
+contract$Ceil.Simple[contract$Ceil.Simple %in% c(
+  "1m - <10m",
+  "100k - <1m")]<-"100k - <10m"
+contract$Ceil.Simple[contract$Ceil.Simple %in% c(
+  "15k - <100k",
+  "0 - <15k")]<-"0k - <100k"
+contract$Ceil.Simple<-factor(contract$Ceil.Simple,
+                                           levels=c("0k - <100k",
+                                                    "100k - <10m",
+                                                    "10m+"),
+                                           ordered=TRUE
+)
+
+
+contract$Ceil.Big<-as.character(contract$Ceil)
+
+contract$Ceil.Big[contract$Ceil.Big %in% c(
+  "100k - <1m",
+  "15k - <100k",
+  "0 - <15k")]<-"0k - <1m"
+
+contract$Ceil.Big<-factor(contract$Ceil.Big,
+                                        levels=c("0k - <1m",
+                                                 "1m - <10m",
+                                                 "10m - <75m",
+                                                 "75m+"),
+                                        ordered=TRUE
+)
+
+
+
 #l_Days
+
 contract$l_Days<-log(contract$UnmodifiedDays)
 contract$l_Days[is.infinite(contract$l_Days)]<-NA
+
+
+contract$UnmodifiedYearsFloat<-contract$UnmodifiedDays/365.25
+contract$UnmodifiedYearsCat<-floor(contract$UnmodifiedYearsFloat)
+contract$Dur[contract$UnmodifiedYearsCat<0]<-NA
+
+contract$Dur.Simple<-as.character(contract$Dur)
+contract$Dur.Simple[contract$Dur.Simple %in% c(
+  "[0 months,~2 months)",
+  "[~2 months,~7 months)",
+  "[~7 months-~1 year]")]<-"<~1 year"
+contract$Dur.Simple<-factor(contract$Dur.Simple,
+                                         levels=c("<~1 year",
+                                                  "(~1 year,~2 years]",
+                                                  "(~2 years+]"),
+                                         ordered=TRUE
+)
+
 
 #b_ODoD
 contract$b_ODoD<-contract$Who
