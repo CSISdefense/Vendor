@@ -14,6 +14,16 @@ transform_contract<-function(
   contract$pChange3Sig<-round(
     contract$pChangeOrderUnmodifiedBaseAndAll,3)
   
+
+  #Customer
+  if(!"Is.Defense" %in% colnames(contract)){
+    contract$Is.Defense<-as.character(contract$Who)
+    contract$Is.Defense[contract$Is.Defense %in%
+                          c("Air Force","Army",
+                            "Navy","Other DoD","Uncategorized"  )
+                        ]<-"Defense"
+    contract$Is.Defense<-factor(contract$Is.Defense)
+  }
   
   
   #PSR_What
