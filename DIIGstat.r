@@ -168,7 +168,6 @@ if (all(levels(factor(contract$Comp))==c("0","1"))){
   levels(contract$Comp) <-
   list("No Competition"="0",
        "Competition"="1")
-}
 
 #Right now comp is not actually a factor, so don't need to process it
 contract$b_Comp<-contract$Comp #Fix in Rdata, and add back comp
@@ -208,6 +207,19 @@ levels(contract$CompOffr) <-
        "3-4 offers"="3",
        "5+ offers"="4")
 }
+  
+  
+  #l_Offr
+  contract$l_Offr<-log(contract$UnmodifiedNumberOfOffersReceived)
+  contract$l_Offr[is.infinite(contract$l_Days)]<-NA
+  
+  contract$cb_Comp<-scale(contract$b_Comp)
+  contract$cn_Comp<-scale(contract$n_Comp)
+  contract$cn_Offr<-scale(contract$n_Offr)
+  contract$cl_Offr<-scale(contract$l_Offr)
+  
+}
+
 #b_Intl
 contract$b_Intl<-contract$Intl
 contract$b_Intl[contract$b_Intl=="Unlabeled"]<-NA
@@ -228,9 +240,6 @@ contract$b_UCA<-as.integer(as.character(contract$b_UCA))
 
 
 
-#l_Offr
-contract$l_Offr<-log(contract$UnmodifiedNumberOfOffersReceived)
-contract$l_Offr[is.infinite(contract$l_Days)]<-NA
 
 # contract$DecisionTree<-as.character(contract$MaxOfDecisionTree)
 # contract$DecisionTree[
@@ -280,10 +289,6 @@ contract$OIDV<-as.integer(as.character(contract$OIDV))
 
 contract$cl_Ceil<-scale(contract$l_Ceil)
 contract$cl_Days<-scale(contract$l_Days)
-contract$cb_Comp<-scale(contract$b_Comp)
-contract$cn_Comp<-scale(contract$n_Comp)
-contract$cn_Offr<-scale(contract$n_Offr)
-contract$cl_Offr<-scale(contract$l_Offr)
 contract$clsqr_Ceil<-contract$cl_Ceil^2
 contract$lsqr_Ceil<-contract$l_Ceil^2
 
