@@ -5,6 +5,7 @@ install.packages("plyr")
 install.packages("data.table")
 install.packages("tidyverse")
 install.packages("sqldf")
+install.packages("compare")
 library(sqldf)
 library(openxlsx)
 library(httr)
@@ -13,10 +14,27 @@ library(plyr)
 library(data.table)
 library(tidyverse)
 
+library(compare)
 
 all_years <- read_csv("all years quote.csv", col_names = TRUE, quote = "\"")
+final_joined <- all_years
 
-final_joined = all_years[!duplicated(all_years),]
+final <- read_csv("allSAMData FPDS.csv")
+
+comparison <- anti_join(all_years, final, by = "unique_transaction_id")
+comparison2 <- anti_join(final, all_years, by = "unique_transaction_id")
+
+all_years2 <- select(all_years, -c(time_in_SAM, one_year, two_years, five_years, ten_years, stateorProvince, city_1))
+
+comp<-comparison2[names(all_years2)]
+
+
+final_joined = final[!duplicated(final),]
+
+final_joined <- final_joined %>% 
+  mutate(age_at_start = year(registrationDate) - year(businessStartDate)) %>% 
+  mutate(months_in_SAM = ((year(expirationDate) - year(registrationDate)) * 12) + month(expirationDate) - month(registrationDate)) %>% 
+  rename(country = `samAddress countryCode`)
 
 
 ##2001
@@ -871,3 +889,17 @@ dataset.2011 = joined.5 %>%
 
 all.dataset <- rbind(dataset.2001, dataset.2002, dataset.2003, dataset.2004, dataset.2005, dataset.2006, dataset.2007, dataset.2008, dataset.2009, dataset.2010, dataset.2011)
 
+write.csv(all.dataset, "allsecond.csv")
+
+all.datasets2 <- rbind(dataset.2001, dataset.2002, dataset.2003, dataset.2004, dataset.2005, dataset.2006, dataset.2007, dataset.2008, dataset.2009, dataset.2010, dataset.2011)
+
+
+first <- read_csv("allfirst.csv")
+second <- read_csv("allsecond.csv")
+
+
+join <- rbind(first, second)
+
+joined_final = join[!duplicated(join),]
+
+write.csv(all.dataset, "SAM2001-2011.csv")
