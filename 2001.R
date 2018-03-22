@@ -51,7 +51,7 @@ NAICS.unique.column = NAICS.edit.unique %>%
   select(duns, NAICS2)
 
 
-#### selected only small businesses that registered in the year 2000
+#### selected only small businesses that registered in the year 2001
 year.edit = final_joined %>% 
   mutate(regyear = year(registrationDate)) %>%
   arrange(regyear) %>% 
@@ -61,7 +61,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2001
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -73,6 +73,7 @@ parent.edit = year.edit %>%
 
 parent.unique = parent.edit[!duplicated(parent.edit[,c('duns')]),] 
 
+##joined the above sections together by duns and selected only the columns needed
 
 NAICS = as.data.frame(NAICS.unique.column)
 year = as.data.frame(year.edit.unique)
@@ -89,6 +90,9 @@ joined.25 = joined.2 %>%
          isalaskannativeownedcorporationorfirm, other_minority_owned_business, 
          isforeignownedandlocated, expirationDate, contractingofficerbusinesssizedetermination)
 
+###cross reference agency and department codes with a list of names and used one of our 
+##datasets in SQL to identify the PSC codes -- used a similar method to determine agency and PSC
+##for each firm as was used to determine the NAICS code
 
 
 psc_names <- read_csv("PSC.csv")
@@ -116,8 +120,6 @@ agency <- name.defined %>%
 
 agency.unique = agency[!duplicated(agency[,c("duns")]),]
 
-#### identified within each DUNS# which NAICs code had the greaest total
-#### obligatedamount to determine one NAICS per DUNS
 
 PSC_code = name.defined %>% 
   select(duns, obligatedamount, productorservicecode, ServicesCategory) %>% 
@@ -130,7 +132,8 @@ PSC_code = name.defined %>%
 psc.code.unique = PSC_code[!duplicated(PSC_code[,c("duns")]),]
 
 
-###total contract obligations and contract actions
+###devised the fields total contract actions (all contracts that a certain firm had between 
+##the given timeframe) and total obligated amount (sum of obligated amount for each contract)
 
 unique.contract <- final_joined[!duplicated(final_joined[,c("unique_transaction_id")]),]
 
@@ -138,6 +141,8 @@ contobsac <- unique.contract %>%
   select(duns, obligatedamount, unique_transaction_id) %>% 
   group_by(duns) %>% 
   summarize(obligated.amt = sum(obligatedamount), contract.actions = n())
+
+#### joined these to the previous dataframe
 
 
 PSC = as.data.frame(psc.code.unique)
@@ -149,15 +154,10 @@ joined.3 = merge.data.frame(joined.25, PSC, by = "duns", all.x = TRUE)
 joined.4 = merge.data.frame(joined.3, oblandact, by = "duns", all.x = TRUE)
 joined.5 = merge.data.frame(joined.4, agency, by = "duns", all.x = TRUE)
 
-#### joined.5 is all 2001
-
-
-
-
 
 ####selecting and creating needed fields  
 
-#### variables I need: Firm Age, Industry, Location, Ownership, unemployment rate in 2000, interest rate in 2000, exchange rate in 2000
+#### variables I need: Firm Age, Location, Ownership, years in SAM, survival status, biz_size, 3 years, 5 years, 10 years 
 
 
 dataset.2001 = joined.5 %>% 
@@ -195,7 +195,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2002
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -263,7 +263,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2003
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -331,7 +331,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2004
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -399,7 +399,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2005
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -467,7 +467,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2006
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -535,7 +535,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2007
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -604,7 +604,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2008
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -672,7 +672,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2009
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -741,7 +741,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2010
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -810,7 +810,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2011
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -867,7 +867,7 @@ dataset.2011 = joined.5 %>%
          obligated.amt, firm.age, three.year, five.year,ten.year, survival.status, DEPARTMENT_NAME, AGENCY_NAME) %>% 
   filter(NAICS2 != "NU")
 
-####
+#### bind each created dataset together
 
 all.dataset <- rbind(dataset.2001, dataset.2002, dataset.2003, dataset.2004, dataset.2005, dataset.2006, dataset.2007, dataset.2008, dataset.2009, dataset.2010, dataset.2011)
 
