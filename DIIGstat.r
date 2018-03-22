@@ -162,6 +162,7 @@ contract$n_NoFee<-as.integer(as.character(contract$n_NoFee))
 
 
 #n_Comp
+if("Comp" %in% colnames(contract)){
 if (all(levels(factor(contract$Comp))==c("0","1"))){
   contract$Comp<-factor(contract$Comp)
   levels(contract$Comp) <-
@@ -206,7 +207,7 @@ levels(contract$CompOffr) <-
        "2 offers"="2",
        "3-4 offers"="3",
        "5+ offers"="4")
-
+}
 #b_Intl
 contract$b_Intl<-contract$Intl
 contract$b_Intl[contract$b_Intl=="Unlabeled"]<-NA
@@ -575,7 +576,6 @@ centered_log_description<-function(x,units=NA){
 
 
 NA_stats<-function(data,col){
-  data<-DefenseModelAndDetail
   paste("Data is missing for ",
         format(sum(is.na(data[,col]))/nrow(data),digits=3),
         " of records and ",
