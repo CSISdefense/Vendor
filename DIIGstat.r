@@ -1,6 +1,6 @@
 #DIIGstat.r
 library(arm)
-
+library(dplyr)
 #This will likely be folded into CSIS360
 #But for now, using it to create and refine functions for regression analysis.
 
@@ -8,12 +8,12 @@ transform_contract<-function(
   contract
 ){
 
+  # contract$pNewWorkUnmodifiedBaseAndAll<-as.numeric(as.character(contract$pNewWorkUnmodifiedBaseAndAll))
   #Newwork and change
-  contract$pNewWork3Sig<-round(
-    contract$pNewWorkUnmodifiedBaseAndAll,3)
-  contract$pChange3Sig<-round(
-    contract$pChangeOrderUnmodifiedBaseAndAll,3)
+  # contract$pNewWork3Sig<-round(
+    # contract$pNewWorkUnmodifiedBaseAndAll,3)
   
+
 
   #Customer
   if(!"Is.Defense" %in% colnames(contract)){
@@ -49,6 +49,10 @@ contract$b_Term[contract$Term=="Unterminated"]<-0
 contract$j_Term<-jitter.binary(contract$b_Term)
 
 #n_Crai
+contract$pChangeOrderUnmodifiedBaseAndAll<-as.numeric(as.character(contract$pChangeOrderUnmodifiedBaseAndAll))
+contract$pChange3Sig<-round(
+  contract$pChangeOrderUnmodifiedBaseAndAll,3)
+
 #Should include this in the original data frame but for now can drive it.
 contract$n_Crai<-contract$pChangeOrderUnmodifiedBaseAndAll*
   contract$UnmodifiedContractBaseAndAllOptionsValue
@@ -62,12 +66,8 @@ contract$l_Crai[contract$b_Crai==1 & !is.na(contract$b_Crai)]<-
 contract$l_Ceil<-log(contract$UnmodifiedContractBaseAndAllOptionsValue)
 contract$l_Ceil[is.infinite(contract$l_Ceil)]<-NA
 
-
-contract<-ddply(contract,
-                              .(Ceil),
-                              plyr::mutate,
-                              ceil.median.wt = median(UnmodifiedContractBaseAndAllOptionsValue)
-)
+contract<-contract %>% group_by(Ceil) %>%
+  mutate(ceil.median.wt = median(UnmodifiedContractBaseAndAllOptionsValue))
 
 contract$Ceil.Simple<-as.character(contract$Ceil)
 
