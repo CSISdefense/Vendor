@@ -2,12 +2,12 @@ install.packages("matrixStats")
 library(matrixStats)
 library(describer)
 
-df2001 <- read_csv("dataset2001.csv")
-df2002 <- read_csv("dataset2002.csv")
-df2003 <- read_csv("dataset2003.csv")
-df2004 <- read_csv("dataset2004.csv")
-df2005 <- read_csv("dataset2005.csv")
-df2006 <- read_csv("dataset2006.csv")
+df2001 <- dataset.2001
+df2002 <- dataset.2002
+df2003 <- dataset.2003
+df2004 <- dataset.2004
+df2005 <- dataset.2005
+df2006 <- dataset.2006
 
 df2001$NAICS2 = as.factor(df2001$NAICS2)
 df2001$ServicesCategory = as.factor(df2001$ServicesCategory)
