@@ -404,15 +404,6 @@ stats.2001$ID[stats.2001$ID == 12] = "10 year non-small"
 
 ##t test
 
-x3.2001 <- df2001 %>% 
-  filter(three.year == 1)
-
-x5.2001 <- df2001 %>% 
-  filter(five.year == 1)
-
-x10.2001 <- df2001 %>% 
-  filter(ten.year == 1)
-
 all <- lapply(all2001.num[ ,c("firm.age", "years.in.SAM", "ownership.woman", "ownership.veteran", 
                         "ownership.minority", "ownership.foreign", "location", 
                         "contract.actions", "obligated.amt", "NAICS.f", "PSC.f", "dept.f", "agency.f")], 
@@ -443,7 +434,7 @@ t.test$agency = as.character(t.test$agency)
 write.csv(survival.rates, "survival rates.csv")
 write.csv(t.test, "t-test numeric.csv")
 
-#### Categorical variable names
+#### Categorical variable levels
 
 naics.lev <- as.data.frame(levels(df2001$NAICS2))
 psc.lev <- as.data.frame(levels(df2001$ServicesCategory))
