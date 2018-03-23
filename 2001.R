@@ -4,9 +4,6 @@ install.packages("jsonlite")
 install.packages("plyr")
 install.packages("data.table")
 install.packages("tidyverse")
-install.packages("sqldf")
-install.packages("compare")
-library(sqldf)
 library(openxlsx)
 library(httr)
 library(jsonlite)
@@ -14,7 +11,6 @@ library(plyr)
 library(data.table)
 library(tidyverse)
 
-library(compare)
 
 final <- read_csv("allSAMData FPDS.csv")
 
@@ -88,6 +84,8 @@ parent = as.data.frame(parent.unique)
 
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
+
+###joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
 
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
@@ -222,6 +220,8 @@ parent = as.data.frame(parent.unique)
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
 
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
+
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
          businessStartDate, country, womenownedflag, veteranownedflag, aiobflag, naobflag,
@@ -289,6 +289,8 @@ parent = as.data.frame(parent.unique)
 
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
+
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
 
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
@@ -358,6 +360,8 @@ parent = as.data.frame(parent.unique)
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
 
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
+
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
          businessStartDate, country, womenownedflag, veteranownedflag, aiobflag, naobflag,
@@ -425,6 +429,8 @@ parent = as.data.frame(parent.unique)
 
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
+
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
 
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
@@ -494,6 +500,8 @@ parent = as.data.frame(parent.unique)
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
 
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
+
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
          businessStartDate, country, womenownedflag, veteranownedflag, aiobflag, naobflag,
@@ -561,6 +569,8 @@ parent = as.data.frame(parent.unique)
 
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
+
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
 
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
@@ -631,6 +641,8 @@ parent = as.data.frame(parent.unique)
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
 
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
+
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
          businessStartDate, country, womenownedflag, veteranownedflag, aiobflag, naobflag,
@@ -698,6 +710,8 @@ parent = as.data.frame(parent.unique)
 
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
+
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
 
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
@@ -768,6 +782,8 @@ parent = as.data.frame(parent.unique)
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
 
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
+
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
          businessStartDate, country, womenownedflag, veteranownedflag, aiobflag, naobflag,
@@ -837,6 +853,8 @@ parent = as.data.frame(parent.unique)
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
 
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
+
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
          businessStartDate, country, womenownedflag, veteranownedflag, aiobflag, naobflag,
@@ -878,5 +896,8 @@ dataset.2011 = joined.5 %>%
 
 all.dataset <- rbind(dataset.2001, dataset.2002, dataset.2003, dataset.2004, dataset.2005, dataset.2006, dataset.2007, dataset.2008, dataset.2009, dataset.2010, dataset.2011)
 
+##all.dataset.parentno <- rbind(dataset.2001, dataset.2002, dataset.2003, dataset.2004, dataset.2005, dataset.2006, dataset.2007, dataset.2008, dataset.2009, dataset.2010, dataset.2011)
 
 write.csv(all.dataset, "SAM2001-2011.csv")
+
+write.csv(all.dataset.parentno, "parentno2001-2011.csv")
