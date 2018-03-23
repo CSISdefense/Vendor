@@ -76,11 +76,6 @@ df2006$DEPARTMENT_NAME = as.factor(df2006$DEPARTMENT_NAME)
 df2006$AGENCY_NAME = as.factor(df2006$AGENCY_NAME)
 
 
-naics.lev <- as.data.frame(levels(df2001$NAICS2))
-psc.lev <- as.data.frame(levels(df2001$ServicesCategory))
-dept.lev <- as.data.frame(levels(df2001$DEPARTMENT_NAME))
-agency.lev <- as.data.frame(levels(df2001$DEPARTMENT_NAME))
-
 class(dataset.2001$ServicesCategory)
 
 ###Descriptive Stats
@@ -448,6 +443,11 @@ t.test$agency = as.character(t.test$agency)
 write.csv(survival.rates, "survival rates.csv")
 write.csv(t.test, "t-test numeric.csv")
 
+#### Categorical variable names
 
+naics.lev <- as.data.frame(levels(df2001$NAICS2))
+psc.lev <- as.data.frame(levels(df2001$ServicesCategory))
+dept.lev <- as.data.frame(levels(df2001$DEPARTMENT_NAME))
+agency.lev <- as.data.frame(levels(df2001$DEPARTMENT_NAME))
 
 
