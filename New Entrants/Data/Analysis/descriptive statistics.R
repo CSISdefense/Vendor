@@ -30,6 +30,76 @@ df2004 <- read_csv("dataset2004.csv")
 df2005 <- read_csv("dataset2005.csv")
 df2006 <- read_csv("dataset2006.csv")
 
+###Cleaning variables to categorical and numeric####
+###No Parent ID Filter
+df2001_nop$NAICS2 = as.factor(df2001$NAICS2)
+df2001_nop$ServicesCategory = as.factor(df2001$ServicesCategory)
+df2001_nop$location = as.numeric(df2001$location)
+df2001_nop$ownership.woman = as.numeric(df2001$ownership.woman)
+df2001_nop$ownership.veteran = as.numeric(df2001$ownership.veteran)
+df2001_nop$ownership.minority = as.numeric(df2001$ownership.minority)
+df2001_nop$ownership.foreign = as.numeric(df2001$ownership.foreign)
+df2001_nop$survival.status = as.numeric(df2001$survival.status)
+df2001_nop$DEPARTMENT_NAME = as.factor(df2001$DEPARTMENT_NAME)
+df2001_nop$AGENCY_NAME = as.factor(df2001$AGENCY_NAME)
+
+
+df2002_nop$NAICS2 = as.factor(df2002$NAICS2)
+df2002_nop$ServicesCategory = as.factor(df2002$ServicesCategory)
+df2002_nop$location = as.numeric(df2002$location)
+df2002_nop$ownership.woman = as.numeric(df2002$ownership.woman)
+df2002_nop$ownership.veteran = as.numeric(df2002$ownership.veteran)
+df2002_nop$ownership.minority = as.numeric(df2002$ownership.minority)
+df2002_nop$ownership.foreign = as.numeric(df2002$ownership.foreign)
+df2002_nop$survival.status = as.numeric(df2002$survival.status)
+df2002_nop$DEPARTMENT_NAME = as.factor(df2002$DEPARTMENT_NAME)
+df2002_nop$AGENCY_NAME = as.factor(df2002$AGENCY_NAME)
+
+df2003_nop$NAICS2 = as.factor(df2003$NAICS2)
+df2003_nop$ServicesCategory = as.factor(df2003$ServicesCategory)
+df2003_nop$location = as.numeric(df2003$location)
+df2003_nop$ownership.woman = as.numeric(df2003$ownership.woman)
+df2003_nop$ownership.veteran = as.numeric(df2003$ownership.veteran)
+df2003_nop$ownership.minority = as.numeric(df2003$ownership.minority)
+df2003_nop$ownership.foreign = as.numeric(df2003$ownership.foreign)
+df2003_nop$survival.status = as.numeric(df2003$survival.status)
+df2003_nop$DEPARTMENT_NAME = as.factor(df2003$DEPARTMENT_NAME)
+df2003_nop$AGENCY_NAME = as.factor(df2003$AGENCY_NAME)
+
+df2004_nop$NAICS2 = as.factor(df2004$NAICS2)
+df2004_nop$ServicesCategory = as.factor(df2004$ServicesCategory)
+df2004_nop$location = as.numeric(df2004$location)
+df2004_nop$ownership.woman = as.numeric(df2004$ownership.woman)
+df2004_nop$ownership.veteran = as.numeric(df2004$ownership.veteran)
+df2004_nop$ownership.minority = as.numeric(df2004$ownership.minority)
+df2004_nop$ownership.foreign = as.numeric(df2004$ownership.foreign)
+df2004_nop$survival.status = as.numeric(df2004$survival.status)
+df2004_nop$DEPARTMENT_NAME = as.factor(df2004$DEPARTMENT_NAME)
+df2004_nop$AGENCY_NAME = as.factor(df2004$AGENCY_NAME)
+
+df2005b_nop$NAICS2 = as.factor(df2005$NAICS2)
+df2005_nop$ServicesCategory = as.factor(df2005$ServicesCategory)
+df2005_nop$location = as.numeric(df2005$location)
+df2005_nop$ownership.woman = as.numeric(df2005$ownership.woman)
+df2005_nop$ownership.veteran = as.numeric(df2005$ownership.veteran)
+df2005_nop$ownership.minority = as.numeric(df2005$ownership.minority)
+df2005_nop$ownership.foreign = as.numeric(df2005$ownership.foreign)
+df2005_nop$survival.status = as.numeric(df2005$survival.status)
+df2005_nop$DEPARTMENT_NAME = as.factor(df2005$DEPARTMENT_NAME)
+df2005_nop$AGENCY_NAME = as.factor(df2005$AGENCY_NAME)
+
+df2006_nop$NAICS2 = as.factor(df2006$NAICS2)
+df2006_nop$ServicesCategory = as.factor(df2006$ServicesCategory)
+df2006_nop$location = as.numeric(df2006$location)
+df2006_nop$ownership.woman = as.numeric(df2006$ownership.woman)
+df2006_nop$ownership.veteran = as.numeric(df2006$ownership.veteran)
+df2006_nop$ownership.minority = as.numeric(df2006$ownership.minority)
+df2006_nop$ownership.foreign = as.numeric(df2006$ownership.foreign)
+df2006_nop$survival.status = as.numeric(df2006$survival.status)
+df2006_nop$DEPARTMENT_NAME = as.factor(df2006$DEPARTMENT_NAME)
+df2006_nop$AGENCY_NAME = as.factor(df2006$AGENCY_NAME)
+
+###Parent ID filter
 
 df2001$NAICS2 = as.factor(df2001$NAICS2)
 df2001$ServicesCategory = as.factor(df2001$ServicesCategory)
@@ -97,12 +167,11 @@ df2006$survival.status = as.numeric(df2006$survival.status)
 df2006$DEPARTMENT_NAME = as.factor(df2006$DEPARTMENT_NAME)
 df2006$AGENCY_NAME = as.factor(df2006$AGENCY_NAME)
 
-
 class(dataset.2001$ServicesCategory)
 
-###Descriptive Stats
+###Descriptive Stats####
 
-###Survival Rates
+###Survival Rates no parent filter####
 
 ##3-year
 sr3yr2001 <- sum(df2001$years.in.SAM>=3, value=TRUE)/nrow(df2001)
@@ -225,7 +294,13 @@ survival.rates <- survival.rates %>%
   spread(key = "time_type", value = "survivalrate")
   
 survival.rates[, c(1, 5, 7, 6, 8, 10, 9, 2, 4, 3)]
-####mean and SD
+
+###Survival Rates with parent filter####
+
+
+
+
+####Mean and SD####
 
 all2001 <- df2001 %>% 
   select(firm.age, years.in.SAM:obligated.amt, DEPARTMENT_NAME, AGENCY_NAME) %>% 
