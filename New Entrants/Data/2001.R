@@ -4,8 +4,6 @@ install.packages("jsonlite")
 install.packages("plyr")
 install.packages("data.table")
 install.packages("tidyverse")
-install.packages("sqldf")
-library(sqldf)
 library(openxlsx)
 library(httr)
 library(jsonlite)
@@ -14,9 +12,14 @@ library(data.table)
 library(tidyverse)
 
 
-all_years <- read_csv("all years quote.csv", col_names = TRUE, quote = "\"")
+final <- read_csv("allSAMData FPDS.csv")
 
-final_joined = all_years[!duplicated(all_years),]
+final_joined = final[!duplicated(final),]
+
+final_joined <- final_joined %>% 
+  mutate(age_at_start = year(registrationDate) - year(businessStartDate)) %>% 
+  mutate(months_in_SAM = ((year(expirationDate) - year(registrationDate)) * 12) + month(expirationDate) - month(registrationDate)) %>% 
+  rename(country = `samAddress countryCode`)
 
 
 ##2001
@@ -51,7 +54,7 @@ NAICS.unique.column = NAICS.edit.unique %>%
   select(duns, NAICS2)
 
 
-#### selected only small businesses that registered in the year 2000
+#### selected only small businesses that registered in the year 2001
 year.edit = final_joined %>% 
   mutate(regyear = year(registrationDate)) %>%
   arrange(regyear) %>% 
@@ -61,7 +64,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2001
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -73,6 +76,7 @@ parent.edit = year.edit %>%
 
 parent.unique = parent.edit[!duplicated(parent.edit[,c('duns')]),] 
 
+##joined the above sections together by duns and selected only the columns needed
 
 NAICS = as.data.frame(NAICS.unique.column)
 year = as.data.frame(year.edit.unique)
@@ -80,6 +84,8 @@ parent = as.data.frame(parent.unique)
 
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
+
+###joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
 
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
@@ -89,6 +95,9 @@ joined.25 = joined.2 %>%
          isalaskannativeownedcorporationorfirm, other_minority_owned_business, 
          isforeignownedandlocated, expirationDate, contractingofficerbusinesssizedetermination)
 
+###cross reference agency and department codes with a list of names and used one of our 
+##datasets in SQL to identify the PSC codes -- used a similar method to determine agency and PSC
+##for each firm as was used to determine the NAICS code
 
 
 psc_names <- read_csv("PSC.csv")
@@ -116,8 +125,6 @@ agency <- name.defined %>%
 
 agency.unique = agency[!duplicated(agency[,c("duns")]),]
 
-#### identified within each DUNS# which NAICs code had the greaest total
-#### obligatedamount to determine one NAICS per DUNS
 
 PSC_code = name.defined %>% 
   select(duns, obligatedamount, productorservicecode, ServicesCategory) %>% 
@@ -130,7 +137,8 @@ PSC_code = name.defined %>%
 psc.code.unique = PSC_code[!duplicated(PSC_code[,c("duns")]),]
 
 
-###total contract obligations and contract actions
+###devised the fields total contract actions (all contracts that a certain firm had between 
+##the given timeframe) and total obligated amount (sum of obligated amount for each contract)
 
 unique.contract <- final_joined[!duplicated(final_joined[,c("unique_transaction_id")]),]
 
@@ -138,6 +146,8 @@ contobsac <- unique.contract %>%
   select(duns, obligatedamount, unique_transaction_id) %>% 
   group_by(duns) %>% 
   summarize(obligated.amt = sum(obligatedamount), contract.actions = n())
+
+#### joined these to the previous dataframe
 
 
 PSC = as.data.frame(psc.code.unique)
@@ -149,15 +159,10 @@ joined.3 = merge.data.frame(joined.25, PSC, by = "duns", all.x = TRUE)
 joined.4 = merge.data.frame(joined.3, oblandact, by = "duns", all.x = TRUE)
 joined.5 = merge.data.frame(joined.4, agency, by = "duns", all.x = TRUE)
 
-#### joined.5 is all 2001
-
-
-
-
 
 ####selecting and creating needed fields  
 
-#### variables I need: Firm Age, Industry, Location, Ownership, unemployment rate in 2000, interest rate in 2000, exchange rate in 2000
+#### variables I need: Firm Age, Location, Ownership, years in SAM, survival status, biz_size, 3 years, 5 years, 10 years 
 
 
 dataset.2001 = joined.5 %>% 
@@ -195,7 +200,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2002
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -214,6 +219,8 @@ parent = as.data.frame(parent.unique)
 
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
+
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
 
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
@@ -263,7 +270,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2003
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -282,6 +289,8 @@ parent = as.data.frame(parent.unique)
 
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
+
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
 
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
@@ -331,7 +340,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2004
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -350,6 +359,8 @@ parent = as.data.frame(parent.unique)
 
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
+
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
 
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
@@ -399,7 +410,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2005
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -418,6 +429,8 @@ parent = as.data.frame(parent.unique)
 
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
+
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
 
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
@@ -467,7 +480,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2006
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -486,6 +499,8 @@ parent = as.data.frame(parent.unique)
 
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
+
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
 
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
@@ -535,7 +550,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2007
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -554,6 +569,8 @@ parent = as.data.frame(parent.unique)
 
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
+
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
 
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
@@ -604,7 +621,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2008
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -623,6 +640,8 @@ parent = as.data.frame(parent.unique)
 
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
+
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
 
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
@@ -672,7 +691,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2009
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -691,6 +710,8 @@ parent = as.data.frame(parent.unique)
 
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
+
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
 
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
@@ -741,7 +762,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2010
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -760,6 +781,8 @@ parent = as.data.frame(parent.unique)
 
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
+
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
 
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
@@ -810,7 +833,7 @@ year.edit = final_joined %>%
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
 
-#### filtered out firms with parent duns of the parent duns did not register in 2000
+#### filtered out firms with parent duns of the parent duns did not register in 2011
 
 parent.edit = year.edit %>%
   mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
@@ -829,6 +852,8 @@ parent = as.data.frame(parent.unique)
 
 joined.1 = merge.data.frame(parent, NAICS, by = "duns")
 joined.2 = merge.data.frame(joined.1, year, by = "duns")
+
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
 
 joined.25 = joined.2 %>% 
   select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
@@ -867,7 +892,12 @@ dataset.2011 = joined.5 %>%
          obligated.amt, firm.age, three.year, five.year,ten.year, survival.status, DEPARTMENT_NAME, AGENCY_NAME) %>% 
   filter(NAICS2 != "NU")
 
-####
+#### bind each created dataset together
 
 all.dataset <- rbind(dataset.2001, dataset.2002, dataset.2003, dataset.2004, dataset.2005, dataset.2006, dataset.2007, dataset.2008, dataset.2009, dataset.2010, dataset.2011)
 
+##all.dataset.parentno <- rbind(dataset.2001, dataset.2002, dataset.2003, dataset.2004, dataset.2005, dataset.2006, dataset.2007, dataset.2008, dataset.2009, dataset.2010, dataset.2011)
+
+write.csv(all.dataset, "SAM2001-2011.csv")
+
+write.csv(all.dataset.parentno, "parentno2001-2011.csv")
