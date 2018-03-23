@@ -421,7 +421,10 @@ survival.rates[, c(1, 5, 7, 6, 8, 10, 9, 2, 4, 3)]
 
 
 
-####Mean and SD####
+####Focusing on 2001 Sample: descriptives for firm-level independent variables (firm age, firm ownership,####
+#firm location, contract obligations, PSC code) and t-test testing the differences between small and non-small
+#new entrants means for each independent var for all 2001 and then those that survived after 3 yrs, 5 yrs and 10
+#yrs. 
 
 all2001 <- df2001 %>% 
   select(firm.age, years.in.SAM:obligated.amt, DEPARTMENT_NAME, AGENCY_NAME) %>% 
