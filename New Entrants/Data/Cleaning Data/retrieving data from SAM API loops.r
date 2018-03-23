@@ -5,6 +5,16 @@ library(plyr)
 library(jsonlite)
 library(data.table)
 
+
+##Marielle working Directory
+setwd("K:/2018-01 NPS New Entrants/Data/Data")
+getwd()
+
+##Sam working Directory
+setwd("K:.....")
+getwd()
+
+
 ######## searchDataAPI pull
 
 ##### the Search pull provides the DUNs numbers within a range of dates (as well as 16 other fields)
@@ -128,8 +138,13 @@ for(i in 1:length(redo_nums)){
 errornums = unlist(error2)
 finalerrors = duns4_nums[errornums]  ###Final list of errors
 
+#### The title changes with the above year setting
+
+
 get.unique = get.df[!duplicated(get.df[,c('duns','dunsPlus4')]),]
-write.xlsx(get.unique, "Get_2012_13.xlsx", asTable = TRUE, col.names=TRUE)
+write.csv(get.unique, "Get_2012_13.csv", asTable = TRUE, col.names=TRUE)
+
+
 
 #####Loading the xlsx files sometimes caused problems in excel - if so, use write.csv
 #####For importing into SQL Server, us write.table to produce txt

@@ -2,12 +2,33 @@ install.packages("matrixStats")
 library(matrixStats)
 library(describer)
 
-df2001 <- dataset.2001
-df2002 <- dataset.2002
-df2003 <- dataset.2003
-df2004 <- dataset.2004
-df2005 <- dataset.2005
-df2006 <- dataset.2006
+##Marielle working Directory
+setwd("K:/2018-01 NPS New Entrants/Data/Data")
+getwd()
+
+##Sam working Directory
+setwd("K:.....")
+getwd()
+
+###if no parent filter
+
+df2001 <- read_csv("dataset2001nop.csv")
+df2002 <- read_csv("dataset2002nop.csv")
+df2003 <- read_csv("dataset2003nop.csv")
+df2004 <- read_csv("dataset2004nop.csv")
+df2005 <- read_csv("dataset2005nop.csv")
+df2006 <- read_csv("dataset2006nop.csv")
+
+
+### if parent filter
+
+df2001 <- read_csv("dataset2001.csv")
+df2002 <- read_csv("dataset2002.csv")
+df2003 <- read_csv("dataset2003.csv")
+df2004 <- read_csv("dataset2004.csv")
+df2005 <- read_csv("dataset2005.csv")
+df2006 <- read_csv("dataset2006.csv")
+
 
 df2001$NAICS2 = as.factor(df2001$NAICS2)
 df2001$ServicesCategory = as.factor(df2001$ServicesCategory)
