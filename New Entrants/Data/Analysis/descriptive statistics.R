@@ -420,18 +420,258 @@ survival.rates <- survival.rates %>%
 survival.rates[, c(1, 5, 7, 6, 8, 10, 9, 2, 4, 3)]
 
 
-
-####Focusing on 2001 Sample: descriptives for firm-level independent variables (firm age, firm ownership,####
+####Descriptives: Firm-level characteristics ####
+#Focusing on 2001 Sample: descriptives for firm-level independent variables (firm age, firm ownership,
 #firm location, contract obligations, PSC code) and t-test testing the differences between small and non-small
 #new entrants means for each independent var for all 2001 and then those that survived after 3 yrs, 5 yrs and 10
 #yrs. 
 
-all2001 <- df2001 %>% 
+####firm-level descriptives no parent id filter####
+all2001_nop <- df2001_nop %>% 
   select(firm.age, years.in.SAM:obligated.amt, DEPARTMENT_NAME, AGENCY_NAME) %>% 
   mutate(NAICS.f = as.numeric(NAICS2), PSC.f = as.numeric(ServicesCategory), dept.f = as.numeric(DEPARTMENT_NAME), agency.f = as.numeric(AGENCY_NAME)) %>% 
   select(years.in.SAM, location:obligated.amt, NAICS.f:agency.f) %>% 
   summarise_all(funs(mean = mean, 
                       sd = sd), na.rm = TRUE)
+all2001.num_nop <- df2001_nop %>% 
+  select(firm.age, biz_size, years.in.SAM:obligated.amt, DEPARTMENT_NAME, AGENCY_NAME) %>% 
+  mutate(NAICS.f = as.numeric(NAICS2), PSC.f = as.numeric(ServicesCategory), dept.f = as.numeric(DEPARTMENT_NAME), agency.f = as.numeric(AGENCY_NAME)) %>% 
+  select(firm.age, biz_size, years.in.SAM, location:obligated.amt, NAICS.f:agency.f) 
+
+
+all2001tidy_nop <- all2001_nop %>% 
+  gather(stat, val) %>%
+  separate(stat, into = c("var", "stat"), sep = "_") %>%
+  spread(stat, val) %>%
+  select(var, mean, sd)
+
+#small
+all2001sm_nop <- df2001_nop%>% 
+  filter(biz_size == 0) %>% 
+  mutate(NAICS.f = as.numeric(NAICS2), PSC.f = as.numeric(ServicesCategory), dept.f = as.numeric(DEPARTMENT_NAME), agency.f = as.numeric(AGENCY_NAME)) %>% 
+  select(firm.age, years.in.SAM, location:obligated.amt, NAICS.f:agency.f) %>% 
+  summarise_all(funs(mean = mean, 
+                     sd = sd), na.rm = TRUE)
+
+all2001smtidy_nop <- all2001sm_nop %>% 
+  gather(stat, val) %>%
+  separate(stat, into = c("var", "stat"), sep = "_") %>%
+  spread(stat, val) %>%
+  select(var, mean, sd)
+
+
+
+#not small
+
+all2001non_nop <- df2001_nop %>% 
+  filter(biz_size == 1) %>% 
+  mutate(NAICS.f = as.numeric(NAICS2), PSC.f = as.numeric(ServicesCategory), dept.f = as.numeric(DEPARTMENT_NAME), agency.f = as.numeric(AGENCY_NAME)) %>% 
+  select(firm.age, years.in.SAM, location:obligated.amt, NAICS.f:agency.f) %>% 
+  summarise_all(funs(mean = mean, 
+                     sd = sd), na.rm = TRUE)
+
+all2001nontidy_nop <- all2001non_nop %>% 
+  gather(stat, val) %>%
+  separate(stat, into = c("var", "stat"), sep = "_") %>%
+  spread(stat, val) %>%
+  select(var, mean, sd)
+
+
+# 3yr 
+
+x2001.3_nop <- df2001_nop %>% 
+  filter(three.year == 1) %>% 
+  mutate(NAICS.f = as.numeric(NAICS2), PSC.f = as.numeric(ServicesCategory), dept.f = as.numeric(DEPARTMENT_NAME), agency.f = as.numeric(AGENCY_NAME)) %>% 
+  select(firm.age, years.in.SAM, location:obligated.amt, NAICS.f:agency.f) %>% 
+  summarise_all(funs(mean = mean, 
+                     sd = sd), na.rm = TRUE)
+
+x2001.3tidy_nop <- x2001.3_nop %>% 
+  gather(stat, val) %>%
+  separate(stat, into = c("var", "stat"), sep = "_") %>%
+  spread(stat, val) %>%
+  select(var, mean, sd)
+
+x2001.3sm_nop <- df2001_nop %>% 
+  filter(three.year == 1, biz_size == 0) %>% 
+  mutate(NAICS.f = as.numeric(NAICS2), PSC.f = as.numeric(ServicesCategory), dept.f = as.numeric(DEPARTMENT_NAME), agency.f = as.numeric(AGENCY_NAME)) %>% 
+  select(firm.age, years.in.SAM, location:obligated.amt, NAICS.f:agency.f) %>% 
+  summarise_all(funs(mean = mean, 
+                     sd = sd), na.rm = TRUE)
+
+x2001.3smtidy_nop <- x2001.3sm_nop %>% 
+  gather(stat, val) %>%
+  separate(stat, into = c("var", "stat"), sep = "_") %>%
+  spread(stat, val) %>%
+  select(var, mean, sd)
+
+
+x2001.3non_nop <- df2001_nop %>% 
+  filter(three.year == 1, biz_size == 0) %>% 
+  mutate(NAICS.f = as.numeric(NAICS2), PSC.f = as.numeric(ServicesCategory), dept.f = as.numeric(DEPARTMENT_NAME), agency.f = as.numeric(AGENCY_NAME)) %>% 
+  select(firm.age, years.in.SAM, location:obligated.amt, NAICS.f:agency.f) %>% 
+  summarise_all(funs(mean = mean, 
+                     sd = sd), na.rm = TRUE)
+
+x2001.3nontidy_nop <- x2001.3non_nop %>% 
+  gather(stat, val) %>%
+  separate(stat, into = c("var", "stat"), sep = "_") %>%
+  spread(stat, val) %>%
+  select(var, mean, sd)
+
+##5 yr
+
+
+x2001.5_nop <- df2001_nop %>% 
+  mutate(NAICS.f = as.numeric(NAICS2), PSC.f = as.numeric(ServicesCategory), dept.f = as.numeric(DEPARTMENT_NAME), agency.f = as.numeric(AGENCY_NAME)) %>% 
+  select(firm.age, years.in.SAM, location:obligated.amt, NAICS.f:agency.f) %>% 
+  summarise_all(funs(mean = mean, 
+                     sd = sd), na.rm = TRUE)
+
+x2001.5tidy_nop <- x2001.5_nop %>% 
+  gather(stat, val) %>%
+  separate(stat, into = c("var", "stat"), sep = "_") %>%
+  spread(stat, val) %>%
+  select(var, mean, sd)
+
+x2001.5sm_nop <- df2001_nop %>% 
+  filter(five.year == 1, biz_size == 0) %>% 
+  mutate(NAICS.f = as.numeric(NAICS2), PSC.f = as.numeric(ServicesCategory), dept.f = as.numeric(DEPARTMENT_NAME), agency.f = as.numeric(AGENCY_NAME)) %>% 
+  select(firm.age, years.in.SAM, location:obligated.amt, NAICS.f:agency.f) %>% 
+  summarise_all(funs(mean = mean, 
+                     sd = sd), na.rm = TRUE)
+
+x2001.5smtidy_nop <- x2001.5sm_nop %>% 
+  gather(stat, val) %>%
+  separate(stat, into = c("var", "stat"), sep = "_") %>%
+  spread(stat, val) %>%
+  select(var, mean, sd)
+
+
+x2001.5non_nop <- df2001_nop %>% 
+  filter(five.year == 1, biz_size == 0) %>% 
+  mutate(NAICS.f = as.numeric(NAICS2), PSC.f = as.numeric(ServicesCategory), dept.f = as.numeric(DEPARTMENT_NAME), agency.f = as.numeric(AGENCY_NAME)) %>% 
+  select(firm.age, years.in.SAM, location:obligated.amt, NAICS.f:agency.f) %>% 
+  summarise_all(funs(mean = mean, 
+                     sd = sd), na.rm = TRUE)
+
+x2001.5nontidy_nop <- x2001.3non_nop %>% 
+  gather(stat, val) %>%
+  separate(stat, into = c("var", "stat"), sep = "_") %>%
+  spread(stat, val) %>%
+  select(var, mean, sd)
+
+##10 yr
+
+
+x2001.10_nop <- df2001_nop %>% 
+  mutate(NAICS.f = as.numeric(NAICS2), PSC.f = as.numeric(ServicesCategory), dept.f = as.numeric(DEPARTMENT_NAME), agency.f = as.numeric(AGENCY_NAME)) %>% 
+  select(firm.age, years.in.SAM, location:obligated.amt, NAICS.f:agency.f) %>% 
+  summarise_all(funs(mean = mean, 
+                     sd = sd), na.rm = TRUE)
+
+x2001.10tidy_nop <- x2001.10_nop %>% 
+  gather(stat, val) %>%
+  separate(stat, into = c("var", "stat"), sep = "_") %>%
+  spread(stat, val) %>%
+  select(var, mean, sd)
+
+
+x2001.10sm_nop <- df2001_nop %>% 
+  filter(ten.year == 1, biz_size == 0) %>% 
+  mutate(NAICS.f = as.numeric(NAICS2), PSC.f = as.numeric(ServicesCategory), dept.f = as.numeric(DEPARTMENT_NAME), agency.f = as.numeric(AGENCY_NAME)) %>% 
+  select(firm.age, years.in.SAM, location:obligated.amt, NAICS.f:agency.f) %>% 
+  summarise_all(funs(mean = mean, 
+                     sd = sd), na.rm = TRUE)
+
+x2001.10smtidy_nop <- x2001.10sm_nop %>% 
+  gather(stat, val) %>%
+  separate(stat, into = c("var", "stat"), sep = "_") %>%
+  spread(stat, val) %>%
+  select(var, mean, sd)
+
+x2001.10non_nop <- df2001_nop %>% 
+  filter(ten.year == 1, biz_size == 0) %>% 
+  mutate(NAICS.f = as.numeric(NAICS2), PSC.f = as.numeric(ServicesCategory), dept.f = as.numeric(DEPARTMENT_NAME), agency.f = as.numeric(AGENCY_NAME)) %>% 
+  select(firm.age, years.in.SAM, location:obligated.amt, NAICS.f:agency.f) %>% 
+  summarise_all(funs(mean = mean, 
+                     sd = sd), na.rm = TRUE)
+
+x2001.10nontidy_nop <- x2001.10non_nop %>% 
+  gather(stat, val) %>%
+  separate(stat, into = c("var", "stat"), sep = "_") %>%
+  spread(stat, val) %>%
+  select(var, mean, sd)
+
+
+
+stats.2001_nop <- bind_rows(list(all2001tidy_nop, all2001smtidy_nop, all2001nontidy_nop, 
+                              x2001.3tidy_nop, x2001.3smtidy_nop, x2001.3nontidy_nop, 
+                               x2001.5tidy_nop, x2001.5smtidy_nop, x2001.5nontidy_nop,
+                               x2001.10tidy_nop, x2001.10smtidy_nop, x2001.10nontidy_nop), .id = "ID")
+
+stats.2001_nop$ID[stats.2001_nop$ID == 1] = "all 2001"
+stats.2001_nop$ID[stats.2001_nop$ID == 2] = "all 2001 small"
+stats.2001_nop$ID[stats.2001_nop$ID == 3] = "all 2001 non-small"
+stats.2001_nop$ID[stats.2001_nop$ID == 4] = "3 year"
+stats.2001_nop$ID[stats.2001_nop$ID == 5] = "3 year small"
+stats.2001_nop$ID[stats.2001_nop$ID == 6] = "3 year non-small"
+stats.2001_nop$ID[stats.2001_nop$ID == 7] = "5 year"  
+stats.2001_nop$ID[stats.2001_nop$ID == 8] = "5 year small"
+stats.2001_nop$ID[stats.2001_nop$ID == 9] = "5 year non-small"
+stats.2001_nop$ID[stats.2001_nop$ID == 10] = "10 year"
+stats.2001_nop$ID[stats.2001_nop$ID == 11] = "10 year small"
+stats.2001_nop$ID[stats.2001_nop$ID == 12] = "10 year non-small"
+
+
+##t test
+
+all_nop <- lapply(all2001.num_nop[ ,c("firm.age", "years.in.SAM", "ownership.woman", "ownership.veteran", 
+                        "ownership.minority", "ownership.foreign", "location", 
+                        "contract.actions", "obligated.amt", "NAICS.f", "PSC.f", "dept.f", "agency.f")], 
+              function(x) t.test(x ~ all2001.num_nop$biz_size))
+
+t.test_nop <- as.data.frame(cbind("firm.age" = all_nop$firm.age, "years.in.SAM" = all_nop$years.in.SAM, 
+                  "ownership.woman" = all_nop$ownership.woman, 'ownership.veteran' = all_nop$ownership.veteran, 
+                  "ownership.minority" = all_nop$ownership.minority, 
+                  "ownership.foreign" = all_nop$ownership.foreign, "location" = all_nop$location, 
+                  "contract.actions" = all_nop$contract.actions, 
+                  "obligated.amt" = all_nop$obligated.amt, "NAICS" = all_nop$NAICS.f, "PSC" = all_nop$PSC.f, "department" = all_nop$dept.f, "agency" = all_nop$agency.f))
+
+
+t.test_nop$firm.age = as.character(t.test$firm.age)
+t.test_nop$years.in.SAM = as.character(t.test$years.in.SAM)
+t.test_nop$ownership.woman = as.character(t.test$ownership.woman)
+t.test_nop$ownership.veteran = as.character(t.test$ownership.veteran)
+t.test_nop$ownership.foreign = as.character(t.test$ownership.foreign)
+t.test_nop$ownership.minority = as.character(t.test$ownership.minority)
+t.test_nop$location = as.character(t.test$location)
+t.test_nop$contract.actions = as.character(t.test$contract.actions)
+t.test_nop$obligated.amt = as.character(t.test$obligated.amt)
+t.test_nop$NAICS = as.character(t.test$NAICS)
+t.test_nop$PSC = as.character(t.test$PSC)
+t.test_nop$department = as.character(t.test$department)
+t.test_nop$agency = as.character(t.test$agency)
+
+write.csv(survival.rates_nop, "survival rates_nop.csv")
+write.csv(t.test_nop, "t-test numeric_nop.csv")
+
+#### Categorical variable levels
+
+naics.lev_nop <- as.data.frame(levels(df2001_nop$NAICS2))
+psc.lev_nop <- as.data.frame(levels(df2001_nop$ServicesCategory))
+dept.lev_nop <- as.data.frame(levels(df2001_nop$DEPARTMENT_NAME))
+agency.lev_nop <- as.data.frame(levels(df2001_nop$DEPARTMENT_NAME))
+
+
+
+####firm-level descriptives with parent id filter####
+all2001 <- df2001 %>% 
+  select(firm.age, years.in.SAM:obligated.amt, DEPARTMENT_NAME, AGENCY_NAME) %>% 
+  mutate(NAICS.f = as.numeric(NAICS2), PSC.f = as.numeric(ServicesCategory), dept.f = as.numeric(DEPARTMENT_NAME), agency.f = as.numeric(AGENCY_NAME)) %>% 
+  select(years.in.SAM, location:obligated.amt, NAICS.f:agency.f) %>% 
+  summarise_all(funs(mean = mean, 
+                     sd = sd), na.rm = TRUE)
 all2001.num <- df2001 %>% 
   select(firm.age, biz_size, years.in.SAM:obligated.amt, DEPARTMENT_NAME, AGENCY_NAME) %>% 
   mutate(NAICS.f = as.numeric(NAICS2), PSC.f = as.numeric(ServicesCategory), dept.f = as.numeric(DEPARTMENT_NAME), agency.f = as.numeric(AGENCY_NAME)) %>% 
@@ -605,9 +845,9 @@ x2001.10nontidy <- x2001.10non %>%
 
 
 stats.2001 <- bind_rows(list(all2001tidy, all2001smtidy, all2001nontidy, 
-                              x2001.3tidy, x2001.3smtidy, x2001.3nontidy, 
-                               x2001.5tidy, x2001.5smtidy, x2001.5nontidy,
-                               x2001.10tidy, x2001.10smtidy, x2001.10nontidy), .id = "ID")
+                             x2001.3tidy, x2001.3smtidy, x2001.3nontidy, 
+                             x2001.5tidy, x2001.5smtidy, x2001.5nontidy,
+                             x2001.10tidy, x2001.10smtidy, x2001.10nontidy), .id = "ID")
 
 stats.2001$ID[stats.2001$ID == 1] = "all 2001"
 stats.2001$ID[stats.2001$ID == 2] = "all 2001 small"
@@ -626,16 +866,16 @@ stats.2001$ID[stats.2001$ID == 12] = "10 year non-small"
 ##t test
 
 all <- lapply(all2001.num[ ,c("firm.age", "years.in.SAM", "ownership.woman", "ownership.veteran", 
-                        "ownership.minority", "ownership.foreign", "location", 
-                        "contract.actions", "obligated.amt", "NAICS.f", "PSC.f", "dept.f", "agency.f")], 
+                              "ownership.minority", "ownership.foreign", "location", 
+                              "contract.actions", "obligated.amt", "NAICS.f", "PSC.f", "dept.f", "agency.f")], 
               function(x) t.test(x ~ all2001.num$biz_size))
 
 t.test <- as.data.frame(cbind("firm.age" = all$firm.age, "years.in.SAM" = all$years.in.SAM, 
-                  "ownership.woman" = all$ownership.woman, 'ownership.veteran' = all$ownership.veteran, 
-                  "ownership.minority" = all$ownership.minority, 
-                  "ownership.foreign" = all$ownership.foreign, "location" = all$location, 
-                  "contract.actions" = all$contract.actions, 
-                  "obligated.amt" = all$obligated.amt, "NAICS" = all$NAICS.f, "PSC" = all$PSC.f, "department" = all$dept.f, "agency" = all$agency.f))
+                              "ownership.woman" = all$ownership.woman, 'ownership.veteran' = all$ownership.veteran, 
+                              "ownership.minority" = all$ownership.minority, 
+                              "ownership.foreign" = all$ownership.foreign, "location" = all$location, 
+                              "contract.actions" = all$contract.actions, 
+                              "obligated.amt" = all$obligated.amt, "NAICS" = all$NAICS.f, "PSC" = all$PSC.f, "department" = all$dept.f, "agency" = all$agency.f))
 
 
 t.test$firm.age = as.character(t.test$firm.age)
@@ -661,5 +901,4 @@ naics.lev <- as.data.frame(levels(df2001$NAICS2))
 psc.lev <- as.data.frame(levels(df2001$ServicesCategory))
 dept.lev <- as.data.frame(levels(df2001$DEPARTMENT_NAME))
 agency.lev <- as.data.frame(levels(df2001$DEPARTMENT_NAME))
-
 
