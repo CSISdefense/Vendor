@@ -32,72 +32,72 @@ df2006 <- read_csv("dataset2006.csv")
 
 ###Cleaning variables to categorical and numeric####
 ###No Parent ID Filter
-df2001_nop$NAICS2 = as.factor(df2001$NAICS2)
-df2001_nop$ServicesCategory = as.factor(df2001$ServicesCategory)
-df2001_nop$location = as.numeric(df2001$location)
-df2001_nop$ownership.woman = as.numeric(df2001$ownership.woman)
-df2001_nop$ownership.veteran = as.numeric(df2001$ownership.veteran)
-df2001_nop$ownership.minority = as.numeric(df2001$ownership.minority)
-df2001_nop$ownership.foreign = as.numeric(df2001$ownership.foreign)
-df2001_nop$survival.status = as.numeric(df2001$survival.status)
-df2001_nop$DEPARTMENT_NAME = as.factor(df2001$DEPARTMENT_NAME)
-df2001_nop$AGENCY_NAME = as.factor(df2001$AGENCY_NAME)
+df2001_nop$NAICS2 = as.factor(df2001_nop$NAICS2)
+df2001_nop$ServicesCategory = as.factor(df2001_nop$ServicesCategory)
+df2001_nop$location = as.numeric(df2001_nop$location)
+df2001_nop$ownership.woman = as.numeric(df2001_nop$ownership.woman)
+df2001_nop$ownership.veteran = as.numeric(df2001_nop$ownership.veteran)
+df2001_nop$ownership.minority = as.numeric(df2001_nop$ownership.minority)
+df2001_nop$ownership.foreign = as.numeric(df2001_nop$ownership.foreign)
+df2001_nop$survival.status = as.numeric(df2001_nop$survival.status)
+df2001_nop$DEPARTMENT_NAME = as.factor(df2001_nop$DEPARTMENT_NAME)
+df2001_nop$AGENCY_NAME = as.factor(df2001_nop$AGENCY_NAME)
 
 
-df2002_nop$NAICS2 = as.factor(df2002$NAICS2)
-df2002_nop$ServicesCategory = as.factor(df2002$ServicesCategory)
-df2002_nop$location = as.numeric(df2002$location)
-df2002_nop$ownership.woman = as.numeric(df2002$ownership.woman)
-df2002_nop$ownership.veteran = as.numeric(df2002$ownership.veteran)
-df2002_nop$ownership.minority = as.numeric(df2002$ownership.minority)
-df2002_nop$ownership.foreign = as.numeric(df2002$ownership.foreign)
-df2002_nop$survival.status = as.numeric(df2002$survival.status)
-df2002_nop$DEPARTMENT_NAME = as.factor(df2002$DEPARTMENT_NAME)
-df2002_nop$AGENCY_NAME = as.factor(df2002$AGENCY_NAME)
+df2002_nop$NAICS2 = as.factor(df2002_nop$NAICS2)
+df2002_nop$ServicesCategory = as.factor(df2002_nop$ServicesCategory)
+df2002_nop$location = as.numeric(df2002_nop$location)
+df2002_nop$ownership.woman = as.numeric(df2002_nop$ownership.woman)
+df2002_nop$ownership.veteran = as.numeric(df2002_nop$ownership.veteran)
+df2002_nop$ownership.minority = as.numeric(df2002_nop$ownership.minority)
+df2002_nop$ownership.foreign = as.numeric(df2002_nop$ownership.foreign)
+df2002_nop$survival.status = as.numeric(df2002_nop$survival.status)
+df2002_nop$DEPARTMENT_NAME = as.factor(df2002_nop$DEPARTMENT_NAME)
+df2002_nop$AGENCY_NAME = as.factor(df2002_nop$AGENCY_NAME)
 
-df2003_nop$NAICS2 = as.factor(df2003$NAICS2)
-df2003_nop$ServicesCategory = as.factor(df2003$ServicesCategory)
-df2003_nop$location = as.numeric(df2003$location)
-df2003_nop$ownership.woman = as.numeric(df2003$ownership.woman)
-df2003_nop$ownership.veteran = as.numeric(df2003$ownership.veteran)
-df2003_nop$ownership.minority = as.numeric(df2003$ownership.minority)
-df2003_nop$ownership.foreign = as.numeric(df2003$ownership.foreign)
-df2003_nop$survival.status = as.numeric(df2003$survival.status)
-df2003_nop$DEPARTMENT_NAME = as.factor(df2003$DEPARTMENT_NAME)
-df2003_nop$AGENCY_NAME = as.factor(df2003$AGENCY_NAME)
+df2003_nop$NAICS2 = as.factor(df2003_nop$NAICS2)
+df2003_nop$ServicesCategory = as.factor(df2003_nop$ServicesCategory)
+df2003_nop$location = as.numeric(df2003_nop$location)
+df2003_nop$ownership.woman = as.numeric(df2003_nop$ownership.woman)
+df2003_nop$ownership.veteran = as.numeric(df2003_nop$ownership.veteran)
+df2003_nop$ownership.minority = as.numeric(df2003_nop$ownership.minority)
+df2003_nop$ownership.foreign = as.numeric(df2003_nop$ownership.foreign)
+df2003_nop$survival.status = as.numeric(df2003_nop$survival.status)
+df2003_nop$DEPARTMENT_NAME = as.factor(df2003_nop$DEPARTMENT_NAME)
+df2003_nop$AGENCY_NAME = as.factor(df2003_nop$AGENCY_NAME)
 
-df2004_nop$NAICS2 = as.factor(df2004$NAICS2)
-df2004_nop$ServicesCategory = as.factor(df2004$ServicesCategory)
-df2004_nop$location = as.numeric(df2004$location)
-df2004_nop$ownership.woman = as.numeric(df2004$ownership.woman)
-df2004_nop$ownership.veteran = as.numeric(df2004$ownership.veteran)
-df2004_nop$ownership.minority = as.numeric(df2004$ownership.minority)
-df2004_nop$ownership.foreign = as.numeric(df2004$ownership.foreign)
-df2004_nop$survival.status = as.numeric(df2004$survival.status)
-df2004_nop$DEPARTMENT_NAME = as.factor(df2004$DEPARTMENT_NAME)
-df2004_nop$AGENCY_NAME = as.factor(df2004$AGENCY_NAME)
+df2004_nop$NAICS2 = as.factor(df2004_nop$NAICS2)
+df2004_nop$ServicesCategory = as.factor(df2004_nop$ServicesCategory)
+df2004_nop$location = as.numeric(df2004_nop$location)
+df2004_nop$ownership.woman = as.numeric(df2004_nop$ownership.woman)
+df2004_nop$ownership.veteran = as.numeric(df2004_nop$ownership.veteran)
+df2004_nop$ownership.minority = as.numeric(df2004_nop$ownership.minority)
+df2004_nop$ownership.foreign = as.numeric(df2004_nop$ownership.foreign)
+df2004_nop$survival.status = as.numeric(df2004_nop$survival.status)
+df2004_nop$DEPARTMENT_NAME = as.factor(df2004_nop$DEPARTMENT_NAME)
+df2004_nop$AGENCY_NAME = as.factor(df2004_nop$AGENCY_NAME)
 
-df2005b_nop$NAICS2 = as.factor(df2005$NAICS2)
-df2005_nop$ServicesCategory = as.factor(df2005$ServicesCategory)
-df2005_nop$location = as.numeric(df2005$location)
-df2005_nop$ownership.woman = as.numeric(df2005$ownership.woman)
-df2005_nop$ownership.veteran = as.numeric(df2005$ownership.veteran)
-df2005_nop$ownership.minority = as.numeric(df2005$ownership.minority)
-df2005_nop$ownership.foreign = as.numeric(df2005$ownership.foreign)
-df2005_nop$survival.status = as.numeric(df2005$survival.status)
-df2005_nop$DEPARTMENT_NAME = as.factor(df2005$DEPARTMENT_NAME)
-df2005_nop$AGENCY_NAME = as.factor(df2005$AGENCY_NAME)
+df2005b_nop$NAICS2 = as.factor(df2005_nop$NAICS2)
+df2005_nop$ServicesCategory = as.factor(df2005_nop$ServicesCategory)
+df2005_nop$location = as.numeric(df2005_nop$location)
+df2005_nop$ownership.woman = as.numeric(df2005_nop$ownership.woman)
+df2005_nop$ownership.veteran = as.numeric(df2005_nop$ownership.veteran)
+df2005_nop$ownership.minority = as.numeric(df2005_nop$ownership.minority)
+df2005_nop$ownership.foreign = as.numeric(df2005_nop$ownership.foreign)
+df2005_nop$survival.status = as.numeric(df2005_nop$survival.status)
+df2005_nop$DEPARTMENT_NAME = as.factor(df2005_nop$DEPARTMENT_NAME)
+df2005_nop$AGENCY_NAME = as.factor(df2005_nop$AGENCY_NAME)
 
-df2006_nop$NAICS2 = as.factor(df2006$NAICS2)
-df2006_nop$ServicesCategory = as.factor(df2006$ServicesCategory)
-df2006_nop$location = as.numeric(df2006$location)
-df2006_nop$ownership.woman = as.numeric(df2006$ownership.woman)
-df2006_nop$ownership.veteran = as.numeric(df2006$ownership.veteran)
-df2006_nop$ownership.minority = as.numeric(df2006$ownership.minority)
-df2006_nop$ownership.foreign = as.numeric(df2006$ownership.foreign)
-df2006_nop$survival.status = as.numeric(df2006$survival.status)
-df2006_nop$DEPARTMENT_NAME = as.factor(df2006$DEPARTMENT_NAME)
-df2006_nop$AGENCY_NAME = as.factor(df2006$AGENCY_NAME)
+df2006_nop$NAICS2 = as.factor(df2006_nop$NAICS2)
+df2006_nop$ServicesCategory = as.factor(df2006_nop$ServicesCategory)
+df2006_nop$location = as.numeric(df2006_nop$location)
+df2006_nop$ownership.woman = as.numeric(df2006_nop$ownership.woman)
+df2006_nop$ownership.veteran = as.numeric(df2006_nop$ownership.veteran)
+df2006_nop$ownership.minority = as.numeric(df2006_nop$ownership.minority)
+df2006_nop$ownership.foreign = as.numeric(df2006_nop$ownership.foreign)
+df2006_nop$survival.status = as.numeric(df2006_nop$survival.status)
+df2006_nop$DEPARTMENT_NAME = as.factor(df2006_nop$DEPARTMENT_NAME)
+df2006_nop$AGENCY_NAME = as.factor(df2006_nop$AGENCY_NAME)
 
 ###Parent ID filter
 
@@ -172,6 +172,130 @@ class(dataset.2001$ServicesCategory)
 ###Descriptive Stats####
 
 ###Survival Rates no parent filter####
+
+##3-year
+sr3yr2001_nop <- sum(df2001_nop$years.in.SAM>=3, value=TRUE)/nrow(df2001_nop)
+sr3yr2001sm_nop <- sum((df2001_nop$years.in.SAM>=3 & df2001_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2001_nop)
+sr3yr2001non_nop <- sum((df2001_nop$years.in.SAM>=3 & df2001_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2001_nop)
+
+sr3yr2002_nop <- sum(df2002_nop$years.in.SAM>=3, value=TRUE)/nrow(df2002_nop) 
+sr3yr2002sm_nop <- sum((df2002_nop$years.in.SAM>=3 & df2002_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2002_nop)
+sr3yr2002non_nop <- sum((df2002_nop$years.in.SAM>=3 & df2002_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2002_nop)
+
+sr3yr2003_nop <- sum(df2003_nop$years.in.SAM>=3, value=TRUE)/nrow(df2003_nop)
+sr3yr2003sm_nop <- sum((df2003_nop$years.in.SAM>=3 & df2003_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2003_nop)
+sr3yr2003non_nop <- sum((df2003_nop$years.in.SAM>=3 & df2003_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2003_nop)
+
+sr3yr2004_nop <- sum(df2004_nop$years.in.SAM>=3, value=TRUE)/nrow(df2004_nop) 
+sr3yr2004sm_nop <- sum((df2004_nop$years.in.SAM>=3 & df2004_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2004_nop)
+sr3yr2004non_nop <- sum((df2004_nop$years.in.SAM>=3 & df2004_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2004_nop)
+
+sr3yr2005_nop <- sum(df2005_nop$years.in.SAM>=3, value=TRUE)/nrow(df2005_nop) 
+sr3yr2005sm_nop <- sum((df2005_nop$years.in.SAM>=3 & df2005_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2005_nop)
+sr3yr2005non_nop <- sum((df2005_nop$years.in.SAM>=3 & df2005_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2005_nop)
+
+sr3yr2006_nop <- sum(df2006_nop$years.in.SAM>=3, value=TRUE)/nrow(df2006_nop) 
+sr3yr2006sm_nop <- sum((df2006_nop$years.in.SAM>=3 & df2006_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2006_nop)
+sr3yr2006non_nop <- sum((df2006_nop$years.in.SAM>=3 & df2006_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2006_nop)
+
+##5-year
+sr5yr2001_nop <- sum(df2001_nop$years.in.SAM>=5, value=TRUE)/nrow(df2001_nop)
+sr5yr2001sm_nop <- sum((df2001_nop$years.in.SAM>=5 & df2001_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2001_nop)
+sr5yr2001non_nop <- sum((df2001_nop$years.in.SAM>=5 & df2001_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2001_nop)
+
+sr5yr2002_nop <- sum(df2002_nop$years.in.SAM>=5, value=TRUE)/nrow(df2002_nop) 
+sr5yr2002sm_nop <- sum((df2002_nop$years.in.SAM>=5 & df2002_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2002_nop)
+sr5yr2002non_nop <- sum((df2002_nop$years.in.SAM>=5 & df2002_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2002_nop)
+
+sr5yr2003_nop <- sum(df2003_nop$years.in.SAM>=5, value=TRUE)/nrow(df2003_nop)
+sr5yr2003sm_nop <- sum((df2003_nop$years.in.SAM>=5 & df2003_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2003_nop)
+sr5yr2003non_nop <- sum((df2003_nop$years.in.SAM>=5 & df2003_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2003_nop)
+
+sr5yr2004_nop <- sum(df2004_nop$years.in.SAM>=5, value=TRUE)/nrow(df2004_nop) 
+sr5yr2004sm_nop <- sum((df2004_nop$years.in.SAM>=5 & df2004_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2004_nop)
+sr5yr2004non_nop <- sum((df2004_nop$years.in.SAM>=5 & df2004_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2004_nop)
+
+sr5yr2005_nop <- sum(df2005_nop$years.in.SAM>=5, value=TRUE)/nrow(df2005_nop) 
+sr5yr2005sm_nop <- sum((df2005_nop$years.in.SAM>=5 & df2005_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2005_nop)
+sr5yr2005non_nop <- sum((df2005_nop$years.in.SAM>=5 & df2005_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2005_nop)
+
+sr5yr2006_nop <- sum(df2006_nop$years.in.SAM>=5, value=TRUE)/nrow(df2006_nop) 
+sr5yr2006sm_nop <- sum((df2006_nop$years.in.SAM>=5 & df2006_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2006_nop)
+sr5yr2006non_nop <- sum((df2006_nop$years.in.SAM>=5 & df2006_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2006_nop)
+
+
+##10-year
+sr10yr2001_nop <- (sum(df2001_nop$years.in.SAM>=10, value=TRUE))/893 
+sr10yr2001sm_nop <- sum((df2001_nop$years.in.SAM>=10 & df2001_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/893
+sr10yr2001non_nop <- sum((df2001_nop$years.in.SAM>=10 & df2001_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/893
+
+
+sr10yr2002_nop <- sum(df2002_nop$years.in.SAM>=10, value=TRUE)/nrow(df2002_nop) 
+sr10yr2002sm_nop <- sum((df2002_nop$years.in.SAM>=10 & df2002_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2002_nop)
+sr10yr2002non_nop <- sum((df2002_nop$years.in.SAM>=10 & df2002_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2002_nop)
+
+sr10yr2003_nop <- sum(df2003_nop$years.in.SAM>=10, value=TRUE)/nrow(df2003_nop)
+sr10yr2003sm_nop <- sum((df2003_nop$years.in.SAM>=10 & df2003_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2003_nop)
+sr10yr2003non_nop <- sum((df2003_nop$years.in.SAM>=10 & df2003_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2003_nop)
+
+sr10yr2004_nop <- sum(df2004_nop$years.in.SAM>=10, value=TRUE)/nrow(df2004_nop) 
+sr10yr2004sm_nop <- sum((df2004_nop$years.in.SAM>=10 & df2004_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2004_nop)
+sr10yr2004non_nop <- sum((df2004_nop$years.in.SAM>=10 & df2004_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2004_nop)
+
+sr10yr2005_nop <- sum(df2005_nop$years.in.SAM>=10, value=TRUE)/nrow(df2005_nop) 
+sr10yr2005sm_nop <- sum((df2005_nop$years.in.SAM>=10 & df2005_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2005_nop)
+sr10yr2005non_nop <- sum((df2005_nop$years.in.SAM>=10 & df2005_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2005_nop)
+
+sr10yr2006_nop <- sum(df2006_nop$years.in.SAM>=10, value=TRUE)/nrow(df2006_nop) 
+sr10yr2006sm_nop <- sum((df2006_nop$years.in.SAM>=10 & df2006_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2006_nop)
+sr10yr2006non_nop <- sum((df2006_nop$years.in.SAM>=10 & df2006_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2006_nop)
+
+##bound all survival rates together and reformated dataframe
+
+survivalrate_nop <- cbind(sr3yr2001_nop, sr3yr2001sm_nop, sr3yr2001non_nop, sr5yr2001_nop, sr5yr2001sm_nop, sr5yr2001non_nop, 
+  sr10yr2001_nop, sr10yr2001sm_nop, sr10yr2001non_nop,
+  sr3yr2002_nop, sr3yr2002sm_nop, sr3yr2002non_nop, sr5yr2002_nop, sr5yr2002sm_nop, sr5yr2002non_nop, 
+  sr10yr2002_nop, sr10yr2002sm_nop, sr10yr2002non_nop,
+  sr3yr2003_nop, sr3yr2003sm_nop, sr3yr2003non_nop, sr5yr2003_nop, sr5yr2003sm_nop, sr5yr2003non_nop, 
+  sr10yr2003_nop, sr10yr2003sm_nop, sr10yr2003non_nop,
+  sr3yr2004_nop, sr3yr2004sm_nop, sr3yr2004non_nop, sr5yr2004_nop, sr5yr2004sm_nop, sr5yr2004non_nop, 
+  sr10yr2004_nop, sr10yr2004sm_nop, sr10yr2004non_nop,
+  sr3yr2005_nop, sr3yr2005sm_nop, sr3yr2005non_nop, sr5yr2005_nop, sr5yr2005sm_nop, sr5yr2005non_nop, 
+  sr10yr2005_nop, sr10yr2005sm_nop, sr10yr2005non_nop,
+  sr3yr2006_nop, sr3yr2006sm_nop, sr3yr2006non_nop, sr5yr2006_nop, sr5yr2006sm_nop, sr5yr2006non_nop, 
+  sr10yr2006_nop, sr10yr2006sm_nop, sr10yr2006non_nop)
+srnames_nop <- c("3yr_2001_all_nop", "3yr_2001_sm_nop", 
+  "3yr_2001_non_nop", "5yr_2001_all_nop", "5yr_2001_sm_nop", "5yr_2001_non_nop", "10yr_2001_all_nop", 
+  "10yr_2001_sm_nop", "10yr_2001_non_nop",
+  "3yr_2002_all_nop", "3yr_2002_sm_nop", "3yr_2002_non_nop", "5yr_2002_all_nop", "5yr_2002_sm_nop", "5yr_2002_non_nop", 
+  "10yr_2002_all_nop", "10yr_2002_sm_nop", "10yr_2002_non_nop",
+  "3yr_2003_all_nop", "3yr_2003_sm_nop", "3yr_2003_non_nop", "5yr_2003_all_nop", "5yr_2003_sm_nop", "5yr_2003_non_nop", 
+  "10yr_2003_all_nop", "10yr_2003_sm_nop", "10yr_2003_non_nop",
+  "3yr_2004_all_nop", "3yr_2004_sm_nop", "3yr_2004_non_nop", "5yr_2004_all_nop", "5yr_2004_sm_nop", "5yr_2004_non_nop", 
+  "10yr_2004_all_nop", "10yr_2004_sm_nop", "10yr_2004_non_nop",
+  "3yr_2005_all_nop", "3yr_2005_sm_nop", "3yr_2005_non_nop", "5yr_2005_all_nop", "5yr_2005_sm_nop", "5yr_2005_non_nop", 
+  "10yr2005_all_nop", "10yr_2005_sm_nop", "10yr_2005_non_nop",
+  "3yr_2006_all_nop", "3yr_2006_sm_nop", "3yr_2006_non_nop", "5yr_2006_all_nop", "5yr_2006_sm_nop", "5yr_2006_non_nop", 
+  "10yr_2006_all_nop", "10yr_2006_sm_nop", "10yr_2006_non_nop")
+ colnames(survivalrate_nop) <- srnames_nop
+ 
+sr_nop <- as.data.frame(survivalrate_nop)
+
+survival.rates_nop <- sr_nop %>% 
+  gather("3yr_2001_all_nop":"10yr_2006_non_nop", key = "time_year_type", value = "survivalrate_nop") %>% 
+  separate(time_year_type, into = c("time", "year", "type"), sep = "_") %>% 
+  arrange(time, year) %>% 
+  unite("time_type", time, type, sep = "_") 
+
+survival.rates_nop$time_type[18] <- "10yr_all"
+survival.rates_nop$year[18] <- 2005
+  
+survival.rates_nop <- survival.rates_nop %>% 
+  spread(key = "time_type", value = "survivalrate_nop")
+  
+survival.rates_nop[, c(1, 5, 7, 6, 8, 10, 9, 2, 4, 3)]
+
+###Survival Rates with parent filter####
 
 ##3-year
 sr3yr2001 <- sum(df2001$years.in.SAM>=3, value=TRUE)/nrow(df2001)
@@ -253,32 +377,32 @@ sr10yr2006non <- sum((df2006$years.in.SAM>=10 & df2006$biz_size == 1), na.rm = T
 ##bound all survival rates together and reformated dataframe
 
 survivalrate <- cbind(sr3yr2001, sr3yr2001sm, sr3yr2001non, sr5yr2001, sr5yr2001sm, sr5yr2001non, 
-  sr10yr2001, sr10yr2001sm, sr10yr2001non,
-  sr3yr2002, sr3yr2002sm, sr3yr2002non, sr5yr2002, sr5yr2002sm, sr5yr2002non, 
-  sr10yr2002, sr10yr2002sm, sr10yr2002non,
-  sr3yr2003, sr3yr2003sm, sr3yr2003non, sr5yr2003, sr5yr2003sm, sr5yr2003non, 
-  sr10yr2003, sr10yr2003sm, sr10yr2003non,
-  sr3yr2004, sr3yr2004sm, sr3yr2004non, sr5yr2004, sr5yr2004sm, sr5yr2004non, 
-  sr10yr2004, sr10yr2004sm, sr10yr2004non,
-  sr3yr2005, sr3yr2005sm, sr3yr2005non, sr5yr2005, sr5yr2005sm, sr5yr2005non, 
-  sr10yr2005, sr10yr2005sm, sr10yr2005non,
-  sr3yr2006, sr3yr2006sm, sr3yr2006non, sr5yr2006, sr5yr2006sm, sr5yr2006non, 
-  sr10yr2006, sr10yr2006sm, sr10yr2006non)
+                      sr10yr2001, sr10yr2001sm, sr10yr2001non,
+                      sr3yr2002, sr3yr2002sm, sr3yr2002non, sr5yr2002, sr5yr2002sm, sr5yr2002non, 
+                      sr10yr2002, sr10yr2002sm, sr10yr2002non,
+                      sr3yr2003, sr3yr2003sm, sr3yr2003non, sr5yr2003, sr5yr2003sm, sr5yr2003non, 
+                      sr10yr2003, sr10yr2003sm, sr10yr2003non,
+                      sr3yr2004, sr3yr2004sm, sr3yr2004non, sr5yr2004, sr5yr2004sm, sr5yr2004non, 
+                      sr10yr2004, sr10yr2004sm, sr10yr2004non,
+                      sr3yr2005, sr3yr2005sm, sr3yr2005non, sr5yr2005, sr5yr2005sm, sr5yr2005non, 
+                      sr10yr2005, sr10yr2005sm, sr10yr2005non,
+                      sr3yr2006, sr3yr2006sm, sr3yr2006non, sr5yr2006, sr5yr2006sm, sr5yr2006non, 
+                      sr10yr2006, sr10yr2006sm, sr10yr2006non)
 srnames <- c("3yr_2001_all", "3yr_2001_sm", 
-  "3yr_2001_non", "5yr_2001_all", "5yr_2001_sm", "5yr_2001_non", "10yr_2001_all", 
-  "10yr_2001_sm", "10yr_2001_non",
-  "3yr_2002_all", "3yr_2002_sm", "3yr_2002_non", "5yr_2002_all", "5yr_2002_sm", "5yr_2002_non", 
-  "10yr_2002_all", "10yr_2002_sm", "10yr_2002_non",
-  "3yr_2003_all", "3yr_2003_sm", "3yr_2003_non", "5yr_2003_all", "5yr_2003_sm", "5yr_2003_non", 
-  "10yr_2003_all", "10yr_2003_sm", "10yr_2003_non",
-  "3yr_2004_all", "3yr_2004_sm", "3yr_2004_non", "5yr_2004_all", "5yr_2004_sm", "5yr_2004_non", 
-  "10yr_2004_all", "10yr_2004_sm", "10yr_2004_non",
-  "3yr_2005_all", "3yr_2005_sm", "3yr_2005_non", "5yr_2005_all", "5yr_2005_sm", "5yr_2005_non", 
-  "10yr2005_all", "10yr_2005_sm", "10yr_2005_non",
-  "3yr_2006_all", "3yr_2006_sm", "3yr_2006_non", "5yr_2006_all", "5yr_2006_sm", "5yr_2006_non", 
-  "10yr_2006_all", "10yr_2006_sm", "10yr_2006_non")
- colnames(survivalrate) <- srnames
- 
+             "3yr_2001_non", "5yr_2001_all", "5yr_2001_sm", "5yr_2001_non", "10yr_2001_all", 
+             "10yr_2001_sm", "10yr_2001_non",
+             "3yr_2002_all", "3yr_2002_sm", "3yr_2002_non", "5yr_2002_all", "5yr_2002_sm", "5yr_2002_non", 
+             "10yr_2002_all", "10yr_2002_sm", "10yr_2002_non",
+             "3yr_2003_all", "3yr_2003_sm", "3yr_2003_non", "5yr_2003_all", "5yr_2003_sm", "5yr_2003_non", 
+             "10yr_2003_all", "10yr_2003_sm", "10yr_2003_non",
+             "3yr_2004_all", "3yr_2004_sm", "3yr_2004_non", "5yr_2004_all", "5yr_2004_sm", "5yr_2004_non", 
+             "10yr_2004_all", "10yr_2004_sm", "10yr_2004_non",
+             "3yr_2005_all", "3yr_2005_sm", "3yr_2005_non", "5yr_2005_all", "5yr_2005_sm", "5yr_2005_non", 
+             "10yr2005_all", "10yr_2005_sm", "10yr_2005_non",
+             "3yr_2006_all", "3yr_2006_sm", "3yr_2006_non", "5yr_2006_all", "5yr_2006_sm", "5yr_2006_non", 
+             "10yr_2006_all", "10yr_2006_sm", "10yr_2006_non")
+colnames(survivalrate) <- srnames
+
 sr <- as.data.frame(survivalrate)
 
 survival.rates <- sr %>% 
@@ -289,14 +413,11 @@ survival.rates <- sr %>%
 
 survival.rates$time_type[18] <- "10yr_all"
 survival.rates$year[18] <- 2005
-  
+
 survival.rates <- survival.rates %>% 
   spread(key = "time_type", value = "survivalrate")
-  
+
 survival.rates[, c(1, 5, 7, 6, 8, 10, 9, 2, 4, 3)]
-
-###Survival Rates with parent filter####
-
 
 
 
