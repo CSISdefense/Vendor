@@ -1,23 +1,24 @@
 install.packages("matrixStats")
 library(matrixStats)
 library(describer)
+library(tidyverse)
 
 ##Marielle working Directory
 setwd("K:/2018-01 NPS New Entrants/Data/Data")
 getwd()
 
 ##Sam working Directory
-setwd("K:.....")
+setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data")
 getwd()
 
 ###if no parent filter
 
-df2001 <- read_csv("dataset2001nop.csv")
-df2002 <- read_csv("dataset2002nop.csv")
-df2003 <- read_csv("dataset2003nop.csv")
-df2004 <- read_csv("dataset2004nop.csv")
-df2005 <- read_csv("dataset2005nop.csv")
-df2006 <- read_csv("dataset2006nop.csv")
+df2001_nop <- read_csv("dataset2001nop.csv")
+df2002_nop <- read_csyv("dataset2002nop.csv")
+df2003_nop <- read_csv("dataset2003nop.csv")
+df2004_nop <- read_csv("dataset2004nop.csv")
+df2005_nop <- read_csv("dataset2005nop.csv")
+df2006_nop <- read_csv("dataset2006nop.csv")
 
 
 ### if parent filter
