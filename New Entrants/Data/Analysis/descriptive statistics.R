@@ -14,7 +14,7 @@ getwd()
 ###if no parent filter
 
 df2001_nop <- read_csv("dataset2001nop.csv")
-df2002_nop <- read_csyv("dataset2002nop.csv")
+df2002_nop <- read_csv("dataset2002nop.csv")
 df2003_nop <- read_csv("dataset2003nop.csv")
 df2004_nop <- read_csv("dataset2004nop.csv")
 df2005_nop <- read_csv("dataset2005nop.csv")
@@ -892,6 +892,7 @@ t.test$department = as.character(t.test$department)
 t.test$agency = as.character(t.test$agency)
 
 write.csv(survival.rates, "survival rates.csv")
+write.csv(survival.rates_nop, "survival rates reg2000-2011-no parent filter.csv")
 write.csv(t.test, "t-test numeric.csv")
 
 #### Categorical variable levels

@@ -517,8 +517,19 @@ ggplot(timeseries_data.size, aes(x = regyear)) +
 
 t_test <- read_csv("t-test reg2000-2011.csv")
 t_test_nop <- read_csv("t-test reg2000-2011-no parent filter.csv")
-survival_rates <- read_csv("survival rates reg2000-2011.csv")
-survival_rates_nop <- read_csv("survival rates reg2000-2011-no parent filter.csv")
+survival.rates <- read_csv("survival rates reg2000-2011.csv")
+survival.rates_nop <- read_csv("survival rates reg2000-2011-no parent filter.csv")
+
+survival_rates_nop <- survival.rates_nop %>% 
+  gather("10yr_all":"5yr_sm", key = "years_bizsize", value = "survival rate") %>% 
+  separate(years_bizsize, into = c("year", "bizsize"), sep = "_") %>% 
+  select(-X1)
+ 
+  
+ggplot(survival_rates_nop, aes(x = year, y = `survival rate`, fill = bizsize)) +
+  geom_bar(stat = "identity", width = .5, position = "dodge") +
+  ylab("Survival Rate")  +
+  xlab("Years Survived")
 
 
 
