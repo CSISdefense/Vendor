@@ -36,7 +36,12 @@ gradfirm1 <- gradfirm %>%
 maxdate <- gradfirm1[unlist(tapply(row.names(gradfirm1), gradfirm1$duns, tail, n = 1)), ] 
 
 gradfirm2 <- maxdate %>% 
-  filter(contractingofficerbusinesssizedetermination.y == "O")
+  filter(contractingofficerbusinesssizedetermination.y == "O") %>% 
+  select(duns, signeddate) %>% 
+  left_join(panel_data, by = "duns") %>% 
+  select(-X1) %>% 
+  select(-biz_size)
+
 
 write.csv(gradfirm2, "graduatedfirms.csv")
 
