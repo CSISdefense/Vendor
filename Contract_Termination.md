@@ -1,11 +1,6 @@
----
-title: "Contract Termination"
-author: "Greg Sanders"
-date: "Wednesday, February 8, 2017"
-output:
-  html_document:
-    keep_md: yes
---- 
+# Contract Termination
+Greg Sanders  
+Wednesday, February 8, 2017  
 
 Modeling Likelihood of Contract Termination
 ============================================================================
@@ -27,6 +22,10 @@ Modeling Likelihood of Contract Termination
 ## The following objects are masked from 'package:base':
 ## 
 ##     intersect, setdiff, setequal, union
+```
+
+```
+## Warning: package 'arm' was built under R version 3.4.3
 ```
 
 ```
@@ -53,16 +52,28 @@ Modeling Likelihood of Contract Termination
 ```
 
 ```
+## Warning: package 'lme4' was built under R version 3.4.3
+```
+
+```
 ## 
 ## arm (Version 1.9-3, built: 2016-11-21)
 ```
 
 ```
-## Working directory is H:/Users/Greg/Documents/Repositories/Vendor
+## Working directory is C:/Users/gsand_000.ALPHONSE/Documents/Development/Vendor
+```
+
+```
+## Warning: package 'R2WinBUGS' was built under R version 3.4.3
 ```
 
 ```
 ## Loading required package: coda
+```
+
+```
+## Warning: package 'coda' was built under R version 3.4.3
 ```
 
 ```
@@ -226,90 +237,90 @@ head(Term_smp)
 ```
 
 ```
-##          CSIScontractID        FxCb           Fee Comp       Who
-## 2194587         1216694 Fixed-Price FFP or No Fee    1 Air Force
-## 11787004       25389820 Fixed-Price FFP or No Fee    1 Other DoD
-## 10684397        4954243 Fixed-Price FFP or No Fee    1 Other DoD
-## 9800314        60554794 Fixed-Price FFP or No Fee    1      Navy
-## 4316617        61401442 Fixed-Price FFP or No Fee    1 Other DoD
-## 7672408         4304092 Fixed-Price FFP or No Fee    1 Other DoD
-##                                    What              Intl      PSR
-## 2194587     Facilities and Construction         Just U.S. Products
-## 11787004                  Land Vehicles         Just U.S. Products
-## 10684397 Electronics and Communications         Just U.S. Products
-## 9800314     Facilities and Construction Any International Services
-## 4316617                           Other         Just U.S. Products
-## 7672408             Aircraft and Drones         Just U.S. Products
+##          CSIScontractID        FxCb                      Fee Comp
+## 217902         63748753 Fixed-Price Combination or Other Fee    1
+## 8684335        60711081 Fixed-Price Combination or Other Fee    0
+## 11100305       63994008 Fixed-Price Combination or Other Fee    1
+## 6168115        24702086 Fixed-Price            FFP or No Fee    0
+## 2588907        65595020 Fixed-Price            FFP or No Fee    0
+## 1902140        65340974 Fixed-Price Combination or Other Fee    1
+##                    Who                           What      Intl      PSR
+## 217902   Uncategorized                          Other Unlabeled Products
+## 8684335      Other DoD    Facilities and Construction Just U.S. Products
+## 11100305 Uncategorized                          Other Unlabeled Products
+## 6168115           Army    Facilities and Construction Just U.S. Services
+## 2588907  Uncategorized Electronics and Communications Unlabeled Services
+## 1902140  Uncategorized                          Other Unlabeled Products
 ##                      LowCeil                Ceil             Dur
-## 2194587  [1.50e+04,1.00e+05) [1.50e+04,1.00e+05) [-43558,    61)
-## 11787004 [1.50e+04,1.00e+05) [1.50e+04,1.00e+05) [    61,   214)
-## 10684397 [0.00e+00,1.50e+04) [0.00e+00,1.50e+04) [    61,   214)
-## 9800314  [0.00e+00,1.50e+04) [0.00e+00,1.50e+04) [-43558,    61)
-## 4316617  [0.00e+00,1.50e+04) [0.00e+00,1.50e+04) [-43558,    61)
-## 7672408  [0.00e+00,1.50e+04) [0.00e+00,1.50e+04) [    61,   214)
+## 217902   [0.00e+00,1.50e+04) [0.00e+00,1.50e+04) [-43558,    61)
+## 8684335  [0.00e+00,1.50e+04) [0.00e+00,1.50e+04) [-43558,    61)
+## 11100305 [0.00e+00,1.50e+04) [0.00e+00,1.50e+04) [-43558,    61)
+## 6168115  [0.00e+00,1.50e+04) [0.00e+00,1.50e+04) [-43558,    61)
+## 2588907  [0.00e+00,1.50e+04) [0.00e+00,1.50e+04) [   366,   732)
+## 1902140  [0.00e+00,1.50e+04) [0.00e+00,1.50e+04) [-43558,    61)
 ##          SingleOffer      Offr     UCA            CRai NChg          Veh
-## 2194587        Multi [  3,  5) Not UCA [-0.001, 0.001)    0      Def/Pur
-## 11787004      Single         1 Not UCA [-0.001, 0.001)    0      Def/Pur
-## 10684397      Single         1 Not UCA [-0.001, 0.001)    0      Def/Pur
-## 9800314        Multi [  3,  5) Not UCA [-0.001, 0.001)    0 SINGLE AWARD
-## 4316617        Multi         2    <NA> [-0.001, 0.001)    0 SINGLE AWARD
-## 7672408        Multi [  5,999] Not UCA [-0.001, 0.001)    0      Def/Pur
+## 217902        Single         1    <NA> [-0.001, 0.001)    0 SINGLE AWARD
+## 8684335       Single         1    <NA> [-0.001, 0.001)    0 SINGLE AWARD
+## 11100305       Multi [  5,999]    <NA> [-0.001, 0.001)    0         <NA>
+## 6168115       Single         1 Not UCA [-0.001, 0.001)    0 SINGLE AWARD
+## 2588907       Single         1    <NA> [-0.001, 0.001)    0         <NA>
+## 1902140        Multi [  5,999]    <NA> [-0.001, 0.001)    0         <NA>
 ##          UnmodifiedNumberOfOffersReceived         Term
-## 2194587                                 3 Unterminated
-## 11787004                                1 Unterminated
-## 10684397                                1 Unterminated
-## 9800314                                 3 Unterminated
-## 4316617                                 2 Unterminated
-## 7672408                                 6 Unterminated
+## 217902                                  1 Unterminated
+## 8684335                                 1 Unterminated
+## 11100305                              140 Unterminated
+## 6168115                                 1 Unterminated
+## 2588907                                 1 Unterminated
+## 1902140                                54 Unterminated
 ##          UnmodifiedContractBaseAndAllOptionsValue SumOfisChangeOrder
-## 2194587                                  20966.82                  0
-## 11787004                                 27950.52                  0
-## 10684397                                  5958.00                  0
-## 9800314                                    500.00                  0
-## 4316617                                    293.14                  0
-## 7672408                                   4588.98                  0
+## 217902                                     403.13                  0
+## 8684335                                   4180.24                  0
+## 11100305                                 10464.41                  0
+## 6168115                                   2667.04                  0
+## 2588907                                   8675.00                  0
+## 1902140                                   2163.00                  0
 ##          pChangeOrderUnmodifiedBaseAndAll UnmodifiedDays
-## 2194587                                 0         1.0000
-## 11787004                                0       189.9583
-## 10684397                                0       181.0417
-## 9800314                                 0         3.0000
-## 4316617                                 0        22.0000
-## 7672408                                 0        91.0000
+## 217902                                  0              1
+## 8684335                                 0              2
+## 11100305                                0              1
+## 6168115                                 0             23
+## 2588907                                 0            366
+## 1902140                                 0              6
 ##          MinOfEffectiveDate Action.Obligation StartFY
-## 2194587          2012-07-02          20966.82    2012
-## 11787004         2012-11-08          27950.52    2013
-## 10684397         2010-08-10           5958.00    2010
-## 9800314          2014-11-24            207.00    2015
-## 4316617          2015-07-21            293.14    2015
-## 7672408          2012-06-21           4588.98    2012
+## 217902           2016-03-04            403.13    2016
+## 8684335          2015-08-04           4180.24    2015
+## 11100305         2016-06-11          10464.41    2016
+## 6168115          2011-04-06           2667.04    2011
+## 2588907          2015-10-01           8675.00    2016
+## 1902140          2016-09-14           2163.00    2016
 ##                                         PSR_What b_Crai     j_Crai b_Term
-## 2194587     Products.Facilities and Construction      0 0.01310675      0
-## 11787004                  Products.Land Vehicles      0 0.02367903      0
-## 10684397 Products.Electronics and Communications      0 0.04579125      0
-## 9800314     Services.Facilities and Construction      0 0.03703859      0
-## 4316617                           Products.Other      0 0.02842038      0
-## 7672408             Products.Aircraft and Drones      0 0.02918785      0
-##               j_Term n_Crai l_Crai    l_Ceil   l_Days n_Fixed n_Incent
-## 2194587  0.024860312      0     NA  9.950696 0.000000       1        0
-## 11787004 0.039136986      0     NA 10.238191 5.246805       1        0
-## 10684397 0.038075200      0     NA  8.692490 5.198727       1        0
-## 9800314  0.008647903      0     NA  6.214608 1.098612       1        0
-## 4316617  0.036452609      0     NA  5.680650 3.091042       1        0
-## 7672408  0.001926498      0     NA  8.431413 4.510860       1        0
-##          b_Comp n_Comp n_Offr n_Intl n_UCA   l_Offer IDV SIDV MIDV OIDV
-## 2194587       1      2      3      0     0 1.0986123   0    0    0    0
-## 11787004      1      1      1      0     0 0.0000000   0    0    0    0
-## 10684397      1      1      1      0     0 0.0000000   0    0    0    0
-## 9800314       1      2      3      1     0 1.0986123   1    1    0    0
-## 4316617       1      2      2      0    NA 0.6931472   1    1    0    0
-## 7672408       1      2      4      0     0 1.7917595   0    0    0    0
-##              cl_Ceil    cl_Days   cb_Comp    cn_Comp    cn_Offr   cl_Offer
-## 2194587   0.56866563 -1.5002730 0.4264364  0.6029924  0.4647553  0.0198967
-## 11787004  0.68036752  1.2615271 0.4264364 -0.7370026 -0.9476600 -1.0340986
-## 10684397  0.07980765  1.2362202 0.4264364 -0.7370026 -0.9476600 -1.0340986
-## 9800314  -0.88293779 -0.9219882 0.4264364  0.6029924  0.4647553  0.0198967
-## 4316617  -1.09039941  0.1267823 0.4264364  0.6029924 -0.2414523 -0.3691016
-## 7672408  -0.02163010  0.8741421 0.4264364  0.6029924  1.1709629  0.6848937
+## 217902                            Products.Other      0 0.04334889      0
+## 8684335     Products.Facilities and Construction      0 0.01766423      0
+## 11100305                          Products.Other      0 0.04941184      0
+## 6168115     Services.Facilities and Construction      0 0.02885874      0
+## 2588907  Services.Electronics and Communications      0 0.03581444      0
+## 1902140                           Products.Other      0 0.00090889      0
+##               j_Term n_Crai l_Crai   l_Ceil    l_Days n_Fixed n_Incent
+## 217902   0.003297944      0     NA 5.999259 0.0000000       1       NA
+## 8684335  0.015224915      0     NA 8.338124 0.6931472       1       NA
+## 11100305 0.028313225      0     NA 9.255735 0.0000000       1       NA
+## 6168115  0.019454491      0     NA 7.888725 3.1354942       1        0
+## 2588907  0.017997757      0     NA 9.068201 5.9026333       1        0
+## 1902140  0.047650020      0     NA 7.679251 1.7917595       1       NA
+##          b_Comp n_Comp n_Offr n_Intl n_UCA  l_Offer IDV SIDV MIDV OIDV
+## 217902        1      1      1     NA    NA 0.000000   1    1    0    0
+## 8684335       0      0      0      0    NA 0.000000   1    1    0    0
+## 11100305      1      2      4     NA    NA 4.941642  NA   NA   NA   NA
+## 6168115       0      0      0      0     0 0.000000   1    1    0    0
+## 2588907       0      0      0     NA    NA 0.000000  NA   NA   NA   NA
+## 1902140       1      2      4     NA    NA 3.988984  NA   NA   NA   NA
+##              cl_Ceil    cl_Days   cb_Comp    cn_Comp    cn_Offr  cl_Offer
+## 217902   -0.96712434 -1.5057100  0.428753 -0.7323899 -0.9438623 -1.035351
+## 8684335  -0.05719406 -1.1399426 -2.332336 -2.0687567 -1.6493608 -1.035351
+## 11100305  0.29980064 -1.5057100  0.428753  0.6039768  1.1726332  3.721709
+## 6168115  -0.23203192  0.1488614 -2.332336 -2.0687567 -1.6493608 -1.035351
+## 2588907   0.22684068  1.6090552 -2.332336 -2.0687567 -1.6493608 -1.035351
+## 1902140  -0.31352697 -0.5602150  0.428753  0.6039768  1.1726332  2.804635
 ```
 
 #Estimate Model
@@ -347,11 +358,11 @@ display(Term_01A)
 ## glm(formula = b_Term ~ cb_Comp, family = binomial(link = "logit"), 
 ##     data = Term_smp)
 ##             coef.est coef.se
-## (Intercept) -4.82     0.02  
-## cb_Comp     -0.02     0.02  
+## (Intercept) -4.81     0.02  
+## cb_Comp     -0.11     0.02  
 ## ---
 ##   n = 250000, k = 2
-##   residual deviance = 23305.7, null deviance = 23306.9 (difference = 1.1)
+##   residual deviance = 23636.4, null deviance = 23662.8 (difference = 26.4)
 ```
 
 ```r
@@ -385,7 +396,7 @@ freq_discrete_term_plot(Term_smp,"n_Comp")
 ```
 
 ```
-## Warning: Removed 1360 rows containing non-finite values (stat_count).
+## Warning: Removed 1351 rows containing non-finite values (stat_count).
 ```
 
 ![](Contract_Termination_files/figure-html/Model01B-1.png)<!-- -->
@@ -412,11 +423,11 @@ display(Term_01B)
 ## glm(formula = b_Term ~ cn_Comp, family = binomial(link = "logit"), 
 ##     data = Term_smp)
 ##             coef.est coef.se
-## (Intercept) -4.83     0.02  
-## cn_Comp     -0.06     0.02  
+## (Intercept) -4.82     0.02  
+## cn_Comp     -0.13     0.02  
 ## ---
-##   n = 248640, k = 2
-##   residual deviance = 22959.8, null deviance = 22966.6 (difference = 6.9)
+##   n = 248649, k = 2
+##   residual deviance = 23331.9, null deviance = 23371.7 (difference = 39.8)
 ```
 
 ```r
@@ -429,7 +440,7 @@ discrete_fitted_term_model(Term_smp,"n_Comp") +
 ```
 
 ```
-## Warning: Removed 1360 rows containing missing values (geom_point).
+## Warning: Removed 1351 rows containing missing values (geom_point).
 ```
 
 ![](Contract_Termination_files/figure-html/Model01B-3.png)<!-- -->
@@ -449,7 +460,7 @@ freq_discrete_term_plot(Term_smp,"n_Offr")
 ```
 
 ```
-## Warning: Removed 1360 rows containing non-finite values (stat_count).
+## Warning: Removed 1351 rows containing non-finite values (stat_count).
 ```
 
 ![](Contract_Termination_files/figure-html/Model01C-1.png)<!-- -->
@@ -476,11 +487,11 @@ display(Term_01C)
 ## glm(formula = b_Term ~ cn_Offr, family = binomial(link = "logit"), 
 ##     data = Term_smp)
 ##             coef.est coef.se
-## (Intercept) -4.83     0.02  
-## cn_Offr      0.04     0.02  
+## (Intercept) -4.81     0.02  
+## cn_Offr     -0.04     0.02  
 ## ---
-##   n = 248640, k = 2
-##   residual deviance = 22964.0, null deviance = 22966.6 (difference = 2.7)
+##   n = 248649, k = 2
+##   residual deviance = 23368.5, null deviance = 23371.7 (difference = 3.2)
 ```
 
 ```r
@@ -493,7 +504,7 @@ discrete_fitted_term_model(Term_smp,"n_Comp") +
 ```
 
 ```
-## Warning: Removed 1360 rows containing missing values (geom_point).
+## Warning: Removed 1351 rows containing missing values (geom_point).
 ```
 
 ![](Contract_Termination_files/figure-html/Model01C-3.png)<!-- -->
@@ -525,36 +536,21 @@ binned_percent_term_plot(Term_smp,"l_Offer")
 
 ```r
 #Percent Terminated Plot
-Term_smp$bin_Offer_FxCb<-bin_df(Term_smp,rank_col="l_Offer",group_col="FxCb")
-ggplot(data=subset(Term_smp,!is.na(l_Offer) & !is.na(FxCb)) %>% 
-  group_by(bin_Offer_FxCb,FxCb) %>% 
-  summarise (mean_Term = mean(b_Term),
-             mean_l_Offer =mean(l_Offer)),
-       aes(y=mean_Term,x=mean_l_Offer))+geom_point()+facet_wrap(~FxCb)
+binned_percent_term_plot(Term_smp,"l_Offer","FxCb")
 ```
 
 ![](Contract_Termination_files/figure-html/Model01D-3.png)<!-- -->
 
 ```r
 #Percent Terminated Plot
-Term_smp$bin_Offer_PSR<-bin_df(Term_smp,rank_col="l_Offer",group_col="PSR")
-ggplot(data=subset(Term_smp,!is.na(l_Offer) & !is.na(PSR)) %>% 
-  group_by(bin_Offer_PSR,PSR) %>% 
-  summarise (mean_Term = mean(b_Term),
-             mean_l_Offer =mean(l_Offer)),
-       aes(y=mean_Term,x=mean_l_Offer))+geom_point()+facet_wrap(~PSR)
+binned_percent_term_plot(Term_smp,"l_Offer","PSR")
 ```
 
 ![](Contract_Termination_files/figure-html/Model01D-4.png)<!-- -->
 
 ```r
 #Percent Terminated Plot
-Term_smp$bin_Offer_Veh<-bin_df(Term_smp,rank_col="l_Offer",group_col="Veh")
-ggplot(data=subset(Term_smp,!is.na(l_Offer) & !is.na(Veh) ) %>% 
-  group_by(bin_Offer_Veh,Veh) %>% 
-  summarise (mean_Term = mean(b_Term),
-             mean_l_Offer =mean(l_Offer)),
-       aes(y=mean_Term,x=mean_l_Offer))+geom_point()+facet_wrap(~Veh)
+binned_percent_term_plot(Term_smp,"l_Offer","Veh")
 ```
 
 ![](Contract_Termination_files/figure-html/Model01D-5.png)<!-- -->
@@ -570,11 +566,11 @@ display(Term_01D)
 ## glm(formula = b_Term ~ cl_Offer, family = binomial(link = "logit"), 
 ##     data = Term_smp)
 ##             coef.est coef.se
-## (Intercept) -4.83     0.02  
-## cl_Offer     0.03     0.02  
+## (Intercept) -4.81     0.02  
+## cl_Offer    -0.02     0.02  
 ## ---
 ##   n = 247962, k = 2
-##   residual deviance = 22915.3, null deviance = 22917.2 (difference = 2.0)
+##   residual deviance = 23311.9, null deviance = 23312.4 (difference = 0.5)
 ```
 
 ```r
@@ -590,11 +586,11 @@ display(Term_01E)
 ##     data = Term_smp)
 ##             coef.est coef.se
 ## (Intercept) -4.79     0.03  
-## cl_Offer     0.09     0.03  
-## clsqr_Offer -0.04     0.01  
+## cl_Offer     0.01     0.03  
+## clsqr_Offer -0.02     0.01  
 ## ---
 ##   n = 247962, k = 3
-##   residual deviance = 22905.9, null deviance = 22917.2 (difference = 11.3)
+##   residual deviance = 23310.4, null deviance = 23312.4 (difference = 2.1)
 ```
 
 ```r
@@ -692,7 +688,7 @@ freq_continuous_term_plot(Term_smp,"l_Ceil")
 ```
 
 ```
-## Warning: Removed 380 rows containing non-finite values (stat_bin).
+## Warning: Removed 396 rows containing non-finite values (stat_bin).
 ```
 
 ![](Contract_Termination_files/figure-html/Model02A-3.png)<!-- -->
@@ -715,12 +711,12 @@ display(Term_02A)
 ## glm(formula = b_Term ~ n_Comp + cl_Ceil, family = binomial(link = "logit"), 
 ##     data = Term_smp)
 ##             coef.est coef.se
-## (Intercept) -4.96     0.05  
-## n_Comp       0.00     0.03  
+## (Intercept) -4.80     0.05  
+## n_Comp      -0.09     0.03  
 ## cl_Ceil      0.51     0.02  
 ## ---
-##   n = 248266, k = 3
-##   residual deviance = 22373.7, null deviance = 22873.7 (difference = 500.0)
+##   n = 248258, k = 3
+##   residual deviance = 22791.7, null deviance = 23346.1 (difference = 554.4)
 ```
 
 ```r
@@ -735,7 +731,7 @@ fitted_term_model(Term_smp,"cl_Ceil") + stat_function(fun = Term_02A_curve,
 ```
 
 ```
-## Warning: Removed 380 rows containing missing values (geom_point).
+## Warning: Removed 396 rows containing missing values (geom_point).
 ```
 
 ![](Contract_Termination_files/figure-html/Model02A-5.png)<!-- -->
@@ -771,35 +767,28 @@ Contract ceiling has a significant relationship, though the residuals show a pos
 
 ```r
 Term_smp$clsqr_Ceil<-Term_smp$cl_Ceil^2
+Term_smp$lsqr_Ceil<-Term_smp$l_Ceil^2
+
 
 #Frequency Plot
-ggplot(data=Term_smp,
-       aes(x=l_Ceil^2))+geom_histogram(bins=20) + scale_y_continuous(labels = scales::comma) + facet_wrap(~Term,ncol=1,scales="free_y")+
-  labs(title="Frequency by Termination",
-          caption="Source: FPDS, CSIS Analysis")
+freq_continuous_term_plot(Term_smp,"lsqr_Ceil")
 ```
 
 ```
-## Warning: Removed 380 rows containing non-finite values (stat_bin).
+## Warning: Removed 396 rows containing non-finite values (stat_bin).
 ```
 
 ![](Contract_Termination_files/figure-html/Model02B-1.png)<!-- -->
 
 ```r
 #Percent Terminated Plot
-Term_smp$bin_Offer<-bin_df(Term_smp,"cl_Ceil")
-ggplot(data=subset(Term_smp,!is.na(l_Ceil)) %>% 
-  group_by(bin_Offer) %>% 
-  summarise (mean_Term = mean(b_Term),
-             mean_lsqr_Ceil =mean(l_Ceil^2)),
-       aes(y=mean_Term,x=mean_lsqr_Ceil))+geom_point()+
-  labs(title="Average Termination Rate",
-          caption="Source: FPDS, CSIS Analysis")
+binned_percent_term_plot(Term_smp,"lsqr_Ceil")
 ```
 
 ![](Contract_Termination_files/figure-html/Model02B-2.png)<!-- -->
 
 ```r
+#Model
 Term_02B <- glm (data=Term_smp,
                  b_Term ~n_Comp + cl_Ceil + clsqr_Ceil, family=binomial(link="logit"))
 display(Term_02B)
@@ -809,20 +798,17 @@ display(Term_02B)
 ## glm(formula = b_Term ~ n_Comp + cl_Ceil + clsqr_Ceil, family = binomial(link = "logit"), 
 ##     data = Term_smp)
 ##             coef.est coef.se
-## (Intercept) -4.95     0.05  
-## n_Comp       0.01     0.03  
-## cl_Ceil      0.56     0.03  
+## (Intercept) -4.79     0.05  
+## n_Comp      -0.09     0.03  
+## cl_Ceil      0.58     0.03  
 ## clsqr_Ceil  -0.04     0.01  
 ## ---
-##   n = 248266, k = 4
-##   residual deviance = 22363.9, null deviance = 22873.7 (difference = 509.8)
+##   n = 248258, k = 4
+##   residual deviance = 22778.5, null deviance = 23346.1 (difference = 567.6)
 ```
 
 ```r
-Term_02B_plot<-ggplot(data=Term_smp,
-       aes(y=j_Term,x=cl_Ceil))+geom_point(alpha=0.01)+scale_y_sqrt() +
-  labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
-
+#Plot the fitted model plot
 Term_02B_curve<-function(x, Comp){invlogit(cbind(1,Comp,x, x^2) %*%  coef(Term_02B))}
 
 #Competition curves
@@ -833,7 +819,7 @@ fitted_term_model(Term_smp,"cl_Ceil") + stat_function(fun = Term_02B_curve,
 ```
 
 ```
-## Warning: Removed 380 rows containing missing values (geom_point).
+## Warning: Removed 396 rows containing missing values (geom_point).
 ```
 
 ![](Contract_Termination_files/figure-html/Model02B-3.png)<!-- -->
@@ -869,32 +855,18 @@ Contracts with very small or very large ceilings appear have a negative coeffici
 
 ```r
 #Frequency Plot
-ggplot(data=subset(Term_smp,!is.na(n_Comp)),
-       aes(x=l_Ceil))+geom_histogram(bins=20) + scale_y_continuous(labels = scales::comma) + facet_grid(Term~n_Comp,scales="free_y")+
-  labs(title="Initial Cost Ceiling Frequency by Competition Termination",
-          caption="Source: FPDS, CSIS Analysis")
+freq_continuous_term_plot(Term_smp,"l_Ceil","n_Comp")
 ```
 
 ```
-## Warning: Removed 374 rows containing non-finite values (stat_bin).
+## Warning: Removed 396 rows containing non-finite values (stat_bin).
 ```
 
 ![](Contract_Termination_files/figure-html/Model02C-1.png)<!-- -->
 
 ```r
 #Plot the percent terminated across cost ceiling and competition
-Term_smp$bin_Ceil_Comp<-bin_df(Term_smp,"l_Ceil")
-ggplot(data=subset(Term_smp,!is.na(n_Comp)&!is.na(bin_Ceil_Comp)) %>% 
-  group_by(bin_Ceil_Comp,n_Comp) %>% 
-  summarise (mean_Term = mean(b_Term),
-             mean_l_Ceil =mean(l_Ceil)),
-       aes(y=mean_Term,x=mean_l_Ceil))+geom_point()+facet_wrap(~n_Comp)+
-  labs(title="Average Termination Rate",
-          caption="Source: FPDS, CSIS Analysis")
-```
-
-```
-## Warning: Removed 3 rows containing missing values (geom_point).
+binned_percent_term_plot(Term_smp,"l_Ceil","n_Comp")
 ```
 
 ![](Contract_Termination_files/figure-html/Model02C-2.png)<!-- -->
@@ -910,14 +882,14 @@ display(Term_02C)
 ## glm(formula = b_Term ~ n_Comp + cl_Ceil + clsqr_Ceil + n_Comp:cl_Ceil, 
 ##     family = binomial(link = "logit"), data = Term_smp)
 ##                coef.est coef.se
-## (Intercept)    -4.83     0.06  
-## n_Comp         -0.07     0.03  
-## cl_Ceil         0.37     0.06  
-## clsqr_Ceil     -0.04     0.01  
-## n_Comp:cl_Ceil  0.12     0.03  
+## (Intercept)    -4.62     0.05  
+## n_Comp         -0.19     0.03  
+## cl_Ceil         0.32     0.05  
+## clsqr_Ceil     -0.05     0.01  
+## n_Comp:cl_Ceil  0.18     0.03  
 ## ---
-##   n = 248266, k = 5
-##   residual deviance = 22348.5, null deviance = 22873.7 (difference = 525.2)
+##   n = 248258, k = 5
+##   residual deviance = 22743.2, null deviance = 23346.1 (difference = 602.9)
 ```
 
 ```r
@@ -931,7 +903,7 @@ fitted_term_model(Term_smp,"cl_Ceil") + stat_function(fun = Term_02C_curve,
 ```
 
 ```
-## Warning: Removed 380 rows containing missing values (geom_point).
+## Warning: Removed 396 rows containing missing values (geom_point).
 ```
 
 ![](Contract_Termination_files/figure-html/Model02C-3.png)<!-- -->
@@ -969,7 +941,7 @@ freq_continuous_term_plot(Term_smp,"UnmodifiedDays",
 ```
 
 ```
-## Warning: Removed 12 rows containing non-finite values (stat_bin).
+## Warning: Removed 8 rows containing non-finite values (stat_bin).
 ```
 
 ![](Contract_Termination_files/figure-html/Model02D-1.png)<!-- -->
@@ -980,7 +952,7 @@ freq_continuous_term_plot(Term_smp,"l_Days")
 ```
 
 ```
-## Warning: Removed 1622 rows containing non-finite values (stat_bin).
+## Warning: Removed 1598 rows containing non-finite values (stat_bin).
 ```
 
 ![](Contract_Termination_files/figure-html/Model02D-2.png)<!-- -->
@@ -1006,15 +978,15 @@ display(Term_02D)
 ##     clsqr_Ceil + n_Comp:cl_Ceil, family = binomial(link = "logit"), 
 ##     data = Term_smp)
 ##                coef.est coef.se
-## (Intercept)    -5.63     0.07  
-## n_Comp          0.16     0.04  
-## cl_Ceil        -0.05     0.06  
-## clsqr_Ceil     -0.03     0.01  
-## cl_Days         1.10     0.03  
-## n_Comp:cl_Ceil  0.09     0.03  
+## (Intercept)    -5.35     0.06  
+## n_Comp          0.03     0.03  
+## cl_Ceil        -0.08     0.06  
+## clsqr_Ceil     -0.05     0.02  
+## cl_Days         1.04     0.03  
+## n_Comp:cl_Ceil  0.14     0.03  
 ## ---
-##   n = 246862, k = 6
-##   residual deviance = 20689.8, null deviance = 22600.0 (difference = 1910.2)
+##   n = 246889, k = 6
+##   residual deviance = 21138.7, null deviance = 22986.9 (difference = 1848.2)
 ```
 
 ```r
@@ -1028,7 +1000,7 @@ fitted_term_model(Term_smp,"cl_Days") + stat_function(fun = Term_02D_curve,
 ```
 
 ```
-## Warning: Removed 1622 rows containing missing values (geom_point).
+## Warning: Removed 1598 rows containing missing values (geom_point).
 ```
 
 ![](Contract_Termination_files/figure-html/Model02D-4.png)<!-- -->
@@ -1042,7 +1014,7 @@ fitted_term_model(Term_smp,"cl_Days") +  stat_function(fun = Term_02D_curve,
 ```
 
 ```
-## Warning: Removed 1622 rows containing missing values (geom_point).
+## Warning: Removed 1598 rows containing missing values (geom_point).
 ```
 
 ![](Contract_Termination_files/figure-html/Model02D-5.png)<!-- -->
@@ -1080,7 +1052,7 @@ ggplot(data=subset(Term_smp,!is.na(l_Ceil)),
 ```
 
 ```
-## Warning: Removed 1404 rows containing missing values (geom_point).
+## Warning: Removed 1369 rows containing missing values (geom_point).
 ```
 
 ![](Contract_Termination_files/figure-html/Mode02E-1.png)<!-- -->
@@ -1099,16 +1071,16 @@ display(Term_02E)
 ##     n_Comp:cl_Ceil + cl_Ceil:cl_Days, family = binomial(link = "logit"), 
 ##     data = Term_smp)
 ##                 coef.est coef.se
-## (Intercept)     -5.73     0.07  
-## n_Comp           0.19     0.04  
-## cl_Ceil          0.23     0.07  
-## clsqr_Ceil       0.06     0.01  
-## cl_Days          1.22     0.04  
-## n_Comp:cl_Ceil   0.05     0.03  
-## cl_Ceil:cl_Days -0.33     0.03  
+## (Intercept)     -5.44     0.07  
+## n_Comp           0.05     0.03  
+## cl_Ceil          0.14     0.06  
+## clsqr_Ceil       0.02     0.02  
+## cl_Days          1.13     0.03  
+## n_Comp:cl_Ceil   0.10     0.03  
+## cl_Ceil:cl_Days -0.26     0.04  
 ## ---
-##   n = 246862, k = 7
-##   residual deviance = 20607.5, null deviance = 22600.0 (difference = 1992.5)
+##   n = 246889, k = 7
+##   residual deviance = 21089.0, null deviance = 22986.9 (difference = 1897.9)
 ```
 
 ```r
@@ -1126,7 +1098,7 @@ fitted_term_model(Term_smp,"cl_Days") + stat_function(fun = Term_02E_curve,
 ```
 
 ```
-## Warning: Removed 1622 rows containing missing values (geom_point).
+## Warning: Removed 1598 rows containing missing values (geom_point).
 ```
 
 ![](Contract_Termination_files/figure-html/Mode02E-2.png)<!-- -->
@@ -1140,7 +1112,7 @@ fitted_term_model(Term_smp,"cl_Days") +  stat_function(fun = Term_02E_curve,
 ```
 
 ```
-## Warning: Removed 1622 rows containing missing values (geom_point).
+## Warning: Removed 1598 rows containing missing values (geom_point).
 ```
 
 ![](Contract_Termination_files/figure-html/Mode02E-3.png)<!-- -->
@@ -1174,30 +1146,22 @@ The interaction of ceiling and duration is correlated with a lower rate of termi
 
 ```r
 Term_smp$clsqr_Days<-Term_smp$cl_Days^2
+Term_smp$lsqr_Days<-Term_smp$l_Days^2
+
 
 #Frequency Plot
-ggplot(data=Term_smp,
-       aes(x=l_Days^2))+geom_histogram(bins=20) + scale_y_continuous(labels = scales::comma) + facet_wrap(~Term,ncol=1,scales="free_y")+
-  labs(title="Frequency by Termination",
-          caption="Source: FPDS, CSIS Analysis")
+freq_continuous_term_plot(Term_smp,"lsqr_Days")
 ```
 
 ```
-## Warning: Removed 1622 rows containing non-finite values (stat_bin).
+## Warning: Removed 1598 rows containing non-finite values (stat_bin).
 ```
 
 ![](Contract_Termination_files/figure-html/Model02F-1.png)<!-- -->
 
 ```r
 #Percent Terminated Plot
-Term_smp$bin_Offer<-bin_df(Term_smp,"cl_Days")
-ggplot(data=subset(Term_smp,!is.na(l_Days)) %>% 
-  group_by(bin_Offer) %>% 
-  summarise (mean_Term = mean(b_Term),
-             mean_lsqr_Ceil =mean(l_Days^2)),
-       aes(y=mean_Term,x=mean_lsqr_Ceil))+geom_point()+
-  labs(title="Average Termination Rate",
-          caption="Source: FPDS, CSIS Analysis")
+binned_percent_term_plot(Term_smp,"lsqr_Days")
 ```
 
 ![](Contract_Termination_files/figure-html/Model02F-2.png)<!-- -->
@@ -1216,17 +1180,17 @@ display(Term_02F)
 ##     clsqr_Days + n_Comp:cl_Ceil + cl_Ceil:cl_Days, family = binomial(link = "logit"), 
 ##     data = Term_smp)
 ##                 coef.est coef.se
-## (Intercept)     -5.66     0.07  
-## n_Comp           0.18     0.04  
-## cl_Ceil          0.20     0.07  
-## clsqr_Ceil       0.05     0.01  
-## cl_Days          1.44     0.06  
-## clsqr_Days      -0.21     0.03  
-## n_Comp:cl_Ceil   0.05     0.03  
-## cl_Ceil:cl_Days -0.28     0.04  
+## (Intercept)     -5.38     0.07  
+## n_Comp           0.05     0.03  
+## cl_Ceil          0.11     0.07  
+## clsqr_Ceil       0.02     0.02  
+## cl_Days          1.24     0.05  
+## clsqr_Days      -0.11     0.03  
+## n_Comp:cl_Ceil   0.11     0.03  
+## cl_Ceil:cl_Days -0.22     0.04  
 ## ---
-##   n = 246862, k = 8
-##   residual deviance = 20564.7, null deviance = 22600.0 (difference = 2035.3)
+##   n = 246889, k = 8
+##   residual deviance = 21074.1, null deviance = 22986.9 (difference = 1912.9)
 ```
 
 ```r
@@ -1252,7 +1216,7 @@ fitted_term_model(Term_smp,"cl_Ceil") + stat_function(fun = Term_02F_curve,
 ```
 
 ```
-## Warning: Removed 380 rows containing missing values (geom_point).
+## Warning: Removed 396 rows containing missing values (geom_point).
 ```
 
 ![](Contract_Termination_files/figure-html/Model02F-3.png)<!-- -->
@@ -1301,16 +1265,16 @@ display(Term_02G)
 ##     n_Comp:cl_Ceil + cl_Ceil:cl_Days, family = binomial(link = "logit"), 
 ##     data = Term_smp)
 ##                 coef.est coef.se
-## (Intercept)     -5.61     0.07  
-## n_Comp           0.17     0.04  
-## cl_Ceil          0.17     0.07  
-## cl_Days          1.42     0.06  
-## clsqr_Days      -0.21     0.03  
-## n_Comp:cl_Ceil   0.06     0.04  
-## cl_Ceil:cl_Days -0.20     0.04  
+## (Intercept)     -5.36     0.07  
+## n_Comp           0.04     0.03  
+## cl_Ceil          0.10     0.07  
+## cl_Days          1.23     0.05  
+## clsqr_Days      -0.11     0.03  
+## n_Comp:cl_Ceil   0.11     0.03  
+## cl_Ceil:cl_Days -0.20     0.03  
 ## ---
-##   n = 246862, k = 7
-##   residual deviance = 20576.6, null deviance = 22600.0 (difference = 2023.4)
+##   n = 246889, k = 7
+##   residual deviance = 21075.8, null deviance = 22986.9 (difference = 1911.1)
 ```
 
 ```r
@@ -1334,7 +1298,7 @@ fitted_term_model(Term_smp,"cl_Ceil") + stat_function(fun = Term_02G_curve,
 ```
 
 ```
-## Warning: Removed 380 rows containing missing values (geom_point).
+## Warning: Removed 396 rows containing missing values (geom_point).
 ```
 
 ![](Contract_Termination_files/figure-html/Model02G-1.png)<!-- -->
@@ -1363,7 +1327,7 @@ residuals_term_plot(Term_02G,"cl_Ceil")+
 
 While the effect on the residual deviance is fairly minor, it does still appear that the ceiling^2 does reduce the incidence of non-linear patterns in the residuals. So for now we will be leaving it in.
 
-###Model 02H: Interation of Duration and Competition
+###Model 02H: Interaction of Duration and Competition
 
 ```r
 #Frequency Plot
@@ -1374,7 +1338,7 @@ ggplot(data=subset(Term_smp,!is.na(n_Comp)),
 ```
 
 ```
-## Warning: Removed 1622 rows containing non-finite values (stat_bin).
+## Warning: Removed 1598 rows containing non-finite values (stat_bin).
 ```
 
 ![](Contract_Termination_files/figure-html/Mode02H-1.png)<!-- -->
@@ -1411,18 +1375,18 @@ display(Term_02H)
 ##     clsqr_Days + n_Comp:cl_Ceil + cl_Ceil:cl_Days + n_Comp:cl_Days, 
 ##     family = binomial(link = "logit"), data = Term_smp)
 ##                 coef.est coef.se
-## (Intercept)     -5.28     0.09  
-## n_Comp          -0.07     0.05  
-## cl_Ceil          0.31     0.07  
-## clsqr_Ceil       0.06     0.01  
-## cl_Days          0.98     0.09  
-## clsqr_Days      -0.18     0.03  
-## n_Comp:cl_Ceil  -0.02     0.04  
-## cl_Ceil:cl_Days -0.29     0.04  
-## n_Comp:cl_Days   0.28     0.05  
+## (Intercept)     -5.09     0.08  
+## n_Comp          -0.15     0.05  
+## cl_Ceil          0.23     0.07  
+## clsqr_Ceil       0.03     0.02  
+## cl_Days          0.87     0.08  
+## clsqr_Days      -0.08     0.03  
+## n_Comp:cl_Ceil   0.04     0.03  
+## cl_Ceil:cl_Days -0.25     0.04  
+## n_Comp:cl_Days   0.23     0.04  
 ## ---
-##   n = 246862, k = 9
-##   residual deviance = 20529.9, null deviance = 22600.0 (difference = 2070.1)
+##   n = 246889, k = 9
+##   residual deviance = 21044.3, null deviance = 22986.9 (difference = 1942.7)
 ```
 
 ```r
@@ -1438,7 +1402,7 @@ fitted_term_model(Term_smp,"cl_Days") + stat_function(fun = Term_02H_curve,
 ```
 
 ```
-## Warning: Removed 1622 rows containing missing values (geom_point).
+## Warning: Removed 1598 rows containing missing values (geom_point).
 ```
 
 ![](Contract_Termination_files/figure-html/Mode02H-3.png)<!-- -->
@@ -1504,21 +1468,21 @@ display(Term_03A)
 ##     clsqr_Days + SIDV + MIDV + OIDV + n_Comp:cl_Ceil + cl_Ceil:cl_Days + 
 ##     n_Comp:cl_Days, family = binomial(link = "logit"), data = Term_smp)
 ##                 coef.est coef.se
-## (Intercept)     -4.91     0.10  
-## n_Comp          -0.09     0.06  
-## cl_Ceil          0.20     0.08  
-## clsqr_Ceil       0.04     0.02  
-## cl_Days          0.72     0.09  
-## clsqr_Days      -0.09     0.04  
-## SIDV            -0.71     0.06  
-## MIDV            -0.40     0.11  
-## OIDV            -0.23     0.09  
-## n_Comp:cl_Ceil   0.05     0.04  
-## cl_Ceil:cl_Days -0.15     0.05  
-## n_Comp:cl_Days   0.23     0.05  
+## (Intercept)     -4.73     0.09  
+## n_Comp          -0.14     0.05  
+## cl_Ceil          0.11     0.08  
+## clsqr_Ceil       0.02     0.02  
+## cl_Days          0.66     0.08  
+## clsqr_Days       0.01     0.03  
+## SIDV            -0.92     0.07  
+## MIDV            -0.31     0.11  
+## OIDV            -0.14     0.08  
+## n_Comp:cl_Ceil   0.10     0.04  
+## cl_Ceil:cl_Days -0.12     0.05  
+## n_Comp:cl_Days   0.14     0.05  
 ## ---
-##   n = 184500, k = 12
-##   residual deviance = 15901.2, null deviance = 17366.7 (difference = 1465.5)
+##   n = 184080, k = 12
+##   residual deviance = 16307.3, null deviance = 17819.6 (difference = 1512.3)
 ```
 
 ```r
@@ -1538,7 +1502,7 @@ discrete_fitted_term_model(Term_smp,"SIDV") +
 ```
 
 ```
-## Warning: Removed 62385 rows containing missing values (geom_point).
+## Warning: Removed 62833 rows containing missing values (geom_point).
 ```
 
 ![](Contract_Termination_files/figure-html/Model03A-3.png)<!-- -->
@@ -1560,7 +1524,7 @@ discrete_fitted_term_model(Term_smp,"MIDV") +
 ```
 
 ```
-## Warning: Removed 62385 rows containing missing values (geom_point).
+## Warning: Removed 62833 rows containing missing values (geom_point).
 ```
 
 ![](Contract_Termination_files/figure-html/Model03A-4.png)<!-- -->
@@ -1582,7 +1546,7 @@ discrete_fitted_term_model(Term_smp,"OIDV") +
 ```
 
 ```
-## Warning: Removed 62385 rows containing missing values (geom_point).
+## Warning: Removed 62833 rows containing missing values (geom_point).
 ```
 
 ![](Contract_Termination_files/figure-html/Model03A-5.png)<!-- -->
@@ -1612,22 +1576,36 @@ The first check lumps looks at three categories of IDVs, each facing a notably l
 This may reflect that the Ceiling and Days entries reflect only the task order and not the larger contract. The next step is to check the intersections with ceiling.
 
 
-###Model 03B: Any IDV and contract duration
+###Model 03B: Vehicle and Contract Duration
 
 ```r
 #Frequency Plot
-freq_discrete_term_plot(Term_smp,"Veh")
+ggplot(data=subset(Term_smp,!is.na(Veh)),
+       aes(x=l_Days))+geom_histogram(bins=20)+facet_grid(Term~Veh,scales="free_y")+
+  labs(title="Frequency by Termination",
+          caption="Source: FPDS, CSIS Analysis")
 ```
 
 ```
-## Warning: Ignoring unknown parameters: binwidth, bins, pad
+## Warning: Removed 1593 rows containing non-finite values (stat_bin).
 ```
 
 ![](Contract_Termination_files/figure-html/Model03B-1.png)<!-- -->
 
 ```r
-#Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp,"Veh")
+#Plot the percent terminated across duration and competition
+Term_smp$bin_Days_Veh<-bin_df(Term_smp,"l_Days","Veh")
+ggplot(data=subset(Term_smp,!is.na(n_Comp)&!is.na(bin_Days_Comp)) %>% 
+  group_by(bin_Days_Veh,Veh) %>% 
+  summarise (mean_Term = mean(b_Term),
+             mean_l_Days =mean(cl_Days)),
+       aes(y=mean_Term,x=mean_l_Days))+geom_point()+facet_wrap(~Veh)+
+  labs(title="Average Termination Rate",
+          caption="Source: FPDS, CSIS Analysis")
+```
+
+```
+## Warning: Removed 4 rows containing missing values (geom_point).
 ```
 
 ![](Contract_Termination_files/figure-html/Model03B-2.png)<!-- -->
@@ -1649,192 +1627,324 @@ display(Term_03B)
 ##     n_Comp:cl_Days + SIDV:cl_Days + MIDV:cl_Days + OIDV:cl_Days, 
 ##     family = binomial(link = "logit"), data = Term_smp)
 ##                 coef.est coef.se
-## (Intercept)     -4.81     0.10  
-## n_Comp           0.01     0.06  
-## cl_Ceil          0.16     0.08  
-## clsqr_Ceil       0.05     0.02  
-## cl_Days          0.57     0.10  
-## clsqr_Days      -0.06     0.03  
-## SIDV            -1.23     0.11  
-## MIDV            -0.98     0.25  
-## OIDV            -0.08     0.14  
-## n_Comp:cl_Ceil   0.05     0.04  
-## cl_Ceil:cl_Days -0.14     0.05  
-## n_Comp:cl_Days   0.14     0.05  
-## cl_Days:SIDV     0.53     0.09  
-## cl_Days:MIDV     0.52     0.18  
-## cl_Days:OIDV    -0.22     0.13  
+## (Intercept)     -4.66     0.09  
+## n_Comp          -0.03     0.06  
+## cl_Ceil          0.07     0.08  
+## clsqr_Ceil       0.03     0.02  
+## cl_Days          0.52     0.09  
+## clsqr_Days       0.04     0.03  
+## SIDV            -1.41     0.10  
+## MIDV            -0.79     0.22  
+## OIDV            -0.03     0.12  
+## n_Comp:cl_Ceil   0.10     0.04  
+## cl_Ceil:cl_Days -0.12     0.05  
+## n_Comp:cl_Days   0.06     0.05  
+## cl_Days:SIDV     0.52     0.08  
+## cl_Days:MIDV     0.44     0.16  
+## cl_Days:OIDV    -0.15     0.11  
 ## ---
-##   n = 184500, k = 15
-##   residual deviance = 15844.8, null deviance = 17366.7 (difference = 1521.8)
+##   n = 184080, k = 15
+##   residual deviance = 16251.7, null deviance = 17819.6 (difference = 1567.9)
 ```
 
 ```r
-#Plot the model and Vehicle for SIDV
-# Term_03B_SIDV_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
-#   cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,x,MIDV,OIDV,
-#         Comp*Ceil,Days*Ceil,Days*Comp) %*%  coef(Term_03B))}
-# 
-# #Competition curves
-# discrete_fitted_term_model(Term_smp,"SIDV") +
-#   stat_function(fun = Term_03B_SIDV_curve, 
-#                              args=list(Comp=0,Ceil=0,Days=0,
-#                                        MIDV=0,OIDV=0),color="blue")+
-#   stat_function(fun = Term_03B_SIDV_curve, 
-#                              args=list(Comp=2,Ceil=0,Days=0,
-#                                        MIDV=0,OIDV=0),color="blue")
-# 
-# Term_03B_MIDV_curve<-function(x, Comp,Ceil,Days,SIDV,OIDV){invlogit(
-#   cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,x,OIDV,
-#         Comp*Ceil,Days*Ceil,Days*Comp) %*%  coef(Term_03B))}
-# 
-# #Plot the model and Vehicle for MIDV
-# #Competition curves
-# discrete_fitted_term_model(Term_smp,"MIDV") +
-#   stat_function(fun = Term_03B_MIDV_curve, 
-#                              args=list(Comp=0,Ceil=0,Days=0,
-#                                        SIDV=0,OIDV=0),color="blue")+
-#   stat_function(fun = Term_03B_MIDV_curve, 
-#                              args=list(Comp=2,Ceil=0,Days=0,
-#                                        SIDV=0,OIDV=0),color="blue")
-# 
-# Term_03B_OIDV_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV){invlogit(
-#   cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,MIDV,x,
-#         Comp*Ceil,Days*Ceil,Days*Comp) %*%  coef(Term_03B))}
-# 
-# #Plot the model and Vehicle for OIDV
-# #Competition curves
-# discrete_fitted_term_model(Term_smp,"OIDV") +
-#   stat_function(fun = Term_03B_OIDV_curve, 
-#                              args=list(Comp=0,Ceil=0,Days=0,
-#                                        SIDV=0,MIDV=0),color="blue")+
-#   stat_function(fun = Term_03B_OIDV_curve, 
-#                              args=list(Comp=2,Ceil=0,Days=0,
-#                                        SIDV=0,MIDV=0),color="blue")
+# Plot the model and Vehicle for SIDV
+Term_03B_SIDV_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,x,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*x,Days*MIDV,Days*OIDV) %*%  coef(Term_03B))}
 
+#Duration curves
+discrete_fitted_term_model(Term_smp,"SIDV") +
+  stat_function(fun = Term_03B_SIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=-1,
+                                       MIDV=0,OIDV=0),color="blue")+
+  stat_function(fun = Term_03B_SIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=1,
+                                       MIDV=0,OIDV=0),color="blue")
+```
 
-
-#Plot the fitted values vs actual results
-binned_fitted_versus_residuals(Term_03B)
+```
+## Warning: Removed 62833 rows containing missing values (geom_point).
 ```
 
 ![](Contract_Termination_files/figure-html/Model03B-3.png)<!-- -->
 
 ```r
-#Plot residuals versus fitted
+Term_03B_MIDV_curve<-function(x, Comp,Ceil,Days,SIDV,OIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,x,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*SIDV,Days*x,Days*OIDV) %*%  coef(Term_03B))}
+
+#Plot the model and Vehicle for MIDV
+#Duration Curves
+discrete_fitted_term_model(Term_smp,"MIDV") +
+  stat_function(fun = Term_03B_MIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=-1,
+                                       SIDV=0,OIDV=0),color="blue")+
+  stat_function(fun = Term_03B_MIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=1,
+                                       SIDV=0,OIDV=0),color="blue")
+```
+
+```
+## Warning: Removed 62833 rows containing missing values (geom_point).
+```
+
+![](Contract_Termination_files/figure-html/Model03B-4.png)<!-- -->
+
+```r
+Term_03B_OIDV_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,MIDV,x,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*SIDV,Days*MIDV,Days*x) %*%  coef(Term_03B))}
+
+#Plot the model and Vehicle for OIDV
+#Duration curves
+discrete_fitted_term_model(Term_smp,"OIDV") +
+  stat_function(fun = Term_03B_OIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=-1,
+                                       SIDV=0,MIDV=0),color="blue")+
+  stat_function(fun = Term_03B_OIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=1,
+                                       SIDV=0,MIDV=0),color="blue")
+```
+
+```
+## Warning: Removed 62833 rows containing missing values (geom_point).
+```
+
+![](Contract_Termination_files/figure-html/Model03B-5.png)<!-- -->
+
+```r
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_03B)
+```
+
+![](Contract_Termination_files/figure-html/Model03B-6.png)<!-- -->
+
+```r
+#Plot residuals versus fittedO
 residuals_term_plot(Term_03B)+
   labs(x="Estimated  Pr (Termination)")
 ```
 
-![](Contract_Termination_files/figure-html/Model03B-4.png)<!-- -->
+![](Contract_Termination_files/figure-html/Model03B-7.png)<!-- -->
 
 ```r
 # residuals_term_plot(Term_02F,"cl_days")+
 #   labs(x="Centered Log(Days)")
 ```
 
-The vast majority of very short duration contracts are IDVs
+The vast majority of very short duration contracts are IDVs. The distribution in each of the categories is typically not normal, Other IDVs in particularly being prone to two peaks. Interestingly enough, definitive contracts and purchase orders have the most consistent relationship with terminations, and single-award IDVs the most noisy. For the MIDVs and OIDVs, below l_days=2, or about the average point, there's almost no risk of termination, but that risk steadily rises above that level. 
 
-The lower rate of task order termination did not prove to be relevant to contract ceiling. The next step is to see whether there is any relationship to maximum duration. Under this theory, the fact that IDVs make it simpler to do multiple short task orders could mask any risk when task order duratioN grows longer.
+Interactions:
+* Single-Award IDVs have a large negative coefficient, but as the duration grows longer this affect is diminished and the importance of duration grows. 
+* Multiple-Award IDVs now have the largest negative coefficient, but to an even greater degree than with Single-Award IDVs, as the duration grows longer this affect is diminished and the importance of duration grows. 
+* Other IDVs now have a no longer signicant risk of termination, but the relationship with duration is the reverse of the other two, OIDVs dampen the rise in termination risk for longer contracts.
 
-###Model 03C: Any IDV and Maximum Duration
+
+
+###Model 03C: Vehicle and Competition
 
 ```r
-# Term_03C <- glmer (data=Term_smp,
+#Frequency Plot
+ggplot(data=subset(Term_smp,!is.na(Veh)),
+       aes(x=n_Comp))+geom_histogram(bins=20)+facet_grid(Term~Veh,scales="free_y")+
+  labs(title="Frequency by Termination",
+          caption="Source: FPDS, CSIS Analysis")
+```
+
+```
+## Warning: Removed 1332 rows containing non-finite values (stat_bin).
+```
+
+![](Contract_Termination_files/figure-html/Model03C-1.png)<!-- -->
+
+```r
+#Plot the percent terminated across duration and competition
+Term_smp$bin_n_Comp_Veh<-bin_df(Term_smp,"n_Comp","Veh")
+ggplot(data=subset(Term_smp,!is.na(n_Comp)&!is.na(bin_n_Comp_Veh)) %>% 
+  group_by(bin_n_Comp_Veh,Veh) %>% 
+  summarise (mean_Term = mean(b_Term),
+             mean_n_Comp =mean(n_Comp)),
+       aes(y=mean_Term,x=mean_n_Comp))+geom_point()+facet_wrap(~Veh)+
+  labs(title="Average Termination Rate",
+          caption="Source: FPDS, CSIS Analysis")
+```
+
+![](Contract_Termination_files/figure-html/Model03C-2.png)<!-- -->
+
+```r
+#Create the model
+Term_03C <- glm (data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                 SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp , family=binomial(link="logit"))
+display(Term_03C)
+```
+
+```
+## glm(formula = b_Term ~ n_Comp + cl_Ceil + clsqr_Ceil + cl_Days + 
+##     clsqr_Days + SIDV + MIDV + OIDV + n_Comp:cl_Ceil + cl_Ceil:cl_Days + 
+##     n_Comp:cl_Days + SIDV:cl_Days + MIDV:cl_Days + OIDV:cl_Days + 
+##     SIDV:n_Comp + MIDV:n_Comp + OIDV:n_Comp, family = binomial(link = "logit"), 
+##     data = Term_smp)
+##                 coef.est coef.se
+## (Intercept)     -4.73     0.10  
+## n_Comp           0.03     0.06  
+## cl_Ceil          0.04     0.08  
+## clsqr_Ceil       0.02     0.02  
+## cl_Days          0.46     0.09  
+## clsqr_Days       0.05     0.03  
+## SIDV            -0.91     0.15  
+## MIDV            -0.23     0.31  
+## OIDV            -0.20     0.20  
+## n_Comp:cl_Ceil   0.13     0.04  
+## cl_Ceil:cl_Days -0.11     0.05  
+## n_Comp:cl_Days   0.09     0.05  
+## cl_Days:SIDV     0.46     0.08  
+## cl_Days:MIDV     0.40     0.16  
+## cl_Days:OIDV    -0.11     0.11  
+## n_Comp:SIDV     -0.34     0.07  
+## n_Comp:MIDV     -0.35     0.14  
+## n_Comp:OIDV      0.11     0.11  
+## ---
+##   n = 184080, k = 18
+##   residual deviance = 16224.0, null deviance = 17819.6 (difference = 1595.6)
+```
+
+```r
+# Plot the model and Vehicle for SIDV
+Term_03C_SIDV_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,x,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*x,Days*MIDV,Days*OIDV,
+        Comp*x,Comp*MIDV,Comp*OIDV) %*%  coef(Term_03C))}
+
+#Competition curves
+discrete_fitted_term_model(Term_smp,"SIDV") +
+  stat_function(fun = Term_03C_SIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,OIDV=0),color="blue")+
+  stat_function(fun = Term_03C_SIDV_curve,
+                             args=list(Comp=2,Ceil=0,Days=0,
+                                       MIDV=0,OIDV=0),color="blue")
+```
+
+```
+## Warning: Removed 62833 rows containing missing values (geom_point).
+```
+
+![](Contract_Termination_files/figure-html/Model03C-3.png)<!-- -->
+
+```r
+Term_03C_MIDV_curve<-function(x, Comp,Ceil,Days,SIDV,OIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,x,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*SIDV,Days*x,Days*OIDV,
+        Comp*SIDV,Comp*x,Comp*OIDV) %*%  coef(Term_03C))}
+
+#Plot the model and Vehicle for MIDV
+#Competition Curves
+discrete_fitted_term_model(Term_smp,"MIDV") +
+  stat_function(fun = Term_03C_MIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       SIDV=0,OIDV=0),color="blue")+
+  stat_function(fun = Term_03C_MIDV_curve,
+                             args=list(Comp=2,Ceil=0,Days=0,
+                                       SIDV=0,OIDV=0),color="blue")
+```
+
+```
+## Warning: Removed 62833 rows containing missing values (geom_point).
+```
+
+![](Contract_Termination_files/figure-html/Model03C-4.png)<!-- -->
+
+```r
+Term_03C_OIDV_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,MIDV,x,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*SIDV,Days*MIDV,Days*x,
+        Comp*SIDV,Comp*MIDV,Comp*x) %*%  coef(Term_03C))}
+
+#Plot the model and Vehicle for OIDV
+#Competition curves
+discrete_fitted_term_model(Term_smp,"OIDV") +
+  stat_function(fun = Term_03C_OIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       SIDV=0,MIDV=0),color="blue")+
+  stat_function(fun = Term_03C_OIDV_curve,
+                             args=list(Comp=2,Ceil=0,Days=0,
+                                       SIDV=0,MIDV=0),color="blue")
+```
+
+```
+## Warning: Removed 62833 rows containing missing values (geom_point).
+```
+
+![](Contract_Termination_files/figure-html/Model03C-5.png)<!-- -->
+
+```r
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_03C)
+```
+
+![](Contract_Termination_files/figure-html/Model03C-6.png)<!-- -->
+
+```r
+#Plot residuals versus fittedO
+residuals_term_plot(Term_03C)+
+  labs(x="Estimated  Pr (Termination)")
+```
+
+![](Contract_Termination_files/figure-html/Model03C-7.png)<!-- -->
+
+```r
+# residuals_term_plot(Term_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
+```
+The average plots did show varying relationships and slopes between different types of vehicles. However, 
+the coeficient for competition itself remains negative, though not significant, despite the baseline vehicle state, definitive/purchase, having higher termination rates among competed contracts. Given the other interactions, this suggests that this phenomenon is already captured by other inputs and interactions in the dataset. 
+
+Interactions
+* For single-award IDVs, competition magnifies the lower termination coeffient. This is somewhat surprising, as competition reflects the competed status of the IDV, not the individual task order. Nonetheless, that rate appears to very much matter, and suggests that uncompeted IDVs lose some of their termination reduction correlation.
+* For multiple-award IDVs, competition also dampens the termination rate. This also magnificies the import of duration for multiple-award IDVs, which now can complete overcome the base termination coefficient of the vehicle.
+* Competition dampens the termination reduction coefficient for other IDVs. It is not significant, I am tempted to leave it out, though it may be appropriate to always leave in the triples.
+
+###Model 03D: Any IDV and Contract ceiling
+
+```r
+# Term_03D <- glmer (data=Term_smp,
 #                  b_Term ~ l_Ceil + l_Days + l_Ceil:l_Days + 
 #                    IDV + IDV:l_Days+
 #                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_03C)
+# display(Term_03D)
 ```
 
 The results a dramatic, longer IDVs do face higher risks of termination. That said, the termination risk reduction for all IDVs has grown even further as a result, so even longer task orders may not face greater termination risks than comparable contract awards. With this addition, the intersection of contract ceiling and maximum duration is no longer significant, the next step will be testing its removal from the equation.
 
-###Model 03D: Trimming the intersection of duration and ceiling
+
+The lower rate of task order termination did not prove to be relevant to contract ceiling. The next step is to see whether there is any relationship to maximum duration. Under this theory, the fact that IDVs make it simpler to do multiple short task orders could mask any risk when task order duratioN grows longer.
+
+###Model 03E: Trimming the intersection of duration and ceiling
 
 ```r
-# Term_03D <- glmer (data=Term_smp,
+# Term_03E <- glmer (data=Term_smp,
 #                  b_Term ~ l_Ceil + l_Days + 
 #                    IDV + IDV:l_Days+
 #                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_03D)
+# display(Term_03E)
 ```
 
 The removal has little effect on the AIC or DIC but does simplify the model.
 
 Subsequent steps will explore the difference between multiple-award IDVs, where the government can choose from a pre-qualified pool of vendors, and single-award IDVs, where the government only has one option. 
 
-###Model 03E: Single-Award IDV
-
-```r
-# Term_03E <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + 
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_03E)
-```
-
-Single-award IDVs closely align with the role played by IDVs as a whole, and increase the predictive power of the model, as measured by AIC and DIC. 
-
-###Model 03F: Multiple-Award IDVs
-
-```r
-# Term_03F <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + MIDV +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_03F)
-```
-
-Multiple-Award IDVs also reduce the termination rate, but not to nearly the same extent as single-awrd IDVs. However, coefficient is sufficient to merit inclusion in the model.
-
-###Model 03G: Other IDVs
-
-```r
-# Term_03G <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + MIDV + OIDV +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_03G)
-```
-Other IDVs has the weakest relationship of the three, but still is significant. The next step is to test if interactions with maximum duration still add value to the model, starting with single-award.
-
-
-###Model 03H: Single-Award IDVs and Maximum duration
-
-```r
-# Term_03H <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + MIDV + OIDV + SIDV:l_Days +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_03H)
-```
-
-The pattern for single-award IDVs and duration is a slightly magnified version of the phenonemon for IDVs overall shown in mdel 2C. 
-
-###Model 03I: Single-Award IDVs and Maximum duration
-
-
-```r
-# 
-# Term_03I <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + MIDV + OIDV + SIDV:l_Days + MIDV:l_Days +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_03I)
-```
-The error is a bit higher for multiple source IDVs interacting with duration, as compared to single-award IDVs. In addition, the model failed to converge, so leaving out this interaction.
-
-###Model 03J: Other IDVs and Maximum duration
-
-
-```r
-# Term_12J <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + MIDV + OIDV + SIDV:l_Days + OIDV:l_Days +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_12J)
-```
-Interesting enough, other IDVs have the opposite interaction with single-award IDVs as does single-award IDVs. Shorter duration other IDVs slightly raise termination risks while longer reduce them relative to other sorts of vehicles. However, the coefficient for other IDVs no longer exceeds the standard error, so leaving this parameter out.
 
 ##Type of Contract
 ###Model 13A: Fixed-Price Contracts
