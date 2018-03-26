@@ -225,7 +225,7 @@ sr5yr2006non_nop <- sum((df2006_nop$years.in.SAM>=5 & df2006_nop$biz_size == 1),
 
 
 ##10-year
-sr10yr2001_nop <- (sum(df2001_nop$years.in.SAM>=10, value=TRUE))/893 
+sr10yr2001_nop <- (sum(df2001_nop$years.in.SAM>=10, value=TRUE))/nrow(df2001_nop) 
 sr10yr2001sm_nop <- sum((df2001_nop$years.in.SAM>=10 & df2001_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/893
 sr10yr2001non_nop <- sum((df2001_nop$years.in.SAM>=10 & df2001_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/893
 
@@ -349,10 +349,9 @@ sr5yr2006non <- sum((df2006$years.in.SAM>=5 & df2006$biz_size == 1), na.rm = TRU
 
 
 ##10-year
-sr10yr2001 <- (sum(df2001$years.in.SAM>=10, value=TRUE))/893 
-sr10yr2001sm <- sum((df2001$years.in.SAM>=10 & df2001$biz_size == 0), na.rm = TRUE, value = TRUE)/893
-sr10yr2001non <- sum((df2001$years.in.SAM>=10 & df2001$biz_size == 1), na.rm = TRUE, value = TRUE)/893
-
+sr10yr2001 <- (sum(df2001$years.in.SAM>=10, value=TRUE))/nrow(df2001)
+sr10yr2001sm <- sum((df2001$years.in.SAM>=10 & df2001$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2001)
+sr10yr2001non <- sum((df2001$years.in.SAM>=10 & df2001$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2001)
 
 sr10yr2002 <- sum(df2002$years.in.SAM>=10, value=TRUE)/nrow(df2002) 
 sr10yr2002sm <- sum((df2002$years.in.SAM>=10 & df2002$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2002)
