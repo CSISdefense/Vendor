@@ -71,6 +71,8 @@ In addition, l_Ceil and l_Days are rescaled to have an average value of 0 and a 
   
 
 head(DefenseModelAndDetail)
+debug(transform_contract)
+DefenseModelAndDetail<-transform_contract(DefenseModelAndDetail)
 
 
 ```
@@ -82,13 +84,12 @@ Next, we eliminate missing data entries and then draw a sample. The final comput
 ###Computational Sample Creation
 ```{r Sample}
 
-DefenseModelAndDetail<-transform_contract(DefenseModelAndDetail)
 
 Term_smp<-DefenseModelAndDetail[!is.na(DefenseModelAndDetail$b_Term)&
                                   !is.na(DefenseModelAndDetail$Comp),]
 
-
 Term_smp<-Term_smp[sample(nrow(Term_smp),250000),]
+
 
 
 Term_smp$cl_Ceil<-scale(Term_smp$l_Ceil)
@@ -97,13 +98,70 @@ Term_smp$cb_Comp<-scale(Term_smp$b_Comp)
 Term_smp$cn_Comp<-scale(Term_smp$n_Comp)
 Term_smp$cn_Offr<-scale(Term_smp$n_Offr)
 Term_smp$cl_Offer<-scale(Term_smp$l_Offer)
+Term_smp$clsqr_Ceil<-Term_smp$cl_Ceil^2
+Term_smp$lsqr_Ceil<-Term_smp$l_Ceil^2
 
+Term_smp$clsqr_Days<-Term_smp$cl_Days^2
+Term_smp$lsqr_Days<-Term_smp$l_Days^2
+
+summary(Term_smp$b_Comp )
+summary(Term_smp$n_Comp )
+summary(Term_smp$Comp )
+summary(Term_smp$CompOffr )
+summary(Term_smp$EffComp )
 
 head(Term_smp)
 
 ```
+###Examine Minimium Size
+```{r MinimumSize}
+# path<-"https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/"
+#   directory="economic/"
+#   deflator_file <- "Lookup_Deflators.csv"
+#   
+#  deflators_retrieved <- readr::read_csv(paste0(path, directory,deflator_file))
+# deflators_retrieved$cutoff_3500<-3500*deflators_retrieved$Deflator.2016
+# deflators_retrieved<-subset(deflators_retrieved,select=c(Fiscal.Year,cutoff_3500))
+# colnames(deflators_retrieved)[1]<-"StartFY"
+# DefenseModelAndDetail<-plyr::join(DefenseModelAndDetail,deflators_retrieved)
+# #Frequency Plot for logged ceiling
+# DefenseModelAndDetail$UnmodifiedContractBaseAndAllOptionsValue
+# Term_smp<-DefenseModelAndDetail[
+#   !is.na(DefenseModelAndDetail$b_Term)&
+#     !is.na(DefenseModelAndDetail$Comp)&
+#     DefenseModelAndDetail$UnmodifiedContractBaseAndAllOptionsValue>=
+#     DefenseModelAndDetail$cutoff_3500,]
+# 
+# Term_smp<-Term_smp[sample(nrow(Term_smp),250000),]
+# 
+# 
+# freq_continuous_term_plot(Term_smp,"l_Ceil")
+# exp(mean(Term_smp$l_Ceil,na.rm=TRUE))
+# 
+# Term_smp$StartFY
+# 
+# cutoff<-quantile(Term_smp$l_Ceil,0.05,na.rm=TRUE)
+# exp(cutoff)
+# cutoff<-log(3500)
+# 
+# nrow(subset(Term_smp,l_Ceil<cutoff,na.rm=TRUE))/nrow(Term_smp)
+# sum(subset(Term_smp,l_Ceil<cutoff)$b_Term)/sum(Term_smp$b_Term)
+# 
+# 
+# sum(subset(Term_smp,l_Ceil<cutoff,na.rm=TRUE)$Action.Obligation)/sum(Term_smp$Action.Obligation)
+# sum(subset(Term_smp,l_Ceil>=cutoff,na.rm=TRUE)$Action.Obligation)/sum(Term_smp$Action.Obligation)
+# 
+# sum(subset(Term_smp,l_Ceil<cutoff)$b_Term)/nrow(subset(Term_smp,l_Ceil<cutoff,na.rm=TRUE))
+# 
+# sum(subset(Term_smp,l_Ceil>=cutoff)$b_Term)/nrow(subset(Term_smp,l_Ceil<cutoff,na.rm=TRUE))
+# 
+# 
+# exp(2)
+```
 
-#Estimate Model
+
+
+#Initial Logit Model
 
 ##Study Variable: Competition
 Competition has the potential to reduce terminations by giving the government more options in vendors and encouraging better behavior from the contractor that was chosen. 
@@ -114,7 +172,7 @@ Competition has the potential to reduce terminations by giving the government mo
 freq_discrete_term_plot(Term_smp,"Comp")
 
 #Percent Terminated Plot
-discrete_percent_term_plot(Term_smp,"b_Comp")
+discrete_percent_term_plot(Term_smp,"Comp")
 
 #Model
 Term_01A <- glm (data=Term_smp,
@@ -141,11 +199,11 @@ Competition alone has a very slight, but significant, negative correlation with 
 ```{r Model01B}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp,"n_Comp")
+freq_discrete_term_plot(Term_smp,"EffComp")
 
 
 #Percent Terminated Plot
-discrete_percent_term_plot(Term_smp,"n_Comp")
+discrete_percent_term_plot(Term_smp,"EffComp")
 
 #Model
 Term_01B <- glm (data=Term_smp,
@@ -171,10 +229,10 @@ The correltion between the three categories of competition has a smaller coeffic
 ```{r Model01C}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp,"n_Offr")
+freq_discrete_term_plot(Term_smp,"CompOffr")
 
 #Percent Terminated Plot
-discrete_percent_term_plot(Term_smp,"n_Offr")
+discrete_percent_term_plot(Term_smp,"CompOffr")
 
 #Model
 Term_01C <- glm (data=Term_smp,
@@ -206,30 +264,14 @@ freq_continuous_term_plot(Term_smp,"l_Offer")
 #Percent Terminated Plot 
 binned_percent_term_plot(Term_smp,"l_Offer")
 
+#Percent Terminated Plot
+binned_percent_term_plot(Term_smp,"l_Offer","FxCb")
 
 #Percent Terminated Plot
-Term_smp$bin_Offer_FxCb<-bin_df(Term_smp,rank_col="l_Offer",group_col="FxCb")
-ggplot(data=subset(Term_smp,!is.na(l_Offer) & !is.na(FxCb)) %>% 
-  group_by(bin_Offer_FxCb,FxCb) %>% 
-  summarise (mean_Term = mean(b_Term),
-             mean_l_Offer =mean(l_Offer)),
-       aes(y=mean_Term,x=mean_l_Offer))+geom_point()+facet_wrap(~FxCb)
+binned_percent_term_plot(Term_smp,"l_Offer","PSR")
 
 #Percent Terminated Plot
-Term_smp$bin_Offer_PSR<-bin_df(Term_smp,rank_col="l_Offer",group_col="PSR")
-ggplot(data=subset(Term_smp,!is.na(l_Offer) & !is.na(PSR)) %>% 
-  group_by(bin_Offer_PSR,PSR) %>% 
-  summarise (mean_Term = mean(b_Term),
-             mean_l_Offer =mean(l_Offer)),
-       aes(y=mean_Term,x=mean_l_Offer))+geom_point()+facet_wrap(~PSR)
-
-#Percent Terminated Plot
-Term_smp$bin_Offer_Veh<-bin_df(Term_smp,rank_col="l_Offer",group_col="Veh")
-ggplot(data=subset(Term_smp,!is.na(l_Offer) & !is.na(Veh) ) %>% 
-  group_by(bin_Offer_Veh,Veh) %>% 
-  summarise (mean_Term = mean(b_Term),
-             mean_l_Offer =mean(l_Offer)),
-       aes(y=mean_Term,x=mean_l_Offer))+geom_point()+facet_wrap(~Veh)
+binned_percent_term_plot(Term_smp,"l_Offer","Veh")
 
 
 #Model
@@ -255,37 +297,14 @@ discrete_fitted_term_model(Term_smp,"cl_Offer") +
                                            b=coef(Term_01D)[2]),
                              color="blue")
 
-#Plot the fitted data versus actual outcomes
-Term_01D_data<-data.frame(fitted=fitted(Term_01D),
-                       residuals=residuals(Term_01D),
-                       b_Term=Term_01D$model$b_Term,
-                       cl_Offer=Term_01D$model$cl_Offer
-                       )
-
-
 #Plot the fitted values vs actual results
-Term_01D_data$bin_fitted<-bin_df(Term_01D_data,rank_col="fitted")
-ggplot(data=subset(Term_01D_data,!is.na(fitted) & !is.na(b_Term) ) %>% 
-  group_by(bin_fitted) %>% 
-  summarise (mean_Term = mean(b_Term),
-             mean_fitted =mean(fitted)),
-       aes(y=mean_Term,x=mean_fitted))+geom_point()+
-  labs(title="Binned Fitted Linear Model",
-          caption="Source: FPDS, CSIS Analysis")
+binned_fitted_versus_residuals(Term_01D)
 
 
-#Plot the Residualts
-Term_01D_res<-binned.resids (Term_01D_data$fitted,
-                              Term_01D_data$fitted-Term_01D_data$b_Term, nclass=3)$binned
 
-ggplot(data=Term_01D_res,
-       aes(x=xbar,y-ybar))+
-  geom_point(aes(y=ybar))+ #Residuals
-  geom_line(aes(y=se2),col="grey")+
-  geom_line(aes(y=-se2),col="grey")+
-  labs(title="Binned residual plot",
-       x="Estimated  Pr (Termination)",
-       y="Average residual")
+#Plot residuals versus fitted
+residuals_term_plot(Term_01D,bins=3)+
+  labs(x="Estimated  Pr (Termination)")
 
 
 
@@ -357,36 +376,20 @@ Contract ceiling has a significant relationship, though the residuals show a pos
 
 ```{r Model02B}
 
-Term_smp$clsqr_Ceil<-Term_smp$cl_Ceil^2
+
 
 #Frequency Plot
-ggplot(data=Term_smp,
-       aes(x=l_Ceil^2))+geom_histogram(bins=20) + scale_y_continuous(labels = scales::comma) + facet_wrap(~Term,ncol=1,scales="free_y")+
-  labs(title="Frequency by Termination",
-          caption="Source: FPDS, CSIS Analysis")
-
+freq_continuous_term_plot(Term_smp,"lsqr_Ceil")
 
 #Percent Terminated Plot
-Term_smp$bin_Offer<-bin_df(Term_smp,"cl_Ceil")
-ggplot(data=subset(Term_smp,!is.na(l_Ceil)) %>% 
-  group_by(bin_Offer) %>% 
-  summarise (mean_Term = mean(b_Term),
-             mean_lsqr_Ceil =mean(l_Ceil^2)),
-       aes(y=mean_Term,x=mean_lsqr_Ceil))+geom_point()+
-  labs(title="Average Termination Rate",
-          caption="Source: FPDS, CSIS Analysis")
+binned_percent_term_plot(Term_smp,"lsqr_Ceil")
 
-
+#Model
 Term_02B <- glm (data=Term_smp,
                  b_Term ~n_Comp + cl_Ceil + clsqr_Ceil, family=binomial(link="logit"))
 display(Term_02B)
 
-
-
-Term_02B_plot<-ggplot(data=Term_smp,
-       aes(y=j_Term,x=cl_Ceil))+geom_point(alpha=0.01)+scale_y_sqrt() +
-  labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
-
+#Plot the fitted model plot
 Term_02B_curve<-function(x, Comp){invlogit(cbind(1,Comp,x, x^2) %*%  coef(Term_02B))}
 
 #Competition curves
@@ -411,29 +414,13 @@ Contracts with very small or very large ceilings appear have a negative coeffici
 
 ###Model 02C: Cost Ceiling and Competition
 
-
-
 ```{r Model02C}
 
-
 #Frequency Plot
-ggplot(data=subset(Term_smp,!is.na(n_Comp)),
-       aes(x=l_Ceil))+geom_histogram(bins=20) + scale_y_continuous(labels = scales::comma) + facet_grid(Term~n_Comp,scales="free_y")+
-  labs(title="Initial Cost Ceiling Frequency by Competition Termination",
-          caption="Source: FPDS, CSIS Analysis")
-
-
+freq_continuous_term_plot(Term_smp,"l_Ceil","EffComp")
 
 #Plot the percent terminated across cost ceiling and competition
-Term_smp$bin_Ceil_Comp<-bin_df(Term_smp,"l_Ceil")
-ggplot(data=subset(Term_smp,!is.na(n_Comp)&!is.na(bin_Ceil_Comp)) %>% 
-  group_by(bin_Ceil_Comp,n_Comp) %>% 
-  summarise (mean_Term = mean(b_Term),
-             mean_l_Ceil =mean(l_Ceil)),
-       aes(y=mean_Term,x=mean_l_Ceil))+geom_point()+facet_wrap(~n_Comp)+
-  labs(title="Average Termination Rate",
-          caption="Source: FPDS, CSIS Analysis")
-
+binned_percent_term_plot(Term_smp,"l_Ceil","EffComp")
 
 #Create the model
 Term_02C <- glm (data=Term_smp,
@@ -512,8 +499,8 @@ residuals_term_plot(Term_02D)+
 The initial model results are surprising as ceiling change direction, reducing and correlates with a lower risk of termiation now, although the interaction between competition and ceiling remains roughly the same. The graph of the fitted values shows that this model The next step will be to look at the interaction of ceiling and duration. The difference in deviance for residual difference has more than trippled, an indication of the correlative power of duration. However, the residuals do show a clear pattern that indicates another exponential variable may be necessary. However, the interaction between ceiling and duration is a more important analytical question and will be the next variable added.
 
 ###Model 02E: Interation of Ceiling and Duration
-```{r Mode02E}
 
+```{r Mode02E}
 
 #First a quick scatter plot for terminations by duration and ceiling
 ggplot(data=subset(Term_smp,!is.na(l_Ceil)),
@@ -568,24 +555,13 @@ The interaction of ceiling and duration is correlated with a lower rate of termi
 
 ```{r Model02F}
 
-Term_smp$clsqr_Days<-Term_smp$cl_Days^2
+
 
 #Frequency Plot
-ggplot(data=Term_smp,
-       aes(x=l_Days^2))+geom_histogram(bins=20) + scale_y_continuous(labels = scales::comma) + facet_wrap(~Term,ncol=1,scales="free_y")+
-  labs(title="Frequency by Termination",
-          caption="Source: FPDS, CSIS Analysis")
-
+freq_continuous_term_plot(Term_smp,"lsqr_Days")
 
 #Percent Terminated Plot
-Term_smp$bin_Offer<-bin_df(Term_smp,"cl_Days")
-ggplot(data=subset(Term_smp,!is.na(l_Days)) %>% 
-  group_by(bin_Offer) %>% 
-  summarise (mean_Term = mean(b_Term),
-             mean_lsqr_Ceil =mean(l_Days^2)),
-       aes(y=mean_Term,x=mean_lsqr_Ceil))+geom_point()+
-  labs(title="Average Termination Rate",
-          caption="Source: FPDS, CSIS Analysis")
+binned_percent_term_plot(Term_smp,"lsqr_Days")
 
 
 #Create the model
@@ -658,27 +634,14 @@ residuals_term_plot(Term_02G,"cl_Ceil")+
 
 While the effect on the residual deviance is fairly minor, it does still appear that the ceiling^2 does reduce the incidence of non-linear patterns in the residuals. So for now we will be leaving it in.
 
-###Model 02H: Interation of Duration and Competition
+###Model 02H: Interaction of Duration and Competition
 ```{r Mode02H}
 
-
 #Frequency Plot
-ggplot(data=subset(Term_smp,!is.na(n_Comp)),
-       aes(x=l_Days))+geom_histogram(bins=20)+facet_grid(Term~n_Comp,scales="free_y")+
-  labs(title="Frequency by Termination",
-          caption="Source: FPDS, CSIS Analysis")
+freq_continuous_term_plot(Term_smp,"l_Days","EffComp")
 
-
-
-#Plot the percent terminated across duration and competition
-Term_smp$bin_Days_Comp<-bin_df(Term_smp,"l_Days")
-ggplot(data=subset(Term_smp,!is.na(n_Comp)&!is.na(bin_Days_Comp)) %>% 
-  group_by(bin_Days_Comp,n_Comp) %>% 
-  summarise (mean_Term = mean(b_Term),
-             mean_l_Days =mean(l_Days)),
-       aes(y=mean_Term,x=mean_l_Days))+geom_point()+facet_wrap(~n_Comp)+facet_wrap(~n_Comp)+
-  labs(title="Average Termination Rate",
-          caption="Source: FPDS, CSIS Analysis")
+#Plot the percent terminated across cost ceiling and competition
+binned_percent_term_plot(Term_smp,"l_Days","EffComp")
 
 #Create the model
 Term_02H <- glm (data=Term_smp,
@@ -735,40 +698,46 @@ Term_03A <- glm (data=Term_smp,
 display(Term_03A)
 
 #Plot the model and Vehicle for SIDV
-Term_03A_SIDV_curve<-function(x, Comp,Ceil,MIDV,OIDV){invlogit(
-  cbind(1,Comp,Ceil,Ceil^2,cl_Days,x,MIDV,OIDV,cl_Days^2,
-        Comp*Ceil,cl_Days*Ceil,cl_Days*Comp) %*%  coef(Term_03A))}
+Term_03A_SIDV_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,x,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp) %*%  coef(Term_03A))}
 
 #Competition curves
 discrete_fitted_term_model(Term_smp,"SIDV") +
   stat_function(fun = Term_03A_SIDV_curve, 
-                             args=list(Comp=0,Ceil=0,MIDV=0,OIDV=0),color="blue")+
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,OIDV=0),color="blue")+
   stat_function(fun = Term_03A_SIDV_curve, 
-                             args=list(Comp=2,Ceil=0,MIDV=0,OIDV=0),color="blue")
+                             args=list(Comp=2,Ceil=0,Days=0,
+                                       MIDV=0,OIDV=0),color="blue")
 
-Term_03A_MIDV_curve<-function(x, Comp,Ceil,SIDV,OIDV){invlogit(
-  cbind(1,Comp,Ceil,Ceil^2,cl_Days,SIDV,x,OIDV,cl_Days^2,
-        Comp*Ceil,cl_Days*Ceil,cl_Days*Comp) %*%  coef(Term_03A))}
+Term_03A_MIDV_curve<-function(x, Comp,Ceil,Days,SIDV,OIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,x,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp) %*%  coef(Term_03A))}
 
 #Plot the model and Vehicle for MIDV
 #Competition curves
 discrete_fitted_term_model(Term_smp,"MIDV") +
   stat_function(fun = Term_03A_MIDV_curve, 
-                             args=list(Comp=0,Ceil=0,SIDV=0,OIDV=0),color="blue")+
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       SIDV=0,OIDV=0),color="blue")+
   stat_function(fun = Term_03A_MIDV_curve, 
-                             args=list(Comp=2,Ceil=0,SIDV=0,OIDV=0),color="blue")
+                             args=list(Comp=2,Ceil=0,Days=0,
+                                       SIDV=0,OIDV=0),color="blue")
 
-Term_03A_OIDV_curve<-function(x, Comp,Ceil,SIDV,MIDV){invlogit(
-  cbind(1,Comp,Ceil,Ceil^2,cl_Days,SIDV,MIDV,x,cl_Days^2,
-        Comp*Ceil,cl_Days*Ceil,cl_Days*Comp) %*%  coef(Term_03A))}
+Term_03A_OIDV_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,MIDV,x,
+        Comp*Ceil,Days*Ceil,Days*Comp) %*%  coef(Term_03A))}
 
 #Plot the model and Vehicle for OIDV
 #Competition curves
 discrete_fitted_term_model(Term_smp,"OIDV") +
   stat_function(fun = Term_03A_OIDV_curve, 
-                             args=list(Comp=0,Ceil=0,SIDV=0,MIDV=0),color="blue")+
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       SIDV=0,MIDV=0),color="blue")+
   stat_function(fun = Term_03A_OIDV_curve, 
-                             args=list(Comp=2,Ceil=0,SIDV=0,MIDV=0),color="blue")
+                             args=list(Comp=2,Ceil=0,Days=0,
+                                       SIDV=0,MIDV=0),color="blue")
 
 
 
@@ -789,196 +758,559 @@ The first check lumps looks at three categories of IDVs, each facing a notably l
 This may reflect that the Ceiling and Days entries reflect only the task order and not the larger contract. The next step is to check the intersections with ceiling.
 
 
-###Model 03B: Any IDV and contract duration
+###Model 03B: Vehicle and Duration
 ```{r Model03B}
 
-# #Frequency Plot
-# ggplot(data=subset(Term_smp,!is.na(IDV)),
-#        aes(x=l_Days))+geom_histogram(bins=20)+facet_grid(Term~IDV,scales="free_y")
-# 
-# 
-# 
-# #Plot the percent terminated across duration and IDV
-# Term_smp$bin_Days_IDV<-bin_df(Term_smp,"l_Days")
-# ggplot(data=subset(Term_smp,!is.na(IDV)&!is.na(bin_Days_IDV)) %>% 
-#   group_by(bin_Days_IDV,IDV) %>% 
-#   summarise (mean_Term = mean(b_Term),
-#              mean_l_Days =mean(l_Days)),
-#        aes(y=mean_Term,x=mean_l_Days))+geom_point()+facet_wrap(~IDV)
-# 
-# 
-# 
-# 
-# 
-# #Create the model
-# Term_03B <- glm (data=Term_smp,
-#                  b_Term ~ n_Comp +
-#                  cl_Ceil + cl_Days +
-#                  n_Comp:cl_Ceil  + cl_Ceil:cl_Days + n_Comp:cl_Days +
-#                    IDV +
-#                    IDV:cl_Days
-#                    , family=binomial(link="logit"))
-# display(Term_03B)
-# 
-# #Plot the model and IDV
-# Term_03B_plot<-ggplot(data=Term_smp,
-#        aes(y=j_Term,x=IDV))+geom_point(alpha=0.01)+scale_y_sqrt() +
-#   labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
-# 
-# Term_03B_curve<-function(x, Comp,Ceil,Days){invlogit(cbind(1,Comp,
-#                                                       Ceil,Days,x,
-#                                                       Comp*Ceil,Days*Ceil,Days*Comp,x*Days) %*%  coef(Term_03B))}
-# 
-# Term_03B_plot+ stat_function(fun = Term_03B_curve, 
-#                              args=list(Comp=0,Ceil=0,Days=0),color="blue")+
-#   stat_function(fun = Term_03B_curve, 
-#                              args=list(Comp=0,Ceil=0,Days=1),color="blue")
-# 
-# 
-# 
-# 
-# #Plot the fitted values vs actual results
-# Term_03B_data<-data.frame(fitted=fitted(Term_03B),
-#                        residuals=residuals(Term_03B),
-#                        b_Term=Term_03B$model$b_Term,
-#                        n_Comp=Term_03B$model$n_Comp,
-#                        cl_Ceil=Term_03B$model$cl_Ceil,
-#                        cl_Days=Term_03B$model$cl_Days,
-#                        IDV=Term_03B$model$IDV
-#                        )
-# 
-# 
-# Term_03B_data$bin_fitted<-bin_df(Term_03B_data,rank_col="fitted")
-# ggplot(data=subset(Term_03B_data,!is.na(fitted) & !is.na(b_Term) ) %>% 
-#   group_by(bin_fitted) %>% 
-#   summarise (mean_Term = mean(b_Term),
-#              mean_fitted =mean(fitted)),
-#        aes(y=mean_Term,x=mean_fitted))+geom_point() + labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+#Frequency Plot
+freq_continuous_term_plot(Term_smp,"l_Days","Veh")
 
+
+#Percent Terminated Plot 
+binned_percent_term_plot(Term_smp,"l_Ceil","Veh")
+
+#Create the model
+Term_03B <- glm (data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                 SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days, family=binomial(link="logit"))
+display(Term_03B)
+
+# Plot the model and Vehicle for SIDV
+Term_03B_SIDV_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,x,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*x,Days*MIDV,Days*OIDV) %*%  coef(Term_03B))}
+
+#Duration curves
+discrete_fitted_term_model(Term_smp,"SIDV") +
+  stat_function(fun = Term_03B_SIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=-1,
+                                       MIDV=0,OIDV=0),color="blue")+
+  stat_function(fun = Term_03B_SIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=1,
+                                       MIDV=0,OIDV=0),color="blue")
+
+
+Term_03B_MIDV_curve<-function(x, Comp,Ceil,Days,SIDV,OIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,x,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*SIDV,Days*x,Days*OIDV) %*%  coef(Term_03B))}
+
+#Plot the model and Vehicle for MIDV
+#Duration Curves
+discrete_fitted_term_model(Term_smp,"MIDV") +
+  stat_function(fun = Term_03B_MIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=-1,
+                                       SIDV=0,OIDV=0),color="blue")+
+  stat_function(fun = Term_03B_MIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=1,
+                                       SIDV=0,OIDV=0),color="blue")
+
+
+Term_03B_OIDV_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,MIDV,x,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*SIDV,Days*MIDV,Days*x) %*%  coef(Term_03B))}
+
+#Plot the model and Vehicle for OIDV
+#Duration curves
+discrete_fitted_term_model(Term_smp,"OIDV") +
+  stat_function(fun = Term_03B_OIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=-1,
+                                       SIDV=0,MIDV=0),color="blue")+
+  stat_function(fun = Term_03B_OIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=1,
+                                       SIDV=0,MIDV=0),color="blue")
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_03B)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_03B)+
+  labs(x="Estimated  Pr (Termination)")
+
+# residuals_term_plot(Term_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
 
 ```
 
-The vast majority of very short duration contracts are IDVs
+The vast majority of very short duration contracts are IDVs. The distribution in each of the categories is typically not normal, Other IDVs in particularly being prone to two peaks. Interestingly enough, definitive contracts and purchase orders have the most consistent relationship with terminations, and single-award IDVs the most noisy. For the MIDVs and OIDVs, below l_days=2, or about the average point, there's almost no risk of termination, but that risk steadily rises above that level. 
 
-The lower rate of task order termination did not prove to be relevant to contract ceiling. The next step is to see whether there is any relationship to maximum duration. Under this theory, the fact that IDVs make it simpler to do multiple short task orders could mask any risk when task order duratioN grows longer.
+Interactions:
+* Single-Award IDVs have a large negative coefficient, but as the duration grows longer this affect is diminished and the importance of duration grows. 
+* Multiple-Award IDVs now have the largest negative coefficient, but to an even greater degree than with Single-Award IDVs, as the duration grows longer this affect is diminished and the importance of duration grows. 
+* Other IDVs now have a no longer signicant risk of termination, but the relationship with duration is the reverse of the other two, OIDVs dampen the rise in termination risk for longer contracts.
 
-###Model 03C: Any IDV and Maximum Duration
+
+
+###Model 03C: Vehicle and Competition
+
+The next step is to check interactions with the contract vehicles. Each has a slightly different approach to competition. For example, the competition for a Single-Award IDV happens at the start of the IDV, after that, contracts awarded through that vehicle go to that single winning vendor.
+
+
 ```{r Model03C}
 
-# Term_03C <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days + l_Ceil:l_Days + 
-#                    IDV + IDV:l_Days+
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_03C)
+#Frequency Plot
+freq_discrete_term_plot(Term_smp,"EffComp","Veh")
+
+#Percent Terminated Plot 
+discrete_percent_term_plot(Term_smp,"EffComp","Veh")
+
+
+#Create the model
+Term_03C <- glm (data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                 SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp , family=binomial(link="logit"))
+display(Term_03C)
+
+# Plot the model and Vehicle for SIDV
+Term_03C_SIDV_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,x,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*x,Days*MIDV,Days*OIDV,
+        Comp*x,Comp*MIDV,Comp*OIDV) %*%  coef(Term_03C))}
+
+#Competition curves
+discrete_fitted_term_model(Term_smp,"SIDV") +
+  stat_function(fun = Term_03C_SIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,OIDV=0),color="blue")+
+  stat_function(fun = Term_03C_SIDV_curve,
+                             args=list(Comp=2,Ceil=0,Days=0,
+                                       MIDV=0,OIDV=0),color="blue")
+
+
+Term_03C_MIDV_curve<-function(x, Comp,Ceil,Days,SIDV,OIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,x,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*SIDV,Days*x,Days*OIDV,
+        Comp*SIDV,Comp*x,Comp*OIDV) %*%  coef(Term_03C))}
+
+#Plot the model and Vehicle for MIDV
+#Competition Curves
+discrete_fitted_term_model(Term_smp,"MIDV") +
+  stat_function(fun = Term_03C_MIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       SIDV=0,OIDV=0),color="blue")+
+  stat_function(fun = Term_03C_MIDV_curve,
+                             args=list(Comp=2,Ceil=0,Days=0,
+                                       SIDV=0,OIDV=0),color="blue")
+
+
+Term_03C_OIDV_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,MIDV,x,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*SIDV,Days*MIDV,Days*x,
+        Comp*SIDV,Comp*MIDV,Comp*x) %*%  coef(Term_03C))}
+
+#Plot the model and Vehicle for OIDV
+#Competition curves
+discrete_fitted_term_model(Term_smp,"OIDV") +
+  stat_function(fun = Term_03C_OIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       SIDV=0,MIDV=0),color="blue")+
+  stat_function(fun = Term_03C_OIDV_curve,
+                             args=list(Comp=2,Ceil=0,Days=0,
+                                       SIDV=0,MIDV=0),color="blue")
+
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_03C)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_03C)+
+  labs(x="Estimated  Pr (Termination)")
+
+# residuals_term_plot(Term_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
+
 ```
+The average plots did show varying relationships and slopes between different types of vehicles. However, 
+the coeficient for competition itself remains negative, though not significant, despite the baseline vehicle state, definitive/purchase, having higher termination rates among competed contracts. Given the other interactions, this suggests that this phenomenon is already captured by other inputs and interactions in the dataset. 
 
-The results a dramatic, longer IDVs do face higher risks of termination. That said, the termination risk reduction for all IDVs has grown even further as a result, so even longer task orders may not face greater termination risks than comparable contract awards. With this addition, the intersection of contract ceiling and maximum duration is no longer significant, the next step will be testing its removal from the equation.
+Interactions
+* For single-award IDVs, competition magnifies the lower termination coeffient. This is somewhat surprising, as competition reflects the competed status of the IDV, not the individual task order. Nonetheless, that rate appears to very much matter, and suggests that uncompeted IDVs lose some of their termination reduction correlation.
+* For multiple-award IDVs, competition also dampens the termination rate. This also magnificies the import of duration for multiple-award IDVs, which now can complete overcome the base termination coefficient of the vehicle.
+* Competition dampens the termination reduction coefficient for other IDVs. It is not significant, I am tempted to leave it out, though it may be appropriate to always leave in the triples.
 
-###Model 03D: Trimming the intersection of duration and ceiling
+Unlike the existance of competition, having more offers does not have the same dramatic relationship with multi-award IDVs that it does with competition. This does raise the question as to whether the long tail of high numbers of offers might be undercutting the relationship. However, for now, we will stick with competition. 
+
+###Model 03D: Vehicle and Contract Ceiling
 ```{r Model03D}
 
-# Term_03D <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days + 
-#                    IDV + IDV:l_Days+
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_03D)
+#Frequency Plot
+freq_continuous_term_plot(Term_smp,"l_Ceil","Veh")
+
+
+#Percent Terminated Plot 
+binned_percent_term_plot(Term_smp,"l_Ceil","Veh")
+
+#Create the model
+
+#Create the model
+Term_03D <- glm (data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                 SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp +
+                   SIDV:cl_Ceil+MIDV:cl_Ceil+OIDV:cl_Ceil, family=binomial(link="logit"))
+display(Term_03D)
+
+# Plot the model and Vehicle for SIDV
+Term_03D_SIDV_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,x,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*x,Days*MIDV,Days*OIDV,
+        Comp*x,Comp*MIDV,Comp*OIDV,
+        Ceil*x,Ceil*MIDV,Ceil*OIDV) %*%  coef(Term_03D))}
+
+#Competition curves
+discrete_fitted_term_model(Term_smp,"SIDV") +
+  stat_function(fun = Term_03D_SIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,OIDV=0),color="blue")+
+  stat_function(fun = Term_03D_SIDV_curve,
+                             args=list(Comp=2,Ceil=0,Days=0,
+                                       MIDV=0,OIDV=0),color="blue")
+
+
+Term_03D_MIDV_curve<-function(x, Comp,Ceil,Days,SIDV,OIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,x,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*SIDV,Days*x,Days*OIDV,
+        Comp*SIDV,Comp*x,Comp*OIDV,
+        Ceil*SIDV,Ceil*x,Ceil*OIDV) %*%  coef(Term_03D))}
+
+#Plot the model and Vehicle for MIDV
+#Competition Curves
+discrete_fitted_term_model(Term_smp,"MIDV") +
+  stat_function(fun = Term_03D_MIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       SIDV=0,OIDV=0),color="blue")+
+  stat_function(fun = Term_03D_MIDV_curve,
+                             args=list(Comp=2,Ceil=0,Days=0,
+                                       SIDV=0,OIDV=0),color="blue")
+
+
+Term_03D_OIDV_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV){invlogit(
+  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,MIDV,x,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*SIDV,Days*MIDV,Days*x,
+        Comp*SIDV,Comp*MIDV,Comp*x,
+        Ceil*SIDV,Ceil*MIDV,Ceil*x) %*%  coef(Term_03D))}
+
+#Plot the model and Vehicle for OIDV
+#Competition curves
+discrete_fitted_term_model(Term_smp,"OIDV") +
+  stat_function(fun = Term_03D_OIDV_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       SIDV=0,MIDV=0),color="blue")+
+  stat_function(fun = Term_03D_OIDV_curve,
+                             args=list(Comp=2,Ceil=0,Days=0,
+                                       SIDV=0,MIDV=0),color="blue")
+
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_03D)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_03D)+
+  labs(x="Estimated  Pr (Termination)")
+
+
+
+# residuals_term_plot(Term_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
+
 ```
 
-The removal has little effect on the AIC or DIC but does simplify the model.
+The interaction with contract ceiling only has a significant relationship with other IDV, and the 3 terms together do little to reduce the divergence of the model. Leaving it out.
 
-Subsequent steps will explore the difference between multiple-award IDVs, where the government can choose from a pre-qualified pool of vendors, and single-award IDVs, where the government only has one option. 
+###Model 03E: Testing the removal of Ceiling^2 
 
-###Model 03E: Single-Award IDV
 ```{r Model03E}
 
-# Term_03E <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + 
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_03E)
+#Create the model
+Term_03E <- glm (data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil  + cl_Days+ clsqr_Days +
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                 SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp, family=binomial(link="logit"))
+display(Term_03E)
+
+
+# Plot the model and Vehicle for SIDV
+Term_03E_SIDV_curve<-function(x, Comp,Days,SIDV,MIDV,OIDV){invlogit(
+  cbind(1,Comp,x,Days,Days^2,SIDV,MIDV,OIDV,
+        Comp*x,Days*x,Days*Comp,
+        Days*SIDV,Days*MIDV,Days*OIDV,
+        Comp*SIDV,Comp*MIDV,Comp*OIDV) %*%  coef(Term_03E))}
+
+#Competition curves
+discrete_fitted_term_model(Term_smp,"cl_Ceil") +
+  stat_function(fun = Term_03E_SIDV_curve,
+                             args=list(Comp=0,Days=0,
+                                       MIDV=0,OIDV=0,SIDV=0),color="blue")+
+  stat_function(fun = Term_03E_SIDV_curve,
+                             args=list(Comp=2,Days=0,
+                                       MIDV=0,OIDV=0,SIDV=0),color="blue")
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_03E)
+
+#Plot residuals versus fitted
+residuals_term_plot(Term_03E)+
+  labs(x="Estimated  Pr (Termination)")
+
+residuals_term_plot(Term_03D,"cl_Ceil")+
+  labs(x="Centered Log(Ceiling)")
+
+
+residuals_term_plot(Term_03E,"cl_Ceil")+
+  labs(x="Centered Log(Ceiling)")
+
 ```
+Ceiling squared does little to reduce deviance and only slightly mitigates, rather than removing, any patterns in the residuals. Removing it from the model.
 
-Single-award IDVs closely align with the role played by IDVs as a whole, and increase the predictive power of the model, as measured by AIC and DIC. 
 
-###Model 03F: Multiple-Award IDVs
+###Model 03F: Testing the removal of Duration^2 
+
 ```{r Model03F}
 
-# Term_03F <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + MIDV +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_03F)
+#Create the model
+Term_03F <- glm (data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil  + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                 SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp, family=binomial(link="logit"))
+display(Term_03F)
+
+
+# Plot the model and Vehicle for SIDV
+Term_03F_SIDV_curve<-function(x, Comp,Days,SIDV,MIDV,OIDV){invlogit(
+  cbind(1,Comp,x,Days,Days^2,SIDV,MIDV,OIDV,
+        Comp*x,Days*x,Days*Comp,
+        Days*SIDV,Days*MIDV,Days*OIDV,
+        Comp*SIDV,Comp*MIDV,Comp*OIDV) %*%  coef(Term_03F))}
+
+#Competition curves
+discrete_fitted_term_model(Term_smp,"cl_Ceil") +
+  stat_function(fun = Term_03F_SIDV_curve,
+                             args=list(Comp=0,Days=0,
+                                       MIDV=0,OIDV=0,SIDV=0),color="blue")+
+  stat_function(fun = Term_03F_SIDV_curve,
+                             args=list(Comp=2,Days=0,
+                                       MIDV=0,OIDV=0,SIDV=0),color="blue")
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_03F)
+
+
+#Plot residuals versus fitted
+residuals_term_plot(Term_03E)+
+  labs(x="Estimated  Pr (Termination)")
+
+
+#Plot residuals versus fitted
+residuals_term_plot(Term_03F)+
+  labs(x="Estimated  Pr (Termination)")
+
+residuals_term_plot(Term_03E,"cl_Days")+
+  labs(x="Centered Log(Duration)")
+
+
+residuals_term_plot(Term_03F,"cl_Days")+
+  labs(x="Centered Log(Duration)")
 ```
 
-Multiple-Award IDVs also reduce the termination rate, but not to nearly the same extent as single-awrd IDVs. However, coefficient is sufficient to merit inclusion in the model.
-
-###Model 03G: Other IDVs
-```{r Model03G}
-
-# Term_03G <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + MIDV + OIDV +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_03G)
-```
-Other IDVs has the weakest relationship of the three, but still is significant. The next step is to test if interactions with maximum duration still add value to the model, starting with single-award.
-
-
-###Model 03H: Single-Award IDVs and Maximum duration
-```{r Model03H}
-
-# Term_03H <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + MIDV + OIDV + SIDV:l_Days +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_03H)
-```
-
-The pattern for single-award IDVs and duration is a slightly magnified version of the phenonemon for IDVs overall shown in mdel 2C. 
-
-###Model 03I: Single-Award IDVs and Maximum duration
-
-```{r Model03I}
-# 
-# Term_03I <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + MIDV + OIDV + SIDV:l_Days + MIDV:l_Days +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_03I)
-```
-The error is a bit higher for multiple source IDVs interacting with duration, as compared to single-award IDVs. In addition, the model failed to converge, so leaving out this interaction.
-
-###Model 03J: Other IDVs and Maximum duration
-
-```{r Model12J}
-
-# Term_12J <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + MIDV + OIDV + SIDV:l_Days + OIDV:l_Days +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_12J)
-```
-Interesting enough, other IDVs have the opposite interaction with single-award IDVs as does single-award IDVs. Shorter duration other IDVs slightly raise termination risks while longer reduce them relative to other sorts of vehicles. However, the coefficient for other IDVs no longer exceeds the standard error, so leaving this parameter out.
+The benefits of duration squared are fairly minimal as well at this point.
 
 ##Type of Contract
-###Model 13A: Fixed-Price Contracts
 
 The next step adds a measure for whether the contract was cost-based or fixed-price. Prior CSIS research has found that fixed-price contracts do face a higher risk of termination across the board.
 
-```{r Model13A}
+###Model 04A: Fixed-Price
+```{r Model04A}
 
-# Term_13A <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + MIDV + OIDV + SIDV:l_Days + 
-#                    n_Fixed +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_13A)
+#Frequency Plot
+freq_discrete_term_plot(Term_smp,"FxCb")
+
+#Percent Terminated Plot 
+discrete_percent_term_plot(Term_smp,"FxCb")
+
+
+#Create the model
+Term_04A <- glm (data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   n_Fixed +
+                 SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp , family=binomial(link="logit"))
+display(Term_04A)
+
+# Plot the model and Vehicle 
+Term_04A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV){invlogit(
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        x,
+        Days*x,Days*MIDV,Days*OIDV,
+        Comp*x,Comp*MIDV,Comp*OIDV) %*%  coef(Term_04A))}
+
+#Competition curves
+discrete_fitted_term_model(Term_smp,"SIDV") +
+  stat_function(fun = Term_04A_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,SIDV=0,OIDV=0),color="blue")+
+  stat_function(fun = Term_04A_curve,
+                             args=list(Comp=2,Ceil=0,Days=0,
+                                       MIDV=0,SIDV=0,OIDV=0),color="blue")
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_04A)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_04A)+
+  labs(x="Estimated  Pr (Termination)")
+
+# residuals_term_plot(Term_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
+
 ```
 
-And fixed price contracts do indeed have a appreciably higher average termination rate. This does not improve the overall AIC of the model, but it captures another important dynamic and has a coefficient that greatly exceeds its standard error. 
+And fixed price contracts do indeed have a significant coefficient that correlates with higher termination risk. In addition, the addition of this variable reduces the pattern in the residuals that in the middle range. 
 
-###Model 13B: Fixed-Price and Maximum Duration
+###Model 04B: Fixed-Price and Maximum Duration Intersection 
 Past CSIS research has found that fixed-price contracts do appear to be at higher risk if they have a longer maximum duration. Fixed-price contracting does require upfront estimation of likely costs, and thus a longer duration means more opportunity for changed circumstance.
+
+```{r Model04B}
+
+#Frequency Plot
+freq_continuous_term_plot(Term_smp,"l_Days","FxCb")
+
+#Percent Terminated Plot 
+binned_percent_term_plot(Term_smp,"l_Days","FxCb")
+
+
+#Create the model
+Term_04B <- glm (data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   n_Fixed +
+                   SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp +
+                   cl_Days:n_Fixed , family=binomial(link="logit"))
+display(Term_04B)
+
+# Plot the model and Vehicle 
+Term_04B_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV){invlogit(
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        x,
+        Days*x,Days*MIDV,Days*OIDV,
+        Comp*x,Comp*MIDV,Comp*OIDV,
+        Days*x) %*%  coef(Term_04B))}
+
+#Days curves
+discrete_fitted_term_model(Term_smp,"SIDV") +
+  stat_function(fun = Term_04B_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,SIDV=0,OIDV=0),color="blue")+
+  stat_function(fun = Term_04B_curve,
+                             args=list(Comp=2,Ceil=0,Days=1,
+                                       MIDV=0,SIDV=0,OIDV=0),color="blue")
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_04B)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_04B)+
+  labs(x="Estimated  Pr (Termination)")
+
+# residuals_term_plot(Term_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
+
+```
+The probability of termination by duration chart is more clearcut with fixed price than with cost-based contracts. However, the variable does not appreciably decrease the deviation, is not significant, and undercuts the significance of other variables. It will not be added tto the model.
+
+###Model 04C: Fixed-Price and Vehicle
+```{r Model04C}
+
+#Frequency Plot
+freq_discrete_term_plot(Term_smp,"FxCb","Veh")
+
+#Percent Terminated Plot 
+discrete_percent_term_plot(Term_smp,"FxCb","Veh")
+
+#Create the model
+Term_04C <- glm (data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   n_Fixed +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                 SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp +
+                   SIDV:n_Fixed+MIDV:n_Fixed+OIDV:n_Fixed, family=binomial(link="logit"))
+display(Term_04C)
+
+# Plot the model and Vehicle for SIDV
+Term_04C_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+        n_Fixed,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Days*SIDV,Days*MIDV,Days*OIDV,
+        Comp*SIDV,Comp*MIDV,Comp*OIDV,
+        x*SIDV,x*MIDV,x*OIDV
+        ) %*%  coef(Term_04C))}
+
+#Vehicle curves
+discrete_fitted_term_model(Term_smp,"n_Fixed") +
+  stat_function(fun = Term_04C_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       SIDV=1,MIDV=0,OIDV=0),color="blue")+
+  stat_function(fun = Term_04C_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       SIDV=0,MIDV=1,OIDV=0),color="blue")+
+  stat_function(fun = Term_04C_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       SIDV=0,MIDV=0,OIDV=1),color="blue")
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_04C)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_04C)+
+  labs(x="Estimated  Pr (Termination)")
+
+# residuals_term_plot(Term_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
+
+```
+The interactions are not significant and do little to reduce the residual deviance. They will not be added to the model.
+
 
 ```{r Model13B}
 
@@ -992,22 +1324,240 @@ Past CSIS research has found that fixed-price contracts do appear to be at highe
 ```
 The model failed to converge and the coefficient, while large, did not exceed the standard error. That said, it is worth noting that the sign went in the opposite direction from what was expected, with longer fixed-price contracts not being associated with disproprtionately higher terminations rates. Thus, the earlier finding is not replicated. 
 
-###Model 13C: Incentive Fees
+###Model 04D: Incentive Fees
 
 In the performance of the defense acquisition system report, the benefits found were reduced cost overruns. That could help avoid terminations, but it's an indirect connection at best. 
 
-```{r Model13C}
 
-# Term_13C <- glmer (data=Term_smp,
-#                   b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + MIDV + OIDV + SIDV:l_Days + 
-#                    n_Fixed + nIncent +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_13C)
+```{r Model04D}
+
+#Frequency Plot
+freq_discrete_term_plot(Term_smp,"Fee")
+
+#Percent Terminated Plot 
+discrete_percent_term_plot(Term_smp,"Fee")
+discrete_percent_term_plot(DefenseModelAndDetail,"Fee")
+
+
+
+#Create the model
+Term_04D <- glm (data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + cl_Days+ clsqr_Ceil + clsqr_Days +
+                   SIDV + MIDV + OIDV + 
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   n_Fixed + n_Incent + n_NoFee +
+                   SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp 
+                    , family=binomial(link="logit"))
+display(Term_04D)
+
+# Plot the model and Vehicle 
+Term_04D_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Fixed,x,
+        Days*x,Days*MIDV,Days*OIDV,
+        Comp*x,Comp*MIDV,Comp*OIDV) %*%  coef(Term_04D))}
+
+#Days curves
+discrete_fitted_term_model(Term_smp,"n_Incent") +
+  stat_function(fun = Term_04D_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,SIDV=0,OIDV=0,Fixed=1),color="blue")+
+  stat_function(fun = Term_04D_curve,
+                             args=list(Comp=2,Ceil=0,Days=1,
+                                       MIDV=0,SIDV=0,OIDV=0,Fixed=1),color="blue")
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_04D)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_04D)+
+  labs(x="Estimated  Pr (Termination)")
+
+# residuals_term_plot(Term_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
+
+
 ```
 
-###Model 13D: Undefinitized Contract Awards
+The effect of incentive fees are not significant. They do have a noteworthy coefficient, however, given prior research on their ability to prevent cost overruns, their lowered heightened probably of terminations lacks an immdetiate explaintation. There's also a fair amount of unlabeled data, which reduces the samplle size. It's still worth checking the interaction with fixed price, as they are based on a common field in FPDS and the two are closely related in concept.
+
+###Model 04E: Incentive Fees and Fixed-Price  
+
+```{r Model04E}
+
+#Frequency Plot
+freq_discrete_term_plot(Term_smp,"Fee","FxCb")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+#Percent Terminated Plot 
+discrete_percent_term_plot(Term_smp,"Fee","FxCb")+
+   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+summary(Term_smp$Fee
+
+#Create the model
+Term_04E <- glm (data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   n_Fixed + n_Incent + 
+                   SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp +
+                   n_Fixed:n_Incent +n_Fixed:n_NoFee 
+                    , family=binomial(link="logit"))
+display(Term_04E)
+
+# Plot the model and Vehicle 
+Term_04E_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Fixed,x,
+        Days*x,Days*MIDV,Days*OIDV,
+        Comp*x,Comp*MIDV,Comp*OIDV,
+        x*Fixed) %*%  coef(Term_04E))}
+
+#Days curves
+discrete_fitted_term_model(Term_smp,"SIDV") +
+  stat_function(fun = Term_04E_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=0),color="blue")+
+  stat_function(fun = Term_04E_curve,
+                             args=list(Comp=2,Ceil=0,Days=1,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=0),color="blue")
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_04E)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_04E)+
+  labs(x="Estimated  Pr (Termination)")
+
+# residuals_term_plot(Term_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
+
+```
+Looking at Incentive Fees and Fixed-Price interactions undercuts the significance of both base variables. Incentive will not be added to the model.
+
+###Model 04F: Undefinitized Contract Awards
 Undefinitized Contract Awards allow for quick action in situations where there is not time or information to establish all of a contracts properties at the time of signing. They have been found by the GAO and the Performance of the Defense Acquisition studies to contain notable risks, primarily relating to cost overruns. Will these risks also carry into terminations?
+
+```{r Model04F}
+
+#Frequency Plot
+freq_discrete_term_plot(Term_smp,"UCA")
+
+#Percent Terminated Plot 
+discrete_percent_term_plot(Term_smp,"UCA")
+
+
+
+#Create the model
+Term_04F <- glm (data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   n_Fixed + n_UCA + 
+                   SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp 
+                    , family=binomial(link="logit"))
+display(Term_04F)
+
+# Plot the model and Vehicle 
+Term_04F_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Fixed,x,
+        Days*x,Days*MIDV,Days*OIDV,
+        Comp*x,Comp*MIDV,Comp*OIDV) %*%  coef(Term_04F))}
+
+#Days curves
+discrete_fitted_term_model(Term_smp,"SIDV") +
+  stat_function(fun = Term_04F_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1),color="blue")+
+  stat_function(fun = Term_04F_curve,
+                             args=list(Comp=2,Ceil=0,Days=1,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1),color="blue")
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_04F)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_04F)+
+  labs(x="Estimated  Pr (Termination)")
+
+# residuals_term_plot(Term_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
+
+```
+
+
+```{r Model04F}
+
+#Frequency Plot
+freq_discrete_term_plot(Term_smp,"UCA","FxCb")
+
+#Percent Terminated Plot 
+discrete_percent_term_plot(Term_smp,"UCA","FxCb")
+
+
+
+#Create the model
+Term_04F <- glm (data=Term_smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   n_Fixed + n_UCA + 
+                   SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp 
+                    , family=binomial(link="logit"))
+display(Term_04F)
+
+# Plot the model and Vehicle 
+Term_04F_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Fixed,x,
+        Days*x,Days*MIDV,Days*OIDV,
+        Comp*x,Comp*MIDV,Comp*OIDV) %*%  coef(Term_04F))}
+
+#Days curves
+discrete_fitted_term_model(Term_smp,"SIDV") +
+  stat_function(fun = Term_04F_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1),color="blue")+
+  stat_function(fun = Term_04F_curve,
+                             args=list(Comp=2,Ceil=0,Days=1,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1),color="blue")
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_04F)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_04F)+
+  labs(x="Estimated  Pr (Termination)")
+
+# residuals_term_plot(Term_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
+
+```
+
 
 ```{r Model3D}
 #Run through stopped here
@@ -1022,157 +1572,22 @@ Undefinitized Contract Awards allow for quick action in situations where there i
 
 Use of UCA significantly increases risks of termination, well in excess of the error term. Interestingly, while this addition further reduceds the AIC and DIC of the model, it also increases the coefficient for fixed price contracts.
 
+
 ##Place of Performance
-###Model 14A: Any International
+###Model 05A: Any International
 
-```{r Model4A}
+```{r Model05A}
 
-# Term4A <- glmer (data=Term_smp,
+# Term05A <- glmer (data=Term_smp,
 #                   b_Term ~ l_Ceil + l_Days + 
 #                    SIDV + MIDV + OIDV + SIDV:l_Days + 
 #                    n_Fixed  + n_UCA +
 #                    nIntl +
 #                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term4A)
+# display(Term05A)
 
 ```
 
 International performance of contract proved to not be an effective predictor of contract termination. In addition, the model failed to converge. This variable will not be added.
 
-##Competition Variables
-###Model 15A: Competition
-
-
-
-###Model 15C: Competition and Fixed Price 
-
-```{r Model5C}
-# Term_02C <- glmer (data=Term_smp,b_Term ~ l_Ceil + l_Days + 
-#                    SIDV + MIDV + OIDV + SIDV:l_Days + 
-#                    n_Fixed  + n_UCA +
-#                    cb_Comp + cb_Comp:n_Fixed +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_02C)
-
-```
-THese results are not sufficiently signficiant to justify inclusion, but the interaction between fixed price and competition is potentially interesting and suggests that the demographics of competed contrats may be one factor driving their increase in termination risk. Specifically, one possibility may be that competitive fixed-price contracts are at greater risk of aggressive bids that increase contract risk. 
-
-###Model 15D: Fixed Price and Number of Offers for Competed Contracts
-
-```{r Term_02G}
-# Term_02D <- glmer (data=subset(Term_smp,cb_Comp==1),
-#               b_Term ~ l_Ceil + l_Days + 
-#                 SIDV + MIDV + OIDV + SIDV:l_Days + 
-#                    n_Fixed  + n_UCA +  lOffer + lOffer:n_Fixed +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_02D)
-
-```
-
-Focusing again on only those contracts that were competed, there does not appear to be a relationship between fixed price contracting and the number of offers. This undercuts the idea that the competition dynamics can be explained as simply relating to aggressive bidding on fixed price contracts.
-
-###Model 15E: Competition and Contract Ceiling
-```{r Term_15E}
-# Term_15E <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days +
-#                    SIDV + MIDV + OIDV + SIDV:l_Days +
-#                 n_Fixed  + n_UCA +  
-#                   cb_Comp + cb_Comp:l_Ceil +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_15E)
-
-
-```
-The coefficient for the interaction of Ceiling and Competition exceeds the standard error, but only minimally. The model also fails to converge, so we'll leave out this interaction.
-
-###Model 15F: Single-Award IDVs and Competition 
-The next step is to check interactions with the contract vehicles. Each has a slightly different approach to competition. For example, the competition for a Single-Award IDV happens at the start of the IDV, after that, contracts awarded through that vehicle go to that single winning vendor.
-
-```{r Term_15F}
-# Term_15F <- glmer (data=Term_smp,
-#                 b_Term ~ l_Ceil + l_Days +
-#                 SIDV + MIDV + OIDV + SIDV:l_Days +
-#                 n_Fixed  + n_UCA +  
-#                 cb_Comp + cb_Comp:SIDV + 
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_15F)
-# 
-
-```
-That result proved stronger than expected and does seem to show that that competed IDVs do have a lower average risk of terminations. However, the model failed to converge.
-
-Next, we'll check the same relationship, but with number of offers instead.
-
-###Model 15G: Single-Award IDVs and Number of Offers 
-
-```{r Term_15G}
-# Term_15G <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days +
-#                 SIDV + MIDV + OIDV + SIDV:l_Days +
-#                 n_Fixed  + n_UCA +
-#                 lOffer + lOffer:SIDV + 
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_15G)
-
-```
-The model likewise failed to converge with number of offers and the number of offers proved a less powerful interaction variable than extent of competition.
-
-
-###Model 15H: Multiple-Award IDVs and Competition
-
-```{r Term_15H}
-# Term_15H <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days +
-#                 SIDV + MIDV + OIDV + SIDV:l_Days +
-#                 n_Fixed  + n_UCA +
-#                 cb_Comp + cb_Comp:MIDV + 
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_15H)
-# nrow(Term_smp[!is.na(Term_smp$l_Ceil) &
-#                 !is.na(Term_smp$lDays) &
-#                 !is.na(Term_smp$IDV) &
-#               !is.na(Term_smp$nUCA) & 
-#                 !is.na(Term_smp$Fixed)
-#                 !is.na(Term_smp$cb_Comp),])
-
-```
-The combination of competition and multiple-award IDVs is powerful. Multiple-award IDVs entirely explains the competition 
-
-###Model 15I: Multiple-Award IDVs and Number of Offers
-```{r Term_15I}
-# Term_15I <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days +
-#                 SIDV + MIDV + OIDV + SIDV:l_Days +
-#                 n_Fixed  + n_UCA +
-#                 lOffer + MIDV:lOffer + 
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_15I)
-
-```
-###Model 15J: Other IDVs and Competition
-
-Unlike the existance of competition, having more offers does not have the same dramatic relationship with multi-award IDVs that it does with competition. This does raise the question as to whether the long tail of high numbers of offers might be undercutting the relationship. However, for now, we will stick with competition. 
-
-```{r Term_15J}
-# Term_15J <- glmer (data=Term_smp,
-#                  b_Term ~ l_Ceil + l_Days +
-#                 SIDV + MIDV + OIDV + SIDV:l_Days +
-#                 n_Fixed  + n_UCA +
-#                 cb_Comp + cb_Comp:MIDV + cb_Comp:OIDV +
-#                (1 | Who) + (1 | PSR_What) + (1 | StartFY), family=binomial(link="logit"))
-# display(Term_15J)
-
-```
-Competition and Other IDVs only slightly exceeds the standard error.
-
-
-##Selection: Model 05H
-
-While the direction of competition is still puzzling, the interaction with Multiple-Award clarifies it somewhat. The study team will use model 05A going forward.
-
-```{r Final Model}
-# TermModel<-Term_15H
-# display(Term_15H)
-
-
-```
+#Multi-Level Model
