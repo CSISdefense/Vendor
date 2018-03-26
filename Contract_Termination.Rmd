@@ -1240,7 +1240,6 @@ And fixed price contracts do indeed have a significant coefficient that correlat
 Past CSIS research has found that fixed-price contracts do appear to be at higher risk if they have a longer maximum duration. Fixed-price contracting does require upfront estimation of likely costs, and thus a longer duration means more opportunity for changed circumstance.
 
 ```{r Model04B}
-#Create the model
 
 #Frequency Plot
 freq_continuous_term_plot(Term_smp25k,"l_Days","FxCb")
@@ -1837,6 +1836,16 @@ Adding who resulted in a range of models that failed to converge. The one except
 Other DoD stands out for its sheer quantity of contracts and task orders and also its lower termination rate. 
 ```{r Model06A}
 
+# Term_09A <- glmer(data=Term_smp1m,
+#                  b_Term ~n_Comp + 
+#                    cl_Ceil + cl_Days+ 
+#                    SIDV + MIDV + OIDV +
+#                    n_Fixed + b_UCA + 
+#                    # b_Intl +
+#                    (1 | NAICS) + (1 | Office)
+#                   , family=binomial(link="logit"))
+# display(Term_09A)
+
 #Frequency Plot
 freq_discrete_term_plot(Term_smp25k,"Who")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
@@ -1990,15 +1999,7 @@ Term_08A <- glmer(data=Term_smp25k,
                   , family=binomial(link="logit"))
 display(Term_08A)
 
-Term_09A <- glmer(data=Term_smp25k,
-                 b_Term ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   SIDV + MIDV + OIDV +
-                   n_Fixed + b_UCA + 
-                   b_Intl + 
-                   (1 | Agency)
-                  , family=binomial(link="logit"))
-display(Term_09A)
+
 
 #Create the model
 # Term_08A <- glmer(data=Term_smp25k,
@@ -2065,21 +2066,32 @@ discrete_percent_term_plot(Term_smp25k,"PSR_What")+ theme(axis.text.x = element_
 
 
 #Create the model
-Term_08B <- glmer(data=Term_smp25k,
+Term_08A <- glmer(data=Term_smp25k,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
-                   n_Comp:cl_Ceil  +
-                   # cl_Ceil:cl_Days  + 
-                   n_Comp:cl_Days +
                    n_Fixed + b_UCA + 
-                   b_Intl + 
-                   SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
-                   b_UCA:n_Comp+
-                   (1 | PSR) + (1 | PSR_What)
-                    , family=binomial(link="logit"))
-display(Term_08B)
+                   # b_Intl +
+                   n_Comp:cl_Ceil + #+ cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   (1 | NAICS)
+                  , family=binomial(link="logit"))
+display(Term_08A)
+#Model failed to converge with max|grad| = 0.00858407 (tol = 0.001, component 1)
+# Term_08B <- glmer(data=Term_smp25k,
+#                  b_Term ~n_Comp + 
+#                    cl_Ceil + cl_Days+ 
+#                    SIDV + MIDV + OIDV +
+#                    n_Comp:cl_Ceil  +
+#                    # cl_Ceil:cl_Days  + 
+#                    n_Comp:cl_Days +
+#                    n_Fixed + b_UCA + 
+#                    b_Intl + 
+#                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+#                    SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
+#                    b_UCA:n_Comp+
+#                    (1 | PSR) + (1 | PSR_What)
+#                     , family=binomial(link="logit"))
+# display(Term_08B)
 
 # Plot the model and Vehicle 
 Term_08B_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
@@ -2111,7 +2123,7 @@ residuals_term_plot(Term_08B)+
 #   labs(x="Centered Log(Days)")
 
 ```
-
+After the incorporation of NAICS intercepts, ceiling related interactions had strange consequences (left out for speed of running RMD reasons). The interaction of Competition and Ceiling, even when introduced alone  had a positive coefficient and removed the effect of Ceiling by itself. When all three interactions were included, Ceiling and Duration similarly had a notable negative coefficient, which seemed contrary to past literature that suggests greater risks when trying to do a large contract too fast. The interaction of competition and days had a positive coefficient, but was not significant.
 ###Model 08C: Interactions
 ```{r Model 6 Exploration}
 #, fig.height = 10, fig.width = 6.5
@@ -2237,15 +2249,6 @@ freq_discrete_term_plot(Term_smp25k,"NAICS")
 #Percent Terminated Plot 
 discrete_percent_term_plot(Term_smp25k,"NAICS")
 
-# Term_09A <- glmer(data=Term_smp1m,
-#                  b_Term ~n_Comp + 
-#                    cl_Ceil + cl_Days+ 
-#                    SIDV + MIDV + OIDV +
-#                    n_Fixed + b_UCA + 
-#                    # b_Intl +
-#                    (1 | NAICS) + (1 | Office)
-#                   , family=binomial(link="logit"))
-# display(Term_09A)
 #Model failed to converge with max|grad| = 0.00993991 (tol = 0.001, component 1)
 Term_09A <- glmer(data=Term_smp25k,
                  b_Term ~n_Comp + 
