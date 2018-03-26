@@ -1,13 +1,32 @@
 #DIIGstat.r
 library(arm)
-
+library(dplyr)
 #This will likely be folded into CSIS360
 #But for now, using it to create and refine functions for regression analysis.
 
 transform_contract<-function(
   contract
 ){
-#PSR_What
+
+  # contract$pNewWorkUnmodifiedBaseAndAll<-as.numeric(as.character(contract$pNewWorkUnmodifiedBaseAndAll))
+  #Newwork and change
+  # contract$pNewWork3Sig<-round(
+    # contract$pNewWorkUnmodifiedBaseAndAll,3)
+  
+
+
+  #Customer
+  if(!"Is.Defense" %in% colnames(contract)){
+    contract$Is.Defense<-as.character(contract$Who)
+    contract$Is.Defense[contract$Is.Defense %in%
+                          c("Air Force","Army",
+                            "Navy","Other DoD","Uncategorized"  )
+                        ]<-"Defense"
+    contract$Is.Defense<-factor(contract$Is.Defense)
+  }
+  
+  
+  #PSR_What
 contract$PSR_What<-factor(paste(as.character(contract$PSR),
                                              as.character(contract$What),sep="."))
 contract$PSR_What[contract$PSR_What=="Unlabeled"]<-NA
@@ -30,6 +49,10 @@ contract$b_Term[contract$Term=="Unterminated"]<-0
 contract$j_Term<-jitter.binary(contract$b_Term)
 
 #n_Crai
+contract$pChangeOrderUnmodifiedBaseAndAll<-as.numeric(as.character(contract$pChangeOrderUnmodifiedBaseAndAll))
+contract$pChange3Sig<-round(
+  contract$pChangeOrderUnmodifiedBaseAndAll,3)
+
 #Should include this in the original data frame but for now can drive it.
 contract$n_Crai<-contract$pChangeOrderUnmodifiedBaseAndAll*
   contract$UnmodifiedContractBaseAndAllOptionsValue
@@ -43,10 +66,74 @@ contract$l_Crai[contract$b_Crai==1 & !is.na(contract$b_Crai)]<-
 contract$l_Ceil<-log(contract$UnmodifiedContractBaseAndAllOptionsValue)
 contract$l_Ceil[is.infinite(contract$l_Ceil)]<-NA
 
+contract<-contract %>% group_by(Ceil) %>%
+  mutate(ceil.median.wt = median(UnmodifiedContractBaseAndAllOptionsValue))
+
+contract$Ceil.Simple<-as.character(contract$Ceil)
+
+contract$Ceil.Simple[contract$Ceil.Simple %in% c(
+  "75m+",
+  "10m - <75m")]<-"10m+"
+contract$Ceil.Simple[contract$Ceil.Simple %in% c(
+  "1m - <10m",
+  "100k - <1m")]<-"100k - <10m"
+contract$Ceil.Simple[contract$Ceil.Simple %in% c(
+  "15k - <100k",
+  "0 - <15k")]<-"0k - <100k"
+contract$Ceil.Simple<-factor(contract$Ceil.Simple,
+                                           levels=c("0k - <100k",
+                                                    "100k - <10m",
+                                                    "10m+"),
+                                           ordered=TRUE
+)
+
+
+contract$Ceil.Big<-as.character(contract$Ceil)
+
+contract$Ceil.Big[contract$Ceil.Big %in% c(
+  "100k - <1m",
+  "15k - <100k",
+  "0 - <15k")]<-"0k - <1m"
+
+contract$Ceil.Big<-factor(contract$Ceil.Big,
+                                        levels=c("0k - <1m",
+                                                 "1m - <10m",
+                                                 "10m - <75m",
+                                                 "75m+"),
+                                        ordered=TRUE
+)
+
+
+
 #l_Days
+
 contract$l_Days<-log(contract$UnmodifiedDays)
 contract$l_Days[is.infinite(contract$l_Days)]<-NA
 
+
+contract$UnmodifiedYearsFloat<-contract$UnmodifiedDays/365.25
+contract$UnmodifiedYearsCat<-floor(contract$UnmodifiedYearsFloat)
+contract$Dur[contract$UnmodifiedYearsCat<0]<-NA
+
+contract$Dur.Simple<-as.character(contract$Dur)
+contract$Dur.Simple[contract$Dur.Simple %in% c(
+  "[0 months,~2 months)",
+  "[~2 months,~7 months)",
+  "[~7 months-~1 year]")]<-"<~1 year"
+contract$Dur.Simple<-factor(contract$Dur.Simple,
+                                         levels=c("<~1 year",
+                                                  "(~1 year,~2 years]",
+                                                  "(~2 years+]"),
+                                         ordered=TRUE
+)
+
+
+#b_ODoD
+contract$b_ODoD<-contract$Who
+levels(contract$b_ODoD)<- list("1"=c("Other DoD"), 
+                                "0"=c("Air Force","Army","Navy"))
+contract$b_ODoD[contract$b_ODoD=="Uncategorized"]<-NA
+contract$b_ODoD<-as.integer(as.character(contract$b_ODoD))
 
 
 #n_Fixed
@@ -75,12 +162,12 @@ contract$n_NoFee<-as.integer(as.character(contract$n_NoFee))
 
 
 #n_Comp
+if("Comp" %in% colnames(contract)){
 if (all(levels(factor(contract$Comp))==c("0","1"))){
   contract$Comp<-factor(contract$Comp)
   levels(contract$Comp) <-
   list("No Competition"="0",
        "Competition"="1")
-}
 
 #Right now comp is not actually a factor, so don't need to process it
 contract$b_Comp<-contract$Comp #Fix in Rdata, and add back comp
@@ -119,30 +206,40 @@ levels(contract$CompOffr) <-
        "2 offers"="2",
        "3-4 offers"="3",
        "5+ offers"="4")
+}
+  
+  
+  #l_Offr
+  contract$l_Offr<-log(contract$UnmodifiedNumberOfOffersReceived)
+  contract$l_Offr[is.infinite(contract$l_Days)]<-NA
+  
+  contract$cb_Comp<-scale(contract$b_Comp)
+  contract$cn_Comp<-scale(contract$n_Comp)
+  contract$cn_Offr<-scale(contract$n_Offr)
+  contract$cl_Offr<-scale(contract$l_Offr)
+  
+}
 
-#n_Intl
-contract$n_Intl<-contract$Intl
-contract$n_Intl[contract$n_Intl=="Unlabeled"]<-NA
-levels(contract$n_Intl) <-
+#b_Intl
+contract$b_Intl<-contract$Intl
+contract$b_Intl[contract$b_Intl=="Unlabeled"]<-NA
+levels(contract$b_Intl) <-
   list("0"=c("Just U.S."), 
        "1"=c("Any International"))
-contract$n_Intl<-as.integer(as.character(contract$n_Intl))
+contract$b_Intl<-as.integer(as.character(contract$b_Intl))
 
 
 
-#n_UCA
-contract$n_UCA<-contract$UCA
-levels(contract$n_UCA) <-
+#b_UCA
+contract$b_UCA<-contract$UCA
+levels(contract$b_UCA) <-
   list("0"=c("Not UCA"), 
        "1"=c("UCA"))
-contract$n_UCA<-as.integer(as.character(contract$n_UCA))
+contract$b_UCA<-as.integer(as.character(contract$b_UCA))
 
 
 
 
-#l_Offer
-contract$l_Offer<-log(contract$UnmodifiedNumberOfOffersReceived)
-contract$l_Offer[is.infinite(contract$l_Days)]<-NA
 
 # contract$DecisionTree<-as.character(contract$MaxOfDecisionTree)
 # contract$DecisionTree[
@@ -189,6 +286,16 @@ levels(contract$OIDV) <-
        "0"=c("Def/Pur","SINGLE AWARD", "MULTIPLE AWARD"))
 contract$OIDV<-as.integer(as.character(contract$OIDV))
 
+
+contract$cl_Ceil<-scale(contract$l_Ceil)
+contract$cl_Days<-scale(contract$l_Days)
+contract$clsqr_Ceil<-contract$cl_Ceil^2
+contract$lsqr_Ceil<-contract$l_Ceil^2
+
+contract$clsqr_Days<-contract$cl_Days^2
+contract$lsqr_Days<-contract$l_Days^2
+
+
 contract
 }
 
@@ -234,11 +341,11 @@ bin_df<-function(data,rank_col,group_col=NULL,n=20,ties.method="random"){
 # 
 # 
 # 
-# Term_01D_line_FxCb<-ggplot(data=subset(Term_smp,!is.na(l_Offer) & !is.na(FxCb)) %>% 
+# Term_01D_line_FxCb<-ggplot(data=subset(Term_smp,!is.na(l_Offr) & !is.na(FxCb)) %>% 
 #                              group_by(bin_Offer_FxCb,FxCb) %>% 
 #                              summarise (mean_Term = mean(b_Term),
-#                                         mean_l_Offer =mean(l_Offer)),
-#                            aes(y=mean_Term,x=mean_l_Offer))+geom_point()+facet_wrap(~FxCb)
+#                                         mean_l_Offr =mean(l_Offr)),
+#                            aes(y=mean_Term,x=mean_l_Offr))+geom_point()+facet_wrap(~FxCb)
 # 
 # }
 
@@ -274,11 +381,31 @@ binned.resids <- function (x, y, nclass=sqrt(length(x))){
 }
 
 binned_fitted_versus_residuals<-function(model){
+  
+  #Save this for a future GLM
+  # Term_data_01A<-data.frame(fitted=fitted(Term_01A),
+  #                        residuals=residuals(Term_01A),
+  #                        nTerm=Term_01A@frame$nTerm,
+  #                        cb_Comp=Term_01A@frame$cb_Comp
+  #                        )
+  
+  if(class(model)=="glmerMod")
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_Term=model@frame$b_Term
+    )
+    
+  }
+  else
+  {
   data <-data.frame(
     fitted=fitted(model),
     residuals=residuals(model),
     b_Term=model$model$b_Term
   )
+  }
 
   data$bin_fitted<-bin_df(data,rank_col="fitted")
   
@@ -294,10 +421,27 @@ binned_fitted_versus_residuals<-function(model){
 
 residuals_term_plot<-function(model,x_col="fitted",bins=40){
   #Plot the fitted values vs actual results
-  data<-data.frame(fitted=fitted(model),
-                            residuals=residuals(model),
-                            b_Term=model$model$b_Term
-  )
+  
+  
+  if(class(model)=="glmerMod")
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_Term=model@frame$b_Term
+    )
+    
+  }
+  else
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_Term=model$model$b_Term
+    )
+  }
+  
+  
   if (x_col!="fitted"){
     data$x_col<-
       test<-model$model[,x_col]
@@ -418,3 +562,31 @@ discrete_fitted_term_model<-function(data,x_col){
     labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
 }
 
+
+centered_log_description<-function(x,units=NA){
+  xbar<-mean(x,na.rm=TRUE)
+    xsd<-sd(x,na.rm=TRUE)
+  paste("The variable is centered, by subtracting its mean (",
+        format(xbar,digits=3,big.mark=","),
+        ") and dividing by its standard deviation (",
+        format(xsd,digits=3,big.mark=","),
+        "). Values of -1, 0, 1, and 2 correspond to ",
+        format(exp(xbar-xsd),digits=2,big.mark=","), ", ",
+        format(exp(xbar),digits=2,big.mark=","),", ",
+        format(exp(xbar+xsd),digits=2,big.mark=","),", and ",
+        format(exp(xbar+2*xsd),digits=2,big.mark=","),
+        ifelse(is.na(units),"",paste("",units)),
+        " respectively.",sep="")
+}
+
+
+NA_stats<-function(data,col){
+  paste("Data is missing for ",
+        format(sum(is.na(data[,col]))/nrow(data),digits=3),
+        " of records and ",
+        format(sum(data$Action.Obligation[is.na(data[,col])],na.rm=TRUE)/
+                 sum(data$Action.Obligation,na.rm=TRUE),digits=3),
+        " of obligated dollars."
+              ,sep="")
+
+}

@@ -1,7 +1,4 @@
-USE [DIIG]
-GO
-
-/****** Object:  StoredProcedure [Vendor].[SP_TopVendorHistoryPlatformSubCustomer]    Script Date: 10/5/2017 9:43:57 PM ******/
+/****** Object:  StoredProcedure [Vendor].[SP_EntityIDhistory]    Script Date: 3/7/2018 12:51:45 PM ******/
 SET ANSI_NULLS ON
 GO
 
@@ -9,7 +6,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
-alter PROCEDURE [Vendor].[SP_EntityIDhistory]
+
+ALTER PROCEDURE [Vendor].[SP_EntityIDhistory]
 
 @Customer VARCHAR(255)
 
@@ -65,8 +63,6 @@ ELSE --Begin sub path where all products and services amd all Customers will be 
 				,Sum(C.obligatedAmount) AS obligatedAmount
 			,Sum(C.numberOfActions) AS numberOfActions
 			FROM [Vendor].[VendorHistoryNaicsPlatformSubCustomer] as C
-		--Here's the where clause for @IsService is null and Customer is not null
-		WHERE C.Customer=@Customer 
 		--Copy the end of your query here
 		GROUP BY 
 			C.fiscal_year
