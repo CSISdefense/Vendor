@@ -286,6 +286,12 @@ levels(contract$OIDV) <-
        "0"=c("Def/Pur","SINGLE AWARD", "MULTIPLE AWARD"))
 contract$OIDV<-as.integer(as.character(contract$OIDV))
 
+#NAICS
+load("annual_naics_summary.Rdata")
+contract<-left_join(contract,NAICS_join)
+
+
+
 
 contract$cl_Ceil<-scale(contract$l_Ceil)
 contract$cl_Days<-scale(contract$l_Days)
