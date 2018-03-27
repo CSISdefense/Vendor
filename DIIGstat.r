@@ -288,7 +288,9 @@ contract$OIDV<-as.integer(as.character(contract$OIDV))
 
 #NAICS
 load("annual_naics_summary.Rdata")
-contract<-left_join(contract,NAICS_join)
+contract$NAICS<-as.integer(as.character(contract$NAICS))
+contract<-left_join(contract,NAICS_join, by=c("StartFY",
+                                                           "NAICS"))
 
 
 
