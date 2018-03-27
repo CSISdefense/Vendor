@@ -927,3 +927,375 @@ write.csv(dataset.2006, "dataset2006nop.csv")
 write.csv(all.dataset, "Panel Data reg 2001-2011.csv")
 
 write.csv(all.dataset.parentno, "Panel Data reg 2001-2011 - no parent filter.csv")
+
+
+
+--------------------------------------------------------------------------------------------
+##2012-2016
+  
+  ##2012
+  
+  year.edit = final_joined %>% 
+  mutate(regyear = year(registrationDate)) %>%
+  arrange(regyear) %>% 
+  filter(regyear == 2012) 
+
+
+#filter(contractingofficerbusinesssizedetermination == "S")
+year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
+
+#### filtered out firms with parent duns of the parent duns did not register in 2011
+
+parent.edit = year.edit %>%
+  mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
+  filter(haveparent == "NO") %>% 
+  #filter(contractingofficerbusinesssizedetermination != ":") %>% 
+  #filter(contractingofficerbusinesssizedetermination != "NULL") %>% 
+  select(duns, haveparent, fiscal_year, signeddate, parentdunsnumber, vendorname) %>% 
+  arrange(fiscal_year) 
+
+parent.unique = parent.edit[!duplicated(parent.edit[,c('duns')]),] 
+
+
+NAICS = as.data.frame(NAICS.unique.column)
+year = as.data.frame(year.edit.unique)
+parent = as.data.frame(parent.unique)
+
+joined.1 = merge.data.frame(parent, NAICS, by = "duns")
+joined.2 = merge.data.frame(joined.1, year, by = "duns")
+
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
+
+joined.25 = joined.2 %>% 
+  select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
+         businessStartDate, country, womenownedflag, veteranownedflag, aiobflag, naobflag,
+         minorityownedbusinessflag, apaobflag, baobflag, baobflag, saaobflag, haobflag, 
+         isnativehawaiianownedorganizationorfirm, isotherminorityowned, istriballyownedfirm, 
+         isalaskannativeownedcorporationorfirm, other_minority_owned_business, 
+         isforeignownedandlocated, expirationDate, contractingofficerbusinesssizedetermination)
+
+joined.3 = merge.data.frame(joined.25, PSC, by = "duns", all.x = TRUE)
+joined.4 = merge.data.frame(joined.3, oblandact, by = "duns", all.x = TRUE)
+joined.5 = merge.data.frame(joined.4, agency, by = "duns", all.x = TRUE)
+
+
+dataset.2013 = joined.5 %>% 
+  mutate(firm.age = year(registrationDate) - year(businessStartDate)) %>% 
+  mutate(location = ifelse(country == "USA", "1", "0")) %>% 
+  mutate(ownership.woman = ifelse(womenownedflag == 1, "1", 0)) %>% 
+  mutate(ownership.veteran = ifelse(veteranownedflag == 1, "1",0)) %>% 
+  mutate(ownership.minority = ifelse(aiobflag == 1 |minorityownedbusinessflag == 1 | 
+                                       apaobflag == 1 | 
+                                       baobflag == 1 | naobflag == 1 | saaobflag == 1 | 
+                                       haobflag == 1 | isnativehawaiianownedorganizationorfirm == 1 | 
+                                       isotherminorityowned == 1 | istriballyownedfirm == 1 | 
+                                       isalaskannativeownedcorporationorfirm == 1 | 
+                                       other_minority_owned_business == 1, "1", 0)) %>% 
+  mutate(ownership.foreign = ifelse(isforeignownedandlocated == 1, "1", 0)) %>% 
+  mutate(years.in.SAM = months_in_SAM/12) %>% 
+  mutate(survival.status = ifelse(year(expirationDate) > 2013, "1", "0")) %>%
+  mutate(three.year = years.in.SAM>=3, "YES","NO") %>% 
+  mutate(five.year = years.in.SAM>=5, "YES","NO") %>% 
+  mutate(ten.year = years.in.SAM>=10, "YES","NO") %>%   ##only works since start at same time
+  mutate(biz_size = ifelse(contractingofficerbusinesssizedetermination == "O", 1, 0)) %>% 
+  select(duns, biz_size, years.in.SAM, NAICS2, ServicesCategory, location, ownership.woman, 
+         ownership.veteran, ownership.minority, ownership.foreign, contract.actions,
+         obligated.amt, firm.age, three.year, five.year,ten.year, survival.status, DEPARTMENT_NAME, AGENCY_NAME) %>% 
+  filter(NAICS2 != "NU")  
+  
+  
+  
+  ##2013
+  
+  year.edit = final_joined %>% 
+  mutate(regyear = year(registrationDate)) %>%
+  arrange(regyear) %>% 
+  filter(regyear == 2013) 
+
+
+#filter(contractingofficerbusinesssizedetermination == "S")
+year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
+
+#### filtered out firms with parent duns of the parent duns did not register in 2011
+
+parent.edit = year.edit %>%
+  mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
+  filter(haveparent == "NO") %>% 
+  #filter(contractingofficerbusinesssizedetermination != ":") %>% 
+  #filter(contractingofficerbusinesssizedetermination != "NULL") %>% 
+  select(duns, haveparent, fiscal_year, signeddate, parentdunsnumber, vendorname) %>% 
+  arrange(fiscal_year) 
+
+parent.unique = parent.edit[!duplicated(parent.edit[,c('duns')]),] 
+
+
+NAICS = as.data.frame(NAICS.unique.column)
+year = as.data.frame(year.edit.unique)
+parent = as.data.frame(parent.unique)
+
+joined.1 = merge.data.frame(parent, NAICS, by = "duns")
+joined.2 = merge.data.frame(joined.1, year, by = "duns")
+
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
+
+joined.25 = joined.2 %>% 
+  select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
+         businessStartDate, country, womenownedflag, veteranownedflag, aiobflag, naobflag,
+         minorityownedbusinessflag, apaobflag, baobflag, baobflag, saaobflag, haobflag, 
+         isnativehawaiianownedorganizationorfirm, isotherminorityowned, istriballyownedfirm, 
+         isalaskannativeownedcorporationorfirm, other_minority_owned_business, 
+         isforeignownedandlocated, expirationDate, contractingofficerbusinesssizedetermination)
+
+joined.3 = merge.data.frame(joined.25, PSC, by = "duns", all.x = TRUE)
+joined.4 = merge.data.frame(joined.3, oblandact, by = "duns", all.x = TRUE)
+joined.5 = merge.data.frame(joined.4, agency, by = "duns", all.x = TRUE)
+
+
+dataset.2013 = joined.5 %>% 
+  mutate(firm.age = year(registrationDate) - year(businessStartDate)) %>% 
+  mutate(location = ifelse(country == "USA", "1", "0")) %>% 
+  mutate(ownership.woman = ifelse(womenownedflag == 1, "1", 0)) %>% 
+  mutate(ownership.veteran = ifelse(veteranownedflag == 1, "1",0)) %>% 
+  mutate(ownership.minority = ifelse(aiobflag == 1 |minorityownedbusinessflag == 1 | 
+                                       apaobflag == 1 | 
+                                       baobflag == 1 | naobflag == 1 | saaobflag == 1 | 
+                                       haobflag == 1 | isnativehawaiianownedorganizationorfirm == 1 | 
+                                       isotherminorityowned == 1 | istriballyownedfirm == 1 | 
+                                       isalaskannativeownedcorporationorfirm == 1 | 
+                                       other_minority_owned_business == 1, "1", 0)) %>% 
+  mutate(ownership.foreign = ifelse(isforeignownedandlocated == 1, "1", 0)) %>% 
+  mutate(years.in.SAM = months_in_SAM/12) %>% 
+  mutate(survival.status = ifelse(year(expirationDate) > 2013, "1", "0")) %>%
+  mutate(three.year = years.in.SAM>=3, "YES","NO") %>% 
+  mutate(five.year = years.in.SAM>=5, "YES","NO") %>% 
+  mutate(ten.year = years.in.SAM>=10, "YES","NO") %>%   ##only works since start at same time
+  mutate(biz_size = ifelse(contractingofficerbusinesssizedetermination == "O", 1, 0)) %>% 
+  select(duns, biz_size, years.in.SAM, NAICS2, ServicesCategory, location, ownership.woman, 
+         ownership.veteran, ownership.minority, ownership.foreign, contract.actions,
+         obligated.amt, firm.age, three.year, five.year,ten.year, survival.status, DEPARTMENT_NAME, AGENCY_NAME) %>% 
+  filter(NAICS2 != "NU")
+
+##2014
+
+year.edit = final_joined %>% 
+  mutate(regyear = year(registrationDate)) %>%
+  arrange(regyear) %>% 
+  filter(regyear == 2014) 
+
+
+#filter(contractingofficerbusinesssizedetermination == "S")
+year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
+
+#### filtered out firms with parent duns of the parent duns did not register in 2011
+
+parent.edit = year.edit %>%
+  mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
+  filter(haveparent == "NO") %>% 
+  #filter(contractingofficerbusinesssizedetermination != ":") %>% 
+  #filter(contractingofficerbusinesssizedetermination != "NULL") %>% 
+  select(duns, haveparent, fiscal_year, signeddate, parentdunsnumber, vendorname) %>% 
+  arrange(fiscal_year) 
+
+parent.unique = parent.edit[!duplicated(parent.edit[,c('duns')]),] 
+
+
+NAICS = as.data.frame(NAICS.unique.column)
+year = as.data.frame(year.edit.unique)
+parent = as.data.frame(parent.unique)
+
+joined.1 = merge.data.frame(parent, NAICS, by = "duns")
+joined.2 = merge.data.frame(joined.1, year, by = "duns")
+
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
+
+joined.25 = joined.2 %>% 
+  select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
+         businessStartDate, country, womenownedflag, veteranownedflag, aiobflag, naobflag,
+         minorityownedbusinessflag, apaobflag, baobflag, baobflag, saaobflag, haobflag, 
+         isnativehawaiianownedorganizationorfirm, isotherminorityowned, istriballyownedfirm, 
+         isalaskannativeownedcorporationorfirm, other_minority_owned_business, 
+         isforeignownedandlocated, expirationDate, contractingofficerbusinesssizedetermination)
+
+joined.3 = merge.data.frame(joined.25, PSC, by = "duns", all.x = TRUE)
+joined.4 = merge.data.frame(joined.3, oblandact, by = "duns", all.x = TRUE)
+joined.5 = merge.data.frame(joined.4, agency, by = "duns", all.x = TRUE)
+
+
+dataset.2014 = joined.5 %>% 
+  mutate(firm.age = year(registrationDate) - year(businessStartDate)) %>% 
+  mutate(location = ifelse(country == "USA", "1", "0")) %>% 
+  mutate(ownership.woman = ifelse(womenownedflag == 1, "1", 0)) %>% 
+  mutate(ownership.veteran = ifelse(veteranownedflag == 1, "1",0)) %>% 
+  mutate(ownership.minority = ifelse(aiobflag == 1 |minorityownedbusinessflag == 1 | 
+                                       apaobflag == 1 | 
+                                       baobflag == 1 | naobflag == 1 | saaobflag == 1 | 
+                                       haobflag == 1 | isnativehawaiianownedorganizationorfirm == 1 | 
+                                       isotherminorityowned == 1 | istriballyownedfirm == 1 | 
+                                       isalaskannativeownedcorporationorfirm == 1 | 
+                                       other_minority_owned_business == 1, "1", 0)) %>% 
+  mutate(ownership.foreign = ifelse(isforeignownedandlocated == 1, "1", 0)) %>% 
+  mutate(years.in.SAM = months_in_SAM/12) %>% 
+  mutate(survival.status = ifelse(year(expirationDate) > 2014, "1", "0")) %>%
+  mutate(three.year = years.in.SAM>=3, "YES","NO") %>% 
+  mutate(five.year = years.in.SAM>=5, "YES","NO") %>% 
+  mutate(ten.year = years.in.SAM>=10, "YES","NO") %>%   ##only works since start at same time
+  mutate(biz_size = ifelse(contractingofficerbusinesssizedetermination == "O", 1, 0)) %>% 
+  select(duns, biz_size, years.in.SAM, NAICS2, ServicesCategory, location, ownership.woman, 
+         ownership.veteran, ownership.minority, ownership.foreign, contract.actions,
+         obligated.amt, firm.age, three.year, five.year,ten.year, survival.status, DEPARTMENT_NAME, AGENCY_NAME) %>% 
+  filter(NAICS2 != "NU")
+
+##2015
+
+year.edit = final_joined %>% 
+  mutate(regyear = year(registrationDate)) %>%
+  arrange(regyear) %>% 
+  filter(regyear == 2015) 
+
+
+#filter(contractingofficerbusinesssizedetermination == "S")
+year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
+
+#### filtered out firms with parent duns of the parent duns did not register in 2011
+
+parent.edit = year.edit %>%
+  mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
+  filter(haveparent == "NO") %>% 
+  #filter(contractingofficerbusinesssizedetermination != ":") %>% 
+  #filter(contractingofficerbusinesssizedetermination != "NULL") %>% 
+  select(duns, haveparent, fiscal_year, signeddate, parentdunsnumber, vendorname) %>% 
+  arrange(fiscal_year) 
+
+parent.unique = parent.edit[!duplicated(parent.edit[,c('duns')]),] 
+
+
+NAICS = as.data.frame(NAICS.unique.column)
+year = as.data.frame(year.edit.unique)
+parent = as.data.frame(parent.unique)
+
+joined.1 = merge.data.frame(parent, NAICS, by = "duns")
+joined.2 = merge.data.frame(joined.1, year, by = "duns")
+
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
+
+joined.25 = joined.2 %>% 
+  select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
+         businessStartDate, country, womenownedflag, veteranownedflag, aiobflag, naobflag,
+         minorityownedbusinessflag, apaobflag, baobflag, baobflag, saaobflag, haobflag, 
+         isnativehawaiianownedorganizationorfirm, isotherminorityowned, istriballyownedfirm, 
+         isalaskannativeownedcorporationorfirm, other_minority_owned_business, 
+         isforeignownedandlocated, expirationDate, contractingofficerbusinesssizedetermination)
+
+joined.3 = merge.data.frame(joined.25, PSC, by = "duns", all.x = TRUE)
+joined.4 = merge.data.frame(joined.3, oblandact, by = "duns", all.x = TRUE)
+joined.5 = merge.data.frame(joined.4, agency, by = "duns", all.x = TRUE)
+
+
+dataset.2015 = joined.5 %>% 
+  mutate(firm.age = year(registrationDate) - year(businessStartDate)) %>% 
+  mutate(location = ifelse(country == "USA", "1", "0")) %>% 
+  mutate(ownership.woman = ifelse(womenownedflag == 1, "1", 0)) %>% 
+  mutate(ownership.veteran = ifelse(veteranownedflag == 1, "1",0)) %>% 
+  mutate(ownership.minority = ifelse(aiobflag == 1 |minorityownedbusinessflag == 1 | 
+                                       apaobflag == 1 | 
+                                       baobflag == 1 | naobflag == 1 | saaobflag == 1 | 
+                                       haobflag == 1 | isnativehawaiianownedorganizationorfirm == 1 | 
+                                       isotherminorityowned == 1 | istriballyownedfirm == 1 | 
+                                       isalaskannativeownedcorporationorfirm == 1 | 
+                                       other_minority_owned_business == 1, "1", 0)) %>% 
+  mutate(ownership.foreign = ifelse(isforeignownedandlocated == 1, "1", 0)) %>% 
+  mutate(years.in.SAM = months_in_SAM/12) %>% 
+  mutate(survival.status = ifelse(year(expirationDate) > 2015, "1", "0")) %>%
+  mutate(three.year = years.in.SAM>=3, "YES","NO") %>% 
+  mutate(five.year = years.in.SAM>=5, "YES","NO") %>% 
+  mutate(ten.year = years.in.SAM>=10, "YES","NO") %>%   ##only works since start at same time
+  mutate(biz_size = ifelse(contractingofficerbusinesssizedetermination == "O", 1, 0)) %>% 
+  select(duns, biz_size, years.in.SAM, NAICS2, ServicesCategory, location, ownership.woman, 
+         ownership.veteran, ownership.minority, ownership.foreign, contract.actions,
+         obligated.amt, firm.age, three.year, five.year,ten.year, survival.status, DEPARTMENT_NAME, AGENCY_NAME) %>% 
+  filter(NAICS2 != "NU")
+
+##2016
+
+year.edit = final_joined %>% 
+  mutate(regyear = year(registrationDate)) %>%
+  arrange(regyear) %>% 
+  filter(regyear == 2016) 
+
+
+#filter(contractingofficerbusinesssizedetermination == "S")
+year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
+
+#### filtered out firms with parent duns of the parent duns did not register in 2011
+
+parent.edit = year.edit %>%
+  mutate (haveparent = ifelse(duns == parentdunsnumber|parentdunsnumber == "NULL", "NO", "YES")) %>% 
+  filter(haveparent == "NO") %>% 
+  #filter(contractingofficerbusinesssizedetermination != ":") %>% 
+  #filter(contractingofficerbusinesssizedetermination != "NULL") %>% 
+  select(duns, haveparent, fiscal_year, signeddate, parentdunsnumber, vendorname) %>% 
+  arrange(fiscal_year) 
+
+parent.unique = parent.edit[!duplicated(parent.edit[,c('duns')]),] 
+
+
+NAICS = as.data.frame(NAICS.unique.column)
+year = as.data.frame(year.edit.unique)
+parent = as.data.frame(parent.unique)
+
+joined.1 = merge.data.frame(parent, NAICS, by = "duns")
+joined.2 = merge.data.frame(joined.1, year, by = "duns")
+
+##joined.2 = merge.data.frame(NAICS, year, by = "duns")  ##no parent
+
+joined.25 = joined.2 %>% 
+  select(duns, NAICS2, age_at_start, months_in_SAM, status,regyear, registrationDate, 
+         businessStartDate, country, womenownedflag, veteranownedflag, aiobflag, naobflag,
+         minorityownedbusinessflag, apaobflag, baobflag, baobflag, saaobflag, haobflag, 
+         isnativehawaiianownedorganizationorfirm, isotherminorityowned, istriballyownedfirm, 
+         isalaskannativeownedcorporationorfirm, other_minority_owned_business, 
+         isforeignownedandlocated, expirationDate, contractingofficerbusinesssizedetermination)
+
+joined.3 = merge.data.frame(joined.25, PSC, by = "duns", all.x = TRUE)
+joined.4 = merge.data.frame(joined.3, oblandact, by = "duns", all.x = TRUE)
+joined.5 = merge.data.frame(joined.4, agency, by = "duns", all.x = TRUE)
+
+
+dataset.2016 = joined.5 %>% 
+  mutate(firm.age = year(registrationDate) - year(businessStartDate)) %>% 
+  mutate(location = ifelse(country == "USA", "1", "0")) %>% 
+  mutate(ownership.woman = ifelse(womenownedflag == 1, "1", 0)) %>% 
+  mutate(ownership.veteran = ifelse(veteranownedflag == 1, "1",0)) %>% 
+  mutate(ownership.minority = ifelse(aiobflag == 1 |minorityownedbusinessflag == 1 | 
+                                       apaobflag == 1 | 
+                                       baobflag == 1 | naobflag == 1 | saaobflag == 1 | 
+                                       haobflag == 1 | isnativehawaiianownedorganizationorfirm == 1 | 
+                                       isotherminorityowned == 1 | istriballyownedfirm == 1 | 
+                                       isalaskannativeownedcorporationorfirm == 1 | 
+                                       other_minority_owned_business == 1, "1", 0)) %>% 
+  mutate(ownership.foreign = ifelse(isforeignownedandlocated == 1, "1", 0)) %>% 
+  mutate(years.in.SAM = months_in_SAM/12) %>% 
+  mutate(survival.status = ifelse(year(expirationDate) > 2016, "1", "0")) %>%
+  mutate(three.year = years.in.SAM>=3, "YES","NO") %>% 
+  mutate(five.year = years.in.SAM>=5, "YES","NO") %>% 
+  mutate(ten.year = years.in.SAM>=10, "YES","NO") %>%   ##only works since start at same time
+  mutate(biz_size = ifelse(contractingofficerbusinesssizedetermination == "O", 1, 0)) %>% 
+  select(duns, biz_size, years.in.SAM, NAICS2, ServicesCategory, location, ownership.woman, 
+         ownership.veteran, ownership.minority, ownership.foreign, contract.actions,
+         obligated.amt, firm.age, three.year, five.year,ten.year, survival.status, DEPARTMENT_NAME, AGENCY_NAME) %>% 
+  filter(NAICS2 != "NU")
+
+panel_data <- read_csv("Panel Data reg 2001-2011.csv")
+panel_data <- select(panel_data, -X1)
+
+x0116.dataset <- rbind(panel_data, dataset.2012, dataset.2013, dataset.2014, dataset.2015, dataset.2016)
+x0116.dataset <- x0116.dataset %>% 
+  filter(!is.na(biz_size))
+
+
+write.csv(x0116.dataset, "Panel Data 2001-2016.csv")  
+write.csv(dataset.2012, "dataset2012.csv")
+write.csv(dataset.2013, "dataset2013.csv")
+write.csv(dataset.2014, "dataset2014.csv")
+write.csv(dataset.2015, "dataset2015.csv")
+write.csv(dataset.2016, "dataset2016.csv")
