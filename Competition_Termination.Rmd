@@ -2066,16 +2066,18 @@ discrete_percent_term_plot(Term_smp25k,"PSR_What")+ theme(axis.text.x = element_
 
 
 #Create the model
-Term_08A <- glmer(data=Term_smp25k,
+Term_08B <- glmer(data=Term_smp1m,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
                    n_Fixed + b_UCA + 
+                   SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   # SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp +
                    # b_Intl +
-                   n_Comp:cl_Ceil + #+ cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                  # n_Comp:cl_Ceil + #+ cl_Ceil:cl_Days  + n_Comp:cl_Days +
                    (1 | NAICS)
                   , family=binomial(link="logit"))
-display(Term_08A)
+display(Term_08B)
 #Model failed to converge with max|grad| = 0.00858407 (tol = 0.001, component 1)
 # Term_08B <- glmer(data=Term_smp25k,
 #                  b_Term ~n_Comp + 
@@ -2094,13 +2096,14 @@ display(Term_08A)
 # display(Term_08B)
 
 # Plot the model and Vehicle 
-Term_08B_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
-  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
-        Comp*Ceil,Days*Ceil,Days*Comp,
-        Fixed,UCA,x,
-        Days*x,Days*MIDV,Days*OIDV,
-        UCA*Comp) %*%  coef(Term_08B))}
-
+# Term_08B_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
+#   cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+#         Comp*Ceil,Days*Ceil,Days*Comp,
+#         Fixed,UCA,x,
+#         Days*x,Days*MIDV,Days*OIDV,
+#         UCA*Comp) %*%  coef(Term_08B))}
+# save(Term_08B,file="Term08B.Rdata")
+load("Term08B.Rdata")
 #Days curves
 discrete_fitted_term_model(Term_smp25k,"SIDV") +
   stat_function(fun = Term_08B_curve,
@@ -2122,8 +2125,10 @@ residuals_term_plot(Term_08B)+
 # residuals_term_plot(Term_02F,"cl_days")+
 #   labs(x="Centered Log(Days)")
 
+
+
 ```
-After the incorporation of NAICS intercepts, ceiling related interactions had strange consequences (left out for speed of running RMD reasons). The interaction of Competition and Ceiling, even when introduced alone  had a positive coefficient and removed the effect of Ceiling by itself. When all three interactions were included,  Ceiling and Duration similarly had a notable negative coefficient, which seemed contrary to past literature that suggests greater risks when trying to do a large contract too fast. The interaction of competition and days had a positive coefficient, but was not significant.
+After the incorporation of NAICS intercepts, ceiling related interactions had strange consequences (left out for speed of running RMD reasons). The interaction of Competition and Ceiling, even when introduced alone  had a positive coefficient and removed the effect of Ceiling by itself. When all three interactions were included,  Ceiling and Duration similarly had a notable negative coefficient, which seemed contrary to past literature that suggests greater risks when trying to do a large contract too fast. The interaction of competition and days had a positive coefficient, but was not significant. Single Award IDV does have a significant negative coefficient in interaction with Competition, but the other two types do not and the model fails to converge (with the 250k or 1m sample) and exhibit a peak at the lower end of the residuals.
 ###Model 08C: Interactions
 ```{r Model 6 Exploration}
 #, fig.height = 10, fig.width = 6.5
