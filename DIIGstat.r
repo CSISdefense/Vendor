@@ -294,7 +294,7 @@ contract<-left_join(contract,NAICS_join, by=c("StartFY",
 
 
 
-
+contract$c_hh_index_lag1<-scale(contract$hh_index_lag1)
 contract$cl_Ceil<-scale(contract$l_Ceil)
 contract$cl_Days<-scale(contract$l_Days)
 contract$clsqr_Ceil<-contract$cl_Ceil^2
@@ -327,7 +327,7 @@ bin_df<-function(data,rank_col,group_col=NULL,n=20,ties.method="random"){
       group_by_(.dots=dots) 
   }
   #Calculate rank, this allows cut_number to work even when some answers have to be broken up into multiple bins
-  bin<-rank(data[,colnames(data)==rank_col],ties.method=ties.method)
+  bin<-rank(as.data.frame(data[,which(colnames(data)==rank_col)]),ties.method=ties.method)
   cut_number(bin,n)
 }
 
@@ -489,6 +489,25 @@ freq_discrete_term_plot<-function(data,x_col,group_col=NA){
   
 }
 
+
+freq_discrete_crai_plot<-function(data,x_col,group_col=NA){
+  if(is.na(group_col)){
+    plot<-ggplot(data=data,
+                 aes_string(x=x_col))+
+      facet_wrap(~b_Crai,ncol=1,scales="free_y")
+  }
+  else{
+    plot<-ggplot(data=data,
+                 aes_string(x=x_col))+
+      facet_grid(as.formula(paste("b_Crai~",group_col)),scales="free_y")
+  }
+  plot+geom_histogram(stat="count") +
+    scale_y_continuous(labels = scales::comma) +
+    labs(title="Frequency by Ceiling Breaches",
+         caption="Source: FPDS, CSIS Analysis")
+  
+}
+
 freq_continuous_term_plot<-function(data,x_col,group_col=NA,bins=20){
   if(is.na(group_col)){
     plot<-ggplot(data=data,
@@ -534,6 +553,32 @@ binned_percent_term_plot<-function(data,x_col,group_col=NA){
 }
 
 
+
+binned_percent_crai_plot<-function(data,x_col,group_col=NA){
+  data<-data[!is.na(data[,x_col]),]
+  if(is.na(group_col)){
+    data$bin_x<-bin_df(data,x_col)
+    plot<-ggplot(data=data %>%
+                   group_by(bin_x) %>%
+                   summarise_ (   mean_Crai = "mean(b_Crai)"   
+                                  , mean_x =  paste( "mean(" ,  x_col  ,")"  ))     ,
+                 aes(y=mean_Crai,x=mean_x))
+  }
+  else{
+    data<-data[!is.na(data[,group_col]),]
+    data$bin_x<-bin_df(data,rank_col=x_col,group_col=group_col)
+    plot<-ggplot(data=data %>%
+                   group_by_("bin_x",group_col) %>%
+                   summarise_ (   mean_Crai = "mean(b_Crai)"   
+                                  , mean_x =  paste( "mean(" ,  x_col  ,")"  ))     ,
+                 aes(y=mean_Crai,x=mean_x))+
+      facet_wrap(as.formula(paste("~",group_col)))
+  }
+  plot+geom_point()+
+    labs(title="Percent Ceiling Breaches",
+         caption="Source: FPDS, CSIS Analysis")
+}
+
 discrete_percent_term_plot<-function(data,x_col,group_col=NA){
   data<-data[!is.na(data[,x_col]),]
     if(is.na(group_col)){
@@ -554,6 +599,31 @@ discrete_percent_term_plot<-function(data,x_col,group_col=NA){
   }
   plot+    geom_point()+
     labs(title="Percent Terminated",
+         caption="Source: FPDS, CSIS Analysis")
+  
+}
+
+
+discrete_percent_crai_plot<-function(data,x_col,group_col=NA){
+  data<-data[!is.na(data[,x_col]) & !is.na(data[,"b_Crai"]),]
+  if(is.na(group_col)){
+    plot<-ggplot(data=data %>%
+                   group_by_(x_col) %>%
+                   summarise (   mean_Crai = mean(b_Crai)),
+                 aes_string(y="mean_Crai",x=x_col))
+    
+  }
+  else{
+    data<-data[!is.na(data[,group_col]),]
+    plot<-ggplot(data=data %>%
+                   group_by_(x_col,group_col) %>%
+                   summarise (   mean_Crai = mean(b_Crai)),
+                 aes_string(y="mean_Crai",x=x_col))+
+      facet_wrap(as.formula(paste("~",group_col)))
+    
+  }
+  plot+    geom_point()+
+    labs(title="Percent Ceiling Breaches",
          caption="Source: FPDS, CSIS Analysis")
   
 }
