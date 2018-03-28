@@ -1,6 +1,12 @@
-# Monoplies Data Exploration
-Gregory Sanders  
-November 29, 2017  
+---
+title: "Monoplies Data Exploration"
+author: "Gregory Sanders"
+date: "November 29, 2017"
+output: 
+  html_document: 
+    keep_md: yes
+    toc: yes
+---
 
 
 
@@ -21,8 +27,8 @@ The study team is presently considering ways to handle these small datasets, for
 ## # A tibble: 1 x 12
 ## # Groups:   Fiscal.Year [1]
 ##   Fiscal.Year NAICS_Code Action.Obligation Obligation.2016 vendor_count
-##        <date>      <int>             <dbl>           <dbl>        <int>
-## 1  2012-01-01     336411       46597986857     48630752303          746
+##   <date>           <int>             <dbl>           <dbl>        <int>
+## 1 2012-01-01      336411      46597986857.    48630752303.          746
 ## # ... with 7 more variables: hh_index <dbl>, pct_sum_check <dbl>,
 ## #   top4 <dbl>, top8 <dbl>, top12 <dbl>, top20 <dbl>, top50 <dbl>
 ```
@@ -146,3 +152,10 @@ The HH-index is correlated with the marketshare held by top firms, but is also a
 Upon examination, the consolidation ratio for the top 4 firms appears to offer the most granularity. Mathematically, all of the concentration ratios top out at 100% and provide no differentiating detail between different markets with the same ratio (for example the both a market dominated by a single firm and evenly divided between 8 firms would have a top 8 concentration ratio of 100%). A top 4 ratio of 100% lines up with a minimum HH-index of 2,500. That is also the threshhold for a highly concentrated market. This suggests that the top 4 concentration ratio is the best choice for comparison with the HH-index, because all of the other concentration ratios used by the census bureau sometimes regularly  100% concentration when the HH-index would report only a moderately concentrated market (HH-index 1,500 to 2,500).
 
 ![](Monopolies_Exploration_files/figure-html/CrossValidation-1.png)<!-- -->
+
+
+
+
+```r
+save(annual_naics_summary,file="annual_naics_summary.Rdata")
+```

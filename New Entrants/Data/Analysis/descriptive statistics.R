@@ -425,6 +425,16 @@ survival.rates[, c(1, 5, 7, 6, 8, 10, 9, 2, 4, 3)]
 #new entrants means for each independent var for all 2001 and then those that survived after 3 yrs, 5 yrs and 10
 #yrs. 
 
+##exporting to csv for Sam
+
+write.csv(df2001_nop, file = "df2001_nop.csv")
+write.csv(df2002_nop, file = "df2002_nop.csv")
+write.csv(df2003_nop, file = "df2003_nop.csv")
+write.csv(df2004_nop, file = "df2004_nop.csv")
+write.csv(df2005_nop, file = "df2005_nop.csv")
+write.csv(df2006_nop, file = "df2006_nop.csv")
+
+
 ####firm-level descriptives no parent id filter####
 all2001_nop <- df2001_nop %>% 
   select(firm.age, years.in.SAM:obligated.amt, DEPARTMENT_NAME, AGENCY_NAME) %>% 

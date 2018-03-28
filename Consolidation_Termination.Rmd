@@ -60,6 +60,8 @@ First we load the data. The dataset used is a U.S. Defense Contracting dataset d
 
 head(DefenseModelAndDetail)
 # undebug(transform_contract)
+# debug(transform_contract)
+# debug(transform_contract)
 DefenseModelAndDetail<-transform_contract(DefenseModelAndDetail)
 
 
@@ -75,12 +77,12 @@ NA_stats(DefenseModelAndDetail,"b_Term")
 NA_stats(DefenseModelAndDetail,"b_Term"))
 * b_Comp is a binary variable based on competition. It has a value of 0 for uncompeted contracts and a value of 1 for competition, regardless of number of offers. 'r  summary(DefenseModelAndDetail$b_Comp);
 NA_stats(DefenseModelAndDetail,"b_Comp")'
-* n_Comp is a numeric variable based on competition and number of offers. It has a value of 0 for uncompeted contracts and a value of 1 for single-offer competition, and a value of 2 for multi-offer competition. 'r summary(DefenseModelAndDetail$n_Comp);
-NA_stats(DefenseModelAndDetail,"n_Comp")'
+* c_hh_index_lag1 is a numeric variable based on competition and number of offers. It has a value of 0 for uncompeted contracts and a value of 1 for single-offer competition, and a value of 2 for multi-offer competition. 'r summary(DefenseModelAndDetail$c_hh_index_lag1);
+NA_stats(DefenseModelAndDetail,"c_hh_index_lag1")'
 * n_Offr is a numeric variable based on competition and with more granularity on number offers. It has a value of 0 for uncompeted contracts and a value of 1 for single-offer competition, and a value of 2 for 2-offers, 3 for 3-4 offers, and 4 for 5+ offers. 'r summary(DefenseModelAndDetail$n_Offr);
 NA_stats(DefenseModelAndDetail,"n_Offr")'
-* l_Offr is the natural log of the number of offers received. Uncompeted contracts are classified as having received one offer. 'r summary(DefenseModelAndDetail$l_Offr);
-NA_stats(DefenseModelAndDetail,"l_Offr")'
+* hh_index_lag1 is the natural log of the number of offers received. Uncompeted contracts are classified as having received one offer. 'r summary(DefenseModelAndDetail$hh_index_lag1);
+NA_stats(DefenseModelAndDetail,"hh_index_lag1")'
 * cl_Ceil is the natural log of the initial contract cost ceiling, in then-year dollars. 'r centered_log_description(DefenseModelAndDetail$l_Ceil,"dollars");
 NA_stats(DefenseModelAndDetail,"l_Ceil")'
 * cl_Days is the natural log of the initial maximum duration of the contract, in days. The variable is centered, by subtracting its mean ('r centered_log_description(DefenseModelAndDetail$l_Days,"days");
@@ -148,7 +150,7 @@ Term_smp1m<-Term_smp1m[sample(nrow(Term_smp1m),1000000),]
 
 
 summary(Term_smp25k$b_Comp )
-summary(Term_smp25k$n_Comp )
+summary(Term_smp25k$c_hh_index_lag1 )
 summary(Term_smp25k$Comp )
 summary(Term_smp25k$CompOffr )
 summary(Term_smp25k$EffComp )
@@ -206,141 +208,56 @@ head(Term_smp25k)
 
 #Initial Logit Model
 
-##Study Variable: Competition
+##Study Variable: Consolidation
 Competition has the potential to reduce terminations by giving the government more options in vendors and encouraging better behavior from the contractor that was chosen. 
-###Model 01A: No Competition / Competition
+###Model 01A: Consolidation
 ```{r Model01A}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"Comp")
+freq_continuous_term_plot(Term_smp25k,"hh_index_lag1")
+
+ggplot(data=Term_smp25k,aes(x=hh_index_lag1,weight=Action.Obligation))+geom_histogram()
+
+freq_continuous_term_plot(Term_smp25k,"hh_index_lag1","Veh")
+
+ggplot(data=Term_smp25k,aes(x=hh_index_lag1,weight=Action.Obligation))+geom_histogram()+facet_wrap(~Veh)
+
+freq_continuous_term_plot(Term_smp25k,"hh_index_lag1","PSR")
+freq_continuous_term_plot(Term_smp25k,"hh_index_lag1","FxCb")
+
+#Percent Terminated Plot 
+debug(binned_percent_term_plot)
+binned_percent_term_plot(Term_smp25k,"hh_index_lag1")
 
 #Percent Terminated Plot
-discrete_percent_term_plot(Term_smp25k,"Comp")
+binned_percent_term_plot(Term_smp25k,"hh_index_lag1","FxCb")
+
+#Percent Terminated Plot
+binned_percent_term_plot(Term_smp25k,"hh_index_lag1","PSR")
+
+#Percent Terminated Plot
+binned_percent_term_plot(Term_smp25k,"hh_index_lag1","Veh")
+
 
 #Model
 Term_01A <- glm (data=Term_smp25k,
-                 b_Term ~ cb_Comp, family=binomial(link="logit"))
+                 b_Term ~ c_hh_index_lag1, family=binomial(link="logit"))
 display(Term_01A)
 
-#Plot the new variable and coefficients
-#Add the fitted regression line
-discrete_fitted_term_model(Term_smp25k,"cb_Comp") + 
-  stat_function(fun = fit_curve, args=list(a=coef(Term_01A)[1],                                                        b=coef(Term_01A)[2]),color="blue")
-
-
-
-```
-Competition alone has a very slight, but significant, negative correlation with terminations. The next step is to check alternate formulations. There's not yet enough in this model for any meaningful residual models. The next step is to look at a more detailed model, where single offer competition is broken out as a middle option between competition and no competion.
-
-###Model 01B: No Competition / Single Offer / Competition
-```{r Model01B}
-
-#Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"EffComp")
-
-
-#Percent Terminated Plot
-discrete_percent_term_plot(Term_smp25k,"EffComp")
-
-#Model
-Term_01B <- glm (data=Term_smp25k,
-                 b_Term ~ cn_Comp, family=binomial(link="logit"))
-display(Term_01B)
-
 #Plot the Fitted
 #Add the fitted regression line
-discrete_fitted_term_model(Term_smp25k,"n_Comp") +
-  stat_function(fun = fit_curve, args=list(a=coef(Term_01B)[1],
-                                           b=coef(Term_01B)[2]),
-                color="blue")
-
-
-
-
-```
-
-
-The correltion between the three categories of competition has a smaller coefficent, but is still signficant. In the next step, the multiple award competition is broken down in greater detail.
-
-###Model 01C: No Competition / Number of Offer Categories 
-```{r Model01C}
-
-#Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"CompOffr")
-
-#Percent Terminated Plot
-discrete_percent_term_plot(Term_smp25k,"CompOffr")
-
-#Model
-Term_01C <- glm (data=Term_smp25k,
-                 b_Term ~ cn_Offr, family=binomial(link="logit"))
-display(Term_01C)
-
-#Plot the Fitted
-#Add the fitted regression line
-discrete_fitted_term_model(Term_smp25k,"n_Comp") +
-  stat_function(fun = fit_curve, args=list(a=coef(Term_01C)[1],
-                                           b=coef(Term_01C)[2]),
-                color="blue")
-
-
-
-```
-
-As measured by residual deviance, this variable has slightly less predictive power than random noise. That can likely be attributed to the fact that 5+ offers category has a higher termination rate than 2 and 3-4. In theory, this could be because of non-liner relationship, for example higher number of offers competition may be more vulnerable to aggressive bidding beavior. However, this explaination would likely be better captured by other hidden variables such as competition methods rather than having a direct relationship with an increased number of offers. As a result, we are not testing offers as a categorical variable with dummies. 
-
-Instead, the last variant to be checked is the number of offers directly. This is handled logarithmicly because the differences between number of offers at the bottom end of the scale mtters much more than at the high end of the scale. In this method, contracts that were not open to competition are grouped with contracts that received only a single offer.
-
-
-###Model 01D: Number of Offer Categories 
-```{r Model01D}
-
-#Frequency Plot
-freq_continuous_term_plot(Term_smp25k,"l_Offr")
-
-#Percent Terminated Plot 
-binned_percent_term_plot(Term_smp25k,"l_Offr")
-
-#Percent Terminated Plot
-binned_percent_term_plot(Term_smp25k,"l_Offr","FxCb")
-
-#Percent Terminated Plot
-binned_percent_term_plot(Term_smp25k,"l_Offr","PSR")
-
-#Percent Terminated Plot
-binned_percent_term_plot(Term_smp25k,"l_Offr","Veh")
-
-
-#Model
-Term_01D <- glm (data=Term_smp25k,
-                 b_Term ~ cl_Offr, family=binomial(link="logit"))
-display(Term_01D)
-
-#Variant Model
-Term_smp25k$clsqr_Offer<-Term_smp25k$cl_Offr^2
-Term_01E <- glm (data=Term_smp25k,
-                 b_Term ~ cl_Offr +clsqr_Offer, family=binomial(link="logit"))
-display(Term_01E)
-
-#Plot the data and fitted curve
-Term_01D_plot<-ggplot(data=Term_smp25k,
-       aes(y=j_Term,x=cl_Offr))+geom_jitter(alpha=0.01,height=0)+scale_y_sqrt() +
-  labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
-
-#Plot the Fitted
-#Add the fitted regression line
-discrete_fitted_term_model(Term_smp25k,"cl_Offr") +
-  stat_function(fun = fit_curve, args=list(a=coef(Term_01D)[1],
-                                           b=coef(Term_01D)[2]),
+discrete_fitted_term_model(Term_smp25k,"chh_index_lag1") +
+  stat_function(fun = fit_curve, args=list(a=coef(Term_01A)[1],
+                                           b=coef(Term_01A)[2]),
                              color="blue")
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(Term_01D)
+binned_fitted_versus_residuals(Term_01A)
 
 
 
 #Plot residuals versus fitted
-residuals_term_plot(Term_01D,bins=3)+
+residuals_term_plot(Term_01A,bins=3)+
   labs(x="Estimated  Pr (Termination)")
 
 
@@ -377,7 +294,7 @@ binned_percent_term_plot(Term_smp25k,"l_Ceil")
 
 #Model
 Term_02A <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + cl_Ceil, family=binomial(link="logit"))
+                 b_Term ~c_hh_index_lag1 + cl_Ceil, family=binomial(link="logit"))
 display(Term_02A)
 
 
@@ -423,7 +340,7 @@ binned_percent_term_plot(Term_smp25k,"lsqr_Ceil")
 
 #Model
 Term_02B <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + cl_Ceil + clsqr_Ceil, family=binomial(link="logit"))
+                 b_Term ~c_hh_index_lag1 + cl_Ceil + clsqr_Ceil, family=binomial(link="logit"))
 display(Term_02B)
 
 #Plot the fitted model plot
@@ -461,7 +378,7 @@ binned_percent_term_plot(Term_smp25k,"l_Ceil","EffComp")
 
 #Create the model
 Term_02C <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + cl_Ceil + clsqr_Ceil + n_Comp:cl_Ceil, family=binomial(link="logit"))
+                 b_Term ~c_hh_index_lag1 + cl_Ceil + clsqr_Ceil + c_hh_index_lag1:cl_Ceil, family=binomial(link="logit"))
 display(Term_02C)
 
 Term_02C_curve<-function(x, Comp){invlogit(cbind(1,Comp,x,x^2,Comp*x) %*%  coef(Term_02C))}
@@ -500,9 +417,9 @@ binned_percent_term_plot(Term_smp25k,"l_Days")
 
 #Model
 Term_02D <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + clsqr_Ceil + cl_Days + clsqr_Ceil +
-                   n_Comp:cl_Ceil , family=binomial(link="logit"))
+                   c_hh_index_lag1:cl_Ceil , family=binomial(link="logit"))
 display(Term_02D)
 
 
@@ -548,9 +465,9 @@ ggplot(data=subset(Term_smp25k,!is.na(l_Ceil)),
 
 #Create the model
 Term_02E <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + clsqr_Ceil + cl_Days+
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days, family=binomial(link="logit"))
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days, family=binomial(link="logit"))
 display(Term_02E)
 
 Term_02E_curve<-function(x, Comp,Ceil){invlogit(
@@ -603,9 +520,9 @@ binned_percent_term_plot(Term_smp25k,"lsqr_Days")
 
 #Create the model
 Term_02F <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days, family=binomial(link="logit"))
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days, family=binomial(link="logit"))
 display(Term_02F)
 
 Term_02F_curve<-function(x, Comp,Ceil){invlogit(
@@ -642,9 +559,9 @@ Adding log(initial duration)^2 does seem to address the troubling pattern presen
 
 #Create the model
 Term_02G <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + cl_Days+ clsqr_Days +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days, family=binomial(link="logit"))
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days, family=binomial(link="logit"))
 display(Term_02G)
 
 Term_02G_curve<-function(x, Comp,Ceil){invlogit(
@@ -682,9 +599,9 @@ binned_percent_term_plot(Term_smp25k,"l_Days","EffComp")
 
 #Create the model
 Term_02H <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days, family=binomial(link="logit"))
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days, family=binomial(link="logit"))
 display(Term_02H)
 
 Term_02H_curve<-function(x, Comp,Ceil){invlogit(
@@ -728,10 +645,10 @@ discrete_percent_term_plot(Term_smp25k,"Veh")
 
 #Create the model
 Term_03A <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
                    SIDV + MIDV + OIDV +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days, family=binomial(link="logit"))
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days, family=binomial(link="logit"))
 display(Term_03A)
 
 #Plot the model and Vehicle for SIDV
@@ -807,10 +724,10 @@ binned_percent_term_plot(Term_smp25k,"l_Days","Veh")
 
 #Create the model
 Term_03B <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
                    SIDV + MIDV + OIDV +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
                  SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days, family=binomial(link="logit"))
 display(Term_03B)
 
@@ -899,12 +816,12 @@ discrete_percent_term_plot(Term_smp25k,"EffComp","Veh")
 
 #Create the model
 Term_03C <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
                    SIDV + MIDV + OIDV +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
                  SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp , family=binomial(link="logit"))
+                   SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1 , family=binomial(link="logit"))
 display(Term_03C)
 
 # Plot the model and Vehicle for SIDV
@@ -994,12 +911,12 @@ binned_percent_term_plot(Term_smp25k,"l_Ceil","Veh")
 
 #Create the model
 Term_03D <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
                    SIDV + MIDV + OIDV +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
                  SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp +
+                   SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1 +
                    SIDV:cl_Ceil+MIDV:cl_Ceil+OIDV:cl_Ceil, family=binomial(link="logit"))
 display(Term_03D)
 
@@ -1080,12 +997,12 @@ The interaction with contract ceiling only has a significant relationship with o
 
 #Create the model
 Term_03E <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil  + cl_Days+ clsqr_Days +
                    SIDV + MIDV + OIDV +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
                  SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp, family=binomial(link="logit"))
+                   SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1, family=binomial(link="logit"))
 display(Term_03E)
 
 
@@ -1130,12 +1047,12 @@ Ceiling squared does little to reduce deviance and only slightly mitigates, rath
 
 #Create the model
 Term_03F <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil  + cl_Days+ 
                    SIDV + MIDV + OIDV +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
                  SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp, family=binomial(link="logit"))
+                   SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1, family=binomial(link="logit"))
 display(Term_03F)
 
 
@@ -1195,13 +1112,13 @@ discrete_percent_term_plot(Term_smp25k,"FxCb")
 
 #Create the model
 Term_04A <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
                    n_Fixed +
                  SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp , family=binomial(link="logit"))
+                   SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1 , family=binomial(link="logit"))
 display(Term_04A)
 
 # Plot the model and Vehicle 
@@ -1250,13 +1167,13 @@ binned_percent_term_plot(Term_smp25k,"l_Days","FxCb")
 
 #Create the model
 Term_04B <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
                    n_Fixed +
                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp +
+                   SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1 +
                    cl_Days:n_Fixed , family=binomial(link="logit"))
 display(Term_04B)
 
@@ -1303,13 +1220,13 @@ discrete_percent_term_plot(Term_smp25k,"FxCb","Veh")
 
 #Create the model
 Term_04C <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
                    n_Fixed +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
                  SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp +
+                   SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1 +
                    SIDV:n_Fixed+MIDV:n_Fixed+OIDV:n_Fixed, family=binomial(link="logit"))
 display(Term_04C)
 
@@ -1366,13 +1283,13 @@ discrete_percent_term_plot(Term_smp25k,"Fee")
 
 #Create the model
 Term_04D <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + cl_Days+ clsqr_Ceil + clsqr_Days +
                    SIDV + MIDV + OIDV + 
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
                    n_Fixed + n_Incent + n_NoFee +
                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp 
+                   SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1 
                     , family=binomial(link="logit"))
 display(Term_04D)
 
@@ -1424,13 +1341,13 @@ discrete_percent_term_plot(Term_smp25k,"Fee","FxCb")+
 
 #Create the model
 Term_04E <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
                    n_Fixed + n_Incent + 
                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp +
+                   SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1 +
                    n_Fixed:n_Incent
                     , family=binomial(link="logit"))
 display(Term_04E)
@@ -1484,13 +1401,13 @@ discrete_percent_term_plot(Term_smp25k,"UCA")
 
 #Create the model
 Term_04F <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
                    n_Fixed + b_UCA + 
                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp 
+                   SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1 
                     , family=binomial(link="logit"))
 display(Term_04F)
 
@@ -1531,23 +1448,23 @@ residuals_term_plot(Term_04F)+
 ```{r Model04G}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"UCA","n_Comp")
+freq_discrete_term_plot(Term_smp25k,"UCA","c_hh_index_lag1")
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp25k,"UCA","n_Comp")
+discrete_percent_term_plot(Term_smp25k,"UCA","c_hh_index_lag1")
 
 
 
 #Create the model
 Term_04G <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
                    n_Fixed + b_UCA + 
                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp +
-                   b_UCA:n_Comp
+                   SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1 +
+                   b_UCA:c_hh_index_lag1
                  
                     , family=binomial(link="logit"))
 display(Term_04G)
@@ -1599,14 +1516,14 @@ binned_percent_term_plot(Term_smp25k,"l_Days","UCA")
 
 #Create the model
 Term_04H <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
                    n_Fixed + b_UCA + 
                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp +
-                   b_UCA:n_Comp + 
+                   SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1 +
+                   b_UCA:c_hh_index_lag1 + 
                   b_UCA:l_Days
                     , family=binomial(link="logit"))
 display(Term_04H)
@@ -1660,15 +1577,15 @@ discrete_percent_term_plot(Term_smp25k,"Intl")
 
 #Create the model
 Term_05A <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
                    n_Fixed + b_UCA + 
                    b_Intl + 
                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
-                   b_UCA:n_Comp
+                   SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1+
+                   b_UCA:c_hh_index_lag1
                     , family=binomial(link="logit"))
 display(Term_05A)
 
@@ -1721,15 +1638,15 @@ discrete_percent_term_plot(Term_smp25k,"Intl","FxCb")
 
 #Create the model
 Term_05A <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
                    n_Fixed + b_UCA + 
                    b_Intl + 
                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
-                   b_UCA:n_Comp+
+                   SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1+
+                   b_UCA:c_hh_index_lag1+
                    n_Fixed:b_Intl
                     , family=binomial(link="logit"))
 display(Term_05A)
@@ -1781,15 +1698,15 @@ discrete_percent_term_plot(Term_smp25k,"Intl","Veh")
 
 #Create the model
 Term_05C <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
                    n_Fixed + b_UCA + 
                    b_Intl + 
                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
-                   b_UCA:n_Comp+
+                   SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1+
+                   b_UCA:c_hh_index_lag1+
                    SIDV:b_Intl+MIDV:b_Intl+OIDV:b_Intl
                     , family=binomial(link="logit"))
 display(Term_05C)
@@ -1837,7 +1754,7 @@ Other DoD stands out for its sheer quantity of contracts and task orders and als
 ```{r Model06A}
 
 # Term_09A <- glmer(data=Term_smp1m,
-#                  b_Term ~n_Comp + 
+#                  b_Term ~c_hh_index_lag1 + 
 #                    cl_Ceil + cl_Days+ 
 #                    SIDV + MIDV + OIDV +
 #                    n_Fixed + b_UCA + 
@@ -1862,15 +1779,15 @@ Term_smp25k$b_ODoD<-as.integer(as.character(Term_smp25k$b_ODoD))
 
 #Create the model
 Term_06A <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
                    n_Fixed + b_UCA + 
                    b_Intl + b_ODoD +
                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
-                   b_UCA:n_Comp
+                   SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1+
+                   b_UCA:c_hh_index_lag1
                     , family=binomial(link="logit"))
 display(Term_06A)
 
@@ -1929,16 +1846,16 @@ Term_smp25k$b_ODoD<-as.integer(as.character(Term_smp25k$b_ODoD))
 
 #Create the model
 Term_06B <- glm (data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
                    n_Fixed + b_UCA + 
                    b_Intl + b_ODoD +
                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
-                   b_UCA:n_Comp+
-                   b_ODoD:n_Comp
+                   SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1+
+                   b_UCA:c_hh_index_lag1+
+                   b_ODoD:c_hh_index_lag1
                     , family=binomial(link="logit"))
 display(Term_06B)
 
@@ -1979,7 +1896,7 @@ residuals_term_plot(Term_06B)+
 #Multi-Level Model
 
 ##What
-###Model 08A: NAICS
+###Model 09A: NAICS
 The North American Industrial Classification system captures the sector of each contract, which are each given a seperate intercept in the model.
 ```{r Model08A}
 
@@ -1990,7 +1907,7 @@ freq_discrete_term_plot(Term_smp25k,"NAICS")
 discrete_percent_term_plot(Term_smp25k,"NAICS")
 
 Term_08A <- glmer(data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
                    n_Fixed + b_UCA + 
@@ -2003,15 +1920,15 @@ display(Term_08A)
 
 #Create the model
 # Term_08A <- glmer(data=Term_smp25k,
-#                  b_Term ~n_Comp + 
+#                  b_Term ~c_hh_index_lag1 + 
 #                    cl_Ceil + cl_Days+ 
 #                    SIDV + MIDV + OIDV +
 #                    n_Fixed + b_UCA + 
 #                    b_Intl + 
-#                    n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+#                    c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
 #                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-#                    SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
-#                    b_UCA:n_Comp+
+#                    SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1+
+#                    b_UCA:c_hh_index_lag1+
 #                    (1 | NAICS)
 #                     , family=binomial(link="logit"))
 # display(Term_08A)
@@ -2066,44 +1983,41 @@ discrete_percent_term_plot(Term_smp25k,"PSR_What")+ theme(axis.text.x = element_
 
 
 #Create the model
-Term_08B <- glmer(data=Term_smp1m,
-                 b_Term ~n_Comp + 
+Term_08A <- glmer(data=Term_smp25k,
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
                    n_Fixed + b_UCA + 
-                   SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   # SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp +
                    # b_Intl +
-                  # n_Comp:cl_Ceil + #+ cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   c_hh_index_lag1:cl_Ceil + #+ cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
                    (1 | NAICS)
                   , family=binomial(link="logit"))
-display(Term_08B)
+display(Term_08A)
 #Model failed to converge with max|grad| = 0.00858407 (tol = 0.001, component 1)
 # Term_08B <- glmer(data=Term_smp25k,
-#                  b_Term ~n_Comp + 
+#                  b_Term ~c_hh_index_lag1 + 
 #                    cl_Ceil + cl_Days+ 
 #                    SIDV + MIDV + OIDV +
-#                    n_Comp:cl_Ceil  +
+#                    c_hh_index_lag1:cl_Ceil  +
 #                    # cl_Ceil:cl_Days  + 
-#                    n_Comp:cl_Days +
+#                    c_hh_index_lag1:cl_Days +
 #                    n_Fixed + b_UCA + 
 #                    b_Intl + 
 #                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-#                    SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
-#                    b_UCA:n_Comp+
+#                    SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1+
+#                    b_UCA:c_hh_index_lag1+
 #                    (1 | PSR) + (1 | PSR_What)
 #                     , family=binomial(link="logit"))
 # display(Term_08B)
 
 # Plot the model and Vehicle 
-# Term_08B_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
-#   cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
-#         Comp*Ceil,Days*Ceil,Days*Comp,
-#         Fixed,UCA,x,
-#         Days*x,Days*MIDV,Days*OIDV,
-#         UCA*Comp) %*%  coef(Term_08B))}
-# save(Term_08B,file="Term08B.Rdata")
-load("Term08B.Rdata")
+Term_08B_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Fixed,UCA,x,
+        Days*x,Days*MIDV,Days*OIDV,
+        UCA*Comp) %*%  coef(Term_08B))}
+
 #Days curves
 discrete_fitted_term_model(Term_smp25k,"SIDV") +
   stat_function(fun = Term_08B_curve,
@@ -2125,10 +2039,8 @@ residuals_term_plot(Term_08B)+
 # residuals_term_plot(Term_02F,"cl_days")+
 #   labs(x="Centered Log(Days)")
 
-
-
 ```
-After the incorporation of NAICS intercepts, ceiling related interactions had strange consequences (left out for speed of running RMD reasons). The interaction of Competition and Ceiling, even when introduced alone  had a positive coefficient and removed the effect of Ceiling by itself. When all three interactions were included,  Ceiling and Duration similarly had a notable negative coefficient, which seemed contrary to past literature that suggests greater risks when trying to do a large contract too fast. The interaction of competition and days had a positive coefficient, but was not significant. Single Award IDV does have a significant negative coefficient in interaction with Competition, but the other two types do not and the model fails to converge (with the 250k or 1m sample) and exhibit a peak at the lower end of the residuals.
+After the incorporation of NAICS intercepts, ceiling related interactions had strange consequences (left out for speed of running RMD reasons). The interaction of Competition and Ceiling, even when introduced alone  had a positive coefficient and removed the effect of Ceiling by itself. When all three interactions were included,  Ceiling and Duration similarly had a notable negative coefficient, which seemed contrary to past literature that suggests greater risks when trying to do a large contract too fast. The interaction of competition and days had a positive coefficient, but was not significant.
 ###Model 08C: Interactions
 ```{r Model 6 Exploration}
 #, fig.height = 10, fig.width = 6.5
@@ -2167,36 +2079,36 @@ discrete_percent_term_plot(Term_smp25k,"FxCb","What")+ theme(axis.text.x = eleme
 discrete_percent_term_plot(Term_smp25k,"FxCb","PSR_What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 
-Term_08C <- glmer(data=Term_smp1m,
-                 b_Term ~n_Comp +
-                   cl_Ceil + cl_Days+
-                   SIDV + MIDV + OIDV +
-                   # n_Comp:cl_Ceil  +
-                   # cl_Ceil:cl_Days  +
-                   # n_Comp:cl_Days +
-                   n_Fixed + b_UCA +
-                   # b_Intl +
-                   # SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   # SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
-                   b_UCA:n_Comp+
-                   (1 | NAICS)
-                    , family=binomial(link="logit"))
-display(Term_08C)
-save(Term_08C,file="Term08C.Rdata")
-
-Term_08D <- glmer(data=Term_smp25k,
-                 b_Term ~ n_Comp + 
+Term_08C <- glmer(data=Term_smp25k,
+                 b_Term ~ #c_hh_index_lag1 + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
-                   n_Comp:cl_Ceil  +
+                   c_hh_index_lag1:cl_Ceil  +
                    # cl_Ceil:cl_Days  + 
-                   n_Comp:cl_Days +
+                   c_hh_index_lag1:cl_Days +
                    n_Fixed + b_UCA + 
                    b_Intl + 
                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
-                   b_UCA:n_Comp+
-                   (1  | PSR) + (1 + n_Comp| PSR_What)
+                   SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1+
+                   b_UCA:c_hh_index_lag1+
+                   (1 + c_hh_index_lag1 | PSR) + (1 | PSR_What)
+                    , family=binomial(link="logit"))
+display(Term_08C)
+
+
+Term_08D <- glmer(data=Term_smp25k,
+                 b_Term ~ c_hh_index_lag1 + 
+                   cl_Ceil + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   c_hh_index_lag1:cl_Ceil  +
+                   # cl_Ceil:cl_Days  + 
+                   c_hh_index_lag1:cl_Days +
+                   n_Fixed + b_UCA + 
+                   b_Intl + 
+                   SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1+
+                   b_UCA:c_hh_index_lag1+
+                   (1  | PSR) + (1 + c_hh_index_lag1| PSR_What)
                     , family=binomial(link="logit"))
 display(Term_08D)
 
@@ -2210,18 +2122,18 @@ residuals_term_plot(Term_08C)+
 
 
 # Term_08E <- glmer(data=Term_smp25k,
-#                  b_Term ~ n_Comp + 
+#                  b_Term ~ c_hh_index_lag1 + 
 #                    cl_Ceil + cl_Days+ 
 #                    SIDV + MIDV + OIDV +
-#                    n_Comp:cl_Ceil  +
+#                    c_hh_index_lag1:cl_Ceil  +
 #                    # cl_Ceil:cl_Days  + 
-#                    n_Comp:cl_Days +
+#                    c_hh_index_lag1:cl_Days +
 #                    n_Fixed + b_UCA + 
 #                    b_Intl + 
 #                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-#                    SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
-#                    b_UCA:n_Comp+
-#                    (1+n_Comp  | PSR) + (1+ n_Comp | PSR_What)
+#                    SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1+
+#                    b_UCA:c_hh_index_lag1+
+#                    (1+c_hh_index_lag1  | PSR) + (1+ c_hh_index_lag1 | PSR_What)
 #                     , family=binomial(link="logit"))
 # display(Term_08E)
 # failure to converge in 10000 evaluations
@@ -2256,7 +2168,7 @@ discrete_percent_term_plot(Term_smp25k,"NAICS")
 
 #Model failed to converge with max|grad| = 0.00993991 (tol = 0.001, component 1)
 Term_09A <- glmer(data=Term_smp25k,
-                 b_Term ~n_Comp + 
+                 b_Term ~c_hh_index_lag1 + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
                    n_Fixed + b_UCA + 
@@ -2267,15 +2179,15 @@ display(Term_09A)
 
 #Create the model
 # Term_08A <- glmer(data=Term_smp25k,
-#                  b_Term ~n_Comp + 
+#                  b_Term ~c_hh_index_lag1 + 
 #                    cl_Ceil + cl_Days+ 
 #                    SIDV + MIDV + OIDV +
 #                    n_Fixed + b_UCA + 
 #                    b_Intl + 
-#                    n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+#                    c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
 #                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
-#                    SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp+
-#                    b_UCA:n_Comp+
+#                    SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1+
+#                    b_UCA:c_hh_index_lag1+
 #                    (1 | NAICS)
 #                     , family=binomial(link="logit"))
 # display(Term_08A)
@@ -2305,6 +2217,78 @@ binned_fitted_versus_residuals(Term_08A)
 
 #Plot residuals versus fittedO
 residuals_term_plot(Term_08A)+
+  labs(x="Estimated  Pr (Termination)")
+
+# residuals_term_plot(Term_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
+
+```
+
+
+
+
+###Model 09A: oFFICE
+The North American Industrial Classification system captures the sector of each contract, which are each given a seperate intercept in the model.
+```{r Model09A}
+
+#Frequency Plot
+freq_discrete_term_plot(Term_smp25k,"NAICS")
+
+#Percent Terminated Plot 
+discrete_percent_term_plot(Term_smp25k,"NAICS")
+Term_smp25k$topContractingOfficeID
+Term_09A <- glmer(data=Term_smp25k,
+                 b_Term ~c_hh_index_lag1 + 
+                   cl_Ceil + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   n_Fixed + b_UCA + 
+                   # b_Intl +
+                   (1 | topContractingOfficeID)
+                  , family=binomial(link="logit"))
+display(Term_09A)
+
+
+
+#Create the model
+# Term_09A <- glmer(data=Term_smp25k,
+#                  b_Term ~c_hh_index_lag1 + 
+#                    cl_Ceil + cl_Days+ 
+#                    SIDV + MIDV + OIDV +
+#                    n_Fixed + b_UCA + 
+#                    b_Intl + 
+#                    c_hh_index_lag1:cl_Ceil  + cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
+#                    SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+#                    SIDV:c_hh_index_lag1+MIDV:c_hh_index_lag1+OIDV:c_hh_index_lag1+
+#                    b_UCA:c_hh_index_lag1+
+#                    (1 | NAICS)
+#                     , family=binomial(link="logit"))
+# display(Term_09A)
+#Ran for two hours Model failed to converge with max|grad| = 0.186396 (tol = 0.001, component 1)
+# Plot the model and Vehicle 
+Term_09A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Fixed,UCA,x,
+        Days*x,Days*MIDV,Days*OIDV,
+        UCA*Comp) %*%  coef(Term_09A))}
+
+#Days curves
+discrete_fitted_term_model(Term_smp25k,"SIDV") +
+  stat_function(fun = Term_09A_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1,UCA=0),color="blue")+
+  stat_function(fun = Term_09A_curve,
+                             args=list(Comp=2,Ceil=0,Days=1,
+                                       MIDV=0,SIDV=0,OIDV=0,
+                                       Fixed=1,UCA=0),color="blue")
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_09A)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_09A)+
   labs(x="Estimated  Pr (Termination)")
 
 # residuals_term_plot(Term_02F,"cl_days")+
