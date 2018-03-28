@@ -2040,7 +2040,9 @@ freq_discrete_term_plot(Term_smp,"PSR_What")+ theme(axis.text.x = element_text(a
 #Percent Terminated Plot 
 discrete_percent_term_plot(Term_smp,"PSR_What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
+Term_smp250k$NAICS2<-substr(Term_smp250k$NAICS,1,2)
 
+#Create the model
 
 #Create the model
 Term_08A <- glmer(data=Term_smp,
@@ -2050,9 +2052,34 @@ Term_08A <- glmer(data=Term_smp,
                    n_Fixed + b_UCA + 
                    # b_Intl +
                    c_hh_index_lag1:cl_Ceil + #+ cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
-                   (1 | NAICS)
+                   (1 | NAICS2)
                   , family=binomial(link="logit"))
-display(Term_08A)
+display(Term_08B2)
+
+Term_smp250k$NAICS4<-substr(Term_smp250k$NAICS,1,4)
+Term_08B4 <- glmer(data=Term_smp250k,
+                 b_Crai ~c_hh_index_lag1 + 
+                   cl_Ceil + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   n_Fixed + b_UCA + 
+                   # b_Intl +
+                   c_hh_index_lag1:cl_Ceil + #+ cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
+                   (1 | NAICS4)
+                  , family=binomial(link="logit"))
+display(Term_08B4)
+
+Term_smp250k$NAICS3<-substr(Term_smp250k$NAICS,1,3)
+Term_08B3 <- glmer(data=Term_smp250k,
+                 b_Crai ~c_hh_index_lag1 + 
+                   cl_Ceil + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   n_Fixed + b_UCA + 
+                   # b_Intl +
+                   c_hh_index_lag1:cl_Ceil + #+ cl_Ceil:cl_Days  + c_hh_index_lag1:cl_Days +
+                   (1 | NAICS3)
+                  , family=binomial(link="logit"))
+display(Term_08B3)
+
 #Model failed to converge with max|grad| = 0.00858407 (tol = 0.001, component 1)
 # Term_08B <- glmer(data=Term_smp,
 #                  b_Crai ~c_hh_index_lag1 + 
@@ -2101,6 +2128,8 @@ residuals_term_plot(Term_08B)+
 
 ```
 After the incorporation of NAICS intercepts, ceiling related interactions had strange consequences (left out for speed of running RMD reasons). The interaction of Competition and Ceiling, even when introduced alone  had a positive coefficient and removed the effect of Ceiling by itself. When all three interactions were included,  Ceiling and Duration similarly had a notable negative coefficient, which seemed contrary to past literature that suggests greater risks when trying to do a large contract too fast. The interaction of competition and days had a positive coefficient, but was not significant.
+save(Term_08B2,Term_08B3,Term_08B4,file="Cons_Term08B.Rdata")
+
 ###Model 08C: Interactions
 ```{r Model 6 Exploration}
 #, fig.height = 10, fig.width = 6.5
