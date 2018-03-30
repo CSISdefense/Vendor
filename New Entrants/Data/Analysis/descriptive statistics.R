@@ -11,7 +11,7 @@ getwd()
 setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data")
 getwd()
 
-###if no parent filter
+###if no parent filter####
 
 df2001_nop <- read_csv("dataset2001nop.csv")
 df2002_nop <- read_csv("dataset2002nop.csv")
@@ -20,18 +20,8 @@ df2004_nop <- read_csv("dataset2004nop.csv")
 df2005_nop <- read_csv("dataset2005nop.csv")
 df2006_nop <- read_csv("dataset2006nop.csv")
 
-
-### if parent filter
-
-df2001 <- read_csv("dataset2001.csv")
-df2002 <- read_csv("dataset2002.csv")
-df2003 <- read_csv("dataset2003.csv")
-df2004 <- read_csv("dataset2004.csv")
-df2005 <- read_csv("dataset2005.csv")
-df2006 <- read_csv("dataset2006.csv")
-
 ###Cleaning variables to categorical and numeric####
-###No Parent ID Filter
+
 df2001_nop$NAICS2 = as.factor(df2001_nop$NAICS2)
 df2001_nop$ServicesCategory = as.factor(df2001_nop$ServicesCategory)
 df2001_nop$location = as.numeric(df2001_nop$location)
@@ -99,8 +89,16 @@ df2006_nop$survival.status = as.numeric(df2006_nop$survival.status)
 df2006_nop$DEPARTMENT_NAME = as.factor(df2006_nop$DEPARTMENT_NAME)
 df2006_nop$AGENCY_NAME = as.factor(df2006_nop$AGENCY_NAME)
 
-###Parent ID filter
+### if parent filter####
 
+df2001 <- read_csv("dataset2001.csv")
+df2002 <- read_csv("dataset2002.csv")
+df2003 <- read_csv("dataset2003.csv")
+df2004 <- read_csv("dataset2004.csv")
+df2005 <- read_csv("dataset2005.csv")
+df2006 <- read_csv("dataset2006.csv")
+
+###Cleaning variables to categorical and numeric####
 df2001$NAICS2 = as.factor(df2001$NAICS2)
 df2001$ServicesCategory = as.factor(df2001$ServicesCategory)
 df2001$location = as.numeric(df2001$location)
@@ -167,6 +165,47 @@ df2006$survival.status = as.numeric(df2006$survival.status)
 df2006$DEPARTMENT_NAME = as.factor(df2006$DEPARTMENT_NAME)
 df2006$AGENCY_NAME = as.factor(df2006$AGENCY_NAME)
 
+
+### DOD filter####
+dod_nop <- read_csv("Panel Data 2001-2011 DOD-nop")
+
+df2001_DOD <- dod_nop %>% 
+  filter(year(registrationDate.x) == 2001 )
+df2002_DOD <- dod_nop %>% 
+  filter(year(registrationDate.x) == 2002 )
+df2003_DOD <- dod_nop %>% 
+  filter(year(registrationDate.x) == 2003 )
+df2004_DOD <- dod_nop %>% 
+  filter(year(registrationDate.x) == 2004 )
+df2005_DOD <- dod_nop %>% 
+  filter(year(registrationDate.x) == 2005 )
+df2006_DOD <- dod_nop %>% 
+  filter(year(registrationDate.x) == 2006 )
+
+### Signeddate nop filter####
+sd_nop <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/Panel Data reg 2001-2011 - nop, 10plus1 year view.csv")
+
+df2001_sd <- sd_nop %>% 
+  filter(year(registrationDate) == 2001 )
+df2002_sd <- sd_nop %>% 
+  filter(year(registrationDate) == 2002 )
+df2003_sd <- sd_nop %>% 
+  filter(year(registrationDate) == 2003 )
+df2004_sd <- sd_nop %>% 
+  filter(year(registrationDate) == 2004 )
+df2005_sd <- sd_nop %>% 
+  filter(year(registrationDate) == 2005 )
+df2006_sd <- sd_nop %>% 
+  filter(year(registrationDate) == 2006 )
+
+###Cleaning variables to categorical and numeric####
+
+
+
+###Parent ID filter
+
+
+
 class(dataset.2001$ServicesCategory)
 
 ###Descriptive Stats####
@@ -174,81 +213,81 @@ class(dataset.2001$ServicesCategory)
 ###Survival Rates no parent filter####
 
 ##3-year
-sr3yr2001_nop <- sum(df2001_nop$years.in.SAM>=3, value=TRUE)/nrow(df2001_nop)
-sr3yr2001sm_nop <- sum((df2001_nop$years.in.SAM>=3 & df2001_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2001_nop)
-sr3yr2001non_nop <- sum((df2001_nop$years.in.SAM>=3 & df2001_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2001_nop)
+sr3yr2001_nop <- sum(df2001_nop$years.in.SAM>=3)/nrow(df2001_nop)
+sr3yr2001sm_nop <- sum((df2001_nop$years.in.SAM>=3 & df2001_nop$biz_size == 0), na.rm = TRUE)/sum(df2001_nop$biz_size == 0, na.rm = TRUE)
+sr3yr2001non_nop <- sum((df2001_nop$years.in.SAM>=3 & df2001_nop$biz_size == 1), na.rm = TRUE)/sum(df2001_nop$biz_size == 1, na.rm = TRUE)
 
-sr3yr2002_nop <- sum(df2002_nop$years.in.SAM>=3, value=TRUE)/nrow(df2002_nop) 
-sr3yr2002sm_nop <- sum((df2002_nop$years.in.SAM>=3 & df2002_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2002_nop)
-sr3yr2002non_nop <- sum((df2002_nop$years.in.SAM>=3 & df2002_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2002_nop)
+sr3yr2002_nop <- sum(df2002_nop$years.in.SAM>=3)/nrow(df2002_nop) 
+sr3yr2002sm_nop <- sum((df2002_nop$years.in.SAM>=3 & df2002_nop$biz_size == 0), na.rm = TRUE)/sum(df2002_nop$biz_size == 0, na.rm = TRUE)
+sr3yr2002non_nop <- sum((df2002_nop$years.in.SAM>=3 & df2002_nop$biz_size == 1), na.rm = TRUE)/sum(df2002_nop$biz_size == 1, na.rm = TRUE)
 
-sr3yr2003_nop <- sum(df2003_nop$years.in.SAM>=3, value=TRUE)/nrow(df2003_nop)
-sr3yr2003sm_nop <- sum((df2003_nop$years.in.SAM>=3 & df2003_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2003_nop)
-sr3yr2003non_nop <- sum((df2003_nop$years.in.SAM>=3 & df2003_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2003_nop)
+sr3yr2003_nop <- sum(df2003_nop$years.in.SAM>=3)/nrow(df2003_nop)
+sr3yr2003sm_nop <- sum((df2003_nop$years.in.SAM>=3 & df2003_nop$biz_size == 0), na.rm = TRUE)/sum(df2003_nop$biz_size == 0, na.rm = TRUE)
+sr3yr2003non_nop <- sum((df2003_nop$years.in.SAM>=3 & df2003_nop$biz_size == 1), na.rm = TRUE)/sum(df2003_nop$biz_size == 1, na.rm = TRUE)
 
-sr3yr2004_nop <- sum(df2004_nop$years.in.SAM>=3, value=TRUE)/nrow(df2004_nop) 
-sr3yr2004sm_nop <- sum((df2004_nop$years.in.SAM>=3 & df2004_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2004_nop)
-sr3yr2004non_nop <- sum((df2004_nop$years.in.SAM>=3 & df2004_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2004_nop)
+sr3yr2004_nop <- sum(df2004_nop$years.in.SAM>=3)/nrow(df2004_nop) 
+sr3yr2004sm_nop <- sum((df2004_nop$years.in.SAM>=3 & df2004_nop$biz_size == 0), na.rm = TRUE)/sum(df2004_nop$biz_size == 0, na.rm = TRUE)
+sr3yr2004non_nop <- sum((df2004_nop$years.in.SAM>=3 & df2004_nop$biz_size == 1), na.rm = TRUE)/sum(df2004_nop$biz_size == 1, na.rm = TRUE)
 
-sr3yr2005_nop <- sum(df2005_nop$years.in.SAM>=3, value=TRUE)/nrow(df2005_nop) 
-sr3yr2005sm_nop <- sum((df2005_nop$years.in.SAM>=3 & df2005_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2005_nop)
-sr3yr2005non_nop <- sum((df2005_nop$years.in.SAM>=3 & df2005_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2005_nop)
+sr3yr2005_nop <- sum(df2005_nop$years.in.SAM>=3)/nrow(df2005_nop) 
+sr3yr2005sm_nop <- sum((df2005_nop$years.in.SAM>=3 & df2005_nop$biz_size == 0), na.rm = TRUE)/sum(df2005_nop$biz_size == 0, na.rm = TRUE)
+sr3yr2005non_nop <- sum((df2005_nop$years.in.SAM>=3 & df2005_nop$biz_size == 1), na.rm = TRUE)/sum(df2005_nop$biz_size == 1, na.rm = TRUE)
 
-sr3yr2006_nop <- sum(df2006_nop$years.in.SAM>=3, value=TRUE)/nrow(df2006_nop) 
-sr3yr2006sm_nop <- sum((df2006_nop$years.in.SAM>=3 & df2006_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2006_nop)
-sr3yr2006non_nop <- sum((df2006_nop$years.in.SAM>=3 & df2006_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2006_nop)
+sr3yr2006_nop <- sum(df2006_nop$years.in.SAM>=3)/nrow(df2006_nop) 
+sr3yr2006sm_nop <- sum((df2006_nop$years.in.SAM>=3 & df2006_nop$biz_size == 0), na.rm = TRUE)/sum(df2006_nop$biz_size == 0, na.rm = TRUE)
+sr3yr2006non_nop <- sum((df2006_nop$years.in.SAM>=3 & df2006_nop$biz_size == 1), na.rm = TRUE)/sum(df2006_nop$biz_size == 1, na.rm = TRUE)
 
 ##5-year
-sr5yr2001_nop <- sum(df2001_nop$years.in.SAM>=5, value=TRUE)/nrow(df2001_nop)
-sr5yr2001sm_nop <- sum((df2001_nop$years.in.SAM>=5 & df2001_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2001_nop)
-sr5yr2001non_nop <- sum((df2001_nop$years.in.SAM>=5 & df2001_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2001_nop)
+sr5yr2001_nop <- sum(df2001_nop$years.in.SAM>=5)/nrow(df2001_nop)
+sr5yr2001sm_nop <- sum((df2001_nop$years.in.SAM>=5 & df2001_nop$biz_size == 0), na.rm = TRUE)/sum(df2001_nop$biz_size == 0, na.rm = TRUE)
+sr5yr2001non_nop <- sum((df2001_nop$years.in.SAM>=5 & df2001_nop$biz_size == 1), na.rm = TRUE)/sum(df2001_nop$biz_size == 1, na.rm = TRUE)
 
-sr5yr2002_nop <- sum(df2002_nop$years.in.SAM>=5, value=TRUE)/nrow(df2002_nop) 
-sr5yr2002sm_nop <- sum((df2002_nop$years.in.SAM>=5 & df2002_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2002_nop)
-sr5yr2002non_nop <- sum((df2002_nop$years.in.SAM>=5 & df2002_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2002_nop)
+sr5yr2002_nop <- sum(df2002_nop$years.in.SAM>=5)/nrow(df2002_nop) 
+sr5yr2002sm_nop <- sum((df2002_nop$years.in.SAM>=5 & df2002_nop$biz_size == 0), na.rm = TRUE)/sum(df2002_nop$biz_size == 0, na.rm = TRUE)
+sr5yr2002non_nop <- sum((df2002_nop$years.in.SAM>=5 & df2002_nop$biz_size == 1), na.rm = TRUE)/sum(df2002_nop$biz_size == 1, na.rm = TRUE)
 
-sr5yr2003_nop <- sum(df2003_nop$years.in.SAM>=5, value=TRUE)/nrow(df2003_nop)
-sr5yr2003sm_nop <- sum((df2003_nop$years.in.SAM>=5 & df2003_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2003_nop)
-sr5yr2003non_nop <- sum((df2003_nop$years.in.SAM>=5 & df2003_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2003_nop)
+sr5yr2003_nop <- sum(df2003_nop$years.in.SAM>=5)/nrow(df2003_nop)
+sr5yr2003sm_nop <- sum((df2003_nop$years.in.SAM>=5 & df2003_nop$biz_size == 0), na.rm = TRUE)/sum(df2003_nop$biz_size == 0, na.rm = TRUE)
+sr5yr2003non_nop <- sum((df2003_nop$years.in.SAM>=5 & df2003_nop$biz_size == 1), na.rm = TRUE)/sum(df2003_nop$biz_size == 1, na.rm = TRUE)
 
-sr5yr2004_nop <- sum(df2004_nop$years.in.SAM>=5, value=TRUE)/nrow(df2004_nop) 
-sr5yr2004sm_nop <- sum((df2004_nop$years.in.SAM>=5 & df2004_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2004_nop)
-sr5yr2004non_nop <- sum((df2004_nop$years.in.SAM>=5 & df2004_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2004_nop)
+sr5yr2004_nop <- sum(df2004_nop$years.in.SAM>=5)/nrow(df2004_nop) 
+sr5yr2004sm_nop <- sum((df2004_nop$years.in.SAM>=5 & df2004_nop$biz_size == 0), na.rm = TRUE)/sum(df2004_nop$biz_size == 0, na.rm = TRUE)
+sr5yr2004non_nop <- sum((df2004_nop$years.in.SAM>=5 & df2004_nop$biz_size == 1), na.rm = TRUE)/sum(df2004_nop$biz_size == 1, na.rm = TRUE)
 
-sr5yr2005_nop <- sum(df2005_nop$years.in.SAM>=5, value=TRUE)/nrow(df2005_nop) 
-sr5yr2005sm_nop <- sum((df2005_nop$years.in.SAM>=5 & df2005_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2005_nop)
-sr5yr2005non_nop <- sum((df2005_nop$years.in.SAM>=5 & df2005_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2005_nop)
+sr5yr2005_nop <- sum(df2005_nop$years.in.SAM>=5)/nrow(df2005_nop) 
+sr5yr2005sm_nop <- sum((df2005_nop$years.in.SAM>=5 & df2005_nop$biz_size == 0), na.rm = TRUE)/sum(df2005_nop$biz_size == 0, na.rm = TRUE)
+sr5yr2005non_nop <- sum((df2005_nop$years.in.SAM>=5 & df2005_nop$biz_size == 1), na.rm = TRUE)/sum(df2005_nop$biz_size == 1, na.rm = TRUE)
 
-sr5yr2006_nop <- sum(df2006_nop$years.in.SAM>=5, value=TRUE)/nrow(df2006_nop) 
-sr5yr2006sm_nop <- sum((df2006_nop$years.in.SAM>=5 & df2006_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2006_nop)
-sr5yr2006non_nop <- sum((df2006_nop$years.in.SAM>=5 & df2006_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2006_nop)
+sr5yr2006_nop <- sum(df2006_nop$years.in.SAM>=5)/nrow(df2006_nop) 
+sr5yr2006sm_nop <- sum((df2006_nop$years.in.SAM>=5 & df2006_nop$biz_size == 0), na.rm = TRUE)/sum(df2006_nop$biz_size == 0, na.rm = TRUE)
+sr5yr2006non_nop <- sum((df2006_nop$years.in.SAM>=5 & df2006_nop$biz_size == 1), na.rm = TRUE)/sum(df2006_nop$biz_size == 1, na.rm = TRUE)
 
 
 ##10-year
-sr10yr2001_nop <- (sum(df2001_nop$years.in.SAM>=10, value=TRUE))/nrow(df2001_nop) 
-sr10yr2001sm_nop <- sum((df2001_nop$years.in.SAM>=10 & df2001_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/893
-sr10yr2001non_nop <- sum((df2001_nop$years.in.SAM>=10 & df2001_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/893
+sr10yr2001_nop <- (sum(df2001_nop$years.in.SAM>=10))/nrow(df2001_nop) 
+sr10yr2001sm_nop <- sum((df2001_nop$years.in.SAM>=10 & df2001_nop$biz_size == 0), na.rm = TRUE)/sum(df2001_nop$biz_size == 0, na.rm = TRUE)
+sr10yr2001non_nop <- sum((df2001_nop$years.in.SAM>=10 & df2001_nop$biz_size == 1), na.rm = TRUE)/sum(df2002_nop$biz_size == 1, na.rm = TRUE)
 
 
-sr10yr2002_nop <- sum(df2002_nop$years.in.SAM>=10, value=TRUE)/nrow(df2002_nop) 
-sr10yr2002sm_nop <- sum((df2002_nop$years.in.SAM>=10 & df2002_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2002_nop)
-sr10yr2002non_nop <- sum((df2002_nop$years.in.SAM>=10 & df2002_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2002_nop)
+sr10yr2002_nop <- sum(df2002_nop$years.in.SAM>=10)/nrow(df2002_nop) 
+sr10yr2002sm_nop <- sum((df2002_nop$years.in.SAM>=10 & df2002_nop$biz_size == 0), na.rm = TRUE)/sum(df2002_nop$biz_size == 0, na.rm = TRUE)
+sr10yr2002non_nop <- sum((df2002_nop$years.in.SAM>=10 & df2002_nop$biz_size == 1), na.rm = TRUE)/sum(df2002_nop$biz_size == 1, na.rm = TRUE)
 
-sr10yr2003_nop <- sum(df2003_nop$years.in.SAM>=10, value=TRUE)/nrow(df2003_nop)
-sr10yr2003sm_nop <- sum((df2003_nop$years.in.SAM>=10 & df2003_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2003_nop)
-sr10yr2003non_nop <- sum((df2003_nop$years.in.SAM>=10 & df2003_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2003_nop)
+sr10yr2003_nop <- sum(df2003_nop$years.in.SAM>=10)/nrow(df2003_nop)
+sr10yr2003sm_nop <- sum((df2003_nop$years.in.SAM>=10 & df2003_nop$biz_size == 0), na.rm = TRUE)/sum(df2003_nop$biz_size == 0, na.rm = TRUE)
+sr10yr2003non_nop <- sum((df2003_nop$years.in.SAM>=10 & df2003_nop$biz_size == 1), na.rm = TRUE)/sum(df2003_nop$biz_size == 1, na.rm = TRUE)
 
-sr10yr2004_nop <- sum(df2004_nop$years.in.SAM>=10, value=TRUE)/nrow(df2004_nop) 
-sr10yr2004sm_nop <- sum((df2004_nop$years.in.SAM>=10 & df2004_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2004_nop)
-sr10yr2004non_nop <- sum((df2004_nop$years.in.SAM>=10 & df2004_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2004_nop)
+sr10yr2004_nop <- sum(df2004_nop$years.in.SAM>=10)/nrow(df2004_nop) 
+sr10yr2004sm_nop <- sum((df2004_nop$years.in.SAM>=10 & df2004_nop$biz_size == 0), na.rm = TRUE)/sum(df2004_nop$biz_size == 0, na.rm = TRUE)
+sr10yr2004non_nop <- sum((df2004_nop$years.in.SAM>=10 & df2004_nop$biz_size == 1), na.rm = TRUE)/sum(df2004_nop$biz_size == 1, na.rm = TRUE)
 
-sr10yr2005_nop <- sum(df2005_nop$years.in.SAM>=10, value=TRUE)/nrow(df2005_nop) 
-sr10yr2005sm_nop <- sum((df2005_nop$years.in.SAM>=10 & df2005_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2005_nop)
-sr10yr2005non_nop <- sum((df2005_nop$years.in.SAM>=10 & df2005_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2005_nop)
+sr10yr2005_nop <- sum(df2005_nop$years.in.SAM>=10)/nrow(df2005_nop) 
+sr10yr2005sm_nop <- sum((df2005_nop$years.in.SAM>=10 & df2005_nop$biz_size == 0), na.rm = TRUE)/sum(df2005_nop$biz_size == 0, na.rm = TRUE)
+sr10yr2005non_nop <- sum((df2005_nop$years.in.SAM>=10 & df2005_nop$biz_size == 1), na.rm = TRUE)/sum(df2005_nop$biz_size == 1, na.rm = TRUE)
 
-sr10yr2006_nop <- sum(df2006_nop$years.in.SAM>=10, value=TRUE)/nrow(df2006_nop) 
-sr10yr2006sm_nop <- sum((df2006_nop$years.in.SAM>=10 & df2006_nop$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2006_nop)
-sr10yr2006non_nop <- sum((df2006_nop$years.in.SAM>=10 & df2006_nop$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2006_nop)
+sr10yr2006_nop <- sum(df2006_nop$years.in.SAM>=10)/nrow(df2006_nop) 
+sr10yr2006sm_nop <- sum((df2006_nop$years.in.SAM>=10 & df2006_nop$biz_size == 0), na.rm = TRUE)/sum(df2006_nop$biz_size == 0, na.rm = TRUE)
+sr10yr2006non_nop <- sum((df2006_nop$years.in.SAM>=10 & df2006_nop$biz_size == 1), na.rm = TRUE)/sum(df2006_nop$biz_size == 1, na.rm = TRUE)
 
 ##bound all survival rates together and reformated dataframe
 
@@ -295,129 +334,256 @@ survival.rates_nop <- survival.rates_nop %>%
   
 survival.rates_nop[, c(1, 5, 7, 6, 8, 10, 9, 2, 4, 3)]
 
-###Survival Rates with parent filter####
+###Survival Rates with nop, 10+1 years SD####
 
 ##3-year
-sr3yr2001 <- sum(df2001$years.in.SAM>=3, value=TRUE)/nrow(df2001)
-sr3yr2001sm <- sum((df2001$years.in.SAM>=3 & df2001$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2001)
-sr3yr2001non <- sum((df2001$years.in.SAM>=3 & df2001$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2001)
+sr3yr2001 <- sum(df2001_sd$years.in.SAM>=3)/nrow(df2001_sd)
+sr3yr2001sm <- sum((df2001_sd$years.in.SAM>=3 & df2001_sd$biz_size == 0), na.rm = TRUE)/sum(df2001_sd$biz_size == 0, na.rm = TRUE)
+sr3yr2001non <- sum((df2001_sd$years.in.SAM>=3 & df2001_sd$biz_size == 1), na.rm = TRUE)/sum(df2001_sd$biz_size == 1, na.rm = TRUE)
 
-sr3yr2002 <- sum(df2002$years.in.SAM>=3, value=TRUE)/nrow(df2002) 
-sr3yr2002sm <- sum((df2002$years.in.SAM>=3 & df2002$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2002)
-sr3yr2002non <- sum((df2002$years.in.SAM>=3 & df2002$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2002)
+sr3yr2002 <- sum(df2002_sd$years.in.SAM>=3)/nrow(df2002_sd)
+sr3yr2002sm <- sum((df2002_sd$years.in.SAM>=3 & df2002_sd$biz_size == 0), na.rm = TRUE)/sum(df2002_sd$biz_size == 0, na.rm = TRUE)
+sr3yr2002non <- sum((df2002_sd$years.in.SAM>=3 & df2002_sd$biz_size == 1), na.rm = TRUE)/sum(df2002_sd$biz_size == 1, na.rm = TRUE)
 
-sr3yr2003 <- sum(df2003$years.in.SAM>=3, value=TRUE)/nrow(df2003)
-sr3yr2003sm <- sum((df2003$years.in.SAM>=3 & df2003$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2003)
-sr3yr2003non <- sum((df2003$years.in.SAM>=3 & df2003$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2003)
+sr3yr2003 <- sum(df2003_sd$years.in.SAM>=3)/nrow(df2003_sd)
+sr3yr2003sm <- sum((df2003_sd$years.in.SAM>=3 & df2003_sd$biz_size == 0), na.rm = TRUE)/sum(df2003_sd$biz_size == 0, na.rm = TRUE)
+sr3yr2003non <- sum((df2003_sd$years.in.SAM>=3 & df2003_sd$biz_size == 1), na.rm = TRUE)/sum(df2003_sd$biz_size == 1, na.rm = TRUE)
 
-sr3yr2004 <- sum(df2004$years.in.SAM>=3, value=TRUE)/nrow(df2004) 
-sr3yr2004sm <- sum((df2004$years.in.SAM>=3 & df2004$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2004)
-sr3yr2004non <- sum((df2004$years.in.SAM>=3 & df2004$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2004)
+sr3yr2004 <- sum(df2004_sd$years.in.SAM>=3)/nrow(df2004_sd)
+sr3yr2004sm <- sum((df2004_sd$years.in.SAM>=3 & df2004_sd$biz_size == 0), na.rm = TRUE)/sum(df2004_sd$biz_size == 0, na.rm = TRUE)
+sr3yr2004non <- sum((df2004_sd$years.in.SAM>=3 & df2004_sd$biz_size == 1), na.rm = TRUE)/sum(df2004_sd$biz_size == 1, na.rm = TRUE)
 
-sr3yr2005 <- sum(df2005$years.in.SAM>=3, value=TRUE)/nrow(df2005) 
-sr3yr2005sm <- sum((df2005$years.in.SAM>=3 & df2005$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2005)
-sr3yr2005non <- sum((df2005$years.in.SAM>=3 & df2005$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2005)
+sr3yr2005 <- sum(df2005_sd$years.in.SAM>=3)/nrow(df2005_sd)
+sr3yr2005sm <- sum((df2005_sd$years.in.SAM>=3 & df2005_sd$biz_size == 0), na.rm = TRUE)/sum(df2005_sd$biz_size == 0, na.rm = TRUE)
+sr3yr2005non <- sum((df2005_sd$years.in.SAM>=3 & df2005_sd$biz_size == 1), na.rm = TRUE)/sum(df2005_sd$biz_size == 1, na.rm = TRUE)
 
-sr3yr2006 <- sum(df2006$years.in.SAM>=3, value=TRUE)/nrow(df2006) 
-sr3yr2006sm <- sum((df2006$years.in.SAM>=3 & df2006$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2006)
-sr3yr2006non <- sum((df2006$years.in.SAM>=3 & df2006$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2006)
+sr3yr2006 <- sum(df2006_sd$years.in.SAM>=3)/nrow(df2006_sd)
+sr3yr2006sm <- sum((df2006_sd$years.in.SAM>=3 & df2006_sd$biz_size == 0), na.rm = TRUE)/sum(df2006_sd$biz_size == 0, na.rm = TRUE)
+sr3yr2006non <- sum((df2006_sd$years.in.SAM>=3 & df2006_sd$biz_size == 1), na.rm = TRUE)/sum(df2006_sd$biz_size == 1, na.rm = TRUE)
 
 ##5-year
-sr5yr2001 <- sum(df2001$years.in.SAM>=5, value=TRUE)/nrow(df2001)
-sr5yr2001sm <- sum((df2001$years.in.SAM>=5 & df2001$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2001)
-sr5yr2001non <- sum((df2001$years.in.SAM>=5 & df2001$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2001)
+sr5yr2001 <- sum(df2001_sd$years.in.SAM>=5)/nrow(df2001_sd)
+sr5yr2001sm <- sum((df2001_sd$years.in.SAM>=5 & df2001_sd$biz_size == 0), na.rm = TRUE)/sum(df2001_sd$biz_size == 0, na.rm = TRUE)
+sr5yr2001non <- sum((df2001_sd$years.in.SAM>=5 & df2001_sd$biz_size == 1), na.rm = TRUE)/sum(df2001_sd$biz_size == 1, na.rm = TRUE)
 
-sr5yr2002 <- sum(df2002$years.in.SAM>=5, value=TRUE)/nrow(df2002) 
-sr5yr2002sm <- sum((df2002$years.in.SAM>=5 & df2002$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2002)
-sr5yr2002non <- sum((df2002$years.in.SAM>=5 & df2002$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2002)
+sr5yr2002 <- sum(df2002_sd$years.in.SAM>=5)/nrow(df2002_sd)
+sr5yr2002sm <- sum((df2002_sd$years.in.SAM>=5 & df2002_sd$biz_size == 0), na.rm = TRUE)/sum(df2002_sd$biz_size == 0, na.rm = TRUE)
+sr5yr2002non <- sum((df2002_sd$years.in.SAM>=5 & df2002_sd$biz_size == 1), na.rm = TRUE)/sum(df2002_sd$biz_size == 1, na.rm = TRUE)
 
-sr5yr2003 <- sum(df2003$years.in.SAM>=5, value=TRUE)/nrow(df2003)
-sr5yr2003sm <- sum((df2003$years.in.SAM>=5 & df2003$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2003)
-sr5yr2003non <- sum((df2003$years.in.SAM>=5 & df2003$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2003)
+sr5yr2003 <- sum(df2003_sd$years.in.SAM>=5)/nrow(df2003_sd)
+sr5yr2003sm <- sum((df2003_sd$years.in.SAM>=5 & df2003_sd$biz_size == 0), na.rm = TRUE)/sum(df2003_sd$biz_size == 0, na.rm = TRUE)
+sr5yr2003non <- sum((df2003_sd$years.in.SAM>=5 & df2003_sd$biz_size == 1), na.rm = TRUE)/sum(df2003_sd$biz_size == 1, na.rm = TRUE)
 
-sr5yr2004 <- sum(df2004$years.in.SAM>=5, value=TRUE)/nrow(df2004) 
-sr5yr2004sm <- sum((df2004$years.in.SAM>=5 & df2004$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2004)
-sr5yr2004non <- sum((df2004$years.in.SAM>=5 & df2004$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2004)
+sr5yr2004 <- sum(df2004_sd$years.in.SAM>=5)/nrow(df2004_sd)
+sr5yr2004sm <- sum((df2004_sd$years.in.SAM>=5 & df2004_sd$biz_size == 0), na.rm = TRUE)/sum(df2004_sd$biz_size == 0, na.rm = TRUE)
+sr5yr2004non <- sum((df2004_sd$years.in.SAM>=5 & df2004_sd$biz_size == 1), na.rm = TRUE)/sum(df2004_sd$biz_size == 1, na.rm = TRUE)
 
-sr5yr2005 <- sum(df2005$years.in.SAM>=5, value=TRUE)/nrow(df2005) 
-sr5yr2005sm <- sum((df2005$years.in.SAM>=5 & df2005$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2005)
-sr5yr2005non <- sum((df2005$years.in.SAM>=5 & df2005$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2005)
+sr5yr2005 <- sum(df2005_sd$years.in.SAM>=5)/nrow(df2005_sd)
+sr5yr2005sm <- sum((df2005_sd$years.in.SAM>=5 & df2005_sd$biz_size == 0), na.rm = TRUE)/sum(df2005_sd$biz_size == 0, na.rm = TRUE)
+sr5yr2005non <- sum((df2005_sd$years.in.SAM>=5 & df2005_sd$biz_size == 1), na.rm = TRUE)/sum(df2005_sd$biz_size == 1, na.rm = TRUE)
 
-sr5yr2006 <- sum(df2006$years.in.SAM>=5, value=TRUE)/nrow(df2006) 
-sr5yr2006sm <- sum((df2006$years.in.SAM>=5 & df2006$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2006)
-sr5yr2006non <- sum((df2006$years.in.SAM>=5 & df2006$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2006)
+sr5yr2006 <- sum(df2006_sd$years.in.SAM>=5)/nrow(df2006_sd)
+sr5yr2006sm <- sum((df2006_sd$years.in.SAM>=5 & df2006_sd$biz_size == 0), na.rm = TRUE)/sum(df2006_sd$biz_size == 0, na.rm = TRUE)
+sr5yr2006non <- sum((df2006_sd$years.in.SAM>=5 & df2006_sd$biz_size == 1), na.rm = TRUE)/sum(df2006_sd$biz_size == 1, na.rm = TRUE)
 
 
 ##10-year
-sr10yr2001 <- (sum(df2001$years.in.SAM>=10, value=TRUE))/nrow(df2001)
-sr10yr2001sm <- sum((df2001$years.in.SAM>=10 & df2001$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2001)
-sr10yr2001non <- sum((df2001$years.in.SAM>=10 & df2001$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2001)
+sr10yr2001 <- (sum(df2001_sd$years.in.SAM>=10))/nrow(df2001_sd)
+sr10yr2001sm <- sum((df2001_sd$years.in.SAM>=10 & df2001_sd$biz_size == 0), na.rm = TRUE)/sum(df2001_sd$biz_size == 0, na.rm = TRUE)
+sr10yr2001non <- sum((df2001_sd$years.in.SAM>=10 & df2001_sd$biz_size == 1), na.rm = TRUE)/sum(df2001_sd$biz_size == 1, na.rm = TRUE)
 
-sr10yr2002 <- sum(df2002$years.in.SAM>=10, value=TRUE)/nrow(df2002) 
-sr10yr2002sm <- sum((df2002$years.in.SAM>=10 & df2002$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2002)
-sr10yr2002non <- sum((df2002$years.in.SAM>=10 & df2002$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2002)
+sr10yr2002 <- sum(df2002_sd$years.in.SAM>=10)/nrow(df2002_sd)
+sr10yr2002sm <- sum((df2002_sd$years.in.SAM>=10 & df2002_sd$biz_size == 0), na.rm = TRUE)/sum(df2002_sd$biz_size == 0, na.rm = TRUE)
+sr10yr2002non <- sum((df2002_sd$years.in.SAM>=10 & df2002_sd$biz_size == 1), na.rm = TRUE)/sum(df2002_sd$biz_size == 1, na.rm = TRUE)
 
-sr10yr2003 <- sum(df2003$years.in.SAM>=10, value=TRUE)/nrow(df2003)
-sr10yr2003sm <- sum((df2003$years.in.SAM>=10 & df2003$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2003)
-sr10yr2003non <- sum((df2003$years.in.SAM>=10 & df2003$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2003)
+sr10yr2003 <- sum(df2003_sd$years.in.SAM>=10)/nrow(df2003_sd)
+sr10yr2003sm <- sum((df2003_sd$years.in.SAM>=10 & df2003_sd$biz_size == 0), na.rm = TRUE)/sum(df2003_sd$biz_size == 0, na.rm = TRUE)
+sr10yr2003non <- sum((df2003_sd$years.in.SAM>=10 & df2003_sd$biz_size == 1), na.rm = TRUE)/sum(df2003_sd$biz_size == 1, na.rm = TRUE)
 
-sr10yr2004 <- sum(df2004$years.in.SAM>=10, value=TRUE)/nrow(df2004) 
-sr10yr2004sm <- sum((df2004$years.in.SAM>=10 & df2004$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2004)
-sr10yr2004non <- sum((df2004$years.in.SAM>=10 & df2004$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2004)
+sr10yr2004 <- sum(df2004_sd$years.in.SAM>=10)/nrow(df2004_sd)
+sr10yr2004sm <- sum((df2004_sd$years.in.SAM>=10 & df2004_sd$biz_size == 0), na.rm = TRUE)/sum(df2004_sd$biz_size == 0, na.rm = TRUE)
+sr10yr2004non <- sum((df2004_sd$years.in.SAM>=10 & df2004_sd$biz_size == 1), na.rm = TRUE)/sum(df2004_sd$biz_size == 1, na.rm = TRUE)
 
-sr10yr2005 <- sum(df2005$years.in.SAM>=10, value=TRUE)/nrow(df2005) 
-sr10yr2005sm <- sum((df2005$years.in.SAM>=10 & df2005$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2005)
-sr10yr2005non <- sum((df2005$years.in.SAM>=10 & df2005$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2005)
+sr10yr2005 <- sum(df2005_sd$years.in.SAM>=10)/nrow(df2005_sd)
+sr10yr2005sm <- sum((df2005_sd$years.in.SAM>=10 & df2005_sd$biz_size == 0), na.rm = TRUE)/sum(df2005_sd$biz_size == 0, na.rm = TRUE)
+sr10yr2005non <- sum((df2005_sd$years.in.SAM>=10 & df2005_sd$biz_size == 1), na.rm = TRUE)/sum(df2005_sd$biz_size == 1, na.rm = TRUE)
 
-sr10yr2006 <- sum(df2006$years.in.SAM>=10, value=TRUE)/nrow(df2006) 
-sr10yr2006sm <- sum((df2006$years.in.SAM>=10 & df2006$biz_size == 0), na.rm = TRUE, value = TRUE)/nrow(df2006)
-sr10yr2006non <- sum((df2006$years.in.SAM>=10 & df2006$biz_size == 1), na.rm = TRUE, value = TRUE)/nrow(df2006)
+sr10yr2006 <- sum(df2006_sd$years.in.SAM>=10)/nrow(df2006_sd)
+sr10yr2006sm <- sum((df2006_sd$years.in.SAM>=10 & df2006_sd$biz_size == 0), na.rm = TRUE)/sum(df2006_sd$biz_size == 0, na.rm = TRUE)
+sr10yr2006non <- sum((df2006_sd$years.in.SAM>=10 & df2006_sd$biz_size == 1), na.rm = TRUE)/sum(df2006_sd$biz_size == 1, na.rm = TRUE)
 
 ##bound all survival rates together and reformated dataframe
 
-survivalrate <- cbind(sr3yr2001, sr3yr2001sm, sr3yr2001non, sr5yr2001, sr5yr2001sm, sr5yr2001non, 
+survivalrate <- cbind(sr3yr2001, sr3yr2001sm, sr3yr2001non, sr5yr2001, sr5yr2001sm, sr5yr2001non,
                       sr10yr2001, sr10yr2001sm, sr10yr2001non,
-                      sr3yr2002, sr3yr2002sm, sr3yr2002non, sr5yr2002, sr5yr2002sm, sr5yr2002non, 
+                      sr3yr2002, sr3yr2002sm, sr3yr2002non, sr5yr2002, sr5yr2002sm, sr5yr2002non,
                       sr10yr2002, sr10yr2002sm, sr10yr2002non,
-                      sr3yr2003, sr3yr2003sm, sr3yr2003non, sr5yr2003, sr5yr2003sm, sr5yr2003non, 
+                      sr3yr2003, sr3yr2003sm, sr3yr2003non, sr5yr2003, sr5yr2003sm, sr5yr2003non,
                       sr10yr2003, sr10yr2003sm, sr10yr2003non,
-                      sr3yr2004, sr3yr2004sm, sr3yr2004non, sr5yr2004, sr5yr2004sm, sr5yr2004non, 
+                      sr3yr2004, sr3yr2004sm, sr3yr2004non, sr5yr2004, sr5yr2004sm, sr5yr2004non,
                       sr10yr2004, sr10yr2004sm, sr10yr2004non,
-                      sr3yr2005, sr3yr2005sm, sr3yr2005non, sr5yr2005, sr5yr2005sm, sr5yr2005non, 
+                      sr3yr2005, sr3yr2005sm, sr3yr2005non, sr5yr2005, sr5yr2005sm, sr5yr2005non,
                       sr10yr2005, sr10yr2005sm, sr10yr2005non,
-                      sr3yr2006, sr3yr2006sm, sr3yr2006non, sr5yr2006, sr5yr2006sm, sr5yr2006non, 
+                      sr3yr2006, sr3yr2006sm, sr3yr2006non, sr5yr2006, sr5yr2006sm, sr5yr2006non,
                       sr10yr2006, sr10yr2006sm, sr10yr2006non)
-srnames <- c("3yr_2001_all", "3yr_2001_sm", 
-             "3yr_2001_non", "5yr_2001_all", "5yr_2001_sm", "5yr_2001_non", "10yr_2001_all", 
+srnames <- c("3yr_2001_all", "3yr_2001_sm",
+             "3yr_2001_non", "5yr_2001_all", "5yr_2001_sm", "5yr_2001_non", "10yr_2001_all",
              "10yr_2001_sm", "10yr_2001_non",
-             "3yr_2002_all", "3yr_2002_sm", "3yr_2002_non", "5yr_2002_all", "5yr_2002_sm", "5yr_2002_non", 
+             "3yr_2002_all", "3yr_2002_sm", "3yr_2002_non", "5yr_2002_all", "5yr_2002_sm", "5yr_2002_non",
              "10yr_2002_all", "10yr_2002_sm", "10yr_2002_non",
-             "3yr_2003_all", "3yr_2003_sm", "3yr_2003_non", "5yr_2003_all", "5yr_2003_sm", "5yr_2003_non", 
+             "3yr_2003_all", "3yr_2003_sm", "3yr_2003_non", "5yr_2003_all", "5yr_2003_sm", "5yr_2003_non",
              "10yr_2003_all", "10yr_2003_sm", "10yr_2003_non",
-             "3yr_2004_all", "3yr_2004_sm", "3yr_2004_non", "5yr_2004_all", "5yr_2004_sm", "5yr_2004_non", 
+             "3yr_2004_all", "3yr_2004_sm", "3yr_2004_non", "5yr_2004_all", "5yr_2004_sm", "5yr_2004_non",
              "10yr_2004_all", "10yr_2004_sm", "10yr_2004_non",
-             "3yr_2005_all", "3yr_2005_sm", "3yr_2005_non", "5yr_2005_all", "5yr_2005_sm", "5yr_2005_non", 
+             "3yr_2005_all", "3yr_2005_sm", "3yr_2005_non", "5yr_2005_all", "5yr_2005_sm", "5yr_2005_non",
              "10yr2005_all", "10yr_2005_sm", "10yr_2005_non",
-             "3yr_2006_all", "3yr_2006_sm", "3yr_2006_non", "5yr_2006_all", "5yr_2006_sm", "5yr_2006_non", 
+             "3yr_2006_all", "3yr_2006_sm", "3yr_2006_non", "5yr_2006_all", "5yr_2006_sm", "5yr_2006_non",
              "10yr_2006_all", "10yr_2006_sm", "10yr_2006_non")
 colnames(survivalrate) <- srnames
 
 sr <- as.data.frame(survivalrate)
 
-survival.rates <- sr %>% 
-  gather("3yr_2001_all":"10yr_2006_non", key = "time_year_type", value = "survivalrate") %>% 
-  separate(time_year_type, into = c("time", "year", "type"), sep = "_") %>% 
-  arrange(time, year) %>% 
-  unite("time_type", time, type, sep = "_") 
+survival.rates <- sr %>%
+  gather("3yr_2001_all":"10yr_2006_non", key = "time_year_type", value = "survivalrate") %>%
+  separate(time_year_type, into = c("time", "year", "type"), sep = "_") %>%
+  arrange(time, year) %>%
+  unite("time_type", time, type, sep = "_")
 
 survival.rates$time_type[18] <- "10yr_all"
 survival.rates$year[18] <- 2005
 
-survival.rates <- survival.rates %>% 
+survival.rates <- survival.rates %>%
   spread(key = "time_type", value = "survivalrate")
 
 survival.rates[, c(1, 5, 7, 6, 8, 10, 9, 2, 4, 3)]
 
+write.csv(survival.rates, "K:/2018-01 NPS New Entrants/Data/Data/Analysis/survival rates_SD nop.csv")
+
+
+###Survival Rates with no parent filter DOD####
+##3-year
+sr3yr2001_DOD <- sum(df2001_DOD$years.in.SAM>=3)/nrow(df2001_DOD)
+sr3yr2001sm_DOD <- sum((df2001_DOD$years.in.SAM>=3 & df2001_DOD$biz_size == 0), na.rm = TRUE)/sum(df2001_DOD$biz_size == 0, na.rm = TRUE)
+sr3yr2001non_DOD <- sum((df2001_DOD$years.in.SAM>=3 & df2001_DOD$biz_size == 1), na.rm = TRUE)/sum(df2001_DOD$biz_size == 1, na.rm = TRUE)
+
+sr3yr2002_DOD <- sum(df2002_DOD$years.in.SAM>=3)/nrow(df2002_DOD) 
+sr3yr2002sm_DOD <- sum((df2002_DOD$years.in.SAM>=3 & df2002_DOD$biz_size == 0), na.rm = TRUE)/sum(df2002_DOD$biz_size == 0, na.rm = TRUE)
+sr3yr2002non_DOD <- sum((df2002_DOD$years.in.SAM>=3 & df2002_DOD$biz_size == 1), na.rm = TRUE)/sum(df2002_DOD$biz_size == 1, na.rm = TRUE)
+
+sr3yr2003_DOD <- sum(df2003_DOD$years.in.SAM>=3)/nrow(df2003_DOD)
+sr3yr2003sm_DOD <- sum((df2003_DOD$years.in.SAM>=3 & df2003_DOD$biz_size == 0), na.rm = TRUE)/sum(df2003_DOD$biz_size == 0, na.rm = TRUE)
+sr3yr2003non_DOD <- sum((df2003_DOD$years.in.SAM>=3 & df2003_DOD$biz_size == 1), na.rm = TRUE)/sum(df2003_DOD$biz_size == 1, na.rm = TRUE)
+
+sr3yr2004_DOD <- sum(df2004_DOD$years.in.SAM>=3)/nrow(df2004_DOD) 
+sr3yr2004sm_DOD <- sum((df2004_DOD$years.in.SAM>=3 & df2004_DOD$biz_size == 0), na.rm = TRUE)/sum(df2004_DOD$biz_size == 0, na.rm = TRUE)
+sr3yr2004non_DOD <- sum((df2004_DOD$years.in.SAM>=3 & df2004_DOD$biz_size == 1), na.rm = TRUE)/sum(df2004_DOD$biz_size == 1, na.rm = TRUE)
+
+sr3yr2005_DOD <- sum(df2005_DOD$years.in.SAM>=3)/nrow(df2005_DOD) 
+sr3yr2005sm_DOD <- sum((df2005_DOD$years.in.SAM>=3 & df2005_DOD$biz_size == 0), na.rm = TRUE)/sum(df2005_DOD$biz_size == 0, na.rm = TRUE)
+sr3yr2005non_DOD <- sum((df2005_DOD$years.in.SAM>=3 & df2005_DOD$biz_size == 1), na.rm = TRUE)/sum(df2005_DOD$biz_size == 1, na.rm = TRUE)
+
+sr3yr2006_DOD <- sum(df2006_DOD$years.in.SAM>=3)/nrow(df2006_DOD) 
+sr3yr2006sm_DOD <- sum((df2006_DOD$years.in.SAM>=3 & df2006_DOD$biz_size == 0), na.rm = TRUE)/sum(df2006_DOD$biz_size == 0, na.rm = TRUE)
+sr3yr2006non_DOD <- sum((df2006_DOD$years.in.SAM>=3 & df2006_DOD$biz_size == 1), na.rm = TRUE)/sum(df2006_DOD$biz_size == 1, na.rm = TRUE)
+
+##5-year
+sr5yr2001_DOD <- sum(df2001_DOD$years.in.SAM>=5)/nrow(df2001_DOD)
+sr5yr2001sm_DOD <- sum((df2001_DOD$years.in.SAM>=5 & df2001_DOD$biz_size == 0), na.rm = TRUE)/sum(df2001_DOD$biz_size == 0, na.rm = TRUE)
+sr5yr2001non_DOD <- sum((df2001_DOD$years.in.SAM>=5 & df2001_DOD$biz_size == 1), na.rm = TRUE)/sum(df2001_DOD$biz_size == 1, na.rm = TRUE)
+
+sr5yr2002_DOD <- sum(df2002_DOD$years.in.SAM>=5)/nrow(df2002_DOD) 
+sr5yr2002sm_DOD <- sum((df2002_DOD$years.in.SAM>=5 & df2002_DOD$biz_size == 0), na.rm = TRUE)/sum(df2002_DOD$biz_size == 0, na.rm = TRUE)
+sr5yr2002non_DOD <- sum((df2002_DOD$years.in.SAM>=5 & df2002_DOD$biz_size == 1), na.rm = TRUE)/sum(df2002_DOD$biz_size == 1, na.rm = TRUE)
+
+sr5yr2003_DOD <- sum(df2003_DOD$years.in.SAM>=5)/nrow(df2003_DOD)
+sr5yr2003sm_DOD <- sum((df2003_DOD$years.in.SAM>=5 & df2003_DOD$biz_size == 0), na.rm = TRUE)/sum(df2003_DOD$biz_size == 0, na.rm = TRUE)
+sr5yr2003non_DOD <- sum((df2003_DOD$years.in.SAM>=5 & df2003_DOD$biz_size == 1), na.rm = TRUE)/sum(df2003_DOD$biz_size == 1, na.rm = TRUE)
+
+sr5yr2004_DOD <- sum(df2004_DOD$years.in.SAM>=5)/nrow(df2004_DOD) 
+sr5yr2004sm_DOD <- sum((df2004_DOD$years.in.SAM>=5 & df2004_DOD$biz_size == 0), na.rm = TRUE)/sum(df2004_DOD$biz_size == 0, na.rm = TRUE)
+sr5yr2004non_DOD <- sum((df2004_DOD$years.in.SAM>=5 & df2004_DOD$biz_size == 1), na.rm = TRUE)/sum(df2004_DOD$biz_size == 1, na.rm = TRUE)
+
+sr5yr2005_DOD <- sum(df2005_DOD$years.in.SAM>=5)/nrow(df2005_DOD) 
+sr5yr2005sm_DOD <- sum((df2005_DOD$years.in.SAM>=5 & df2005_DOD$biz_size == 0), na.rm = TRUE)/sum(df2005_DOD$biz_size == 0, na.rm = TRUE)
+sr5yr2005non_DOD <- sum((df2005_DOD$years.in.SAM>=5 & df2005_DOD$biz_size == 1), na.rm = TRUE)/sum(df2005_DOD$biz_size == 1, na.rm = TRUE)
+
+sr5yr2006_DOD <- sum(df2006_DOD$years.in.SAM>=5)/nrow(df2006_DOD) 
+sr5yr2006sm_DOD <- sum((df2006_DOD$years.in.SAM>=5 & df2006_DOD$biz_size == 0), na.rm = TRUE)/sum(df2006_DOD$biz_size == 0, na.rm = TRUE)
+sr5yr2006non_DOD <- sum((df2006_DOD$years.in.SAM>=5 & df2006_DOD$biz_size == 1), na.rm = TRUE)/sum(df2006_DOD$biz_size == 1, na.rm = TRUE)
+
+
+##10-year
+sr10yr2001_DOD <- (sum(df2001_DOD$years.in.SAM>=10))/nrow(df2001_DOD) 
+sr10yr2001sm_DOD <- sum((df2001_DOD$years.in.SAM>=10 & df2001_DOD$biz_size == 0), na.rm = TRUE)/sum(df2001_DOD$biz_size == 0, na.rm = TRUE)
+sr10yr2001non_DOD <- sum((df2001_DOD$years.in.SAM>=10 & df2001_DOD$biz_size == 1), na.rm = TRUE)/sum(df2001_DOD$biz_size == 1, na.rm = TRUE)
+
+
+sr10yr2002_DOD <- sum(df2002_DOD$years.in.SAM>=10)/nrow(df2002_DOD) 
+sr10yr2002sm_DOD <- sum((df2002_DOD$years.in.SAM>=10 & df2002_DOD$biz_size == 0), na.rm = TRUE)/sum(df2002_DOD$biz_size == 0, na.rm = TRUE)
+sr10yr2002non_DOD <- sum((df2002_DOD$years.in.SAM>=10 & df2002_DOD$biz_size == 1), na.rm = TRUE)/sum(df2002_DOD$biz_size == 1, na.rm = TRUE)
+
+sr10yr2003_DOD <- sum(df2003_DOD$years.in.SAM>=10)/nrow(df2003_DOD)
+sr10yr2003sm_DOD <- sum((df2003_DOD$years.in.SAM>=10 & df2003_DOD$biz_size == 0), na.rm = TRUE)/sum(df2003_DOD$biz_size == 0, na.rm = TRUE)
+sr10yr2003non_DOD <- sum((df2003_DOD$years.in.SAM>=10 & df2003_DOD$biz_size == 1), na.rm = TRUE)/sum(df2003_DOD$biz_size == 1, na.rm = TRUE)
+
+sr10yr2004_DOD <- sum(df2004_DOD$years.in.SAM>=10)/nrow(df2004_DOD) 
+sr10yr2004sm_DOD <- sum((df2004_DOD$years.in.SAM>=10 & df2004_DOD$biz_size == 0), na.rm = TRUE)/sum(df2004_DOD$biz_size == 0, na.rm = TRUE)
+sr10yr2004non_DOD <- sum((df2004_DOD$years.in.SAM>=10 & df2004_DOD$biz_size == 1), na.rm = TRUE)/sum(df2004_DOD$biz_size == 1, na.rm = TRUE)
+
+sr10yr2005_DOD <- sum(df2005_DOD$years.in.SAM>=10)/nrow(df2005_DOD) 
+sr10yr2005sm_DOD <- sum((df2005_DOD$years.in.SAM>=10 & df2005_DOD$biz_size == 0), na.rm = TRUE)/sum(df2005_DOD$biz_size == 0, na.rm = TRUE)
+sr10yr2005non_DOD <- sum((df2005_DOD$years.in.SAM>=10 & df2005_DOD$biz_size == 1), na.rm = TRUE)/sum(df2005_DOD$biz_size == 1, na.rm = TRUE)
+
+sr10yr2006_DOD <- sum(df2006_DOD$years.in.SAM>=10)/nrow(df2006_DOD) 
+sr10yr2006sm_DOD <- sum((df2006_DOD$years.in.SAM>=10 & df2006_DOD$biz_size == 0), na.rm = TRUE)/sum(df2006_DOD$biz_size == 0, na.rm = TRUE)
+sr10yr2006non_DOD <- sum((df2006_DOD$years.in.SAM>=10 & df2006_DOD$biz_size == 1), na.rm = TRUE)/sum(df2006_DOD$biz_size == 1, na.rm = TRUE)
+
+##bound all survival rates together and reformated dataframe
+
+survivalrate_DOD <- cbind(sr3yr2001_DOD, sr3yr2001sm_DOD, sr3yr2001non_DOD, sr5yr2001_DOD, sr5yr2001sm_DOD, sr5yr2001non_DOD, 
+                          sr10yr2001_DOD, sr10yr2001sm_DOD, sr10yr2001non_DOD,
+                          sr3yr2002_DOD, sr3yr2002sm_DOD, sr3yr2002non_DOD, sr5yr2002_DOD, sr5yr2002sm_DOD, sr5yr2002non_DOD, 
+                          sr10yr2002_DOD, sr10yr2002sm_DOD, sr10yr2002non_DOD,
+                          sr3yr2003_DOD, sr3yr2003sm_DOD, sr3yr2003non_DOD, sr5yr2003_DOD, sr5yr2003sm_DOD, sr5yr2003non_DOD, 
+                          sr10yr2003_DOD, sr10yr2003sm_DOD, sr10yr2003non_DOD,
+                          sr3yr2004_DOD, sr3yr2004sm_DOD, sr3yr2004non_DOD, sr5yr2004_DOD, sr5yr2004sm_DOD, sr5yr2004non_DOD, 
+                          sr10yr2004_DOD, sr10yr2004sm_DOD, sr10yr2004non_DOD,
+                          sr3yr2005_DOD, sr3yr2005sm_DOD, sr3yr2005non_DOD, sr5yr2005_DOD, sr5yr2005sm_DOD, sr5yr2005non_DOD, 
+                          sr10yr2005_DOD, sr10yr2005sm_DOD, sr10yr2005non_DOD,
+                          sr3yr2006_DOD, sr3yr2006sm_DOD, sr3yr2006non_DOD, sr5yr2006_DOD, sr5yr2006sm_DOD, sr5yr2006non_DOD, 
+                          sr10yr2006_DOD, sr10yr2006sm_DOD, sr10yr2006non_DOD)
+srnames_DOD <- c("3yr_2001_all_DOD", "3yr_2001_sm_DOD", 
+                 "3yr_2001_non_DOD", "5yr_2001_all_DOD", "5yr_2001_sm_DOD", "5yr_2001_non_DOD", "10yr_2001_all_DOD", 
+                 "10yr_2001_sm_DOD", "10yr_2001_non_DOD",
+                 "3yr_2002_all_DOD", "3yr_2002_sm_DOD", "3yr_2002_non_DOD", "5yr_2002_all_DOD", "5yr_2002_sm_DOD", "5yr_2002_non_DOD", 
+                 "10yr_2002_all_DOD", "10yr_2002_sm_DOD", "10yr_2002_non_DOD",
+                 "3yr_2003_all_DOD", "3yr_2003_sm_DOD", "3yr_2003_non_DOD", "5yr_2003_all_DOD", "5yr_2003_sm_DOD", "5yr_2003_non_DOD", 
+                 "10yr_2003_all_DOD", "10yr_2003_sm_DOD", "10yr_2003_non_DOD",
+                 "3yr_2004_all_DOD", "3yr_2004_sm_DOD", "3yr_2004_non_DOD", "5yr_2004_all_DOD", "5yr_2004_sm_DOD", "5yr_2004_non_DOD", 
+                 "10yr_2004_all_DOD", "10yr_2004_sm_DOD", "10yr_2004_non_DOD",
+                 "3yr_2005_all_DOD", "3yr_2005_sm_DOD", "3yr_2005_non_DOD", "5yr_2005_all_DOD", "5yr_2005_sm_DOD", "5yr_2005_non_DOD", 
+                 "10yr2005_all_DOD", "10yr_2005_sm_DOD", "10yr_2005_non_DOD",
+                 "3yr_2006_all_DOD", "3yr_2006_sm_DOD", "3yr_2006_non_DOD", "5yr_2006_all_DOD", "5yr_2006_sm_DOD", "5yr_2006_non_DOD", 
+                 "10yr_2006_all_DOD", "10yr_2006_sm_DOD", "10yr_2006_non_DOD")
+colnames(survivalrate_DOD) <- srnames_DOD
+
+sr_DOD <- as.data.frame(survivalrate_DOD)
+
+survival.rates_DOD <- sr_DOD %>% 
+  gather("3yr_2001_all_DOD":"10yr_2006_non_DOD", key = "time_year_type", value = "survivalrate_DOD") %>% 
+  separate(time_year_type, into = c("time", "year", "type"), sep = "_") %>% 
+  arrange(time, year) %>% 
+  unite("time_type", time, type, sep = "_") 
+
+survival.rates_DOD$time_type[18] <- "10yr_all"
+survival.rates_DOD$year[18] <- 2005
+
+survival.rates_DOD <- survival.rates_DOD %>% 
+  spread(key = "time_type", value = "survivalrate_DOD")
+
+survival.rates_DOD[, c(1, 5, 7, 6, 8, 10, 9, 2, 4, 3)]
+
+write.csv(survival.rates_DOD, "survival rates_DOD-nop.csv")
 
 ####Descriptives: Firm-level characteristics ####
 #Focusing on 2001 Sample: descriptives for firm-level independent variables (firm age, firm ownership,
@@ -901,4 +1067,147 @@ naics.lev <- as.data.frame(levels(df2001$NAICS2))
 psc.lev <- as.data.frame(levels(df2001$ServicesCategory))
 dept.lev <- as.data.frame(levels(df2001$DEPARTMENT_NAME))
 agency.lev <- as.data.frame(levels(df2001$DEPARTMENT_NAME))
+
+### Graduated firms ####
+### Grad: Survival Rates####
+
+###Survival rates by regDate
+
+gradfirm <- read_csv("graduatedfirms.csv")
+
+df2001_grad <- gradfirm %>% 
+  filter(year(registrationDate.x) == 2001 )
+df2002_grad <- gradfirm %>%
+  filter(year(registrationDate.x) == 2002 )
+df2003_grad <- gradfirm %>%
+  filter(year(registrationDate.x) == 2003 )
+df2004_grad <- gradfirm %>%
+  filter(year(registrationDate.x) == 2004 )
+df2005_grad <- gradfirm %>%
+  filter(year(registrationDate.x) == 2005 )
+df2006_grad <- gradfirm %>%
+  filter(year(registrationDate.x) == 2006 )
+
+sr3yr2001_grad <- sum(df2001_grad$years.in.SAM>=3)/nrow(df2001_grad)
+sr3yr2001sm_grad <- sum((df2001_grad$years.in.SAM>=3 & df2001_grad$biz_size.x == 0), na.rm = TRUE)/nrow(df2001_grad)
+sr3yr2001non_grad <- sum((df2001_grad$years.in.SAM>=3 & df2001_grad$biz_size.x == 1), na.rm = TRUE)/nrow(df2001_grad)
+
+sr3yr2002_grad <- sum(df2002_grad$years.in.SAM>=3)/nrow(df2002_grad) 
+sr3yr2002sm_grad <- sum((df2002_grad$years.in.SAM>=3 & df2002_grad$biz_size.x == 0), na.rm = TRUE)/nrow(df2002_grad)
+sr3yr2002non_grad <- sum((df2002_grad$years.in.SAM>=3 & df2002_grad$biz_size.x == 1), na.rm = TRUE)/nrow(df2002_grad)
+
+sr3yr2003_grad <- sum(df2003_grad$years.in.SAM>=3)/nrow(df2003_grad)
+sr3yr2003sm_grad <- sum((df2003_grad$years.in.SAM>=3 & df2003_grad$biz_size.x == 0), na.rm = TRUE)/nrow(df2003_grad)
+sr3yr2003non_grad <- sum((df2003_grad$years.in.SAM>=3 & df2003_grad$biz_size.x == 1), na.rm = TRUE)/nrow(df2003_grad)
+
+sr3yr2004_grad <- sum(df2004_grad$years.in.SAM>=3)/nrow(df2004_grad) 
+sr3yr2004sm_grad <- sum((df2004_grad$years.in.SAM>=3 & df2004_grad$biz_size.x == 0), na.rm = TRUE)/nrow(df2004_grad)
+sr3yr2004non_grad <- sum((df2004_grad$years.in.SAM>=3 & df2004_grad$biz_size.x == 1), na.rm = TRUE)/nrow(df2004_grad)
+
+sr3yr2005_grad <- sum(df2005_grad$years.in.SAM>=3)/nrow(df2005_grad) 
+sr3yr2005sm_grad <- sum((df2005_grad$years.in.SAM>=3 & df2005_grad$biz_size.x == 0), na.rm = TRUE)/nrow(df2005_grad)
+sr3yr2005non_grad <- sum((df2005_grad$years.in.SAM>=3 & df2005_grad$biz_size.x == 1), na.rm = TRUE)/nrow(df2005_grad)
+
+sr3yr2006_grad <- sum(df2006_grad$years.in.SAM>=3)/nrow(df2006_grad) 
+sr3yr2006sm_grad <- sum((df2006_grad$years.in.SAM>=3 & df2006_grad$biz_size.x == 0), na.rm = TRUE)/nrow(df2006_grad)
+sr3yr2006non_grad <- sum((df2006_grad$years.in.SAM>=3 & df2006_grad$biz_size.x == 1), na.rm = TRUE)/nrow(df2006_grad)
+
+##5-year
+sr5yr2001_grad <- sum(df2001_grad$years.in.SAM>=5)/nrow(df2001_grad)
+sr5yr2001sm_grad <- sum((df2001_grad$years.in.SAM>=5 & df2001_grad$biz_size.x == 0), na.rm = TRUE)/nrow(df2001_grad)
+sr5yr2001non_grad <- sum((df2001_grad$years.in.SAM>=5 & df2001_grad$biz_size.x == 1), na.rm = TRUE)/nrow(df2001_grad)
+
+sr5yr2002_grad <- sum(df2002_grad$years.in.SAM>=5)/nrow(df2002_grad) 
+sr5yr2002sm_grad <- sum((df2002_grad$years.in.SAM>=5 & df2002_grad$biz_size.x == 0), na.rm = TRUE)/nrow(df2002_grad)
+sr5yr2002non_grad <- sum((df2002_grad$years.in.SAM>=5 & df2002_grad$biz_size.x == 1), na.rm = TRUE)/nrow(df2002_grad)
+
+sr5yr2003_grad <- sum(df2003_grad$years.in.SAM>=5)/nrow(df2003_grad)
+sr5yr2003sm_grad <- sum((df2003_grad$years.in.SAM>=5 & df2003_grad$biz_size.x == 0), na.rm = TRUE)/nrow(df2003_grad)
+sr5yr2003non_grad <- sum((df2003_grad$years.in.SAM>=5 & df2003_grad$biz_size.x == 1), na.rm = TRUE)/nrow(df2003_grad)
+
+sr5yr2004_grad <- sum(df2004_grad$years.in.SAM>=5)/nrow(df2004_grad) 
+sr5yr2004sm_grad <- sum((df2004_grad$years.in.SAM>=5 & df2004_grad$biz_size.x == 0), na.rm = TRUE)/nrow(df2004_grad)
+sr5yr2004non_grad <- sum((df2004_grad$years.in.SAM>=5 & df2004_grad$biz_size.x == 1), na.rm = TRUE)/nrow(df2004_grad)
+
+sr5yr2005_grad <- sum(df2005_grad$years.in.SAM>=5)/nrow(df2005_grad) 
+sr5yr2005sm_grad <- sum((df2005_grad$years.in.SAM>=5 & df2005_grad$biz_size.x == 0), na.rm = TRUE)/nrow(df2005_grad)
+sr5yr2005non_grad <- sum((df2005_grad$years.in.SAM>=5 & df2005_grad$biz_size.x == 1), na.rm = TRUE)/nrow(df2005_grad)
+
+sr5yr2006_grad <- sum(df2006_grad$years.in.SAM>=5)/nrow(df2006_grad) 
+sr5yr2006sm_grad <- sum((df2006_grad$years.in.SAM>=5 & df2006_grad$biz_size.x == 0), na.rm = TRUE)/nrow(df2006_grad)
+sr5yr2006non_grad <- sum((df2006_grad$years.in.SAM>=5 & df2006_grad$biz_size.x == 1), na.rm = TRUE)/nrow(df2006_grad)
+
+
+##10-year
+sr10yr2001_grad <- (sum(df2001_grad$years.in.SAM>=10)/nrow(df2001_grad) 
+sr10yr2001sm_grad <- sum((df2001_grad$years.in.SAM>=10 & df2001_grad$biz_size.x == 0), na.rm = TRUE)/893
+sr10yr2001non_grad <- sum((df2001_grad$years.in.SAM>=10 & df2001_grad$biz_size.x == 1), na.rm = TRUE)/893
+
+
+sr10yr2002_grad <- sum(df2002_grad$years.in.SAM>=10)/nrow(df2002_grad) 
+sr10yr2002sm_grad <- sum((df2002_grad$years.in.SAM>=10 & df2002_grad$biz_size.x == 0), na.rm = TRUE)/nrow(df2002_grad)
+sr10yr2002non_grad <- sum((df2002_grad$years.in.SAM>=10 & df2002_grad$biz_size.x == 1), na.rm = TRUE)/nrow(df2002_grad)
+
+sr10yr2003_grad <- sum(df2003_grad$years.in.SAM>=10)/nrow(df2003_grad)
+sr10yr2003sm_grad <- sum((df2003_grad$years.in.SAM>=10 & df2003_grad$biz_size.x == 0), na.rm = TRUE)/nrow(df2003_grad)
+sr10yr2003non_grad <- sum((df2003_grad$years.in.SAM>=10 & df2003_grad$biz_size.x == 1), na.rm = TRUE)/nrow(df2003_grad)
+
+sr10yr2004_grad <- sum(df2004_grad$years.in.SAM>=10)/nrow(df2004_grad) 
+sr10yr2004sm_grad <- sum((df2004_grad$years.in.SAM>=10 & df2004_grad$biz_size.x == 0), na.rm = TRUE)/nrow(df2004_grad)
+sr10yr2004non_grad <- sum((df2004_grad$years.in.SAM>=10 & df2004_grad$biz_size.x == 1), na.rm = TRUE)/nrow(df2004_grad)
+
+sr10yr2005_grad <- sum(df2005_grad$years.in.SAM>=10)/nrow(df2005_grad) 
+sr10yr2005sm_grad <- sum((df2005_grad$years.in.SAM>=10 & df2005_grad$biz_size.x == 0), na.rm = TRUE)/nrow(df2005_grad)
+sr10yr2005non_grad <- sum((df2005_grad$years.in.SAM>=10 & df2005_grad$biz_size.x == 1), na.rm = TRUE)/nrow(df2005_grad)
+
+sr10yr2006_grad <- sum(df2006_grad$years.in.SAM>=10)/nrow(df2006_grad) 
+sr10yr2006sm_grad <- sum((df2006_grad$years.in.SAM>=10 & df2006_grad$biz_size.x == 0), na.rm = TRUE)/nrow(df2006_grad)
+sr10yr2006non_grad <- sum((df2006_grad$years.in.SAM>=10 & df2006_grad$biz_size.x == 1), na.rm = TRUE)/nrow(df2006_grad)
+
+##bound all survival rates together and reformated dataframe
+
+survivalrate_grad <- cbind(sr3yr2001_grad, sr3yr2001sm_grad, sr3yr2001non_grad, sr5yr2001_grad, sr5yr2001sm_grad, sr5yr2001non_grad, 
+                          sr10yr2001_grad, sr10yr2001sm_grad, sr10yr2001non_grad,
+                          sr3yr2002_grad, sr3yr2002sm_grad, sr3yr2002non_grad, sr5yr2002_grad, sr5yr2002sm_grad, sr5yr2002non_grad, 
+                          sr10yr2002_grad, sr10yr2002sm_grad, sr10yr2002non_grad,
+                          sr3yr2003_grad, sr3yr2003sm_grad, sr3yr2003non_grad, sr5yr2003_grad, sr5yr2003sm_grad, sr5yr2003non_grad, 
+                          sr10yr2003_grad, sr10yr2003sm_grad, sr10yr2003non_grad,
+                          sr3yr2004_grad, sr3yr2004sm_grad, sr3yr2004non_grad, sr5yr2004_grad, sr5yr2004sm_grad, sr5yr2004non_grad, 
+                          sr10yr2004_grad, sr10yr2004sm_grad, sr10yr2004non_grad,
+                          sr3yr2005_grad, sr3yr2005sm_grad, sr3yr2005non_grad, sr5yr2005_grad, sr5yr2005sm_grad, sr5yr2005non_grad, 
+                          sr10yr2005_grad, sr10yr2005sm_grad, sr10yr2005non_grad,
+                          sr3yr2006_grad, sr3yr2006sm_grad, sr3yr2006non_grad, sr5yr2006_grad, sr5yr2006sm_grad, sr5yr2006non_grad, 
+                          sr10yr2006_grad, sr10yr2006sm_grad, sr10yr2006non_grad)
+srnames_grad <- c("3yr_2001_all_grad", "3yr_2001_sm_grad", 
+                 "3yr_2001_non_grad", "5yr_2001_all_grad", "5yr_2001_sm_grad", "5yr_2001_non_grad", "10yr_2001_all_grad", 
+                 "10yr_2001_sm_grad", "10yr_2001_non_grad",
+                 "3yr_2002_all_grad", "3yr_2002_sm_grad", "3yr_2002_non_grad", "5yr_2002_all_grad", "5yr_2002_sm_grad", "5yr_2002_non_grad", 
+                 "10yr_2002_all_grad", "10yr_2002_sm_grad", "10yr_2002_non_grad",
+                 "3yr_2003_all_grad", "3yr_2003_sm_grad", "3yr_2003_non_grad", "5yr_2003_all_grad", "5yr_2003_sm_grad", "5yr_2003_non_grad", 
+                 "10yr_2003_all_grad", "10yr_2003_sm_grad", "10yr_2003_non_grad",
+                 "3yr_2004_all_grad", "3yr_2004_sm_grad", "3yr_2004_non_grad", "5yr_2004_all_grad", "5yr_2004_sm_grad", "5yr_2004_non_grad", 
+                 "10yr_2004_all_grad", "10yr_2004_sm_grad", "10yr_2004_non_grad",
+                 "3yr_2005_all_grad", "3yr_2005_sm_grad", "3yr_2005_non_grad", "5yr_2005_all_grad", "5yr_2005_sm_grad", "5yr_2005_non_grad", 
+                 "10yr_2005_all_grad", "10yr_2005_sm_grad", "10yr_2005_non_grad",
+                 "3yr_2006_all_grad", "3yr_2006_sm_grad", "3yr_2006_non_grad", "5yr_2006_all_grad", "5yr_2006_sm_grad", "5yr_2006_non_grad", 
+                 "10yr_2006_all_grad", "10yr_2006_sm_grad", "10yr_2006_non_grad")
+colnames(survivalrate_grad) <- srnames_grad
+
+sr_grad <- as.data.frame(survivalrate_grad)
+
+survival.rates_grad <- sr_grad %>% 
+  gather("3yr_2001_all_grad":"10yr_2006_non_grad", key = "time_year_type_delete", value = "survivalrate_grad") %>% 
+  separate(time_year_type_delete, into = c("time", "year", "type", "delete"), sep = "_") %>% 
+  arrange(time, year) %>% 
+  unite("time_type", time, type, sep = "_") 
+  
+
+
+survival.rates_grad <- survival.rates_grad %>% 
+  spread(key = "time_type", value = "survivalrate_grad") %>% 
+  select(-delete)
+
+survival.rates_grad[, c(1, 5, 7, 6, 8, 10, 9, 2, 4, 3)]
+
+write.csv(survival.rates_grad, "survival rates_grad-nop.csv")
 

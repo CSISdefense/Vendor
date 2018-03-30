@@ -134,24 +134,6 @@ year.2016 = full_FPDS %>%
 x2016.unique = year.2016[!duplicated(year.2016[,c('duns')]),]
 
 
-
-df2001 <- read_csv("dataset2001.csv")
-df2002 <- read_csv("dataset2002.csv")
-df2003 <- read_csv("dataset2003.csv")
-df2004 <- read_csv("dataset2004.csv")
-df2005 <- read_csv("dataset2005.csv")
-df2006 <- read_csv("dataset2006.csv")
-#df2007 <- read_csv("dataset2007.csv")
-#df2008 <- read_csv("dataset2008.csv")
-#df2009 <- read_csv("dataset2009.csv")
-#df2010 <- read_csv("dataset2010.csv")
-#df2011 <- read_csv("dataset2011.csv")
-#df2012 <- read_csv("dataset2012.csv")
-#df2013 <- read_csv("dataset2013.csv")
-#df2014 <- read_csv("dataset2014.csv")
-#df2015 <- read_csv("dataset2015.csv")
-#df2016 <- read_csv("dataset2016.csv")
-
 yearfildata0116 <- rbind(x2001.unique, x2002.unique, x2003.unique, x2004.unique, x2005.unique,
                          x2006.unique, x2007.unique, x2008.unique, x2009.unique, x2010.unique,
                          x2011.unique, x2012.unique, x2013.unique, x2014.unique, x2015.unique,
@@ -178,22 +160,6 @@ timeseries_data.size <- timeseries_data.all %>%
   spread(biz_size, sizefreq) %>% 
   rename("non_small" = "1", "small" = "0", "all" = "freq")
 # right_join(timeseries_data.all, by = c("regyear", "biz_size"))
-
-
-
-timeseries_data.NAICS <- timeseries_data.all %>% 
-  group_by(regyear, survival.status, NAICS2) %>% 
-  dplyr::summarize(NAICSfreq = n()) %>% 
-  #spread(NAICS2, NAICSfreq) %>% 
-  filter(regyear>=2001 & regyear<=2010) %>% 
-  group_by(regyear, survival.status) %>% 
-  top_n(n = 3, wt = NAICSfreq)
-
-timeseries_data.NAICS[is.na(timeseries_data.NAICS)] <- 0
-
-names(timeseries_data.size)
-
-
 
 ggplot(timeseries_data.size, aes(x = regyear)) +
   geom_line(aes(y = all, colour = "black")) +
