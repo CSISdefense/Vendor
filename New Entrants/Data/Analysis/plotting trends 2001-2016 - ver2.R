@@ -68,52 +68,17 @@ timeseries_data.size <- timeseries_data.all %>%
   dplyr::rename("non_small" = "1", "small" = "0", "all" = "freq")
  # right_join(timeseries_data.all, by = c("regyear", "biz_size"))
 
-ggplot(timeseries_data.size, aes(x = regyear)) +
-  geom_line(aes(y = all, colour = "black")) +
-  geom_line(aes(y = non_small, colour = "blue")) +
-  geom_line(aes(y = small, colour = "red")) +
-  ylab("Number of new entrants") +
-  xlab("Year") +
-  scale_x_continuous("Registration Date", labels = as.character(timeseries_data.size$regyear), breaks = timeseries_data.size$regyear) +
-  scale_y_continuous(limits = c(0, 3000)) +
-  scale_color_manual(name = "New Entrants Types", values = c("black" = "black", "blue" = "blue", "red" = "red"), labels = c("all","non-small", "small")) +
-  ggtitle("# of New Entrants per Year (2001-2016) - All Agencies")
-
-
-
-##Sam edits##
-
-yearfildata0116 <- read_csv("Panel Data 2001-2016 -nop.csv")
-
-timeseries_data <- yearfildata0116 %>% 
-  left_join(full_FPDS[, c("duns", "registrationDate")], by = "duns") %>% 
-  distinct() %>% 
-  mutate(regyear = year(registrationDate))
-
-
-timeseries_data.all <- timeseries_data %>% 
-  group_by(regyear) %>% 
-  dplyr::summarise(freq = n()) %>% 
-  right_join(timeseries_data, by = "regyear")
-
-timeseries_data.size <- timeseries_data.all %>% 
-  group_by(regyear, biz_size, freq) %>% 
-  dplyr::summarise(sizefreq = n()) %>%
-  spread(biz_size, sizefreq) %>% 
-  rename("non_small" = "1", "small" = "0", "all" = "freq")
-# right_join(timeseries_data.all, by = c("regyear", "biz_size"))
 
 ggplot(timeseries_data.size, aes(x = regyear)) +
-  geom_line(aes(y = all), colour = "#000033") +
-  geom_line(aes(y = non_small), colour = "#0066CC") +
-  geom_line(aes(y = small), colour = "#00FFFF") +
+  geom_line(aes(y = all, colour = "midnightblue")) +
+  geom_line(aes(y = non_small, colour = "lightskyblue")) +
+  geom_line(aes(y = small, colour = "blue")) +
   ylab("Number of new entrants") +
   xlab("Year") +
   scale_y_continuous(limits = c(0, 2300)) +
   scale_x_continuous("Registration Date", labels = as.character(timeseries_data.size$regyear), breaks = timeseries_data.size$regyear) +
-  scale_color_manual(name = "New Entrants Types", values = c("#000033" = "#000033", "#000033" = "#000033", "#00FFFF" = "#00FFFF"), labels = c("all","non-small", "small")) +
+  scale_color_manual(name = "New Entrants Types", values = c("midnightblue" = "midnightblue", "lightskyblue" = "lightskyblue", "blue" = "blue"), labels = c("all","non-small", "small")) +
   ggtitle("Number of New Entrants per Year (2001-2016) - All Federal Agencies")
-
 
 
 
@@ -142,14 +107,14 @@ timeseries_data.sizeDOD <- timeseries_data.allDOD %>%
 # right_join(timeseries_data.all, by = c("regyear", "biz_size"))
 
 ggplot(timeseries_data.sizeDOD, aes(x = regyear)) +
-  geom_line(aes(y = all, colour = "black")) +
-  geom_line(aes(y = non_small, colour = "blue")) +
-  geom_line(aes(y = small, colour = "red")) +
+  geom_line(aes(y = all, colour = "midnightblue")) +
+  geom_line(aes(y = non_small, colour = "skyblue")) +
+  geom_line(aes(y = small, colour = "blue")) +
   ylab("Number of new entrants") +
   xlab("Year") +
   scale_y_continuous(limits = c(0, 2300)) +
   scale_x_continuous("Registration Date", labels = as.character(timeseries_data.size$regyear), breaks = timeseries_data.size$regyear) +
-  scale_color_manual(name = "New Entrants Types", values = c("black" = "black", "blue" = "blue", "red" = "red"), labels = c("all","non-small", "small"))+
+  scale_color_manual(name = "New Entrants Types", values = c("midnightblue" = "midnightblue", "skyblue" = "skyblue", "blue" = "blue"), labels = c("all","non-small", "small"))+
   ggtitle("Number of New Entrants per Year (2001-2016) - DOD")
 
 
