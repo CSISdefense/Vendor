@@ -3,6 +3,10 @@ library(data.table)
 library(lubridate)
 library(plyr)
 
+setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data")
+getwd()
+
+
 ###determine in biz-size column if change (for each duns)
 
 panel_data <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/Panel Data reg2001-2016 - ver 2.csv")
@@ -116,7 +120,7 @@ survival.rates_grad <- survival.rates_grad %>%
                     
 survival.rates_grad[, c(1, 5, 7, 6, 8, 10, 9, 2, 4, 3)]
                     
-write.csv(survival.rates_grad, "survival rates_grad-nop.csv")
+write.csv(survival.rates_grad, "graduation rates-nop.csv")
                     
                     
                     
