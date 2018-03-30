@@ -26,7 +26,7 @@ setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data")
 getwd()
 
 ### import data Signeddate nop filter####
-sd_nop <- read_csv("Panel Data reg2001-2016 - ver 2.csv")
+sd_nop <- read_csv("Panel Data reg2001-2016 - ver4.csv")
 
 df2001_sd <- sd_nop %>% 
   filter(year(registrationDate) == 2001 )
@@ -116,7 +116,7 @@ df2006_sd$AGENCY_NAME = as.factor(df2006_sd$AGENCY_NAME)
 
 
 ### DOD filter####
-dod_sd <- read_csv("Panel Data reg2001-2016 DOD - ver2.csv")
+dod_sd <- read_csv("Panel Data reg2001-2016 DOD - ver4.csv")
 
 df2001_DOD <- dod_sd %>% 
   filter(year(registrationDate) == 2001 )
@@ -451,7 +451,7 @@ survival.rates_DOD <- survival.rates_DOD %>%
 
 survival.rates_DOD[, c(1, 5, 7, 6, 8, 10, 9, 2, 4, 3)]
 
-write.csv(survival.rates_DOD, "survival rates_DOD-nop.csv")
+write.csv(survival.rates_DOD, "survival rates_DOD-nop - ver 4.csv")
 
 ####Descriptives: Firm-level characteristics ####
 #Focusing on 2001 Sample: descriptives for firm-level independent variables (firm age, firm ownership,

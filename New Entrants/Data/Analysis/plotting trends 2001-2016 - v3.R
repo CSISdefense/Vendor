@@ -30,12 +30,12 @@ full_FPDS <- read_csv("SAM Data merged with FPDS, exp2000-2019.csv")
 final_joined = full_FPDS[!duplicated(full_FPDS),]
 
 final_joined <- final_joined %>% 
-  mutate(age_at_start = year(registrationDate) - year(businessStartDate)) %>% 
+  dplyr::mutate(age_at_start = year(registrationDate) - year(businessStartDate)) %>% 
   dplyr::rename(country = `samAddress countryCode`)
 
 #panel_data <- read_csv("Panel Data reg 2001-2011.csv")
 
-x0116.dataset <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/Panel Data reg2001-2016 - ver3.csv")
+x0116.dataset <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/Panel Data reg2001-2016 - ver4.csv")
 
 library(tidyverse)
 library(lubridate)
@@ -85,7 +85,7 @@ ggplot(timeseries_data.size, aes(x = regyear)) +
 
 ###count DOD nop####
 
-DODfildata0116 <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/Panel Data reg2001-2016 DOD - ver2.csv")
+DODfildata0116 <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/Panel Data reg2001-2016 DOD - ver4.csv")
 
 timeseries_dataDOD <- DODfildata0116 %>% 
   left_join(full_FPDS[, c("duns", "registrationDate")], by = "duns") %>% 

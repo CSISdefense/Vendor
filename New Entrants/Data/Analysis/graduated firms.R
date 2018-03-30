@@ -9,15 +9,15 @@ getwd()
 ###All Agencies####
 ###determine in biz-size column if change (for each duns)
 
-panel_data <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/Panel Data reg2001-2016 - ver 2.csv")
+panel_data <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/Panel Data reg2001-2016 - ver4.csv")
 full_FPDS <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/SAM Data merged with FPDS, exp2000-2019.csv")
 
 ### Small start firms
 
-total <- panel_data %>% 
-  filter(ten.year == "TRUE") %>% 
-  group_by(biz_size) %>% 
-  dplyr::summarize(count = n())
+# total <- panel_data %>% 
+#   filter(ten.year == "TRUE") %>% 
+#   group_by(biz_size) %>% 
+#   dplyr::summarize(count = n())
 
 
 total.survived<- panel_data %>% 
@@ -32,7 +32,7 @@ total.survived<- panel_data %>%
 nonsmallfirm <- total.survived %>% 
   filter(contractingofficerbusinesssizedetermination == "O") %>% 
   group_by(duns) %>% 
-  slice(which.min(signeddate)) %>% 
+  dplyr::slice(which.min(signeddate)) %>% 
   left_join(total.survived, by = "duns") %>% ###signeddate.x as mindate, signeddate.y as all dates
   filter(signeddate.y >= signeddate.x) %>% 
   select(duns, signeddate.x, obligatedamount.y, contractingofficerbusinesssizedetermination.y, signeddate.y, lastsigneddate.y, ten.year.y, registrationDate.y)
@@ -42,7 +42,7 @@ nonsmallfirm <- total.survived %>%
   
 maxobligated = nonsmallfirm %>%
    group_by(duns, contractingofficerbusinesssizedetermination.y) %>% 
-   slice(which.max(obligatedamount.y)) %>% 
+   dplyr::slice(which.max(obligatedamount.y)) %>% 
    arrange (duns, desc(obligatedamount.y))
   
 unique.maxob <- maxobligated[!duplicated(maxobligated[,c('duns')]),] 
@@ -50,11 +50,9 @@ unique.maxob <- maxobligated[!duplicated(maxobligated[,c('duns')]),]
 gradfirm <- unique.maxob %>% 
   filter(contractingofficerbusinesssizedetermination.y == "O")
 
-unique.tot <- total.survived[!duplicated(total.survived[,c('duns')]),]
   
-write.csv(gradfirm, "graduated firms.csv")
+write.csv(gradfirm, "graduated firms - ver4.csv")
 
-nrow(gradfirm)/nrow(unique.tot)
 
 x2001 <- gradfirm %>% 
   filter(year(registrationDate.y) == 2001)
@@ -120,20 +118,15 @@ survival.rates_grad <- survival.rates_grad %>%
                     
 
                     
-write.csv(survival.rates_grad, "graduation rates-nop.csv")
+write.csv(survival.rates_grad, "graduation rates-nop - ver4.csv")
                     
 ------------------
 ###DOD####
 
-panel_data <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/Panel Data reg2001-2016 DOD - ver2.csv")
+panel_data <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/Panel Data reg2001-2016 DOD - ver4.csv")
 full_FPDS <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/SAM Data merged with FPDS, exp2000-2019.csv")
 panel_data$duns = as.character(panel_data$duns)
 ### Small start firms
-
-total <- panel_data %>% 
-  filter(ten.year == "TRUE") %>% 
-  group_by(biz_size) %>% 
-  dplyr::summarize(count = n())
 
 
 total.survived<- panel_data %>% 
@@ -148,7 +141,7 @@ total.survived<- panel_data %>%
 nonsmallfirm <- total.survived %>% 
   filter(contractingofficerbusinesssizedetermination == "O") %>% 
   group_by(duns) %>% 
-  slice(which.min(signeddate)) %>% 
+  dplyr::slice(which.min(signeddate)) %>% 
   left_join(total.survived, by = "duns") %>% ###signeddate.x as mindate, signeddate.y as all dates
   filter(signeddate.y >= signeddate.x) %>% 
   select(duns, signeddate.x, obligatedamount.y, contractingofficerbusinesssizedetermination.y, signeddate.y, lastsigneddate.y, ten.year.y, registrationDate.y)
@@ -158,7 +151,7 @@ nonsmallfirm <- total.survived %>%
 
 maxobligated = nonsmallfirm %>%
   group_by(duns, contractingofficerbusinesssizedetermination.y) %>% 
-  slice(which.max(obligatedamount.y)) %>% 
+  dplyr::slice(which.max(obligatedamount.y)) %>% 
   arrange (duns, desc(obligatedamount.y))
 
 unique.maxob <- maxobligated[!duplicated(maxobligated[,c('duns')]),] 
@@ -166,48 +159,33 @@ unique.maxob <- maxobligated[!duplicated(maxobligated[,c('duns')]),]
 gradfirm <- unique.maxob %>% 
   filter(contractingofficerbusinesssizedetermination.y == "O")
 
-unique.tot <- total.survived[!duplicated(total.survived[,c('duns')]),]
+write.csv(gradfirm, "graduated firms - DOD - ver4.csv")
 
-write.csv(gradfirm, "graduated firms - DOD.csv")
 
-gradfirm1<- gradfirm %>% 
-  separate(registrationDate.y, into = c("x", "y"), sep = " ") %>% 
-  select(-y) %>% 
-  mutate(registrationDate = as.Date(x, format = '%m/%d/%Y')) %>% 
-  select(-x)
+x2001 <- gradfirm %>% 
+  filter(year(registrationDate.y) == 2001)
+x2002 <- gradfirm %>% 
+  filter(year(registrationDate.y) == 2002)
+x2003 <- gradfirm %>% 
+  filter(year(registrationDate.y) == 2003)
+x2004 <- gradfirm %>% 
+  filter(year(registrationDate.y) == 2004)
+x2005 <- gradfirm %>% 
+  filter(year(registrationDate.y) == 2005)
+x2006 <- gradfirm %>% 
+  filter(year(registrationDate.y) == 2006)
 
-panel_data1 <- panel_data %>%
-  separate(registrationDate, into = c("x", "y"), sep = " ") %>% 
-  select(-y) %>% 
-  mutate(registrationDate = as.Date(x, format = '%m/%d/%Y')) %>% 
-  select(-x)
-
-nrow(gradfirm1)/nrow(unique.tot)
-
-x2001 <- gradfirm1 %>% 
+tot2001 <- panel_data %>% 
   filter(year(registrationDate) == 2001)
-x2002 <- gradfirm1 %>% 
+tot2002 <- panel_data %>% 
   filter(year(registrationDate) == 2002)
-x2003 <- gradfirm1 %>% 
+tot2003 <- panel_data %>% 
   filter(year(registrationDate) == 2003)
-x2004 <- gradfirm1 %>% 
+tot2004 <- panel_data %>% 
   filter(year(registrationDate) == 2004)
-x2005 <- gradfirm1 %>% 
+tot2005 <- panel_data %>% 
   filter(year(registrationDate) == 2005)
-x2006 <- gradfirm1 %>% 
-  filter(year(registrationDate) == 2006)
-
-tot2001 <- panel_data1 %>% 
-  filter(year(registrationDate) == 2001)
-tot2002 <- panel_data1 %>% 
-  filter(year(registrationDate) == 2002)
-tot2003 <- panel_data1 %>% 
-  filter(year(registrationDate) == 2003)
-tot2004 <- panel_data1 %>% 
-  filter(year(registrationDate) == 2004)
-tot2005 <- panel_data1 %>% 
-  filter(year(registrationDate) == 2005)
-tot2006 <- panel_data1 %>% 
+tot2006 <- panel_data %>% 
   filter(year(registrationDate) == 2006)
 
 
@@ -248,5 +226,5 @@ survival.rates_grad <- survival.rates_grad %>%
 
 
 
-write.csv(survival.rates_grad, "graduation rates-DOD.csv")
+write.csv(survival.rates_grad, "graduation rates-DOD - ver4.csv")
                     
