@@ -14,7 +14,7 @@ setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data")
 getwd()
 
 ### Signeddate nop filter####
-sd_nop <- read_csv("Panel Data reg2001-2016, SD2010-2025 - nop, 10plus1 year view.csv")
+sd_nop <- read_csv("Panel Data reg2001-2016 - ver 2.csv")
 
 df2001_sd <- sd_nop %>% 
   filter(year(registrationDate) == 2001 )
