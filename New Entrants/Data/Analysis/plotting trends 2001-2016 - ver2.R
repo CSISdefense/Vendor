@@ -3,6 +3,23 @@
 setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data")
 getwd()
 
+#install.packages("matrixStats")
+library(matrixStats)
+library(describer)
+library(tidyverse)
+#install.packages("lubridate")
+#install.packages("openxlsx")
+library(openxlsx)
+#install.packages("httr")
+library(httr)
+#install.packages("jsonlite")
+library(jsonlite)
+library(plyr)
+#install.packages("data.table")
+library(data.table)
+library(lubridate)
+
+
 ## x = year(registrationDate)  OR Regyear
 ##y = nrows()
 ##add lines for biz_size 0 or 1
