@@ -32,11 +32,11 @@ final_joined = full_FPDS[!duplicated(full_FPDS),]
 
 final_joined <- final_joined %>% 
   mutate(age_at_start = year(registrationDate) - year(businessStartDate)) %>% 
-  rename(country = `samAddress countryCode`)
+  dplyr::rename(country = `samAddress countryCode`)
 
 #panel_data <- read_csv("Panel Data reg 2001-2011.csv")
 
-x0116.dataset <- read_csv("Panel Data reg2001-2016 - ver 2.csv")
+x0116.dataset <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/Panel Data reg2001-2016 - ver3.csv")
 
 library(tidyverse)
 library(lubridate)
@@ -50,6 +50,9 @@ timeseries_data <- x0116.dataset %>%
   left_join(full_FPDS[, c("duns", "registrationDate")], by = "duns") %>% 
   mutate(regyear = year(registrationDate.y))
 
+test <- timeseries_data %>% 
+  filter(regyear==2008)
+
 timeseries_data = timeseries_data[!duplicated(timeseries_data["duns"]),]
 
 timeseries_data.all <- timeseries_data %>% 
@@ -61,7 +64,7 @@ timeseries_data.size <- timeseries_data.all %>%
   group_by(regyear, biz_size, freq) %>% 
   dplyr::summarise(sizefreq = n()) %>%
   spread(biz_size, sizefreq) %>% 
-  rename("non_small" = "1", "small" = "0", "all" = "freq")
+  dplyr::rename("non_small" = "1", "small" = "0", "all" = "freq")
  # right_join(timeseries_data.all, by = c("regyear", "biz_size"))
 
 ggplot(timeseries_data.size, aes(x = regyear)) +
@@ -81,7 +84,7 @@ ggplot(timeseries_data.size, aes(x = regyear)) +
 
 ###count DOD nop####
 
-DODfildata0116 <- read_csv("Panel Data reg2001-2016, SD2010-2025 DOD- nop, 10plus1 year view.csv")
+DODfildata0116 <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/Panel Data reg2001-2016 DOD - ver2.csv")
 
 timeseries_dataDOD <- DODfildata0116 %>% 
   left_join(full_FPDS[, c("duns", "registrationDate")], by = "duns") %>% 
@@ -98,7 +101,7 @@ timeseries_data.sizeDOD <- timeseries_data.allDOD %>%
   group_by(regyear, biz_size, freq) %>% 
   dplyr::summarise(sizefreq = n()) %>%
   spread(biz_size, sizefreq) %>% 
-  rename("non_small" = "1", "small" = "0", "all" = "freq")
+  dplyr::rename("non_small" = "1", "small" = "0", "all" = "freq")
 # right_join(timeseries_data.all, by = c("regyear", "biz_size"))
 
 ggplot(timeseries_data.sizeDOD, aes(x = regyear)) +

@@ -29,7 +29,7 @@ final_joined = final[!duplicated(final),]
 
 final_joined <- final_joined %>% 
   mutate(age_at_start = year(registrationDate) - year(businessStartDate)) %>% 
-  rename(country = `samAddress countryCode`)
+  dplyr::rename(country = `samAddress countryCode`)
 
 ###created a new variable for 2 digit NAICS codes and removed NA fields
 NAICS.edit = final_joined %>% 
@@ -79,7 +79,7 @@ agency <- name.defined %>%
   select(duns, DEPARTMENT_ID, mod_agency, DEPARTMENT_NAME, AGENCY_NAME, obligatedamount) %>% 
   filter(!is.na(AGENCY_NAME)) %>%
   group_by(duns, DEPARTMENT_NAME, AGENCY_NAME) %>% 
-  summarize(max(obligatedamount)) %>% 
+  dplyr::summarize(max(obligatedamount)) %>% 
   arrange(desc(`max(obligatedamount)`))
 
 agency.unique = agency[!duplicated(agency[,c("duns")]),]
@@ -90,7 +90,7 @@ PSC_code = name.defined %>%
   filter(!is.na(productorservicecode)) %>%
   filter(productorservicecode != 0, productorservicecode != "N: NO - SERVICE WHERE PBA IS NOT USED.") %>% 
   group_by(duns, ServicesCategory) %>% 
-  summarize(max(obligatedamount)) %>% 
+  dplyr::summarize(max(obligatedamount)) %>% 
   arrange(desc(`max(obligatedamount)`))
 
 psc.code.unique = PSC_code[!duplicated(PSC_code[,c("duns")]),]
@@ -104,7 +104,7 @@ unique.contract <- final_joined[!duplicated(final_joined[,c("unique_transaction_
 contobsac <- unique.contract %>% 
   select(duns, obligatedamount, unique_transaction_id) %>% 
   group_by(duns) %>% 
-  summarize(obligated.amt = sum(obligatedamount), contract.actions = n())
+  dplyr::summarize(obligated.amt = sum(obligatedamount), contract.actions = n())
 
 #### joined these to the previous dataframe
 
@@ -1180,9 +1180,9 @@ all.dataset.SD <- rbind(dataset.2001, dataset.2002, dataset.2003,
                         dataset.2013, dataset.2014, dataset.2015,
                         dataset.2016)
 
+test = filter(all.dataset.SD, year(registrationDate)==2008)
 
-
-write.csv(all.dataset.SD, "Panel Data reg2001-2016, SD2010-2025 - nop, 10plus1 year view.csv")
+write.csv(all.dataset.SD, "Panel Data reg2001-2016 - ver3.csv")
 
 ------------------------------------------------------------
   
@@ -1200,7 +1200,7 @@ agency.unique = agency_codes[!duplicated(agency_codes[,c('DEPARTMENT_NAME')]),]
 
 final_joined_DOD <- final_joined %>% 
   mutate(age_at_start = year(registrationDate) - year(businessStartDate)) %>% 
-  rename(country = `samAddress countryCode`) %>% 
+  dplyr::rename(country = `samAddress countryCode`) %>% 
   left_join(agency_codes_unique, by = c("mod_agency"="AGENCY_CODE")) %>% 
   filter(DEPARTMENT_ID == "9700")
 
