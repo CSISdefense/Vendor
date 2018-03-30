@@ -1,3 +1,8 @@
+
+##for sam
+setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data")
+getwd()
+
 ## x = year(registrationDate)  OR Regyear
 ##y = nrows()
 ##add lines for biz_size 0 or 1
