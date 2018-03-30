@@ -44,6 +44,8 @@ library(lubridate)
 
 ###count filtered ####
 
+###All fed agencies####
+
 timeseries_data <- x0116.dataset %>% 
   left_join(full_FPDS[, c("duns", "registrationDate")], by = "duns") %>% 
   mutate(regyear = year(registrationDate.y))
@@ -61,6 +63,57 @@ timeseries_data.size <- timeseries_data.all %>%
   spread(biz_size, sizefreq) %>% 
   rename("non_small" = "1", "small" = "0", "all" = "freq")
  # right_join(timeseries_data.all, by = c("regyear", "biz_size"))
+
+ggplot(timeseries_data.size, aes(x = regyear)) +
+  geom_line(aes(y = all, colour = "black")) +
+  geom_line(aes(y = non_small, colour = "blue")) +
+  geom_line(aes(y = small, colour = "red")) +
+  ylab("Number of new entrants") +
+  xlab("Year") +
+  scale_x_continuous("Registration Date", labels = as.character(timeseries_data.size$regyear), breaks = timeseries_data.size$regyear) +
+  scale_y_continuous(limits = c(0, 3000)) +
+  scale_color_manual(name = "New Entrants Types", values = c("black" = "black", "blue" = "blue", "red" = "red"), labels = c("all","non-small", "small")) +
+  ggtitle("# of New Entrants per Year (2001-2016) - All Agencies")
+
+
+
+##DoD####
+
+###count DOD nop####
+
+DODfildata0116 <- read_csv("Panel Data reg2001-2016, SD2010-2025 DOD- nop, 10plus1 year view.csv")
+
+timeseries_dataDOD <- DODfildata0116 %>% 
+  left_join(full_FPDS[, c("duns", "registrationDate")], by = "duns") %>% 
+  distinct() %>% 
+  mutate(regyear = year(registrationDate.y))
+
+
+timeseries_data.allDOD <- timeseries_dataDOD %>% 
+  group_by(regyear) %>% 
+  dplyr::summarise(freq = n()) %>% 
+  right_join(timeseries_dataDOD, by = "regyear")
+
+timeseries_data.sizeDOD <- timeseries_data.allDOD %>% 
+  group_by(regyear, biz_size, freq) %>% 
+  dplyr::summarise(sizefreq = n()) %>%
+  spread(biz_size, sizefreq) %>% 
+  rename("non_small" = "1", "small" = "0", "all" = "freq")
+# right_join(timeseries_data.all, by = c("regyear", "biz_size"))
+
+ggplot(timeseries_data.sizeDOD, aes(x = regyear)) +
+  geom_line(aes(y = all, colour = "black")) +
+  geom_line(aes(y = non_small, colour = "blue")) +
+  geom_line(aes(y = small, colour = "red")) +
+  ylab("Number of new entrants") +
+  xlab("Year") +
+  scale_y_continuous(limits = c(0, 2300)) +
+  scale_x_continuous("Registration Date", labels = as.character(timeseries_data.size$regyear), breaks = timeseries_data.size$regyear) +
+  scale_color_manual(name = "New Entrants Types", values = c("black" = "black", "blue" = "blue", "red" = "red"), labels = c("all","non-small", "small"))+
+  ggtitle("Number of New Entrants per Year (2001-2016) - DOD")
+
+
+
 
 ###NAICS filtered####
 
