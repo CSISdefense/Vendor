@@ -162,7 +162,6 @@ contract$n_NoFee<-as.integer(as.character(contract$n_NoFee))
 
 
 #n_Comp
-if("Comp" %in% colnames(contract)){
 if (all(levels(factor(contract$Comp))==c("0","1"))){
   contract$Comp<-factor(contract$Comp)
   levels(contract$Comp) <-
@@ -206,7 +205,6 @@ levels(contract$CompOffr) <-
        "2 offers"="2",
        "3-4 offers"="3",
        "5+ offers"="4")
-}
   
   
   #l_Offr
