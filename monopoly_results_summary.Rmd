@@ -15,6 +15,7 @@ library(ggplot2)
 library(dplyr)
 library(arm)
 library(R2WinBUGS)
+library(knitr)
 source("DIIGstat.r")
 
 axis.text.size<-10
@@ -54,65 +55,51 @@ First we load the data. The dataset used is a U.S. Defense Contracting dataset d
 
 
 ```{r ReadInData, echo = TRUE}
-  load(file="Data/defense_contract_CSIScontractID_detail.Rdata")
-  
-
-head(DefenseModelAndDetail)
-# undebug(transform_contract)
-# debug(transform_contract)
-# debug(transform_contract)
-DefenseModelAndDetail<-transform_contract(DefenseModelAndDetail)
-
-
+  # load(file="Data/defense_contract_CSIScontractID_detail.Rdata")
+# head(def)
+debug(transform)
+def<-transform_contract(def)
+# save(file="Data/transformed_def.Rdata", def)
+ load(file="Data/transformed_def.Rdata")
 ```
 
 
-DefenseModelAndDetails$
 
 
-NA_stats(DefenseModelAndDetail,"b_Crai")
 
-* b_Crai is a binary variable that has a value of 1 for any contracts that have experienced a partial or complete termination, 0 otherwise. ('r summary(DefenseModelAndDetail$b_Crai)
-NA_stats(DefenseModelAndDetail,"b_Crai"))
-* b_Comp is a binary variable based on competition. It has a value of 0 for uncompeted contracts and a value of 1 for competition, regardless of number of offers. 'r  summary(DefenseModelAndDetail$b_Comp);
-NA_stats(DefenseModelAndDetail,"b_Comp")'
-* c_hh_index_lag1 is a numeric variable based on competition and number of offers. It has a value of 0 for uncompeted contracts and a value of 1 for single-offer competition, and a value of 2 for multi-offer competition. 'r summary(DefenseModelAndDetail$c_hh_index_lag1);
-NA_stats(DefenseModelAndDetail,"c_hh_index_lag1")'
-* n_Offr is a numeric variable based on competition and with more granularity on number offers. It has a value of 0 for uncompeted contracts and a value of 1 for single-offer competition, and a value of 2 for 2-offers, 3 for 3-4 offers, and 4 for 5+ offers. 'r summary(DefenseModelAndDetail$n_Offr);
-NA_stats(DefenseModelAndDetail,"n_Offr")'
-* hh_index_lag1 is the natural log of the number of offers received. Uncompeted contracts are classified as having received one offer. 'r summary(DefenseModelAndDetail$hh_index_lag1);
-NA_stats(DefenseModelAndDetail,"hh_index_lag1")'
-* cl_Ceil is the natural log of the initial contract cost ceiling, in then-year dollars. 'r centered_log_description(DefenseModelAndDetail$l_Ceil,"dollars");
-NA_stats(DefenseModelAndDetail,"l_Ceil")'
-* cl_Days is the natural log of the initial maximum duration of the contract, in days. The variable is centered, by subtracting its mean ('r centered_log_description(DefenseModelAndDetail$l_Days,"days");
-NA_stats(DefenseModelAndDetail,"l_Days")' 
-* SIDV, MIDV, and OIDV are dummy variables based on the contract vehicle. They correspond to Single-Award IDVs, Multi-Award IDVs, and Other IDVs, respectively, having a value of 1 when the task order has that vehicle type, and having a 0 other. The remaining types, definitive contracts and purchase orders, are intentionally left out. ('r summary(DefenseModelAndDetail$SIDV);
-summary(DefenseModelAndDetail$MIDV);
-summary(DefenseModelAndDetail$OIDV);
-NA_stats(DefenseModelAndDetail,"Veh")'
-* n_Fixed is a numeric variable based on contract pricing. It has a value of 0 for cost-based, 0.5 or "combination or other", 1 for any fixed price (excluding fixed-price level of effort which is classified as cost-based). ('r summary(DefenseModelAndDetail$n_Fixed);
-NA_stats(DefenseModelAndDetail,"n_Fixed")')
-* n_Incent is a numeric variable based on fee type. Ig has a value. 1 for incentive fee or cost sharing, 0.5 or "combination or other", 0 for all remaining types. ('r summary(DefenseModelAndDetail$n_Incent);
-NA_stats(DefenseModelAndDetail,"n_Incent")')
-* b_UCA is a binary variable with a value of 1 for contracts/task orders that begin as letter contracts or undefinitized contract awards (UCA) and a value of 0 otherwise. 'r
-summary(DefenseModelAndDetail$b_UCA);
-NA_stats(DefenseModelAndDetail,"b_UCA")'
-* b_Intl is a binary variable with a value of 1 for contracts/task orders with any transactions performed internationally and a value of 0 otherwise. 'r
-summary(DefenseModelAndDetail$b_Intl);
-NA_stats(DefenseModelAndDetail,"b_Intl")'
-* PSR is a factor reporting whether a contract is primarily for products/services/R&D. 'r
-summary(DefenseModelAndDetail$PSR);
-NA_stats(DefenseModelAndDetail,"PSR")'
-* ProdServ is a factor reporting the top Product or Service Code of each contract. 'r
-summary(DefenseModelAndDetail$ProdServ);
-NA_stats(DefenseModelAndDetail,"ProdServ")'
-* NAICS is a factor reporting the top North American Industrial Classification Code of each contract. 'r
-summary(DefenseModelAndDetail$NAICS);
-NA_stats(DefenseModelAndDetail,"NAICS")'
-* Agency is a factor reporting the top Contracting Agency of each contract. 'r
-summary(DefenseModelAndDetail$Agency);
-NA_stats(DefenseModelAndDetail,"Agency")'
-* Office is a factor reporting the top Contracting office of each contract. 'r
-summary(DefenseModelAndDetail$Office);
-NA_stats(DefenseModelAndDetail,"Office")'
+NA_stats(def,"b_Crai")
+
+* b_Crai is a binary variable that has a value of 1 for any contracts that have experienced a partial or complete termination, 0 otherwise. (`r summary(def$b_Crai)
+NA_stats(def,"b_Crai")`)
+* b_Comp is a binary variable based on competition. It has a value of 0 for uncompeted contracts and a value of 1 for competition, regardless of number of offers. `r  summary(def$b_Comp);
+NA_stats(def,"b_Comp")`
+* c_hh_index_lag1 is a numeric variable based on competition and number of offers. It has a value of 0 for uncompeted contracts and a value of 1 for single-offer competition, and a value of 2 for multi-offer competition. `r summary(def$c_hh_index_lag1);
+NA_stats(def,"c_hh_index_lag1")`
+* n_Offr is a numeric variable based on competition and with more granularity on number offers. It has a value of 0 for uncompeted contracts and a value of 1 for single-offer competition, and a value of 2 for 2-offers, 3 for 3-4 offers, and 4 for 5+ offers. `r summary(def$n_Offr);
+NA_stats(def,"n_Offr")`
+* cl_Ceil is the natural log of the initial contract cost ceiling, in then-year dollars. `r centered_log_description(def$l_Ceil,"dollars");
+NA_stats(def,"l_Ceil")`
+* cl_Days is the natural log of the initial maximum duration of the contract, in days. The variable is centered, by subtracting its mean (`r centered_log_description(def$l_Days,"days");
+NA_stats(def,"l_Days")` 
+* SIDV, MIDV, and OIDV are dummy variables based on the contract vehicle. They correspond to Single-Award IDVs, Multi-Award IDVs, and Other IDVs, respectively, having a value of 1 when the task order has that vehicle type, and having a 0 other. The remaining types, definitive contracts and purchase orders, are intentionally left out. (`r summary(def$SIDV);
+summary(def$MIDV);
+summary(def$OIDV);
+NA_stats(def,"Veh")`
+* n_Fixed is a numeric variable based on contract pricing. It has a value of 0 for cost-based, 0.5 or "combination or other", 1 for any fixed price (excluding fixed-price level of effort which is classified as cost-based). (`r summary(def$n_Fixed);
+NA_stats(def,"n_Fixed")`)
+* n_Incent is a numeric variable based on fee type. Ig has a value. 1 for incentive fee or cost sharing, 0.5 or "combination or other", 0 for all remaining types. (`r summary(def$n_Incent);
+NA_stats(def,"n_Incent")`)
+* b_UCA is a binary variable with a value of 1 for contracts/task orders that begin as letter contracts or undefinitized contract awards (UCA) and a value of 0 otherwise. `r summary(def$b_UCA);
+NA_stats(def,"b_UCA")`
+* b_Intl is a binary variable with a value of 1 for contracts/task orders with any transactions performed internationally and a value of 0 otherwise. `r summary(def$b_Intl);
+NA_stats(def,"b_Intl")`
+* NAICS is a factor reporting the top North American Industrial Classification Code of each contract. 
+`r summary(def$NAICS);
+NA_stats(def,"NAICS")`
+* Agency is a factor reporting the top Contracting Agency of each contract. 
+`r summary(def$Agency);
+NA_stats(def,"Agency")`
+* Office is a factor reporting the top Contracting office of each contract. 
+`r summary(def$Office);
+NA_stats(def,"Office")`
 

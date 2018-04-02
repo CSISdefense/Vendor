@@ -31,13 +31,14 @@ contract$PSR_What<-factor(paste(as.character(contract$PSR),
                                              as.character(contract$What),sep="."))
 contract$PSR_What[contract$PSR_What=="Unlabeled"]<-NA
 
-#b_Crai
-contract$b_Crai<-ifelse(contract$pChangeOrderUnmodifiedBaseAndAll>0,1,NA)
-contract$b_Crai[contract$pChangeOrderUnmodifiedBaseAndAll<=0]<-0
+#b_CBre
+contract$b_CBre<-ifelse(contract$CBre=="Ceiling Breach",1,NA)
+contract$b_CBre[contract$CBre=="None"]<-0
+
 
 #Create a jittered version of Crai for display purposes
 #Unlike geom_jitter, this caps values at 0 and 1
-contract$j_Crai<-jitter.binary(contract$b_Crai)
+contract$j_Crai<-jitter.binary(contract$b_CBre)
 
 
 #b_Term
@@ -49,18 +50,17 @@ contract$b_Term[contract$Term=="Unterminated"]<-0
 contract$j_Term<-jitter.binary(contract$b_Term)
 
 #n_Crai
-contract$pChangeOrderUnmodifiedBaseAndAll<-as.numeric(as.character(contract$pChangeOrderUnmodifiedBaseAndAll))
-contract$pChange3Sig<-round(
-  contract$pChangeOrderUnmodifiedBaseAndAll,3)
+# contract$pChangeOrderUnmodifiedBaseAndAll<-as.numeric(as.character(contract$pChangeOrderUnmodifiedBaseAndAll))
+# contract$pChange3Sig<-round(
+#   contract$pChangeOrderUnmodifiedBaseAndAll,3)
 
 #Should include this in the original data frame but for now can drive it.
-contract$n_Crai<-contract$pChangeOrderUnmodifiedBaseAndAll*
-  contract$UnmodifiedContractBaseAndAllOptionsValue
+contract$n_Crai<-contract$ChangeOrderBaseAndAllOptionsValue
 
 #l_Crai
 contract$l_Crai<-NA
-contract$l_Crai[contract$b_Crai==1 & !is.na(contract$b_Crai)]<-
-  log(contract$n_Crai[contract$b_Crai==1 & !is.na(contract$b_Crai)])
+contract$l_Crai[contract$b_CBre==1 & !is.na(contract$b_CBre)]<-
+  log(contract$n_Crai[contract$b_CBre==1 & !is.na(contract$b_CBre)])
 
 #l_Ceil
 contract$l_Ceil<-log(contract$UnmodifiedContractBaseAndAllOptionsValue)
@@ -287,7 +287,7 @@ contract$OIDV<-as.integer(as.character(contract$OIDV))
 #NAICS
 load("annual_naics_summary.Rdata")
 contract$NAICS<-as.integer(as.character(contract$NAICS))
-contract<-left_join(contract,NAICS_join, by=c("StartFY",
+contract<-left_join(contract,NAICS_join, by=c("StartFY"="StartFY",
                                                            "NAICS"))
 
 
@@ -492,12 +492,12 @@ freq_discrete_crai_plot<-function(data,x_col,group_col=NA){
   if(is.na(group_col)){
     plot<-ggplot(data=data,
                  aes_string(x=x_col))+
-      facet_wrap(~b_Crai,ncol=1,scales="free_y")
+      facet_wrap(~b_CBre,ncol=1,scales="free_y")
   }
   else{
     plot<-ggplot(data=data,
                  aes_string(x=x_col))+
-      facet_grid(as.formula(paste("b_Crai~",group_col)),scales="free_y")
+      facet_grid(as.formula(paste("b_CBre~",group_col)),scales="free_y")
   }
   plot+geom_histogram(stat="count") +
     scale_y_continuous(labels = scales::comma) +
@@ -558,7 +558,7 @@ binned_percent_crai_plot<-function(data,x_col,group_col=NA){
     data$bin_x<-bin_df(data,x_col)
     plot<-ggplot(data=data %>%
                    group_by(bin_x) %>%
-                   summarise_ (   mean_Crai = "mean(b_Crai)"   
+                   summarise_ (   mean_Crai = "mean(b_CBre)"   
                                   , mean_x =  paste( "mean(" ,  x_col  ,")"  ))     ,
                  aes(y=mean_Crai,x=mean_x))
   }
@@ -567,7 +567,7 @@ binned_percent_crai_plot<-function(data,x_col,group_col=NA){
     data$bin_x<-bin_df(data,rank_col=x_col,group_col=group_col)
     plot<-ggplot(data=data %>%
                    group_by_("bin_x",group_col) %>%
-                   summarise_ (   mean_Crai = "mean(b_Crai)"   
+                   summarise_ (   mean_Crai = "mean(b_CBre)"   
                                   , mean_x =  paste( "mean(" ,  x_col  ,")"  ))     ,
                  aes(y=mean_Crai,x=mean_x))+
       facet_wrap(as.formula(paste("~",group_col)))
@@ -603,11 +603,11 @@ discrete_percent_term_plot<-function(data,x_col,group_col=NA){
 
 
 discrete_percent_crai_plot<-function(data,x_col,group_col=NA){
-  data<-data[!is.na(data[,x_col]) & !is.na(data[,"b_Crai"]),]
+  data<-data[!is.na(data[,x_col]) & !is.na(data[,"b_CBre"]),]
   if(is.na(group_col)){
     plot<-ggplot(data=data %>%
                    group_by_(x_col) %>%
-                   summarise (   mean_Crai = mean(b_Crai)),
+                   summarise (   mean_Crai = mean(b_CBre)),
                  aes_string(y="mean_Crai",x=x_col))
     
   }
@@ -615,7 +615,7 @@ discrete_percent_crai_plot<-function(data,x_col,group_col=NA){
     data<-data[!is.na(data[,group_col]),]
     plot<-ggplot(data=data %>%
                    group_by_(x_col,group_col) %>%
-                   summarise (   mean_Crai = mean(b_Crai)),
+                   summarise (   mean_Crai = mean(b_CBre)),
                  aes_string(y="mean_Crai",x=x_col))+
       facet_wrap(as.formula(paste("~",group_col)))
     
