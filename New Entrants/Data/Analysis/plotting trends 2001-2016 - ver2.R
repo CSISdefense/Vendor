@@ -103,7 +103,8 @@ ggplot(bar.data, aes(x = regyear, y = regpersize, fill = factor(biz_size), label
   ylab("Number of New Entrants") +
   xlab("Registration Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
-  scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
+  ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
+  scale_fill_manual(name = "New Entrants Types", values = c("darkslategray1", "cadetblue4"), labels = c("small", "non-small")) +
   ggtitle("Number of New Entrants Per Year (2001-2016) - All Federal Agencies")+
   geom_text(aes(label = regpersize), size = 2.5, position = position_stack(vjust = 0.5)) 
 
@@ -172,7 +173,8 @@ ggplot(bar.dataDOD, aes(x = regyear, y = regpersize, fill = factor(biz_size), la
   ylab("Number of New Entrants") +
   xlab("Registration Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
-  scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
+  ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
+  scale_fill_manual(name = "New Entrants Types", values = c("darkslategray1", "cadetblue4"), labels = c("small", "non-small")) +
   ggtitle("Number of New Entrants Per Year (2001-2016) - DOD")+
   geom_text(aes(label = regpersize), size = 2.5, position = position_stack(vjust = 0.5)) 
 
