@@ -7,10 +7,8 @@ library(csis360)
 library(dplyr)
 
 
-Path<-"C:\\Users\\gsand_000.ALPHONSE\\Documents\\Development\\R-scripts-and-data\\"
-# Path<-"K:\\2007-01 PROFESSIONAL SERVICES\\R scripts and data\\"
-source(paste(Path,"lookups.r",sep=""))
-
+source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/lookups.r")
+Path<-"https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/"
 
 file<-unz("Data\\Defense_Vendor_EntityIDhistoryNAICS.zip",
           filename="Defense_Vendor_EntityIDhistoryNAICS.txt")
@@ -39,15 +37,18 @@ defense_vendor <- read.table(file,
 
 
 
-defense_vendor<-apply_lookups(Path,defense_vendor)
-defense_naics_vendor<-apply_lookups(Path,defense_naics_vendor)
-
+defense_vendor<-standardize_variable_names(defense_vendor)
+defense_naics_vendor<-standardize_variable_names(defense_naics_vendor)
+defense_naics_vendor<-deflate(defense_naics_vendor,
+                              money_var = "Action.Obligation",
+                              deflator_var="Deflator.2016"
+                              )
 
 defense_vendor<-csis360::read_and_join(defense_vendor,
                                        "Lookup_ParentID.csv",
                                        path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
                                        by="ParentID",
-                                       directory="vendor//",
+                                       directory="vendor/",
                                        new_var_checked=FALSE,
                                        add_var="Abbreviation"
                                        # NA.check.columns="Fair.Competed"
@@ -68,7 +69,7 @@ defense_vendor<-defense_vendor %>% group_by(Fiscal.Year)
 
 defense_vendor<-defense_vendor %>%
   dplyr::mutate(
-    pos = rank(-Obligation.2016,
+    pos = rank(-Action.Obligation.2016,
                ties.method ="min"),
     pct = ifelse(Action.Obligation>0,
                  Action.Obligation / sum(Action.Obligation[Action.Obligation>0]),
@@ -80,7 +81,7 @@ defense_vendor<-defense_vendor %>%
 annual_summary<-defense_vendor %>%
   dplyr::summarize(
   Action.Obligation = sum(Action.Obligation),
-  Obligation.2016 = sum(Obligation.2016),
+  Obligation.2016 = sum(Action.Obligation.2016),
   vendor_count=length(Fiscal.Year),
   hh_index=sum((pct*100)^2,na.rm=TRUE),
   top4=sum(ifelse(pos<=4,pct,NA),na.rm=TRUE),
@@ -91,41 +92,57 @@ annual_summary<-defense_vendor %>%
 )
 
 
-defense_naics_vendor<-defense_naics_vendor %>% group_by(Fiscal.Year,NAICS_Code)
-group_vars(defense_naics_vendor)
-
-defense_naics_vendor<-defense_naics_vendor %>% #filter(Action.Obligation>0) %>%
- dplyr::mutate(
-  pos = rank(-Action.Obligation,
-             ties.method ="min"),
-  pct = ifelse(Action.Obligation>0,
-               Action.Obligation / sum(Action.Obligation[Action.Obligation>0]),
-               NA
-               )
-)
+#*****************NAICS 6****************************
 
 
-#Learned the filtering approach from
-# https://stackoverflow.com/questions/23438476/dplyr-idiom-for-summarize-a-filtered-group-by-and-also-replace-any-nas-due-to
-
-annual_naics_summary<-defense_naics_vendor %>% group_by(Fiscal.Year,NAICS_Code) %>%
-  dplyr::summarize( 
-  Action.Obligation = sum(Action.Obligation),
-  Obligation.2016 = sum(Obligation.2016),
-  vendor_count=length(Fiscal.Year),
-  hh_index=sum((pct*100)^2,na.rm=TRUE),
-  pct_sum_check=sum(pct),
-  top4=sum(pct[pos<=4],na.rm=TRUE),
-  top8=sum(pct[pos<=8],na.rm=TRUE),
-  top12=sum(pct[pos<=12],na.rm=TRUE),
-  top20=sum(pct[pos<=20],na.rm=TRUE),
-  top50=sum(pct[pos<=50],na.rm=TRUE)
-)
-
+  
+  summarize_annual_naics<-function(data,naics_level=6){
+    data$NAICS_Code<-substr(data$NAICS_Code,1,naics_level)
+    data<-data %>% group_by(Fiscal.Year,NAICS_Code)
+    
+    data<-data %>% #filter(Action.Obligation>0) %>%
+      dplyr::mutate(
+        pos = rank(-Action.Obligation.Then.Year,
+                   ties.method ="min"),
+        pct = ifelse(Action.Obligation.Then.Year>0,
+                     Action.Obligation.Then.Year / sum(Action.Obligation.Then.Year[Action.Obligation.Then.Year>0]),
+                     NA
+        )
+      )
+    
+    #Learned the filtering approach from
+    # https://stackoverflow.com/questions/23438476/dplyr-idiom-for-summarize-a-filtered-group-by-and-also-replace-any-nas-due-to
+    
+    output<-data %>% group_by(Fiscal.Year,NAICS_Code) %>%
+      dplyr::summarize( 
+        Action.Obligation = sum(Action.Obligation.Then.Year),
+        Obligation.2016 = sum(Action.Obligation.2016),
+        vendor_count=length(Fiscal.Year),
+        hh_index=sum((pct*100)^2,na.rm=TRUE),
+        pct_sum_check=sum(pct),
+        top4=sum(pct[pos<=4],na.rm=TRUE),
+        top8=sum(pct[pos<=8],na.rm=TRUE),
+        top12=sum(pct[pos<=12],na.rm=TRUE),
+        top20=sum(pct[pos<=20],na.rm=TRUE),
+        top50=sum(pct[pos<=50],na.rm=TRUE)
+      )
+    output
+  }
+  
+  annual_naics6_summary<-summarize_annual_naics(defense_naics_vendor)
+  annual_naics5_summary<-summarize_annual_naics(defense_naics_vendor,5)
+  annual_naics4_summary<-summarize_annual_naics(defense_naics_vendor,4)
+  annual_naics3_summary<-summarize_annual_naics(defense_naics_vendor,3)
+  annual_naics2_summary<-summarize_annual_naics(defense_naics_vendor,2)
+  
 save(defense_naics_vendor,
   defense_vendor,
   annual_summary,
-  annual_naics_summary,
+  annual_naics6_summary,
+  annual_naics5_summary,
+  annual_naics4_summary,
+  annual_naics3_summary,
+  annual_naics2_summary,
   file="data//defense_naics_vendor.Rdata")
 
 write.csv(defense_naics_vendor,"data//defense_naics_vendor.csv")

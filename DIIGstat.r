@@ -176,14 +176,16 @@ levels(contract$b_Comp) <-
 contract$b_Comp<-as.integer(as.character(contract$b_Comp))
 
 
-contract$n_Comp<-contract$b_Comp
+contract$n_Comp<-contract$EffComp
 contract$n_Comp[contract$b_Comp==1 & !is.na(contract$b_Comp)]<-
   ifelse(contract$SingleOffer[contract$b_Comp==1 & !is.na(contract$b_Comp)]=="Multi",2,1)
 contract$EffComp<-factor(contract$n_Comp)
-levels(contract$EffComp) <-
-  list("No Competition"="0",
-       "1 Offer"="1",
-       "2+ Offer"="2")
+levels(contract$n_Comp) <-
+  list("0"="No Comp.",
+       "0.5"="1 Offer",
+       "1"="2+ Offer")
+contract$n_Comp<-as.integer(as.character(contract$n_Comp))
+
 
 contract$n_Offr<-contract$Offr
 levels(contract$n_Offr) <-
