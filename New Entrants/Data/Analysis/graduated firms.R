@@ -123,13 +123,13 @@ write.csv(survival.rates_grad, "graduation rates-nop - ver4.csv")
 ------------------
 ###DOD####
 
-panel_data <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/Panel Data reg2001-2016 DOD - ver4.csv")
+panel_data_DOD <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/Panel Data reg2001-2016 DOD - ver4.csv")
 full_FPDS <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/SAM Data merged with FPDS, exp2000-2019.csv")
 panel_data$duns = as.character(panel_data$duns)
 ### Small start firms
 
 
-total.survived<- panel_data %>% 
+total.survived<- panel_data_DOD %>% 
   filter(ten.year == "TRUE") %>% ###all who survived 10 years
   filter(biz_size == 0) %>% ### all who started small
   left_join(full_FPDS[c("duns", "contractingofficerbusinesssizedetermination",
@@ -175,17 +175,17 @@ x2005 <- gradfirm %>%
 x2006 <- gradfirm %>% 
   filter(year(registrationDate.y) == 2006)
 
-tot2001 <- panel_data %>% 
+tot2001 <- panel_data_DOD %>% 
   filter(year(registrationDate) == 2001)
-tot2002 <- panel_data %>% 
+tot2002 <- panel_data_DOD %>% 
   filter(year(registrationDate) == 2002)
-tot2003 <- panel_data %>% 
+tot2003 <- panel_data_DOD %>% 
   filter(year(registrationDate) == 2003)
-tot2004 <- panel_data %>% 
+tot2004 <- panel_data_DOD %>% 
   filter(year(registrationDate) == 2004)
-tot2005 <- panel_data %>% 
+tot2005 <- panel_data_DOD %>% 
   filter(year(registrationDate) == 2005)
-tot2006 <- panel_data %>% 
+tot2006 <- panel_data_DOD %>% 
   filter(year(registrationDate) == 2006)
 
 
