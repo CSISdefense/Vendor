@@ -86,6 +86,26 @@ df2006_sd$AGENCY_NAME = as.factor(df2006_sd$AGENCY_NAME)
 
 
 ###which sectors####
+dod_sd <- read_csv("Panel Data reg2001-2016 DOD - ver4.csv")
+
+year_div <- dod_sd %>% 
+  mutate(regyear = year(registrationDate)) %>% 
+  filter(regyear <= 2006) %>% 
+  filter(biz_size == 1 | biz_size == 0) %>% 
+  group_by(regyear) %>% 
+  dplyr::summarise(n()) 
+
+year_size_div <- dod_sd %>% 
+  mutate(regyear = year(registrationDate)) %>% 
+  filter(regyear <= 2006) %>% 
+  filter(biz_size == 1 | biz_size == 0) %>% 
+  group_by(regyear, biz_size) %>% 
+  dplyr::summarise(n()) %>% 
+  left_join(year_div, by = "regyear") %>% 
+  dplyr::rename("total registration per year" = `n().y`) %>% 
+  dplyr::rename("registration per year per business size" = `n().x`)
+
+write.csv(year_size_div, "count total registration per year and by biz_size - DOD.csv")
 
 year_div <- sd_nop %>% 
   mutate(regyear = year(registrationDate)) %>% 

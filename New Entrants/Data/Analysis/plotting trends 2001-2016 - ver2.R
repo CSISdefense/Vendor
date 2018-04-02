@@ -36,7 +36,7 @@ final_joined <- final_joined %>%
 
 #panel_data <- read_csv("Panel Data reg 2001-2011.csv")
 
-x0116.dataset <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/Panel Data reg2001-2016 - ver3.csv")
+x0116.dataset <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/Panel Data reg2001-2016 - ver4.csv")
 
 library(tidyverse)
 library(lubridate)
@@ -80,13 +80,44 @@ ggplot(timeseries_data.size, aes(x = regyear)) +
   scale_color_manual(name = "New Entrants Types", values = c("midnightblue" = "midnightblue", "lightskyblue" = "lightskyblue", "blue" = "blue"), labels = c("all","non-small", "small")) +
   ggtitle("Number of New Entrants per Year (2001-2016) - All Federal Agencies")
 
+##bar
+year_div <- x0116.dataset %>% 
+  mutate(regyear = year(registrationDate)) %>% 
+  filter(biz_size == 1 | biz_size == 0) %>% 
+  group_by(regyear) %>% 
+  dplyr::summarise(n())  
 
+
+bar.data <- x0116.dataset %>% 
+  mutate(regyear = year(registrationDate)) %>% 
+  filter(biz_size == 1 | biz_size == 0) %>% 
+  group_by(regyear, biz_size) %>% 
+  dplyr::summarise(n()) %>% 
+  dplyr::rename("regpersize" = `n()`) %>% 
+  left_join(year_div, by = "regyear") %>% 
+  dplyr::rename("regperyear" = `n()`)
+
+
+ggplot(bar.data, aes(x = regyear, y = regpersize, fill = factor(biz_size), label = regperyear)) +
+  geom_bar(stat = 'identity') +
+  ylab("Number of New Entrants") +
+  xlab("Registration Year") +
+  scale_x_continuous(breaks = c(2001:2016)) +
+  scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
+  ggtitle("Number of New Entrants Per Year (2001-2016) - All Federal Agencies")+
+  geom_text(aes(label = regpersize), size = 2.5, position = position_stack(vjust = 0.5)) 
+
+
+  
+  
+  
+  
 
 ##DoD####
 
 ###count DOD nop####
 
-DODfildata0116 <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/Panel Data reg2001-2016 DOD - ver2.csv")
+DODfildata0116 <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/Panel Data reg2001-2016 DOD - ver4.csv")
 
 timeseries_dataDOD <- DODfildata0116 %>% 
   left_join(full_FPDS[, c("duns", "registrationDate")], by = "duns") %>% 
@@ -117,7 +148,33 @@ ggplot(timeseries_data.sizeDOD, aes(x = regyear)) +
   scale_color_manual(name = "New Entrants Types", values = c("midnightblue" = "midnightblue", "skyblue" = "skyblue", "blue" = "blue"), labels = c("all","non-small", "small"))+
   ggtitle("Number of New Entrants per Year (2001-2016) - DOD")
 
+########## bar
 
+year_divDOD <- DODfildata0116 %>% 
+  mutate(regyear = year(registrationDate)) %>% 
+  filter(biz_size == 1 | biz_size == 0) %>% 
+  group_by(regyear) %>% 
+  dplyr::summarise(n())  
+
+
+bar.dataDOD <- DODfildata0116 %>% 
+  mutate(regyear = year(registrationDate)) %>% 
+  filter(biz_size == 1 | biz_size == 0) %>% 
+  group_by(regyear, biz_size) %>% 
+  dplyr::summarise(n()) %>% 
+  dplyr::rename("regpersize" = `n()`) %>% 
+  left_join(year_divDOD, by = "regyear") %>% 
+  dplyr::rename("regperyear" = `n()`)
+
+
+ggplot(bar.dataDOD, aes(x = regyear, y = regpersize, fill = factor(biz_size), label = regperyear)) +
+  geom_bar(stat = 'identity') +
+  ylab("Number of New Entrants") +
+  xlab("Registration Year") +
+  scale_x_continuous(breaks = c(2001:2016)) +
+  scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
+  ggtitle("Number of New Entrants Per Year (2001-2016) - DOD")+
+  geom_text(aes(label = regpersize), size = 2.5, position = position_stack(vjust = 0.5)) 
 
 
 ###NAICS filtered####
