@@ -65,33 +65,67 @@ def<-transform_contract(def)
 
 
 
+## Dependent Variables
 
-
-NA_stats(def,"b_CBre")
-
-* b_CBre is a binary variable that has a value of 1 for any contracts that have experienced a partial or complete termination, 0 otherwise. (`r summary(def$b_CBre)
+NA_stats(def,"b_Term")
+* b_Term is a binary variable that has a value of 1 for any contracts that have experienced a partial or complete termination, 0 otherwise. (`r summary(def$b_Term);
+sum(def$Action.Obligation[def$b_Term==1],na.rm=TRUE)/sum(def$Action.Obligation,na.rm=TRUE)`
+* b_CBre is a binary variable that has a value of 1 for any contracts that have experienced a partial or complete termination, 0 otherwise. (`r summary(def$b_CBre);
+sum(def$Action.Obligation[def$b_CBre==1],na.rm=TRUE)/sum(def$Action.Obligation,na.rm=TRUE)
 NA_stats(def,"b_CBre")`)
-* n_Comp is a binary variable based on competition. It has a value of 0 for uncompeted contracts and a value of 1 for competition, regardless of number of offers. `r  summary(def$n_Comp);
-NA_stats(def,"b_Comp")`
+
+## Independent Variables
+
+### Study Variables
+
+* b_Comp is a binary variable based on competition. It has a value of 0 for uncompeted contracts and a value of 1 for competition, regardless of number of offers. `r  summary(def$Comp);
+NA_stats(def,"Comp") `
+* n_Comp is a binary variable based on competition. It has a value of 0 for uncompeted contracts and a value of 1 for competition, regardless of number of offers. `r  summary(def$EffComp);
+NA_stats(def,"EffComp")
+sum(def$Action.Obligation[def$EffComp=="No Comp."],na.rm=TRUE)/sum(def$Action.Obligation,na.rm=TRUE)
+sum(def$Action.Obligation[def$EffComp=="1 Offer"],na.rm=TRUE)/sum(def$Action.Obligation,na.rm=TRUE)
+sum(def$Action.Obligation[def$EffComp=="2+ Offers"],na.rm=TRUE)/sum(def$Action.Obligation,na.rm=TRUE)`
+)
+
 * c_hh_index_lag1 is a numeric variable based on competition and number of offers. It has a value of 0 for uncompeted contracts and a value of 1 for single-offer competition, and a value of 2 for multi-offer competition. `r summary(def$c_hh_index_lag1);
 NA_stats(def,"c_hh_index_lag1")`
-* n_Offr is a numeric variable based on competition and with more granularity on number offers. It has a value of 0 for uncompeted contracts and a value of 1 for single-offer competition, and a value of 2 for 2-offers, 3 for 3-4 offers, and 4 for 5+ offers. `r summary(def$n_Offr);
-NA_stats(def,"n_Offr")`
+
+### Initial Contract Scope
 * cl_Ceil is the natural log of the initial contract cost ceiling, in then-year dollars. `r centered_log_description(def$l_Ceil,"dollars");
 NA_stats(def,"l_Ceil")`
 * cl_Days is the natural log of the initial maximum duration of the contract, in days. The variable is centered, by subtracting its mean (`r centered_log_description(def$l_Days,"days");
 NA_stats(def,"l_Days")` 
-* SIDV, MIDV, and OIDV are dummy variables based on the contract vehicle. They correspond to Single-Award IDVs, Multi-Award IDVs, and Other IDVs, respectively, having a value of 1 when the task order has that vehicle type, and having a 0 other. The remaining types, definitive contracts and purchase orders, are intentionally left out. (`r summary(def$SIDV);
+
+### Contract Vehicle
+* SIDV, MIDV, and OIDV are dummy variables based on the contract vehicle. They correspond to Single-Award IDVs, Multi-Award IDVs, and Other IDVs, respectively, having a value of 1 when the task order has that vehicle type, and having a 0 other. The remaining types, definitive contracts and purchase orders, are intentionally left out. (`r 
+summary(def$Veh);
+summary(def$SIDV);
 summary(def$MIDV);
 summary(def$OIDV);
+nrow(def[def$Veh =="SINGLE AWARD IDC",])/nrow(def)
+nrow(def[def$Veh =="MULTIPLE AWARD IDC",])/nrow(def)
+nrow(def[def$Veh =="FSS/GWAC",])/nrow(def)
+nrow(def[def$Veh =="BPA/BOA",])/nrow(def)
 NA_stats(def,"Veh")`
 * n_Fixed is a numeric variable based on contract pricing. It has a value of 0 for cost-based, 0.5 or "combination or other", 1 for any fixed price (excluding fixed-price level of effort which is classified as cost-based). (`r summary(def$n_Fixed);
-NA_stats(def,"n_Fixed")`)
+NA_stats(def,"n_Fixed")
+sum(def$Action.Obligation[def$n_Fixed==0],na.rm=TRUE)/sum(def$Action.Obligation,na.rm=TRUE)
+sum(def$Action.Obligation[def$n_Fixed==0.5],na.rm=TRUE)/sum(def$Action.Obligation,na.rm=TRUE)
+sum(def$Action.Obligation[def$n_Fixed==1],na.rm=TRUE)/sum(def$Action.Obligation,na.rm=TRUE)
+nrow(def[def$n_Fixed==0,])/nrow(def)
+nrow(def[def$n_Fixed==0.5,])/nrow(def)
+nrow(def[def$n_Fixed==1,])/nrow(def)
+
+`)
 * n_Incent is a numeric variable based on fee type. Ig has a value. 1 for incentive fee or cost sharing, 0.5 or "combination or other", 0 for all remaining types. (`r summary(def$n_Incent);
+summary(def$Fee)
 NA_stats(def,"n_Incent")`)
 * b_UCA is a binary variable with a value of 1 for contracts/task orders that begin as letter contracts or undefinitized contract awards (UCA) and a value of 0 otherwise. `r summary(def$b_UCA);
+sum(def$Action.Obligation[def$b_UCA==1],na.rm=TRUE)/sum(def$Action.Obligation,na.rm=TRUE)
+length(def[def$b_UCA==1,])/sum(def$Action.Obligation,na.rm=TRUE)
 NA_stats(def,"b_UCA")`
 * b_Intl is a binary variable with a value of 1 for contracts/task orders with any transactions performed internationally and a value of 0 otherwise. `r summary(def$b_Intl);
+sum(def$Action.Obligation[def$b_Intl==1],na.rm=TRUE)/sum(def$Action.Obligation,na.rm=TRUE)
 NA_stats(def,"b_Intl")`
 * NAICS is a factor reporting the top North American Industrial Classification Code of each contract. 
 `r summary(def$NAICS);
@@ -110,14 +144,15 @@ NA_stats(def,"Office")`
 
 
 complete<-!is.na(def$b_Term)&
-                                     !is.na(def$b_CBre)&
-                                  !is.na(def$n_Comp)&
-                                  !is.na(def$l_Ceil)&
-                                  !is.na(def$l_Days)&
-                                    !is.na(def$Veh) &
-                                  !is.na(def$n_Fixed)&
-                                    !is.na(def$b_Intl)&
-                                  !is.na(def$NAICS)
+  !is.na(def$b_CBre)&
+  !is.na(def$n_Comp)&
+  !is.na(def$l_Ceil)&
+  !is.na(def$l_Days)&
+  !is.na(def$Veh) &
+  !is.na(def$n_Fixed)&
+  !is.na(def$b_Intl)&
+  !is.na(def$b_UCA)&
+  !is.na(def$NAICS)
 
 smp<-def[complete,]
 #8818392  to 8818392
@@ -133,7 +168,7 @@ smp<-smp[sample(nrow(smp),250000),]
 
 ```{r Comp_Term}
 
-
+load(file="Comp_Term.Rdata")
 
 
 #Create the model
@@ -141,12 +176,64 @@ Term_Comp_05A <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + FSSGWAC + BPABOA +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                   n_Fixed + 
-                   b_Intl + 
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  +# n_Comp:cl_Days +
+                   n_Fixed + b_UCA +
+                  # b_Intl + 
                    SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days + BPABOA:cl_Days +
-                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp + BPABOA:n_Comp
+                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp + BPABOA:n_Comp +
+                   b_UCA:n_Comp
                     , family=binomial(link="logit"))
 display(Term_Comp_05A)
 
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_Comp_05A)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_Comp_05A)+
+  labs(x="Estimated  Pr (Termination)")
+
+
+smp$NAICS6<-smp$NAICS
+smp$NAICS5<-substring(smp$NAICS6,1,5)
+smp$NAICS4<-substring(smp$NAICS6,1,4)
+smp$NAICS3<-substring(smp$NAICS6,1,3)
+smp$NAICS2<-substring(smp$NAICS6,1,2)
+# 
+# Term_Comp_08H <- glmer(data=smp,
+#                        b_Term ~n_Comp + 
+#                          cl_Ceil + cl_Days+ 
+#                          SIDV + MIDV + FSSGWAC + BPABOA +
+#                          # n_Comp:cl_Ceil  + cl_Ceil:cl_Days  +# n_Comp:cl_Days +
+#                          n_Fixed + b_UCA +
+#                          # b_Intl + 
+#                          # SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days + BPABOA:cl_Days +
+#                          SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp + BPABOA:n_Comp +
+#                          b_UCA:n_Comp +
+#                          (1 | NAICS2)
+#                        , family=binomial(link="logit"))
+display(Term_Comp_08H)
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_residuals(Term_Comp_08H)
+
+#Plot residuals versus fittedO
+residuals_term_plot(Term_Comp_08H)+
+  labs(x="Estimated  Pr (Termination)")
+
+
+
+Term_Cons_08A <- glmer(data=smp,
+                       b_Term ~c_HHI_lag1 + 
+                         cl_Ceil + cl_Days+ 
+                         SIDV + MIDV + FSSGWAC + BPABOA +
+                         # c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +# c_HHI_lag1:cl_Days +
+                         n_Fixed + b_UCA +
+                         # b_Intl + 
+                         # SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days + BPABOA:cl_Days +
+                         SIDV:c_HHI_lag1+MIDV:c_HHI_lag1+FSSGWAC:c_HHI_lag1 + BPABOA:c_HHI_lag1 +
+                         b_UCA:c_HHI_lag1 +
+                         (1 | NAICS2)
+                       , family=binomial(link="logit"))
+display(Term_Cons_08A)
+save(file="Term_Cons.RData",Term_Cons_08A)
 ```
