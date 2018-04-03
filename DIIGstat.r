@@ -211,6 +211,7 @@ levels(contract$CompOffr) <-
   contract$cn_Offr<-scale(contract$n_Offr)
   contract$cl_Offr<-scale(contract$l_Offr)
   
+  
 
 
 #b_Intl
@@ -288,7 +289,7 @@ contract<-left_join(contract,NAICS_join, by=c("StartFY"="StartFY",
 
 
 
-# contract$c_HHI_lag1<-scale(contract$HHI_lag1)
+contract$c_HHI_lag1<-scale(contract$HHI_lag1)
 contract$cl_Ceil<-scale(contract$l_Ceil)
 contract$cl_Days<-scale(contract$l_Days)
 contract$clsqr_Ceil<-contract$cl_Ceil^2
