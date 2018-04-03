@@ -157,7 +157,7 @@ display(b_CBre_01A)
 
 #Plot the new variable and coefficients
 #Add the fitted regression line
-discrete_fitted_cbre_model(smp,"cb_Comp") + 
+fitted_cbre_model(smp,"cb_Comp") + 
   stat_function(fun = fit_curve, args=list(a=coef(b_CBre_01A)[1],                                                        b=coef(b_CBre_01A)[2]),color="blue")
 
 
@@ -182,7 +182,7 @@ display(b_CBre_01B)
 
 #Plot the Fitted
 #Add the fitted regression line
-discrete_fitted_cbre_model(smp,"n_Comp") +
+fitted_cbre_model(smp,"n_Comp") +
   stat_function(fun = fit_curve, args=list(a=coef(b_CBre_01B)[1],
                                            b=coef(b_CBre_01B)[2]),
                 color="blue")
@@ -211,7 +211,7 @@ display(b_CBre_01C)
 
 #Plot the Fitted
 #Add the fitted regression line
-discrete_fitted_cbre_model(smp,"n_Comp") +
+fitted_cbre_model(smp,"n_Comp") +
   stat_function(fun = fit_curve, args=list(a=coef(b_CBre_01C)[1],
                                            b=coef(b_CBre_01C)[2]),
                 color="blue")
@@ -262,13 +262,13 @@ b_CBre_01D_plot<-ggplot(data=smp,
 
 #Plot the Fitted
 #Add the fitted regression line
-discrete_fitted_cbre_model(smp,"cl_Offr") +
+fitted_cbre_model(smp,"cl_Offr") +
   stat_function(fun = fit_curve, args=list(a=coef(b_CBre_01D)[1],
                                            b=coef(b_CBre_01D)[2]),
                              color="blue")
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_01D)
+binned_fitted_versus_cbre_residuals(b_CBre_01D)
 
 
 
@@ -318,7 +318,7 @@ display(b_CBre_02A)
 b_CBre_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(b_CBre_02A))}
 
 #Competition curves
-fitted_b_CBre_model(smp,"cl_Ceil") + stat_function(fun = b_CBre_02A_curve, 
+fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = b_CBre_02A_curve, 
                              args=list(Comp=0),color="blue")+
   stat_function(fun = b_CBre_02A_curve, 
                              args=list(Comp=2),color="blue")
@@ -326,7 +326,7 @@ fitted_b_CBre_model(smp,"cl_Ceil") + stat_function(fun = b_CBre_02A_curve,
 
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_02A)
+binned_fitted_versus_cbre_residuals(b_CBre_02A)
 
 #Plot residuals versus fitted
 residuals_cbre_plot(b_CBre_02A)+
@@ -338,49 +338,9 @@ residuals_cbre_plot(b_CBre_02A,"cl_Ceil")+
 
 ```
 
-Contract ceiling has a significant relationship, though the residuals show a possible non-linear patterns. When the initial contract ceiling is particularly low or high, the fitted model underestimates the risk of terminations. This suggests that addding the log(Ceil)^2 might better capture the underlying data.
+Contract ceiling has a significant relationship.
 
 
-
-###Model 02B: Cost Ceiling Squared
-
-```{r Model02B}
-
-
-
-#Frequency Plot
-freq_continuous_cbre_plot(smp,"lsqr_Ceil")
-
-#Percent Terminated Plot
-binned_percent_cbre_plot(smp,"lsqr_Ceil")
-
-#Model
-b_CBre_02B <- glm (data=smp,
-                 b_CBre ~n_Comp + cl_Ceil + clsqr_Ceil, family=binomial(link="logit"))
-display(b_CBre_02B)
-
-#Plot the fitted model plot
-b_CBre_02B_curve<-function(x, Comp){invlogit(cbind(1,Comp,x, x^2) %*%  coef(b_CBre_02B))}
-
-#Competition curves
-fitted_b_CBre_model(smp,"cl_Ceil") + stat_function(fun = b_CBre_02B_curve, 
-                             args=list(Comp=0),color="blue")+
-  stat_function(fun = b_CBre_02B_curve, 
-                             args=list(Comp=2),color="blue")
-
-#Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_02B)
-
-#Plot residuals versus fitted
-residuals_cbre_plot(b_CBre_02B)+
-  labs(x="Estimated  Pr (Ceiling Breach)")
-
-residuals_cbre_plot(b_CBre_02B,"cl_Ceil")+
-  labs(x="Centered Log(Ceiling)")
-
-```
-
-Contracts with very small or very large ceilings appear have a negative coefficient for calculating termination. On the upper end, this might represent contracts that are "too large to fail"" or simply that above a certain size, risk stops rising. Adding the log(Ceiling) squared greatly reduces the apparent pattern in the residuals, although more than 5 percent of the binned residuals still fall outside the 95% confidence interval.
 
 ###Model 02C: Cost Ceiling and Competition
 
@@ -394,19 +354,19 @@ binned_percent_cbre_plot(smp,"l_Ceil","EffComp")
 
 #Create the model
 b_CBre_02C <- glm (data=smp,
-                 b_CBre ~n_Comp + cl_Ceil + clsqr_Ceil + n_Comp:cl_Ceil, family=binomial(link="logit"))
+                 b_CBre ~n_Comp + cl_Ceil + n_Comp:cl_Ceil, family=binomial(link="logit"))
 display(b_CBre_02C)
 
-b_CBre_02C_curve<-function(x, Comp){invlogit(cbind(1,Comp,x,x^2,Comp*x) %*%  coef(b_CBre_02C))}
+b_CBre_02C_curve<-function(x, Comp){invlogit(cbind(1,Comp,x,Comp*x) %*%  coef(b_CBre_02C))}
 
 #Competition Curves
-fitted_b_CBre_model(smp,"cl_Ceil") + stat_function(fun = b_CBre_02C_curve, 
+fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = b_CBre_02C_curve, 
                              args=list(Comp=0),color="blue")+
   stat_function(fun = b_CBre_02C_curve, 
                              args=list(Comp=2),color="blue")
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_02C)
+binned_fitted_versus_cbre_residuals(b_CBre_02C)
 
 #Plot residuals versus fitted
 residuals_cbre_plot(b_CBre_02C)+
@@ -434,27 +394,27 @@ binned_percent_cbre_plot(smp,"l_Days")
 #Model
 b_CBre_02D <- glm (data=smp,
                  b_CBre ~n_Comp + 
-                   cl_Ceil + clsqr_Ceil + cl_Days + clsqr_Ceil +
+                   cl_Ceil + cl_Days +
                    n_Comp:cl_Ceil , family=binomial(link="logit"))
 display(b_CBre_02D)
 
 
-b_CBre_02D_curve<-function(x, Comp,Ceil){invlogit(cbind(1,Comp,Ceil,Ceil^2,x,Comp*Ceil) %*%  coef(b_CBre_02D))}
+b_CBre_02D_curve<-function(x, Comp,Ceil){invlogit(cbind(1,Comp,Ceil,x,Comp*Ceil) %*%  coef(b_CBre_02D))}
 
 #Competition Curves
-fitted_b_CBre_model(smp,"cl_Days") + stat_function(fun = b_CBre_02D_curve, 
+fitted_cbre_model(smp,"cl_Days") + stat_function(fun = b_CBre_02D_curve, 
                              args=list(Comp=0,Ceil=0),color="blue")+
   stat_function(fun = b_CBre_02D_curve, 
                              args=list(Comp=2,Ceil=0),color="blue")
 
 #Ceiling Curves
-fitted_b_CBre_model(smp,"cl_Days") +  stat_function(fun = b_CBre_02D_curve, 
+fitted_cbre_model(smp,"cl_Days") +  stat_function(fun = b_CBre_02D_curve, 
                              args=list(Comp=0,Ceil=0),color="blue")+
   stat_function(fun = b_CBre_02D_curve, 
                              args=list(Comp=0,Ceil=1),color="blue")
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_02D)
+binned_fitted_versus_cbre_residuals(b_CBre_02D)
 
 
 #Plot residuals versus fitted
@@ -482,30 +442,30 @@ ggplot(data=subset(smp,!is.na(l_Ceil)),
 #Create the model
 b_CBre_02E <- glm (data=smp,
                  b_CBre ~n_Comp + 
-                   cl_Ceil + clsqr_Ceil + cl_Days+
+                   cl_Ceil + cl_Days+
                    n_Comp:cl_Ceil  + cl_Ceil:cl_Days, family=binomial(link="logit"))
 display(b_CBre_02E)
 
 b_CBre_02E_curve<-function(x, Comp,Ceil){invlogit(
-  cbind(1,Comp,Ceil,Ceil^2,x,
+  cbind(1,Comp,Ceil,x,
         Comp*Ceil,x*Ceil) %*%  coef(b_CBre_02E))}
 
 
 
 #Competition Curves
-fitted_b_CBre_model(smp,"cl_Days") + stat_function(fun = b_CBre_02E_curve, 
+fitted_cbre_model(smp,"cl_Days") + stat_function(fun = b_CBre_02E_curve, 
                              args=list(Comp=0,Ceil=0),color="blue")+
   stat_function(fun = b_CBre_02E_curve, 
                              args=list(Comp=2,Ceil=0),color="blue")
 
 #Ceiling Curves
-fitted_b_CBre_model(smp,"cl_Days") +  stat_function(fun = b_CBre_02E_curve, 
+fitted_cbre_model(smp,"cl_Days") +  stat_function(fun = b_CBre_02E_curve, 
                              args=list(Comp=0,Ceil=0),color="blue")+
   stat_function(fun = b_CBre_02E_curve, 
                              args=list(Comp=0,Ceil=1),color="blue")
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_02E)
+binned_fitted_versus_cbre_residuals(b_CBre_02E)
 
 
 #Plot residuals versus fitted
@@ -519,90 +479,7 @@ residuals_cbre_plot(b_CBre_02E)+
 ```
 
 
-The interaction of ceiling and duration is correlated with a lower rate of termination, which is to say that when either factor is high, the other has less effect. Thus long contracts with fewer dollars or high ceiling contract with shorter durations are at higher risk than more balanced contracts. This interaction also restores the positive coefficient for ceiling and switches ceiling squared to positive. The residuals still show a pattern tht could be explained by an exponential. Examining that possibility will be the next step.
-
-###Model 02F: Duration Squared
-
-```{r Model02F}
-
-
-
-#Frequency Plot
-freq_continuous_cbre_plot(smp,"lsqr_Days")
-
-#Percent Terminated Plot
-binned_percent_cbre_plot(smp,"lsqr_Days")
-
-
-#Create the model
-b_CBre_02F <- glm (data=smp,
-                 b_CBre ~n_Comp + 
-                   cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days, family=binomial(link="logit"))
-display(b_CBre_02F)
-
-b_CBre_02F_curve<-function(x, Comp,Ceil){invlogit(
-  cbind(1,Comp,Ceil,Ceil^2,x,x^2,
-        Comp*Ceil,x*Ceil) %*%  coef(b_CBre_02F))}
-
-#Competition curves
-fitted_b_CBre_model(smp,"cl_Ceil") + stat_function(fun = b_CBre_02F_curve, 
-                             args=list(Comp=0),color="blue")+
-  stat_function(fun = b_CBre_02F_curve, 
-                             args=list(Comp=2),color="blue")
-
-#Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_02F)
-
-#Plot residuals versus fitted
-residuals_cbre_plot(b_CBre_02F)+
-  labs(x="Estimated  Pr (Ceiling Breach)")
-
-# residuals_cbre_plot(b_CBre_02F,"cl_days")+
-#   labs(x="Centered Log(Days)")
-
-
-residuals_cbre_plot(b_CBre_02F,"cl_Ceil")+
-  labs(x="Centered Log(Ceiling)")
-
-
-```
-Adding log(initial duration)^2 does seem to address the troubling pattern present in the residuals, namely the parabolic curve and the large number of data bins falling outside of the 95% confidence interval. Both of the ceiling coefficients remain positive but they are no longer coefficient. The next step is to see whether log(initial cost ceiling)^2 is still useful in this model now that the square of duration is included.
-
-###Model 02G: Testing the removal of Ceiling^2 
-
-```{r Model02G}
-
-#Create the model
-b_CBre_02G <- glm (data=smp,
-                 b_CBre ~n_Comp + 
-                   cl_Ceil + cl_Days+ clsqr_Days +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days, family=binomial(link="logit"))
-display(b_CBre_02G)
-
-b_CBre_02G_curve<-function(x, Comp,Ceil){invlogit(
-  cbind(1,Comp,Ceil,x,x^2,
-        Comp*Ceil,x*Ceil) %*%  coef(b_CBre_02E))}
-
-#Competition curves
-fitted_b_CBre_model(smp,"cl_Ceil") + stat_function(fun = b_CBre_02G_curve, 
-                             args=list(Comp=0),color="blue")+
-  stat_function(fun = b_CBre_02G_curve, 
-                             args=list(Comp=2),color="blue")
-
-#Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_02G)
-
-#Plot residuals versus fitted
-residuals_cbre_plot(b_CBre_02G)+
-  labs(x="Estimated  Pr (Ceiling Breach)")
-
-residuals_cbre_plot(b_CBre_02G,"cl_Ceil")+
-  labs(x="Centered Log(Ceiling)")
-
-```
-
-While the effect on the residual deviance is fairly minor, it does still appear that the ceiling^2 does reduce the incidence of non-linear patterns in the residuals. So for now we will be leaving it in.
+The interaction of ceiling and duration has a minimal coefficient and is not significant. Leaving it out.
 
 ###Model 02H: Interaction of Duration and Competition
 ```{r Mode02H}
@@ -616,22 +493,22 @@ binned_percent_cbre_plot(smp,"l_Days","EffComp")
 #Create the model
 b_CBre_02H <- glm (data=smp,
                  b_CBre ~n_Comp + 
-                   cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days, family=binomial(link="logit"))
+                   cl_Ceil + cl_Days+ 
+                   n_Comp:cl_Ceil  + n_Comp:cl_Days, family=binomial(link="logit"))
 display(b_CBre_02H)
 
 b_CBre_02H_curve<-function(x, Comp,Ceil){invlogit(
-  cbind(1,Comp,Ceil,Ceil^2,x,x^2,
+  cbind(1,Comp,Ceil,x,
         Comp*Ceil,x*Ceil,x*Comp) %*%  coef(b_CBre_02H))}
 
 #Competition curves
-fitted_b_CBre_model(smp,"cl_Days") + stat_function(fun = b_CBre_02H_curve, 
+fitted_cbre_model(smp,"cl_Days") + stat_function(fun = b_CBre_02H_curve, 
                              args=list(Comp=0,Ceil=0),color="blue")+
   stat_function(fun = b_CBre_02H_curve, 
                              args=list(Comp=2,Ceil=0),color="blue")
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_02G)
+binned_fitted_versus_cbre_residuals(b_CBre_02G)
 
 #Plot residuals versus fitted
 residuals_cbre_plot(b_CBre_02G)+
@@ -662,46 +539,46 @@ discrete_percent_cbre_plot(smp,"Veh")
 #Create the model
 b_CBre_03A <- glm (data=smp,
                  b_CBre ~n_Comp + 
-                   cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
+                   cl_Ceil + cl_Days+ 
                    SIDV + MIDV + FSSGWAC + BPABOA +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days, family=binomial(link="logit"))
+                   n_Comp:cl_Ceil  + n_Comp:cl_Days, family=binomial(link="logit"))
 display(b_CBre_03A)
 
 #Plot the model and Vehicle for SIDV
 b_CBre_03A_SIDV_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
-  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,x,MIDV,OIDV,
+  cbind(1,Comp,Ceil,Days,x,MIDV,OIDV,
         Comp*Ceil,Days*Ceil,Days*Comp) %*%  coef(b_CBre_03A))}
 
 #Competition curves
-discrete_fitted_cbre_model(smp,"SIDV") +
+fitted_cbre_model(smp,"SIDV") +
   stat_function(fun = b_CBre_03A_SIDV_curve, 
                              args=list(Comp=0,Ceil=0,Days=0,
-                                       MIDV=0,FSSGWAC=0,BPABOA=0,),color="blue")+
+                                       MIDV=0,FSSGWAC=0,BPABOA=0),color="blue")+
   stat_function(fun = b_CBre_03A_SIDV_curve, 
                              args=list(Comp=2,Ceil=0,Days=0,
-                                       MIDV=0,FSSGWAC=0,BPABOA=0,),color="blue")
+                                       MIDV=0,FSSGWAC=0,BPABOA=0),color="blue")
 
 b_CBre_03A_MIDV_curve<-function(x, Comp,Ceil,Days,SIDV,OIDV){invlogit(
-  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,x,OIDV,
+  cbind(1,Comp,Ceil,Days,SIDV,x,OIDV,
         Comp*Ceil,Days*Ceil,Days*Comp) %*%  coef(b_CBre_03A))}
 
 #Plot the model and Vehicle for MIDV
 #Competition curves
-discrete_fitted_cbre_model(smp,"MIDV") +
+fitted_cbre_model(smp,"MIDV") +
   stat_function(fun = b_CBre_03A_MIDV_curve, 
                              args=list(Comp=0,Ceil=0,Days=0,
-                                       SIDV=0,FSSGWAC=0,BPABOA=0,),color="blue")+
+                                       SIDV=0,FSSGWAC=0,BPABOA=0),color="blue")+
   stat_function(fun = b_CBre_03A_MIDV_curve, 
                              args=list(Comp=2,Ceil=0,Days=0,
-                                       SIDV=0,FSSGWAC=0,BPABOA=0,),color="blue")
+                                       SIDV=0,FSSGWAC=0,BPABOA=0),color="blue")
 
 b_CBre_03A_OIDV_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV){invlogit(
-  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,MIDV,x,
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,x,
         Comp*Ceil,Days*Ceil,Days*Comp) %*%  coef(b_CBre_03A))}
 
 #Plot the model and Vehicle for OIDV
 #Competition curves
-discrete_fitted_cbre_model(smp,"OIDV") +
+fitted_cbre_model(smp,"OIDV") +
   stat_function(fun = b_CBre_03A_OIDV_curve, 
                              args=list(Comp=0,Ceil=0,Days=0,
                                        SIDV=0,MIDV=0),color="blue")+
@@ -712,7 +589,7 @@ discrete_fitted_cbre_model(smp,"OIDV") +
 
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_03A)
+binned_fitted_versus_cbre_residuals(b_CBre_03A)
 
 #Plot residuals versus fitted
 residuals_cbre_plot(b_CBre_03A)+
@@ -741,52 +618,52 @@ binned_percent_cbre_plot(smp,"l_Days","Veh")
 #Create the model
 b_CBre_03B <- glm (data=smp,
                  b_CBre ~n_Comp + 
-                   cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
+                   cl_Ceil + cl_Days+ 
                    SIDV + MIDV + FSSGWAC + BPABOA +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   n_Comp:cl_Ceil  + n_Comp:cl_Days +
                  SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days, family=binomial(link="logit"))
 display(b_CBre_03B)
 
 # Plot the model and Vehicle for SIDV
 b_CBre_03B_SIDV_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
-  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,x,MIDV,OIDV,
+  cbind(1,Comp,Ceil,Days,x,MIDV,OIDV,
         Comp*Ceil,Days*Ceil,Days*Comp,
         Days*x,Days*MIDV,Days*OIDV) %*%  coef(b_CBre_03B))}
 
 #Duration curves
-discrete_fitted_cbre_model(smp,"SIDV") +
+fitted_cbre_model(smp,"SIDV") +
   stat_function(fun = b_CBre_03B_SIDV_curve,
                              args=list(Comp=0,Ceil=0,Days=-1,
-                                       MIDV=0,FSSGWAC=0,BPABOA=0,),color="blue")+
+                                       MIDV=0,FSSGWAC=0,BPABOA=0),color="blue")+
   stat_function(fun = b_CBre_03B_SIDV_curve,
                              args=list(Comp=0,Ceil=0,Days=1,
-                                       MIDV=0,FSSGWAC=0,BPABOA=0,),color="blue")
+                                       MIDV=0,FSSGWAC=0,BPABOA=0),color="blue")
 
 
 b_CBre_03B_MIDV_curve<-function(x, Comp,Ceil,Days,SIDV,OIDV){invlogit(
-  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,x,OIDV,
+  cbind(1,Comp,Ceil,Days,SIDV,x,OIDV,
         Comp*Ceil,Days*Ceil,Days*Comp,
         Days*SIDV,Days*x,Days*OIDV) %*%  coef(b_CBre_03B))}
 
 #Plot the model and Vehicle for MIDV
 #Duration Curves
-discrete_fitted_cbre_model(smp,"MIDV") +
+fitted_cbre_model(smp,"MIDV") +
   stat_function(fun = b_CBre_03B_MIDV_curve,
                              args=list(Comp=0,Ceil=0,Days=-1,
-                                       SIDV=0,FSSGWAC=0,BPABOA=0,),color="blue")+
+                                       SIDV=0,FSSGWAC=0,BPABOA=0),color="blue")+
   stat_function(fun = b_CBre_03B_MIDV_curve,
                              args=list(Comp=0,Ceil=0,Days=1,
-                                       SIDV=0,FSSGWAC=0,BPABOA=0,),color="blue")
+                                       SIDV=0,FSSGWAC=0,BPABOA=0),color="blue")
 
 
 b_CBre_03B_OIDV_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV){invlogit(
-  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,MIDV,x,
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,x,BPABOA,
         Comp*Ceil,Days*Ceil,Days*Comp,
         Days*SIDV,Days*MIDV,Days*x) %*%  coef(b_CBre_03B))}
 
-#Plot the model and Vehicle for OIDV
+#Plot the model and Vehicle for FSSGWAC
 #Duration curves
-discrete_fitted_cbre_model(smp,"OIDV") +
+fitted_cbre_model(smp,"FSSGWAC") +
   stat_function(fun = b_CBre_03B_OIDV_curve,
                              args=list(Comp=0,Ceil=0,Days=-1,
                                        SIDV=0,MIDV=0),color="blue")+
@@ -796,7 +673,7 @@ discrete_fitted_cbre_model(smp,"OIDV") +
 
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_03B)
+binned_fitted_versus_cbre_residuals(b_CBre_03B)
 
 #Plot residuals versus fittedO
 residuals_cbre_plot(b_CBre_03B)+
@@ -833,56 +710,56 @@ discrete_percent_cbre_plot(smp,"EffComp","Veh")
 #Create the model
 b_CBre_03C <- glm (data=smp,
                  b_CBre ~n_Comp + 
-                   cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
+                   cl_Ceil + cl_Days+ 
                    SIDV + MIDV + FSSGWAC + BPABOA +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                 SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
-                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp , family=binomial(link="logit"))
+                   n_Comp:cl_Ceil  + n_Comp:cl_Days +
+                 SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days+
+                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp  + SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil, family=binomial(link="logit"))
 display(b_CBre_03C)
 
 # Plot the model and Vehicle for SIDV
 b_CBre_03C_SIDV_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
-  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,x,MIDV,OIDV,
+  cbind(1,Comp,Ceil,Days,x,MIDV,OIDV,
         Comp*Ceil,Days*Ceil,Days*Comp,
         Days*x,Days*MIDV,Days*OIDV,
         Comp*x,Comp*MIDV,Comp*OIDV) %*%  coef(b_CBre_03C))}
 
 #Competition curves
-discrete_fitted_cbre_model(smp,"SIDV") +
+fitted_cbre_model(smp,"SIDV") +
   stat_function(fun = b_CBre_03C_SIDV_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
-                                       MIDV=0,FSSGWAC=0,BPABOA=0,),color="blue")+
+                                       MIDV=0,FSSGWAC=0,BPABOA=0),color="blue")+
   stat_function(fun = b_CBre_03C_SIDV_curve,
                              args=list(Comp=2,Ceil=0,Days=0,
-                                       MIDV=0,FSSGWAC=0,BPABOA=0,),color="blue")
+                                       MIDV=0,FSSGWAC=0,BPABOA=0),color="blue")
 
 
 b_CBre_03C_MIDV_curve<-function(x, Comp,Ceil,Days,SIDV,OIDV){invlogit(
-  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,x,OIDV,
+  cbind(1,Comp,Ceil,Days,SIDV,x,OIDV,
         Comp*Ceil,Days*Ceil,Days*Comp,
         Days*SIDV,Days*x,Days*OIDV,
         Comp*SIDV,Comp*x,Comp*OIDV) %*%  coef(b_CBre_03C))}
 
 #Plot the model and Vehicle for MIDV
 #Competition Curves
-discrete_fitted_cbre_model(smp,"MIDV") +
+fitted_cbre_model(smp,"MIDV") +
   stat_function(fun = b_CBre_03C_MIDV_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
-                                       SIDV=0,FSSGWAC=0,BPABOA=0,),color="blue")+
+                                       SIDV=0,FSSGWAC=0,BPABOA=0),color="blue")+
   stat_function(fun = b_CBre_03C_MIDV_curve,
                              args=list(Comp=2,Ceil=0,Days=0,
-                                       SIDV=0,FSSGWAC=0,BPABOA=0,),color="blue")
+                                       SIDV=0,FSSGWAC=0,BPABOA=0),color="blue")
 
 
 b_CBre_03C_OIDV_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV){invlogit(
-  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,MIDV,x,
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,x,
         Comp*Ceil,Days*Ceil,Days*Comp,
         Days*SIDV,Days*MIDV,Days*x,
         Comp*SIDV,Comp*MIDV,Comp*x) %*%  coef(b_CBre_03C))}
 
 #Plot the model and Vehicle for OIDV
 #Competition curves
-discrete_fitted_cbre_model(smp,"OIDV") +
+fitted_cbre_model(smp,"OIDV") +
   stat_function(fun = b_CBre_03C_OIDV_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        SIDV=0,MIDV=0),color="blue")+
@@ -893,7 +770,7 @@ discrete_fitted_cbre_model(smp,"OIDV") +
 
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_03C)
+binned_fitted_versus_cbre_residuals(b_CBre_03C)
 
 #Plot residuals versus fittedO
 residuals_cbre_plot(b_CBre_03C)+
@@ -928,34 +805,34 @@ binned_percent_cbre_plot(smp,"l_Ceil","Veh")
 #Create the model
 b_CBre_03D <- glm (data=smp,
                  b_CBre ~n_Comp + 
-                   cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
+                   cl_Ceil + cl_Days+ 
                    SIDV + MIDV + FSSGWAC + BPABOA +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                 SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
-                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp +
+                   n_Comp:cl_Ceil  + n_Comp:cl_Days +
+                 SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days+
+                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp  + SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil+
                    SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil, family=binomial(link="logit"))
 display(b_CBre_03D)
 
 # Plot the model and Vehicle for SIDV
 b_CBre_03D_SIDV_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
-  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,x,MIDV,OIDV,
+  cbind(1,Comp,Ceil,Days,x,MIDV,OIDV,
         Comp*Ceil,Days*Ceil,Days*Comp,
         Days*x,Days*MIDV,Days*OIDV,
         Comp*x,Comp*MIDV,Comp*OIDV,
         Ceil*x,Ceil*MIDV,Ceil*OIDV) %*%  coef(b_CBre_03D))}
 
 #Competition curves
-discrete_fitted_cbre_model(smp,"SIDV") +
+fitted_cbre_model(smp,"SIDV") +
   stat_function(fun = b_CBre_03D_SIDV_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
-                                       MIDV=0,FSSGWAC=0,BPABOA=0,),color="blue")+
+                                       MIDV=0,FSSGWAC=0,BPABOA=0),color="blue")+
   stat_function(fun = b_CBre_03D_SIDV_curve,
                              args=list(Comp=2,Ceil=0,Days=0,
-                                       MIDV=0,FSSGWAC=0,BPABOA=0,),color="blue")
+                                       MIDV=0,FSSGWAC=0,BPABOA=0),color="blue")
 
 
 b_CBre_03D_MIDV_curve<-function(x, Comp,Ceil,Days,SIDV,OIDV){invlogit(
-  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,x,OIDV,
+  cbind(1,Comp,Ceil,Days,SIDV,x,OIDV,
         Comp*Ceil,Days*Ceil,Days*Comp,
         Days*SIDV,Days*x,Days*OIDV,
         Comp*SIDV,Comp*x,Comp*OIDV,
@@ -963,17 +840,17 @@ b_CBre_03D_MIDV_curve<-function(x, Comp,Ceil,Days,SIDV,OIDV){invlogit(
 
 #Plot the model and Vehicle for MIDV
 #Competition Curves
-discrete_fitted_cbre_model(smp,"MIDV") +
+fitted_cbre_model(smp,"MIDV") +
   stat_function(fun = b_CBre_03D_MIDV_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
-                                       SIDV=0,FSSGWAC=0,BPABOA=0,),color="blue")+
+                                       SIDV=0,FSSGWAC=0,BPABOA=0),color="blue")+
   stat_function(fun = b_CBre_03D_MIDV_curve,
                              args=list(Comp=2,Ceil=0,Days=0,
-                                       SIDV=0,FSSGWAC=0,BPABOA=0,),color="blue")
+                                       SIDV=0,FSSGWAC=0,BPABOA=0),color="blue")
 
 
 b_CBre_03D_OIDV_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV){invlogit(
-  cbind(1,Comp,Ceil,Ceil^2,Days,Days^2,SIDV,MIDV,x,
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,x,
         Comp*Ceil,Days*Ceil,Days*Comp,
         Days*SIDV,Days*MIDV,Days*x,
         Comp*SIDV,Comp*MIDV,Comp*x,
@@ -981,7 +858,7 @@ b_CBre_03D_OIDV_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV){invlogit(
 
 #Plot the model and Vehicle for OIDV
 #Competition curves
-discrete_fitted_cbre_model(smp,"OIDV") +
+fitted_cbre_model(smp,"OIDV") +
   stat_function(fun = b_CBre_03D_OIDV_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        SIDV=0,MIDV=0),color="blue")+
@@ -992,7 +869,7 @@ discrete_fitted_cbre_model(smp,"OIDV") +
 
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_03D)
+binned_fitted_versus_cbre_residuals(b_CBre_03D)
 
 #Plot residuals versus fittedO
 residuals_cbre_plot(b_CBre_03D)+
@@ -1013,24 +890,25 @@ The interaction with contract ceiling only has a significant relationship with o
 
 #Create the model
 b_CBre_03E <- glm (data=smp,
-                 b_CBre ~n_Comp + 
-                   cl_Ceil  + cl_Days+ clsqr_Days +
-                   SIDV + MIDV + FSSGWAC + BPABOA +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                 SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
-                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp, family=binomial(link="logit"))
+                   b_CBre ~n_Comp + 
+                     cl_Ceil + cl_Days+ 
+                     SIDV + MIDV + FSSGWAC + BPABOA +
+                     n_Comp:cl_Ceil  + 
+                     SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days +
+                     SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp  + SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil+
+                     SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil, family=binomial(link="logit"))
 display(b_CBre_03E)
 
 
 # Plot the model and Vehicle for SIDV
 b_CBre_03E_SIDV_curve<-function(x, Comp,Days,SIDV,MIDV,OIDV){invlogit(
-  cbind(1,Comp,x,Days,Days^2,SIDV,MIDV,OIDV,
-        Comp*x,Days*x,Days*Comp,
+  cbind(1,Comp,x,Days,SIDV,MIDV,OIDV,
+        Comp*x,Days*x,
         Days*SIDV,Days*MIDV,Days*OIDV,
         Comp*SIDV,Comp*MIDV,Comp*OIDV) %*%  coef(b_CBre_03E))}
 
 #Competition curves
-discrete_fitted_cbre_model(smp,"cl_Ceil") +
+fitted_cbre_model(smp,"cl_Ceil") +
   stat_function(fun = b_CBre_03E_SIDV_curve,
                              args=list(Comp=0,Days=0,
                                        MIDV=0,FSSGWAC=0,BPABOA=0,SIDV=0),color="blue")+
@@ -1040,7 +918,7 @@ discrete_fitted_cbre_model(smp,"cl_Ceil") +
 
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_03E)
+binned_fitted_versus_cbre_residuals(b_CBre_03E)
 
 #Plot residuals versus fitted
 residuals_cbre_plot(b_CBre_03E)+
@@ -1049,68 +927,9 @@ residuals_cbre_plot(b_CBre_03E)+
 residuals_cbre_plot(b_CBre_03D,"cl_Ceil")+
   labs(x="Centered Log(Ceiling)")
 
-
-residuals_cbre_plot(b_CBre_03E,"cl_Ceil")+
-  labs(x="Centered Log(Ceiling)")
-
 ```
 Ceiling squared does little to reduce deviance and only slightly mitigates, rather than removing, any patterns in the residuals. Removing it from the model.
 
-
-###Model 03F: Testing the removal of Duration^2 
-
-```{r Model03F}
-
-#Create the model
-b_CBre_03F <- glm (data=smp,
-                 b_CBre ~n_Comp + 
-                   cl_Ceil  + cl_Days+ 
-                   SIDV + MIDV + FSSGWAC + BPABOA +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                 SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
-                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp, family=binomial(link="logit"))
-display(b_CBre_03F)
-
-
-# Plot the model and Vehicle for SIDV
-b_CBre_03F_SIDV_curve<-function(x, Comp,Days,SIDV,MIDV,OIDV){invlogit(
-  cbind(1,Comp,x,Days,Days^2,SIDV,MIDV,OIDV,
-        Comp*x,Days*x,Days*Comp,
-        Days*SIDV,Days*MIDV,Days*OIDV,
-        Comp*SIDV,Comp*MIDV,Comp*OIDV) %*%  coef(b_CBre_03F))}
-
-#Competition curves
-discrete_fitted_cbre_model(smp,"cl_Ceil") +
-  stat_function(fun = b_CBre_03F_SIDV_curve,
-                             args=list(Comp=0,Days=0,
-                                       MIDV=0,FSSGWAC=0,BPABOA=0,SIDV=0),color="blue")+
-  stat_function(fun = b_CBre_03F_SIDV_curve,
-                             args=list(Comp=2,Days=0,
-                                       MIDV=0,FSSGWAC=0,BPABOA=0,SIDV=0),color="blue")
-
-
-#Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_03F)
-
-
-#Plot residuals versus fitted
-residuals_cbre_plot(b_CBre_03E)+
-  labs(x="Estimated  Pr (Ceiling Breach)")
-
-
-#Plot residuals versus fitted
-residuals_cbre_plot(b_CBre_03F)+
-  labs(x="Estimated  Pr (Ceiling Breach)")
-
-# residuals_cbre_plot(b_CBre_03E,"cl_Days")+
-  # labs(x="Centered Log(Duration)")
-
-
-# residuals_cbre_plot(b_CBre_03F,"cl_Days")+
-  # labs(x="Centered Log(Duration)")
-```
-
-The benefits of duration squared are fairly minimal as well at this point.
 
 ##Type of Contract
 
@@ -1131,10 +950,12 @@ b_CBre_04A <- glm (data=smp,
                  b_CBre ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + FSSGWAC + BPABOA +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
                    n_Fixed +
-                 SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
-                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp , family=binomial(link="logit"))
+                   n_Comp:cl_Ceil  + 
+                 SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days+
+                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp  +
+                   SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil,
+                 family=binomial(link="logit"))
 display(b_CBre_04A)
 
 # Plot the model and Vehicle 
@@ -1146,17 +967,17 @@ b_CBre_04A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV){invlogit(
         Comp*x,Comp*MIDV,Comp*OIDV) %*%  coef(b_CBre_04A))}
 
 #Competition curves
-discrete_fitted_cbre_model(smp,"SIDV") +
+fitted_cbre_model(smp,"SIDV") +
   stat_function(fun = b_CBre_04A_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
-                                       MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,),color="blue")+
+                                       MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0),color="blue")+
   stat_function(fun = b_CBre_04A_curve,
                              args=list(Comp=2,Ceil=0,Days=0,
-                                       MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,),color="blue")
+                                       MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0),color="blue")
 
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_04A)
+binned_fitted_versus_cbre_residuals(b_CBre_04A)
 
 #Plot residuals versus fittedO
 residuals_cbre_plot(b_CBre_04A)+
@@ -1186,11 +1007,13 @@ b_CBre_04B <- glm (data=smp,
                  b_CBre ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + FSSGWAC + BPABOA +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
                    n_Fixed +
-                   SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
-                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp +
-                   cl_Days:n_Fixed , family=binomial(link="logit"))
+                   n_Comp:cl_Ceil  + 
+                 SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days+
+                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp  +
+                   SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil+
+                   cl_Ceil:n_Fixed , 
+                 family=binomial(link="logit"))
 display(b_CBre_04B)
 
 # Plot the model and Vehicle 
@@ -1203,17 +1026,17 @@ b_CBre_04B_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV){invlogit(
         Days*x) %*%  coef(b_CBre_04B))}
 
 #Days curves
-discrete_fitted_cbre_model(smp,"SIDV") +
+fitted_cbre_model(smp,"SIDV") +
   stat_function(fun = b_CBre_04B_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
-                                       MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,),color="blue")+
+                                       MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0),color="blue")+
   stat_function(fun = b_CBre_04B_curve,
                              args=list(Comp=2,Ceil=0,Days=1,
-                                       MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,),color="blue")
+                                       MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0),color="blue")
 
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_04B)
+binned_fitted_versus_cbre_residuals(b_CBre_04B)
 
 #Plot residuals versus fittedO
 residuals_cbre_plot(b_CBre_04B)+
@@ -1240,10 +1063,12 @@ b_CBre_04C <- glm (data=smp,
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + FSSGWAC + BPABOA +
                    n_Fixed +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                 SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
-                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp +
-                   SIDV:n_Fixed+MIDV:n_Fixed+OIDV:n_Fixed, family=binomial(link="logit"))
+                   n_Comp:cl_Ceil  + 
+                 SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days+
+                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp  +
+                   SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil+
+                   
+                   SIDV:n_Fixed+MIDV:n_Fixed+FSSGWAC:n_Fixed + BPABOA:n_Fixed, family=binomial(link="logit"))
 display(b_CBre_04C)
 
 # Plot the model and Vehicle for SIDV
@@ -1257,19 +1082,19 @@ b_CBre_04C_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
         ) %*%  coef(b_CBre_04C))}
 
 #Vehicle curves
-discrete_fitted_cbre_model(smp,"n_Fixed") +
+fitted_cbre_model(smp,"n_Fixed") +
   stat_function(fun = b_CBre_04C_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
-                                       SIDV=1,MIDV=0,FSSGWAC=0,BPABOA=0,),color="blue")+
+                                       SIDV=1,MIDV=0,FSSGWAC=0,BPABOA=0),color="blue")+
   stat_function(fun = b_CBre_04C_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
-                                       SIDV=0,MIDV=1,FSSGWAC=0,BPABOA=0,),color="blue")+
+                                       SIDV=0,MIDV=1,FSSGWAC=0,BPABOA=0),color="blue")+
   stat_function(fun = b_CBre_04C_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        SIDV=0,MIDV=0,OIDV=1),color="blue")
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_04C)
+binned_fitted_versus_cbre_residuals(b_CBre_04C)
 
 #Plot residuals versus fittedO
 residuals_cbre_plot(b_CBre_04C)+
@@ -1299,13 +1124,16 @@ discrete_percent_cbre_plot(smp,"Fee")
 
 #Create the model
 b_CBre_04D <- glm (data=smp,
-                 b_CBre ~n_Comp + 
-                   cl_Ceil + cl_Days+ clsqr_Ceil + clsqr_Days +
+    b_CBre ~n_Comp + 
+                   cl_Ceil + cl_Days+ 
                    SIDV + MIDV + FSSGWAC + BPABOA +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                   n_Fixed + n_Incent + n_NoFee +
-                   SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
-                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp 
+                   n_Fixed +
+                   n_Comp:cl_Ceil  + 
+      n_Fixed + n_Incent + n_NoFee +
+
+                 SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days+
+                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp  +
+                   SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil                                  
                     , family=binomial(link="logit"))
 display(b_CBre_04D)
 
@@ -1318,7 +1146,7 @@ b_CBre_04D_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
         Comp*x,Comp*MIDV,Comp*OIDV) %*%  coef(b_CBre_04D))}
 
 #Days curves
-discrete_fitted_cbre_model(smp,"n_Incent") +
+fitted_cbre_model(smp,"n_Incent") +
   stat_function(fun = b_CBre_04D_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,Fixed=1),color="blue")+
@@ -1328,7 +1156,7 @@ discrete_fitted_cbre_model(smp,"n_Incent") +
 
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_04D)
+binned_fitted_versus_cbre_residuals(b_CBre_04D)
 
 #Plot residuals versus fittedO
 residuals_cbre_plot(b_CBre_04D)+
@@ -1360,10 +1188,10 @@ b_CBre_04E <- glm (data=smp,
                  b_CBre ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + FSSGWAC + BPABOA +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   n_Comp:cl_Ceil SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp  + SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil +
                    n_Fixed + n_Incent + 
-                   SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
-                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp +
+                   SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days+
+                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp  + SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil+
                    n_Fixed:n_Incent
                     , family=binomial(link="logit"))
 display(b_CBre_04E)
@@ -1378,7 +1206,7 @@ b_CBre_04E_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
         x*Fixed) %*%  coef(b_CBre_04E))}
 
 #Days curves
-discrete_fitted_cbre_model(smp,"SIDV") +
+fitted_cbre_model(smp,"SIDV") +
   stat_function(fun = b_CBre_04E_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
@@ -1390,7 +1218,7 @@ discrete_fitted_cbre_model(smp,"SIDV") +
 
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_04E)
+binned_fitted_versus_cbre_residuals(b_CBre_04E)
 
 #Plot residuals versus fittedO
 residuals_cbre_plot(b_CBre_04E)+
@@ -1419,14 +1247,15 @@ discrete_percent_cbre_plot(smp,"UCA")
 
 #Create the model
 b_CBre_04F <- glm (data=smp,
-                 b_CBre ~n_Comp + 
+b_CBre ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + FSSGWAC + BPABOA +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                   n_Fixed + b_UCA + 
-                   SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
-                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp 
-                    , family=binomial(link="logit"))
+                   n_Fixed + b_UCA +
+                   n_Comp:cl_Ceil  + 
+                 SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days+
+                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp  +
+                   SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil+
+, family=binomial(link="logit"))
 display(b_CBre_04F)
 
 # Plot the model and Vehicle 
@@ -1438,7 +1267,7 @@ b_CBre_04F_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
         Comp*x,Comp*MIDV,Comp*OIDV) %*%  coef(b_CBre_04F))}
 
 #Days curves
-discrete_fitted_cbre_model(smp,"SIDV") +
+fitted_cbre_model(smp,"SIDV") +
   stat_function(fun = b_CBre_04F_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
@@ -1450,7 +1279,7 @@ discrete_fitted_cbre_model(smp,"SIDV") +
 
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_04F)
+binned_fitted_versus_cbre_residuals(b_CBre_04F)
 
 #Plot residuals versus fittedO
 residuals_cbre_plot(b_CBre_04F)+
@@ -1460,6 +1289,67 @@ residuals_cbre_plot(b_CBre_04F)+
 #   labs(x="Centered Log(Days)")
 
 ```
+
+###Model 04H: UCA and Ceiling
+
+
+```{r Model04H}
+
+#Frequency Plot
+freq_continuous_cbre_plot(smp,"l_Days","UCA")
+
+#Percent Terminated Plot 
+binned_percent_cbre_plot(smp,"l_Days","UCA")
+
+
+#Create the model
+b_CBre_04H <- glm (data=smp,
+                   b_CBre ~n_Comp + 
+                   cl_Ceil + cl_Days+ 
+                     SIDV + MIDV + FSSGWAC + BPABOA +
+                     n_Fixed + b_UCA +
+                     n_Comp:cl_Ceil  + 
+                     SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days+
+                     SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp  +
+                     SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil+
+                     b_UCA:cl_Ceil,
+                   family=binomial(link="logit"))
+display(b_CBre_04H)
+
+# Plot the model and Vehicle 
+b_CBre_04H_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
+  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+        Comp*Ceil,Days*Ceil,Days*Comp,
+        Fixed,x,
+        Days*x,Days*MIDV,Days*OIDV,
+        Comp*x,Comp*MIDV,Comp*OIDV,
+        Comp*x,Days*x) %*%  coef(b_CBre_04H))}
+
+#Days curves
+fitted_cbre_model(smp,"SIDV") +
+  stat_function(fun = b_CBre_04H_curve,
+                             args=list(Comp=0,Ceil=0,Days=0,
+                                       MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
+                                       Fixed=1),color="blue")+
+  stat_function(fun = b_CBre_04H_curve,
+                             args=list(Comp=2,Ceil=0,Days=1,
+                                       MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
+                                       Fixed=1),color="blue")
+
+
+#Plot the fitted values vs actual results
+binned_fitted_versus_cbre_residuals(b_CBre_04H)
+
+#Plot residuals versus fittedO
+residuals_cbre_plot(b_CBre_04H)+
+  labs(x="Estimated  Pr (Ceiling Breach)")
+
+# residuals_cbre_plot(b_CBre_02F,"cl_days")+
+  # labs(x="Centered Log(Days)")
+
+```
+
+
 ###Model 04G: UCA and Competition
 
 
@@ -1475,15 +1365,16 @@ discrete_percent_cbre_plot(smp,"UCA","n_Comp")
 
 #Create the model
 b_CBre_04G <- glm (data=smp,
-                 b_CBre ~n_Comp + 
+b_CBre ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + FSSGWAC + BPABOA +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                   n_Fixed + b_UCA + 
-                   SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
-                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp +
-                   b_UCA:n_Comp
-                 
+                   n_Fixed + b_UCA +
+                   n_Comp:cl_Ceil  + 
+                 SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days+
+                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp  +
+                   SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil+
+  b_UCA:cl_Ceil+
+                b_UCA:n_Comp
                     , family=binomial(link="logit"))
 display(b_CBre_04G)
 
@@ -1496,7 +1387,7 @@ b_CBre_04G_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
         Comp*x,Comp*MIDV,Comp*OIDV) %*%  coef(b_CBre_04G))}
 
 #Days curves
-discrete_fitted_cbre_model(smp,"SIDV") +
+fitted_cbre_model(smp,"SIDV") +
   stat_function(fun = b_CBre_04G_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
@@ -1508,7 +1399,7 @@ discrete_fitted_cbre_model(smp,"SIDV") +
 
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_04G)
+binned_fitted_versus_cbre_residuals(b_CBre_04G)
 
 #Plot residuals versus fittedO
 residuals_cbre_plot(b_CBre_04G)+
@@ -1518,67 +1409,7 @@ residuals_cbre_plot(b_CBre_04G)+
   # labs(x="Centered Log(Days)")
 
 ```
-The interaction of UCA and Comp does align with the findings of the GAO as to the heightened risk of uncompeted UCA. The magnitude of the coefficentsis is considerable, although the rarity of UCAs means the effect on deviation is fairly small. This can also be seen in the residuals where there is a substantial gap between 0.03 and 0.05 in estimated risk of termination.
-
-###Model 04H: UCA and Duration
-
-
-```{r Model04H}
-
-#Frequency Plot
-freq_continuous_cbre_plot(smp,"l_Days","UCA")
-
-#Percent Terminated Plot 
-binned_percent_cbre_plot(smp,"l_Days","UCA")
-
-
-#Create the model
-b_CBre_04H <- glm (data=smp,
-                 b_CBre ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   SIDV + MIDV + FSSGWAC + BPABOA +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                   n_Fixed + b_UCA + 
-                   SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
-                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp +
-                   b_UCA:n_Comp + 
-                  b_UCA:l_Days
-                    , family=binomial(link="logit"))
-display(b_CBre_04H)
-
-# Plot the model and Vehicle 
-b_CBre_04H_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
-  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
-        Comp*Ceil,Days*Ceil,Days*Comp,
-        Fixed,x,
-        Days*x,Days*MIDV,Days*OIDV,
-        Comp*x,Comp*MIDV,Comp*OIDV,
-        Comp*x,Days*x) %*%  coef(b_CBre_04H))}
-
-#Days curves
-discrete_fitted_cbre_model(smp,"SIDV") +
-  stat_function(fun = b_CBre_04H_curve,
-                             args=list(Comp=0,Ceil=0,Days=0,
-                                       MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
-                                       Fixed=1),color="blue")+
-  stat_function(fun = b_CBre_04H_curve,
-                             args=list(Comp=2,Ceil=0,Days=1,
-                                       MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
-                                       Fixed=1),color="blue")
-
-
-#Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_04H)
-
-#Plot residuals versus fittedO
-residuals_cbre_plot(b_CBre_04H)+
-  labs(x="Estimated  Pr (Ceiling Breach)")
-
-# residuals_cbre_plot(b_CBre_02F,"cl_days")+
-  # labs(x="Centered Log(Days)")
-
-```
-The intersection of initial duration and UCA had a negative coefficient that was not significant. This is the opposite of what we would expect from the literature, which notes the risks of long periods under an undefinitized contract. This may simply reflect a limitation of the variable, which tracks the initial maximum duration and would not differentiate between a contract that went a day before being definitized and one that went a year. This interaction will not be added to the model.
+The interaction of UCA and Comp does align with the findings of the GAO as to the heightened risk of uncompeted UCA. However, the results are not significant. 
 
 ##Place of Performance
 ###Model 05A: Any International
@@ -1595,15 +1426,17 @@ discrete_percent_cbre_plot(smp,"Intl")
 
 #Create the model
 b_CBre_05A <- glm (data=smp,
-                 b_CBre ~n_Comp + 
+b_CBre ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + FSSGWAC + BPABOA +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                   n_Fixed + b_UCA + 
-                   b_Intl + 
-                   SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
-                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp+
-                   b_UCA:n_Comp
+                   n_Fixed + b_UCA +
+                   n_Comp:cl_Ceil  + 
+  b_Intl+
+                 SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days+
+                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp  +
+                   SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil+
+  b_UCA:cl_Ceil+
+                b_UCA:n_Comp
                     , family=binomial(link="logit"))
 display(b_CBre_05A)
 
@@ -1617,7 +1450,7 @@ b_CBre_05A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
         UCA*Comp) %*%  coef(b_CBre_05A))}
 
 #Days curves
-discrete_fitted_cbre_model(smp,"SIDV") +
+fitted_cbre_model(smp,"SIDV") +
   stat_function(fun = b_CBre_05A_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
@@ -1629,7 +1462,7 @@ discrete_fitted_cbre_model(smp,"SIDV") +
 
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_05A)
+binned_fitted_versus_cbre_residuals(b_CBre_05A)
 
 #Plot residuals versus fittedO
 residuals_cbre_plot(b_CBre_05A)+
@@ -1642,125 +1475,6 @@ residuals_cbre_plot(b_CBre_05A)+
 
 International performance of contract unexpectedly had a negative coefficent. It is a variable of interest  to the study and will be left in.
 
-###Model 05B: Fixed Price and Any International
-
-```{r Model05B}
-
-#Frequency Plot
-freq_discrete_cbre_plot(smp,"Intl","FxCb")
-
-#Percent Terminated Plot 
-discrete_percent_cbre_plot(smp,"Intl","FxCb")
-
-
-
-#Create the model
-b_CBre_05A <- glm (data=smp,
-                 b_CBre ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   SIDV + MIDV + FSSGWAC + BPABOA +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                   n_Fixed + b_UCA + 
-                   b_Intl + 
-                   SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
-                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp+
-                   b_UCA:n_Comp+
-                   n_Fixed:b_Intl
-                    , family=binomial(link="logit"))
-display(b_CBre_05A)
-
-# Plot the model and Vehicle 
-b_CBre_05A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
-  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
-        Comp*Ceil,Days*Ceil,Days*Comp,
-        Fixed,UCA,x,
-        Days*x,Days*MIDV,Days*OIDV,
-        Comp*x,Comp*MIDV,Comp*OIDV,
-        UCA*Comp) %*%  coef(b_CBre_05A))}
-
-#Days curves
-discrete_fitted_cbre_model(smp,"SIDV") +
-  stat_function(fun = b_CBre_05A_curve,
-                             args=list(Comp=0,Ceil=0,Days=0,
-                                       MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
-                                       Fixed=1,UCA=0),color="blue")+
-  stat_function(fun = b_CBre_05A_curve,
-                             args=list(Comp=2,Ceil=0,Days=1,
-                                       MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
-                                       Fixed=1,UCA=0),color="blue")
-
-
-#Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_05A)
-
-#Plot residuals versus fittedO
-residuals_cbre_plot(b_CBre_05A)+
-  labs(x="Estimated  Pr (Ceiling Breach)")
-
-# residuals_cbre_plot(b_CBre_02F,"cl_days")+
-#   labs(x="Centered Log(Days)")
-
-```
-
-###Model 05C: Vehicle and Any International
-
-```{r Model05C}
-
-#Frequency Plot
-freq_discrete_cbre_plot(smp,"Intl","Veh")
-
-#Percent Terminated Plot 
-discrete_percent_cbre_plot(smp,"Intl","Veh")
-
-
-
-#Create the model
-b_CBre_05C <- glm (data=smp,
-                 b_CBre ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   SIDV + MIDV + FSSGWAC + BPABOA +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                   n_Fixed + b_UCA + 
-                   b_Intl + 
-                   SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
-                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp+
-                   b_UCA:n_Comp+
-                   SIDV:b_Intl+MIDV:b_Intl+FSSGWAC:b_Intl+BPABOA:b_Intl
-                    , family=binomial(link="logit"))
-display(b_CBre_05C)
-
-# Plot the model and Vehicle 
-b_CBre_05C_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
-  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
-        Comp*Ceil,Days*Ceil,Days*Comp,
-        Fixed,UCA,x,
-        Days*x,Days*MIDV,Days*OIDV,
-        Comp*x,Comp*MIDV,Comp*OIDV,
-        UCA*Comp) %*%  coef(b_CBre_05C))}
-
-#Days curves
-discrete_fitted_cbre_model(smp,"SIDV") +
-  stat_function(fun = b_CBre_05C_curve,
-                             args=list(Comp=0,Ceil=0,Days=0,
-                                       MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
-                                       Fixed=1,UCA=0),color="blue")+
-  stat_function(fun = b_CBre_05C_curve,
-                             args=list(Comp=2,Ceil=0,Days=1,
-                                       MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
-                                       Fixed=1,UCA=0),color="blue")
-
-
-#Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_05C)
-
-#Plot residuals versus fittedO
-residuals_cbre_plot(b_CBre_05C)+
-  labs(x="Estimated  Pr (Ceiling Breach)")
-
-# residuals_cbre_plot(b_CBre_02F,"cl_days")+
-#   labs(x="Centered Log(Days)")
-
-```
 
 
 ##Who
@@ -1800,10 +1514,10 @@ b_CBre_06A <- glm (data=smp,
                  b_CBre ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + FSSGWAC + BPABOA +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   n_Comp:cl_Ceil SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp  + SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil +
                    n_Fixed + b_UCA + 
                    b_Intl + b_ODoD +
-                   SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
+                   SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days+
                    SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp+
                    b_UCA:n_Comp
                     , family=binomial(link="logit"))
@@ -1820,7 +1534,7 @@ b_CBre_06A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA,Intl){invl
         UCA*Comp) %*%  coef(b_CBre_06A))}
 
 #Days curves
-discrete_fitted_cbre_model(smp,"b_ODoD") +
+fitted_cbre_model(smp,"b_ODoD") +
   stat_function(fun = b_CBre_06A_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
@@ -1832,7 +1546,7 @@ discrete_fitted_cbre_model(smp,"b_ODoD") +
 
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_06A)
+binned_fitted_versus_cbre_residuals(b_CBre_06A)
 
 #Plot residuals versus fittedO
 residuals_cbre_plot(b_CBre_06A)+
@@ -1867,10 +1581,10 @@ b_CBre_06B <- glm (data=smp,
                  b_CBre ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + FSSGWAC + BPABOA +
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   n_Comp:cl_Ceil SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp  + SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil +
                    n_Fixed + b_UCA + 
                    b_Intl + b_ODoD +
-                   SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
+                   SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days+
                    SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp+
                    b_UCA:n_Comp+
                    b_ODoD:n_Comp
@@ -1888,7 +1602,7 @@ b_CBre_06B_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA,Intl){invl
         UCA*Comp) %*%  coef(b_CBre_06B))}
 
 #Days curves
-discrete_fitted_cbre_model(smp,"b_ODoD") +
+fitted_cbre_model(smp,"b_ODoD") +
   stat_function(fun = b_CBre_06B_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
@@ -1900,7 +1614,7 @@ discrete_fitted_cbre_model(smp,"b_ODoD") +
 
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_06B)
+binned_fitted_versus_cbre_residuals(b_CBre_06B)
 
 #Plot residuals versus fittedO
 residuals_cbre_plot(b_CBre_06B)+
@@ -1943,8 +1657,8 @@ display(b_CBre_08A)
 #                    SIDV + MIDV + FSSGWAC + BPABOA +
 #                    n_Fixed + b_UCA + 
 #                    b_Intl + 
-#                    n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-#                    SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
+#                    n_Comp:cl_Ceil SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp  + SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil +
+#                    SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days+
 #                    SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp+
 #                    b_UCA:n_Comp+
 #                    (1 | NAICS)
@@ -1960,7 +1674,7 @@ b_CBre_08A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
         UCA*Comp) %*%  coef(b_CBre_08A))}
 
 #Days curves
-discrete_fitted_cbre_model(smp,"SIDV") +
+fitted_cbre_model(smp,"SIDV") +
   stat_function(fun = b_CBre_08A_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
@@ -1972,7 +1686,7 @@ discrete_fitted_cbre_model(smp,"SIDV") +
 
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_08A)
+binned_fitted_versus_cbre_residuals(b_CBre_08A)
 
 #Plot residuals versus fittedO
 residuals_cbre_plot(b_CBre_08A)+
@@ -2006,10 +1720,10 @@ b_CBre_08B <- glmer(data=b_CBre_smp1m,
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + FSSGWAC + BPABOA +
                    n_Fixed + b_UCA + 
-                   SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
-                   # SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp +
+                   SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days+
+                   # SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp  + SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil+
                    # b_Intl +
-                  # n_Comp:cl_Ceil + #+ cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                  # n_Comp:cl_Ceil + #+ n_Comp:cl_Days +
                    (1 | NAICS)
                   , family=binomial(link="logit"))
 display(b_CBre_08B)
@@ -2019,11 +1733,11 @@ display(b_CBre_08B)
 #                    cl_Ceil + cl_Days+ 
 #                    SIDV + MIDV + FSSGWAC + BPABOA +
 #                    n_Comp:cl_Ceil  +
-#                    # cl_Ceil:cl_Days  + 
+#                    # 
 #                    n_Comp:cl_Days +
 #                    n_Fixed + b_UCA + 
 #                    b_Intl + 
-#                    SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
+#                    SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days+
 #                    SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp+
 #                    b_UCA:n_Comp+
 #                    (1 | PSR) + (1 | PSR_What)
@@ -2040,7 +1754,7 @@ display(b_CBre_08B)
 # save(b_CBre_08B,file="Term08B.Rdata")
 load("Term08B.Rdata")
 #Days curves
-discrete_fitted_cbre_model(smp,"SIDV") +
+fitted_cbre_model(smp,"SIDV") +
   stat_function(fun = b_CBre_08B_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
@@ -2051,7 +1765,7 @@ discrete_fitted_cbre_model(smp,"SIDV") +
                                        Fixed=1,UCA=0),color="blue")
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_08B)
+binned_fitted_versus_cbre_residuals(b_CBre_08B)
 
 #Plot residuals versus fittedO
 residuals_cbre_plot(b_CBre_08B)+
@@ -2107,11 +1821,11 @@ b_CBre_08C <- glmer(data=smp,
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + FSSGWAC + BPABOA +
                    n_Comp:cl_Ceil  +
-                   # cl_Ceil:cl_Days  + 
+                   # 
                    n_Comp:cl_Days +
                    n_Fixed + b_UCA + 
                    b_Intl + 
-                   SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
+                   SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days+
                    SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp+
                    b_UCA:n_Comp+
                    (1 + n_Comp | PSR) + (1 | PSR_What)
@@ -2124,11 +1838,11 @@ b_CBre_08D <- glmer(data=smp,
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + FSSGWAC + BPABOA +
                    n_Comp:cl_Ceil  +
-                   # cl_Ceil:cl_Days  + 
+                   # 
                    n_Comp:cl_Days +
                    n_Fixed + b_UCA + 
                    b_Intl + 
-                   SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
+                   SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days+
                    SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp+
                    b_UCA:n_Comp+
                    (1  | PSR) + (1 + n_Comp| PSR_What)
@@ -2136,7 +1850,7 @@ b_CBre_08D <- glmer(data=smp,
 display(b_CBre_08D)
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_08C)
+binned_fitted_versus_cbre_residuals(b_CBre_08C)
 
 
 #Plot residuals versus fittedO
@@ -2149,11 +1863,11 @@ residuals_cbre_plot(b_CBre_08C)+
 #                    cl_Ceil + cl_Days+ 
 #                    SIDV + MIDV + FSSGWAC + BPABOA +
 #                    n_Comp:cl_Ceil  +
-#                    # cl_Ceil:cl_Days  + 
+#                    # 
 #                    n_Comp:cl_Days +
 #                    n_Fixed + b_UCA + 
 #                    b_Intl + 
-#                    SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
+#                    SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days+
 #                    SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp+
 #                    b_UCA:n_Comp+
 #                    (1+n_Comp  | PSR) + (1+ n_Comp | PSR_What)
@@ -2162,7 +1876,7 @@ residuals_cbre_plot(b_CBre_08C)+
 # failure to converge in 10000 evaluations
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_08C)
+binned_fitted_versus_cbre_residuals(b_CBre_08C)
 
 
 #Plot residuals versus fittedO
@@ -2171,7 +1885,7 @@ residuals_cbre_plot(b_CBre_08C)+
 
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_08D)
+binned_fitted_versus_cbre_residuals(b_CBre_08D)
 
 
 #Plot residuals versus fittedO
@@ -2207,8 +1921,8 @@ display(b_CBre_09A)
 #                    SIDV + MIDV + FSSGWAC + BPABOA +
 #                    n_Fixed + b_UCA + 
 #                    b_Intl + 
-#                    n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-#                    SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days++
+#                    n_Comp:cl_Ceil SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp  + SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil +
+#                    SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days+
 #                    SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp+
 #                    b_UCA:n_Comp+
 #                    (1 | NAICS)
@@ -2224,7 +1938,7 @@ b_CBre_08A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
         UCA*Comp) %*%  coef(b_CBre_08A))}
 
 #Days curves
-discrete_fitted_cbre_model(smp,"SIDV") +
+fitted_cbre_model(smp,"SIDV") +
   stat_function(fun = b_CBre_08A_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
@@ -2236,7 +1950,7 @@ discrete_fitted_cbre_model(smp,"SIDV") +
 
 
 #Plot the fitted values vs actual results
-binned_fitted_versus_residuals(b_CBre_08A)
+binned_fitted_versus_cbre_residuals(b_CBre_08A)
 
 #Plot residuals versus fittedO
 residuals_cbre_plot(b_CBre_08A)+

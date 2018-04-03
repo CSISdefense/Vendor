@@ -382,7 +382,7 @@ binned.resids <- function (x, y, nclass=sqrt(length(x))){
   return (list (binned=output, xbreaks=xbreaks))
 }
 
-binned_fitted_versus_residuals<-function(model){
+binned_fitted_versus_term_residuals<-function(model){
   
   #Save this for a future GLM
   # Term_data_01A<-data.frame(fitted=fitted(Term_01A),
@@ -396,7 +396,7 @@ binned_fitted_versus_residuals<-function(model){
     data <-data.frame(
       fitted=fitted(model),
       residuals=residuals(model),
-      b_Term=model@frame$b_Term
+      b_Term=model@frame$b_Term,
     )
     
   }
@@ -420,6 +420,46 @@ binned_fitted_versus_residuals<-function(model){
          aes(y=mean_Term,x=mean_fitted))+geom_point() +
     labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 }
+
+binned_fitted_versus_cbre_residuals<-function(model){
+  
+  #Save this for a future GLM
+  # CBre_data_01A<-data.frame(fitted=fitted(CBre_01A),
+  #                        residuals=residuals(CBre_01A),
+  #                        nCBre=CBre_01A@frame$nCBre,
+  #                        cb_Comp=CBre_01A@frame$cb_Comp
+  #                        )
+  
+  if(class(model)=="glmerMod")
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_CBre=model@frame$b_CBre,
+    )
+    
+  }
+  else
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_CBre=model$model$b_CBre
+    )
+  }
+  
+  data$bin_fitted<-bin_df(data,rank_col="fitted")
+  
+  data<-subset(data,!is.na(fitted) & !is.na(residuals) )
+  
+  ggplot(data= data %>% 
+           group_by(bin_fitted) %>% 
+           summarise (mean_CBre = mean(b_CBre),
+                      mean_fitted =mean(fitted)),
+         aes(y=mean_CBre,x=mean_fitted))+geom_point() +
+    labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+}
+
 
 residuals_term_plot<-function(model,x_col="fitted",bins=40){
   #Plot the fitted values vs actual results
@@ -566,6 +606,25 @@ freq_continuous_term_plot<-function(data,x_col,group_col=NA,bins=20){
 }
 
 
+freq_continuous_cbre_plot<-function(data,x_col,group_col=NA,bins=20){
+  if(is.na(group_col)){
+    plot<-ggplot(data=data,
+                 aes_string(x=x_col))+
+      facet_wrap(~CBre,ncol=1,scales="free_y")
+  }
+  else{
+    plot<-ggplot(data=data,
+                 aes_string(x=x_col))+geom_histogram(bins=bins) +
+      facet_grid(as.formula(paste("CBre~",group_col)),scales="free_y")
+    
+  }
+  plot+labs(title="Frequency by Ceiling Breach",
+            caption="Source: FPDS, CSIS Analysis")+
+    scale_y_continuous(labels = scales::comma) + 
+    geom_histogram(bins=bins) 
+}
+
+
 binned_percent_term_plot<-function(data,x_col,group_col=NA){
   data<-data[!is.na(data[,x_col]),]
   if(is.na(group_col)){
@@ -672,6 +731,13 @@ fitted_term_model<-function(data,x_col){
          aes_string(y="j_Term",x=x_col))+geom_point(alpha=0.01)+scale_y_sqrt() +
     labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
 }
+
+fitted_cbre_model<-function(data,x_col){
+  ggplot(data=data,
+         aes_string(y="j_CBre",x=x_col))+geom_point(alpha=0.01)+scale_y_sqrt() +
+    labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
+}
+
 
 discrete_fitted_term_model<-function(data,x_col){
   ggplot(data=data,
