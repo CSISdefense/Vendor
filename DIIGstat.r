@@ -465,6 +465,51 @@ residuals_term_plot<-function(model,x_col="fitted",bins=40){
   
 }
 
+residuals_cbre_plot<-function(model,x_col="fitted",bins=40){
+  #Plot the fitted values vs actual results
+  
+  
+  if(class(model)=="glmerMod")
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_CBre=model@frame$b_CBre
+    )
+    
+  }
+  else
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_CBre=model$model$b_CBre
+    )
+  }
+  
+  
+  if (x_col!="fitted"){
+    data$x_col<-
+      test<-model$model[,x_col]
+    colnames(data)[colnames(data)=="x_col"]<-x_col
+  }
+  
+  
+  data<-binned.resids (data[,x_col],
+                       data$fitted-data$b_CBre, nclass=bins)$binned
+  
+  ggplot(data=data,
+         aes(x=xbar,y-ybar))+
+    geom_point(aes(y=ybar))+ #Residuals
+    geom_line(aes(y=se2),col="grey")+
+    geom_line(aes(y=-se2),col="grey")+
+    labs(title="Binned residual plot",
+         y="Average residual")
+  
+  
+}
+
+
 freq_discrete_term_plot<-function(data,x_col,group_col=NA){
   if(is.na(group_col)){
     plot<-ggplot(data=data,
