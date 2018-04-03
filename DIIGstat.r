@@ -1,6 +1,7 @@
 #DIIGstat.r
 library(arm)
 library(dplyr)
+library(ggplot2)
 #This will likely be folded into CSIS360
 #But for now, using it to create and refine functions for regression analysis.
 
@@ -36,7 +37,7 @@ contract$b_CBre<-ifelse(contract$CBre=="Ceiling Breach",1,NA)
 contract$b_CBre[contract$CBre=="None"]<-0
 
 
-#Create a jittered version of Crai for display purposes
+#Create a jittered version of CBre for display purposes
 #Unlike geom_jitter, this caps values at 0 and 1
 contract$j_CBre<-jitter.binary(contract$b_CBre)
 
@@ -49,18 +50,18 @@ contract$b_Term[contract$Term=="Unterminated"]<-0
 #Unlike geom_jitter, this caps values at 0 and 1
 contract$j_Term<-jitter.binary(contract$b_Term)
 
-#n_Crai
+#n_CBre
 # contract$pChangeOrderUnmodifiedBaseAndAll<-as.numeric(as.character(contract$pChangeOrderUnmodifiedBaseAndAll))
 # contract$pChange3Sig<-round(
 #   contract$pChangeOrderUnmodifiedBaseAndAll,3)
 
 #Should include this in the original data frame but for now can drive it.
-contract$n_Crai<-contract$ChangeOrderBaseAndAllOptionsValue
+contract$n_CBre<-contract$ChangeOrderBaseAndAllOptionsValue
 
-#l_Crai
-contract$l_Crai<-NA
-contract$l_Crai[contract$b_CBre==1 & !is.na(contract$b_CBre)]<-
-  log(contract$n_Crai[contract$b_CBre==1 & !is.na(contract$b_CBre)])
+#l_CBre
+contract$l_CBre<-NA
+contract$l_CBre[contract$b_CBre==1 & !is.na(contract$b_CBre)]<-
+  log(contract$n_CBre[contract$b_CBre==1 & !is.na(contract$b_CBre)])
 
 #l_Ceil
 contract$l_Ceil<-log(contract$UnmodifiedContractBaseAndAllOptionsValue)
@@ -483,7 +484,7 @@ freq_discrete_term_plot<-function(data,x_col,group_col=NA){
 }
 
 
-freq_discrete_crai_plot<-function(data,x_col,group_col=NA){
+freq_discrete_cbre_plot<-function(data,x_col,group_col=NA){
   if(is.na(group_col)){
     plot<-ggplot(data=data,
                  aes_string(x=x_col))+
@@ -547,24 +548,24 @@ binned_percent_term_plot<-function(data,x_col,group_col=NA){
 
 
 
-binned_percent_crai_plot<-function(data,x_col,group_col=NA){
+binned_percent_cbre_plot<-function(data,x_col,group_col=NA){
   data<-data[!is.na(data[,x_col]),]
   if(is.na(group_col)){
     data$bin_x<-bin_df(data,x_col)
     plot<-ggplot(data=data %>%
                    group_by(bin_x) %>%
-                   summarise_ (   mean_Crai = "mean(b_CBre)"   
+                   summarise_ (   mean_CBre = "mean(b_CBre)"   
                                   , mean_x =  paste( "mean(" ,  x_col  ,")"  ))     ,
-                 aes(y=mean_Crai,x=mean_x))
+                 aes(y=mean_CBre,x=mean_x))
   }
   else{
     data<-data[!is.na(data[,group_col]),]
     data$bin_x<-bin_df(data,rank_col=x_col,group_col=group_col)
     plot<-ggplot(data=data %>%
                    group_by_("bin_x",group_col) %>%
-                   summarise_ (   mean_Crai = "mean(b_CBre)"   
+                   summarise_ (   mean_CBre = "mean(b_CBre)"   
                                   , mean_x =  paste( "mean(" ,  x_col  ,")"  ))     ,
-                 aes(y=mean_Crai,x=mean_x))+
+                 aes(y=mean_CBre,x=mean_x))+
       facet_wrap(as.formula(paste("~",group_col)))
   }
   plot+geom_point()+
@@ -597,21 +598,21 @@ discrete_percent_term_plot<-function(data,x_col,group_col=NA){
 }
 
 
-discrete_percent_crai_plot<-function(data,x_col,group_col=NA){
+discrete_percent_cbre_plot<-function(data,x_col,group_col=NA){
   data<-data[!is.na(data[,x_col]) & !is.na(data[,"b_CBre"]),]
   if(is.na(group_col)){
     plot<-ggplot(data=data %>%
                    group_by_(x_col) %>%
-                   summarise (   mean_Crai = mean(b_CBre)),
-                 aes_string(y="mean_Crai",x=x_col))
+                   summarise (   mean_CBre = mean(b_CBre)),
+                 aes_string(y="mean_CBre",x=x_col))
     
   }
   else{
     data<-data[!is.na(data[,group_col]),]
     plot<-ggplot(data=data %>%
                    group_by_(x_col,group_col) %>%
-                   summarise (   mean_Crai = mean(b_CBre)),
-                 aes_string(y="mean_Crai",x=x_col))+
+                   summarise (   mean_CBre = mean(b_CBre)),
+                 aes_string(y="mean_CBre",x=x_col))+
       facet_wrap(as.formula(paste("~",group_col)))
     
   }
