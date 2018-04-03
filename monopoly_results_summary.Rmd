@@ -58,7 +58,7 @@ First we load the data. The dataset used is a U.S. Defense Contracting dataset d
   # load(file="Data/defense_contract_CSIScontractID_detail.Rdata")
 # head(def)
 # debug(transform)
-# def<-transform_contract(def)
+def<-transform_contract(def)
 # save(file="Data/transformed_def.Rdata", def)
  load(file="Data/transformed_def.Rdata")
 ```
@@ -103,3 +103,50 @@ NA_stats(def,"Agency")`
 `r summary(def$Office);
 NA_stats(def,"Office")`
 
+
+
+###Computational Sample Creation
+```{r Sample}
+
+
+complete<-!is.na(def$b_Term)&
+                                     !is.na(def$b_CBre)&
+                                  !is.na(def$EffComp)&
+                                  !is.na(def$l_Ceil)&
+                                  !is.na(def$l_Days)&
+                                    !is.na(def$Veh) &
+                                  !is.na(def$n_Fixed)&
+                                    !is.na(def$b_Intl)&
+                                  !is.na(def$NAICS)
+
+smp<-def[complete,]
+#8818392  to 8818392
+nrow(def[!complete,])/nrow(def)
+sum(def[!complete,]$Action.Obligation,na.rm=TRUE)/sum(def$Action.Obligation,na.rm=TRUE)
+
+smp<-smp[sample(nrow(smp),250000),]
+
+
+```
+
+
+
+```{r Comp_Term}
+
+
+
+
+#Create the model
+Term_05A <- glm (data=smp,
+                 b_Term ~n_Comp + 
+                   cl_Ceil + cl_Days+ 
+                   SIDV + MIDV + OIDV +
+                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
+                   n_Fixed + 
+                   b_Intl + 
+                   SIDV:cl_Days+MIDV:cl_Days+OIDV:cl_Days +
+                   SIDV:n_Comp+MIDV:n_Comp+OIDV:n_Comp
+                    , family=binomial(link="logit"))
+display(Term_05A)
+
+```
