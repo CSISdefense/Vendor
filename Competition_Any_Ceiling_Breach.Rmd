@@ -1638,13 +1638,20 @@ freq_discrete_cbre_plot(smp,"NAICS")
 #Percent Terminated Plot 
 discrete_percent_cbre_plot(smp,"NAICS")
 
+smp$NAICS2<-substring(smp$NAICS,1,2)
+
 b_CBre_08A <- glmer(data=smp,
-                 b_CBre ~n_Comp + 
+b_CBre ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + FSSGWAC + BPABOA +
-                   n_Fixed + b_UCA + 
-                   # b_Intl +
-                   (1 | NAICS)
+                   n_Fixed + b_UCA +
+                   n_Comp:cl_Ceil  + 
+                 SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days+BPABOA:cl_Days+
+                   SIDV:n_Comp+MIDV:n_Comp+FSSGWAC:n_Comp+BPABOA:n_Comp  +
+                   SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil+
+  b_UCA:cl_Ceil+
+                b_UCA:n_Comp+
+                   (1 | NAICS2)
                   , family=binomial(link="logit"))
 display(b_CBre_08A)
 
@@ -1694,7 +1701,7 @@ residuals_cbre_plot(b_CBre_08A)+
 
 # residuals_cbre_plot(b_CBre_02F,"cl_days")+
 #   labs(x="Centered Log(Days)")
-
+save("Comp_CBre.Rdata","")
 ```
 
 The initial attempt to include the pre-existing intercepts and all inputs resulted in a model that initially failed to converge. Conservatively the intercepts have been temporarily removed to be added back in a subsequent step.
