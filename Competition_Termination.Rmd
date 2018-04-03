@@ -120,14 +120,14 @@ Next, we eliminate missing data entries and then draw a sample. The final comput
 ```{r Sample}
 
 
-Term_smp25k<-DefenseModelAndDetail[!is.na(DefenseModelAndDetail$b_Term)&
+smp<-DefenseModelAndDetail[!is.na(DefenseModelAndDetail$b_Term)&
                                   !is.na(DefenseModelAndDetail$Comp)&
                                   !is.na(DefenseModelAndDetail$l_Ceil)&
                                   !is.na(DefenseModelAndDetail$l_Days)&
                                   !is.na(DefenseModelAndDetail$n_Fixed)&
                                   !is.na(DefenseModelAndDetail$NAICS),]
 
-Term_smp25k<-Term_smp25k[sample(nrow(Term_smp25k),250000),]
+smp<-smp[sample(nrow(smp),250000),]
 
 
 Term_smp1m<-DefenseModelAndDetail[!is.na(DefenseModelAndDetail$b_Term)&
@@ -137,18 +137,16 @@ Term_smp1m<-DefenseModelAndDetail[!is.na(DefenseModelAndDetail$b_Term)&
                                   !is.na(DefenseModelAndDetail$n_Fixed)&
                                   !is.na(DefenseModelAndDetail$NAICS),]
 
-Term_smp1m<-Term_smp1m[sample(nrow(Term_smp1m),1000000),]
 
 
 
+summary(smp$b_Comp )
+summary(smp$n_Comp )
+summary(smp$Comp )
+summary(smp$CompOffr )
+summary(smp$EffComp )
 
-summary(Term_smp25k$b_Comp )
-summary(Term_smp25k$n_Comp )
-summary(Term_smp25k$Comp )
-summary(Term_smp25k$CompOffr )
-summary(Term_smp25k$EffComp )
-
-head(Term_smp25k)
+head(smp)
 
 ```
 ###Examine Minimium Size
@@ -164,34 +162,34 @@ head(Term_smp25k)
 # DefenseModelAndDetail<-plyr::join(DefenseModelAndDetail,deflators_retrieved)
 # #Frequency Plot for logged ceiling
 # DefenseModelAndDetail$UnmodifiedContractBaseAndAllOptionsValue
-# Term_smp25k<-DefenseModelAndDetail[
+# smp<-DefenseModelAndDetail[
 #   !is.na(DefenseModelAndDetail$b_Term)&
 #     !is.na(DefenseModelAndDetail$Comp)&
 #     DefenseModelAndDetail$UnmodifiedContractBaseAndAllOptionsValue>=
 #     DefenseModelAndDetail$cutoff_3500,]
 # 
-# Term_smp25k<-Term_smp25k[sample(nrow(Term_smp25k),250000),]
+# smp<-smp[sample(nrow(smp),250000),]
 # 
 # 
-# freq_continuous_term_plot(Term_smp25k,"l_Ceil")
-# exp(mean(Term_smp25k$l_Ceil,na.rm=TRUE))
+# freq_continuous_term_plot(smp,"l_Ceil")
+# exp(mean(smp$l_Ceil,na.rm=TRUE))
 # 
-# Term_smp25k$StartFY
+# smp$StartFY
 # 
-# cutoff<-quantile(Term_smp25k$l_Ceil,0.05,na.rm=TRUE)
+# cutoff<-quantile(smp$l_Ceil,0.05,na.rm=TRUE)
 # exp(cutoff)
 # cutoff<-log(3500)
 # 
-# nrow(subset(Term_smp25k,l_Ceil<cutoff,na.rm=TRUE))/nrow(Term_smp25k)
-# sum(subset(Term_smp25k,l_Ceil<cutoff)$b_Term)/sum(Term_smp25k$b_Term)
+# nrow(subset(smp,l_Ceil<cutoff,na.rm=TRUE))/nrow(smp)
+# sum(subset(smp,l_Ceil<cutoff)$b_Term)/sum(smp$b_Term)
 # 
 # 
-# sum(subset(Term_smp25k,l_Ceil<cutoff,na.rm=TRUE)$Action.Obligation)/sum(Term_smp25k$Action.Obligation)
-# sum(subset(Term_smp25k,l_Ceil>=cutoff,na.rm=TRUE)$Action.Obligation)/sum(Term_smp25k$Action.Obligation)
+# sum(subset(smp,l_Ceil<cutoff,na.rm=TRUE)$Action.Obligation)/sum(smp$Action.Obligation)
+# sum(subset(smp,l_Ceil>=cutoff,na.rm=TRUE)$Action.Obligation)/sum(smp$Action.Obligation)
 # 
-# sum(subset(Term_smp25k,l_Ceil<cutoff)$b_Term)/nrow(subset(Term_smp25k,l_Ceil<cutoff,na.rm=TRUE))
+# sum(subset(smp,l_Ceil<cutoff)$b_Term)/nrow(subset(smp,l_Ceil<cutoff,na.rm=TRUE))
 # 
-# sum(subset(Term_smp25k,l_Ceil>=cutoff)$b_Term)/nrow(subset(Term_smp25k,l_Ceil<cutoff,na.rm=TRUE))
+# sum(subset(smp,l_Ceil>=cutoff)$b_Term)/nrow(subset(smp,l_Ceil<cutoff,na.rm=TRUE))
 # 
 # 
 # exp(2)
@@ -207,19 +205,19 @@ Competition has the potential to reduce terminations by giving the government mo
 ```{r Model01A}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"Comp")
+freq_discrete_term_plot(smp,"Comp")
 
 #Percent Terminated Plot
-discrete_percent_term_plot(Term_smp25k,"Comp")
+discrete_percent_term_plot(smp,"Comp")
 
 #Model
-Term_01A <- glm (data=Term_smp25k,
+Term_01A <- glm (data=smp,
                  b_Term ~ cb_Comp, family=binomial(link="logit"))
 display(Term_01A)
 
 #Plot the new variable and coefficients
 #Add the fitted regression line
-discrete_fitted_term_model(Term_smp25k,"cb_Comp") + 
+discrete_fitted_term_model(smp,"cb_Comp") + 
   stat_function(fun = fit_curve, args=list(a=coef(Term_01A)[1],                                                        b=coef(Term_01A)[2]),color="blue")
 
 
@@ -231,20 +229,20 @@ Competition alone has a very slight, but significant, negative correlation with 
 ```{r Model01B}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"EffComp")
+freq_discrete_term_plot(smp,"EffComp")
 
 
 #Percent Terminated Plot
-discrete_percent_term_plot(Term_smp25k,"EffComp")
+discrete_percent_term_plot(smp,"EffComp")
 
 #Model
-Term_01B <- glm (data=Term_smp25k,
+Term_01B <- glm (data=smp,
                  b_Term ~ cn_Comp, family=binomial(link="logit"))
 display(Term_01B)
 
 #Plot the Fitted
 #Add the fitted regression line
-discrete_fitted_term_model(Term_smp25k,"n_Comp") +
+discrete_fitted_term_model(smp,"n_Comp") +
   stat_function(fun = fit_curve, args=list(a=coef(Term_01B)[1],
                                            b=coef(Term_01B)[2]),
                 color="blue")
@@ -261,19 +259,19 @@ The correltion between the three categories of competition has a smaller coeffic
 ```{r Model01C}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"CompOffr")
+freq_discrete_term_plot(smp,"CompOffr")
 
 #Percent Terminated Plot
-discrete_percent_term_plot(Term_smp25k,"CompOffr")
+discrete_percent_term_plot(smp,"CompOffr")
 
 #Model
-Term_01C <- glm (data=Term_smp25k,
+Term_01C <- glm (data=smp,
                  b_Term ~ cn_Offr, family=binomial(link="logit"))
 display(Term_01C)
 
 #Plot the Fitted
 #Add the fitted regression line
-discrete_fitted_term_model(Term_smp25k,"n_Comp") +
+discrete_fitted_term_model(smp,"n_Comp") +
   stat_function(fun = fit_curve, args=list(a=coef(Term_01C)[1],
                                            b=coef(Term_01C)[2]),
                 color="blue")
@@ -291,40 +289,40 @@ Instead, the last variant to be checked is the number of offers directly. This i
 ```{r Model01D}
 
 #Frequency Plot
-freq_continuous_term_plot(Term_smp25k,"l_Offr")
+freq_continuous_term_plot(smp,"l_Offr")
 
 #Percent Terminated Plot 
-binned_percent_term_plot(Term_smp25k,"l_Offr")
+binned_percent_term_plot(smp,"l_Offr")
 
 #Percent Terminated Plot
-binned_percent_term_plot(Term_smp25k,"l_Offr","FxCb")
+binned_percent_term_plot(smp,"l_Offr","FxCb")
 
 #Percent Terminated Plot
-binned_percent_term_plot(Term_smp25k,"l_Offr","PSR")
+binned_percent_term_plot(smp,"l_Offr","PSR")
 
 #Percent Terminated Plot
-binned_percent_term_plot(Term_smp25k,"l_Offr","Veh")
+binned_percent_term_plot(smp,"l_Offr","Veh")
 
 
 #Model
-Term_01D <- glm (data=Term_smp25k,
+Term_01D <- glm (data=smp,
                  b_Term ~ cl_Offr, family=binomial(link="logit"))
 display(Term_01D)
 
 #Variant Model
-Term_smp25k$clsqr_Offer<-Term_smp25k$cl_Offr^2
-Term_01E <- glm (data=Term_smp25k,
+smp$clsqr_Offer<-smp$cl_Offr^2
+Term_01E <- glm (data=smp,
                  b_Term ~ cl_Offr +clsqr_Offer, family=binomial(link="logit"))
 display(Term_01E)
 
 #Plot the data and fitted curve
-Term_01D_plot<-ggplot(data=Term_smp25k,
+Term_01D_plot<-ggplot(data=smp,
        aes(y=j_Term,x=cl_Offr))+geom_jitter(alpha=0.01,height=0)+scale_y_sqrt() +
   labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
 
 #Plot the Fitted
 #Add the fitted regression line
-discrete_fitted_term_model(Term_smp25k,"cl_Offr") +
+discrete_fitted_term_model(smp,"cl_Offr") +
   stat_function(fun = fit_curve, args=list(a=coef(Term_01D)[1],
                                            b=coef(Term_01D)[2]),
                              color="blue")
@@ -358,20 +356,20 @@ The model starts by examing the influence of large ceilings on contracts, the co
 
 ```{r Model02A}
 #Frequency Plot for unlogged ceiling
-freq_continuous_term_plot(Term_smp25k,"UnmodifiedContractBaseAndAllOptionsValue",
+freq_continuous_term_plot(smp,"UnmodifiedContractBaseAndAllOptionsValue",
                bins=1000)
-freq_continuous_term_plot(subset(Term_smp25k,UnmodifiedContractBaseAndAllOptionsValue<100000000),
+freq_continuous_term_plot(subset(smp,UnmodifiedContractBaseAndAllOptionsValue<100000000),
                "UnmodifiedContractBaseAndAllOptionsValue",
                bins=1000)
 
 #Frequency Plot for logged ceiling
-freq_continuous_term_plot(Term_smp25k,"l_Ceil")
+freq_continuous_term_plot(smp,"l_Ceil")
 
 #Percent Terminated Plot
-binned_percent_term_plot(Term_smp25k,"l_Ceil")
+binned_percent_term_plot(smp,"l_Ceil")
 
 #Model
-Term_02A <- glm (data=Term_smp25k,
+Term_02A <- glm (data=smp,
                  b_Term ~n_Comp + cl_Ceil, family=binomial(link="logit"))
 display(Term_02A)
 
@@ -380,7 +378,7 @@ display(Term_02A)
 Term_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(Term_02A))}
 
 #Competition curves
-fitted_term_model(Term_smp25k,"cl_Ceil") + stat_function(fun = Term_02A_curve, 
+fitted_term_model(smp,"cl_Ceil") + stat_function(fun = Term_02A_curve, 
                              args=list(Comp=0),color="blue")+
   stat_function(fun = Term_02A_curve, 
                              args=list(Comp=2),color="blue")
@@ -411,13 +409,13 @@ Contract ceiling has a significant relationship, though the residuals show a pos
 
 
 #Frequency Plot
-freq_continuous_term_plot(Term_smp25k,"lsqr_Ceil")
+freq_continuous_term_plot(smp,"lsqr_Ceil")
 
 #Percent Terminated Plot
-binned_percent_term_plot(Term_smp25k,"lsqr_Ceil")
+binned_percent_term_plot(smp,"lsqr_Ceil")
 
 #Model
-Term_02B <- glm (data=Term_smp25k,
+Term_02B <- glm (data=smp,
                  b_Term ~n_Comp + cl_Ceil + clsqr_Ceil, family=binomial(link="logit"))
 display(Term_02B)
 
@@ -425,7 +423,7 @@ display(Term_02B)
 Term_02B_curve<-function(x, Comp){invlogit(cbind(1,Comp,x, x^2) %*%  coef(Term_02B))}
 
 #Competition curves
-fitted_term_model(Term_smp25k,"cl_Ceil") + stat_function(fun = Term_02B_curve, 
+fitted_term_model(smp,"cl_Ceil") + stat_function(fun = Term_02B_curve, 
                              args=list(Comp=0),color="blue")+
   stat_function(fun = Term_02B_curve, 
                              args=list(Comp=2),color="blue")
@@ -449,20 +447,20 @@ Contracts with very small or very large ceilings appear have a negative coeffici
 ```{r Model02C}
 
 #Frequency Plot
-freq_continuous_term_plot(Term_smp25k,"l_Ceil","EffComp")
+freq_continuous_term_plot(smp,"l_Ceil","EffComp")
 
 #Plot the percent terminated across cost ceiling and competition
-binned_percent_term_plot(Term_smp25k,"l_Ceil","EffComp")
+binned_percent_term_plot(smp,"l_Ceil","EffComp")
 
 #Create the model
-Term_02C <- glm (data=Term_smp25k,
+Term_02C <- glm (data=smp,
                  b_Term ~n_Comp + cl_Ceil + clsqr_Ceil + n_Comp:cl_Ceil, family=binomial(link="logit"))
 display(Term_02C)
 
 Term_02C_curve<-function(x, Comp){invlogit(cbind(1,Comp,x,x^2,Comp*x) %*%  coef(Term_02C))}
 
 #Competition Curves
-fitted_term_model(Term_smp25k,"cl_Ceil") + stat_function(fun = Term_02C_curve, 
+fitted_term_model(smp,"cl_Ceil") + stat_function(fun = Term_02C_curve, 
                              args=list(Comp=0),color="blue")+
   stat_function(fun = Term_02C_curve, 
                              args=list(Comp=2),color="blue")
@@ -483,18 +481,18 @@ The interaction went in the expected direction, but is surprisingly powerful. Co
 
 ```{r Model02D}
 #Frequency Plot for max duration
-freq_continuous_term_plot(Term_smp25k,"UnmodifiedDays",
+freq_continuous_term_plot(smp,"UnmodifiedDays",
                bins=1000)
 
 #Frequency Plot for logged max duration
-freq_continuous_term_plot(Term_smp25k,"l_Days")
+freq_continuous_term_plot(smp,"l_Days")
 
 #Percent Terminated Plot
-binned_percent_term_plot(Term_smp25k,"l_Days")
+binned_percent_term_plot(smp,"l_Days")
 
 
 #Model
-Term_02D <- glm (data=Term_smp25k,
+Term_02D <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + clsqr_Ceil + cl_Days + clsqr_Ceil +
                    n_Comp:cl_Ceil , family=binomial(link="logit"))
@@ -504,13 +502,13 @@ display(Term_02D)
 Term_02D_curve<-function(x, Comp,Ceil){invlogit(cbind(1,Comp,Ceil,Ceil^2,x,Comp*Ceil) %*%  coef(Term_02D))}
 
 #Competition Curves
-fitted_term_model(Term_smp25k,"cl_Days") + stat_function(fun = Term_02D_curve, 
+fitted_term_model(smp,"cl_Days") + stat_function(fun = Term_02D_curve, 
                              args=list(Comp=0,Ceil=0),color="blue")+
   stat_function(fun = Term_02D_curve, 
                              args=list(Comp=2,Ceil=0),color="blue")
 
 #Ceiling Curves
-fitted_term_model(Term_smp25k,"cl_Days") +  stat_function(fun = Term_02D_curve, 
+fitted_term_model(smp,"cl_Days") +  stat_function(fun = Term_02D_curve, 
                              args=list(Comp=0,Ceil=0),color="blue")+
   stat_function(fun = Term_02D_curve, 
                              args=list(Comp=0,Ceil=1),color="blue")
@@ -535,14 +533,14 @@ The initial model results are surprising as ceiling change direction, reducing a
 ```{r Mode02E}
 
 #First a quick scatter plot for terminations by duration and ceiling
-ggplot(data=subset(Term_smp25k,!is.na(l_Ceil)),
+ggplot(data=subset(smp,!is.na(l_Ceil)),
        aes(x=l_Days,y=l_Ceil))+geom_point(alpha=0.1)+facet_grid(Term~.)+
   labs(title="Frequency by Termination",
           caption="Source: FPDS, CSIS Analysis")
 
 
 #Create the model
-Term_02E <- glm (data=Term_smp25k,
+Term_02E <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + clsqr_Ceil + cl_Days+
                    n_Comp:cl_Ceil  + cl_Ceil:cl_Days, family=binomial(link="logit"))
@@ -555,13 +553,13 @@ Term_02E_curve<-function(x, Comp,Ceil){invlogit(
 
 
 #Competition Curves
-fitted_term_model(Term_smp25k,"cl_Days") + stat_function(fun = Term_02E_curve, 
+fitted_term_model(smp,"cl_Days") + stat_function(fun = Term_02E_curve, 
                              args=list(Comp=0,Ceil=0),color="blue")+
   stat_function(fun = Term_02E_curve, 
                              args=list(Comp=2,Ceil=0),color="blue")
 
 #Ceiling Curves
-fitted_term_model(Term_smp25k,"cl_Days") +  stat_function(fun = Term_02E_curve, 
+fitted_term_model(smp,"cl_Days") +  stat_function(fun = Term_02E_curve, 
                              args=list(Comp=0,Ceil=0),color="blue")+
   stat_function(fun = Term_02E_curve, 
                              args=list(Comp=0,Ceil=1),color="blue")
@@ -590,14 +588,14 @@ The interaction of ceiling and duration is correlated with a lower rate of termi
 
 
 #Frequency Plot
-freq_continuous_term_plot(Term_smp25k,"lsqr_Days")
+freq_continuous_term_plot(smp,"lsqr_Days")
 
 #Percent Terminated Plot
-binned_percent_term_plot(Term_smp25k,"lsqr_Days")
+binned_percent_term_plot(smp,"lsqr_Days")
 
 
 #Create the model
-Term_02F <- glm (data=Term_smp25k,
+Term_02F <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
                    n_Comp:cl_Ceil  + cl_Ceil:cl_Days, family=binomial(link="logit"))
@@ -608,7 +606,7 @@ Term_02F_curve<-function(x, Comp,Ceil){invlogit(
         Comp*Ceil,x*Ceil) %*%  coef(Term_02F))}
 
 #Competition curves
-fitted_term_model(Term_smp25k,"cl_Ceil") + stat_function(fun = Term_02F_curve, 
+fitted_term_model(smp,"cl_Ceil") + stat_function(fun = Term_02F_curve, 
                              args=list(Comp=0),color="blue")+
   stat_function(fun = Term_02F_curve, 
                              args=list(Comp=2),color="blue")
@@ -636,7 +634,7 @@ Adding log(initial duration)^2 does seem to address the troubling pattern presen
 ```{r Model02G}
 
 #Create the model
-Term_02G <- glm (data=Term_smp25k,
+Term_02G <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ clsqr_Days +
                    n_Comp:cl_Ceil  + cl_Ceil:cl_Days, family=binomial(link="logit"))
@@ -647,7 +645,7 @@ Term_02G_curve<-function(x, Comp,Ceil){invlogit(
         Comp*Ceil,x*Ceil) %*%  coef(Term_02E))}
 
 #Competition curves
-fitted_term_model(Term_smp25k,"cl_Ceil") + stat_function(fun = Term_02G_curve, 
+fitted_term_model(smp,"cl_Ceil") + stat_function(fun = Term_02G_curve, 
                              args=list(Comp=0),color="blue")+
   stat_function(fun = Term_02G_curve, 
                              args=list(Comp=2),color="blue")
@@ -670,13 +668,13 @@ While the effect on the residual deviance is fairly minor, it does still appear 
 ```{r Mode02H}
 
 #Frequency Plot
-freq_continuous_term_plot(Term_smp25k,"l_Days","EffComp")
+freq_continuous_term_plot(smp,"l_Days","EffComp")
 
 #Plot the percent terminated across cost ceiling and competition
-binned_percent_term_plot(Term_smp25k,"l_Days","EffComp")
+binned_percent_term_plot(smp,"l_Days","EffComp")
 
 #Create the model
-Term_02H <- glm (data=Term_smp25k,
+Term_02H <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
                    n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days, family=binomial(link="logit"))
@@ -687,7 +685,7 @@ Term_02H_curve<-function(x, Comp,Ceil){invlogit(
         Comp*Ceil,x*Ceil,x*Comp) %*%  coef(Term_02H))}
 
 #Competition curves
-fitted_term_model(Term_smp25k,"cl_Days") + stat_function(fun = Term_02H_curve, 
+fitted_term_model(smp,"cl_Days") + stat_function(fun = Term_02H_curve, 
                              args=list(Comp=0,Ceil=0),color="blue")+
   stat_function(fun = Term_02H_curve, 
                              args=list(Comp=2,Ceil=0),color="blue")
@@ -715,14 +713,14 @@ Our dataset includes both stand alone contract awards and task orders that are u
 
 ```{r Model03A}
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"Veh")
+freq_discrete_term_plot(smp,"Veh")
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp25k,"Veh")
+discrete_percent_term_plot(smp,"Veh")
 
 
 #Create the model
-Term_03A <- glm (data=Term_smp25k,
+Term_03A <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
                    SIDV + MIDV + OIDV +
@@ -735,7 +733,7 @@ Term_03A_SIDV_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
         Comp*Ceil,Days*Ceil,Days*Comp) %*%  coef(Term_03A))}
 
 #Competition curves
-discrete_fitted_term_model(Term_smp25k,"SIDV") +
+discrete_fitted_term_model(smp,"SIDV") +
   stat_function(fun = Term_03A_SIDV_curve, 
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,OIDV=0),color="blue")+
@@ -749,7 +747,7 @@ Term_03A_MIDV_curve<-function(x, Comp,Ceil,Days,SIDV,OIDV){invlogit(
 
 #Plot the model and Vehicle for MIDV
 #Competition curves
-discrete_fitted_term_model(Term_smp25k,"MIDV") +
+discrete_fitted_term_model(smp,"MIDV") +
   stat_function(fun = Term_03A_MIDV_curve, 
                              args=list(Comp=0,Ceil=0,Days=0,
                                        SIDV=0,OIDV=0),color="blue")+
@@ -763,7 +761,7 @@ Term_03A_OIDV_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV){invlogit(
 
 #Plot the model and Vehicle for OIDV
 #Competition curves
-discrete_fitted_term_model(Term_smp25k,"OIDV") +
+discrete_fitted_term_model(smp,"OIDV") +
   stat_function(fun = Term_03A_OIDV_curve, 
                              args=list(Comp=0,Ceil=0,Days=0,
                                        SIDV=0,MIDV=0),color="blue")+
@@ -794,14 +792,14 @@ This may reflect that the Ceiling and Days entries reflect only the task order a
 ```{r Model03B}
 
 #Frequency Plot
-freq_continuous_term_plot(Term_smp25k,"l_Days","Veh")
+freq_continuous_term_plot(smp,"l_Days","Veh")
 
 
 #Percent Terminated Plot 
-binned_percent_term_plot(Term_smp25k,"l_Days","Veh")
+binned_percent_term_plot(smp,"l_Days","Veh")
 
 #Create the model
-Term_03B <- glm (data=Term_smp25k,
+Term_03B <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
                    SIDV + MIDV + OIDV +
@@ -816,7 +814,7 @@ Term_03B_SIDV_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
         Days*x,Days*MIDV,Days*OIDV) %*%  coef(Term_03B))}
 
 #Duration curves
-discrete_fitted_term_model(Term_smp25k,"SIDV") +
+discrete_fitted_term_model(smp,"SIDV") +
   stat_function(fun = Term_03B_SIDV_curve,
                              args=list(Comp=0,Ceil=0,Days=-1,
                                        MIDV=0,OIDV=0),color="blue")+
@@ -832,7 +830,7 @@ Term_03B_MIDV_curve<-function(x, Comp,Ceil,Days,SIDV,OIDV){invlogit(
 
 #Plot the model and Vehicle for MIDV
 #Duration Curves
-discrete_fitted_term_model(Term_smp25k,"MIDV") +
+discrete_fitted_term_model(smp,"MIDV") +
   stat_function(fun = Term_03B_MIDV_curve,
                              args=list(Comp=0,Ceil=0,Days=-1,
                                        SIDV=0,OIDV=0),color="blue")+
@@ -848,7 +846,7 @@ Term_03B_OIDV_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV){invlogit(
 
 #Plot the model and Vehicle for OIDV
 #Duration curves
-discrete_fitted_term_model(Term_smp25k,"OIDV") +
+discrete_fitted_term_model(smp,"OIDV") +
   stat_function(fun = Term_03B_OIDV_curve,
                              args=list(Comp=0,Ceil=0,Days=-1,
                                        SIDV=0,MIDV=0),color="blue")+
@@ -886,14 +884,14 @@ The next step is to check interactions with the contract vehicles. Each has a sl
 ```{r Model03C}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"EffComp","Veh")
+freq_discrete_term_plot(smp,"EffComp","Veh")
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp25k,"EffComp","Veh")
+discrete_percent_term_plot(smp,"EffComp","Veh")
 
 
 #Create the model
-Term_03C <- glm (data=Term_smp25k,
+Term_03C <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
                    SIDV + MIDV + OIDV +
@@ -910,7 +908,7 @@ Term_03C_SIDV_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
         Comp*x,Comp*MIDV,Comp*OIDV) %*%  coef(Term_03C))}
 
 #Competition curves
-discrete_fitted_term_model(Term_smp25k,"SIDV") +
+discrete_fitted_term_model(smp,"SIDV") +
   stat_function(fun = Term_03C_SIDV_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,OIDV=0),color="blue")+
@@ -927,7 +925,7 @@ Term_03C_MIDV_curve<-function(x, Comp,Ceil,Days,SIDV,OIDV){invlogit(
 
 #Plot the model and Vehicle for MIDV
 #Competition Curves
-discrete_fitted_term_model(Term_smp25k,"MIDV") +
+discrete_fitted_term_model(smp,"MIDV") +
   stat_function(fun = Term_03C_MIDV_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        SIDV=0,OIDV=0),color="blue")+
@@ -944,7 +942,7 @@ Term_03C_OIDV_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV){invlogit(
 
 #Plot the model and Vehicle for OIDV
 #Competition curves
-discrete_fitted_term_model(Term_smp25k,"OIDV") +
+discrete_fitted_term_model(smp,"OIDV") +
   stat_function(fun = Term_03C_OIDV_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        SIDV=0,MIDV=0),color="blue")+
@@ -979,16 +977,16 @@ Unlike the existance of competition, having more offers does not have the same d
 ```{r Model03D}
 
 #Frequency Plot
-freq_continuous_term_plot(Term_smp25k,"l_Ceil","Veh")
+freq_continuous_term_plot(smp,"l_Ceil","Veh")
 
 
 #Percent Terminated Plot 
-binned_percent_term_plot(Term_smp25k,"l_Ceil","Veh")
+binned_percent_term_plot(smp,"l_Ceil","Veh")
 
 #Create the model
 
 #Create the model
-Term_03D <- glm (data=Term_smp25k,
+Term_03D <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + clsqr_Ceil + cl_Days+ clsqr_Days +
                    SIDV + MIDV + OIDV +
@@ -1007,7 +1005,7 @@ Term_03D_SIDV_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
         Ceil*x,Ceil*MIDV,Ceil*OIDV) %*%  coef(Term_03D))}
 
 #Competition curves
-discrete_fitted_term_model(Term_smp25k,"SIDV") +
+discrete_fitted_term_model(smp,"SIDV") +
   stat_function(fun = Term_03D_SIDV_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,OIDV=0),color="blue")+
@@ -1025,7 +1023,7 @@ Term_03D_MIDV_curve<-function(x, Comp,Ceil,Days,SIDV,OIDV){invlogit(
 
 #Plot the model and Vehicle for MIDV
 #Competition Curves
-discrete_fitted_term_model(Term_smp25k,"MIDV") +
+discrete_fitted_term_model(smp,"MIDV") +
   stat_function(fun = Term_03D_MIDV_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        SIDV=0,OIDV=0),color="blue")+
@@ -1043,7 +1041,7 @@ Term_03D_OIDV_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV){invlogit(
 
 #Plot the model and Vehicle for OIDV
 #Competition curves
-discrete_fitted_term_model(Term_smp25k,"OIDV") +
+discrete_fitted_term_model(smp,"OIDV") +
   stat_function(fun = Term_03D_OIDV_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        SIDV=0,MIDV=0),color="blue")+
@@ -1074,7 +1072,7 @@ The interaction with contract ceiling only has a significant relationship with o
 ```{r Model03E}
 
 #Create the model
-Term_03E <- glm (data=Term_smp25k,
+Term_03E <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil  + cl_Days+ clsqr_Days +
                    SIDV + MIDV + OIDV +
@@ -1092,7 +1090,7 @@ Term_03E_SIDV_curve<-function(x, Comp,Days,SIDV,MIDV,OIDV){invlogit(
         Comp*SIDV,Comp*MIDV,Comp*OIDV) %*%  coef(Term_03E))}
 
 #Competition curves
-discrete_fitted_term_model(Term_smp25k,"cl_Ceil") +
+discrete_fitted_term_model(smp,"cl_Ceil") +
   stat_function(fun = Term_03E_SIDV_curve,
                              args=list(Comp=0,Days=0,
                                        MIDV=0,OIDV=0,SIDV=0),color="blue")+
@@ -1124,7 +1122,7 @@ Ceiling squared does little to reduce deviance and only slightly mitigates, rath
 ```{r Model03F}
 
 #Create the model
-Term_03F <- glm (data=Term_smp25k,
+Term_03F <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil  + cl_Days+ 
                    SIDV + MIDV + OIDV +
@@ -1142,7 +1140,7 @@ Term_03F_SIDV_curve<-function(x, Comp,Days,SIDV,MIDV,OIDV){invlogit(
         Comp*SIDV,Comp*MIDV,Comp*OIDV) %*%  coef(Term_03F))}
 
 #Competition curves
-discrete_fitted_term_model(Term_smp25k,"cl_Ceil") +
+discrete_fitted_term_model(smp,"cl_Ceil") +
   stat_function(fun = Term_03F_SIDV_curve,
                              args=list(Comp=0,Days=0,
                                        MIDV=0,OIDV=0,SIDV=0),color="blue")+
@@ -1182,14 +1180,14 @@ The next step adds a measure for whether the contract was cost-based or fixed-pr
 ```{r Model04A}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"FxCb")
+freq_discrete_term_plot(smp,"FxCb")
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp25k,"FxCb")
+discrete_percent_term_plot(smp,"FxCb")
 
 
 #Create the model
-Term_04A <- glm (data=Term_smp25k,
+Term_04A <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
@@ -1208,7 +1206,7 @@ Term_04A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV){invlogit(
         Comp*x,Comp*MIDV,Comp*OIDV) %*%  coef(Term_04A))}
 
 #Competition curves
-discrete_fitted_term_model(Term_smp25k,"SIDV") +
+discrete_fitted_term_model(smp,"SIDV") +
   stat_function(fun = Term_04A_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,OIDV=0),color="blue")+
@@ -1237,14 +1235,14 @@ Past CSIS research has found that fixed-price contracts do appear to be at highe
 ```{r Model04B}
 
 #Frequency Plot
-freq_continuous_term_plot(Term_smp25k,"l_Days","FxCb")
+freq_continuous_term_plot(smp,"l_Days","FxCb")
 
 #Percent Terminated Plot 
-binned_percent_term_plot(Term_smp25k,"l_Days","FxCb")
+binned_percent_term_plot(smp,"l_Days","FxCb")
 
 
 #Create the model
-Term_04B <- glm (data=Term_smp25k,
+Term_04B <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
@@ -1265,7 +1263,7 @@ Term_04B_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV){invlogit(
         Days*x) %*%  coef(Term_04B))}
 
 #Days curves
-discrete_fitted_term_model(Term_smp25k,"SIDV") +
+discrete_fitted_term_model(smp,"SIDV") +
   stat_function(fun = Term_04B_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,OIDV=0),color="blue")+
@@ -1291,13 +1289,13 @@ The probability of termination by duration chart is more clearcut with fixed pri
 ```{r Model04C}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"FxCb","Veh")
+freq_discrete_term_plot(smp,"FxCb","Veh")
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp25k,"FxCb","Veh")
+discrete_percent_term_plot(smp,"FxCb","Veh")
 
 #Create the model
-Term_04C <- glm (data=Term_smp25k,
+Term_04C <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
@@ -1319,7 +1317,7 @@ Term_04C_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
         ) %*%  coef(Term_04C))}
 
 #Vehicle curves
-discrete_fitted_term_model(Term_smp25k,"n_Fixed") +
+discrete_fitted_term_model(smp,"n_Fixed") +
   stat_function(fun = Term_04C_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        SIDV=1,MIDV=0,OIDV=0),color="blue")+
@@ -1352,15 +1350,15 @@ In the performance of the defense acquisition system report, the benefits found 
 ```{r Model04D}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"Fee")
+freq_discrete_term_plot(smp,"Fee")
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp25k,"Fee")
+discrete_percent_term_plot(smp,"Fee")
 
 
 
 #Create the model
-Term_04D <- glm (data=Term_smp25k,
+Term_04D <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ clsqr_Ceil + clsqr_Days +
                    SIDV + MIDV + OIDV + 
@@ -1380,7 +1378,7 @@ Term_04D_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
         Comp*x,Comp*MIDV,Comp*OIDV) %*%  coef(Term_04D))}
 
 #Days curves
-discrete_fitted_term_model(Term_smp25k,"n_Incent") +
+discrete_fitted_term_model(smp,"n_Incent") +
   stat_function(fun = Term_04D_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,OIDV=0,Fixed=1),color="blue")+
@@ -1408,17 +1406,17 @@ The effect of incentive fees are not significant. They do have a noteworthy coef
 ```{r Model04E}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"Fee","FxCb")+
+freq_discrete_term_plot(smp,"Fee","FxCb")+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp25k,"Fee","FxCb")+
+discrete_percent_term_plot(smp,"Fee","FxCb")+
    theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 
 
 #Create the model
-Term_04E <- glm (data=Term_smp25k,
+Term_04E <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
@@ -1440,7 +1438,7 @@ Term_04E_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
         x*Fixed) %*%  coef(Term_04E))}
 
 #Days curves
-discrete_fitted_term_model(Term_smp25k,"SIDV") +
+discrete_fitted_term_model(smp,"SIDV") +
   stat_function(fun = Term_04E_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,OIDV=0,
@@ -1470,15 +1468,15 @@ Undefinitized Contract Awards allow for quick action in situations where there i
 ```{r Model04F}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"UCA")
+freq_discrete_term_plot(smp,"UCA")
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp25k,"UCA")
+discrete_percent_term_plot(smp,"UCA")
 
 
 
 #Create the model
-Term_04F <- glm (data=Term_smp25k,
+Term_04F <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
@@ -1498,7 +1496,7 @@ Term_04F_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
         Comp*x,Comp*MIDV,Comp*OIDV) %*%  coef(Term_04F))}
 
 #Days curves
-discrete_fitted_term_model(Term_smp25k,"SIDV") +
+discrete_fitted_term_model(smp,"SIDV") +
   stat_function(fun = Term_04F_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,OIDV=0,
@@ -1526,15 +1524,15 @@ residuals_term_plot(Term_04F)+
 ```{r Model04G}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"UCA","n_Comp")
+freq_discrete_term_plot(smp,"UCA","n_Comp")
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp25k,"UCA","n_Comp")
+discrete_percent_term_plot(smp,"UCA","n_Comp")
 
 
 
 #Create the model
-Term_04G <- glm (data=Term_smp25k,
+Term_04G <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
@@ -1556,7 +1554,7 @@ Term_04G_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
         Comp*x,Comp*MIDV,Comp*OIDV) %*%  coef(Term_04G))}
 
 #Days curves
-discrete_fitted_term_model(Term_smp25k,"SIDV") +
+discrete_fitted_term_model(smp,"SIDV") +
   stat_function(fun = Term_04G_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,OIDV=0,
@@ -1586,14 +1584,14 @@ The interaction of UCA and Comp does align with the findings of the GAO as to th
 ```{r Model04H}
 
 #Frequency Plot
-freq_continuous_term_plot(Term_smp25k,"l_Days","UCA")
+freq_continuous_term_plot(smp,"l_Days","UCA")
 
 #Percent Terminated Plot 
-binned_percent_term_plot(Term_smp25k,"l_Days","UCA")
+binned_percent_term_plot(smp,"l_Days","UCA")
 
 
 #Create the model
-Term_04H <- glm (data=Term_smp25k,
+Term_04H <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
@@ -1616,7 +1614,7 @@ Term_04H_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
         Comp*x,Days*x) %*%  coef(Term_04H))}
 
 #Days curves
-discrete_fitted_term_model(Term_smp25k,"SIDV") +
+discrete_fitted_term_model(smp,"SIDV") +
   stat_function(fun = Term_04H_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,OIDV=0,
@@ -1646,15 +1644,15 @@ The intersection of initial duration and UCA had a negative coefficient that was
 ```{r Model05A}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"Intl")
+freq_discrete_term_plot(smp,"Intl")
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp25k,"Intl")
+discrete_percent_term_plot(smp,"Intl")
 
 
 
 #Create the model
-Term_05A <- glm (data=Term_smp25k,
+Term_05A <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
@@ -1677,7 +1675,7 @@ Term_05A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
         UCA*Comp) %*%  coef(Term_05A))}
 
 #Days curves
-discrete_fitted_term_model(Term_smp25k,"SIDV") +
+discrete_fitted_term_model(smp,"SIDV") +
   stat_function(fun = Term_05A_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,OIDV=0,
@@ -1707,15 +1705,15 @@ International performance of contract unexpectedly had a negative coefficent. It
 ```{r Model05B}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"Intl","FxCb")
+freq_discrete_term_plot(smp,"Intl","FxCb")
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp25k,"Intl","FxCb")
+discrete_percent_term_plot(smp,"Intl","FxCb")
 
 
 
 #Create the model
-Term_05A <- glm (data=Term_smp25k,
+Term_05A <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
@@ -1739,7 +1737,7 @@ Term_05A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
         UCA*Comp) %*%  coef(Term_05A))}
 
 #Days curves
-discrete_fitted_term_model(Term_smp25k,"SIDV") +
+discrete_fitted_term_model(smp,"SIDV") +
   stat_function(fun = Term_05A_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,OIDV=0,
@@ -1767,15 +1765,15 @@ residuals_term_plot(Term_05A)+
 ```{r Model05C}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"Intl","Veh")
+freq_discrete_term_plot(smp,"Intl","Veh")
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp25k,"Intl","Veh")
+discrete_percent_term_plot(smp,"Intl","Veh")
 
 
 
 #Create the model
-Term_05C <- glm (data=Term_smp25k,
+Term_05C <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
@@ -1799,7 +1797,7 @@ Term_05C_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
         UCA*Comp) %*%  coef(Term_05C))}
 
 #Days curves
-discrete_fitted_term_model(Term_smp25k,"SIDV") +
+discrete_fitted_term_model(smp,"SIDV") +
   stat_function(fun = Term_05C_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,OIDV=0,
@@ -1842,21 +1840,21 @@ Other DoD stands out for its sheer quantity of contracts and task orders and als
 # display(Term_09A)
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"Who")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+freq_discrete_term_plot(smp,"Who")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp25k,"Who")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+discrete_percent_term_plot(smp,"Who")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 
-Term_smp25k$b_ODoD<-Term_smp25k$Who
-levels(Term_smp25k$b_ODoD)<- list("1"=c("Other DoD"), 
+smp$b_ODoD<-smp$Who
+levels(smp$b_ODoD)<- list("1"=c("Other DoD"), 
                                 "0"=c("Air Force","Army","Navy"))
-Term_smp25k$b_ODoD[Term_smp25k$b_ODoD=="Uncategorized"]<-NA
-Term_smp25k$b_ODoD<-as.integer(as.character(Term_smp25k$b_ODoD))
+smp$b_ODoD[smp$b_ODoD=="Uncategorized"]<-NA
+smp$b_ODoD<-as.integer(as.character(smp$b_ODoD))
 
 #Create the model
-Term_06A <- glm (data=Term_smp25k,
+Term_06A <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
@@ -1880,7 +1878,7 @@ Term_06A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA,Intl){invlog
         UCA*Comp) %*%  coef(Term_06A))}
 
 #Days curves
-discrete_fitted_term_model(Term_smp25k,"b_ODoD") +
+discrete_fitted_term_model(smp,"b_ODoD") +
   stat_function(fun = Term_06A_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,OIDV=0,
@@ -1909,21 +1907,21 @@ After inclusion of DLA, the Competition correlates significantly predicts a grea
 ```{r Model06B}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"EffComp","Who")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+freq_discrete_term_plot(smp,"EffComp","Who")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp25k,"EffComp","Who")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+discrete_percent_term_plot(smp,"EffComp","Who")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 
-Term_smp25k$b_ODoD<-Term_smp25k$Who
-levels(Term_smp25k$b_ODoD)<- list("1"=c("Other DoD"), 
+smp$b_ODoD<-smp$Who
+levels(smp$b_ODoD)<- list("1"=c("Other DoD"), 
                                 "0"=c("Air Force","Army","Navy"))
-Term_smp25k$b_ODoD[Term_smp25k$b_ODoD=="Uncategorized"]<-NA
-Term_smp25k$b_ODoD<-as.integer(as.character(Term_smp25k$b_ODoD))
+smp$b_ODoD[smp$b_ODoD=="Uncategorized"]<-NA
+smp$b_ODoD<-as.integer(as.character(smp$b_ODoD))
 
 #Create the model
-Term_06B <- glm (data=Term_smp25k,
+Term_06B <- glm (data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
@@ -1948,7 +1946,7 @@ Term_06B_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA,Intl){invlog
         UCA*Comp) %*%  coef(Term_06B))}
 
 #Days curves
-discrete_fitted_term_model(Term_smp25k,"b_ODoD") +
+discrete_fitted_term_model(smp,"b_ODoD") +
   stat_function(fun = Term_06B_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,OIDV=0,
@@ -1979,12 +1977,12 @@ The North American Industrial Classification system captures the sector of each 
 ```{r Model08A}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"NAICS")
+freq_discrete_term_plot(smp,"NAICS")
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp25k,"NAICS")
+discrete_percent_term_plot(smp,"NAICS")
 
-Term_08A <- glmer(data=Term_smp25k,
+Term_08A <- glmer(data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
@@ -1997,7 +1995,7 @@ display(Term_08A)
 
 
 #Create the model
-# Term_08A <- glmer(data=Term_smp25k,
+# Term_08A <- glmer(data=smp,
 #                  b_Term ~n_Comp + 
 #                    cl_Ceil + cl_Days+ 
 #                    SIDV + MIDV + OIDV +
@@ -2020,7 +2018,7 @@ Term_08A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
         UCA*Comp) %*%  coef(Term_08A))}
 
 #Days curves
-discrete_fitted_term_model(Term_smp25k,"SIDV") +
+discrete_fitted_term_model(smp,"SIDV") +
   stat_function(fun = Term_08A_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,OIDV=0,
@@ -2053,10 +2051,10 @@ Unfortunately, after including Start Fiscal Year, the model again failed to conv
 ```{r Model08B}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"PSR_What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+freq_discrete_term_plot(smp,"PSR_What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp25k,"PSR_What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+discrete_percent_term_plot(smp,"PSR_What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 
 
@@ -2074,7 +2072,7 @@ Term_08B <- glmer(data=Term_smp1m,
                   , family=binomial(link="logit"))
 display(Term_08B)
 #Model failed to converge with max|grad| = 0.00858407 (tol = 0.001, component 1)
-# Term_08B <- glmer(data=Term_smp25k,
+# Term_08B <- glmer(data=smp,
 #                  b_Term ~n_Comp + 
 #                    cl_Ceil + cl_Days+ 
 #                    SIDV + MIDV + OIDV +
@@ -2100,7 +2098,7 @@ display(Term_08B)
 # save(Term_08B,file="Term08B.Rdata")
 load("Term08B.Rdata")
 #Days curves
-discrete_fitted_term_model(Term_smp25k,"SIDV") +
+discrete_fitted_term_model(smp,"SIDV") +
   stat_function(fun = Term_08B_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,OIDV=0,
@@ -2129,37 +2127,37 @@ After the incorporation of NAICS intercepts, ceiling related interactions had st
 #, fig.height = 10, fig.width = 6.5
 #Effective Competition
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"PSR_What","EffComp")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+freq_discrete_term_plot(smp,"PSR_What","EffComp")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp25k,"EffComp","PSR")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+discrete_percent_term_plot(smp,"EffComp","PSR")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-discrete_percent_term_plot(Term_smp25k,"EffComp","What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+discrete_percent_term_plot(smp,"EffComp","What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-discrete_percent_term_plot(Term_smp25k,"EffComp","PSR_What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+discrete_percent_term_plot(smp,"EffComp","PSR_What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 
 #Effective Competition
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"PSR_What","Veh")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+freq_discrete_term_plot(smp,"PSR_What","Veh")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp25k,"Veh","PSR")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+discrete_percent_term_plot(smp,"Veh","PSR")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-discrete_percent_term_plot(Term_smp25k,"Veh","What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+discrete_percent_term_plot(smp,"Veh","What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-discrete_percent_term_plot(Term_smp25k,"Veh","PSR_What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+discrete_percent_term_plot(smp,"Veh","PSR_What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 #FxCb
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"PSR_What","FxCb")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+freq_discrete_term_plot(smp,"PSR_What","FxCb")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp25k,"FxCb","PSR")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+discrete_percent_term_plot(smp,"FxCb","PSR")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-discrete_percent_term_plot(Term_smp25k,"FxCb","What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+discrete_percent_term_plot(smp,"FxCb","What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-discrete_percent_term_plot(Term_smp25k,"FxCb","PSR_What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+discrete_percent_term_plot(smp,"FxCb","PSR_What")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 
 Term_08C <- glmer(data=Term_smp1m,
@@ -2179,7 +2177,7 @@ Term_08C <- glmer(data=Term_smp1m,
 display(Term_08C)
 save(Term_08C,file="Term08C.Rdata")
 
-Term_08D <- glmer(data=Term_smp25k,
+Term_08D <- glmer(data=smp,
                  b_Term ~ n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
@@ -2204,7 +2202,7 @@ residuals_term_plot(Term_08C)+
   labs(x="Estimated  Pr (Termination)")
 
 
-# Term_08E <- glmer(data=Term_smp25k,
+# Term_08E <- glmer(data=smp,
 #                  b_Term ~ n_Comp + 
 #                    cl_Ceil + cl_Days+ 
 #                    SIDV + MIDV + OIDV +
@@ -2244,13 +2242,13 @@ The use of Comp as
 ```{r Model09A}
 
 #Frequency Plot
-freq_discrete_term_plot(Term_smp25k,"NAICS")
+freq_discrete_term_plot(smp,"NAICS")
 
 #Percent Terminated Plot 
-discrete_percent_term_plot(Term_smp25k,"NAICS")
+discrete_percent_term_plot(smp,"NAICS")
 
 #Model failed to converge with max|grad| = 0.00993991 (tol = 0.001, component 1)
-Term_09A <- glmer(data=Term_smp25k,
+Term_09A <- glmer(data=smp,
                  b_Term ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    SIDV + MIDV + OIDV +
@@ -2261,7 +2259,7 @@ Term_09A <- glmer(data=Term_smp25k,
 display(Term_09A)
 
 #Create the model
-# Term_08A <- glmer(data=Term_smp25k,
+# Term_08A <- glmer(data=smp,
 #                  b_Term ~n_Comp + 
 #                    cl_Ceil + cl_Days+ 
 #                    SIDV + MIDV + OIDV +
@@ -2284,7 +2282,7 @@ Term_08A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
         UCA*Comp) %*%  coef(Term_08A))}
 
 #Days curves
-discrete_fitted_term_model(Term_smp25k,"SIDV") +
+discrete_fitted_term_model(smp,"SIDV") +
   stat_function(fun = Term_08A_curve,
                              args=list(Comp=0,Ceil=0,Days=0,
                                        MIDV=0,SIDV=0,OIDV=0,
