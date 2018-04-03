@@ -1,6 +1,7 @@
 #DIIGstat.r
 library(arm)
 library(dplyr)
+library(ggplot2)
 #This will likely be folded into CSIS360
 #But for now, using it to create and refine functions for regression analysis.
 
@@ -36,9 +37,9 @@ contract$b_CBre<-ifelse(contract$CBre=="Ceiling Breach",1,NA)
 contract$b_CBre[contract$CBre=="None"]<-0
 
 
-#Create a jittered version of Crai for display purposes
+#Create a jittered version of CBre for display purposes
 #Unlike geom_jitter, this caps values at 0 and 1
-contract$j_Crai<-jitter.binary(contract$b_CBre)
+contract$j_CBre<-jitter.binary(contract$b_CBre)
 
 
 #b_Term
@@ -49,18 +50,18 @@ contract$b_Term[contract$Term=="Unterminated"]<-0
 #Unlike geom_jitter, this caps values at 0 and 1
 contract$j_Term<-jitter.binary(contract$b_Term)
 
-#n_Crai
+#n_CBre
 # contract$pChangeOrderUnmodifiedBaseAndAll<-as.numeric(as.character(contract$pChangeOrderUnmodifiedBaseAndAll))
 # contract$pChange3Sig<-round(
 #   contract$pChangeOrderUnmodifiedBaseAndAll,3)
 
 #Should include this in the original data frame but for now can drive it.
-contract$n_Crai<-contract$ChangeOrderBaseAndAllOptionsValue
+contract$n_CBre<-contract$ChangeOrderBaseAndAllOptionsValue
 
-#l_Crai
-contract$l_Crai<-NA
-contract$l_Crai[contract$b_CBre==1 & !is.na(contract$b_CBre)]<-
-  log(contract$n_Crai[contract$b_CBre==1 & !is.na(contract$b_CBre)])
+#l_CBre
+contract$l_CBre<-NA
+contract$l_CBre[contract$b_CBre==1 & !is.na(contract$b_CBre)]<-
+  log(contract$n_CBre[contract$b_CBre==1 & !is.na(contract$b_CBre)])
 
 #l_Ceil
 contract$l_Ceil<-log(contract$UnmodifiedContractBaseAndAllOptionsValue)
@@ -148,42 +149,36 @@ contract$n_Fixed<-as.integer(as.character(contract$n_Fixed))
 contract$n_Incent<-contract$Fee
 levels(contract$n_Incent) <-
   list("1"=c("Incentive"), 
-       "0.5"=c("Combination or Other Fee"),
-       "0"=c("Award Fee", "FFP or No Fee", "Fixed Fee"))
+       "0.5"=c("Combination"),
+       "0"=c("Award Fee", "FFP or No Fee", "Fixed Fee", "Other Fee"))
 contract$n_Incent<-as.integer(as.character(contract$n_Incent))
 
 #n_NoFee
 contract$n_NoFee<-contract$Fee
 levels(contract$n_NoFee) <-
   list("1"=c("FFP or No Fee"), 
-       "0.5"=c("Combination or Other Fee"),
-       "0"=c("Award Fee", "Incentive", "Fixed Fee"))
+       "0.5"=c("Combination"),
+       "0"=c("Award Fee", "Incentive", "Fixed Fee", "Other Fee"))
 contract$n_NoFee<-as.integer(as.character(contract$n_NoFee))
 
 
-#n_Comp
-if (all(levels(factor(contract$Comp))==c("0","1"))){
-  contract$Comp<-factor(contract$Comp)
-  levels(contract$Comp) <-
-  list("No Competition"="0",
-       "Competition"="1")
 
 #Right now comp is not actually a factor, so don't need to process it
 contract$b_Comp<-contract$Comp #Fix in Rdata, and add back comp
 levels(contract$b_Comp) <-
-  list("0"="No Competition",
-       "1"="Competition")
+  list("0"="No Comp.",
+       "1"="Comp.")
 contract$b_Comp<-as.integer(as.character(contract$b_Comp))
 
+#n_Comp
+contract$n_Comp<-contract$EffComp #Fix in Rdata, and add back comp
+levels(contract$n_Comp) <-
+  list("0"="No Comp.",
+       "0.5"="1 Offer",
+       "1"="2+ Offers")
+contract$n_Comp<-as.integer(as.character(contract$n_Comp))
 
-contract$n_Comp<-contract$b_Comp
-contract$n_Comp[contract$b_Comp==1 & !is.na(contract$b_Comp)]<-
-  ifelse(contract$SingleOffer[contract$b_Comp==1 & !is.na(contract$b_Comp)]=="Multi",2,1)
-contract$EffComp<-factor(contract$n_Comp)
-levels(contract$EffComp) <-
-  list("No Competition"="0",
-       "1 Offer"="1",
-       "2+ Offer"="2")
+
 
 contract$n_Offr<-contract$Offr
 levels(contract$n_Offr) <-
@@ -216,7 +211,8 @@ levels(contract$CompOffr) <-
   contract$cn_Offr<-scale(contract$n_Offr)
   contract$cl_Offr<-scale(contract$l_Offr)
   
-}
+  
+
 
 #b_Intl
 contract$b_Intl<-contract$Intl
@@ -256,33 +252,34 @@ contract$b_UCA<-as.integer(as.character(contract$b_UCA))
 
 
 
-#IDV
-contract$IDV<-contract$Veh
-levels(contract$IDV) <-
-  list("1"=c("MULTIPLE AWARD", "SINGLE AWARD","MULTIPLE AWARD"), 
-       "0"=c("Def/Pur"))
-contract$IDV<-as.integer(as.character(contract$IDV))
 
 #SIDV
 contract$SIDV<-contract$Veh
 levels(contract$SIDV) <-
-  list("1"=c("SINGLE AWARD"), 
-       "0"=c("Def/Pur","MULTIPLE AWARD","Other IDV"))
+  list("1"=c("SINGLE AWARD IDC"), 
+       "0"=c("Def/Pur","MULTIPLE AWARD IDC","Other IDV","FSS/GWAC","BPA/BOA"))
 contract$SIDV<-as.integer(as.character(contract$SIDV))
 
 #MIDV
 contract$MIDV<-contract$Veh
 levels(contract$MIDV) <-
-  list("1"=c("MULTIPLE AWARD"), 
-       "0"=c("Def/Pur","SINGLE AWARD", "Other IDV"))
+  list("1"=c("MULTIPLE AWARD IDC"), 
+       "0"=c("Def/Pur","SINGLE AWARD IDC", "Other IDV","FSS/GWAC","BPA/BOA"))
 contract$MIDV<-as.integer(as.character(contract$MIDV))
 
-#OIDV
-contract$OIDV<-contract$Veh
-levels(contract$OIDV) <-
-  list("1"=c("Other IDV"), 
-       "0"=c("Def/Pur","SINGLE AWARD", "MULTIPLE AWARD"))
-contract$OIDV<-as.integer(as.character(contract$OIDV))
+#FSSGWAC
+contract$FSSGWAC<-contract$Veh
+levels(contract$FSSGWAC) <-
+  list("1"=c("FSS/GWAC"), 
+       "0"=c("Def/Pur","SINGLE AWARD IDC", "MULTIPLE AWARD IDC","BPA/BOA"))
+contract$FSSGWAC<-as.integer(as.character(contract$FSSGWAC))
+
+#BPABOA
+contract$BPABOA<-contract$Veh
+levels(contract$BPABOA) <-
+  list("1"=c("BPA/BOA"), 
+       "0"=c("Def/Pur","SINGLE AWARD IDC", "MULTIPLE AWARD IDC","FSS/GWAC"))
+contract$BPABOA<-as.integer(as.character(contract$BPABOA))
 
 #NAICS
 load("annual_naics_summary.Rdata")
@@ -292,7 +289,7 @@ contract<-left_join(contract,NAICS_join, by=c("StartFY"="StartFY",
 
 
 
-contract$c_hh_index_lag1<-scale(contract$hh_index_lag1)
+contract$c_HHI_lag1<-scale(contract$HHI_lag1)
 contract$cl_Ceil<-scale(contract$l_Ceil)
 contract$cl_Days<-scale(contract$l_Days)
 contract$clsqr_Ceil<-contract$cl_Ceil^2
@@ -386,7 +383,7 @@ binned.resids <- function (x, y, nclass=sqrt(length(x))){
   return (list (binned=output, xbreaks=xbreaks))
 }
 
-binned_fitted_versus_residuals<-function(model){
+binned_fitted_versus_term_residuals<-function(model){
   
   #Save this for a future GLM
   # Term_data_01A<-data.frame(fitted=fitted(Term_01A),
@@ -400,7 +397,7 @@ binned_fitted_versus_residuals<-function(model){
     data <-data.frame(
       fitted=fitted(model),
       residuals=residuals(model),
-      b_Term=model@frame$b_Term
+      b_Term=model@frame$b_Term,
     )
     
   }
@@ -424,6 +421,46 @@ binned_fitted_versus_residuals<-function(model){
          aes(y=mean_Term,x=mean_fitted))+geom_point() +
     labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 }
+
+binned_fitted_versus_cbre_residuals<-function(model){
+  
+  #Save this for a future GLM
+  # CBre_data_01A<-data.frame(fitted=fitted(CBre_01A),
+  #                        residuals=residuals(CBre_01A),
+  #                        nCBre=CBre_01A@frame$nCBre,
+  #                        cb_Comp=CBre_01A@frame$cb_Comp
+  #                        )
+  
+  if(class(model)=="glmerMod")
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_CBre=model@frame$b_CBre,
+    )
+    
+  }
+  else
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_CBre=model$model$b_CBre
+    )
+  }
+  
+  data$bin_fitted<-bin_df(data,rank_col="fitted")
+  
+  data<-subset(data,!is.na(fitted) & !is.na(residuals) )
+  
+  ggplot(data= data %>% 
+           group_by(bin_fitted) %>% 
+           summarise (mean_CBre = mean(b_CBre),
+                      mean_fitted =mean(fitted)),
+         aes(y=mean_CBre,x=mean_fitted))+geom_point() +
+    labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+}
+
 
 residuals_term_plot<-function(model,x_col="fitted",bins=40){
   #Plot the fitted values vs actual results
@@ -469,6 +506,51 @@ residuals_term_plot<-function(model,x_col="fitted",bins=40){
   
 }
 
+residuals_cbre_plot<-function(model,x_col="fitted",bins=40){
+  #Plot the fitted values vs actual results
+  
+  
+  if(class(model)=="glmerMod")
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_CBre=model@frame$b_CBre
+    )
+    
+  }
+  else
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_CBre=model$model$b_CBre
+    )
+  }
+  
+  
+  if (x_col!="fitted"){
+    data$x_col<-
+      test<-model$model[,x_col]
+    colnames(data)[colnames(data)=="x_col"]<-x_col
+  }
+  
+  
+  data<-binned.resids (data[,x_col],
+                       data$fitted-data$b_CBre, nclass=bins)$binned
+  
+  ggplot(data=data,
+         aes(x=xbar,y-ybar))+
+    geom_point(aes(y=ybar))+ #Residuals
+    geom_line(aes(y=se2),col="grey")+
+    geom_line(aes(y=-se2),col="grey")+
+    labs(title="Binned residual plot",
+         y="Average residual")
+  
+  
+}
+
+
 freq_discrete_term_plot<-function(data,x_col,group_col=NA){
   if(is.na(group_col)){
     plot<-ggplot(data=data,
@@ -488,7 +570,7 @@ freq_discrete_term_plot<-function(data,x_col,group_col=NA){
 }
 
 
-freq_discrete_crai_plot<-function(data,x_col,group_col=NA){
+freq_discrete_cbre_plot<-function(data,x_col,group_col=NA){
   if(is.na(group_col)){
     plot<-ggplot(data=data,
                  aes_string(x=x_col))+
@@ -525,6 +607,25 @@ freq_continuous_term_plot<-function(data,x_col,group_col=NA,bins=20){
 }
 
 
+freq_continuous_cbre_plot<-function(data,x_col,group_col=NA,bins=20){
+  if(is.na(group_col)){
+    plot<-ggplot(data=data,
+                 aes_string(x=x_col))+
+      facet_wrap(~CBre,ncol=1,scales="free_y")
+  }
+  else{
+    plot<-ggplot(data=data,
+                 aes_string(x=x_col))+geom_histogram(bins=bins) +
+      facet_grid(as.formula(paste("CBre~",group_col)),scales="free_y")
+    
+  }
+  plot+labs(title="Frequency by Ceiling Breach",
+            caption="Source: FPDS, CSIS Analysis")+
+    scale_y_continuous(labels = scales::comma) + 
+    geom_histogram(bins=bins) 
+}
+
+
 binned_percent_term_plot<-function(data,x_col,group_col=NA){
   data<-data[!is.na(data[,x_col]),]
   if(is.na(group_col)){
@@ -552,24 +653,24 @@ binned_percent_term_plot<-function(data,x_col,group_col=NA){
 
 
 
-binned_percent_crai_plot<-function(data,x_col,group_col=NA){
+binned_percent_cbre_plot<-function(data,x_col,group_col=NA){
   data<-data[!is.na(data[,x_col]),]
   if(is.na(group_col)){
     data$bin_x<-bin_df(data,x_col)
     plot<-ggplot(data=data %>%
                    group_by(bin_x) %>%
-                   summarise_ (   mean_Crai = "mean(b_CBre)"   
+                   summarise_ (   mean_CBre = "mean(b_CBre)"   
                                   , mean_x =  paste( "mean(" ,  x_col  ,")"  ))     ,
-                 aes(y=mean_Crai,x=mean_x))
+                 aes(y=mean_CBre,x=mean_x))
   }
   else{
     data<-data[!is.na(data[,group_col]),]
     data$bin_x<-bin_df(data,rank_col=x_col,group_col=group_col)
     plot<-ggplot(data=data %>%
                    group_by_("bin_x",group_col) %>%
-                   summarise_ (   mean_Crai = "mean(b_CBre)"   
+                   summarise_ (   mean_CBre = "mean(b_CBre)"   
                                   , mean_x =  paste( "mean(" ,  x_col  ,")"  ))     ,
-                 aes(y=mean_Crai,x=mean_x))+
+                 aes(y=mean_CBre,x=mean_x))+
       facet_wrap(as.formula(paste("~",group_col)))
   }
   plot+geom_point()+
@@ -602,21 +703,21 @@ discrete_percent_term_plot<-function(data,x_col,group_col=NA){
 }
 
 
-discrete_percent_crai_plot<-function(data,x_col,group_col=NA){
+discrete_percent_cbre_plot<-function(data,x_col,group_col=NA){
   data<-data[!is.na(data[,x_col]) & !is.na(data[,"b_CBre"]),]
   if(is.na(group_col)){
     plot<-ggplot(data=data %>%
                    group_by_(x_col) %>%
-                   summarise (   mean_Crai = mean(b_CBre)),
-                 aes_string(y="mean_Crai",x=x_col))
+                   summarise (   mean_CBre = mean(b_CBre)),
+                 aes_string(y="mean_CBre",x=x_col))
     
   }
   else{
     data<-data[!is.na(data[,group_col]),]
     plot<-ggplot(data=data %>%
                    group_by_(x_col,group_col) %>%
-                   summarise (   mean_Crai = mean(b_CBre)),
-                 aes_string(y="mean_Crai",x=x_col))+
+                   summarise (   mean_CBre = mean(b_CBre)),
+                 aes_string(y="mean_CBre",x=x_col))+
       facet_wrap(as.formula(paste("~",group_col)))
     
   }
@@ -631,6 +732,13 @@ fitted_term_model<-function(data,x_col){
          aes_string(y="j_Term",x=x_col))+geom_point(alpha=0.01)+scale_y_sqrt() +
     labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
 }
+
+fitted_cbre_model<-function(data,x_col){
+  ggplot(data=data,
+         aes_string(y="j_CBre",x=x_col))+geom_point(alpha=0.01)+scale_y_sqrt() +
+    labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
+}
+
 
 discrete_fitted_term_model<-function(data,x_col){
   ggplot(data=data,

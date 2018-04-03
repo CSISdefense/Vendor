@@ -14,26 +14,29 @@ library(csis360)
 library(dplyr)
 library(gridExtra)
 library(hexbin)
+library(ggplot2)
 load("data//defense_naics_vendor.Rdata")
-
+annual_naics6_summary<-subset(annual_naics6_summary,Fiscal.Year>=2007)
+annual_naics2_summary<-subset(annual_naics2_summary,Fiscal.Year>=2007)
 
 #Converting Obligation.2016 back to actual dollars rather than millions
-annual_naics_summary$Obligation.2016<-annual_naics_summary$Obligation.2016*1e9
-annual_summary$Obligation.2016<-annual_summary$Obligation.2016*1e9
+# annual_naics6_summary$Obligation.2016<-annual_naics6_summary$Obligation.2016*1e9
+# annual_summary$Obligation.2016<-annual_summary$Obligation.2016*1e9
 
 ```
 
 ##Sector Size
 
-The present unit of analysis is the dyad of fiscal year and industrial sector, as defined by 6 digit NAICS code. The average annual obligations for is hundreds of millions of dollars (`r prettyNum(mean(annual_naics_summary$Obligation.2016,na.rm=TRUE),big.mark=",")`).
+The present unit of analysis is the dyad of fiscal year and industrial sector, as defined by 6 digit NAICS code. The average annual obligations for is hundreds of millions of dollars (`r prettyNum(mean(annual_naics6_summary$Obligation.2016,na.rm=TRUE),big.mark=",")`).
 
-However, there is a fair amount of diversity in the obligations by sector. A fair number of these categories have minimal DoD contract spending, e.g. `r scales::percent(nrow(filter(annual_naics_summary, Obligation.2016 <1e6))/nrow(annual_naics_summary))` under \$1,000,000 and `r scales::percent(nrow(filter(annual_naics_summary, Obligation.2016 <1e7))/nrow(annual_naics_summary))` under \$10,000,000. For the `r prettyNum(nrow(filter(annual_naics_summary, vendor_count==1)),big.mark=",")` cases with only a single vendor, the average size is `r prettyNum(mean(filter(annual_naics_summary,vendor_count==1)$Obligation.2016,na.rm=TRUE),big.mark=",")` which suggests that smaller cases will often be high consolidated in a manner that likely reflects a minimal number of contracts rather than a genuinely consolidated industrial sector.
+However, there is a fair amount of diversity in the obligations by sector. A fair number of these categories have minimal DoD contract spending, e.g. `r scales::percent(nrow(filter(annual_naics6_summary, Obligation.2016 <1e6))/nrow(annual_naics6_summary))` under \$1,000,000 and `r scales::percent(nrow(filter(annual_naics6_summary, Obligation.2016 <1e7))/nrow(annual_naics6_summary))` under \$10,000,000. For the `r prettyNum(nrow(filter(annual_naics6_summary, vendor_count==1)),big.mark=",")` cases with only a single vendor, the average size is `r prettyNum(mean(filter(annual_naics6_summary,vendor_count==1)$Obligation.2016,na.rm=TRUE),big.mark=",")` which suggests that smaller cases will often be high consolidated in a manner that likely reflects a minimal number of contracts rather than a genuinely consolidated industrial sector.
 
 The study team is presently considering ways to handle these small datasets, for example eliminating them from the sample, or bundling them to a higher level on the heirarchy of NACIS codes.
 
-```{r sector_size, echo=FALSE, fig.width=6.5, fig.height=8}
+### NAICS-6 code
+```{r naics6, echo=FALSE, fig.width=6.5, fig.height=8}
 
-dollar_hist<-ggplot(annual_naics_summary,
+dollar_hist<-ggplot(annual_naics6_summary,
        aes(x=Obligation.2016))+geom_histogram()+
   # scale_y_continuous(trans="log10",labels=scales::comma_format())+
   scale_x_continuous(trans="log10",labels=scales::comma_format(),
@@ -41,7 +44,7 @@ dollar_hist<-ggplot(annual_naics_summary,
   theme(axis.text.x = element_text(angle = 45,hjust=1))
 
 
-vendor_hist<-ggplot(annual_naics_summary,
+vendor_hist<-ggplot(annual_naics6_summary,
        aes(x=vendor_count))+geom_histogram()+
   # scale_y_continuous(trans="log10",labels=scales::comma_format())+
   scale_x_continuous(trans="log10",labels=scales::comma_format(),
@@ -49,7 +52,24 @@ vendor_hist<-ggplot(annual_naics_summary,
     theme(axis.text.x = element_text(angle = 45,hjust=1))
 
 
-dollar_vendor_scat<-ggplot(annual_naics_summary,
+dollar_hh_index_scat<-ggplot(annual_naics6_summary,
+       aes(x=Obligation.2016,
+           y=hh_index))+geom_point(alpha=0.01)+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+    theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+
+vendor_hh_index_scat<-ggplot(annual_naics6_summary,
+       aes(x=vendor_count,
+           y=hh_index))+geom_point(alpha=0.01)+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+    theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+
+
+dollar_vendor_scat<-ggplot(annual_naics6_summary,
        aes(x=Obligation.2016,
            y=vendor_count))+geom_point(alpha=0.01)+
   scale_y_continuous(trans="log10",labels=scales::comma_format(),
@@ -59,19 +79,305 @@ dollar_vendor_scat<-ggplot(annual_naics_summary,
     theme(axis.text.x = element_text(angle = 45,hjust=1))
 
   
-max(annual_naics_summary$Obligation.2016)
+ max(subset(annual_naics6_summary,!is.na(NAICS_Code))$Obligation.2016,na.rm=TRUE)
 
-filter(annual_naics_summary,Obligation.2016==max(annual_naics_summary$Obligation.2016))
+  )
+# filter(annual_naics6_summary,Obligation.2016==max(annual_naics6_summary$Obligation.2016))
+# 
+# 
+# 
+# annual_naics6_summary <-annual_naics6_summary %>% group_by(NAICS_Code) %>% 
+#   dplyr::mutate(total=sum(Obligation.2016,na.rm=TRUE))
+# annual_naics6<-as.data.frame(annual_naics6)
+# annual_naics6_summary$rank<-rank(-annual_naics6_summary$total,
+#                    ties.method ="min")
+# View(subset(annual_naics6_summary,rank<=10))
+# ggplot(subset(annual_naics6_summary,rank <=10),
+#               aes(x=Fiscal.Year,y=hh_index))+geom_line()+facet_wrap(~NAICS_Code )
+# 
+# annual_naics6_summary
+# 
+# top_NAICS$rank<-rank
 
-
-lay <- rbind(c(1,2),
-             c(3,3))
+ lay <- rbind(c(1,2),
+             c(3,4),
+             c(5,5))
 grid.arrange(dollar_hist, 
              vendor_hist,
+             dollar_hh_index_scat,
+             vendor_hh_index_scat,
              dollar_vendor_scat,
              layout_matrix = lay)
 
 ```
+
+### NAICS-5 code
+```{r naics5, echo=FALSE, fig.width=6.5, fig.height=8}
+
+dollar_hist<-ggplot(annual_naics5_summary,
+       aes(x=Obligation.2016))+geom_histogram()+
+  # scale_y_continuous(trans="log10",labels=scales::comma_format())+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+  theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+
+vendor_hist<-ggplot(annual_naics5_summary,
+       aes(x=vendor_count))+geom_histogram()+
+  # scale_y_continuous(trans="log10",labels=scales::comma_format())+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,4,8,12,20,50, 1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+    theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+
+dollar_hh_index_scat<-ggplot(annual_naics5_summary,
+       aes(x=Obligation.2016,
+           y=hh_index))+geom_point(alpha=0.01)+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+    theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+
+vendor_hh_index_scat<-ggplot(annual_naics5_summary,
+       aes(x=vendor_count,
+           y=hh_index))+geom_point(alpha=0.01)+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+    theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+
+
+dollar_vendor_scat<-ggplot(annual_naics5_summary,
+       aes(x=Obligation.2016,
+           y=vendor_count))+geom_point(alpha=0.01)+
+  scale_y_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,4,8,12,20,50, 1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+    theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+  
+max(annual_naics5_summary$Obligation.2016,na.rm=TRUE)
+
+filter(annual_naics5_summary,Obligation.2016==max(annual_naics5_summary$Obligation.2016))
+
+ lay <- rbind(c(1,2),
+             c(3,4),
+             c(5,5))
+grid.arrange(dollar_hist, 
+             vendor_hist,
+             dollar_hh_index_scat,
+             vendor_hh_index_scat,
+             dollar_vendor_scat,
+             layout_matrix = lay)
+ max(subset(annual_naics5_summary,!is.na(NAICS_Code))$Obligation.2016,na.rm=TRUE)
+
+```
+
+### NAICS-4 code
+```{r naics4, echo=FALSE, fig.width=6.5, fig.height=8}
+
+dollar_hist<-ggplot(annual_naics4_summary,
+       aes(x=Obligation.2016))+geom_histogram()+
+  # scale_y_continuous(trans="log10",labels=scales::comma_format())+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+  theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+
+vendor_hist<-ggplot(annual_naics4_summary,
+       aes(x=vendor_count))+geom_histogram()+
+  # scale_y_continuous(trans="log10",labels=scales::comma_format())+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,4,8,12,20,50, 1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+    theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+
+dollar_hh_index_scat<-ggplot(annual_naics4_summary,
+       aes(x=Obligation.2016,
+           y=hh_index))+geom_point(alpha=0.01)+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+    theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+
+vendor_hh_index_scat<-ggplot(annual_naics4_summary,
+       aes(x=vendor_count,
+           y=hh_index))+geom_point(alpha=0.01)+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+    theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+
+
+dollar_vendor_scat<-ggplot(annual_naics4_summary,
+       aes(x=Obligation.2016,
+           y=vendor_count))+geom_point(alpha=0.01)+
+  scale_y_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,4,8,12,20,50, 1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+    theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+  
+max(annual_naics4_summary$Obligation.2016,na.rm=TRUE)
+
+filter(annual_naics5_summary,Obligation.2016==max(annual_naics5_summary$Obligation.2016))
+
+ lay <- rbind(c(1,2),
+             c(3,4),
+             c(5,5))
+grid.arrange(dollar_hist, 
+             vendor_hist,
+             dollar_vendor_scat,
+             dollar_hh_index_scat,
+             dollar_vendor_scat,
+             layout_matrix = lay)
+max(subset(annual_naics4_summary,!is.na(NAICS_Code))$Obligation.2016,na.rm=TRUE)
+
+```
+
+### NAICS-3 code
+```{r naics3, echo=FALSE, fig.width=6.5, fig.height=8}
+
+dollar_hist<-ggplot(annual_naics3_summary,
+       aes(x=Obligation.2016))+geom_histogram()+
+  # scale_y_continuous(trans="log10",labels=scales::comma_format())+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+  theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+
+vendor_hist<-ggplot(annual_naics3_summary,
+       aes(x=vendor_count))+geom_histogram()+
+  # scale_y_continuous(trans="log10",labels=scales::comma_format())+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,4,8,12,20,50, 1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+    theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+
+dollar_hh_index_scat<-ggplot(annual_naics3_summary,
+       aes(x=Obligation.2016,
+           y=hh_index))+geom_point(alpha=0.01)+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+    theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+
+vendor_hh_index_scat<-ggplot(annual_naics3_summary,
+       aes(x=vendor_count,
+           y=hh_index))+geom_point(alpha=0.01)+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+    theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+
+
+dollar_vendor_scat<-ggplot(annual_naics3_summary,
+       aes(x=Obligation.2016,
+           y=vendor_count))+geom_point(alpha=0.01)+
+  scale_y_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,4,8,12,20,50, 1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+    theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+  
+max(annual_naics3_summary$Obligation.2016,na.rm=TRUE)
+
+filter(annual_naics5_summary,Obligation.2016==max(annual_naics5_summary$Obligation.2016))
+
+ lay <- rbind(c(1,2),
+             c(3,4),
+             c(5,5))
+grid.arrange(dollar_hist, 
+             vendor_hist,
+             dollar_hh_index_scat,
+             vendor_hh_index_scat,
+             dollar_vendor_scat,
+             layout_matrix = lay)
+max(subset(annual_naics3_summary,!is.na(NAICS_Code))$Obligation.2016,na.rm=TRUE)
+
+```
+
+### NAICS-2 code
+```{r naics2, echo=FALSE, fig.width=6.5, fig.height=8}
+
+dollar_hist<-ggplot(annual_naics2_summary,
+       aes(x=Obligation.2016))+geom_histogram()+
+  # scale_y_continuous(trans="log10",labels=scales::comma_format())+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+  theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+
+vendor_hist<-ggplot(annual_naics2_summary,
+       aes(x=vendor_count))+geom_histogram()+
+  # scale_y_continuous(trans="log10",labels=scales::comma_format())+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,4,8,12,20,50, 1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+    theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+
+dollar_hh_index_scat<-ggplot(annual_naics2_summary,
+       aes(x=Obligation.2016,
+           y=hh_index))+geom_point(alpha=0.01)+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+    theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+
+vendor_hh_index_scat<-ggplot(annual_naics2_summary,
+       aes(x=vendor_count,
+           y=hh_index))+geom_point(alpha=0.01)+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+    theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+
+
+dollar_vendor_scat<-ggplot(annual_naics2_summary,
+       aes(x=Obligation.2016,
+           y=vendor_count))+geom_point(alpha=0.01)+
+  scale_y_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,4,8,12,20,50, 1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+  scale_x_continuous(trans="log10",labels=scales::comma_format(),
+                     breaks=c(1,1e2,1e3,1e4,1e5,1e6, 1e7,1e8,1e9, 1e10,1e11))+
+    theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+  
+max(annual_naics3_summary$Obligation.2016,na.rm=TRUE)
+
+filter(annual_naics5_summary,Obligation.2016==max(annual_naics5_summary$Obligation.2016))
+
+ lay <- rbind(c(1,2),
+             c(3,4),
+             c(5,5))
+grid.arrange(dollar_hist, 
+             vendor_hist,
+             dollar_vendor_scat,
+             dollar_hh_index_scat,
+             dollar_vendor_scat,
+             layout_matrix = lay)
+max(subset(annual_naics2_summary,!is.na(NAICS_Code))$Obligation.2016,na.rm=TRUE)
+
+annual_naics2_summary<-left_join(annual_naics2_summary)
+#,y=Obligation.2016
+
+# debug(read_and_join)
+ annual_naics2_summary<-csis360::read_and_join(annual_naics2_summary,
+                        lookup_file = "Lookup_NAICS_code.csv",
+                        path="",
+                        dir="Lookup\\",
+                        by="NAICS_Code",un
+                        skip_check_var="NAICS_DESCRIPTION"
+               )
+
+
+ggplot(annual_naics2_summary,aes(x=Fiscal.Year,weight=Obligation.2016))+
+  geom_bar()+facet_wrap(~NAICS_Code)
+
+``` 
 
 ## Examining consolidation measures
 
@@ -79,54 +385,54 @@ The study team has replicated a ranged of measures used by the U.S. census depar
 
 ```{r consolidation_measures, echo=FALSE, fig.width=6.5, fig.height=9}
 
-top_scale<-nrow(filter(annual_naics_summary,top50>=0.995))
+top_scale<-nrow(filter(annual_naics6_summary,top50>=0.995))
 
-hh_hist<-ggplot(annual_naics_summary,
+hh_hist<-ggplot(annual_naics6_summary,
        aes(x=hh_index))+geom_histogram(binwidth=100)+
   scale_y_continuous(labels=scales::comma_format(),limits=c(0,top_scale))+
   scale_x_continuous(labels=scales::comma_format())
 
 #, echo=FALSE
-hh_scat<-ggplot(annual_naics_summary,
+hh_scat<-ggplot(annual_naics6_summary,
        aes(x=Obligation.2016,
            y=hh_index))+geom_point(alpha=0.01)+
   scale_x_continuous(trans="log10")+
   scale_y_continuous(labels=scales::comma_format())
 
 
-top4_hist<-ggplot(annual_naics_summary,
+top4_hist<-ggplot(annual_naics6_summary,
        aes(x=top4))+geom_histogram(binwidth=0.01)+
   scale_y_continuous(labels=scales::comma_format(),limits=c(0,top_scale))+
   scale_x_continuous(labels=scales::percent_format())
 
-top4_scat<-ggplot(annual_naics_summary,
+top4_scat<-ggplot(annual_naics6_summary,
        aes(x=Obligation.2016,
            y=top4))+geom_point(alpha=0.01)+
   scale_x_continuous(trans="log10")+
   scale_y_continuous(labels=scales::percent_format())
 
 
-top8_hist<-ggplot(annual_naics_summary,
+top8_hist<-ggplot(annual_naics6_summary,
        aes(x=top8))+geom_histogram(binwidth=0.01)+
   scale_y_continuous(labels=scales::comma_format(),limits=c(0,top_scale))+
   scale_x_continuous(labels=scales::percent_format())
 
 
-top8_scat<-ggplot(annual_naics_summary,
+top8_scat<-ggplot(annual_naics6_summary,
        aes(x=Obligation.2016,
            y=top8))+geom_point(alpha=0.01)+
   scale_x_continuous(trans="log10")+
   scale_y_continuous(labels=scales::percent_format())
 
 
-top12_hist<-ggplot(annual_naics_summary,
+top12_hist<-ggplot(annual_naics6_summary,
        aes(x=top12))+geom_histogram(binwidth=0.01)+
   scale_y_continuous(labels=scales::comma_format(),limits=c(0,top_scale))+
   scale_x_continuous(labels=scales::percent_format())
 
 
 
-top12_scat<-ggplot(annual_naics_summary,
+top12_scat<-ggplot(annual_naics6_summary,
        aes(x=Obligation.2016,
            y=top12))+geom_point(alpha=0.01)+
   scale_x_continuous(trans="log10")+
@@ -134,13 +440,13 @@ top12_scat<-ggplot(annual_naics_summary,
 
 
 
-top20_hist<-ggplot(annual_naics_summary,
+top20_hist<-ggplot(annual_naics6_summary,
        aes(x=top20))+geom_histogram(binwidth=0.01)+
   scale_y_continuous(labels=scales::comma_format(),limits=c(0,top_scale))+
   scale_x_continuous(labels=scales::percent_format())
 
 
-top20_scat<-ggplot(annual_naics_summary,
+top20_scat<-ggplot(annual_naics6_summary,
        aes(x=Obligation.2016,
            y=top20))+geom_point(alpha=0.01)+
   scale_x_continuous(trans="log10")+
@@ -149,13 +455,13 @@ top20_scat<-ggplot(annual_naics_summary,
 
 
 
-top50_hist<-ggplot(annual_naics_summary,
+top50_hist<-ggplot(annual_naics6_summary,
        aes(x=top50))+geom_histogram(binwidth=0.01)+
   scale_y_continuous(labels=scales::comma_format(),limits=c(0,top_scale))+
   scale_x_continuous(labels=scales::percent_format())
 
 
-top50_scat<-ggplot(annual_naics_summary,
+top50_scat<-ggplot(annual_naics6_summary,
        aes(x=Obligation.2016,
            y=top50))+geom_point(alpha=0.01)+
   scale_x_continuous(trans="log10")+
@@ -195,21 +501,21 @@ Upon examination, the consolidation ratio for the top 4 firms appears to offer t
 
 ```{r CrossValidation,echo=FALSE}
 
-top4_hh_scat<-ggplot(annual_naics_summary,
+top4_hh_scat<-ggplot(annual_naics6_summary,
        aes(x=hh_index,
            y=top4))+geom_point(alpha=0.01)+
   scale_x_continuous(labels=scales::comma_format())+
   scale_y_continuous(labels=scales::percent_format())
 
 
-top8_hh_scat<-ggplot(annual_naics_summary,
+top8_hh_scat<-ggplot(annual_naics6_summary,
        aes(x=hh_index,
            y=top8))+geom_point(alpha=0.01)+
   scale_x_continuous(labels=scales::comma_format())+
   scale_y_continuous(labels=scales::percent_format())
 
 
-top12_hh_scat<-ggplot(annual_naics_summary,
+top12_hh_scat<-ggplot(annual_naics6_summary,
        aes(x=hh_index,
            y=top12))+geom_point(alpha=0.01)+
   scale_x_continuous(labels=scales::comma_format())+
@@ -217,7 +523,7 @@ top12_hh_scat<-ggplot(annual_naics_summary,
 
 
 
-top20_hh_scat<-ggplot(annual_naics_summary,
+top20_hh_scat<-ggplot(annual_naics6_summary,
        aes(x=hh_index,
            y=top20))+geom_point(alpha=0.01)+
   scale_x_continuous(labels=scales::comma_format())+
@@ -225,7 +531,7 @@ top20_hh_scat<-ggplot(annual_naics_summary,
 
 
 
-top50_hh_scat<-ggplot(annual_naics_summary,
+top50_hh_scat<-ggplot(annual_naics6_summary,
        aes(x=hh_index,
            y=top50))+geom_point(alpha=0.01)+
   scale_x_continuous(labels=scales::comma_format())+
@@ -245,13 +551,18 @@ grid.arrange(top4_hh_scat,
 ```
 
 
+# Examining 
+```{r }
 
+```
+
+
+# Output
 ```{r Output}
-NAICS_join<-annual_naics_summary
-NAICS_join$StartFY<-as.numeric(format(NAICS_join$Fiscal.Year,'%Y'))
-NAICS_join$StartFY<-NAICS_join$StartFY+1
+NAICS_join<-annual_naics6_summary
+NAICS_join$Start_FY<-NAICS_join$Fiscal.Year
+NAICS_join$Start_FY<-NAICS_join$Start_FY+1
 NAICS_join$hh_index_lag1<-NAICS_join$hh_index
-NAICS_join<-subset(NAICS_join, select=c(StartFY,NAICS_Code,hh_index_lag1))
-colnames(NAICS_join)[colnames(NAICS_join)=="NAICS_Code"]<-"NAICS"
-save(annual_naics_summary,NAICS_join,file="annual_naics_summary.Rdata")
+NAICS_join<-subset(NAICS_join, select=c(Start_FY,hh_index_lag1))
+save(annual_naics6_summary,NAICS_join,file="annual_naics6_summary.Rdata")
 ```
