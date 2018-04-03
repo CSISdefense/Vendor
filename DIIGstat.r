@@ -38,7 +38,7 @@ contract$b_CBre[contract$CBre=="None"]<-0
 
 #Create a jittered version of Crai for display purposes
 #Unlike geom_jitter, this caps values at 0 and 1
-contract$j_Crai<-jitter.binary(contract$b_CBre)
+contract$j_CBre<-jitter.binary(contract$b_CBre)
 
 
 #b_Term
@@ -148,38 +148,33 @@ contract$n_Fixed<-as.integer(as.character(contract$n_Fixed))
 contract$n_Incent<-contract$Fee
 levels(contract$n_Incent) <-
   list("1"=c("Incentive"), 
-       "0.5"=c("Combination or Other Fee"),
-       "0"=c("Award Fee", "FFP or No Fee", "Fixed Fee"))
+       "0.5"=c("Combination"),
+       "0"=c("Award Fee", "FFP or No Fee", "Fixed Fee", "Other Fee"))
 contract$n_Incent<-as.integer(as.character(contract$n_Incent))
 
 #n_NoFee
 contract$n_NoFee<-contract$Fee
 levels(contract$n_NoFee) <-
   list("1"=c("FFP or No Fee"), 
-       "0.5"=c("Combination or Other Fee"),
-       "0"=c("Award Fee", "Incentive", "Fixed Fee"))
+       "0.5"=c("Combination"),
+       "0"=c("Award Fee", "Incentive", "Fixed Fee", "Other Fee"))
 contract$n_NoFee<-as.integer(as.character(contract$n_NoFee))
 
 
-#n_Comp
-if (all(levels(factor(contract$Comp))==c("0","1"))){
-  contract$Comp<-factor(contract$Comp)
-  levels(contract$Comp) <-
-  list("No Competition"="0",
-       "Competition"="1")
 
 #Right now comp is not actually a factor, so don't need to process it
 contract$b_Comp<-contract$Comp #Fix in Rdata, and add back comp
 levels(contract$b_Comp) <-
-  list("0"="No Competition",
-       "1"="Competition")
+  list("0"="No Comp.",
+       "1"="Comp.")
 contract$b_Comp<-as.integer(as.character(contract$b_Comp))
 
+#n_Comp
 contract$n_Comp<-contract$EffComp #Fix in Rdata, and add back comp
 levels(contract$n_Comp) <-
-  list("0"="No Competition",
-       "1","1 Offer",
-       "2"="2+ Offer")
+  list("0"="No Comp.",
+       "0.5"="1 Offer",
+       "1"="2+ Offers")
 contract$n_Comp<-as.integer(as.character(contract$n_Comp))
 
 
@@ -215,7 +210,7 @@ levels(contract$CompOffr) <-
   contract$cn_Offr<-scale(contract$n_Offr)
   contract$cl_Offr<-scale(contract$l_Offr)
   
-}
+
 
 #b_Intl
 contract$b_Intl<-contract$Intl
@@ -255,33 +250,34 @@ contract$b_UCA<-as.integer(as.character(contract$b_UCA))
 
 
 
-#IDV
-contract$IDV<-contract$Veh
-levels(contract$IDV) <-
-  list("1"=c("MULTIPLE AWARD", "SINGLE AWARD","MULTIPLE AWARD"), 
-       "0"=c("Def/Pur"))
-contract$IDV<-as.integer(as.character(contract$IDV))
 
 #SIDV
 contract$SIDV<-contract$Veh
 levels(contract$SIDV) <-
-  list("1"=c("SINGLE AWARD"), 
-       "0"=c("Def/Pur","MULTIPLE AWARD","Other IDV"))
+  list("1"=c("SINGLE AWARD IDC"), 
+       "0"=c("Def/Pur","MULTIPLE AWARD IDC","Other IDV","FSS/GWAC","BPA/BOA"))
 contract$SIDV<-as.integer(as.character(contract$SIDV))
 
 #MIDV
 contract$MIDV<-contract$Veh
 levels(contract$MIDV) <-
-  list("1"=c("MULTIPLE AWARD"), 
-       "0"=c("Def/Pur","SINGLE AWARD", "Other IDV"))
+  list("1"=c("MULTIPLE AWARD IDC"), 
+       "0"=c("Def/Pur","SINGLE AWARD IDC", "Other IDV","FSS/GWAC","BPA/BOA"))
 contract$MIDV<-as.integer(as.character(contract$MIDV))
 
-#OIDV
-contract$OIDV<-contract$Veh
-levels(contract$OIDV) <-
-  list("1"=c("Other IDV"), 
-       "0"=c("Def/Pur","SINGLE AWARD", "MULTIPLE AWARD"))
-contract$OIDV<-as.integer(as.character(contract$OIDV))
+#FSSGWAC
+contract$FSSGWAC<-contract$Veh
+levels(contract$FSSGWAC) <-
+  list("1"=c("FSS/GWAC"), 
+       "0"=c("Def/Pur","SINGLE AWARD IDC", "MULTIPLE AWARD IDC","BPA/BOA"))
+contract$FSSGWAC<-as.integer(as.character(contract$FSSGWAC))
+
+#BPABOA
+contract$BPABOA<-contract$Veh
+levels(contract$BPABOA) <-
+  list("1"=c("BPA/BOA"), 
+       "0"=c("Def/Pur","SINGLE AWARD IDC", "MULTIPLE AWARD IDC","FSS/GWAC"))
+contract$BPABOA<-as.integer(as.character(contract$BPABOA))
 
 #NAICS
 load("annual_naics_summary.Rdata")
@@ -291,7 +287,7 @@ contract<-left_join(contract,NAICS_join, by=c("StartFY"="StartFY",
 
 
 
-contract$c_hh_index_lag1<-scale(contract$hh_index_lag1)
+# contract$c_HHI_lag1<-scale(contract$HHI_lag1)
 contract$cl_Ceil<-scale(contract$l_Ceil)
 contract$cl_Days<-scale(contract$l_Days)
 contract$clsqr_Ceil<-contract$cl_Ceil^2
