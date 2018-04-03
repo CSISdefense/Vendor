@@ -5,23 +5,23 @@ rm(list = ls())
 library(tidyverse)
 library(csis360)
 library(dplyr)
-
+library(readr)
 
 source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/lookups.r")
 Path<-"https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/"
 
-file<-unz("Data\\Defense_Vendor_EntityIDhistoryNAICS.zip",
-          filename="Defense_Vendor_EntityIDhistoryNAICS.txt")
-# defense_naics_vendor <- read_tsv(file,
-#                           col_names = TRUE,
-#                           NA = c("","NA","NULL"))
+file<-unz("Data\\Defense_Vendor.SP_EntityIDhistoryNAICS.zip",
+          filename="Defense_Vendor.SP_EntityIDhistoryNAICS.txt")
+ defense_naics_vendor <- read_tsv(file,
+                           col_names = TRUE,
+                           NA = c("","NA","NULL"))
 
 #Import Defense vendor list by NAICS.
-defense_naics_vendor <- read.table(file,
-                           header = TRUE,
-                           na.strings = c("","NA","NULL"),
-                           quote="\"",#Necessary because there are some 's in the names.
-                           sep = "\t")
+defense_naics_vendor <- read_delim("Data\\Defense_Vendor.SP_EntityIDhistoryNAICS.txt",
+                           # header = TRUE,
+                           na = c("","NA","NULL"),
+                           # quote="\"",#Necessary because there are some 's in the names.
+                           delim = "\t")
 
 
 
@@ -144,7 +144,7 @@ save(defense_naics_vendor,
   annual_naics3_summary,
   annual_naics2_summary,
   file="data//defense_naics_vendor.Rdata")
-
+load(file="data//defense_naics_vendor.Rdata")
 write.csv(defense_naics_vendor,"data//defense_naics_vendor.csv")
 write.csv(defense_vendor,"data//defense_vendor.csv")
 write.csv(annual_naics_summary,"data//annual_naics_summary.csv")
