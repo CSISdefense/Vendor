@@ -18,7 +18,8 @@ library(plyr)
 #install.packages("data.table")
 library(data.table)
 library(lubridate)
-
+#install.packages("ggrepel")
+library(ggrepel)
 
 ## x = year(registrationDate)  OR Regyear
 ##y = nrows()
@@ -80,7 +81,7 @@ ggplot(timeseries_data.size, aes(x = regyear)) +
   scale_color_manual(name = "New Entrants Types", values = c("midnightblue" = "midnightblue", "lightskyblue" = "lightskyblue", "blue" = "blue"), labels = c("all","non-small", "small")) +
   ggtitle("Number of New Entrants per Year (2001-2016) - All Federal Agencies")
 
-##bar
+##bar all####
 year_div <- x0116.dataset %>% 
   mutate(regyear = year(registrationDate)) %>% 
   filter(biz_size == 1 | biz_size == 0) %>% 
@@ -99,14 +100,19 @@ bar.data <- x0116.dataset %>%
 
 
 ggplot(bar.data, aes(x = regyear, y = regpersize, fill = factor(biz_size), label = regperyear)) +
-  geom_bar(stat = 'identity') +
+  geom_bar(stat = 'identity', position = 'stack') +
   ylab("Number of New Entrants") +
   xlab("Registration Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
   ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
   scale_fill_manual(name = "New Entrants Types", values = c("darkslategray1", "cadetblue4"), labels = c("small", "non-small")) +
   ggtitle("Number of New Entrants Per Year (2001-2016) - All Federal Agencies")+
-  geom_text(aes(label = regpersize), size = 2.5, position = position_stack(vjust = 0.5)) 
+  geom_text_repel(data = subset(bar.data, regyear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
+                  angle = 45) +
+  geom_text(data = subset(bar.data, regyear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
+  
+  #geom_text(aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
+  #geom_label(aes(label = regpersize), size = 3, position = position_stack(vjust = .5))
 
 
   
@@ -149,7 +155,7 @@ ggplot(timeseries_data.sizeDOD, aes(x = regyear)) +
   scale_color_manual(name = "New Entrants Types", values = c("midnightblue" = "midnightblue", "skyblue" = "skyblue", "blue" = "blue"), labels = c("all","non-small", "small"))+
   ggtitle("Number of New Entrants per Year (2001-2016) - DOD")
 
-########## bar
+########## bar DOD####
 
 year_divDOD <- DODfildata0116 %>% 
   mutate(regyear = year(registrationDate)) %>% 
@@ -176,8 +182,9 @@ ggplot(bar.dataDOD, aes(x = regyear, y = regpersize, fill = factor(biz_size), la
   ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
   scale_fill_manual(name = "New Entrants Types", values = c("darkslategray1", "cadetblue4"), labels = c("small", "non-small")) +
   ggtitle("Number of New Entrants Per Year (2001-2016) - DOD")+
-  geom_text(aes(label = regpersize), size = 2.5, position = position_stack(vjust = 0.5)) 
-
+  geom_text_repel(data = subset(bar.dataDOD, regyear >=2003), aes(label = regpersize), size = 4, box.padding = .1, 
+                  angle = 45) +
+  geom_text(data = subset(bar.dataDOD, regyear < 2003), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
 
 ###NAICS filtered####
 
