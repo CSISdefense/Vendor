@@ -301,7 +301,7 @@ max(subset(annual_naics3_summary,!is.na(NAICS_Code))$Obligation.2016,na.rm=TRUE)
 ```
 
 ### NAICS-2 code
-```{r naics2, echo=FALSE, fig.width=6.5, fig.height=8}
+```{r naics2, echo=FALSE, fig.width=3, fig.height=6}
 
 dollar_hist<-ggplot(annual_naics2_summary,
        aes(x=Obligation.2016))+geom_histogram()+
@@ -373,16 +373,34 @@ max(subset(annual_naics2_summary,!is.na(NAICS_Code))$Obligation.2016,na.rm=TRUE)
                         skip_check_var="NAICS_DESCRIPTION"
                )
 
-
 ggplot(annual_naics2_summary,aes(x=Fiscal.Year,weight=Obligation.2016))+
   geom_bar()+facet_wrap(~NAICS_Code)
 
 
-annual_naics6_summary$NAICS2<-substring(annual_naics6_summary$NAICS_Code,1,2)
 ggplot(annual_naics6_summary,aes(x=Fiscal.Year,weight=Obligation.2016))+
   geom_bar()+facet_wrap(~NAICS2)
 
+annual_naics6_summary$NAICS2<-substring(annual_naics6_summary$NAICS_Code,1,2)
 
+annual_naics2_summary$NAICS_label<-paste(annual_naics2_summary$NAICS_Code,
+                             annual_naics2_summary$NAICS_DESCRIPTION)
+
+annual_naics2_summary$NAICS_label[
+  annual_naics2_summary$NAICS_label==
+    "56 Administrative and Support and Waste Management and Remediation Services"
+  ]<-"56 Admin./Support/Waste Management and Remediation"
+annual_naics2_summary$NAICS_label[annual_naics2_summary$NAICS_label==
+                                    "NA NA"]<-"Unlabeled"
+
+annual_naics2_summary$NAICS_label<-factor(annual_naics2_summary$NAICS_label)
+order<-  rev(levels(annual_naics2_summary$NAICS_label))
+
+NAICS2digit<-ggplot(subset(annual_naics2_summary,Fiscal.Year>=2007 & Fiscal.Year<=2015),
+       aes(x=NAICS_label,weight=Obligation.2016))+
+  geom_bar()+coord_flip()+
+  scale_y_continuous(label=scales::comma)+scale_x_discrete(limits=order)+
+  labs(x="2-Digit NAICS Code",y="Dollars Obligated 2007-2015 (2016 Constants $s)")
+ggsave(NAICS2digit,file="NAICS2digit.png",width=7,height=7,dpi=600)
 ``` 
 
 ## Examining consolidation measures
