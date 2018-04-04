@@ -16,8 +16,8 @@ library(gridExtra)
 library(hexbin)
 library(ggplot2)
 load("data//defense_naics_vendor.Rdata")
-annual_naics6_summary<-subset(annual_naics6_summary,Fiscal.Year>=2007)
-annual_naics2_summary<-subset(annual_naics2_summary,Fiscal.Year>=2007)
+# annual_naics6_summary<-subset(annual_naics6_summary,Fiscal.Year>=2007)
+# annual_naics2_summary<-subset(annual_naics2_summary,Fiscal.Year>=2007)
 
 #Converting Obligation.2016 back to actual dollars rather than millions
 # annual_naics6_summary$Obligation.2016<-annual_naics6_summary$Obligation.2016*1e9
@@ -377,6 +377,12 @@ max(subset(annual_naics2_summary,!is.na(NAICS_Code))$Obligation.2016,na.rm=TRUE)
 ggplot(annual_naics2_summary,aes(x=Fiscal.Year,weight=Obligation.2016))+
   geom_bar()+facet_wrap(~NAICS_Code)
 
+
+annual_naics6_summary$NAICS2<-substring(annual_naics6_summary$NAICS_Code,1,2)
+ggplot(annual_naics6_summary,aes(x=Fiscal.Year,weight=Obligation.2016))+
+  geom_bar()+facet_wrap(~NAICS2)
+
+
 ``` 
 
 ## Examining consolidation measures
@@ -560,9 +566,10 @@ grid.arrange(top4_hh_scat,
 # Output
 ```{r Output}
 NAICS_join<-annual_naics6_summary
-NAICS_join$Start_FY<-NAICS_join$Fiscal.Year
-NAICS_join$Start_FY<-NAICS_join$Start_FY+1
-NAICS_join$hh_index_lag1<-NAICS_join$hh_index
-NAICS_join<-subset(NAICS_join, select=c(Start_FY,hh_index_lag1))
+NAICS_join$StartFY<-NAICS_join$Fiscal.Year
+NAICS_join$StartFY<-NAICS_join$StartFY+1
+NAICS_join$HHI_lag1<-NAICS_join$hh_index
+NAICS_join$NAICS_Code<-as.integer(NAICS_join$NAICS_Code)
+NAICS_join<-subset(NAICS_join, select=c(StartFY,NAICS_Code,HHI_lag1))
 save(annual_naics6_summary,NAICS_join,file="annual_naics6_summary.Rdata")
 ```

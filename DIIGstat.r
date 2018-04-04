@@ -107,8 +107,9 @@ contract$Ceil.Big<-factor(contract$Ceil.Big,
 
 
 #l_Days
-
-contract$l_Days<-log(contract$UnmodifiedDays)
+contract$l_Days<-NA
+contract$l_Days[!is.na(contract$UnmodifiedDays)&contract$UnmodifiedDays>0]<-
+  log(contract$UnmodifiedDays[!is.na(contract$UnmodifiedDays)&contract$UnmodifiedDays>0])
 contract$l_Days[is.infinite(contract$l_Days)]<-NA
 
 
@@ -282,14 +283,13 @@ levels(contract$BPABOA) <-
 contract$BPABOA<-as.integer(as.character(contract$BPABOA))
 
 #NAICS
-load("annual_naics_summary.Rdata")
+load("annual_naics6_summary.Rdata")
 contract$NAICS<-as.integer(as.character(contract$NAICS))
 contract<-left_join(contract,NAICS_join, by=c("StartFY"="StartFY",
-                                                           "NAICS"))
+                                                           "NAICS"="NAICS_Code"))
 
 
-colnames(contract)[colnames(contract)=="hh_index_lag1"]<-"HHI_lag1"
-contract$c_HHI_lag1<-scale(contract$hh_index_lag1)
+contract$c_HHI_lag1<-scale(contract$HHI_lag1)
 contract$cl_Ceil<-scale(contract$l_Ceil)
 contract$cl_Days<-scale(contract$l_Days)
 contract$clsqr_Ceil<-contract$cl_Ceil^2
