@@ -288,8 +288,13 @@ contract$NAICS<-as.integer(as.character(contract$NAICS))
 contract<-left_join(contract,NAICS_join, by=c("StartFY"="StartFY",
                                                            "NAICS"="NAICS_Code"))
 
-
+#Remove 0s, they make no sense, source must be one contractors in field have 0 obligations, which is just missing data really
+contract$HHI_lag1[contract$HHI_lag1==0]<-NA
 contract$c_HHI_lag1<-scale(contract$HHI_lag1)
+
+contract$l_HHI_lag1<-log(contract$HHI_lag1)
+contract$cl_HHI_lag1<-scale(contract$l_HHI_lag1)
+
 contract$cl_Ceil<-scale(contract$l_Ceil)
 contract$cl_Days<-scale(contract$l_Days)
 contract$clsqr_Ceil<-contract$cl_Ceil^2
