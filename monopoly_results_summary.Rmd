@@ -143,11 +143,49 @@ NA_stats(def,"Agency")`
 `r summary(def$Office);
 NA_stats(def,"Office")`
 
+### Summary
+```{r Summary}
+
+# Add NAICS title
+
+def$NAICS_Code<-substring(def$NAICS,1,2)
+
+def$NAICS2<-substring(def$NAICS,1,2)
+smp1m$NAICS2<-substring(smp1m$NAICS,1,2)
+
+ def<-csis360::read_and_join(def,
+                        lookup_file = "Lookup_NAICS_code.csv",
+                        path="",
+                        dir="Lookup\\",
+                        by="NAICS_Code",
+                        skip_check_var="NAICS_DESCRIPTION"
+               )
+
+def$NAICS_label<-paste(def$NAICS_Code,
+                             def$NAICS_DESCRIPTION)
+
+def$NAICS_label[
+  def$NAICS_label==
+    "56 Administrative and Support and Waste Management and Remediation Services"
+  ]<-"56 Admin./Support/Waste Management and Remediation"
+def$NAICS_label[def$NAICS_label==
+                                    "NA NA"]<-"Unlabeled"
+
+def$NAICS_label<-factor(def$NAICS_label)
+order<-  rev(levels(def$NAICS_label))
 
 
-###Computational Sample Creation
+NAICS2digit<-ggplot(def,
+       aes(x=NAICS_label))+
+  geom_bar()+coord_flip()+
+  scale_y_continuous(label=scales::comma)+scale_x_discrete(limits=order)+
+  labs(x="2-Digit NAICS Code",y="Number of Contracts and Task Orders in Unfiltered Dataset")
+ggsave(NAICS2digit,file="NAICS2digit.png",width=7,height=7,dpi=600)
+```
+
+### Computational Sample Creation
 ```{r Sample}
-
+ load(file="def_sample.Rdata")
 
 complete<-!is.na(def$b_Term)&
   !is.na(def$b_CBre)&
@@ -235,7 +273,7 @@ binned_fitted_versus_residuals(Term_Comp_08H)
 residuals_term_plot(Term_Comp_08H)+
   labs(x="Estimated  Pr (Termination)")
 
-save("Term_Comp.rdata",Term_Comp_05A,Term_Comp_08A,Term_Comp_08B,Term_Comp_08C,Term_Comp_08D,Term_Comp_08E,Term_Comp_08F,Term_Comp_08G,Term_Comp_08H)
+save(file="Term_Comp.rdata",Term_Comp_05A,Term_Comp_08B,Term_Comp_08C,Term_Comp_08D,Term_Comp_08E,Term_Comp_08F,Term_Comp_08G,Term_Comp_08H)
 
 
 ```
@@ -246,7 +284,7 @@ save("Term_Comp.rdata",Term_Comp_05A,Term_Comp_08A,Term_Comp_08B,Term_Comp_08C,T
 #Create the model
 load("Comp_CBre.Rdata")
 
-Term_CBre_05A <- glm (data=smp,
+Comp_CBre_05A <- glm (data=smp,
                    b_CBre ~n_Comp + 
                      cl_Ceil + cl_Days+ 
                      SIDV + MIDV + FSSGWAC + BPABOA +
@@ -259,10 +297,10 @@ Term_CBre_05A <- glm (data=smp,
                      b_UCA:cl_Ceil+
                      b_UCA:n_Comp
                    , family=binomial(link="logit"))
-display(Term_CBre_05A)
+display(Comp_CBre_05A)
 smp$NAICS2<-substring(smp$NAICS,1,2)
 
-Term_CBre_08B<- glmer(data=smp1m,
+Comp_CBre_08B<- glmer(data=smp1m,
                     b_CBre ~n_Comp + 
                       cl_Ceil + cl_Days+ 
                       SIDV + MIDV + FSSGWAC + BPABOA +
@@ -274,19 +312,14 @@ Term_CBre_08B<- glmer(data=smp1m,
                       b_UCA:n_Comp+
                       (1 | NAICS2)
                     , family=binomial(link="logit"))
-display(Term_CBre_08B)
-save(file="Term_CBre.RData",Term_CBre_08B)
+display(Comp_CBre_08B)
+save(file="Comp_CBre.RData",Comp_CBre_08B)
 library(stargazer)
 
+Comp_CBre_08B<-b_CBre_08B
+
+
 ?htmlreg
-texreg::htmlreg(list(Term_Cons_08A,
-                     CBre_Cons_08A),file="ConsModel.html",single.row = TRUE)
-
-
-texreg::htmlreg(list(Term_Comp_08H,
-                     Term_CBre_08B),file="Comp2Model.html",single.row = TRUE)
-
-texreg::htmlreg(list(Term_CBre_08B,Term_Cons_08A),file="Hypothesis1.html")
 # 
 # htmlreg(list(EuropeModel$fixed[[1]],EuropeModel$fixed[[2]],EuropeModel$fixed[[3]]),
 #         file="Output\\Hypothesis1.html",
@@ -307,7 +340,9 @@ texreg::htmlreg(list(Term_CBre_08B,Term_Cons_08A),file="Hypothesis1.html")
 #             bold=0.05
 # )
 
-stargazer(Term_CBre_08B,Term_Cons_08A,type="html",out="Term_2.html")
+stargazer(Comp_CBre_05A,Term_Cons_08A,type="html",out="Term_2.html")
+
+save(file="Comp_CBre.rdata",Comp_CBre_05A,Comp_CBre_08A,Comp_CBre_08B)
 ```
 
 
@@ -329,7 +364,7 @@ Term_Cons_05A <- glm(data=smp,
                          # (1 | NAICS2)
                        , family=binomial(link="logit"))
 display(Term_Cons_05A)
-Term_Cons_08A <- glmer(data=smp,
+Term_Cons_08A2 <- glmer(data=smp1m,
                        b_Term ~c_HHI_lag1 + 
                          cl_Ceil + cl_Days+ 
                          SIDV + MIDV + FSSGWAC + BPABOA +
@@ -341,7 +376,8 @@ Term_Cons_08A <- glmer(data=smp,
                          b_UCA:c_HHI_lag1 +
                          (1 | NAICS2)
                        , family=binomial(link="logit"))
-display(Term_Cons_08A)
+display(Term_Cons_08A2)
+
 
 Term_Cons_08B <- glmer(data=smp1m,
                        b_Term ~cl_HHI_lag1 + 
@@ -356,12 +392,14 @@ Term_Cons_08B <- glmer(data=smp1m,
                          (1 | NAICS2)
                        , family=binomial(link="logit"))
 display(Term_Cons_08B)
-save(file="Term_Cons.RData",Term_Cons_08A,Term_Cons_08B)
+save(file="Term_Cons.RData",Term_Cons_08A,Term_Cons_08A2,Term_Cons_08B)
 ```
 
 
 ## Consolidation and Ceiling Breach
 ```{r CONS-CBre}
+load("CBre_Cons.RData")
+
 CBre_Cons_05A <- glm(data=smp,
                        b_CBre ~ c_HHI_lag1 + 
                       cl_Ceil + cl_Days+ 
@@ -375,7 +413,7 @@ CBre_Cons_05A <- glm(data=smp,
                        , family=binomial(link="logit"))
 display(CBre_Cons_05A)
 
-CBre_Cons_08A <- glmer(data=smp,
+CBre_Cons_08A <- glmer(data=smp1m,
                        b_CBre ~ c_HHI_lag1 + 
                       cl_Ceil + cl_Days+ 
                       SIDV + MIDV + FSSGWAC + BPABOA +
@@ -389,8 +427,8 @@ CBre_Cons_08A <- glmer(data=smp,
                        , family=binomial(link="logit"))
 display(CBre_Cons_08A)
 
-CBre_Cons_08B <- glmer(data=smp,
-                       b_CBre ~ c_HHI_lag1 + 
+CBre_Cons_08B <- glmer(data=smp1m,
+                       b_CBre ~ cl_HHI_lag1 + 
                       cl_Ceil + cl_Days+ 
                       SIDV + MIDV + FSSGWAC + BPABOA +
                       n_Fixed + b_UCA +
@@ -402,5 +440,37 @@ CBre_Cons_08B <- glmer(data=smp,
                          (1 | NAICS2)
                        , family=binomial(link="logit"))
 display(CBre_Cons_08B)
-# save(file="CBre_Cons.RData",CBre_Cons_08A,CBre_Cons_08B)
+save(file="CBre_Cons.RData",CBre_Cons_05A,CBre_Cons_08A,CBre_Cons_08B)
+```
+
+
+```{r Everything}
+
+CBre_Cons_Comp_08B <- glmer(data=smp1m,
+                       b_CBre ~ c_HHI_lag1 + 
+                      cl_Ceil + cl_Days+ 
+                      SIDV + MIDV + FSSGWAC + BPABOA +
+                      n_Fixed + b_UCA +
+                      c_HHI_lag1:cl_Ceil  + 
+                      b_Intl +
+                      SIDV:cl_Ceil+MIDV:cl_Ceil+FSSGWAC:cl_Ceil+BPABOA:cl_Ceil+
+                      b_UCA:cl_Ceil+
+                      b_UCA:c_HHI_lag1+
+                         (1 | NAICS2)
+                       , family=binomial(link="logit"))
+```
+
+
+# Output 
+```{r Output}
+
+texreg::htmlreg(list(Term_Cons_08A2,
+                     CBre_Cons_08A),file="ConsModel.html",single.row = TRUE)
+
+
+texreg::htmlreg(list(Term_Comp_08H,
+                     Comp_CBre_08B),file="CompModel.html",single.row = TRUE)
+
+# texreg::htmlreg(list(Comp_CBre_08B,Term_Cons_08A),file="Hypothesis1.html")
+
 ```
