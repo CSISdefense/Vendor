@@ -16,8 +16,8 @@ library(gridExtra)
 library(hexbin)
 library(ggplot2)
 load("data//defense_naics_vendor.Rdata")
-annual_naics6_summary<-subset(annual_naics6_summary,Fiscal.Year>=2007)
-annual_naics2_summary<-subset(annual_naics2_summary,Fiscal.Year>=2007)
+# annual_naics6_summary<-subset(annual_naics6_summary,Fiscal.Year>=2007)
+# annual_naics2_summary<-subset(annual_naics2_summary,Fiscal.Year>=2007)
 
 #Converting Obligation.2016 back to actual dollars rather than millions
 # annual_naics6_summary$Obligation.2016<-annual_naics6_summary$Obligation.2016*1e9
@@ -81,7 +81,7 @@ dollar_vendor_scat<-ggplot(annual_naics6_summary,
   
  max(subset(annual_naics6_summary,!is.na(NAICS_Code))$Obligation.2016,na.rm=TRUE)
 
-  )
+
 # filter(annual_naics6_summary,Obligation.2016==max(annual_naics6_summary$Obligation.2016))
 # 
 # 
@@ -301,7 +301,7 @@ max(subset(annual_naics3_summary,!is.na(NAICS_Code))$Obligation.2016,na.rm=TRUE)
 ```
 
 ### NAICS-2 code
-```{r naics2, echo=FALSE, fig.width=6.5, fig.height=8}
+```{r naics2, echo=FALSE, fig.width=3, fig.height=6}
 
 dollar_hist<-ggplot(annual_naics2_summary,
        aes(x=Obligation.2016))+geom_histogram()+
@@ -361,7 +361,7 @@ grid.arrange(dollar_hist,
              layout_matrix = lay)
 max(subset(annual_naics2_summary,!is.na(NAICS_Code))$Obligation.2016,na.rm=TRUE)
 
-annual_naics2_summary<-left_join(annual_naics2_summary)
+
 #,y=Obligation.2016
 
 # debug(read_and_join)
@@ -369,14 +369,38 @@ annual_naics2_summary<-left_join(annual_naics2_summary)
                         lookup_file = "Lookup_NAICS_code.csv",
                         path="",
                         dir="Lookup\\",
-                        by="NAICS_Code",un
+                        by="NAICS_Code",
                         skip_check_var="NAICS_DESCRIPTION"
                )
-
 
 ggplot(annual_naics2_summary,aes(x=Fiscal.Year,weight=Obligation.2016))+
   geom_bar()+facet_wrap(~NAICS_Code)
 
+
+ggplot(annual_naics6_summary,aes(x=Fiscal.Year,weight=Obligation.2016))+
+  geom_bar()+facet_wrap(~NAICS2)
+
+annual_naics6_summary$NAICS2<-substring(annual_naics6_summary$NAICS_Code,1,2)
+
+annual_naics2_summary$NAICS_label<-paste(annual_naics2_summary$NAICS_Code,
+                             annual_naics2_summary$NAICS_DESCRIPTION)
+
+annual_naics2_summary$NAICS_label[
+  annual_naics2_summary$NAICS_label==
+    "56 Administrative and Support and Waste Management and Remediation Services"
+  ]<-"56 Admin./Support/Waste Management and Remediation"
+annual_naics2_summary$NAICS_label[annual_naics2_summary$NAICS_label==
+                                    "NA NA"]<-"Unlabeled"
+
+annual_naics2_summary$NAICS_label<-factor(annual_naics2_summary$NAICS_label)
+order<-  rev(levels(annual_naics2_summary$NAICS_label))
+
+NAICS2digit<-ggplot(subset(annual_naics2_summary,Fiscal.Year>=2007 & Fiscal.Year<=2015),
+       aes(x=NAICS_label,weight=Obligation.2016))+
+  geom_bar()+coord_flip()+
+  scale_y_continuous(label=scales::comma)+scale_x_discrete(limits=order)+
+  labs(x="2-Digit NAICS Code",y="Dollars Obligated 2007-2015 (2016 Constants $s)")
+ggsave(NAICS2digit,file="NAICS2digit.png",width=7,height=7,dpi=600)
 ``` 
 
 ## Examining consolidation measures
@@ -560,9 +584,10 @@ grid.arrange(top4_hh_scat,
 # Output
 ```{r Output}
 NAICS_join<-annual_naics6_summary
-NAICS_join$Start_FY<-NAICS_join$Fiscal.Year
-NAICS_join$Start_FY<-NAICS_join$Start_FY+1
-NAICS_join$hh_index_lag1<-NAICS_join$hh_index
-NAICS_join<-subset(NAICS_join, select=c(Start_FY,hh_index_lag1))
+NAICS_join$StartFY<-NAICS_join$Fiscal.Year
+NAICS_join$StartFY<-NAICS_join$StartFY+1
+NAICS_join$HHI_lag1<-NAICS_join$hh_index
+NAICS_join$NAICS_Code<-as.integer(NAICS_join$NAICS_Code)
+NAICS_join<-subset(NAICS_join, select=c(StartFY,NAICS_Code,HHI_lag1))
 save(annual_naics6_summary,NAICS_join,file="annual_naics6_summary.Rdata")
 ```

@@ -107,8 +107,9 @@ contract$Ceil.Big<-factor(contract$Ceil.Big,
 
 
 #l_Days
-
-contract$l_Days<-log(contract$UnmodifiedDays)
+contract$l_Days<-NA
+contract$l_Days[!is.na(contract$UnmodifiedDays)&contract$UnmodifiedDays>0]<-
+  log(contract$UnmodifiedDays[!is.na(contract$UnmodifiedDays)&contract$UnmodifiedDays>0])
 contract$l_Days[is.infinite(contract$l_Days)]<-NA
 
 
@@ -282,14 +283,18 @@ levels(contract$BPABOA) <-
 contract$BPABOA<-as.integer(as.character(contract$BPABOA))
 
 #NAICS
-load("annual_naics_summary.Rdata")
+load("annual_naics6_summary.Rdata")
 contract$NAICS<-as.integer(as.character(contract$NAICS))
 contract<-left_join(contract,NAICS_join, by=c("StartFY"="StartFY",
-                                                           "NAICS"))
+                                                           "NAICS"="NAICS_Code"))
 
-
-
+#Remove 0s, they make no sense, source must be one contractors in field have 0 obligations, which is just missing data really
+contract$HHI_lag1[contract$HHI_lag1==0]<-NA
 contract$c_HHI_lag1<-scale(contract$HHI_lag1)
+
+contract$l_HHI_lag1<-log(contract$HHI_lag1)
+contract$cl_HHI_lag1<-scale(contract$l_HHI_lag1)
+
 contract$cl_Ceil<-scale(contract$l_Ceil)
 contract$cl_Days<-scale(contract$l_Days)
 contract$clsqr_Ceil<-contract$cl_Ceil^2
@@ -759,6 +764,24 @@ centered_log_description<-function(x,units=NA){
         format(exp(xbar),digits=2,big.mark=","),", ",
         format(exp(xbar+xsd),digits=2,big.mark=","),", and ",
         format(exp(xbar+2*xsd),digits=2,big.mark=","),
+        ifelse(is.na(units),"",paste("",units)),
+        " respectively.",sep="")
+}
+
+
+
+centered_description<-function(x,units=NA){
+  xbar<-mean(x,na.rm=TRUE)
+  xsd<-sd(x,na.rm=TRUE)
+  paste("The variable is centered, by subtracting its mean (",
+        format(xbar,digits=3,big.mark=","),
+        ") and dividing by its standard deviation (",
+        format(xsd,digits=3,big.mark=","),
+        "). Values of -1, 0, 1, and 2 correspond to ",
+        format(xbar-xsd,digits=2,big.mark=","), ", ",
+        format(xbar,digits=2,big.mark=","),", ",
+        format(xbar+xsd,digits=2,big.mark=","),", and ",
+        format(xbar+2*xsd,digits=2,big.mark=","),
         ifelse(is.na(units),"",paste("",units)),
         " respectively.",sep="")
 }
