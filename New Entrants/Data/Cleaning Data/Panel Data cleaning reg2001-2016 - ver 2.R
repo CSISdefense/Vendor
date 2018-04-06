@@ -37,9 +37,9 @@ NAICS.edit = final_joined %>%
   filter(!is.na(principalnaicscode)) %>% 
   filter(NAICS2 != "NU")
 
-NAICS.edit$NAICS2[NAICS.edit$NAICS2 == 31] = "31-33"
-NAICS.edit$NAICS2[NAICS.edit$NAICS2 == 32] = "31-33"
-NAICS.edit$NAICS2[NAICS.edit$NAICS2 == 33] = "31-33"
+NAICS.edit$NAICS2[NAICS.edit$NAICS2 %in% c(31,32,33)] = "31-33"
+
+#GS: Simple coding assignment, do the same for this
 NAICS.edit$NAICS2[NAICS.edit$NAICS2 == 44] = "44-45"
 NAICS.edit$NAICS2[NAICS.edit$NAICS2 == 45] = "44-45"
 NAICS.edit$NAICS2[NAICS.edit$NAICS2 == 48] = "48-49"
@@ -116,14 +116,31 @@ agency = as.data.frame(agency.unique)
 
 ###NOP, limit by 10+1 years ####
 
+
+create_year_edit<-function(data,
+                           registration_year){
+  year.edit <- data %>% 
+    filter(year(registrationDate) == registration_year) %>% 
+    group_by(duns) %>% 
+    filter(year(signeddate) <= year(registrationDate) + 10) %>% 
+    dplyr::mutate(lastsigneddate = max(signeddate)) %>% 
+    dplyr::mutate(months.survived = ((year(lastsigneddate) - year(registrationDate)) * 12) 
+                  + month(lastsigneddate) - month(registrationDate))
+  year.edit
+  
+}
 #2001 ####
-year.edit = final_joined %>% 
-  filter(year(registrationDate) == 2001) %>% 
-  group_by(duns) %>% 
-  filter(year(signeddate) <= year(registrationDate) + 10) %>% 
-  dplyr::mutate(lastsigneddate = max(signeddate)) %>% 
-  dplyr::mutate(months.survived = ((year(lastsigneddate) - year(registrationDate)) * 12) 
-         + month(lastsigneddate) - month(registrationDate))
+
+create_year_edit(final_joined,2001)
+# year.edit = final_joined %>% 
+#   filter(year(registrationDate) == 2001) %>% 
+#   group_by(duns) %>% 
+#   filter(year(signeddate) <= year(registrationDate) + 10) %>% 
+#   dplyr::mutate(lastsigneddate = max(signeddate)) %>% 
+#   dplyr::mutate(months.survived = ((year(lastsigneddate) - year(registrationDate)) * 12) 
+#                 + month(lastsigneddate) - month(registrationDate))
+
+
            
 #filter(contractingofficerbusinesssizedetermination == "S")
 year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
@@ -182,13 +199,14 @@ dataset.2001 = joined.5 %>%
   filter(NAICS2 != "NU")
 
 #2002 ####
-year.edit = final_joined %>% 
-  filter(year(registrationDate) == 2002) %>% 
-  group_by(duns) %>% 
-  filter(year(signeddate) <= year(registrationDate) + 10) %>% 
-  dplyr::mutate(lastsigneddate = max(signeddate)) %>% 
-  dplyr::mutate(months.survived = ((year(lastsigneddate) - year(registrationDate)) * 12) 
-         + month(lastsigneddate) - month(registrationDate))
+create_year_edit(final_joined,2002)
+# year.edit = final_joined %>% 
+#   filter(year(registrationDate) == 2002) %>% 
+#   group_by(duns) %>% 
+#   filter(year(signeddate) <= year(registrationDate) + 10) %>% 
+#   dplyr::mutate(lastsigneddate = max(signeddate)) %>% 
+#   dplyr::mutate(months.survived = ((year(lastsigneddate) - year(registrationDate)) * 12) 
+#          + month(lastsigneddate) - month(registrationDate))
   
   #filter(contractingofficerbusinesssizedetermination == "S")
   year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
@@ -248,13 +266,14 @@ dataset.2002 = joined.5 %>%
   filter(NAICS2 != "NU")
 
 #2003 ####
-year.edit = final_joined %>% 
-  filter(year(registrationDate) == 2003) %>% 
-  group_by(duns) %>% 
-  filter(year(signeddate) <= year(registrationDate) + 10) %>% 
-  dplyr::mutate(lastsigneddate = max(signeddate)) %>% 
-  dplyr::mutate(months.survived = ((year(lastsigneddate) - year(registrationDate)) * 12) 
-         + month(lastsigneddate) - month(registrationDate)) 
+create_year_edit(final_joined,2003)
+# year.edit = final_joined %>% 
+#   filter(year(registrationDate) == 2003) %>% 
+#   group_by(duns) %>% 
+#   filter(year(signeddate) <= year(registrationDate) + 10) %>% 
+#   dplyr::mutate(lastsigneddate = max(signeddate)) %>% 
+#   dplyr::mutate(months.survived = ((year(lastsigneddate) - year(registrationDate)) * 12) 
+#          + month(lastsigneddate) - month(registrationDate)) 
   
   #filter(contractingofficerbusinesssizedetermination == "S")
   year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
@@ -314,13 +333,15 @@ dataset.2003 = joined.5 %>%
   filter(NAICS2 != "NU")
 
 #2004 ####
-year.edit = final_joined %>% 
-  filter(year(registrationDate) == 2004) %>% 
-  group_by(duns) %>% 
-  filter(year(signeddate) <= year(registrationDate) + 10) %>% 
-  dplyr::mutate(lastsigneddate = max(signeddate)) %>% 
-  dplyr::mutate(months.survived = ((year(lastsigneddate) - year(registrationDate)) * 12) 
-         + month(lastsigneddate) - month(registrationDate)) 
+create_year_edit(final_joined,2004)
+#GS: do the rest.
+# year.edit = final_joined %>% 
+#   filter(year(registrationDate) == 2004) %>% 
+#   group_by(duns) %>% 
+#   filter(year(signeddate) <= year(registrationDate) + 10) %>% 
+#   dplyr::mutate(lastsigneddate = max(signeddate)) %>% 
+#   dplyr::mutate(months.survived = ((year(lastsigneddate) - year(registrationDate)) * 12) 
+#          + month(lastsigneddate) - month(registrationDate)) 
   
   #filter(contractingofficerbusinesssizedetermination == "S")
   year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
