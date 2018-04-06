@@ -38,12 +38,9 @@ NAICS.edit = final_joined %>%
   filter(NAICS2 != "NU")
 
 NAICS.edit$NAICS2[NAICS.edit$NAICS2 %in% c(31,32,33)] = "31-33"
-
-#GS: Simple coding assignment, do the same for this
-NAICS.edit$NAICS2[NAICS.edit$NAICS2 == 44] = "44-45"
-NAICS.edit$NAICS2[NAICS.edit$NAICS2 == 45] = "44-45"
-NAICS.edit$NAICS2[NAICS.edit$NAICS2 == 48] = "48-49"
-NAICS.edit$NAICS2[NAICS.edit$NAICS2 == 49] = "48-49"  
+NAICS.edit$NAICS2[NAICS.edit$NAICS2 %in% c(44,45)] = "44-45"
+NAICS.edit$NAICS2[NAICS.edit$NAICS2 %in% c(48,49)] = "48-49"
+#GS: Simple coding assignment, do the same for this####
 
 #### identified within each DUNS# which NAICs code had the greatest total
 #### obligatedamount to determine one NAICS per DUNS
@@ -112,6 +109,7 @@ contobsac <- unique.contract %>%
 PSC = as.data.frame(psc.code.unique)
 oblandact = as.data.frame(contobsac)
 agency = as.data.frame(agency.unique)
+NAICS = as.data.frame(NAICS.unique.column)
 ###########filtering dataset####
 
 ###NOP, limit by 10+1 years ####
@@ -126,29 +124,60 @@ create_year_edit<-function(data,
     dplyr::mutate(lastsigneddate = max(signeddate)) %>% 
     dplyr::mutate(months.survived = ((year(lastsigneddate) - year(registrationDate)) * 12) 
                   + month(lastsigneddate) - month(registrationDate))
-  year.edit
-  
-}
+  year.edit.unique <- year.edit[!duplicated(year.edit[,c('duns')]),]
+  year <- as.data.frame(year.edit.unique)
+  joined.2 <- merge.data.frame(NAICS, year, by = "duns")
+  joined.25 <- joined.2 %>%
+    select(duns, NAICS2, age_at_start, months.survived, lastsigneddate, status, registrationDate, 
+           businessStartDate, country, womenownedflag, veteranownedflag, aiobflag, naobflag,
+           minorityownedbusinessflag, apaobflag, baobflag, baobflag, saaobflag, haobflag, 
+           isnativehawaiianownedorganizationorfirm, isotherminorityowned, istriballyownedfirm, 
+           isalaskannativeownedcorporationorfirm, other_minority_owned_business, 
+           isforeignownedandlocated, expirationDate, contractingofficerbusinesssizedetermination)
+  joined.3 <- merge.data.frame(joined.25, PSC, by = "duns", all.x = TRUE)
+  joined.4 <- merge.data.frame(joined.3, oblandact, by = "duns", all.x = TRUE)
+  joined.5 <- merge.data.frame(joined.4, agency, by = "duns", all.x = TRUE)
+  dataset.year <- joined.5 %>% 
+    dplyr::mutate(firm.age = year(registrationDate) - year(businessStartDate)) %>% 
+    dplyr::mutate(location = ifelse(country == "USA", "1", "0")) %>% 
+    dplyr::mutate(ownership.woman = ifelse(womenownedflag == 1, "1", 0)) %>% 
+    dplyr::mutate(ownership.veteran = ifelse(veteranownedflag == 1, "1",0)) %>% 
+    dplyr::mutate(ownership.minority = ifelse(aiobflag == 1 |minorityownedbusinessflag == 1 | 
+                                                apaobflag == 1 | 
+                                                baobflag == 1 | naobflag == 1 | saaobflag == 1 | 
+                                                haobflag == 1 | isnativehawaiianownedorganizationorfirm == 1 | 
+                                                isotherminorityowned == 1 | istriballyownedfirm == 1 | 
+                                                isalaskannativeownedcorporationorfirm == 1 | 
+                                                other_minority_owned_business == 1, "1", 0)) %>% 
+    dplyr::mutate(ownership.foreign = ifelse(isforeignownedandlocated == 1, "1", 0)) %>% 
+    dplyr::mutate(years.survived = months.survived/12) %>% 
+    dplyr::mutate(survival.status = ifelse(year(lastsigneddate) >= 2010, "1", "0")) %>%
+    dplyr::mutate(three.year = years.survived>=3, "YES","NO") %>% 
+    dplyr::mutate(five.year = years.survived>=5, "YES","NO") %>% 
+    dplyr::mutate(ten.year = years.survived>=10, "YES","NO") %>%   ##only works since start at same time
+    dplyr::mutate(biz_size = ifelse(contractingofficerbusinesssizedetermination == "O", 1, 0)) %>% 
+    select(duns, biz_size, NAICS2, ServicesCategory, location, ownership.woman, 
+           ownership.veteran, ownership.minority, ownership.foreign, contract.actions,
+           obligated.amt, years.survived, lastsigneddate, firm.age, three.year, five.year,ten.year, lastsigneddate, survival.status, DEPARTMENT_NAME, AGENCY_NAME, registrationDate) %>% 
+    filter(NAICS2 != "NU")
+  dataset.year
+  }
 #2001 ####
 
-create_year_edit(final_joined,2001)
-# year.edit = final_joined %>% 
-#   filter(year(registrationDate) == 2001) %>% 
-#   group_by(duns) %>% 
-#   filter(year(signeddate) <= year(registrationDate) + 10) %>% 
-#   dplyr::mutate(lastsigneddate = max(signeddate)) %>% 
-#   dplyr::mutate(months.survived = ((year(lastsigneddate) - year(registrationDate)) * 12) 
+dataset.2001<- create_year_edit(final_joined,2001)
+# year.edit = final_joined %>%
+#   filter(year(registrationDate) == 2001) %>%
+#   group_by(duns) %>%
+#   filter(year(signeddate) <= year(registrationDate) + 10) %>%
+#   dplyr::mutate(lastsigneddate = max(signeddate)) %>%
+#   dplyr::mutate(months.survived = ((year(lastsigneddate) - year(registrationDate)) * 12)
 #                 + month(lastsigneddate) - month(registrationDate))
-
-
-           
+# year.edit.unique <- year.edit[!duplicated(year.edit[,c('duns')]),]
+# year = as.data.frame(year.edit.unique)
 #filter(contractingofficerbusinesssizedetermination == "S")
-year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
- 
+
 ##joined the above sections together by duns and selected only the columns needed
 
-NAICS = as.data.frame(NAICS.unique.column)
-year = as.data.frame(year.edit.unique)
 
 joined.2 = merge.data.frame(NAICS, year, by = "duns")  
 
@@ -174,7 +203,7 @@ joined.5 = merge.data.frame(joined.4, agency, by = "duns", all.x = TRUE)
 #### variables I need: Firm Age, Location, Ownership, years in SAM, survival status, biz_size, 3 years, 5 years, 10 years 
 
 
-dataset.2001 = joined.5 %>% 
+dataset.2001b = joined.5 %>% 
   dplyr::mutate(firm.age = year(registrationDate) - year(businessStartDate)) %>% 
   dplyr::mutate(location = ifelse(country == "USA", "1", "0")) %>% 
   dplyr::mutate(ownership.woman = ifelse(womenownedflag == 1, "1", 0)) %>% 
@@ -198,6 +227,7 @@ dataset.2001 = joined.5 %>%
          obligated.amt, years.survived, lastsigneddate, firm.age, three.year, five.year,ten.year, lastsigneddate, survival.status, DEPARTMENT_NAME, AGENCY_NAME, registrationDate) %>% 
   filter(NAICS2 != "NU")
 
+
 #2002 ####
 create_year_edit(final_joined,2002)
 # year.edit = final_joined %>% 
@@ -209,32 +239,32 @@ create_year_edit(final_joined,2002)
 #          + month(lastsigneddate) - month(registrationDate))
   
   #filter(contractingofficerbusinesssizedetermination == "S")
-  year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
-
-
-##joined the above sections together by duns and selected only the columns needed
-
-NAICS = as.data.frame(NAICS.unique.column)
-year = as.data.frame(year.edit.unique)
-
-joined.2 = merge.data.frame(NAICS, year, by = "duns")  
-
-joined.25 = joined.2 %>%
-  select(duns, NAICS2, age_at_start, months.survived, lastsigneddate, status, registrationDate, 
-         businessStartDate, country, womenownedflag, veteranownedflag, aiobflag, naobflag,
-         minorityownedbusinessflag, apaobflag, baobflag, baobflag, saaobflag, haobflag, 
-         isnativehawaiianownedorganizationorfirm, isotherminorityowned, istriballyownedfirm, 
-         isalaskannativeownedcorporationorfirm, other_minority_owned_business, 
-         isforeignownedandlocated, expirationDate, contractingofficerbusinesssizedetermination)
-
-###cross reference agency and department codes with a list of names and used one of our 
-##datasets in SQL to identify the PSC codes -- used a similar method to determine agency and PSC
-##for each firm as was used to determine the NAICS code
-
-joined.3 = merge.data.frame(joined.25, PSC, by = "duns", all.x = TRUE)
-joined.4 = merge.data.frame(joined.3, oblandact, by = "duns", all.x = TRUE)
-joined.5 = merge.data.frame(joined.4, agency, by = "duns", all.x = TRUE)
-
+#   year.edit.unique = year.edit[!duplicated(year.edit[,c('duns')]),]
+# 
+# 
+# ##joined the above sections together by duns and selected only the columns needed
+# 
+# NAICS = as.data.frame(NAICS.unique.column)
+# year = as.data.frame(year.edit.unique)
+# 
+# joined.2 = merge.data.frame(NAICS, year, by = "duns")  
+# 
+# joined.25 = joined.2 %>%
+#   select(duns, NAICS2, age_at_start, months.survived, lastsigneddate, status, registrationDate, 
+#          businessStartDate, country, womenownedflag, veteranownedflag, aiobflag, naobflag,
+#          minorityownedbusinessflag, apaobflag, baobflag, baobflag, saaobflag, haobflag, 
+#          isnativehawaiianownedorganizationorfirm, isotherminorityowned, istriballyownedfirm, 
+#          isalaskannativeownedcorporationorfirm, other_minority_owned_business, 
+#          isforeignownedandlocated, expirationDate, contractingofficerbusinesssizedetermination)
+# 
+# ###cross reference agency and department codes with a list of names and used one of our 
+# ##datasets in SQL to identify the PSC codes -- used a similar method to determine agency and PSC
+# ##for each firm as was used to determine the NAICS code
+# 
+# joined.3 = merge.data.frame(joined.25, PSC, by = "duns", all.x = TRUE)
+# joined.4 = merge.data.frame(joined.3, oblandact, by = "duns", all.x = TRUE)
+# joined.5 = merge.data.frame(joined.4, agency, by = "duns", all.x = TRUE)
+# 
 
 ####selecting and creating needed fields  
 
