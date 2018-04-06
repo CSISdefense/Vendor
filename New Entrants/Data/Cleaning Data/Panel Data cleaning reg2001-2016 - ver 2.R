@@ -228,19 +228,7 @@ write.csv(all.dataset.SD, "Panel Data reg2001-2016 - ver4.csv")
   
 ###DOD Panel Data ####
 
-final <- read_csv("SAM Data merged with FPDS, exp2000-2019.csv")
-
-final_joined = final[!duplicated(final),]
-
-agency_codes <- read.xlsx("K:/2018-01 NPS New Entrants/Data/Data/Raw Data/FPDS agency codes.xlsx")
-
-agency_codes_unique = agency_codes[!duplicated(agency_codes[,c('DEPARTMENT_ID','AGENCY_CODE')]),] 
-
-agency.unique = agency_codes[!duplicated(agency_codes[,c('DEPARTMENT_NAME')]),] 
-
 final_joined_DOD <- final_joined %>% 
-  dplyr::mutate(age_at_start = year(registrationDate) - year(businessStartDate)) %>% 
-  dplyr::rename(country = `samAddress countryCode`) %>% 
   left_join(agency_codes_unique, by = c("agencyid"="AGENCY_CODE")) %>% 
   filter(DEPARTMENT_ID == "9700")
 
@@ -253,13 +241,9 @@ NAICS.edit = final_joined_DOD %>%
   filter(!is.na(principalnaicscode)) %>% 
   filter(NAICS2 != "NU")
 
-NAICS.edit$NAICS2[NAICS.edit$NAICS2 == 31] = "31-33"
-NAICS.edit$NAICS2[NAICS.edit$NAICS2 == 32] = "31-33"
-NAICS.edit$NAICS2[NAICS.edit$NAICS2 == 33] = "31-33"
-NAICS.edit$NAICS2[NAICS.edit$NAICS2 == 44] = "44-45"
-NAICS.edit$NAICS2[NAICS.edit$NAICS2 == 45] = "44-45"
-NAICS.edit$NAICS2[NAICS.edit$NAICS2 == 48] = "48-49"
-NAICS.edit$NAICS2[NAICS.edit$NAICS2 == 49] = "48-49"  
+NAICS.edit$NAICS2[NAICS.edit$NAICS2 %in% c(31,32,33)] = "31-33"
+NAICS.edit$NAICS2[NAICS.edit$NAICS2 %in% c(44,45)] = "44-45"
+NAICS.edit$NAICS2[NAICS.edit$NAICS2 %in% c(48,49)] = "48-49"
 
 #### identified within each DUNS# which NAICs code had the greatest total
 #### obligatedamount to determine one NAICS per DUNS
@@ -283,14 +267,6 @@ NAICS = as.data.frame(NAICS.unique.column)
 ###cross reference agency and department codes with a list of names and used one of our 
 ##datasets in SQL to identify the PSC codes -- used a similar method to determine agency and PSC
 ##for each firm as was used to determine the NAICS code
-
-
-psc_names <- read_csv("K:/2018-01 NPS New Entrants/Data/Data/Raw Data/PSC DIIG categories.csv")
-
-psc_names$productorservicecode <- as.character(psc_names$ProductOrServiceCode)
-
-final_joined_DOD$productorservicecode <- as.character(final_joined_DOD$productorservicecode)
-
 
 name.defined <- final_joined_DOD %>% 
   left_join(psc_names[ , c("productorservicecode","ServicesCategory")], by = "productorservicecode") %>% 
@@ -381,8 +357,6 @@ create_year_edit_DOD<-function(data,
     filter(NAICS2 != "NU")
   dataset.year
 }
-
-
 
 #2001 ####
 
