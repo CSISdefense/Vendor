@@ -4,7 +4,9 @@ library(openxlsx)
 library(plyr)
 library(jsonlite)
 library(data.table)
-
+library(tidyverse)
+installr::install.rtools()
+Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe")
 
 ##Marielle working Directory
 setwd("K:/2018-01 NPS New Entrants/Data/Data")
@@ -19,24 +21,16 @@ getwd()
 
 ##### the Search pull provides the DUNs numbers within a range of dates (as well as 16 other fields)
 
-expDate = seq(as.Date("2010-01-01"), as.Date("2011-12-31"), by="days") ###change dates
-length(expDate)
+expDate = seq(as.Date("2010-01-01"), as.Date("2011-12-31"), by="days") ##change date
 
 base_url.search = "https://api.data.gov/sam/v2/registrations"
 myapikey = "Xkyoz6sJxZgqNyChQoeMydse5BNFmWP53IqBZA93"
 myapikey2 = "pEFRIdk6OwgiRzawvh34wU1MR7ERmw9Ro2PUuDVe"
 
-
 url = paste(base_url.search,"?","fields=_all_","&","qterms=expirationDate:[",expDate,"]","&api_key=",myapikey, sep = "")
-
-x = as.integer((GET("https://api.data.gov/sam/v2/registrations?fields=_all_&qterms=expirationDate:[2015-01-01]&api_key=Xkyoz6sJxZgqNyChQoeMydse5BNFmWP53IqBZA93"))[["headers"]][["x-ratelimit-remaining"]])
-
-y = as.integer((GET("https://api.data.gov/sam/v2/registrations?fields=_all_&qterms=expirationDate:[2015-01-01]&api_key=pEFRIdk6OwgiRzawvh34wU1MR7ERmw9Ro2PUuDVe"))[["headers"]][["x-ratelimit-remaining"]])
-
-
 df.search = data.frame(matrix(NA, nrow = 0, ncol = 0))
 
-for(i in 185:length(expDate)){
+for(i in 1:length(expDate)){
   if(x<=0){                          
     url = paste(base_url.search,"?","fields=_all_","&","qterms=expirationDate:[",expDate,"]","&api_key=",myapikey2, sep = "")
     y=y-1
@@ -57,10 +51,9 @@ for(i in 185:length(expDate)){
   Sys.sleep(2)
 }
 
-df.unique_2001 = df.search[!duplicated(df.search),]        ##change name per year and below
+df.unique = df.search[!duplicated(df.search),]        ##change name per year and below
 
-write.xlsx(df.unique_2001, "Search_unique_2010_11.xlsx", asTable = TRUE, col.names=TRUE)
-
+write.xlsx(df.unique, "Search_unique_2010_11.xlsx", asTable = TRUE, col.names=TRUE)
 
 ######## getDataAPI pull
 
@@ -82,7 +75,6 @@ url = paste(base_url.get,"/",duns4_nums,"?","return_values=full", "&api_key=",my
 f = as.integer((GET("https://api.data.gov/sam/v4/registrations/8784448350000?return_values=full&api_key=Xkyoz6sJxZgqNyChQoeMydse5BNFmWP53IqBZA93"))[["headers"]][["x-ratelimit-remaining"]])
 
 g = as.integer((GET("https://api.data.gov/sam/v4/registrations/8784448350000?return_values=full&api_key=pEFRIdk6OwgiRzawvh34wU1MR7ERmw9Ro2PUuDVe"))[["headers"]][["x-ratelimit-remaining"]])
-
 error = list()
 
 
@@ -90,10 +82,8 @@ for(i in 1:length(duns4_nums)){
   if(f <= 0){                          
     url = paste(base_url.get,"/",duns4_nums,"?","return_values=full", "&api_key=",myapikey2, sep = "")
     g = g-1
-    if(g <= 0){
-      url = paste(base_url.get,"/",duns4_nums,"?","return_values=full", "&api_key=",myapikey3, sep = "")
+    if(g == 0)
           break
-        }
       }
   if(i %% 100 ==0){
     cat(paste0("completed", i))
