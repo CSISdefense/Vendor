@@ -229,19 +229,20 @@ Term_Cons_05A <- glm(data=smp,
                          # (1 | NAICS2)
                        , family=binomial(link="logit"))
 display(Term_Cons_05A)
-Term_Cons_08A2 <- glmer(data=smp1m,
-                       b_Term ~c_HHI_lag1 + 
-                         cl_Ceil + cl_Days+ 
-                         SIDV + MIDV + FSSGWAC + BPABOA +
-                         # c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +# c_HHI_lag1:cl_Days +
-                         n_Fixed + b_UCA +
-                         # b_Intl + 
-                         # SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days + BPABOA:cl_Days +
-                         # SIDV:c_HHI_lag1+MIDV:c_HHI_lag1+FSSGWAC:c_HHI_lag1 + BPABOA:c_HHI_lag1 +
-                         b_UCA:c_HHI_lag1 +
-                         (1 | NAICS2)
-                       , family=binomial(link="logit"))
-display(Term_Cons_08A2)
+Term_Cons_08A3 <- glmer(data=smp1m,
+                        b_Term ~c_HHI_lag1 + 
+                          cl_Ceil + cl_Days+ 
+                          SIDV + MIDV + FSSGWAC + BPABOA +
+                          # c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +
+                          # c_HHI_lag1:cl_Days +
+                          n_Fixed + b_UCA +
+                          # b_Intl + 
+                          # SIDV:cl_Days+MIDV:cl_Days+FSSGWAC:cl_Days + BPABOA:cl_Days +
+                          SIDV:c_HHI_lag1+MIDV:c_HHI_lag1+FSSGWAC:c_HHI_lag1 + BPABOA:c_HHI_lag1 +
+                          b_UCA:c_HHI_lag1 +
+                          (1 | NAICS2)
+                        , family=binomial(link="logit"))
+display(Term_Cons_08A3)
 
 
 Term_Cons_08B <- glmer(data=smp1m,
@@ -257,7 +258,9 @@ Term_Cons_08B <- glmer(data=smp1m,
                          (1 | NAICS2)
                        , family=binomial(link="logit"))
 display(Term_Cons_08B)
-save(file="Term_Cons.RData",Term_Cons_08A,Term_Cons_08A2,Term_Cons_08B)
+
+save(file="Term_Cons.RData",Term_Cons_08A,Term_Cons_08A2,Term_Cons_08A3,Term_Cons_08B)
+
 ```
 
 
@@ -422,24 +425,6 @@ Comp_CBre_08B<-b_CBre_08B
 
 ?htmlreg
 # 
-# htmlreg(list(EuropeModel$fixed[[1]],EuropeModel$fixed[[2]],EuropeModel$fixed[[3]]),
-#         file="Output\\Hypothesis1.html",
-#         custom.model.name=c(as.character(EuropeModel$name[1:3])),
-#         digits=3,
-#         stars=c(0.001,0.01,0.05,0.1),
-#         custom.coef.names = c("More Def. Spending",#Dlog(NGDPPC_eu2014)
-#                               "Log(GDP), (2014 Euros)", #log(NGDP_eu2014)
-#                               "EU27-wide Debt, (Percent of EU 27 GDP)",# EUdebt_NGDP
-#                               "Deficit, (Percent of GDP)",# Dfc_NGDP
-#                               "International Terrorism, (Number of Incidents)", #IntAt
-#                               "Log(Global Civil War Battle-Related Deaths)", # log(GCivilWarBRD)
-#                               "Cabinet Liberty/Authority, (GAL=0, TAN=10)", #Cab_liberty_authority
-#                               "Liberty/Authority Polarization", #liberty_authority_ls_spread
-#                               "Cabinet Anti/Pro EU, (Anti=0, Pro=10)"), #Cab_liberty_authority)
-#         groups = list("Public Net Support for (year T-2)" = 1,"Macroeconomics (year T-1)" = 2:4,"Security (year T-1)" = 5:6,"Parliamentary (year T-1)" = 7:9),
-#         custom.note="%stars.",
-#             bold=0.05
-# )
 
 stargazer(Comp_CBre_05A,Term_Cons_08A,type="html",out="Term_2.html")
 
@@ -468,13 +453,40 @@ CBre_Cons_Comp_08B <- glmer(data=smp1m,
 # Output 
 ```{r Output}
 
-texreg::htmlreg(list(Term_Cons_08A2,
-                     CBre_Cons_08A),file="ConsModel.html",single.row = TRUE)
+texreg::htmlreg(list(Term_Cons_08A3,
+                     CBre_Cons_08A),file="ConsModel.html",single.row = TRUE,
+                custom.model.name=c("Complete\nand Partial\nTermination",
+                                    "Ceiling Breach"),
+                        stars=c(0.05))
 
 
 texreg::htmlreg(list(Term_Comp_08H,
-                     Comp_CBre_08B),file="CompModel.html",single.row = TRUE)
+                     Comp_CBre_08B),file="CompModel.html",single.row = TRUE,
+                custom.model.name=c("Complete\nand Partial\nTermination",
+                                    "Ceiling Breach"),
+                        stars=c(0.05))
 
 # texreg::htmlreg(list(Comp_CBre_08B,Term_Cons_08A),file="Hypothesis1.html")
+
+
+# htmlreg(list(EuropeModel$fixed[[1]],EuropeModel$fixed[[2]],EuropeModel$fixed[[3]]),
+#         file="Output\\Hypothesis1.html",
+#         custom.model.name=c(as.character(EuropeModel$name[1:3])),
+#         digits=3,
+#         stars=c(0.001,0.01,0.05,0.1),
+#         custom.coef.names = c("More Def. Spending",#Dlog(NGDPPC_eu2014)
+#                               "Log(GDP), (2014 Euros)", #log(NGDP_eu2014)
+#                               "EU27-wide Debt, (Percent of EU 27 GDP)",# EUdebt_NGDP
+#                               "Deficit, (Percent of GDP)",# Dfc_NGDP
+#                               "International Terrorism, (Number of Incidents)", #IntAt
+#                               "Log(Global Civil War Battle-Related Deaths)", # log(GCivilWarBRD)
+#                               "Cabinet Liberty/Authority, (GAL=0, TAN=10)", #Cab_liberty_authority
+#                               "Liberty/Authority Polarization", #liberty_authority_ls_spread
+#                               "Cabinet Anti/Pro EU, (Anti=0, Pro=10)"), #Cab_liberty_authority)
+#         groups = list("Public Net Support for (year T-2)" = 1,"Macroeconomics (year T-1)" = 2:4,"Security (year T-1)" = 5:6,"Parliamentary (year T-1)" = 7:9),
+#         custom.note="%stars.",
+#             bold=0.05
+# )
+
 
 ```
