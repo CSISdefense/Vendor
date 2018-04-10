@@ -16,6 +16,7 @@ library(dplyr)
 library(arm)
 library(R2WinBUGS)
 library(knitr)
+library(foreign)
 source("DIIGstat.r")
 
 axis.text.size<-10
@@ -143,7 +144,7 @@ NA_stats(def,"Agency")`
 `r summary(def$Office);
 NA_stats(def,"Office")`
 
-### Summary
+### NAICS examination
 ```{r Summary}
 
 # Add NAICS title
@@ -175,12 +176,67 @@ def$NAICS_label<-factor(def$NAICS_label)
 order<-  rev(levels(def$NAICS_label))
 
 
-NAICS2digit<-ggplot(def,
+NAICS2digitCount<-ggplot(def,
        aes(x=NAICS_label))+
   geom_bar()+coord_flip()+
   scale_y_continuous(label=scales::comma)+scale_x_discrete(limits=order)+
   labs(x="2-Digit NAICS Code",y="Number of Contracts and Task Orders in Unfiltered Dataset")
-ggsave(NAICS2digit,file="NAICS2digit.png",width=7,height=7,dpi=600)
+ggsave(NAICS2digit,file="NAICS2digitCount.png",width=7,height=7,dpi=600)
+
+NAICS_summary<-def %>% group_by(NAICS,StartFY,HHI_lag1) %>%
+  dplyr::summarise(annual_action_obligation=sum(Action.Obligation),
+                   annual_count=length(StartFY)) 
+
+top_NAICS <- NAICS_summary %>% group_by(NAICS) %>% 
+  dplyr::summarise(naics_action_obligation=sum(annual_action_obligation),
+                   naics_count=sum(annual_count)) 
+top_NAICS$naics_dollar_rank<-rank(-top_NAICS$naics_action_obligation)
+top_NAICS$naics_count_rank<-rank(-top_NAICS$naics_count)
+
+
+NAICS_summary<-left_join(NAICS_summary,top_NAICS, by="NAICS")
+
+colnames(NAICS_summary)[colnames(NAICS_summary)=="NAICS"]<-"principalnaicscode"
+
+NAICS_summary$principalnaicscode<-as.character(NAICS_summary$principalnaicscode)
+NAICS_summary<-as.data.frame(NAICS_summary)
+NAICS_summary<-csis360::read_and_join(NAICS_summary,
+                        lookup_file = "Lookup_PrincipalNAICScode.csv",
+                        path="",
+                        dir="Lookup\\",
+                        by="principalnaicscode",
+                        skip_check_var=c("principalnaicscodeText",
+"NAICS_shorthand")
+               )
+
+# https://stackoverflow.com/questions/37174316/how-to-fit-long-text-into-ggplot2-facet-titles
+
+
+
+# Helper function for string wrapping. 
+# Default 20 character target width.
+swr <- function(string, nwrap=20) {
+  paste(strwrap(string, width=nwrap), collapse="\n")
+}
+swr <- Vectorize(swr)
+
+# View(NAICS_summary)
+NAICS_summary$NAICS_shorthand<-swr(NAICS_summary$NAICS_shorthand,nwrap = 25)
+NAICS_summary$FY<-NAICS_summary$StartFY-1
+NAICStop<-ggplot(subset(NAICS_summary,naics_dollar_rank<=4 |
+                          naics_count_rank<=4),
+       aes(x=FY,y=HHI_lag1))+#color=NAICS_Code
+  geom_line()+
+  scale_y_continuous(label=scales::comma)+ 
+  scale_x_continuous(breaks=c(2006,2009,2011,2014))+ 
+  facet_wrap(~NAICS_shorthand,ncol=2)+
+  labs(x="Fiscal Year",y="Herfindahl-Herschman Index")+ 
+  geom_hline(yintercept=c(1500,2500),linetype="dotted")
+NAICStop
+ggsave(NAICStop,file="NAICStop.png",width=4,height=8,dpi=600)
+
+
+summary(NAICS_summary$naics_count_rank)
 ```
 
 ### Computational Sample Creation
@@ -207,6 +263,24 @@ sum(def[!complete,]$Action.Obligation,na.rm=TRUE)/sum(def$Action.Obligation,na.r
 smp1m<-smp[sample(nrow(smp),1000000),]
 smp<-smp[sample(nrow(smp),250000),]
 save(file="def_sample.Rdata",smp,smp1m)
+write.foreign(df=smp,
+              datafile="Data//def_sample250k.dat",
+              codefile="Data//def_sample250k_code.do",
+              package = "Stata")
+write.foreign(df=smp1m,
+              datafile="Data//def_sample1m.dat",
+              codefile="Data//def_sample1m_code.do",
+              package = "Stata")
+
+
+
+levels(smp$Intl)<- list("Just U.S."=c("Just U.S."), 
+                                "Any Intl."=c("Any International"))
+levels(smp1m$Intl)<- list("Just U.S."=c("Just U.S."), 
+                                "Any Intl."=c("Any International"))
+write.dta(smp,file="Data//smp250k.dta")
+write.dta(smp1m,file="Data//smp1m.dta")
+
 
 ```
 # Models
