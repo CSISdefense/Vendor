@@ -249,7 +249,15 @@ residuals_cbre_plot<-function(model,x_col="fitted",bins=40){
 }
 
 
-freq_discrete_term_plot<-function(data,x_col,group_col=NA){
+freq_discrete_term_plot<-function(data,x_col,
+                                  group_col=NA,
+                                  na_remove=FALSE){
+  
+  if(na_remove==TRUE){
+    data<-data[!is.na(data[,group_col]),]
+    data<-data[!is.na(data[,x_col]),]
+  }
+  
   if(is.na(group_col)){
     plot<-ggplot(data=data,
            aes_string(x=x_col))+
@@ -268,7 +276,15 @@ freq_discrete_term_plot<-function(data,x_col,group_col=NA){
 }
 
 
-freq_discrete_cbre_plot<-function(data,x_col,group_col=NA){
+freq_discrete_cbre_plot<-function(data,x_col,
+                                  group_col=NA,
+                                  na_remove=FALSE){
+  
+  if(na_remove==TRUE){
+    data<-data[!is.na(data[,group_col]),]
+    data<-data[!is.na(data[,x_col]),]
+  }
+  
   if(is.na(group_col)){
     plot<-ggplot(data=data,
                  aes_string(x=x_col))+
