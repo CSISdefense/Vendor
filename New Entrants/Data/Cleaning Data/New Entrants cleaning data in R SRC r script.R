@@ -120,6 +120,7 @@ str(datapull_yr_2000)
 
 n_distinct(datapull_yr_2000$duns) ##duns is a unique identifier! 
 
+length(unique(datapull_yr_2000$duns)) == nrow(datapull_yr_2000) ##TRUE, confirmed duns as a unique identifier
 
 ##check uniqueness of countryofIncorporation as a variable##
 n_distinct(datapull_yr_2000$countryOfIncorporation)
@@ -227,9 +228,9 @@ datapull_yr_2000 <- datapull_yr_2000 %>%
 ##****Save File*********##
 ##********************************##
 
-write.csv(datapull_yr_2000, file="2001_datapull_cleaned.csv")
+#write.csv(datapull_yr_2000, file="2001_datapull_cleaned.csv")
 
-
+save(datapull_yr_2000, file="2000_datapull_cleaned.Rda")
 
 
 #*********************************************************************
@@ -402,8 +403,9 @@ datapull_yr_2001 <- datapull_yr_2001 %>%
 ##****Save File*********##
 ##********************************##
 
-write.csv(datapull_yr_2001, file="2001_datapull_cleaned.csv")
+#write.csv(datapull_yr_2001, file="2001_datapull_cleaned.csv")
 
+save(datapull_yr_2001, file="2001_datapull_cleaned.Rda")
 
 
 
@@ -577,7 +579,9 @@ datapull_yr_2002_03 <- datapull_yr_2002_03 %>%
 ##****Save File*********##
 ##********************************##
 
-write.csv(datapull_yr_2002_03, file="2002_03_datapull_cleaned.csv")
+#write.csv(datapull_yr_2002_03, file="2002_03_datapull_cleaned.csv")
+
+save(datapull_yr_2002_03, file="2002_03_datapull_cleaned.Rda")
 
 #*********************************************************************
 
@@ -791,8 +795,9 @@ datapull_yr_2004_05 <- datapull_yr_2004_05 %>%
 ##****Save File*********##
 ##********************************##
 
-write.csv(datapull_yr_2004_05, file="2004_05_datapull_cleaned.csv")
+#write.csv(datapull_yr_2004_05, file="2004_05_datapull_cleaned.csv")
 
+save(datapull_yr_2004_05, file="2004_05_datapull_cleaned.Rda")
 
 ##*************************************************************************
 
@@ -1017,7 +1022,9 @@ datapull_yr_2006_07 <- datapull_yr_2006_07 %>%
 ##****Save File*********##
 ##********************************##
 
-write.csv(datapull_yr_2006_07, file="2006_07_datapull_cleaned.csv")
+#write.csv(datapull_yr_2006_07, file="2006_07_datapull_cleaned.csv")
+
+save(datapull_yr_2006_07, file="2006_07_datapull_cleaned.Rda")
 
 #*******************************************************************************
 
@@ -1256,7 +1263,9 @@ datapull_yr_2008_09 <- datapull_yr_2008_09 %>%
 ##****Save File*********##
 ##********************************##
 
-write.csv(datapull_yr_2008_09, file="2008_09_datapull_cleaned.csv")
+#write.csv(datapull_yr_2008_09, file="2008_09_datapull_cleaned.csv")
+
+save(datapull_yr_2008_09, file="2008_09_datapull_cleaned.Rda")
 
 #*******************************************************************************
 
@@ -1506,7 +1515,9 @@ datapull_yr_2010_11 <- datapull_yr_2010_11 %>%
 ##****Save File*********##
 ##********************************##
 
-write.csv(datapull_yr_2010_11, file="2010_11_datapull_cleaned.csv")
+#write.csv(datapull_yr_2010_11, file="2010_11_datapull_cleaned.csv")
+
+save(datapull_yr_2010_11, file="2010_11_datapull_cleaned.Rda")
 
 #*******************************************************************************
 
@@ -1774,7 +1785,9 @@ datapull_yr_2012_13 <- datapull_yr_2012_13 %>%
 ##****Save File*********##
 ##********************************##
 
-write.csv(datapull_yr_2012_13, file="2012_13_datapull_cleaned.csv")
+#write.csv(datapull_yr_2012_13, file="2012_13_datapull_cleaned.csv")
+
+save(datapull_yr_2012_13, file="2012_13_datapull_cleaned.Rda")
 
 #*******************************************************************************
 
@@ -2074,7 +2087,9 @@ datapull_yr_2014_15 <- datapull_yr_2014_15 %>%
 ##****Save File*********##
 ##********************************##
 
-write.csv(datapull_yr_2014_15, file="2014_15_datapull_cleaned.csv")
+#write.csv(datapull_yr_2014_15, file="2014_15_datapull_cleaned.csv")
+
+save(datapull_yr_2014_15, file="2014_15_datapull_cleaned.Rda")
 
 #*******************************************************************************
 
@@ -2299,7 +2314,9 @@ datapull_yr_2016_17 <- datapull_yr_2016_17 %>%
 ##****Save File*********##
 ##********************************##
 
-write.csv(datapull_yr_2016_17, file="2016_17_datapull_cleaned.csv")
+##write.csv(datapull_yr_2016_17, file="2016_17_datapull_cleaned.csv")
+
+save(datapull_yr_2016_17, file="2016_17_datapull_cleaned.Rda")
 
 #*******************************************************************************
 
@@ -2351,7 +2368,9 @@ length(unique(datapull_all$duns)) == nrow(datapull_all) ##should return TRUE if 
 ##****Save File*********##
 ##********************************##
 
-write.csv(datapull_all, file="datapull_all.csv")
+#write.csv(datapull_all, file="datapull_all.csv")
+
+save(datapull_all, file="datapull_all.Rda")
 
 #******************************************************
 
@@ -2359,7 +2378,9 @@ write.csv(datapull_all, file="datapull_all.csv")
 #******************************************************************
 ########################count number of new entrants in each year! ################################
 #******************************************************************
-datapull_all <- read.csv("datapull_all.csv")
+#datapull_all <- read.csv("datapull_all.csv")
+
+load(file = "datapull_all.Rda")
 
 
 
