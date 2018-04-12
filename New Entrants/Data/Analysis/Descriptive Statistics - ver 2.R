@@ -18,28 +18,27 @@ library(lubridate)
 
 
 ##Marielle working Directory
-setwd("K:/2018-01 NPS New Entrants/Data/Data")
+setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data")
 getwd()
 
 ##Sam working Directory
-setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data")
+setwd("K:/2018-01 NPS New Entrants/Data/Data//Cleaned Data")
 getwd()
 
 ### import data Signeddate nop filter####
 sd_nop <- read_csv("Panel Data reg2001-2016 - ver4.csv")
 
-df2001_sd <- sd_nop %>% 
-  filter(year(registrationDate) == 2001 )
-df2002_sd <- sd_nop %>% 
-  filter(year(registrationDate) == 2002 )
-df2003_sd <- sd_nop %>% 
-  filter(year(registrationDate) == 2003 )
-df2004_sd <- sd_nop %>% 
-  filter(year(registrationDate) == 2004 )
-df2005_sd <- sd_nop %>% 
-  filter(year(registrationDate) == 2005 )
-df2006_sd <- sd_nop %>% 
-  filter(year(registrationDate) == 2006 )
+divide_years <- function(df_source, regyear){
+  df_source %>% 
+    filter(year(registrationDate) == regyear )
+}
+
+df2001_sd <- divide_years(sd_nop, 2001)
+df2002_sd <- divide_years(sd_nop, 2002)
+df2003_sd <- divide_years(sd_nop, 2003)
+df2004_sd <- divide_years(sd_nop, 2004)
+df2005_sd <- divide_years(sd_nop, 2005)
+df2006_sd <- divide_years(sd_nop, 2006)
 
 
 ###Cleaning variables to categorical and numeric####
@@ -118,18 +117,14 @@ df2006_sd$AGENCY_NAME = as.factor(df2006_sd$AGENCY_NAME)
 ### DOD filter####
 dod_sd <- read_csv("Panel Data reg2001-2016 DOD - ver4.csv")
 
-df2001_DOD <- dod_sd %>% 
-  filter(year(registrationDate) == 2001 )
-df2002_DOD <- dod_sd %>% 
-  filter(year(registrationDate) == 2002 )
-df2003_DOD <- dod_sd %>% 
-  filter(year(registrationDate) == 2003 )
-df2004_DOD <- dod_sd %>% 
-  filter(year(registrationDate) == 2004 )
-df2005_DOD <- dod_sd %>% 
-  filter(year(registrationDate) == 2005 )
-df2006_DOD <- dod_sd %>% 
-  filter(year(registrationDate) == 2006 )
+
+df2001_DOD <- divide_years(dod_sd, 2001)
+df2002_DOD <- divide_years(dod_sd, 2002)
+df2003_DOD <- divide_years(dod_sd, 2003)
+df2004_DOD <- divide_years(dod_sd, 2004)
+df2005_DOD <- divide_years(dod_sd, 2005)
+df2006_DOD <- divide_years(dod_sd, 2006)
+
 
 ###Cleaning variables to categorical and numeric####
 df2001_DOD$NAICS2 = as.factor(df2001_DOD$NAICS2)
