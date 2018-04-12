@@ -2370,3 +2370,66 @@ registrationyear_count
 
 
 
+
+
+#Greg Replication
+process_pull<-function(data){
+  data<- data %>% select(activationDate, fiscalYearEndCloseDate, 
+                         registrationDate, duns, expirationDate, 
+                         status, businessStartDate, samAddress.countryCode, 
+                         countryOfIncorporation, naics, 
+                         naics.naicsCode, naics.naicsName)
+  
+  ##********************************##
+  ##****clean Entry variable: registrationDate*********##
+  ##********************************##
+  
+  ##change registrationdate to the format as.Date
+  data$registrationDate<-as.Date(as.character(data$registrationDate))
+  
+  ##********************************##
+  ##****clean expirationDate*********##
+  ##********************************##
+  
+  ##change expirationDate to the format as.Date
+  data$expirationDate<-as.Date(as.character(data$expirationDate))
+  
+  ##********************************##
+  ##****clean businessstartDate*********##
+  ##********************************##
+  
+  ##change businessstartDate to the format as.Date
+  data$businessStartDate<-as.Date(as.character(data$businessStartDate))
+  
+  ##********************************##
+  #************creating var describing registration yr and biz start date yr******#
+  #*******************************##
+  
+  #************************
+  ##create registration year
+  data$registrationYear <- format(data$registrationDate, "%Y")
+  
+  #make registrationYear numeric
+  data$registrationYear<-as.numeric(as.character(data$registrationYear))
+  
+  #********************************
+  ##create business start date year
+  data$businessStartYear <- format(data$businessStartDate, "%Y")
+  
+  #make businessstartYear numeric
+  
+  data$businessStartYear<-as.numeric(as.character(data$businessStartYear))
+  #********************************
+  data
+}
+
+Get_2001 <- process_pull( read.xlsx("Get_2001.xlsx") )
+Get_2002_03 <-  process_pull( read.xlsx("Get_2002_03.xlsx"))
+Get_2004_05 <- process_pull(  read.xlsx("Get_2004_05.xlsx"))
+Get_2004_05 <- process_pull(  read.xlsx("Get_2004_05.xlsx"))
+Get_2006_07 <- process_pull(  read.xlsx("Get_2006_07.xlsx"))
+Get_2008_09 <- process_pull(  read.xlsx("Get_2008_09.xlsx"))
+Get_2010_11 <- process_pull(  read.xlsx("Get_2010_11.xlsx"))
+Get_2012_13 <- process_pull(  read.xlsx("Get_2012_13.xlsx"))
+Get_2014_15 <- process_pull(  read.csv("Get_2014_15.csv"))
+Get_2016_17 <- process_pull(  read.csv("Get_2016_17.csv"))
