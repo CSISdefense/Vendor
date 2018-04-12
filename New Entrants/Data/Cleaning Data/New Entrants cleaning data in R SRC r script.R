@@ -403,8 +403,9 @@ datapull_yr_2001 <- datapull_yr_2001 %>%
 ##****Save File*********##
 ##********************************##
 
-write.csv(datapull_yr_2001, file="2001_datapull_cleaned.csv")
+#write.csv(datapull_yr_2001, file="2001_datapull_cleaned.csv")
 
+save(datapull_yr_2001, file="2001_datapull_cleaned.Rda")
 
 
 
