@@ -1,4 +1,4 @@
-	USE [DIIG]
+	USE CSIS360
 GO
 
 /****** Object:  View [Vendor].[VendorFPDShistoryPlatformSubCustomerDirectDiscretization]    Script Date: 10/5/2017 9:47:32 PM ******/
@@ -34,10 +34,21 @@ SELECT C.Fiscal_year
 , Parent.IsSiliconValley
 , coalesce(PCN.CSISName, parent.parentid + '^',C.dunsnumber + '^')  as ContractorDisplayName
 , Parent.jointventure
+, C.Dunsnumber
 , C.obligatedAmount
 , C.numberOfActions
-, n.NAICS_Code
-, n.Industry_TEXT
+, n.principalNAICScode
+, substring(n.principalNAICScode,1,2) NAICS2
+, C.contractingofficerbusinesssizedetermination as DirectCOBSD
+, n.principalnaicscodeText
+, c.SignedDate
+, c.veteranownedflag
+, c.minorityownedbusinessflag
+, c.womenownedflag
+, c.isforeigngovernment
+, c.csistransactionID
+, ctid.csiscontractid
+, c.typeofsetaside
 --Grouping Sub-Query
 , IIf(C.contractingofficerbusinesssizedetermination='S' 
    And Not (parent.largegreaterthan3B=1 Or parent.Largegreaterthan3B=1)
@@ -82,8 +93,8 @@ FROM Contract.FPDS as C
 	LEFT JOIN Contractor.ParentContractorNameHistory as PCN
 		ON Parent.ParentID = PCN.ParentID
 		AND C.Fiscal_Year = PCN.FiscalYear
-	left outer join FPDSTypeTable.NAICScode n
-		on c.principalnaicscode=n.NAICS_Code
+	left outer join FPDSTypeTable.principalNAICScode n
+		on c.principalnaicscode=n.principalNAICScode
 	--Vendor specific things
 		left outer join contract.UnlabeledDunsnumberUniqueTransactionIDentityIDhistory u
 		on u.unique_transaction_id=c.unique_transaction_id
@@ -98,7 +109,7 @@ FROM Contract.FPDS as C
 		LEFT OUTER JOIN Contractor.Dunsnumber as ParentDUNS
 			ON ParentDUNS.Dunsnumber=ParentDtPCH.Dunsnumber
 		LEFT OUTER JOIN Contractor.ParentContractor as PARENTsquared
-			ON PARENTsquared.ParentID= ParentDtPCH.ParentID ;
+			ON PARENTsquared.ParentID= ParentDtPCH.ParentID 
 
 
 
