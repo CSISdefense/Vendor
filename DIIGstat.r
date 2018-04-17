@@ -9,7 +9,7 @@ library(ggplot2)
 fit_curve<-function(x, a, b){invlogit(b *  x +a)}
 
 
-bin_df<-function(data,rank_col,group_col=NULL,n=20,ties.method="random"){
+bin_df<-function(data,rank_col,group_col=NULL,bins=20,ties.method="random"){
   #https://stats.stackexchange.com/questions/34008/how-does-ties-method-argument-of-rs-rank-function-work
   if(!is.null(group_col)){
     # Convert character vector to list of symbols
@@ -21,7 +21,7 @@ bin_df<-function(data,rank_col,group_col=NULL,n=20,ties.method="random"){
   }
   #Calculate rank, this allows cut_number to work even when some answers have to be broken up into multiple bins
   bin<-rank(as.data.frame(data[,which(colnames(data)==rank_col)]),ties.method=ties.method)
-  cut_number(bin,n)
+  cut_number(bin,bins)
 }
 
 # bin_plot<-function(data,x_col,y_col,group_col=NULL,n=20,ties.method="random")
@@ -302,6 +302,48 @@ freq_discrete_cbre_plot<-function(data,x_col,
   
 }
 
+
+freq_discrete_plot<-function(data,x_col,
+                                  group_col=NA,
+                                  na_remove=FALSE){
+  
+  if(na_remove==TRUE){
+    data<-data[!is.na(data[,group_col]),]
+    data<-data[!is.na(data[,x_col]),]
+  }
+  
+  if(is.na(group_col)){
+    plot<-ggplot(data=data,
+                 aes_string(x=x_col))
+  }
+  else{
+    plot<-ggplot(data=data,
+                 aes_string(x=x_col))+
+      facet_wrap(as.formula(paste("~",group_col)),scales="free_y")
+  }
+  plot+geom_histogram(stat="count") +
+    scale_y_continuous(labels = scales::comma) +
+    labs(title="Frequency by Ceiling Breaches",
+         caption="Source: FPDS, CSIS Analysis")
+  
+}
+
+
+summary_continuous_plot<-function(data,x_col,group_col=NA,bins=20){
+  gridExtra::grid.arrange(freq_continuous_plot(data,x_col,group_col,bins=bins),
+                          binned_percent_cbre_plot(data,x_col,group_col,bins=bins),
+                          binned_percent_term_plot(data,x_col,group_col,bins=bins))
+  
+}
+
+summary_discrete_plot<-function(data,x_col,group_col=NA){
+  gridExtra::grid.arrange(freq_discrete_plot(data,x_col,group_col),
+                          binned_percent_cbre_plot(data,x_col,group_col),
+                          binned_percent_term_plot(data,x_col,group_col))
+  
+}
+
+
 freq_continuous_term_plot<-function(data,x_col,group_col=NA,bins=20){
   if(is.na(group_col)){
     plot<-ggplot(data=data,
@@ -315,6 +357,22 @@ freq_continuous_term_plot<-function(data,x_col,group_col=NA,bins=20){
       
   }
   plot+labs(title="Frequency by Termination",
+            caption="Source: FPDS, CSIS Analysis")+
+    scale_y_continuous(labels = scales::comma) + 
+    geom_histogram(bins=bins) 
+}
+
+freq_continuous_plot<-function(data,x_col,group_col=NA,bins=20){
+  if(is.na(group_col)){
+    plot<-ggplot(data=data,
+                 aes_string(x=x_col))
+  }
+  else{
+    plot<-ggplot(data=data,
+                 aes_string(x=x_col))+geom_histogram(bins=bins) 
+    
+  }
+  plot+labs(title="Frequency by Ceiling Breach",
             caption="Source: FPDS, CSIS Analysis")+
     scale_y_continuous(labels = scales::comma) + 
     geom_histogram(bins=bins) 
@@ -340,10 +398,10 @@ freq_continuous_cbre_plot<-function(data,x_col,group_col=NA,bins=20){
 }
 
 
-binned_percent_term_plot<-function(data,x_col,group_col=NA){
+binned_percent_term_plot<-function(data,x_col,group_col=NA,bins=20){
   data<-data[!is.na(data[,x_col]),]
   if(is.na(group_col)){
-    data$bin_x<-bin_df(data,x_col)
+    data$bin_x<-bin_df(data,x_col,bins=20)
     plot<-ggplot(data=data %>%
            group_by(bin_x) %>%
            summarise_ (   mean_Term = "mean(b_Term)"   
@@ -352,7 +410,7 @@ binned_percent_term_plot<-function(data,x_col,group_col=NA){
   }
   else{
     data<-data[!is.na(data[,group_col]),]
-    data$bin_x<-bin_df(data,rank_col=x_col,group_col=group_col)
+    data$bin_x<-bin_df(data,rank_col=x_col,group_col=group_col,bins=20)
     plot<-ggplot(data=data %>%
                    group_by_("bin_x",group_col) %>%
                    summarise_ (   mean_Term = "mean(b_Term)"   
@@ -367,10 +425,10 @@ binned_percent_term_plot<-function(data,x_col,group_col=NA){
 
 
 
-binned_percent_cbre_plot<-function(data,x_col,group_col=NA){
+binned_percent_cbre_plot<-function(data,x_col,group_col=NAm,bins=20){
   data<-data[!is.na(data[,x_col]),]
   if(is.na(group_col)){
-    data$bin_x<-bin_df(data,x_col)
+    data$bin_x<-bin_df(data,x_col,bins=20)
     plot<-ggplot(data=data %>%
                    group_by(bin_x) %>%
                    summarise_ (   mean_CBre = "mean(b_CBre)"   
@@ -379,7 +437,7 @@ binned_percent_cbre_plot<-function(data,x_col,group_col=NA){
   }
   else{
     data<-data[!is.na(data[,group_col]),]
-    data$bin_x<-bin_df(data,rank_col=x_col,group_col=group_col)
+    data$bin_x<-bin_df(data,rank_col=x_col,group_col=group_col,bins=20)
     plot<-ggplot(data=data %>%
                    group_by_("bin_x",group_col) %>%
                    summarise_ (   mean_CBre = "mean(b_CBre)"   
