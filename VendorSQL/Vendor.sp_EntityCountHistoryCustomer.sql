@@ -27,6 +27,7 @@ AS
 		  ,IsEntityAbove2016constantOneMillionThreshold
 		  ,IsEntityAbove1990constantReportingThreshold
 		  ,IsEntityAbove2016constantReportingThreshold
+		  ,IsInSAM 
 		  ,count(distinct [EntityID]) [EntityCount]
 		  ,count(distinct [AllContractor]) as [AllContractorCount]
 		  ,sum([numberOfActions]) as SumOfNumberOfActions
@@ -47,6 +48,7 @@ AS
 	  		  ,IsEntityAbove2016constantOneMillionThreshold
 	  ,IsEntityAbove1990constantReportingThreshold
 		  ,IsEntityAbove2016constantReportingThreshold
+		  ,IsInSAM 
 		--End of your query
 		END
 	ELSE --Begin sub path where only services but all Customers will be returned
@@ -62,6 +64,7 @@ AS
 		  		  ,IsEntityAbove2016constantOneMillionThreshold
 		  ,IsEntityAbove1990constantReportingThreshold
 		  ,IsEntityAbove2016constantReportingThreshold
+		  ,IsInSAM 
 		  ,count(distinct [EntityID]) [EntityCount]
 		  ,count(distinct [AllContractor]) as [AllContractorCount]
 		  ,sum([numberOfActions]) as SumOfNumberOfActions
@@ -79,6 +82,7 @@ AS
 	  		  ,IsEntityAbove2016constantOneMillionThreshold
 	  ,IsEntityAbove1990constantReportingThreshold
 		  ,IsEntityAbove2016constantReportingThreshold
+		  ,IsInSAM 
 		--End of your query
 		END
 
