@@ -113,8 +113,7 @@ FROM Contract.FPDS as C
 		LEFT OUTER JOIN Contractor.Dunsnumber as ParentDUNS
 			ON ParentDUNS.Dunsnumber=ParentDtPCH.Dunsnumber
 		LEFT OUTER JOIN Contractor.ParentContractor as PARENTsquared
-			ON PARENTsquared.ParentID= ParentDtPCH.ParentID 
---Vendor Country
+			ON PARENTsquared.ParentID= ParentDtPCH.ParentID ;
 
 
 	LEFT JOIN FPDSTypeTable.Country3lettercode as OriginCountryCode
@@ -127,7 +126,6 @@ FROM Contract.FPDS as C
 		ON vendorcountrycode.Country3LetterCode=VendorCountryCodePartial.Country3LetterCode
 	left outer join location.CountryCodes as VendorISO
 		on VendorCountryCode.isoAlpha3=VendorISO.[alpha-3]
-
 
 
 
