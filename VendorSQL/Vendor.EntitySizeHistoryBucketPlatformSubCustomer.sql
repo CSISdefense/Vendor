@@ -209,7 +209,8 @@ from (select CASE
 		LEFT OUTER JOIN Contractor.ParentContractor as PARENTsquaredImputed
 			ON PARENTsquaredImputed.ParentID= ParentDtPCHimputed.ParentID 
 
-		--Left outer join to sam table here
+		LEFT OUTER JOIN dbo.allSAM as SAM
+			ON SAM.["duns"] = C.dunsnumber
 
 
 		--CSIStransaction ID joins

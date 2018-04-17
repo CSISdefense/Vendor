@@ -27,6 +27,7 @@ AS
 		  ,IsEntityAbove2016constantOneMillionThreshold
 		  ,IsEntityAbove1990constantReportingThreshold
 		  ,IsEntityAbove2016constantReportingThreshold
+		  ,year([registrationDate])
 		  ,count(distinct [EntityID]) [EntityCount]
 		  ,count(distinct [AllContractor]) as [AllContractorCount]
 		  ,sum([numberOfActions]) as SumOfNumberOfActions
