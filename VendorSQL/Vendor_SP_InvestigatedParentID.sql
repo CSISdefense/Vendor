@@ -1,4 +1,4 @@
-USE [DIIG]
+USE CSIS360
 GO
 
 /****** Object:  StoredProcedure [Vendor].[sp_InvestigateParentID]    Script Date: 10/10/2017 12:01:58 AM ******/

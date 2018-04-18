@@ -8,9 +8,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
-
 Alter VIEW [Vendor].[VendorHistoryNaicsPlatformSubCustomer]
 AS
 
@@ -61,6 +58,7 @@ SELECT C.Fiscal_year
 ,OriginCountryCode.Country3LetterCodeText as OriginCountryText
 ,VendorCountryCode.IsInternational as VendorIsInternational
 ,VendorCountryCode.Country3LetterCodeText as VendorCountryText
+,iif(uduns.dunsnumber is null,0,1) as IsSAMduns
 FROM Contract.FPDS as C
 			left outer join FPDSTypeTable.AgencyID AS Agency
 			ON C.contractingofficeagencyid = Agency.AgencyID 
@@ -126,8 +124,8 @@ FROM Contract.FPDS as C
 		ON vendorcountrycode.Country3LetterCode=VendorCountryCodePartial.Country3LetterCode
 	left outer join location.CountryCodes as VendorISO
 		on VendorCountryCode.isoAlpha3=VendorISO.[alpha-3]
-
-
+	left outer join dbo.observations_uniqueDUNS uduns
+		on c.dunsnumber = uduns.dunsnumber
 
 
 
