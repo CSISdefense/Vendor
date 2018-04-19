@@ -508,3 +508,77 @@ NA_stats<-function(data,col){
               ,sep="")
 
 }
+
+
+residual_compare<-function(cbre_old,cbre_new,term_old,term_new,col,x_axis_name,bins=20){
+  if(col %in% colnames(cbre_old$model)){
+    gridExtra::grid.arrange(residuals_cbre_plot(cbre_old,col,bins=bins)+
+                              labs(x=x_axis_name),
+                            residuals_cbre_plot(cbre_new,col,bins=bins)+
+                              labs(x=x_axis_name),
+                            residuals_term_plot(term_old,col,bins=bins)+
+                              labs(x=x_axis_name),
+                            residuals_term_plot(term_new,col,bins=bins)+
+                              labs(x=x_axis_name),
+                            ncol=2)
+  }
+  else{#If the variable is just in the new model
+    gridExtra::grid.arrange(residuals_cbre_plot(cbre_new,col,bins=bins)+
+                              labs(x=x_axis_name),
+                            residuals_term_plot(term_new,col,bins=bins)+
+                              labs(x=x_axis_name),
+                            ncol=1)
+    
+  }
+}
+
+
+deviance_stats<-function(model,model_name){
+  data.frame(model=model_name,
+                deviance=model$deviance,
+                null.deviance=model$null.deviance,
+                difference=model$null.deviance-model$deviance)
+}
+
+summary_residual_compare<-function(cbre_old,cbre_new,term_old,term_new){
+  #Plot the fitted values vs actual results
+  
+  
+  gridExtra::grid.arrange(binned_fitted_versus_cbre_residuals(cbre_old),
+                          binned_fitted_versus_cbre_residuals(cbre_new),
+                          binned_fitted_versus_term_residuals(term_old),
+                          binned_fitted_versus_term_residuals(term_new),
+                          ncol=2)
+  
+  bins<-10
+  if("cl_Ceil" %in% colnames(cbre_old$model)) bins<-bins+10
+  
+  #Plot residuals versus fitted
+  gridExtra::grid.arrange(residuals_cbre_plot(cbre_old,bins=bins)+
+                            labs(x="Estimated  Pr (Ceiling Breach)"),
+                          residuals_cbre_plot(cbre_new,bins=bins)+
+                            labs(x="Estimated  Pr (Ceiling Breach)"),
+                          residuals_term_plot(term_old,bins=bins)+
+                            labs(x="Estimated  Pr (Termination)"),
+                          residuals_term_plot(term_new,bins=bins)+
+                            labs(x="Estimated  Pr (Termination)"),
+                          ncol=2)
+  
+  if("c_OffCri" %in% colnames(cbre_new$model)){
+    residual_compare(cbre_old,cbre_new,term_old,term_new,"c_OffCri","Office Crisis %",10)
+  }
+  
+  if("cl_Ceil" %in% colnames(cbre_new$model)){
+    residual_compare(cbre_old,cbre_new,term_old,term_new,"cl_Ceil","Centered Log(Ceiling)",20)
+  }
+  
+  if("cl_Days" %in% colnames(cbre_new$model)){
+    residual_compare(cbre_old,cbre_new,term_old,term_new,"cl_Days","Centered Log(Days)",10)
+  }
+  
+  rbind(deviance_stats(cbre_old,"cbre_old"),
+        deviance_stats(cbre_new,"cbre_new"),
+        deviance_stats(term_old,"term_old"),
+        deviance_stats(term_new,"term_new"))
+  
+}
