@@ -34,6 +34,7 @@ AS
 		  ,sum([ObligatedAmount]) as [SumOfObligatedAmount]
 		  ,year([registrationDate]) as registrationYear
 		  ,IsInSAM
+		  ,IsPresent
 	  FROM [Vendor].EntitySizeHistoryBucketPlatformSubCustomer ent
 	  left outer join Vendor.EntitySizeCode esc
 	  on esc.EntitySizeCode=ent.entitysizecode
@@ -52,6 +53,7 @@ AS
 		  ,IsEntityAbove2016constantReportingThreshold
 		  ,registrationDate
 		  ,IsInSAM
+		  ,IsPresent
 		--End of your query
 		END
 	ELSE --Begin sub path where only services but all Customers will be returned
@@ -73,6 +75,7 @@ AS
 		  ,sum([ObligatedAmount]) as [SumOfObligatedAmount]
 		  ,year([registrationDate]) as registrationYear
 		  ,IsInSAM
+		  ,IsPresent
 	  FROM [Vendor].EntitySizeHistoryBucketPlatformSubCustomer ent
 	  left outer join Vendor.EntitySizeCode esc
 	  on esc.EntitySizeCode=ent.entitysizecode
@@ -88,6 +91,7 @@ AS
 		  ,IsEntityAbove2016constantReportingThreshold
 		  ,registrationDate
 		  ,IsInSAM
+		  ,IsPresent
 		--End of your query
 		END
 
