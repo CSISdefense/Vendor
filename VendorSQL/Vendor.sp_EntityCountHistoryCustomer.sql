@@ -1,9 +1,11 @@
-/****** Object:  StoredProcedure [Vendor].[sp_EntityCountHistoryCustomer]    Script Date: 4/17/2018 10:39:22 AM ******/
+/****** Object:  StoredProcedure [Vendor].[sp_EntityCountHistoryCustomer]    Script Date: 4/19/2018 11:51:21 AM ******/
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
 GO
+
+
 
 
 
@@ -31,6 +33,7 @@ AS
 		  ,sum([numberOfActions]) as SumOfNumberOfActions
 		  ,sum([ObligatedAmount]) as [SumOfObligatedAmount]
 		  ,year([registrationDate]) as registrationYear
+		  ,IsInSAM
 	  FROM [Vendor].EntitySizeHistoryBucketPlatformSubCustomer ent
 	  left outer join Vendor.EntitySizeCode esc
 	  on esc.EntitySizeCode=ent.entitysizecode
@@ -46,8 +49,9 @@ AS
 	  ,AnyEntityForeignPlaceOfPerformance
 	  		  ,IsEntityAbove2016constantOneMillionThreshold
 	  ,IsEntityAbove1990constantReportingThreshold
-		  ,IsEntityAbove2016constantReportingThreshold,
-		  registrationDate
+		  ,IsEntityAbove2016constantReportingThreshold
+		  ,registrationDate
+		  ,IsInSAM
 		--End of your query
 		END
 	ELSE --Begin sub path where only services but all Customers will be returned
@@ -68,6 +72,7 @@ AS
 		  ,sum([numberOfActions]) as SumOfNumberOfActions
 		  ,sum([ObligatedAmount]) as [SumOfObligatedAmount]
 		  ,year([registrationDate]) as registrationYear
+		  ,IsInSAM
 	  FROM [Vendor].EntitySizeHistoryBucketPlatformSubCustomer ent
 	  left outer join Vendor.EntitySizeCode esc
 	  on esc.EntitySizeCode=ent.entitysizecode
@@ -82,6 +87,7 @@ AS
 	  ,IsEntityAbove1990constantReportingThreshold
 		  ,IsEntityAbove2016constantReportingThreshold
 		  ,registrationDate
+		  ,IsInSAM
 		--End of your query
 		END
 
