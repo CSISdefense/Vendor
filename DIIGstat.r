@@ -287,13 +287,15 @@ freq_discrete_cbre_plot<-function(data,x_col,
   
   if(is.na(group_col)){
     plot<-ggplot(data=data,
-                 aes_string(x=x_col))+
-      facet_wrap(~b_CBre,ncol=1,scales="free_y")
+                 aes_string(x=x_col))
+    # +
+      # facet_wrap(~b_CBre,ncol=1,scales="free_y")
   }
   else{
     plot<-ggplot(data=data,
-                 aes_string(x=x_col))+
-      facet_grid(as.formula(paste("b_CBre~",group_col)),scales="free_y")
+                 aes_string(x=x_col))
+    # +
+      # facet_grid(as.formula(paste("b_CBre~",group_col)),scales="free_y")
   }
   plot+geom_histogram(stat="count") +
     scale_y_continuous(labels = scales::comma) +

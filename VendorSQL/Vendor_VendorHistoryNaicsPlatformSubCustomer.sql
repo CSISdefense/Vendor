@@ -57,6 +57,10 @@ SELECT C.Fiscal_year
 , iif(parent.parentid is null or
 		parent.firstyear>c.fiscal_year or
 		parent.mergeryear<=c.fiscal_year,1,0) as WarningFlag
+		,OriginCountryCode.IsInternational as OriginIsInternational
+,OriginCountryCode.Country3LetterCodeText as OriginCountryText
+,VendorCountryCode.IsInternational as VendorIsInternational
+,VendorCountryCode.Country3LetterCodeText as VendorCountryText
 FROM Contract.FPDS as C
 			left outer join FPDSTypeTable.AgencyID AS Agency
 			ON C.contractingofficeagencyid = Agency.AgencyID 
@@ -112,9 +116,16 @@ FROM Contract.FPDS as C
 			ON PARENTsquared.ParentID= ParentDtPCH.ParentID 
 
 
-
-
-
+	LEFT JOIN FPDSTypeTable.Country3lettercode as OriginCountryCode
+		ON C.countryoforigin=OriginCountryCode.Country3LetterCode
+	left outer join location.CountryCodes as OriginISO
+		on OriginCountryCode.isoAlpha3 =OriginISO.[alpha-3]
+	LEFT JOIN FPDSTypeTable.vendorcountrycode as VendorCountryCodePartial
+		ON C.vendorcountrycode=VendorCountryCodePartial.vendorcountrycode
+	LEFT JOIN FPDSTypeTable.Country3lettercode as VendorCountryCode
+		ON vendorcountrycode.Country3LetterCode=VendorCountryCodePartial.Country3LetterCode
+	left outer join location.CountryCodes as VendorISO
+		on VendorCountryCode.isoAlpha3=VendorISO.[alpha-3]
 
 
 

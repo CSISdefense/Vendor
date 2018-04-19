@@ -5,7 +5,6 @@
 ################################################################################
 
 library(shiny)
-library(csis360)
 library(magrittr)
 library(forcats)
 library(Cairo)
@@ -17,6 +16,7 @@ library(grid)
 library(gridExtra)
 library(gtable)
 library(ggpubr)
+library(csis360)
 
 
 shinyServer(function(input, output, session) {
