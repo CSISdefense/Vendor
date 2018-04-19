@@ -1,4 +1,4 @@
-USE [DIIG]
+USE CSIS360
 GO
 
 /****** Object:  StoredProcedure [Vendor].[SP_DunsnumberWithOutOfRangeParentIDsFast]    Script Date: 11/3/2017 3:40:52 PM ******/
