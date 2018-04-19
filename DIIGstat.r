@@ -342,6 +342,13 @@ freq_continuous_cbre_plot<-function(data,x_col,group_col=NA,bins=20){
 }
 
 
+summary_continuous_plot<-function(data,x_col,group_col=NA,bins=20){
+  gridExtra::grid.arrange(freq_continuous_plot(data,x_col,group_col,bins=bins),
+                          binned_percent_cbre_plot(data,x_col,group_col,bins=bins),
+                          binned_percent_term_plot(data,x_col,group_col,bins=bins))
+  
+}
+
 binned_percent_term_plot<-function(data,x_col,group_col=NA,bins=20){
   data<-data[!is.na(data[,x_col]),]
   if(is.na(group_col)){
