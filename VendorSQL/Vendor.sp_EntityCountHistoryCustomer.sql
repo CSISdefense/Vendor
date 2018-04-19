@@ -8,7 +8,6 @@ GO
 
 
 
-
 ALTER PROCEDURE [Vendor].[sp_EntityCountHistoryCustomer]
 @Customer VARCHAR(255)
 
@@ -27,11 +26,11 @@ AS
 		  ,IsEntityAbove2016constantOneMillionThreshold
 		  ,IsEntityAbove1990constantReportingThreshold
 		  ,IsEntityAbove2016constantReportingThreshold
-		  ,year([registrationDate])
 		  ,count(distinct [EntityID]) [EntityCount]
 		  ,count(distinct [AllContractor]) as [AllContractorCount]
 		  ,sum([numberOfActions]) as SumOfNumberOfActions
 		  ,sum([ObligatedAmount]) as [SumOfObligatedAmount]
+		  ,year([registrationDate]) as registrationYear
 	  FROM [Vendor].EntitySizeHistoryBucketPlatformSubCustomer ent
 	  left outer join Vendor.EntitySizeCode esc
 	  on esc.EntitySizeCode=ent.entitysizecode
@@ -47,7 +46,8 @@ AS
 	  ,AnyEntityForeignPlaceOfPerformance
 	  		  ,IsEntityAbove2016constantOneMillionThreshold
 	  ,IsEntityAbove1990constantReportingThreshold
-		  ,IsEntityAbove2016constantReportingThreshold
+		  ,IsEntityAbove2016constantReportingThreshold,
+		  registrationDate
 		--End of your query
 		END
 	ELSE --Begin sub path where only services but all Customers will be returned
@@ -67,6 +67,7 @@ AS
 		  ,count(distinct [AllContractor]) as [AllContractorCount]
 		  ,sum([numberOfActions]) as SumOfNumberOfActions
 		  ,sum([ObligatedAmount]) as [SumOfObligatedAmount]
+		  ,year([registrationDate]) as registrationYear
 	  FROM [Vendor].EntitySizeHistoryBucketPlatformSubCustomer ent
 	  left outer join Vendor.EntitySizeCode esc
 	  on esc.EntitySizeCode=ent.entitysizecode
@@ -80,6 +81,7 @@ AS
 	  		  ,IsEntityAbove2016constantOneMillionThreshold
 	  ,IsEntityAbove1990constantReportingThreshold
 		  ,IsEntityAbove2016constantReportingThreshold
+		  ,registrationDate
 		--End of your query
 		END
 
