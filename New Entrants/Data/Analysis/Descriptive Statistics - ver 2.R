@@ -1074,4 +1074,13 @@ sr10yr2001_grad <- (sum(df2001_grad$years.in.SAM>=10)/nrow(df2001_grad)
                     
                     write.csv(survival.rates_grad, "survival rates_grad-nop.csv")
                     
+###
+                    
+                    setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data")
+                    getwd()
+                    
+                    ##Sam working Directory
+                    setwd("K:/2018-01 NPS New Entrants/Data/Data//Cleaned Data")
+                    getwd()
+                    
                     
