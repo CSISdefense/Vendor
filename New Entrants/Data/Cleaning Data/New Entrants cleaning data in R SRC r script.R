@@ -2459,3 +2459,33 @@ fastcheck<-get %>% group_by(duns) %>%
   dplyr::summarize(minofreg=min(registrationYear,na.rm=TRUE)) %>%
   group_by(minofreg) %>% dplyr::summarise(duns_count=length(duns)) 
 
+#*********************************************************************
+#************************************************************************
+
+#******************************************************************
+########################FPDS data################################
+#******************************************************************
+
+###set up
+
+setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
+
+
+##Get and Save into CSV
+FPDS_data <- read.table("Vendor.SP_DunsnumberNewEntrants_w_SAMuniqueDuns.txt", fill = TRUE, row.names=NULL, header=FALSE)
+
+FPDS_data <- read.delim("Vendor.SP_DunsnumberNewEntrants_w_SAMuniqueDuns.txt", fill = TRUE, row.names=NULL)
+
+write.csv(FPDS_data, file="FPDS_all.csv")
+
+
+
+
+
+
+
+
+
+
+
+
