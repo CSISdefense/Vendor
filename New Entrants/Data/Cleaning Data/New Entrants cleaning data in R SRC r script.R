@@ -2472,20 +2472,78 @@ setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
 
 
 ##Get and Save into CSV
-FPDS_data <- read.table("Vendor.SP_DunsnumberNewEntrants_w_SAMuniqueDuns.txt", fill = TRUE, row.names=NULL, header=FALSE)
-
-FPDS_data <- read.delim("Vendor.SP_DunsnumberNewEntrants_w_SAMuniqueDuns.txt", fill = TRUE, row.names=NULL)
-
-write.csv(FPDS_data, file="FPDS_all.csv")
+FPDS_data <- read.delim("Vendor.SP_DunsnumberNewEntrants_w_SAMuniqueDunsRAW.txt", fill = TRUE, header=TRUE,  na.strings = c("", "NULL"))
 
 
+write.csv(FPDS_data, file="FPDS_w_SAMuniqueDUNS.csv")
+
+##Use the data
+
+FPDS_data <- read.csv("FPDS_w_SAMuniqueDUNS.csv")
+
+##also load SAM data
+setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/Get files")
+
+load(file = "datapull_all.Rda")
 
 
-###
+##back to FPDs wd
+setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
+
+
+##*****************************************##
+############prelim cleaning#################
+#*******************************************#
+
+##rename DirectCOBSD to biz_size and i..fiscal_year to FYear
+
+names(FPDS_data)
+
+names(FPDS_data)[names(FPDS_data) == "DirectCOBSD"] <- "biz_size"
+
+names(FPDS_data)[names(FPDS_data) == "ï..fiscal_year"] <- "FYear"
+
+
+### Investigate how many unique duns # there are
+
+unique_FPDS_duns <- data.frame(table(FPDS_data$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+##there are only 9,318 
+
+##sort by year and duns#
+
+FPDS_data <- FPDS_data[order(FPDS_data$FYear, FPDS_data$Dunsnumber), ]
+
+##drop entries in FY before 2000
+
+FPDS_data <- FPDS_data[!(FPDS_data$FYear<2000), ]
+
+##count number of unique duns numbers
+unique_FPDS_duns_studyperiod <- data.frame(table(FPDS_data$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+
+##*****************************************##
+############Choose small or large depending#################
+#on lgst dollar amount
+#*******************************************#
+
+##Small = small or non-small depending on which category has the highest
+#amount of obligations
+
+#for each FPDS_data$Dunsnumber sum obligatedAmount if biz_size=O 
+#for each FPDS_data$Dunsnumber sum obligatedAmount if biz_size=S
 
 
 
 
+##*****************************************##
+############Choose NAICS category depending#################
+#on lgst dollar amount
+#*******************************************#
+
+##NAICS2 = the NAICS category that has the highest amount of obligations
+
+##count number of NAs in NAICS2
+sum(is.na(FPDS_data$NAICS2)) ##0 missing values for DUNS number
 
 
 
