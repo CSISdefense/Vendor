@@ -1,4 +1,4 @@
-USE CSIS360
+USE [DIIG]
 GO
 
 /****** Object:  StoredProcedure [Vendor].[SP_TopVendorHistoryPlatformSubCustomer]    Script Date: 10/5/2017 9:43:57 PM ******/

@@ -71,16 +71,3 @@ EXEC	@return_value = Vendor.sp_EntityCountHistoryCustomer
 --SELECT	'Return Value' = @return_value
 
 
-
-SET ANSI_WARNINGS OFF;
-SET NOCOUNT ON;
-
-DECLARE	@return_value int
-
---EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
-EXEC	@return_value = [Vendor].[SP_EntityIDhistoryNAICS]
---EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
-		@Customer = NULL
-		,@IsSAMduns=1
---SELECT	'Return Value' = @return_value
-

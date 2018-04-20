@@ -1,4 +1,4 @@
-USE CSIS360
+USE [DIIG]
 GO
 
 /****** Object:  StoredProcedure [Vendor].[sp_CreateParentIDdunsnumber]    Script Date: 10/10/2017 11:56:14 AM ******/

@@ -1,9 +1,13 @@
-/****** Object:  View [Vendor].[EntitySizeHistoryBucketPlatformSubCustomer]    Script Date: 4/17/2018 3:37:54 PM ******/
+/****** Object:  View [Vendor].[EntitySizeHistoryBucketPlatformSubCustomer]    Script Date: 4/19/2018 11:50:29 AM ******/
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
 GO
+
+
+
+
 
 
 ALTER VIEW [Vendor].[EntitySizeHistoryBucketPlatformSubCustomer]
@@ -37,6 +41,9 @@ select interior.EntityID
 	, interior.Simple
 	, interior.IsSoCal
 	, interior.IsInSam
+	, interior.isPresent
+	, interior.registrationDate
+	, interior.nextfiscal_year
 	--Assign EntitySize and related states via Unique_Transaction_ID/StandardizedVendorName
 from (select CASE
 		WHEN Parent.ParentID is not null and isnull(Parent.UnknownCompany,0)=0 
@@ -182,7 +189,10 @@ from (select CASE
 	, psc.IsService
 	, psc.Simple
 	, zip.IsSoCal
-	, iif(SAM.["duns"] is null,0,1) as IsInSAM
+	, iif(SAM.duns is null,0,1) as IsInSAM
+	, SAM.registrationDate
+	, iif(c.fiscal_year is null, 0,1) as IsPresent 
+	, dateadd(year, 1, c.fiscal_year) as nextfiscal_year
 	from Contract.FPDS as C
 		LEFT OUTER JOIN Contractor.DunsnumbertoParentContractorHistory as DtPCH
 			ON DtPCH.FiscalYear=C.fiscal_year AND DtPCH.DUNSNUMBER=C.DUNSNumber
@@ -204,8 +214,11 @@ from (select CASE
 			ON PARENTsquaredImputed.ParentID= ParentDtPCHimputed.ParentID 
 		
 		LEFT OUTER JOIN dbo.allSAM as SAM
-			ON SAM.["duns"] = C.dunsnumber
-		
+			ON SAM.duns = C.dunsnumber
+
+		--LEFT JOIN Contractor.DunsnumberToParentContractorHistory as cdtopCH
+		--	ON (cdtopCH.dunsnumber = c.dunsnumber 
+		--	AND  cdtopCH.fiscal_year = c.f
 		
 		
 		
