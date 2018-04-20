@@ -251,7 +251,8 @@ residuals_cbre_plot<-function(model,x_col="fitted",bins=40){
 
 freq_discrete_term_plot<-function(data,x_col,
                                   group_col=NA,
-                                  na_remove=FALSE){
+                                  na_remove=FALSE,
+                                  caption=TRUE){
   
   if(na_remove==TRUE){
     data<-data[!is.na(data[,group_col]),]
@@ -268,17 +269,19 @@ freq_discrete_term_plot<-function(data,x_col,
            aes_string(x=x_col))+
       facet_grid(as.formula(paste("Term~",group_col)),scales="free_y")
   }
-  plot+geom_histogram(stat="count") +
-    scale_y_continuous(labels = scales::comma) +
-    labs(title="Frequency by Termination",
-            caption="Source: FPDS, CSIS Analysis")
-  
+  if(caption==TRUE){
+    plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
+  }
+  plot+labs(title="Frequency by Termination")+
+    geom_histogram(stat="count") +
+    scale_y_continuous(labels = scales::comma)
 }
 
 
 freq_discrete_cbre_plot<-function(data,x_col,
                                   group_col=NA,
-                                  na_remove=FALSE){
+                                  na_remove=FALSE,
+                                  caption=TRUE){
   
   if(na_remove==TRUE){
     data<-data[!is.na(data[,group_col]),]
@@ -297,17 +300,20 @@ freq_discrete_cbre_plot<-function(data,x_col,
     # +
       # facet_grid(as.formula(paste("b_CBre~",group_col)),scales="free_y")
   }
-  plot+geom_histogram(stat="count") +
-    scale_y_continuous(labels = scales::comma) +
-    labs(title="Frequency by Ceiling Breaches",
-         caption="Source: FPDS, CSIS Analysis")
-  
+  if(caption==TRUE){
+    plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
+  }
+  plot+labs(title="Frequency by Ceiling Breach")+
+  geom_histogram(stat="count") +
+    scale_y_continuous(labels = scales::comma) 
+    
 }
 
 
 freq_discrete_plot<-function(data,x_col,
                                   group_col=NA,
-                                  na_remove=FALSE){
+                                  na_remove=FALSE,
+                             caption=TRUE){
   
   if(na_remove==TRUE){
     data<-data[!is.na(data[,group_col]),]
@@ -323,30 +329,33 @@ freq_discrete_plot<-function(data,x_col,
                  aes_string(x=x_col))+
       facet_wrap(as.formula(paste("~",group_col)),scales="free_y")
   }
+  if(caption==TRUE){
+    plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
+  }
+  plot+labs(title="Frequency")+
   plot+geom_histogram(stat="count") +
-    scale_y_continuous(labels = scales::comma) +
-    labs(title="Frequency by Ceiling Breaches",
-         caption="Source: FPDS, CSIS Analysis")
+    scale_y_continuous(labels = scales::comma)
   
 }
 
 
 summary_continuous_plot<-function(data,x_col,group_col=NA,bins=20){
-  gridExtra::grid.arrange(freq_continuous_plot(data,x_col,group_col,bins=bins),
-                          binned_percent_cbre_plot(data,x_col,group_col,bins=bins),
+  gridExtra::grid.arrange(freq_continuous_plot(data,x_col,group_col,bins=bins,caption=FALSE),
+                          binned_percent_cbre_plot(data,x_col,group_col,bins=bins,caption=FALSE),
                           binned_percent_term_plot(data,x_col,group_col,bins=bins))
   
 }
 
 summary_discrete_plot<-function(data,x_col,group_col=NA){
-  gridExtra::grid.arrange(freq_discrete_plot(data,x_col,group_col),
-                          binned_percent_cbre_plot(data,x_col,group_col),
+  gridExtra::grid.arrange(freq_discrete_plot(data,x_col,group_col,caption=FALSE),
+                          binned_percent_cbre_plot(data,x_col,group_col,caption=FALSE),
                           binned_percent_term_plot(data,x_col,group_col))
   
 }
 
 
-freq_continuous_term_plot<-function(data,x_col,group_col=NA,bins=20){
+freq_continuous_term_plot<-function(data,x_col,group_col=NA,bins=20,
+                                    caption=TRUE){
   if(is.na(group_col)){
     plot<-ggplot(data=data,
          aes_string(x=x_col))+
@@ -358,30 +367,39 @@ freq_continuous_term_plot<-function(data,x_col,group_col=NA,bins=20){
       facet_grid(as.formula(paste("Term~",group_col)),scales="free_y")
       
   }
-  plot+labs(title="Frequency by Termination",
-            caption="Source: FPDS, CSIS Analysis")+
+  
+  if(caption==TRUE){
+    plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
+  }
+  plot+labs(title="Frequency by Termination")+
     scale_y_continuous(labels = scales::comma) + 
     geom_histogram(bins=bins) 
 }
 
-freq_continuous_plot<-function(data,x_col,group_col=NA,bins=20){
+freq_continuous_plot<-function(data,x_col,group_col=NA,bins=20,
+                               caption=TRUE){
   if(is.na(group_col)){
     plot<-ggplot(data=data,
                  aes_string(x=x_col))
   }
   else{
     plot<-ggplot(data=data,
-                 aes_string(x=x_col))+geom_histogram(bins=bins) 
+                 aes_string(x=x_col))+geom_histogram(bins=bins)+
+  facet_wrap(as.formula(paste("~",group_col)),scales="free_y")
     
   }
-  plot+labs(title="Frequency by Ceiling Breach",
-            caption="Source: FPDS, CSIS Analysis")+
+  
+  if(caption==TRUE){
+    plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
+  }
+  plot+labs(title="Frequency")+
     scale_y_continuous(labels = scales::comma) + 
     geom_histogram(bins=bins) 
 }
 
 
-freq_continuous_cbre_plot<-function(data,x_col,group_col=NA,bins=20){
+freq_continuous_cbre_plot<-function(data,x_col,group_col=NA,bins=20,
+                                    caption=TRUE){
   if(is.na(group_col)){
     plot<-ggplot(data=data,
                  aes_string(x=x_col))+
@@ -393,17 +411,20 @@ freq_continuous_cbre_plot<-function(data,x_col,group_col=NA,bins=20){
       facet_grid(as.formula(paste("CBre~",group_col)),scales="free_y")
     
   }
-  plot+labs(title="Frequency by Ceiling Breach",
-            caption="Source: FPDS, CSIS Analysis")+
+  
+  if(caption==TRUE){
+    plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
+  }
+  plot+labs(title="Frequency by Ceiling Breach")+
     scale_y_continuous(labels = scales::comma) + 
     geom_histogram(bins=bins) 
 }
 
 
-binned_percent_term_plot<-function(data,x_col,group_col=NA,bins=20){
+binned_percent_term_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE){
   data<-data[!is.na(data[,x_col]),]
   if(is.na(group_col)){
-    data$bin_x<-bin_df(data,x_col,bins=20)
+    data$bin_x<-bin_df(data,x_col,bins=bins)
     plot<-ggplot(data=data %>%
            group_by(bin_x) %>%
            summarise_ (   mean_Term = "mean(b_Term)"   
@@ -420,17 +441,19 @@ binned_percent_term_plot<-function(data,x_col,group_col=NA,bins=20){
                  aes(y=mean_Term,x=mean_x))+
       facet_wrap(as.formula(paste("~",group_col)))
   }
+  if(caption==TRUE){
+    plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
+  }
   plot+geom_point()+
-    labs(title="Percent Terminated",
-         caption="Source: FPDS, CSIS Analysis")
+    labs(title="Percent Terminated")
 }
 
 
 
-binned_percent_cbre_plot<-function(data,x_col,group_col=NAm,bins=20){
+binned_percent_cbre_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE){
   data<-data[!is.na(data[,x_col]),]
   if(is.na(group_col)){
-    data$bin_x<-bin_df(data,x_col,bins=20)
+    data$bin_x<-bin_df(data,x_col,bins=bins)
     plot<-ggplot(data=data %>%
                    group_by(bin_x) %>%
                    summarise_ (   mean_CBre = "mean(b_CBre)"   
@@ -447,12 +470,14 @@ binned_percent_cbre_plot<-function(data,x_col,group_col=NAm,bins=20){
                  aes(y=mean_CBre,x=mean_x))+
       facet_wrap(as.formula(paste("~",group_col)))
   }
+  if(caption==TRUE){
+    plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
+  }
   plot+geom_point()+
-    labs(title="Percent Ceiling Breaches",
-         caption="Source: FPDS, CSIS Analysis")
+    labs(title="Percent Ceiling Breaches")
 }
 
-discrete_percent_term_plot<-function(data,x_col,group_col=NA){
+discrete_percent_term_plot<-function(data,x_col,group_col=NA,caption=TRUE){
   data<-data[!is.na(data[,x_col]),]
     if(is.na(group_col)){
     plot<-ggplot(data=data %>%
@@ -468,16 +493,16 @@ discrete_percent_term_plot<-function(data,x_col,group_col=NA){
                    summarise (   mean_Term = mean(b_Term)),
                  aes_string(y="mean_Term",x=x_col))+
       facet_wrap(as.formula(paste("~",group_col)))
-    
-  }
-  plot+    geom_point()+
-    labs(title="Percent Terminated",
-         caption="Source: FPDS, CSIS Analysis")
-  
+  }    
+    if(caption==TRUE){
+      plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
+    }
+    plot+geom_point()+
+      labs(title="Percent Terminated")
+
 }
 
-
-discrete_percent_cbre_plot<-function(data,x_col,group_col=NA){
+discrete_percent_cbre_plot<-function(data,x_col,group_col=NA,caption=TRUE){
   data<-data[!is.na(data[,x_col]) & !is.na(data[,"b_CBre"]),]
   if(is.na(group_col)){
     plot<-ggplot(data=data %>%
@@ -495,9 +520,12 @@ discrete_percent_cbre_plot<-function(data,x_col,group_col=NA){
       facet_wrap(as.formula(paste("~",group_col)))
     
   }
-  plot+    geom_point()+
-    labs(title="Percent Ceiling Breaches",
-         caption="Source: FPDS, CSIS Analysis")
+  
+  if(caption==TRUE){
+    plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
+  }
+  plot+geom_point()+
+    labs(title="Percent Ceiling Breaches")
   
 }
 
