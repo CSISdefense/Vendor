@@ -2472,7 +2472,7 @@ setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
 
 
 ##Get and Save into CSV
-FPDS_data <- read.delim("Vendor.SP_DunsnumberNewEntrants_w_SAMuniqueDunsRAW.txt", fill = TRUE, header=TRUE)
+FPDS_data <- read.delim("Vendor.SP_DunsnumberNewEntrants_w_SAMuniqueDunsRAW.txt", fill = TRUE, header=TRUE,  na.strings = c("", "NULL"))
 
 
 write.csv(FPDS_data, file="FPDS_w_SAMuniqueDUNS.csv")
@@ -2533,12 +2533,17 @@ unique_FPDS_duns_studyperiod <- data.frame(table(FPDS_data$Dunsnumber)) ##gives 
 #for each FPDS_data$Dunsnumber sum obligatedAmount if biz_size=S
 
 
+
+
 ##*****************************************##
 ############Choose NAICS category depending#################
 #on lgst dollar amount
 #*******************************************#
 
 ##NAICS2 = the NAICS category that has the highest amount of obligations
+
+##count number of NAs in NAICS2
+sum(is.na(FPDS_data$NAICS2)) ##0 missing values for DUNS number
 
 
 
