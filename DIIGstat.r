@@ -591,7 +591,7 @@ discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE){
     data<-rbind(term,cbre)
     plot<-ggplot(data=data,
                  aes_string(y="mean_y",x=x_col))+
-      facet_grid(as.formula(paste("output~",group_col)))
+      facet_grid(as.formula(paste("output~",group_col)))+theme(axis.text.x=element_text(angle=90,hjust=1))
   }
   if(caption==TRUE){
     plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
@@ -696,7 +696,7 @@ deviance_stats<-function(model,model_name){
                 difference=model$null.deviance-model$deviance)
 }
 
-summary_residual_compare<-function(cbre_old,cbre_new,term_old,term_new){
+summary_residual_compare<-function(cbre_old,cbre_new,term_old,term_new,bins=5){
   #Plot the fitted values vs actual results
   
   
@@ -706,32 +706,33 @@ summary_residual_compare<-function(cbre_old,cbre_new,term_old,term_new){
                           binned_fitted_versus_term_residuals(term_new),
                           ncol=2)
   
-  bins<-10
-  if("cl_Ceil" %in% colnames(cbre_old$model)) bins<-bins+10
-  
-  #Plot residuals versus fitted
-  gridExtra::grid.arrange(residuals_cbre_plot(cbre_old,bins=bins)+
-                            labs(x="Estimated  Pr (Ceiling Breach)"),
-                          residuals_cbre_plot(cbre_new,bins=bins)+
-                            labs(x="Estimated  Pr (Ceiling Breach)"),
-                          residuals_term_plot(term_old,bins=bins)+
-                            labs(x="Estimated  Pr (Termination)"),
-                          residuals_term_plot(term_new,bins=bins)+
-                            labs(x="Estimated  Pr (Termination)"),
-                          ncol=2)
-  
-  if("c_OffCri" %in% colnames(cbre_new$model)){
-    residual_compare(cbre_old,cbre_new,term_old,term_new,"c_OffCri","Office Crisis %",10)
+  #This only works once you have some continuous variables o
+
+  if(!is.na(bins)){
+    #Plot residuals versus fitted
+    gridExtra::grid.arrange(residuals_cbre_plot(cbre_old,bins=bins)+
+                              labs(x="Estimated  Pr (Ceiling Breach)"),
+                            residuals_cbre_plot(cbre_new,bins=bins)+
+                              labs(x="Estimated  Pr (Ceiling Breach)"),
+                            residuals_term_plot(term_old,bins=bins)+
+                              labs(x="Estimated  Pr (Termination)"),
+                            residuals_term_plot(term_new,bins=bins)+
+                              labs(x="Estimated  Pr (Termination)"),
+                            ncol=2)
+    
   }
   
-  if("cl_Ceil" %in% colnames(cbre_new$model)){
-    residual_compare(cbre_old,cbre_new,term_old,term_new,"cl_Ceil","Centered Log(Ceiling)",20)
-  }
-  
-  if("cl_Days" %in% colnames(cbre_new$model)){
-    residual_compare(cbre_old,cbre_new,term_old,term_new,"cl_Days","Centered Log(Days)",10)
-  }
-  
+    if("c_OffCri" %in% colnames(cbre_new$model)){
+      residual_compare(cbre_old,cbre_new,term_old,term_new,"c_OffCri","Office Crisis %",10)
+    }
+    
+    if("cl_Ceil" %in% colnames(cbre_new$model)){
+      residual_compare(cbre_old,cbre_new,term_old,term_new,"cl_Ceil","Centered Log(Ceiling)",20)
+    }
+    
+    if("cl_Days" %in% colnames(cbre_new$model)){
+      residual_compare(cbre_old,cbre_new,term_old,term_new,"cl_Days","Centered Log(Days)",10)
+    }
   rbind(deviance_stats(cbre_old,"cbre_old"),
         deviance_stats(cbre_new,"cbre_new"),
         deviance_stats(term_old,"term_old"),
