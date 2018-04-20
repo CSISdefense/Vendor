@@ -341,15 +341,13 @@ freq_discrete_plot<-function(data,x_col,
 
 summary_continuous_plot<-function(data,x_col,group_col=NA,bins=20){
   gridExtra::grid.arrange(freq_continuous_plot(data,x_col,group_col,bins=bins,caption=FALSE),
-                          binned_percent_cbre_plot(data,x_col,group_col,bins=bins,caption=FALSE),
-                          binned_percent_term_plot(data,x_col,group_col,bins=bins))
+                          binned_percent_plot(data,x_col,group_col,caption=TRUE))
   
 }
 
 summary_discrete_plot<-function(data,x_col,group_col=NA){
   gridExtra::grid.arrange(freq_discrete_plot(data,x_col,group_col,caption=FALSE),
-                          binned_percent_cbre_plot(data,x_col,group_col,caption=FALSE),
-                          binned_percent_term_plot(data,x_col,group_col))
+                          binned_percent_plot(data,x_col,group_col,caption=TRUE))
   
 }
 
@@ -419,6 +417,46 @@ freq_continuous_cbre_plot<-function(data,x_col,group_col=NA,bins=20,
     scale_y_continuous(labels = scales::comma) + 
     geom_histogram(bins=bins) 
 }
+
+
+binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE){
+  data<-data[!is.na(data[,x_col]),]
+  if(is.na(group_col)){
+    data$bin_x<-bin_df(data,x_col,bins=bins)
+    data<-data %>% group_by(bin_x)
+    term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   
+                                  , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+    cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   
+                                  , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+    term$output<-"Terminations"
+    cbre$output<-"Ceiling Breaches"
+    data<-rbind(term,cbre)
+    plot<-ggplot(data=data,
+                 aes(y=mean_y,x=mean_x))+facet_wrap(~output)
+  }
+  else{
+    data<-data[!is.na(data[,group_col]),]
+    data$bin_x<-bin_df(data,rank_col=x_col,group_col=group_col,n=bins)
+    data<-data %>%
+      group_by_("bin_x",group_col)
+    
+    term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   
+                                  , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+    cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   
+                                  , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+    term$output<-"Term."
+    cbre$output<-"C. Bre."
+    data<-rbind(term,cbre)
+    plot<-ggplot(data=data,
+                 aes(y=mean_y,x=mean_x))+
+      facet_grid(as.formula(paste("output~",group_col)))
+  }
+  if(caption==TRUE){
+    plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
+  }
+  plot+geom_point()
+}
+
 
 
 binned_percent_term_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE){
