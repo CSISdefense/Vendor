@@ -436,7 +436,7 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE){
   }
   else{
     data<-data[!is.na(data[,group_col]),]
-    data$bin_x<-bin_df(data,rank_col=x_col,group_col=group_col,n=bins)
+    data$bin_x<-bin_df(data,rank_col=x_col,group_col=group_col,bins=bins)
     data<-data %>%
       group_by_("bin_x",group_col)
     
@@ -471,7 +471,7 @@ binned_percent_term_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE)
   }
   else{
     data<-data[!is.na(data[,group_col]),]
-    data$bin_x<-bin_df(data,rank_col=x_col,group_col=group_col,n=bins)
+    data$bin_x<-bin_df(data,rank_col=x_col,group_col=group_col,bins=bins)
     plot<-ggplot(data=data %>%
                    group_by_("bin_x",group_col) %>%
                    summarise_ (   mean_Term = "mean(b_Term)"   
@@ -500,7 +500,7 @@ binned_percent_cbre_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE)
   }
   else{
     data<-data[!is.na(data[,group_col]),]
-    data$bin_x<-bin_df(data,rank_col=x_col,group_col=group_col,n=bins)
+    data$bin_x<-bin_df(data,rank_col=x_col,group_col=group_col,bins=bins)
     plot<-ggplot(data=data %>%
                    group_by_("bin_x",group_col) %>%
                    summarise_ (   mean_CBre = "mean(b_CBre)"   
