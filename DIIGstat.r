@@ -9,7 +9,7 @@ library(ggplot2)
 fit_curve<-function(x, a, b){invlogit(b *  x +a)}
 
 
-bin_df<-function(data,rank_col,group_col=NULL,n=20,ties.method="random"){
+bin_df<-function(data,rank_col,group_col=NULL,bins=20,ties.method="random"){
   #https://stats.stackexchange.com/questions/34008/how-does-ties-method-argument-of-rs-rank-function-work
   if(!is.null(group_col)){
     # Convert character vector to list of symbols
@@ -21,7 +21,7 @@ bin_df<-function(data,rank_col,group_col=NULL,n=20,ties.method="random"){
   }
   #Calculate rank, this allows cut_number to work even when some answers have to be broken up into multiple bins
   bin<-rank(as.data.frame(data[,which(colnames(data)==rank_col)]),ties.method=ties.method)
-  cut_number(bin,n)
+  cut_number(bin,bins)
 }
 
 # bin_plot<-function(data,x_col,y_col,group_col=NULL,n=20,ties.method="random")
@@ -333,7 +333,7 @@ freq_discrete_plot<-function(data,x_col,
     plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
   }
   plot+labs(title="Frequency")+
-  plot+geom_histogram(stat="count") +
+     geom_histogram(stat="count") +
     scale_y_continuous(labels = scales::comma)
   
 }
@@ -347,7 +347,7 @@ summary_continuous_plot<-function(data,x_col,group_col=NA,bins=20){
 
 summary_discrete_plot<-function(data,x_col,group_col=NA){
   gridExtra::grid.arrange(freq_discrete_plot(data,x_col,group_col,caption=FALSE),
-                          binned_percent_plot(data,x_col,group_col,caption=TRUE))
+                          discrete_percent_plot(data,x_col,group_col,caption=TRUE))
   
 }
 
@@ -565,6 +565,38 @@ discrete_percent_cbre_plot<-function(data,x_col,group_col=NA,caption=TRUE){
   plot+geom_point()+
     labs(title="Percent Ceiling Breaches")
   
+}
+
+discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE){
+  data<-data[!is.na(data[,x_col]),]
+  if(is.na(group_col)){
+    data<-data %>% group_by_(x_col)
+    term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   )
+    cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   )
+    term$output<-"Terminations"
+    cbre$output<-"Ceiling Breaches"
+    data<-rbind(term,cbre)
+    plot<-ggplot(data=data,
+                 aes_string(y="mean_y",x=x_col))+facet_wrap(~output)
+  }
+  else{
+    data<-data[!is.na(data[,group_col]),]
+    data<-data %>%
+      group_by_(x_col,group_col)
+    
+    term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   )
+    cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   )
+    term$output<-"Term."
+    cbre$output<-"C. Bre."
+    data<-rbind(term,cbre)
+    plot<-ggplot(data=data,
+                 aes_string(y="mean_y",x=x_col))+
+      facet_grid(as.formula(paste("output~",group_col)))
+  }
+  if(caption==TRUE){
+    plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
+  }
+  plot+geom_point()
 }
 
 fitted_term_model<-function(data,x_col){
