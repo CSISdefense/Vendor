@@ -449,7 +449,7 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE){
     data<-rbind(term,cbre)
     plot<-ggplot(data=data,
                  aes(y=mean_y,x=mean_x))+
-      facet_grid(as.formula(paste("output~",group_col)))
+      facet_grid(as.formula(paste("output~",group_col)),scales="free_y")
   }
   if(caption==TRUE){
     plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
