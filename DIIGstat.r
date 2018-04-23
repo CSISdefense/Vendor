@@ -345,6 +345,46 @@ summary_continuous_plot<-function(data,x_col,group_col=NA,bins=20){
   
 }
 
+
+summary_double_continuous<-function(data,x_col,y_col,bins=20){
+    data<-data[!is.na(data[,y_col]),]
+    data<-data[!is.na(data[,x_col]),]
+  
+    data$interaction<-data[,x_col]*data[,y_col]
+    
+  
+  #First a quick scatter plot for terminations by duration and ceiling
+    gridExtra::grid.arrange(ggplot(data=crisis_smp,
+         aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+
+    labs(title="Distribution",
+         caption="Source: FPDS, CSIS Analysis"),
+    freq_continuous_plot(data,"interaction",bins=bins,caption=FALSE))
+
+  
+  
+  #First a quick scatter plot for terminations by duration and ceiling
+  gridExtra::grid.arrange(ggplot(data=crisis_smp,
+         aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(CBre~.)+
+    labs(title="Distribution by Breach",
+         caption="Source: FPDS, CSIS Analysis"),
+  
+  
+  #First a quick scatter plot for terminations by duration and ceiling
+  ggplot(data=crisis_smp,
+                     aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(Term~.)+
+                labs(title="Distribution by Termination"),
+  
+  ncol=2
+  )
+  min_i<-min(data[,"interaction"])
+  max_i<-max(data[,"interaction"])
+  
+  gridExtra::grid.arrange(binned_percent_plot(data,x_col,caption=FALSE)+xlim(min_i,max_i),
+                          binned_percent_plot(data,y_col,caption=FALSE)+xlim(min_i,max_i),
+                          binned_percent_plot(data,"interaction",caption=TRUE)+xlim(min_i,max_i))
+  
+}
+
 summary_discrete_plot<-function(data,x_col,group_col=NA){
   gridExtra::grid.arrange(freq_discrete_plot(data,x_col,group_col,caption=FALSE),
                           discrete_percent_plot(data,x_col,group_col,caption=TRUE))
