@@ -591,7 +591,8 @@ discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE){
     data<-rbind(term,cbre)
     plot<-ggplot(data=data,
                  aes_string(y="mean_y",x=x_col))+
-      facet_grid(as.formula(paste("output~",group_col)))+theme(axis.text.x=element_text(angle=90,hjust=1))
+      facet_grid(as.formula(paste("output~",group_col)),scales="free_y")+
+      theme(axis.text.x=element_text(angle=90,hjust=1))
   }
   if(caption==TRUE){
     plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
@@ -710,6 +711,9 @@ summary_residual_compare<-function(cbre_old,cbre_new,term_old,term_new,bins=5){
 
   if(!is.na(bins)){
     #Plot residuals versus fitted
+    if("c_OffCri" %in% colnames(cbre_new$model)) bins<-bins+5
+    if("cl_Ceil" %in% colnames(cbre_new$model)) bins<-bins+10
+    if("cl_Days" %in% colnames(cbre_new$model)) bins<-bins+5
     gridExtra::grid.arrange(residuals_cbre_plot(cbre_old,bins=bins)+
                               labs(x="Estimated  Pr (Ceiling Breach)"),
                             residuals_cbre_plot(cbre_new,bins=bins)+
