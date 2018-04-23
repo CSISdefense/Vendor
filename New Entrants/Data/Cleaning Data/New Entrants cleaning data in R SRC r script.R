@@ -59,6 +59,7 @@ library(plyr)
 library(data.table)
 library(lubridate)
 library(dplyr)
+library(foreach)
 
 setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/Get files")
 
@@ -2466,6 +2467,7 @@ fastcheck<-get %>% group_by(duns) %>%
 ########################FPDS data################################
 #******************************************************************
 
+#******************************************************
 ###set up
 
 setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
@@ -2477,6 +2479,8 @@ FPDS_data <- read.delim("Vendor.SP_DunsnumberNewEntrants_w_SAMuniqueDunsRAW.txt"
 
 write.csv(FPDS_data, file="FPDS_w_SAMuniqueDUNS.csv")
 
+
+#*****************************************************
 ##Use the data
 
 FPDS_data <- read.csv("FPDS_w_SAMuniqueDUNS.csv")
@@ -2543,7 +2547,70 @@ unique_FPDS_duns_studyperiod <- data.frame(table(FPDS_data$Dunsnumber)) ##gives 
 ##NAICS2 = the NAICS category that has the highest amount of obligations
 
 ##count number of NAs in NAICS2
-sum(is.na(FPDS_data$NAICS2)) ##0 missing values for DUNS number
+sum(is.na(FPDS_data$NAICS2)) ##30,655 --> 14 percent of the observations
+
+##create a variable that is equal to the total obligations over the 
+# study period for each duns number
+
+
+##create subsetted data with only FY, duns, obligated amount, and naics
+Duns_obligations <- data.frame( FPDS_data$FYear, FPDS_data$Dunsnumber, FPDS_data$obligatedAmount, FPDS_data$NAICS2)
+
+##count how many rows each Dunsnumber has
+names(Duns_obligations)
+unique_duns_fpdsclean <- data.frame(table(Duns_obligations$FPDS_data.Dunsnumbe)) ##gives a data frame with a list of duns and the number of times they occurred
+
+##sort by duns
+names(Duns_obligations)
+Duns_obligations <- Duns_obligations[order(Duns_obligations$FPDS_data.Dunsnumber, Duns_obligations$FPDS_data.FYear, Duns_obligations$FPDS_data.NAICS2), ]
+
+
+##directions from Greg
+##step 1: use dplyr to create a new data frame grouped by DUNS nad NAICS
+#and sum obligated amount for all unique combinations
+DO_newvar <- Duns_obligations %>% group_by(FPDS_data.Dunsnumber, FPDS_data.NAICS2) %>%
+    dplyr::summarize(obligated_amount=sum(FPDS_data.obligatedAmount, na.rm=TRUE))
+
+#step2: eliminate the combinations that are not the highest
+DO_max_newvar <- DO_newvar %>% group_by(FPDS_data.Dunsnumber) %>%
+  dplyr::mutate(desc_rank = row_number(desc(obligated_amount))) ##dense_rank
+
+#step3: subset DO_max_newvar where rank==1
+
+duns_and_NAICS <- subset(DO_max_newvar, desc_rank==1)
+
+#check to see if FPDS_data.Dunsnumber is a unique identifier
+##check uniqueness of DUNS as a variable##
+
+n_distinct(duns_and_NAICS$FPDS_data.Dunsnumber) ##returns 8733 when should return 8764
+
+length(unique(duns_and_NAICS$FPDS_data.Dunsnumber)) == nrow(duns_and_NAICS) ##FALSE
+
+table(duns_and_NAICS$desc_rank)
+
+n_occur <- data.frame(table(duns_and_NAICS$FPDS_data.Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+duplicates_in_dunsandNAICS <- n_occur[n_occur$Freq >1, ] ##tells me which duns occur more than once and their frequency
+
+
+
+#drop obligatedamount and desc_rank
+names(duns_and_NAICS)
+duns_and_NAICS$obligated_amount <- duns_and_NAICS$desc_rank <- NULL
+
+#change name of duns in duns_and_NAICS
+names(duns_and_NAICS)
+names(FPDS_data)
+
+names(duns_and_NAICS)[names(duns_and_NAICS) == "FPDS_data.Dunsnumber"] <- "Dunsnumber"
+names(duns_and_NAICS)[names(duns_and_NAICS) == "FPDS_data.NAICS2"] <- "topNAICS"
+
+#step 4: left join between FPDS_data and duns_and_NAICS
+
+FPDS_data_w_topNAICS <- join(FPDS_data, duns_and_NAICS, by = "Dunsnumber", type = "left", match = "all")
+
+#check why FPDS_data has less rows than FPDS_data_w_topNAICS
+
 
 
 
