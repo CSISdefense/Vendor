@@ -349,12 +349,13 @@ summary_continuous_plot<-function(data,x_col,group_col=NA,bins=20){
 summary_double_continuous<-function(data,x_col,y_col,bins=20){
     data<-data[!is.na(data[,y_col]),]
     data<-data[!is.na(data[,x_col]),]
-  
+  data<-as.data.frame(data)
     data$interaction<-data[,x_col]*data[,y_col]
     
   
   #First a quick scatter plot for terminations by duration and ceiling
-    gridExtra::grid.arrange(ggplot(data=crisis_smp,
+    gridExtra::grid.arrange(
+      ggplot(data=crisis_smp,
          aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+
     labs(title="Distribution",
          caption="Source: FPDS, CSIS Analysis"),
@@ -376,12 +377,14 @@ summary_double_continuous<-function(data,x_col,y_col,bins=20){
   
   ncol=2
   )
-  min_i<-min(data[,"interaction"])
-  max_i<-max(data[,"interaction"])
   
-  gridExtra::grid.arrange(binned_percent_plot(data,x_col,caption=FALSE)+xlim(min_i,max_i),
-                          binned_percent_plot(data,y_col,caption=FALSE)+xlim(min_i,max_i),
-                          binned_percent_plot(data,"interaction",caption=TRUE)+xlim(min_i,max_i))
+  binned_double_percent_plot(data,x_col,y_col,bins)
+  # min_i<-min(data[,"interaction"])
+  # max_i<-max(data[,"interaction"])
+  # 
+  # gridExtra::grid.arrange(binned_percent_plot(data,x_col,caption=FALSE)+xlim(min_i,max_i),
+  #                         binned_percent_plot(data,y_col,caption=FALSE)+xlim(min_i,max_i),
+  #                         binned_percent_plot(data,"interaction",caption=TRUE)+xlim(min_i,max_i))
   
 }
 
@@ -497,6 +500,41 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE){
   plot+geom_point()
 }
 
+
+bin_group<-function(data,bin_col,bins=20){
+  data$bin<-bin_df(data,rank_col=bin_col,bins=bins)
+  data<-data %>%
+    group_by(bin)
+  term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   
+                                , mean_x =  paste( "mean(" ,  bin_col  ,")"  ))  
+  cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   
+                                , mean_x =  paste( "mean(" ,  bin_col  ,")"  ))  
+  term$output<-"Term."
+  cbre$output<-"C. Bre."
+  data<-rbind(term,cbre)
+  data$bin_col<-bin_col
+  data
+}
+
+binned_double_percent_plot<-function(data,x_col,y_col,bins=20,caption=TRUE){
+  data<-data[!is.na(data[,x_col]),]
+  data<-data[!is.na(data[,y_col]),]
+  data<-as.data.frame(data)
+  data$interaction<-data[,x_col]*data[,y_col]
+  data<-rbind(bin_group(data,x_col,bins),
+               bin_group(data,y_col,bins),
+               bin_group(data,"interaction",bins))
+
+  data$bin_col<-factor(data$bin_col,c(x_col,y_col,"interaction"))
+  plot<-ggplot(data=data,
+               aes(y=mean_y,x=mean_x))+
+    facet_grid(output~bin_col,scales="free_y")
+  
+  if(caption==TRUE){
+    plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
+  }
+  plot+geom_point()
+}
 
 
 binned_percent_term_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE){
