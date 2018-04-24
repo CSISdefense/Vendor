@@ -43,8 +43,10 @@ select interior.EntityID
 	, interior.IsInSam
 	, interior.isPresent
 	, interior.registrationDate
-	, interior.nextfiscal_year
-	, interior.is_absent_FPDS
+	, interior.duns
+	--, interior.nextfiscal_year
+	, interior.is_absent_nextyear_FPDS
+	, interior.is_present_after_absent_FPDS
 	--Assign EntitySize and related states via Unique_Transaction_ID/StandardizedVendorName
 from (select CASE
 		WHEN Parent.ParentID is not null and isnull(Parent.UnknownCompany,0)=0 
@@ -192,13 +194,19 @@ from (select CASE
 	, zip.IsSoCal
 	, iif(SAM.duns is null,0,1) as IsInSAM
 	, SAM.registrationDate
+	, c.dunsnumber as duns
 	, iif(c.fiscal_year is null, 0,1) as IsPresent 
-	, (c.fiscal_year + 1) as nextfiscal_year
+	--, (c.fiscal_year + 1) as nextfiscal_year
 	, CASE
-	WHEN cdtopCH.fiscalyear IS NULL 
-	THEN 'NO'
-	ELSE 'YES'
-	END AS is_absent_FPDS
+	WHEN absaftpres.fiscalyear IS NULL 
+	THEN 'YES'
+	ELSE 'NO'
+	END AS is_absent_nextyear_FPDS
+	, CASE
+	WHEN presaftabs.fiscalyear IS NULL 
+	THEN 'YES'
+	ELSE 'NO'
+	END AS is_present_after_absent_FPDS
 	from Contract.FPDS as C
 		LEFT OUTER JOIN Contractor.DunsnumbertoParentContractorHistory as DtPCH
 			ON DtPCH.FiscalYear=C.fiscal_year AND DtPCH.DUNSNUMBER=C.DUNSNumber
@@ -221,9 +229,12 @@ from (select CASE
 		
 		LEFT OUTER JOIN dbo.allSAM as SAM
 			ON SAM.duns = C.dunsnumber
-		LEFT JOIN Contractor.DunsnumberToParentContractorHistory as cdtopCH
-			ON (cdtopCH.dunsnumber = c.dunsnumber 
-			AND  cdtopCH.fiscalyear = c.fiscal_year + 1)
+		LEFT JOIN Contractor.DunsnumberToParentContractorHistory as absaftpres
+			ON (absaftpres.dunsnumber = c.dunsnumber 
+			AND  absaftpres.fiscalyear = c.fiscal_year + 1)
+		LEFT JOIN Contractor.DunsnumberToParentContractorHistory as presaftabs
+			ON (presaftabs.dunsnumber = c.dunsnumber 
+			AND  presaftabs.fiscalyear = c.fiscal_year - 1)
 		
 		
 		
