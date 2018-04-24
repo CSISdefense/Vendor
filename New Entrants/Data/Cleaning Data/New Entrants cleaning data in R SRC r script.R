@@ -2525,19 +2525,6 @@ FPDS_data <- FPDS_data[!(FPDS_data$FYear<2000), ]
 unique_FPDS_duns_studyperiod <- data.frame(table(FPDS_data$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
 
 
-##*****************************************##
-############Choose small or large depending#################
-#on lgst dollar amount
-#*******************************************#
-
-##Small = small or non-small depending on which category has the highest
-#amount of obligations
-
-#for each FPDS_data$Dunsnumber sum obligatedAmount if biz_size=O 
-#for each FPDS_data$Dunsnumber sum obligatedAmount if biz_size=S
-
-
-
 
 ##*****************************************##
 ############Choose NAICS category depending#################
@@ -2565,7 +2552,6 @@ names(Duns_obligations)
 Duns_obligations <- Duns_obligations[order(Duns_obligations$FPDS_data.Dunsnumber, Duns_obligations$FPDS_data.FYear, Duns_obligations$FPDS_data.NAICS2), ]
 
 
-##directions from Greg
 ##step 1: use dplyr to create a new data frame grouped by DUNS nad NAICS
 #and sum obligated amount for all unique combinations
 DO_newvar <- Duns_obligations %>% group_by(FPDS_data.Dunsnumber, FPDS_data.NAICS2) %>%
@@ -2573,7 +2559,7 @@ DO_newvar <- Duns_obligations %>% group_by(FPDS_data.Dunsnumber, FPDS_data.NAICS
 
 #step2: eliminate the combinations that are not the highest
 DO_max_newvar <- DO_newvar %>% group_by(FPDS_data.Dunsnumber) %>%
-  dplyr::mutate(desc_rank = row_number(desc(obligated_amount))) ##dense_rank
+  dplyr::mutate(desc_rank = row_number(desc(obligated_amount))) ##row_number with ties (there were 31) it chooses the first one  
 
 #step3: subset DO_max_newvar where rank==1
 
@@ -2609,8 +2595,240 @@ names(duns_and_NAICS)[names(duns_and_NAICS) == "FPDS_data.NAICS2"] <- "topNAICS"
 
 FPDS_data_w_topNAICS <- join(FPDS_data, duns_and_NAICS, by = "Dunsnumber", type = "left", match = "all")
 
-#check why FPDS_data has less rows than FPDS_data_w_topNAICS
+##check number of NAs again
+sum(is.na(FPDS_data_w_topNAICS$topNAICS)) ##15688 --> 7 percent of the observations
 
+
+##*****************************************##
+############Choose small or large depending#################
+#on lgst dollar amount
+#*******************************************#
+
+##Small = small or non-small depending on which category has the highest
+#amount of obligations
+
+##count number of NAs in biz_size
+sum(is.na(FPDS_data_w_topNAICS$biz_size)) ##12 --> .00 percent of the observations
+
+##create subsetted data with only FY, duns, obligated amount, and naics
+names(FPDS_data)
+Duns_smallbiz <- data.frame( FPDS_data$FYear, FPDS_data$Dunsnumber, FPDS_data$obligatedAmount, FPDS_data$biz_size)
+
+##count how many rows each Dunsnumber has
+names(Duns_smallbiz)
+unique_duns_fpdsclean <- data.frame(table(Duns_smallbiz$FPDS_data.Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+##sort by duns
+names(Duns_smallbiz)
+Duns_smallbiz <- Duns_smallbiz[order(Duns_smallbiz$FPDS_data.Dunsnumber, Duns_smallbiz$FPDS_data.FYear, Duns_smallbiz$FPDS_data.biz_size), ]
+
+
+##step 1: use dplyr to create a new data frame grouped by DUNS nad NAICS
+#and sum obligated amount for all unique combinations
+DO_newvar_sb <- Duns_smallbiz %>% group_by(FPDS_data.Dunsnumber, FPDS_data.biz_size) %>%
+  dplyr::summarize(obligated_amount=sum(FPDS_data.obligatedAmount, na.rm=TRUE))
+
+#step2: eliminate the combinations that are not the highest
+DO_max_newvar_sb <- DO_newvar_sb %>% group_by(FPDS_data.Dunsnumber) %>%
+  dplyr::mutate(desc_rank = row_number(desc(obligated_amount))) ##row_number with ties (there were 31) it chooses the first one  
+
+#step3: subset DO_max_newvar_sb where rank==1
+
+duns_and_smallbiz <- subset(DO_max_newvar_sb, desc_rank==1)
+
+#check to see if FPDS_data.Dunsnumber is a unique identifier
+##check uniqueness of DUNS as a variable##
+
+n_distinct(duns_and_smallbiz$FPDS_data.Dunsnumber) ##returns 8733 
+
+length(unique(duns_and_smallbiz$FPDS_data.Dunsnumber)) == nrow(duns_and_smallbiz) ##TRUE
+
+table(duns_and_smallbiz$desc_rank)
+
+n_occur <- data.frame(table(duns_and_smallbiz$FPDS_data.Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+duplicates_in_dunsandsmallbiz <- n_occur[n_occur$Freq >1, ] ##tells me which duns occur more than once and their frequency
+
+##is unique identifier!
+
+#drop obligatedamount and desc_rank
+names(duns_and_smallbiz)
+duns_and_smallbiz$obligated_amount <- duns_and_smallbiz$desc_rank <- NULL
+
+#change name of duns in duns_and_NAICS
+names(duns_and_smallbiz)
+names(FPDS_data)
+
+names(duns_and_smallbiz)[names(duns_and_smallbiz) == "FPDS_data.Dunsnumber"] <- "Dunsnumber"
+names(duns_and_smallbiz)[names(duns_and_smallbiz) == "FPDS_data.biz_size"] <- "top_small_biz"
+
+#step 4: left join between FPDS_data and duns_and_NAICS
+
+FPDS_data_w_topNAICS_topSB <- join(FPDS_data_w_topNAICS, duns_and_smallbiz, by = "Dunsnumber", type = "left", match = "all")
+
+##check number of NAs again
+sum(is.na(FPDS_data_w_topNAICS_topSB$topNAICS)) ##15688 --> 7 percent of the observations
+sum(is.na(FPDS_data_w_topNAICS_topSB$top_small_biz)) ##0 
+
+##*****************************************##
+############create the total obligated amount#################
+#associated with each DUNS number over the entire time period
+#*******************************************#
+
+##count number of NAs in obligated amount
+sum(is.na(FPDS_data_w_topNAICS_topSB$obligatedAmount)) ##0 --> .00 percent of the observations
+
+##create subsetted data with only FY, duns, obligated amount
+names(FPDS_data)
+Duns_total_obligatedamount <- data.frame( FPDS_data$FYear, FPDS_data$Dunsnumber, FPDS_data$obligatedAmount)
+
+##count how many rows each Dunsnumber has
+names(Duns_total_obligatedamount)
+unique_duns_fpdsclean <- data.frame(table(Duns_total_obligatedamount$FPDS_data.Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+##sort by duns
+names(Duns_total_obligatedamount)
+Duns_total_obligatedamount <- Duns_total_obligatedamount[order(Duns_total_obligatedamount$FPDS_data.Dunsnumber, Duns_total_obligatedamount$FPDS_data.FYear), ]
+
+
+##step 1: use dplyr to create a new data frame grouped by DUNS and obligated amount
+#and sum obligated amount for all unique combinations
+DO_newvar_totalobligations <- Duns_total_obligatedamount %>% group_by(FPDS_data.Dunsnumber) %>%
+  dplyr::summarize(total_obligations=sum(FPDS_data.obligatedAmount, na.rm=TRUE))
+
+#check to see if FPDS_data.Dunsnumber is a unique identifier
+##check uniqueness of DUNS as a variable##
+
+n_distinct(DO_newvar_totalobligations$FPDS_data.Dunsnumber) ##returns 8733 
+
+length(unique(DO_newvar_totalobligations$FPDS_data.Dunsnumber)) == nrow(DO_newvar_totalobligations) ##TRUE
+
+##is unique identifier!
+
+#change name of duns in duns_and_NAICS
+names(DO_newvar_totalobligations)
+names(FPDS_data)
+
+names(DO_newvar_totalobligations)[names(DO_newvar_totalobligations) == "FPDS_data.Dunsnumber"] <- "Dunsnumber"
+
+#step 4: left join between FPDS_data and duns_and_NAICS
+
+FPDS_data_w_topNAICS_topSB_totalobl <- join(FPDS_data_w_topNAICS_topSB, DO_newvar_totalobligations, by = "Dunsnumber", type = "left", match = "all")
+
+
+##*****************************************##
+############create the total obligated amount#################
+#associated with each DUNS number in each year
+#*******************************************#
+
+##create subsetted data with only FY, duns, obligated amount
+names(FPDS_data)
+Duns_FYobligations <- data.frame( FPDS_data$FYear, FPDS_data$Dunsnumber, FPDS_data$obligatedAmount)
+
+
+##sort by duns and FY
+names(Duns_FYobligations)
+Duns_FYobligations <- Duns_FYobligations[order(Duns_FYobligations$FPDS_data.Dunsnumber, Duns_FYobligations$FPDS_data.FYear), ]
+
+
+##step 1: use dplyr to create a new data frame grouped by DUNS and FY
+#and sum obligated amount for all unique combinations
+DO_newvar_FYobligations <- Duns_FYobligations %>% group_by(FPDS_data.FYear, FPDS_data.Dunsnumber) %>%
+  dplyr::summarize(FY_obligated_amount=sum(FPDS_data.obligatedAmount, na.rm=TRUE))
+
+
+
+#change name of duns in duns_and_NAICS
+names(DO_newvar_FYobligations)
+names(FPDS_data)
+
+names(DO_newvar_FYobligations)[names(DO_newvar_FYobligations) == "FPDS_data.Dunsnumber"] <- "Dunsnumber"
+names(DO_newvar_FYobligations)[names(DO_newvar_FYobligations) == "FPDS_data.FYear"] <- "FYear"
+
+
+#step 4: left join between FPDS_data and duns_and_NAICS
+
+FPDS_data_w_topNAICS_topSB_totalobl_FYobl <- join(FPDS_data_w_topNAICS_topSB_totalobl, DO_newvar_FYobligations, by = c("FYear", "Dunsnumber"), type = "left", match = "all")
+
+
+##*****************************************##
+############create the total # of actions#################
+#associated with each DUNS number over the entire time period
+#*******************************************#
+
+##count number of NAs in number of actions
+sum(is.na(FPDS_data$numberOfActions)) ##222
+
+##create subsetted data with only FY, duns, number of actions
+names(FPDS_data)
+Duns_total_actions <- data.frame(FPDS_data$FYear, FPDS_data$Dunsnumber, FPDS_data$numberOfActions)
+
+
+sum(is.na(Duns_total_actions$FPDS_data.numberOfActions)) ##222
+
+##sort by duns
+names(Duns_total_actions)
+Duns_total_actions <- Duns_total_actions[order(Duns_total_actions$FPDS_data.Dunsnumber, Duns_total_actions$FPDS_data.FYear), ]
+
+
+##step 1: use dplyr to create a new data frame grouped by DUNS and obligated amount
+#and sum number of actions for all unique combinations
+DO_newvar_numberactions <- Duns_total_actions %>% group_by(FPDS_data.Dunsnumber) %>%
+  dplyr::summarize(total_actions=sum(FPDS_data.numberOfActions, na.rm=TRUE))
+
+#check to see if FPDS_data.Dunsnumber is a unique identifier
+##check uniqueness of DUNS as a variable##
+
+n_distinct(DO_newvar_numberactions$FPDS_data.Dunsnumber) ##returns 8733 
+
+length(unique(DO_newvar_numberactions$FPDS_data.Dunsnumber)) == nrow(DO_newvar_numberactions) ##TRUE
+
+##is unique identifier!
+
+#change name of duns in DO_newvar_numberactions
+names(DO_newvar_totalobligations)
+names(FPDS_data)
+
+names(DO_newvar_numberactions)[names(DO_newvar_numberactions) == "FPDS_data.Dunsnumber"] <- "Dunsnumber"
+
+#step 4: left join between FPDS_data and duns_and_NAICS
+
+FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact <- join(FPDS_data_w_topNAICS_topSB_totalobl_FYobl, DO_newvar_numberactions, by = "Dunsnumber", type = "left", match = "all")
+
+
+##*****************************************##
+############create the total # of actions#################
+#associated with each DUNS number in each year
+#*******************************************#
+
+##create subsetted data with only FY, duns, totalactions
+names(FPDS_data)
+Duns_FYactions <- data.frame( FPDS_data$FYear, FPDS_data$Dunsnumber, FPDS_data$numberOfActions)
+
+
+##sort by duns and FY
+names(Duns_FYactions)
+Duns_FYactions <- Duns_FYactions[order(Duns_FYactions$FPDS_data.Dunsnumber, Duns_FYactions$FPDS_data.FYear), ]
+
+
+##step 1: use dplyr to create a new data frame grouped by DUNS and FY
+#and sum obligated amount for all unique combinations
+DO_newvar_FYactions <- Duns_FYactions %>% group_by(FPDS_data.FYear, FPDS_data.Dunsnumber) %>%
+  dplyr::summarize(FY_numberofactions=sum(FPDS_data.numberOfActions, na.rm=TRUE))
+
+
+
+#change name of duns in duns_and_NAICS
+names(DO_newvar_FYactions)
+names(FPDS_data)
+
+names(DO_newvar_FYactions)[names(DO_newvar_FYactions) == "FPDS_data.Dunsnumber"] <- "Dunsnumber"
+names(DO_newvar_FYactions)[names(DO_newvar_FYactions) == "FPDS_data.FYear"] <- "FYear"
+
+
+#step 4: left join between FPDS_data and duns_and_NAICS
+
+FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact <- join(FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact, DO_newvar_FYactions, by = c("FYear", "Dunsnumber"), type = "left", match = "all")
 
 
 
