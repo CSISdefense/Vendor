@@ -36,6 +36,7 @@ AS
 		  ,IsInSAM
 		  ,IsPresent
 		  ,nextfiscal_year
+		  ,is_absent_FPDS
 	  FROM [Vendor].EntitySizeHistoryBucketPlatformSubCustomer ent
 	  left outer join Vendor.EntitySizeCode esc
 	  on esc.EntitySizeCode=ent.entitysizecode
@@ -56,6 +57,7 @@ AS
 		  ,IsInSAM
 		  ,IsPresent
 		  ,nextfiscal_year
+		  ,is_absent_FPDS
 		--End of your query
 		END
 	ELSE --Begin sub path where only services but all Customers will be returned
@@ -79,6 +81,7 @@ AS
 		  ,IsInSAM
 		  ,IsPresent
 		  ,nextfiscal_year
+		  ,is_absent_FPDS
 	  FROM [Vendor].EntitySizeHistoryBucketPlatformSubCustomer ent
 	  left outer join Vendor.EntitySizeCode esc
 	  on esc.EntitySizeCode=ent.entitysizecode
@@ -96,6 +99,7 @@ AS
 		  ,IsInSAM
 		  ,IsPresent
 		  ,nextfiscal_year
+		  ,is_absent_FPDS
 		--End of your query
 		END
 
