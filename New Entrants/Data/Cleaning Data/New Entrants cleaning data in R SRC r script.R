@@ -2371,17 +2371,17 @@ length(unique(datapull_all$duns)) == nrow(datapull_all) ##should return TRUE if 
 
 #write.csv(datapull_all, file="datapull_all.csv")
 
-save(datapull_all, file="datapull_all.Rda")
+save(datapull_all, file="SAM_datapull_all.Rda")
 
 #******************************************************
 
 
 #******************************************************************
-########################count number of new entrants in each year! ################################
+########################Count number of new entrants in each year! ################################
 #******************************************************************
 #datapull_all <- read.csv("datapull_all.csv")
 
-load(file = "datapull_all.Rda")
+load(file = "SAM_datapull_all.Rda")
 
 
 
@@ -2797,7 +2797,7 @@ FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact <- join(FPDS_data_w_topNAICS_to
 
 
 ##*****************************************##
-############create the total # of actions#################
+############Create the total # of actions#################
 #associated with each DUNS number in each year
 #*******************************************#
 
@@ -2829,6 +2829,80 @@ names(DO_newvar_FYactions)[names(DO_newvar_FYactions) == "FPDS_data.FYear"] <- "
 #step 4: left join between FPDS_data and duns_and_NAICS
 
 FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact <- join(FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact, DO_newvar_FYactions, by = c("FYear", "Dunsnumber"), type = "left", match = "all")
+
+#*************************************************
+##*****************************************##
+############Choose max sign date #################
+#for each duns number
+#*******************************************#
+
+##create subsetted data with only FY, duns, obligated amount, and AnnualMaxOfSignedDate
+Duns_maxsigndate <- data.frame(FPDS_data$FYear, FPDS_data$Dunsnumber, FPDS_data$obligatedAmount, FPDS_data$AnnualMaxOfSignedDate)
+
+names(Duns_maxsigndate)[names(Duns_maxsigndate) == "FPDS_data.Dunsnumber"] <- "Dunsnumber"
+names(Duns_maxsigndate)[names(Duns_maxsigndate) == "FPDS_data.FYear"] <- "FYear"
+names(Duns_maxsigndate)[names(Duns_maxsigndate) == "FPDS_data.obligatedAmount"] <- "obligated_amount"
+names(Duns_maxsigndate)[names(Duns_maxsigndate) == "FPDS_data.AnnualMaxOfSignedDate"] <- "AnnualMaxSignedDate"
+
+
+##sort by duns
+names(Duns_maxsigndate)
+Duns_maxsigndate <- Duns_maxsigndate[order(Duns_maxsigndate$Dunsnumber, Duns_maxsigndate$FYear, Duns_maxsigndate$AnnualMaxSignedDate), ]
+
+
+##create a variable that ranks max signed date, 1 being the highest signed date
+DO_newvar_maxsigndate <- Duns_maxsigndate %>% group_by(Dunsnumber) %>%
+  dplyr::mutate(desc_rank = row_number(desc(AnnualMaxSignedDate))) 
+
+##subset DO_max_newvar where rank==1
+
+duns_and_maxsigndate <- subset(DO_newvar_maxsigndate, desc_rank==1)
+
+#check to see if FPDS_data.Dunsnumber is a unique identifier
+##check uniqueness of DUNS as a variable##
+
+n_distinct(duns_and_maxsigndate$Dunsnumber) ##returns 8733 when should return 8764
+
+length(unique(duns_and_maxsigndate$Dunsnumber)) == nrow(duns_and_maxsigndate) ##TRUE
+
+#drop obligatedamount and desc_rank
+
+duns_and_maxsigndate$obligated_amount <- duns_and_maxsigndate$desc_rank <- NULL
+
+#change name of 
+names(duns_and_maxsigndate)[names(duns_and_maxsigndate) == "AnnualMaxSignedDate"] <- "obsv_period_maxsigndate"
+
+#step 4: left join between FPDS_data and duns_and_NAICS
+
+FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_maxSD <- join(FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact, duns_and_maxsigndate, by = c("Dunsnumber"), type = "left", match = "all")
+
+
+##********************************##
+##****Save File*********##
+##********************************##
+
+save(FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_maxSD, file="FPDS_datapull_all.Rda")
+
+#******************************************************
+
+
+
+#*****************************************************************
+##*****************************************##
+############Combine SAM and FPDS data#################
+#
+#*******************************************#
+
+setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/Get files")
+
+load(file = "SAM_datapull_all.Rda")
+
+setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
+
+load(file = "FPDS_datapull_all.Rda")
+
+setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/SAM and FPDS Combined")
+
 
 
 
