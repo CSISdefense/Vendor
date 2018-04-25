@@ -89,7 +89,7 @@ AS
 		  ,sum([ObligatedAmount]) as [SumOfObligatedAmount]
 		  ,SAMregyear
 		  ,IsInSAM
-		  ,IsPresent
+		  --,IsPresent
 		  --,nextfiscal_year
 		  ,is_absent_nextyear_FPDS
 		  ,is_present_after_absent_FPDS
@@ -112,7 +112,7 @@ AS
 		  ,IsEntityAbove2016constantReportingThreshold
 		  ,SAMregyear
 		  ,IsInSAM
-		  ,IsPresent
+		  --,IsPresent
 		 -- ,nextfiscal_year
 		  ,is_absent_nextyear_FPDS
 		  ,is_present_after_absent_FPDS
