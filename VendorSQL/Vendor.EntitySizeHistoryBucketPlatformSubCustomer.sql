@@ -41,7 +41,7 @@ select interior.EntityID
 	, interior.Simple
 	, interior.IsSoCal
 	, interior.IsInSam
-	, interior.isPresent
+	--, interior.isPresent
 	, interior.SAMregyear
 	, interior.duns
 	--, interior.nextfiscal_year
