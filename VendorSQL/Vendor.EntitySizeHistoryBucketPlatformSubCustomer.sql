@@ -42,11 +42,14 @@ select interior.EntityID
 	, interior.IsSoCal
 	, interior.IsInSam
 	, interior.isPresent
-	, interior.registrationDate
+	, interior.SAMregyear
 	, interior.duns
 	--, interior.nextfiscal_year
 	, interior.is_absent_nextyear_FPDS
 	, interior.is_present_after_absent_FPDS
+	,interior.FY_presaftabs
+	,interior.FY_absaftpres
+	,interior.minFY_FPDS
 	--Assign EntitySize and related states via Unique_Transaction_ID/StandardizedVendorName
 from (select CASE
 		WHEN Parent.ParentID is not null and isnull(Parent.UnknownCompany,0)=0 
@@ -64,6 +67,7 @@ from (select CASE
 		,c.parentdunsnumber
 		,c.dunsnumber
 		,u.StandardizedVendorName
+		
 	--, CASE
 	--	WHEN Parent.ParentID is not null and isnull(Parent.UnknownCompany,0)=0 
 	--	THEN Parent.ParentID 
@@ -193,7 +197,7 @@ from (select CASE
 	, psc.Simple
 	, zip.IsSoCal
 	, iif(SAM.duns is null,0,1) as IsInSAM
-	, SAM.registrationDate
+	, year(SAM.registrationDate) as SAMregyear
 	, c.dunsnumber as duns
 	--, iif(c.fiscal_year is null, 0,1) as IsPresent We don't need this
 	--, (c.fiscal_year + 1) as nextfiscal_year
@@ -207,6 +211,9 @@ from (select CASE
 	THEN 'YES'
 	ELSE 'NO'
 	END AS is_present_after_absent_FPDS
+	,presaftabs.fiscalyear as FY_presaftabs
+	,absaftpres.fiscalyear as FY_absaftpres
+	,minfy.minFY_FPDS
 	from Contract.FPDS as C
 		LEFT OUTER JOIN Contractor.DunsnumbertoParentContractorHistory as DtPCH
 			ON DtPCH.FiscalYear=C.fiscal_year AND DtPCH.DUNSNUMBER=C.DUNSNumber
@@ -235,7 +242,9 @@ from (select CASE
 		LEFT JOIN Contractor.DunsnumberToParentContractorHistory as presaftabs
 			ON (presaftabs.dunsnumber = c.dunsnumber 
 			AND  presaftabs.fiscalyear = (c.fiscal_year - 1)) --Not sure about order of operations, so adding perens
-		
+		INNER JOIN (select dunsnumber, min(fiscal_year) as minFY_FPDS
+			FROM Contract.FPDS 
+			GROUP BY dunsnumber) as minfy ON c.dunsnumber = minfy.dunsnumber
 		
 		
 		left outer join contract.CSIStransactionID ctid

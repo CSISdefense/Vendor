@@ -32,13 +32,16 @@ AS
 		  ,count(distinct [AllContractor]) as [AllContractorCount]
 		  ,sum([numberOfActions]) as SumOfNumberOfActions
 		  ,sum([ObligatedAmount]) as [SumOfObligatedAmount]
-		  ,year([registrationDate]) as registrationYear
+		  ,SAMregyear
 		  ,IsInSAM
 		  --,IsPresent We're only including present contractors, so we don't need this here.
 		  --,nextfiscal_year
 		  ,is_absent_nextyear_FPDS
 		  ,is_present_after_absent_FPDS
 		  ,duns
+		  ,FY_presaftabs
+	,FY_absaftpres
+	,minFY_FPDS
 	  FROM [Vendor].EntitySizeHistoryBucketPlatformSubCustomer ent
 	  left outer join Vendor.EntitySizeCode esc
 	  on esc.EntitySizeCode=ent.entitysizecode
@@ -55,13 +58,16 @@ AS
 	  		  ,IsEntityAbove2016constantOneMillionThreshold
 	  ,IsEntityAbove1990constantReportingThreshold
 		  ,IsEntityAbove2016constantReportingThreshold
-		  ,registrationDate
+		  ,SAMregyear
 		  ,IsInSAM
 		  --,IsPresent We're only including present contractors, so we don't need this here.
 		  --,nextfiscal_year
 		  ,is_absent_nextyear_FPDS
 		  ,is_present_after_absent_FPDS
 		  ,duns
+		  ,FY_presaftabs
+	,FY_absaftpres
+	,minFY_FPDS
 		--End of your query
 		END
 	ELSE --Begin sub path where only services but all Customers will be returned
@@ -81,13 +87,16 @@ AS
 		  ,count(distinct [AllContractor]) as [AllContractorCount]
 		  ,sum([numberOfActions]) as SumOfNumberOfActions
 		  ,sum([ObligatedAmount]) as [SumOfObligatedAmount]
-		  ,year([registrationDate]) as registrationYear
+		  ,SAMregyear
 		  ,IsInSAM
 		  ,IsPresent
 		  --,nextfiscal_year
 		  ,is_absent_nextyear_FPDS
 		  ,is_present_after_absent_FPDS
 		  , duns
+		  ,FY_presaftabs
+		,FY_absaftpres
+		,minFY_FPDS
 	  FROM [Vendor].EntitySizeHistoryBucketPlatformSubCustomer ent
 	  left outer join Vendor.EntitySizeCode esc
 	  on esc.EntitySizeCode=ent.entitysizecode
@@ -101,13 +110,16 @@ AS
 	  		  ,IsEntityAbove2016constantOneMillionThreshold
 	  ,IsEntityAbove1990constantReportingThreshold
 		  ,IsEntityAbove2016constantReportingThreshold
-		  ,registrationDate
+		  ,SAMregyear
 		  ,IsInSAM
 		  ,IsPresent
 		 -- ,nextfiscal_year
 		  ,is_absent_nextyear_FPDS
 		  ,is_present_after_absent_FPDS
 		  ,duns
+		  ,FY_presaftabs
+	,FY_absaftpres
+	,minFY_FPDS
 		--End of your query
 		END
 
