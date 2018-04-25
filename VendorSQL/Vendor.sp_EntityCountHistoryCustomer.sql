@@ -34,7 +34,7 @@ AS
 		  ,sum([ObligatedAmount]) as [SumOfObligatedAmount]
 		  ,year([registrationDate]) as registrationYear
 		  ,IsInSAM
-		  ,IsPresent
+		  --,IsPresent We're only including present contractors, so we don't need this here.
 		  --,nextfiscal_year
 		  ,is_absent_nextyear_FPDS
 		  ,is_present_after_absent_FPDS
@@ -57,7 +57,7 @@ AS
 		  ,IsEntityAbove2016constantReportingThreshold
 		  ,registrationDate
 		  ,IsInSAM
-		  ,IsPresent
+		  --,IsPresent We're only including present contractors, so we don't need this here.
 		  --,nextfiscal_year
 		  ,is_absent_nextyear_FPDS
 		  ,is_present_after_absent_FPDS

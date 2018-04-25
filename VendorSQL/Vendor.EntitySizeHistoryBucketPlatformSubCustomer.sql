@@ -195,15 +195,15 @@ from (select CASE
 	, iif(SAM.duns is null,0,1) as IsInSAM
 	, SAM.registrationDate
 	, c.dunsnumber as duns
-	, iif(c.fiscal_year is null, 0,1) as IsPresent 
+	--, iif(c.fiscal_year is null, 0,1) as IsPresent We don't need this
 	--, (c.fiscal_year + 1) as nextfiscal_year
 	, CASE
-	WHEN absaftpres.fiscalyear IS NULL 
+	WHEN coalesce(absaftpres.IsPresent,0)=0 --This is where we use in present, in order to make sure that it's a genuine appearance
 	THEN 'YES'
 	ELSE 'NO'
 	END AS is_absent_nextyear_FPDS
 	, CASE
-	WHEN presaftabs.fiscalyear IS NULL 
+	WHEN coalesce(presaftabs.IsPresent,0)=0
 	THEN 'YES'
 	ELSE 'NO'
 	END AS is_present_after_absent_FPDS
@@ -231,10 +231,10 @@ from (select CASE
 			ON SAM.duns = C.dunsnumber
 		LEFT JOIN Contractor.DunsnumberToParentContractorHistory as absaftpres
 			ON (absaftpres.dunsnumber = c.dunsnumber 
-			AND  absaftpres.fiscalyear = c.fiscal_year + 1)
+			AND  absaftpres.fiscalyear = (c.fiscal_year + 1))  --Not sure about order of operations, so adding perens
 		LEFT JOIN Contractor.DunsnumberToParentContractorHistory as presaftabs
 			ON (presaftabs.dunsnumber = c.dunsnumber 
-			AND  presaftabs.fiscalyear = c.fiscal_year - 1)
+			AND  presaftabs.fiscalyear = (c.fiscal_year - 1)) --Not sure about order of operations, so adding perens
 		
 		
 		
