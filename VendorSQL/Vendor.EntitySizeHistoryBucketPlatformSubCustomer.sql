@@ -215,7 +215,7 @@ from (select CASE
 	,presaftabs.fiscalyear as FY_presaftabs
 	,absaftpres.fiscalyear as FY_absaftpres
 	,minfy.minFY_FPDS
-	,present.ISPresent
+	,present.IsPresent
 	from Contract.FPDS as C
 		LEFT OUTER JOIN Contractor.DunsnumbertoParentContractorHistory as DtPCH
 			ON DtPCH.FiscalYear=C.fiscal_year AND DtPCH.DUNSNUMBER=C.DUNSNumber

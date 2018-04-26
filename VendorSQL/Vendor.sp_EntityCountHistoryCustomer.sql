@@ -42,7 +42,7 @@ AS
 		  ,FY_presaftabs
 	,FY_absaftpres
 	,minFY_FPDS
-	,ISPresent
+	,IsPresent
 	  FROM [Vendor].EntitySizeHistoryBucketPlatformSubCustomer ent
 	  left outer join Vendor.EntitySizeCode esc
 	  on esc.EntitySizeCode=ent.entitysizecode
