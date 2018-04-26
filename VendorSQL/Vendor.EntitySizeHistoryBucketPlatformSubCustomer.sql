@@ -45,6 +45,7 @@ select interior.EntityID
 	,interior.FY_presaftabs
 	,interior.FY_absaftpres
 	,interior.minFY_FPDS
+	, interior.ISPresent
 	--Assign EntitySize and related states via Unique_Transaction_ID/StandardizedVendorName
 from (select CASE
 		WHEN Parent.ParentID is not null and isnull(Parent.UnknownCompany,0)=0 
@@ -95,6 +96,7 @@ from (select CASE
 	,presaftabs.fiscalyear as FY_presaftabs
 	,absaftpres.fiscalyear as FY_absaftpres
 	,minfy.minFY_FPDS
+	,present.IsPresent
 	from Contract.FPDS as C
 		LEFT OUTER JOIN Contractor.DunsnumbertoParentContractorHistory as DtPCH
 			ON DtPCH.FiscalYear=C.fiscal_year AND DtPCH.DUNSNUMBER=C.DUNSNumber
@@ -123,9 +125,11 @@ from (select CASE
 		LEFT JOIN Contractor.DunsnumberToParentContractorHistory as presaftabs
 			ON (presaftabs.dunsnumber = c.dunsnumber 
 			AND  presaftabs.fiscalyear = (c.fiscal_year - 1)) --Not sure about order of operations, so adding perens
-		left JOIN (select dunsnumber, min(fiscal_year) as minFY_FPDS
+		LEFT JOIN (select dunsnumber, min(fiscal_year) as minFY_FPDS
 			FROM Contract.FPDS 
 			GROUP BY dunsnumber) as minfy ON c.dunsnumber = minfy.dunsnumber
+		LEFT JOIN Contractor.DunsnumberToParentContractorHistory as present
+			ON present.dunsnumber = c.dunsnumber 
 		
 		
 		left outer join contract.CSIStransactionID ctid
