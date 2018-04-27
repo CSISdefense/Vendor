@@ -23,6 +23,11 @@ setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/Get files")
 ##Get and Save into CSV
 Get_2000 <- read.xlsx("Get_2000.xlsx")
 
+nchar_ <- nchar(Get_2000$duns)
+
+summary(nchar_)
+
+
 write.csv(Get_2000, file="2000_datapull_yr.csv")
 
 ##save(Get_2000, file="2000_datapull_yr.Rda")
@@ -34,6 +39,10 @@ write.csv(Get_2000, file="2000_datapull_yr.csv")
 datapull_yr_2000 <- read.csv("2000_datapull_yr.csv")
 
 names(datapull_yr_2000)
+
+str(datapull_yr_2000$duns)
+
+summary(datapull_all$duns)
 
 ##********************************##
 ##****Drop Vars not used*********##
@@ -198,6 +207,12 @@ save(datapull_yr_2000, file="2000_datapull_cleaned.Rda")
 
 ##Get and Save into CSV
 Get_2001 <- read.xlsx("Get_2001.xlsx")
+
+nchar_ <- nchar(Get_2001$duns)
+
+summary(nchar_)
+
+
 
 write.csv(Get_2001, file="2001_datapull_yr.csv")
 
@@ -371,6 +386,11 @@ save(datapull_yr_2001, file="2001_datapull_cleaned.Rda")
 #******************************************************************
 ##Get and Save into CSV
 Get_2002_03 <- read.xlsx("Get_2002_03.xlsx")
+
+nchar_ <- nchar(Get_2002_03$duns)
+
+summary(nchar_)
+
 
 write.csv(Get_2002_03, file="2002_03_datapull_yr.csv")
 
@@ -547,6 +567,11 @@ save(datapull_yr_2002_03, file="2002_03_datapull_cleaned.Rda")
 
 ##Get and Save into CSV
 Get_2004_05 <- read.xlsx("Get_2004_05.xlsx")
+
+nchar_ <- nchar(Get_2004_05$duns)
+
+summary(nchar_)
+
 
 write.csv(Get_2004_05, file="2004_05_datapull_yr.csv")
 
@@ -762,6 +787,11 @@ save(datapull_yr_2004_05, file="2004_05_datapull_cleaned.Rda")
 
 ##Get and Save into CSV
 Get_2006_07 <- read.xlsx("Get_2006_07.xlsx")
+
+nchar_ <- nchar(Get_2006_07$duns)
+
+summary(nchar_)
+
 
 write.csv(Get_2006_07, file="2006_07_datapull_yr.csv")
 
@@ -990,6 +1020,11 @@ save(datapull_yr_2006_07, file="2006_07_datapull_cleaned.Rda")
 
 ##Get and Save into CSV
 Get_2008_09 <- read.xlsx("Get_2008_09.xlsx")
+
+nchar_ <- nchar(Get_2008_09$duns)
+
+summary(nchar_)
+
 
 write.csv(Get_2008_09, file="2008_09_datapull_yr.csv")
 
@@ -1230,6 +1265,11 @@ save(datapull_yr_2008_09, file="2008_09_datapull_cleaned.Rda")
 
 ##Get and Save into CSV
 Get_2010_11 <- read.xlsx("Get_2010_11.xlsx")
+
+nchar_ <- nchar(Get_2010_11$duns)
+
+summary(nchar_)
+
 
 write.csv(Get_2010_11, file="2010_11_datapull_yr.csv")
 
@@ -1482,6 +1522,11 @@ save(datapull_yr_2010_11, file="2010_11_datapull_cleaned.Rda")
 
 ##Get and Save into CSV
 Get_2012_13 <- read.xlsx("Get_2012_13.xlsx")
+
+nchar_ <- nchar(Get_2012_13$duns)
+
+summary(nchar_)
+
 
 write.csv(Get_2012_13, file="2012_13_datapull_yr.csv")
 
@@ -1752,6 +1797,11 @@ save(datapull_yr_2012_13, file="2012_13_datapull_cleaned.Rda")
 
 ##Get and Save into CSV
 Get_2014_15 <- read.csv("Get_2014_15.csv")
+
+nchar_ <- nchar(Get_2014_15$duns)
+
+summary(nchar_)
+
 
 write.csv(Get_2014_15, file="2014_15_datapull_yr.csv")
 
@@ -2056,6 +2106,11 @@ save(datapull_yr_2014_15, file="2014_15_datapull_cleaned.Rda")
 ##Get and Save into CSV
 Get_2016_17 <- read.csv("Get_2016_17.csv")
 
+nchar_ <- nchar(Get_2016_17$duns)
+
+summary(nchar_)
+
+
 write.csv(Get_2016_17, file="2016_17_datapull_yr.csv")
 
 ##save(Get_2001, file="2001_datapull_yr.Rda")
@@ -2356,9 +2411,17 @@ setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
 FPDS_data <- read.delim("Vendor.SP_DunsnumberNewEntrants_w_SAMuniqueDunsRAW.txt", fill = TRUE, header=TRUE,  na.strings = c("", "NULL"))
 
 
+##check number of characters in duns
+nchar_ <- nchar(FPDS_data$duns)
+
+summary(nchar_)
+
+
+summary(FPDS_data$Dunsnumber)
+
 write.csv(FPDS_data, file="FPDS_w_SAMuniqueDUNS.csv")
 
-
+str(FPDS_data$Dunsnumber)
 #*****************************************************
 ##Use the data
 
@@ -2754,6 +2817,11 @@ names(duns_and_maxsigndate)[names(duns_and_maxsigndate) == "AnnualMaxSignedDate"
 #step 4: left join between FPDS_data and duns_and_NAICS
 
 FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_maxSD <- join(FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact, duns_and_maxsigndate, by = c("Dunsnumber"), type = "left", match = "all")
+
+##********************************##
+##****change top_small_biz to 1 = small, 0 = non-small*********##
+##********************************##
+
 
 
 ##********************************##
