@@ -129,7 +129,9 @@ from (select CASE
 			FROM Contract.FPDS 
 			GROUP BY dunsnumber) as minfy ON c.dunsnumber = minfy.dunsnumber
 		LEFT JOIN Contractor.DunsnumberToParentContractorHistory as present
-			ON present.dunsnumber = c.dunsnumber 
+			ON (present.dunsnumber = c.dunsnumber 
+			AND present.fiscalyear = c.fiscal_year)
+
 		
 		
 		left outer join contract.CSIStransactionID ctid
