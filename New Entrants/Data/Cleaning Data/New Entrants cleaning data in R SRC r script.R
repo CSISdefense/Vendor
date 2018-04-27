@@ -2933,6 +2933,46 @@ names(SAM_Dunsnumber_only)[names(SAM_Dunsnumber_only) == "SAM_Dunsnumber_only"] 
 
 FPDS_unique <- FPDS_all[!duplicated(FPDS_all$Dunsnumber), ]
 
+#*************************************
+####Merge SAM and FPDS unique duns####
+#************************************
+names(FPDS_unique)
+names(SAM_all)
+
+##change SAM_all field name for duns
+
+names(SAM_all)[names(SAM_all) == "duns"] <- "Dunsnumber"
+
+names(SAM_all)
+
+##merge FPDS_unique and SAM_all
+
+SAM_and_FPDS_uniqueDuns <- join(FPDS_unique, SAM_all, by = c("Dunsnumber"), type = "left", match = "all")
+
+#*************************
+##make obsper_maxsigndate_yr
+#***************************
+
+##as date
+SAM_and_FPDS_uniqueDuns$obsv_period_maxsigndate<-as.Date(as.character(SAM_and_FPDS_uniqueDuns$obsv_period_maxsigndate))
+
+str(SAM_and_FPDS_uniqueDuns$obsv_period_maxsigndate)
+
+##create obsv_period_maxsigneddate year
+SAM_and_FPDS_uniqueDuns <- SAM_and_FPDS_uniqueDuns %>%
+  dplyr::mutate(obsvper_signdate_year = (format(SAM_and_FPDS_uniqueDuns$obsv_period_maxsigndate, "%Y")))
+
+str(SAM_and_FPDS_uniqueDuns$obsvper_signdate_year) ##it's a character
+
+#make obsv_periodmaxsigndateyear numeric
+SAM_and_FPDS_uniqueDuns$obsvper_signdate_year<-as.numeric(as.character(SAM_and_FPDS_uniqueDuns$obsvper_signdate_year))
+
+str(SAM_and_FPDS_uniqueDuns$obsvper_signdate_year)
+
+
+#**************************************************************************
+
+#*************************************************************************
 #******************************###
 ####Remove duplicates grouped  by year and duns in FPDS####
 #****************************************
