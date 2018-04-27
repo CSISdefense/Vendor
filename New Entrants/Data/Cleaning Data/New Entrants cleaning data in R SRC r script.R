@@ -2897,19 +2897,17 @@ setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/Get files")
 
 load(file = "SAM_datapull_all.Rda")
 
+SAM_all <- data.frame(datapull_all)
+
 setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
 
 load(file = "FPDS_datapull_all.Rda")
 
+FPDS_all <- data.frame(FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_maxSD)
+
+
 setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/SAM and FPDS Combined")
 
-##Make a list of unique duns from the FPDS data
-
-FPDS_uniqueduns <- FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_maxSD[!duplicated(FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_maxSD$Dunsnumber), ]
-
-length(unique(FPDS_uniqueduns$Dunsnumber)) == nrow(FPDS_uniqueduns)
-
-FPDS_all <- data.frame(FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_maxSD)
 
 ##make a dataframe of only FPDS duns
 
@@ -2930,8 +2928,15 @@ names(SAM_Dunsnumber_only)[names(SAM_Dunsnumber_only) == "SAM_Dunsnumber_only"] 
 
 
 #******************************###
+####Remove duplicates grouped by Duns in FPDS####
+#****************************************      
+
+FPDS_unique <- FPDS_all[!duplicated(FPDS_all$Dunsnumber), ]
+
+#******************************###
 ####Remove duplicates grouped  by year and duns in FPDS####
 #****************************************
+
 
 #***************#
 ####FPDS 2000####
@@ -2939,8 +2944,16 @@ names(SAM_Dunsnumber_only)[names(SAM_Dunsnumber_only) == "SAM_Dunsnumber_only"] 
 
 FPDS_2000 <- FPDS_all[which(FPDS_all$FYear == 2000), names(FPDS_all)]
 
+##count duplicate duns
+
+n_occur <- data.frame(table(FPDS_2000$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
+
+
 ##drop duplicate duns
 
+FPDS_2000_unique <- FPDS_2000[!duplicated(FPDS_2000$Dunsnumber), ]
 
 
 #***************#
@@ -2950,6 +2963,17 @@ FPDS_2000 <- FPDS_all[which(FPDS_all$FYear == 2000), names(FPDS_all)]
 
 FPDS_2001 <- FPDS_all[which(FPDS_all$FYear == 2001), names(FPDS_all)]
 
+##count duplicate duns
+
+n_occur <- data.frame(table(FPDS_2001$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
+
+
+##drop duplicate duns
+
+FPDS_2001_unique <- FPDS_2001[!duplicated(FPDS_2001$Dunsnumber), ]
+
 
 #***************#
 ####FPDS 2002####
@@ -2957,12 +2981,35 @@ FPDS_2001 <- FPDS_all[which(FPDS_all$FYear == 2001), names(FPDS_all)]
 
 FPDS_2002 <- FPDS_all[which(FPDS_all$FYear == 2002), names(FPDS_all)]
 
+##count duplicate duns
+
+n_occur <- data.frame(table(FPDS_2002$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
+
+
+##drop duplicate duns
+
+FPDS_2002_unique <- FPDS_2002[!duplicated(FPDS_2002$Dunsnumber), ]
+
 
 #***************#
 ####FPDS 2003####
 #***************#
 
 FPDS_2003 <- FPDS_all[which(FPDS_all$FYear == 2003), names(FPDS_all)]
+
+##count duplicate duns
+
+n_occur <- data.frame(table(FPDS_2003$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
+
+
+##drop duplicate duns
+
+FPDS_2003_unique <- FPDS_2003[!duplicated(FPDS_2003$Dunsnumber), ]
+
 
 
 #***************#
@@ -2972,11 +3019,35 @@ FPDS_2003 <- FPDS_all[which(FPDS_all$FYear == 2003), names(FPDS_all)]
 FPDS_2004 <- FPDS_all[which(FPDS_all$FYear == 2004), names(FPDS_all)]
 
 
+##count duplicate duns
+
+n_occur <- data.frame(table(FPDS_2004$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
+
+
+##drop duplicate duns
+
+FPDS_2004_unique <- FPDS_2004[!duplicated(FPDS_2004$Dunsnumber), ]
+
+
+
 #***************#
 ####FPDS 2005####
 #***************#
 
 FPDS_2005 <- FPDS_all[which(FPDS_all$FYear == 2005), names(FPDS_all)]
+##count duplicate duns
+
+n_occur <- data.frame(table(FPDS_2005$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
+
+
+##drop duplicate duns
+
+FPDS_2005_unique <- FPDS_2005[!duplicated(FPDS_2005$Dunsnumber), ]
+
 
 
 #***************#
@@ -2985,12 +3056,34 @@ FPDS_2005 <- FPDS_all[which(FPDS_all$FYear == 2005), names(FPDS_all)]
 
 FPDS_2006 <- FPDS_all[which(FPDS_all$FYear == 2006), names(FPDS_all)]
 
+##count duplicate duns
+
+n_occur <- data.frame(table(FPDS_2006$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
+
+
+##drop duplicate duns
+
+FPDS_2006_unique <- FPDS_2006[!duplicated(FPDS_2006$Dunsnumber), ]
+
 
 #***************#
 ####FPDS 2007####
 #***************#
 
 FPDS_2007 <- FPDS_all[which(FPDS_all$FYear == 2007), names(FPDS_all)]
+##count duplicate duns
+
+n_occur <- data.frame(table(FPDS_2007$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
+
+
+##drop duplicate duns
+
+FPDS_2007_unique <- FPDS_2007[!duplicated(FPDS_2007$Dunsnumber), ]
+
 
 
 #***************#
@@ -2998,6 +3091,17 @@ FPDS_2007 <- FPDS_all[which(FPDS_all$FYear == 2007), names(FPDS_all)]
 #***************#
 
 FPDS_2008 <- FPDS_all[which(FPDS_all$FYear == 2008), names(FPDS_all)]
+##count duplicate duns
+
+n_occur <- data.frame(table(FPDS_2008$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
+
+
+##drop duplicate duns
+
+FPDS_2008_unique <- FPDS_2008[!duplicated(FPDS_2008$Dunsnumber), ]
+
 
 
 #***************#
@@ -3005,6 +3109,17 @@ FPDS_2008 <- FPDS_all[which(FPDS_all$FYear == 2008), names(FPDS_all)]
 #***************#
 
 FPDS_2009 <- FPDS_all[which(FPDS_all$FYear == 2009), names(FPDS_all)]
+##count duplicate duns
+
+n_occur <- data.frame(table(FPDS_2009$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
+
+
+##drop duplicate duns
+
+FPDS_2009_unique <- FPDS_2009[!duplicated(FPDS_2009$Dunsnumber), ]
+
 
 
 #***************#
@@ -3013,6 +3128,17 @@ FPDS_2009 <- FPDS_all[which(FPDS_all$FYear == 2009), names(FPDS_all)]
 
 
 FPDS_2010 <- FPDS_all[which(FPDS_all$FYear == 2010), names(FPDS_all)]
+##count duplicate duns
+
+n_occur <- data.frame(table(FPDS_2010$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
+
+
+##drop duplicate duns
+
+FPDS_2010_unique <- FPDS_2010[!duplicated(FPDS_2010$Dunsnumber), ]
+
 
 
 #***************#
@@ -3020,6 +3146,17 @@ FPDS_2010 <- FPDS_all[which(FPDS_all$FYear == 2010), names(FPDS_all)]
 #***************#
 
 FPDS_2011 <- FPDS_all[which(FPDS_all$FYear == 2011), names(FPDS_all)]
+##count duplicate duns
+
+n_occur <- data.frame(table(FPDS_2011$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
+
+
+##drop duplicate duns
+
+FPDS_2011_unique <- FPDS_2011[!duplicated(FPDS_2011$Dunsnumber), ]
+
 
 
 
@@ -3028,6 +3165,17 @@ FPDS_2011 <- FPDS_all[which(FPDS_all$FYear == 2011), names(FPDS_all)]
 #***************#
 
 FPDS_2012 <- FPDS_all[which(FPDS_all$FYear == 2012), names(FPDS_all)]
+##count duplicate duns
+
+n_occur <- data.frame(table(FPDS_2012$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
+
+
+##drop duplicate duns
+
+FPDS_2012_unique <- FPDS_2012[!duplicated(FPDS_2012$Dunsnumber), ]
+
 
 
 #***************#
@@ -3035,6 +3183,17 @@ FPDS_2012 <- FPDS_all[which(FPDS_all$FYear == 2012), names(FPDS_all)]
 #***************#
 
 FPDS_2013 <- FPDS_all[which(FPDS_all$FYear == 2013), names(FPDS_all)]
+##count duplicate duns
+
+n_occur <- data.frame(table(FPDS_2013$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
+
+
+##drop duplicate duns
+
+FPDS_2013_unique <- FPDS_2013[!duplicated(FPDS_2013$Dunsnumber), ]
+
 
 
 #***************#
@@ -3042,6 +3201,17 @@ FPDS_2013 <- FPDS_all[which(FPDS_all$FYear == 2013), names(FPDS_all)]
 #***************#
 
 FPDS_2014 <- FPDS_all[which(FPDS_all$FYear == 2014), names(FPDS_all)]
+##count duplicate duns
+
+n_occur <- data.frame(table(FPDS_2014$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
+
+
+##drop duplicate duns
+
+FPDS_2014_unique <- FPDS_2014[!duplicated(FPDS_2014$Dunsnumber), ]
+
 
 
 #***************#
@@ -3049,6 +3219,17 @@ FPDS_2014 <- FPDS_all[which(FPDS_all$FYear == 2014), names(FPDS_all)]
 #***************#
 
 FPDS_2015 <- FPDS_all[which(FPDS_all$FYear == 2015), names(FPDS_all)]
+##count duplicate duns
+
+n_occur <- data.frame(table(FPDS_2015$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
+
+
+##drop duplicate duns
+
+FPDS_2015_unique <- FPDS_2015[!duplicated(FPDS_2015$Dunsnumber), ]
+
 
 
 #***************#
@@ -3056,6 +3237,17 @@ FPDS_2015 <- FPDS_all[which(FPDS_all$FYear == 2015), names(FPDS_all)]
 #***************#
 
 FPDS_2016 <- FPDS_all[which(FPDS_all$FYear == 2016), names(FPDS_all)]
+##count duplicate duns
+
+n_occur <- data.frame(table(FPDS_2016$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
+
+
+##drop duplicate duns
+
+FPDS_2016_unique <- FPDS_2016[!duplicated(FPDS_2016$Dunsnumber), ]
+
 
 
 #***************#
@@ -3063,6 +3255,17 @@ FPDS_2016 <- FPDS_all[which(FPDS_all$FYear == 2016), names(FPDS_all)]
 #***************#
 
 FPDS_2017 <- FPDS_all[which(FPDS_all$FYear == 2017), names(FPDS_all)]
+##count duplicate duns
+
+n_occur <- data.frame(table(FPDS_2017$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
+
+
+##drop duplicate duns
+
+FPDS_2017_unique <- FPDS_2017[!duplicated(FPDS_2017$Dunsnumber), ]
+
 
 
 
