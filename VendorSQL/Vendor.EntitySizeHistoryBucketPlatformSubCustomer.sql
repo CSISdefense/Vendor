@@ -125,11 +125,13 @@ from (select CASE
 		LEFT JOIN Contractor.DunsnumberToParentContractorHistory as presaftabs
 			ON (presaftabs.dunsnumber = c.dunsnumber 
 			AND  presaftabs.fiscalyear = (c.fiscal_year - 1)) --Not sure about order of operations, so adding perens
-		LEFT JOIN (select dunsnumber, min(fiscal_year) as minFY_FPDS
+		INNER JOIN (select dunsnumber, min(fiscal_year) as minFY_FPDS
 			FROM Contract.FPDS 
-			GROUP BY dunsnumber) as minfy ON c.dunsnumber = minfy.dunsnumber
+			GROUP BY dunsnumber) as minfy ON c.dunsnumber = minfy.dunsnumber  -- query executed quicker for inner join vs left join
 		LEFT JOIN Contractor.DunsnumberToParentContractorHistory as present
-			ON present.dunsnumber = c.dunsnumber 
+			ON (present.dunsnumber = c.dunsnumber 
+			AND present.fiscalyear = c.fiscal_year)
+
 		
 		
 		left outer join contract.CSIStransactionID ctid
