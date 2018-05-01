@@ -2913,6 +2913,180 @@ FPDS_all <- data.frame(FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_ma
 
 setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/SAM and FPDS Combined")
 
+##Make a list of unique duns from the FPDS data
+
+FPDS_uniqueduns <- FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_maxSD[!duplicated(FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_maxSD$Dunsnumber), ]
+
+length(unique(FPDS_uniqueduns$Dunsnumber)) == nrow(FPDS_uniqueduns)
+
+FPDS_all <- data.frame(FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_maxSD)
+
+##make a dataframe of only FPDS duns
+
+FPDS_Dunsnumber_only <- c(FPDS_uniqueduns$Dunsnumber)
+
+FPDS_Dunsnumber_only <- data.frame(FPDS_Dunsnumber_only)
+
+names(FPDS_Dunsnumber_only)[names(FPDS_Dunsnumber_only) == "FPDS_Dunsnumber_only"] <- "Duns"
+
+
+##make a dataframe of only SAM duns
+
+SAM_Dunsnumber_only <- c(datapull_all$duns)
+
+SAM_Dunsnumber_only <- data.frame(SAM_Dunsnumber_only)
+
+names(SAM_Dunsnumber_only)[names(SAM_Dunsnumber_only) == "SAM_Dunsnumber_only"] <- "Duns"
+
+
+#******************************###
+####Remove duplicates grouped  by year and duns in FPDS####
+#****************************************
+
+#***************#
+####FPDS 2000####
+#***************#
+
+FPDS_2000 <- FPDS_all[which(FPDS_all$FYear == 2000), names(FPDS_all)]
+
+##drop duplicate duns
+
+
+
+#***************#
+####FPDS 2001####
+#***************#
+
+
+FPDS_2001 <- FPDS_all[which(FPDS_all$FYear == 2001), names(FPDS_all)]
+
+
+#***************#
+####FPDS 2002####
+#***************#
+
+FPDS_2002 <- FPDS_all[which(FPDS_all$FYear == 2002), names(FPDS_all)]
+
+
+#***************#
+####FPDS 2003####
+#***************#
+
+FPDS_2003 <- FPDS_all[which(FPDS_all$FYear == 2003), names(FPDS_all)]
+
+
+#***************#
+####FPDS 2004####
+#***************#
+
+FPDS_2004 <- FPDS_all[which(FPDS_all$FYear == 2004), names(FPDS_all)]
+
+
+#***************#
+####FPDS 2005####
+#***************#
+
+FPDS_2005 <- FPDS_all[which(FPDS_all$FYear == 2005), names(FPDS_all)]
+
+
+#***************#
+####FPDS 2006####
+#***************#
+
+FPDS_2006 <- FPDS_all[which(FPDS_all$FYear == 2006), names(FPDS_all)]
+
+
+#***************#
+####FPDS 2007####
+#***************#
+
+FPDS_2007 <- FPDS_all[which(FPDS_all$FYear == 2007), names(FPDS_all)]
+
+
+#***************#
+####FPDS 2008####
+#***************#
+
+FPDS_2008 <- FPDS_all[which(FPDS_all$FYear == 2008), names(FPDS_all)]
+
+
+#***************#
+####FPDS 2009####
+#***************#
+
+FPDS_2009 <- FPDS_all[which(FPDS_all$FYear == 2009), names(FPDS_all)]
+
+
+#***************#
+####FPDS 2010####
+#***************#
+
+
+FPDS_2010 <- FPDS_all[which(FPDS_all$FYear == 2010), names(FPDS_all)]
+
+
+#***************#
+####FPDS 2011####
+#***************#
+
+FPDS_2011 <- FPDS_all[which(FPDS_all$FYear == 2011), names(FPDS_all)]
+
+
+
+#***************#
+####FPDS 2012####
+#***************#
+
+FPDS_2012 <- FPDS_all[which(FPDS_all$FYear == 2012), names(FPDS_all)]
+
+
+#***************#
+####FPDS 2013####
+#***************#
+
+FPDS_2013 <- FPDS_all[which(FPDS_all$FYear == 2013), names(FPDS_all)]
+
+
+#***************#
+####FPDS 2014####
+#***************#
+
+FPDS_2014 <- FPDS_all[which(FPDS_all$FYear == 2014), names(FPDS_all)]
+
+
+#***************#
+####FPDS 2015####
+#***************#
+
+FPDS_2015 <- FPDS_all[which(FPDS_all$FYear == 2015), names(FPDS_all)]
+
+
+#***************#
+####FPDS 2016####
+#***************#
+
+FPDS_2016 <- FPDS_all[which(FPDS_all$FYear == 2016), names(FPDS_all)]
+
+
+#***************#
+####FPDS 2017####
+#***************#
+
+FPDS_2017 <- FPDS_all[which(FPDS_all$FYear == 2017), names(FPDS_all)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ##make a dataframe of only FPDS duns
 

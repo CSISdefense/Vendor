@@ -2,6 +2,7 @@
 library(arm)
 library(dplyr)
 library(ggplot2)
+library(car)
 #This will likely be folded into CSIS360
 #But for now, using it to create and refine functions for regression analysis.
 
@@ -389,8 +390,23 @@ summary_double_continuous<-function(data,x_col,y_col,bins=20){
 }
 
 summary_discrete_plot<-function(data,x_col,group_col=NA){
+  if(is.na(group_col)){
+    sort(data[,x_col])
+    table(unlist(data[,x_col]))
+    table(unlist(data[,x_col]),data[,"CBre"])
+    table(unlist(data[,x_col]),data$Term)
+
+  }
+  else{
+    table(unlist(data[,x_col]),unlist(data[,group_col]))
+    table(unlist(data[,x_col]),unlist(data[,group_col]),data$CBre)
+    table(unlist(data[,x_col]),unlist(data[,group_col]),data$Term)
+    
+  }
+
   gridExtra::grid.arrange(freq_discrete_plot(data,x_col,group_col,caption=FALSE),
                           discrete_percent_plot(data,x_col,group_col,caption=TRUE))
+  
   
 }
 
@@ -789,9 +805,9 @@ summary_residual_compare<-function(cbre_old,cbre_new,term_old,term_new,bins=5){
 
   if(!is.na(bins)){
     #Plot residuals versus fitted
-    if("c_OffCri" %in% colnames(cbre_new$model)) bins<-bins+5
-    if("cl_Ceil" %in% colnames(cbre_new$model)) bins<-bins+10
-    if("cl_Days" %in% colnames(cbre_new$model)) bins<-bins+5
+    if("c_OffCri" %in% colnames(cbre_old$model)) bins<-bins+5
+    if("cl_Ceil" %in% colnames(cbre_old$model)) bins<-bins+10
+    if("cl_Days" %in% colnames(cbre_old$model)) bins<-bins+5
     gridExtra::grid.arrange(residuals_cbre_plot(cbre_old,bins=bins)+
                               labs(x="Estimated  Pr (Ceiling Breach)"),
                             residuals_cbre_plot(cbre_new,bins=bins)+
@@ -815,9 +831,15 @@ summary_residual_compare<-function(cbre_old,cbre_new,term_old,term_new,bins=5){
     if("cl_Days" %in% colnames(cbre_new$model)){
       residual_compare(cbre_old,cbre_new,term_old,term_new,"cl_Days","Centered Log(Days)",10)
     }
-  rbind(deviance_stats(cbre_old,"cbre_old"),
+  
+  output<-list(rbind(deviance_stats(cbre_old,"cbre_old"),
         deviance_stats(cbre_new,"cbre_new"),
         deviance_stats(term_old,"term_old"),
-        deviance_stats(term_new,"term_new"))
+        deviance_stats(term_new,"term_new")),
+  car::vif(cbre_new),car::vif(term_new)
+  )
   
+    
+  output
+   
 }
