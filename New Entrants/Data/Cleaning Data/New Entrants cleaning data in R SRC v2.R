@@ -1,50 +1,3 @@
-####Background info####
-# Data to be used for studying new entrants in the market for government contracts.
-# 
-# Longitudinal Data of firms over time where the unique identifier is DUNS number and the time
-# periods are by data_year 
-# 
-# 2 main sources: SAM and FPDS
-# 
-# 
-# Main variables of interest: 
-#   
-# Whether a firm is a new entrant
-# 
-# Whether a firm is small or non-small
-# 
-# Whether a firm exits
-# 
-# Whether a firm graduates
-# 
-# If still survived after 3 years
-# 
-# If still survived after 5 years
-# 
-# If s till survived after 10 years
-# 
-# Firm age
-# 
-# Foreign owned
-# 
-# Woman owned
-# 
-# Veteran owned
-# 
-# Minority Owned
-# 
-# Domestic Location
-# 
-# Industry (2-digit NAICS)
-# 
-# Number of total obligations
-# 
-# Number of total actions
-# 
-# Federal Agency
-# 
-# Any set aside information
-
 #******************************************************************
 ########################Set Up ################################
 #******************************************************************
@@ -63,11 +16,17 @@ library(foreach)
 
 setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/Get files")
 
+
 #******************************************************************
 ########################2000 SAM Data ################################
 #******************************************************************
 ##Get and Save into CSV
 Get_2000 <- read.xlsx("Get_2000.xlsx")
+
+nchar_ <- nchar(Get_2000$duns)
+
+summary(nchar_)
+
 
 write.csv(Get_2000, file="2000_datapull_yr.csv")
 
@@ -80,6 +39,10 @@ write.csv(Get_2000, file="2000_datapull_yr.csv")
 datapull_yr_2000 <- read.csv("2000_datapull_yr.csv")
 
 names(datapull_yr_2000)
+
+str(datapull_yr_2000$duns)
+
+summary(datapull_all$duns)
 
 ##********************************##
 ##****Drop Vars not used*********##
@@ -244,6 +207,12 @@ save(datapull_yr_2000, file="2000_datapull_cleaned.Rda")
 
 ##Get and Save into CSV
 Get_2001 <- read.xlsx("Get_2001.xlsx")
+
+nchar_ <- nchar(Get_2001$duns)
+
+summary(nchar_)
+
+
 
 write.csv(Get_2001, file="2001_datapull_yr.csv")
 
@@ -417,6 +386,11 @@ save(datapull_yr_2001, file="2001_datapull_cleaned.Rda")
 #******************************************************************
 ##Get and Save into CSV
 Get_2002_03 <- read.xlsx("Get_2002_03.xlsx")
+
+nchar_ <- nchar(Get_2002_03$duns)
+
+summary(nchar_)
+
 
 write.csv(Get_2002_03, file="2002_03_datapull_yr.csv")
 
@@ -593,6 +567,11 @@ save(datapull_yr_2002_03, file="2002_03_datapull_cleaned.Rda")
 
 ##Get and Save into CSV
 Get_2004_05 <- read.xlsx("Get_2004_05.xlsx")
+
+nchar_ <- nchar(Get_2004_05$duns)
+
+summary(nchar_)
+
 
 write.csv(Get_2004_05, file="2004_05_datapull_yr.csv")
 
@@ -808,6 +787,11 @@ save(datapull_yr_2004_05, file="2004_05_datapull_cleaned.Rda")
 
 ##Get and Save into CSV
 Get_2006_07 <- read.xlsx("Get_2006_07.xlsx")
+
+nchar_ <- nchar(Get_2006_07$duns)
+
+summary(nchar_)
+
 
 write.csv(Get_2006_07, file="2006_07_datapull_yr.csv")
 
@@ -1036,6 +1020,11 @@ save(datapull_yr_2006_07, file="2006_07_datapull_cleaned.Rda")
 
 ##Get and Save into CSV
 Get_2008_09 <- read.xlsx("Get_2008_09.xlsx")
+
+nchar_ <- nchar(Get_2008_09$duns)
+
+summary(nchar_)
+
 
 write.csv(Get_2008_09, file="2008_09_datapull_yr.csv")
 
@@ -1276,6 +1265,11 @@ save(datapull_yr_2008_09, file="2008_09_datapull_cleaned.Rda")
 
 ##Get and Save into CSV
 Get_2010_11 <- read.xlsx("Get_2010_11.xlsx")
+
+nchar_ <- nchar(Get_2010_11$duns)
+
+summary(nchar_)
+
 
 write.csv(Get_2010_11, file="2010_11_datapull_yr.csv")
 
@@ -1528,6 +1522,11 @@ save(datapull_yr_2010_11, file="2010_11_datapull_cleaned.Rda")
 
 ##Get and Save into CSV
 Get_2012_13 <- read.xlsx("Get_2012_13.xlsx")
+
+nchar_ <- nchar(Get_2012_13$duns)
+
+summary(nchar_)
+
 
 write.csv(Get_2012_13, file="2012_13_datapull_yr.csv")
 
@@ -1798,6 +1797,11 @@ save(datapull_yr_2012_13, file="2012_13_datapull_cleaned.Rda")
 
 ##Get and Save into CSV
 Get_2014_15 <- read.csv("Get_2014_15.csv")
+
+nchar_ <- nchar(Get_2014_15$duns)
+
+summary(nchar_)
+
 
 write.csv(Get_2014_15, file="2014_15_datapull_yr.csv")
 
@@ -2102,6 +2106,11 @@ save(datapull_yr_2014_15, file="2014_15_datapull_cleaned.Rda")
 ##Get and Save into CSV
 Get_2016_17 <- read.csv("Get_2016_17.csv")
 
+nchar_ <- nchar(Get_2016_17$duns)
+
+summary(nchar_)
+
+
 write.csv(Get_2016_17, file="2016_17_datapull_yr.csv")
 
 ##save(Get_2001, file="2001_datapull_yr.Rda")
@@ -2375,7 +2384,6 @@ save(datapull_all, file="SAM_datapull_all.Rda")
 
 #******************************************************
 
-
 #******************************************************************
 ########################Count number of new entrants in each year! ################################
 #******************************************************************
@@ -2388,80 +2396,6 @@ load(file = "SAM_datapull_all.Rda")
 registrationyear_count <- table(datapull_all$registrationYear)
 
 registrationyear_count
-
-
-
-
-
-
-#Greg Replication
-process_pull<-function(data){
-  data<- data %>% select(activationDate, fiscalYearEndCloseDate, 
-                         registrationDate, duns, expirationDate, 
-                         status, businessStartDate, samAddress.countryCode, 
-                         countryOfIncorporation, naics, 
-                         naics.naicsCode, naics.naicsName)
-  
-  ##********************************##
-  ##****clean Entry variable: registrationDate*********##
-  ##********************************##
-  
-  ##change registrationdate to the format as.Date
-  data$registrationDate<-as.Date(as.character(data$registrationDate))
-  
-  ##********************************##
-  ##****clean expirationDate*********##
-  ##********************************##
-  
-  ##change expirationDate to the format as.Date
-  data$expirationDate<-as.Date(as.character(data$expirationDate))
-  
-  ##********************************##
-  ##****clean businessstartDate*********##
-  ##********************************##
-  
-  ##change businessstartDate to the format as.Date
-  data$businessStartDate<-as.Date(as.character(data$businessStartDate))
-  
-  ##********************************##
-  #************creating var describing registration yr and biz start date yr******#
-  #*******************************##
-  
-  #************************
-  ##create registration year
-  data$registrationYear <- format(data$registrationDate, "%Y")
-  
-  #make registrationYear numeric
-  data$registrationYear<-as.numeric(as.character(data$registrationYear))
-  
-  #********************************
-  ##create business start date year
-  data$businessStartYear <- format(data$businessStartDate, "%Y")
-  
-  #make businessstartYear numeric
-  
-  data$businessStartYear<-as.numeric(as.character(data$businessStartYear))
-  #********************************
-  data
-}
-
-get <- process_pull( read.xlsx("Get_2001.xlsx") )
-get <-rbind(get,  process_pull( read.xlsx("Get_2002_03.xlsx")))
-get <- rbind(get, process_pull(  read.xlsx("Get_2004_05.xlsx")))
-get<-rbind(get,process_pull(  read.xlsx("Get_2004_05.xlsx")))
-get<-rbind(get,process_pull(  read.xlsx("Get_2006_07.xlsx")))
-get<-rbind(get,process_pull(  read.xlsx("Get_2008_09.xlsx")))
-get<-rbind(get,process_pull(  read.xlsx("Get_2010_11.xlsx")))
-get<-rbind(get, process_pull(  read.xlsx("Get_2012_13.xlsx")))
-get<-rbind(get, process_pull(  read.csv("Get_2014_15.csv")))
-get<-rbind(get, process_pull(  read.csv("Get_2016_17.csv")))
-
-fastcheck<-get %>% group_by(duns) %>%
-  dplyr::summarize(minofreg=min(registrationYear,na.rm=TRUE)) %>%
-  group_by(minofreg) %>% dplyr::summarise(duns_count=length(duns)) 
-
-#*********************************************************************
-#************************************************************************
 
 #******************************************************************
 ########################FPDS data################################
@@ -2477,9 +2411,17 @@ setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
 FPDS_data <- read.delim("Vendor.SP_DunsnumberNewEntrants_w_SAMuniqueDunsRAW.txt", fill = TRUE, header=TRUE,  na.strings = c("", "NULL"))
 
 
+##check number of characters in duns
+nchar_ <- nchar(FPDS_data$duns)
+
+summary(nchar_)
+
+
+summary(FPDS_data$Dunsnumber)
+
 write.csv(FPDS_data, file="FPDS_w_SAMuniqueDUNS.csv")
 
-
+str(FPDS_data$Dunsnumber)
 #*****************************************************
 ##Use the data
 
@@ -2555,7 +2497,7 @@ Duns_obligations <- Duns_obligations[order(Duns_obligations$FPDS_data.Dunsnumber
 ##step 1: use dplyr to create a new data frame grouped by DUNS nad NAICS
 #and sum obligated amount for all unique combinations
 DO_newvar <- Duns_obligations %>% group_by(FPDS_data.Dunsnumber, FPDS_data.NAICS2) %>%
-    dplyr::summarize(obligated_amount=sum(FPDS_data.obligatedAmount, na.rm=TRUE))
+  dplyr::summarize(obligated_amount=sum(FPDS_data.obligatedAmount, na.rm=TRUE))
 
 #step2: eliminate the combinations that are not the highest
 DO_max_newvar <- DO_newvar %>% group_by(FPDS_data.Dunsnumber) %>%
@@ -2876,6 +2818,11 @@ names(duns_and_maxsigndate)[names(duns_and_maxsigndate) == "AnnualMaxSignedDate"
 
 FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_maxSD <- join(FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact, duns_and_maxsigndate, by = c("Dunsnumber"), type = "left", match = "all")
 
+##********************************##
+##****change top_small_biz to 1 = small, 0 = non-small*********##
+##********************************##
+
+
 
 ##********************************##
 ##****Save File*********##
@@ -2884,8 +2831,6 @@ FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_maxSD <- join(FPDS_data_w
 save(FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_maxSD, file="FPDS_datapull_all.Rda")
 
 #******************************************************
-
-
 
 #*****************************************************************
 ##*****************************************##
@@ -2907,198 +2852,6 @@ FPDS_all <- data.frame(FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_ma
 
 
 setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/SAM and FPDS Combined")
-
-##Make a list of unique duns from the FPDS data
-
-FPDS_uniqueduns <- FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_maxSD[!duplicated(FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_maxSD$Dunsnumber), ]
-
-length(unique(FPDS_uniqueduns$Dunsnumber)) == nrow(FPDS_uniqueduns)
-
-FPDS_all <- data.frame(FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_maxSD)
-
-##make a dataframe of only FPDS duns
-
-FPDS_Dunsnumber_only <- c(FPDS_uniqueduns$Dunsnumber)
-
-FPDS_Dunsnumber_only <- data.frame(FPDS_Dunsnumber_only)
-
-names(FPDS_Dunsnumber_only)[names(FPDS_Dunsnumber_only) == "FPDS_Dunsnumber_only"] <- "Duns"
-
-
-##make a dataframe of only SAM duns
-
-SAM_Dunsnumber_only <- c(datapull_all$duns)
-
-SAM_Dunsnumber_only <- data.frame(SAM_Dunsnumber_only)
-
-names(SAM_Dunsnumber_only)[names(SAM_Dunsnumber_only) == "SAM_Dunsnumber_only"] <- "Duns"
-
-
-#******************************###
-####Remove duplicates grouped  by year and duns in FPDS####
-#****************************************
-
-#***************#
-####FPDS 2000####
-#***************#
-
-FPDS_2000 <- FPDS_all[which(FPDS_all$FYear == 2000), names(FPDS_all)]
-
-##drop duplicate duns
-
-
-
-#***************#
-####FPDS 2001####
-#***************#
-
-
-FPDS_2001 <- FPDS_all[which(FPDS_all$FYear == 2001), names(FPDS_all)]
-
-
-#***************#
-####FPDS 2002####
-#***************#
-
-FPDS_2002 <- FPDS_all[which(FPDS_all$FYear == 2002), names(FPDS_all)]
-
-
-#***************#
-####FPDS 2003####
-#***************#
-
-FPDS_2003 <- FPDS_all[which(FPDS_all$FYear == 2003), names(FPDS_all)]
-
-
-#***************#
-####FPDS 2004####
-#***************#
-
-FPDS_2004 <- FPDS_all[which(FPDS_all$FYear == 2004), names(FPDS_all)]
-
-
-#***************#
-####FPDS 2005####
-#***************#
-
-FPDS_2005 <- FPDS_all[which(FPDS_all$FYear == 2005), names(FPDS_all)]
-
-
-#***************#
-####FPDS 2006####
-#***************#
-
-FPDS_2006 <- FPDS_all[which(FPDS_all$FYear == 2006), names(FPDS_all)]
-
-
-#***************#
-####FPDS 2007####
-#***************#
-
-FPDS_2007 <- FPDS_all[which(FPDS_all$FYear == 2007), names(FPDS_all)]
-
-
-#***************#
-####FPDS 2008####
-#***************#
-
-FPDS_2008 <- FPDS_all[which(FPDS_all$FYear == 2008), names(FPDS_all)]
-
-
-#***************#
-####FPDS 2009####
-#***************#
-
-FPDS_2009 <- FPDS_all[which(FPDS_all$FYear == 2009), names(FPDS_all)]
-
-
-#***************#
-####FPDS 2010####
-#***************#
-
-
-FPDS_2010 <- FPDS_all[which(FPDS_all$FYear == 2010), names(FPDS_all)]
-
-
-#***************#
-####FPDS 2011####
-#***************#
-
-FPDS_2011 <- FPDS_all[which(FPDS_all$FYear == 2011), names(FPDS_all)]
-
-
-
-#***************#
-####FPDS 2012####
-#***************#
-
-FPDS_2012 <- FPDS_all[which(FPDS_all$FYear == 2012), names(FPDS_all)]
-
-
-#***************#
-####FPDS 2013####
-#***************#
-
-FPDS_2013 <- FPDS_all[which(FPDS_all$FYear == 2013), names(FPDS_all)]
-
-
-#***************#
-####FPDS 2014####
-#***************#
-
-FPDS_2014 <- FPDS_all[which(FPDS_all$FYear == 2014), names(FPDS_all)]
-
-
-#***************#
-####FPDS 2015####
-#***************#
-
-FPDS_2015 <- FPDS_all[which(FPDS_all$FYear == 2015), names(FPDS_all)]
-
-
-#***************#
-####FPDS 2016####
-#***************#
-
-FPDS_2016 <- FPDS_all[which(FPDS_all$FYear == 2016), names(FPDS_all)]
-
-
-#***************#
-####FPDS 2017####
-#***************#
-
-FPDS_2017 <- FPDS_all[which(FPDS_all$FYear == 2017), names(FPDS_all)]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-##make a dataframe of only FPDS duns
-
-FPDS_Dunsnumber_only <- c(FPDS_uniqueduns$Dunsnumber)
-
-FPDS_Dunsnumber_only <- data.frame(FPDS_Dunsnumber_only)
-
-names(FPDS_Dunsnumber_only)[names(FPDS_Dunsnumber_only) == "FPDS_Dunsnumber_only"] <- "Duns"
-
-
-##make a dataframe of only SAM duns
-
-SAM_Dunsnumber_only <- c(datapull_all$duns)
-
-SAM_Dunsnumber_only <- data.frame(SAM_Dunsnumber_only)
-
-names(SAM_Dunsnumber_only)[names(SAM_Dunsnumber_only) == "SAM_Dunsnumber_only"] <- "Duns"
 
 
 #******************************###
@@ -3150,358 +2903,6 @@ str(SAM_and_FPDS_uniqueDuns$obsvper_signdate_year)
 save(SAM_and_FPDS_uniqueDuns, file="SAM_and_FPDS_uniqueDuns.Rda")
 
 
-
-
-#**************************************************************************
-
-#*************************************************************************
-#******************************###
-####Remove duplicates grouped  by year and duns in FPDS####
-#****************************************
-
-
-#***************#
-####FPDS 2000####
-#***************#
-
-FPDS_2000 <- FPDS_all[which(FPDS_all$FYear == 2000), names(FPDS_all)]
-
-##count duplicate duns
-
-n_occur <- data.frame(table(FPDS_2000$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
-
-n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
-
-
-##drop duplicate duns
-
-FPDS_2000_unique <- FPDS_2000[!duplicated(FPDS_2000$Dunsnumber), ]
-
-
-#***************#
-####FPDS 2001####
-#***************#
-
-
-FPDS_2001 <- FPDS_all[which(FPDS_all$FYear == 2001), names(FPDS_all)]
-
-##count duplicate duns
-
-n_occur <- data.frame(table(FPDS_2001$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
-
-n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
-
-
-##drop duplicate duns
-
-FPDS_2001_unique <- FPDS_2001[!duplicated(FPDS_2001$Dunsnumber), ]
-
-
-#***************#
-####FPDS 2002####
-#***************#
-
-FPDS_2002 <- FPDS_all[which(FPDS_all$FYear == 2002), names(FPDS_all)]
-
-##count duplicate duns
-
-n_occur <- data.frame(table(FPDS_2002$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
-
-n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
-
-
-##drop duplicate duns
-
-FPDS_2002_unique <- FPDS_2002[!duplicated(FPDS_2002$Dunsnumber), ]
-
-
-#***************#
-####FPDS 2003####
-#***************#
-
-FPDS_2003 <- FPDS_all[which(FPDS_all$FYear == 2003), names(FPDS_all)]
-
-##count duplicate duns
-
-n_occur <- data.frame(table(FPDS_2003$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
-
-n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
-
-
-##drop duplicate duns
-
-FPDS_2003_unique <- FPDS_2003[!duplicated(FPDS_2003$Dunsnumber), ]
-
-
-
-#***************#
-####FPDS 2004####
-#***************#
-
-FPDS_2004 <- FPDS_all[which(FPDS_all$FYear == 2004), names(FPDS_all)]
-
-
-##count duplicate duns
-
-n_occur <- data.frame(table(FPDS_2004$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
-
-n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
-
-
-##drop duplicate duns
-
-FPDS_2004_unique <- FPDS_2004[!duplicated(FPDS_2004$Dunsnumber), ]
-
-
-
-#***************#
-####FPDS 2005####
-#***************#
-
-FPDS_2005 <- FPDS_all[which(FPDS_all$FYear == 2005), names(FPDS_all)]
-##count duplicate duns
-
-n_occur <- data.frame(table(FPDS_2005$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
-
-n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
-
-
-##drop duplicate duns
-
-FPDS_2005_unique <- FPDS_2005[!duplicated(FPDS_2005$Dunsnumber), ]
-
-
-
-#***************#
-####FPDS 2006####
-#***************#
-
-FPDS_2006 <- FPDS_all[which(FPDS_all$FYear == 2006), names(FPDS_all)]
-
-##count duplicate duns
-
-n_occur <- data.frame(table(FPDS_2006$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
-
-n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
-
-
-##drop duplicate duns
-
-FPDS_2006_unique <- FPDS_2006[!duplicated(FPDS_2006$Dunsnumber), ]
-
-
-#***************#
-####FPDS 2007####
-#***************#
-
-FPDS_2007 <- FPDS_all[which(FPDS_all$FYear == 2007), names(FPDS_all)]
-##count duplicate duns
-
-n_occur <- data.frame(table(FPDS_2007$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
-
-n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
-
-
-##drop duplicate duns
-
-FPDS_2007_unique <- FPDS_2007[!duplicated(FPDS_2007$Dunsnumber), ]
-
-
-
-#***************#
-####FPDS 2008####
-#***************#
-
-FPDS_2008 <- FPDS_all[which(FPDS_all$FYear == 2008), names(FPDS_all)]
-##count duplicate duns
-
-n_occur <- data.frame(table(FPDS_2008$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
-
-n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
-
-
-##drop duplicate duns
-
-FPDS_2008_unique <- FPDS_2008[!duplicated(FPDS_2008$Dunsnumber), ]
-
-
-
-#***************#
-####FPDS 2009####
-#***************#
-
-FPDS_2009 <- FPDS_all[which(FPDS_all$FYear == 2009), names(FPDS_all)]
-##count duplicate duns
-
-n_occur <- data.frame(table(FPDS_2009$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
-
-n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
-
-
-##drop duplicate duns
-
-FPDS_2009_unique <- FPDS_2009[!duplicated(FPDS_2009$Dunsnumber), ]
-
-
-
-#***************#
-####FPDS 2010####
-#***************#
-
-
-FPDS_2010 <- FPDS_all[which(FPDS_all$FYear == 2010), names(FPDS_all)]
-##count duplicate duns
-
-n_occur <- data.frame(table(FPDS_2010$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
-
-n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
-
-
-##drop duplicate duns
-
-FPDS_2010_unique <- FPDS_2010[!duplicated(FPDS_2010$Dunsnumber), ]
-
-
-
-#***************#
-####FPDS 2011####
-#***************#
-
-FPDS_2011 <- FPDS_all[which(FPDS_all$FYear == 2011), names(FPDS_all)]
-##count duplicate duns
-
-n_occur <- data.frame(table(FPDS_2011$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
-
-n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
-
-
-##drop duplicate duns
-
-FPDS_2011_unique <- FPDS_2011[!duplicated(FPDS_2011$Dunsnumber), ]
-
-
-
-
-#***************#
-####FPDS 2012####
-#***************#
-
-FPDS_2012 <- FPDS_all[which(FPDS_all$FYear == 2012), names(FPDS_all)]
-##count duplicate duns
-
-n_occur <- data.frame(table(FPDS_2012$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
-
-n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
-
-
-##drop duplicate duns
-
-FPDS_2012_unique <- FPDS_2012[!duplicated(FPDS_2012$Dunsnumber), ]
-
-
-
-#***************#
-####FPDS 2013####
-#***************#
-
-FPDS_2013 <- FPDS_all[which(FPDS_all$FYear == 2013), names(FPDS_all)]
-##count duplicate duns
-
-n_occur <- data.frame(table(FPDS_2013$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
-
-n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
-
-
-##drop duplicate duns
-
-FPDS_2013_unique <- FPDS_2013[!duplicated(FPDS_2013$Dunsnumber), ]
-
-
-
-#***************#
-####FPDS 2014####
-#***************#
-
-FPDS_2014 <- FPDS_all[which(FPDS_all$FYear == 2014), names(FPDS_all)]
-##count duplicate duns
-
-n_occur <- data.frame(table(FPDS_2014$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
-
-n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
-
-
-##drop duplicate duns
-
-FPDS_2014_unique <- FPDS_2014[!duplicated(FPDS_2014$Dunsnumber), ]
-
-
-
-#***************#
-####FPDS 2015####
-#***************#
-
-FPDS_2015 <- FPDS_all[which(FPDS_all$FYear == 2015), names(FPDS_all)]
-##count duplicate duns
-
-n_occur <- data.frame(table(FPDS_2015$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
-
-n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
-
-
-##drop duplicate duns
-
-FPDS_2015_unique <- FPDS_2015[!duplicated(FPDS_2015$Dunsnumber), ]
-
-
-
-#***************#
-####FPDS 2016####
-#***************#
-
-FPDS_2016 <- FPDS_all[which(FPDS_all$FYear == 2016), names(FPDS_all)]
-##count duplicate duns
-
-n_occur <- data.frame(table(FPDS_2016$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
-
-n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
-
-
-##drop duplicate duns
-
-FPDS_2016_unique <- FPDS_2016[!duplicated(FPDS_2016$Dunsnumber), ]
-
-
-
-#***************#
-####FPDS 2017####
-#***************#
-
-FPDS_2017 <- FPDS_all[which(FPDS_all$FYear == 2017), names(FPDS_all)]
-##count duplicate duns
-
-n_occur <- data.frame(table(FPDS_2017$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
-
-n_occur_count <- data.frame(n_occur[n_occur$Freq >1, ]) ##tells me which duns occur more than once and their frequency
-
-
-##drop duplicate duns
-
-FPDS_2017_unique <- FPDS_2017[!duplicated(FPDS_2017$Dunsnumber), ]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#*********************************************************************
 
 
