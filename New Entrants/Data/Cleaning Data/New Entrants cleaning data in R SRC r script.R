@@ -87,7 +87,12 @@ names(datapull_yr_2000)
 
 ##keep these vars
 
-datapull_yr_2000 <- datapull_yr_2000 %>% select(activationDate, fiscalYearEndCloseDate, registrationDate, duns, expirationDate, status, businessStartDate, samAddress.countryCode, countryOfIncorporation, naics, naics.naicsCode, naics.naicsName)
+datapull_yr_2000 <- datapull_yr_2000 %>% select(activationDate, fiscalYearEndCloseDate, 
+                                                registrationDate, duns, expirationDate, 
+                                                status, businessStartDate, 
+                                                samAddress.countryCode, 
+                                                countryOfIncorporation, naics, 
+                                                naics.naicsCode, naics.naicsName)
 
 ##data editor
 
@@ -2505,7 +2510,7 @@ names(FPDS_data)
 
 names(FPDS_data)[names(FPDS_data) == "DirectCOBSD"] <- "biz_size"
 
-names(FPDS_data)[names(FPDS_data) == "ï..fiscal_year"] <- "FYear"
+names(FPDS_data)[names(FPDS_data) == "?..fiscal_year"] <- "FYear"
 
 
 ### Investigate how many unique duns # there are
