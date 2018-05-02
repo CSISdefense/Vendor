@@ -391,23 +391,22 @@ summary_double_continuous<-function(data,x_col,y_col,bins=20){
 
 summary_discrete_plot<-function(data,x_col,group_col=NA){
   if(is.na(group_col)){
-    sort(data[,x_col])
-    table(unlist(data[,x_col]))
-    table(unlist(data[,x_col]),data[,"CBre"])
-    table(unlist(data[,x_col]),data$Term)
+    output<-list(table(unlist(data[,x_col])),
+    table(unlist(data[,x_col]),data$CBre),
+    table(unlist(data[,x_col]),data$Term))
 
   }
   else{
-    table(unlist(data[,x_col]),unlist(data[,group_col]))
-    table(unlist(data[,x_col]),unlist(data[,group_col]),data$CBre)
-    table(unlist(data[,x_col]),unlist(data[,group_col]),data$Term)
+    output<-list(table(unlist(data[,x_col]),unlist(data[,group_col])),
+    table(unlist(data[,x_col]),unlist(data[,group_col]),data$CBre),
+    table(unlist(data[,x_col]),unlist(data[,group_col]),data$Term))
     
   }
 
   gridExtra::grid.arrange(freq_discrete_plot(data,x_col,group_col,caption=FALSE),
                           discrete_percent_plot(data,x_col,group_col,caption=TRUE))
   
-  
+  output
 }
 
 
