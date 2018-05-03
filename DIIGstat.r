@@ -21,7 +21,7 @@ bin_df<-function(data,rank_col,group_col=NULL,bins=20,ties.method="random"){
       group_by_(.dots=dots) 
   }
   #Calculate rank, this allows cut_number to work even when some answers have to be broken up into multiple bins
-  bin<-rank(as.data.frame(data[,which(model_colnames(data)==rank_col)]),ties.method=ties.method)
+  bin<-rank(as.data.frame(data[,which(colnames(data)==rank_col)]),ties.method=ties.method)
   cut_number(bin,bins)
 }
 
