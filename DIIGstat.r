@@ -21,7 +21,7 @@ bin_df<-function(data,rank_col,group_col=NULL,bins=20,ties.method="random"){
       group_by_(.dots=dots) 
   }
   #Calculate rank, this allows cut_number to work even when some answers have to be broken up into multiple bins
-  bin<-rank(as.data.frame(data[,which(colnames(data)==rank_col)]),ties.method=ties.method)
+  bin<-rank(as.data.frame(data[,which(model_colnames(data)==rank_col)]),ties.method=ties.method)
   cut_number(bin,bins)
 }
 
@@ -96,7 +96,7 @@ binned_fitted_versus_term_residuals<-function(model){
     data <-data.frame(
       fitted=fitted(model),
       residuals=residuals(model),
-      b_Term=model@frame$b_Term,
+      b_Term=model@frame$b_Term
     )
     
   }
@@ -135,7 +135,7 @@ binned_fitted_versus_cbre_residuals<-function(model){
     data <-data.frame(
       fitted=fitted(model),
       residuals=residuals(model),
-      b_CBre=model@frame$b_CBre,
+      b_CBre=model@frame$b_CBre
     )
     
   }
@@ -791,6 +791,19 @@ deviance_stats<-function(model,model_name){
                 difference=model$null.deviance-model$deviance)
 }
 
+model_colnames<-function(model){
+  if(class(model)=="glmerMod")
+  { 
+    output<-colnames(model@frame)
+    
+  }
+  else
+  {
+      output<-colnames(model$model)
+  }
+  output
+}
+
 summary_residual_compare<-function(cbre_old,cbre_new,term_old,term_new,bins=5){
   #Plot the fitted values vs actual results
   
@@ -805,9 +818,9 @@ summary_residual_compare<-function(cbre_old,cbre_new,term_old,term_new,bins=5){
 
   if(!is.na(bins)){
     #Plot residuals versus fitted
-    if("c_OffCri" %in% colnames(cbre_old$model)) bins<-bins+5
-    if("cl_Ceil" %in% colnames(cbre_old$model)) bins<-bins+10
-    if("cl_Days" %in% colnames(cbre_old$model)) bins<-bins+5
+    if("c_OffCri" %in% model_colnames(cbre_old$model)) bins<-bins+5
+    if("cl_Ceil" %in% model_colnames(cbre_old$model)) bins<-bins+10
+    if("cl_Days" %in% model_colnames(cbre_old$model)) bins<-bins+5
     gridExtra::grid.arrange(residuals_cbre_plot(cbre_old,bins=bins)+
                               labs(x="Estimated  Pr (Ceiling Breach)"),
                             residuals_cbre_plot(cbre_new,bins=bins)+
@@ -820,15 +833,15 @@ summary_residual_compare<-function(cbre_old,cbre_new,term_old,term_new,bins=5){
     
   }
   
-    if("c_OffCri" %in% colnames(cbre_new$model)){
+    if("c_OffCri" %in% model_colnames(cbre_new$model)){
       residual_compare(cbre_old,cbre_new,term_old,term_new,"c_OffCri","Office Crisis %",10)
     }
     
-    if("cl_Ceil" %in% colnames(cbre_new$model)){
+    if("cl_Ceil" %in% model_colnames(cbre_new$model)){
       residual_compare(cbre_old,cbre_new,term_old,term_new,"cl_Ceil","Centered Log(Ceiling)",20)
     }
     
-    if("cl_Days" %in% colnames(cbre_new$model)){
+    if("cl_Days" %in% model_colnames(cbre_new$model)){
       residual_compare(cbre_old,cbre_new,term_old,term_new,"cl_Days","Centered Log(Days)",10)
     }
   
