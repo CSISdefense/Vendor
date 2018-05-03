@@ -71,3 +71,16 @@ EXEC	@return_value = Vendor.sp_EntityCountHistoryCustomer
 --SELECT	'Return Value' = @return_value
 
 
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+
+--DECLARE	@return_value int
+
+EXEC	
+ [Vendor].[SP_DunsnumberNewEntrants]
+		@Customer = NULL,
+		@IsSAMduns = NULL
+
+--SELECT	'Return Value' = @return_value
+
+GO
