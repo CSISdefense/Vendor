@@ -39,6 +39,7 @@ IF (@Customer is not null) --Begin sub path where all product and services but o
 , c.VendorIsInternational
 ,c.IsSAMduns
 				,max(c.SignedDate) as AnnualMaxOfSignedDate
+								,min(c.SignedDate) as AnnualMinOfSignedDate
 				,Sum(C.obligatedAmount) AS obligatedAmount
 			,Sum(C.numberOfActions) AS numberOfActions
 			,count(c.csistransactionID) as TransactionCount 
@@ -92,6 +93,7 @@ ELSE --Begin sub path where all products and services amd all Customers will be 
 , c.VendorIsInternational
 ,c.IsSAMduns
 				,max(c.SignedDate) as AnnualMaxOfSignedDate
+												,min(c.SignedDate) as AnnualMinOfSignedDate
 				,Sum(C.obligatedAmount) AS obligatedAmount
 			,Sum(C.numberOfActions) AS numberOfActions
 			,count(c.csistransactionID) as TransactionCount 
