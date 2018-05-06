@@ -13,7 +13,7 @@ library(data.table)
 library(lubridate)
 library(dplyr)
 library(foreach)
-
+library(csis360)
 
 #******************************************************************
 ########################FPDS data################################
@@ -52,8 +52,9 @@ setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
 names(FPDS_data)
 
 names(FPDS_data)[names(FPDS_data) == "DirectCOBSD"] <- "biz_size"
-
-names(FPDS_data)[names(FPDS_data) == "ï..fiscal_year"] <- "FYear"
+#GSS: Added remove_bom from CSIS360 to handle the ?.. removal. 
+FPDS_data<-remove_bom(FPDS_data)
+names(FPDS_data)[names(FPDS_data) == "fiscal_year"] <- "FYear"
 
 
 ### Investigate how many unique duns # there are
@@ -410,6 +411,22 @@ FPDS_data_w_topNAICS_topSB_totalobl_FYobl <- join(FPDS_data_w_topNAICS_topSB_tot
 #for each duns number
 #*******************************************#
 
+#GSS: Little bit of cleanup
+str(FPDS_data)
+FPDS_data$AnnualMaxOfSignedDate_date<-as.Date(as.character(FPDS_data$AnnualMaxOfSignedDate))
+
+#GSS: Rather than ranking and then cutting down, it's possible to get both the min and max in a single step
+Duns_signdate<-FPDS_data %>% group_by(Dunsnumber) %>%
+  dplyr::summarise(
+    min_FYear = min(FYear,na.rm=TRUE),
+    max_FYear = max(FYear,na.rm=TRUE),
+    min_AnnualMaxOfSignedDate = min(AnnualMaxOfSignedDate_date,na.rm=TRUE),
+    max_FYear = max(FYear,na.rm=TRUE),
+    max_AnnualMaxOfSignedDate = max(AnnualMaxOfSignedDate_date,na.rm=TRUE),
+  )
+Duns_signdate<-Duns_signdate %>% mutate(min_CYear=year(min_AnnualMaxOfSignedDate),
+                                        max_CYear=year(max_AnnualMaxOfSignedDate))
+
 ##create subsetted data with only FY, duns, obligated amount, and AnnualMaxOfSignedDate
 Duns_maxsigndate <- data.frame(FPDS_data$FYear, FPDS_data$Dunsnumber, FPDS_data$obligatedAmount, FPDS_data$AnnualMaxOfSignedDate)
 
@@ -479,6 +496,7 @@ DO_newvar_minsigndate <- Duns_minsigndate %>% group_by(Dunsnumber) %>%
 
 duns_and_minsigndate <- subset(DO_newvar_minsigndate, asc_rank==1)
 
+
 #check to see if FPDS_data.Dunsnumber is a unique identifier
 ##check uniqueness of DUNS as a variable##
 
@@ -493,12 +511,30 @@ duns_and_minsigndate$obligated_amount <- duns_and_minsigndate$asc_rank <- duns_a
 #change name of 
 names(duns_and_minsigndate)[names(duns_and_minsigndate) == "AnnualMaxSignedDate"] <- "obsv_period_MINsigndate"
 
+
+#GSS: Let's do a annual count of dunsnumbers based on the min of calendar year derived fromr signed date here and now
+duns_and_minsigndate$CYear<-year(as.Date(as.character(duns_and_minsigndate$obsv_period_MINsigndate)))
+duns_and_minsigndate%>% group_by(CYear)%>%
+  dplyr::summarise(
+    DunsCount=length(Dunsnumber)
+  )
+
+
 #step 4: left join between FPDS_data and duns_and_NAICS
 
 #FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_maxSD_minSD <- join(FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_maxSD, duns_and_minsigndate, by = c("Dunsnumber"), type = "left", match = "all")
 
 
 FPDS_data_w_topNAICS_topSB_totalobl_FYobl_maxSD_minSD <- join(FPDS_data_w_topNAICS_topSB_totalobl_FYobl_maxSD, duns_and_minsigndate, by = c("Dunsnumber"), type = "left", match = "all")
+
+
+
+
+#GSS: Let's do a annual count of dunsnumbers based on the min of calendar year derived fromr signed date here and now
+FPDS_data_w_topNAICS_topSB_totalobl_FYobl_maxSD_minSD%>% group_by(CYear)%>%
+  dplyr::summarise(
+    DunsCount=length(unique(Dunsnumber))
+  )
 
 
 #FPDS_data_cleaned <- FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_maxSD_minSD
@@ -512,6 +548,13 @@ FPDS_data_cleaned <- FPDS_data_w_topNAICS_topSB_totalobl_FYobl_maxSD_minSD
 ##collapse by duns number so only have unique duns numbers
 FPDS_cleaned_unique <- FPDS_data_cleaned[!duplicated(FPDS_data_cleaned$Dunsnumber), ]
 ##664767
+
+#GSS: Let's do a annual count of dunsnumbers based on the min of calendar year derived from signed date here and now
+FPDS_cleaned_unique$CYear<-year(as.Date(as.character(FPDS_cleaned_unique$obsv_period_MINsigndate)))
+FPDS_cleaned_unique%>% group_by(CYear)%>%
+  dplyr::summarise(
+    DunsCount=length(unique(Dunsnumber))
+  )
 
 #***************************************#
 ####registration year####
@@ -528,6 +571,21 @@ str(FPDS_cleaned_unique$obsv_period_MINsigndate)
 ##create registration year
 FPDS_cleaned_unique <- FPDS_cleaned_unique %>%
   dplyr::mutate(registrationYear = (format(FPDS_cleaned_unique$obsv_period_MINsigndate, "%Y")))
+
+
+#GSS: Let's do a annual count of dunsnumbers based on the min of calendar year derived from signed date here and now
+FPDS_cleaned_unique%>% group_by(registrationYear)%>%
+  dplyr::summarise(
+    DunsCount=length(unique(Dunsnumber))
+  )
+
+FPDS_cleaned_unique$CYear<-year(as.Date(as.character(FPDS_cleaned_unique$obsv_period_MINsigndate)))
+FPDS_cleaned_unique%>% group_by(CYear)%>%
+  dplyr::summarise(
+    DunsCount=length(unique(Dunsnumber))
+  )
+
+
 
 str(FPDS_cleaned_unique$registrationYear) ##it's a character
 
@@ -550,7 +608,7 @@ str(FPDS_cleaned_unique$obsv_period_maxsigndate)
 
 ##create registration year
 FPDS_cleaned_unique <- FPDS_cleaned_unique %>%
-  dplyr::mutate(registrationYear = (format(FPDS_cleaned_unique$obsv_period_maxsigndate, "%Y")))
+  dplyr::mutate(exitYear = (format(FPDS_cleaned_unique$obsv_period_maxsigndate, "%Y")))
 
 str(FPDS_cleaned_unique$registrationYear) ##it's a character
 
@@ -594,3 +652,16 @@ registrationyear_count <- table(FPDS_cleaned_unique$registrationYear)
 
 registrationyear_count
 
+exitYear_count <- table(FPDS_cleaned_unique$exitYear)
+exitYear_count
+
+Duns_signdate$Dunsnumber
+Duns_signdate%>% group_by(min_CYear)%>%
+  dplyr::summarise(
+  DunsCount=length(Dunsnumber)
+  )
+
+Duns_signdate%>% group_by(max_CYear)%>%
+  dplyr::summarise(
+    DunsCount=length(Dunsnumber)
+  )
