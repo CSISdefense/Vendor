@@ -15,10 +15,12 @@ library(dplyr)
 library(foreach)
 library(ggrepel)
 
-setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/FPDS")
+#setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/FPDS")
+
+setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
 
 load(file = "FPDS_datapull_all_v2.Rda")
-
+length(unique(FPDS_cleaned_unique$Dunsnumber)) == nrow(FPDS_cleaned_unique)
 
 #******************************************************************
 ########################Count number of new entrants in each year! ################################
@@ -112,9 +114,10 @@ ggplot(FPDS_bargraphCount, aes(x = registrationYear, y = regpersize, fill = fact
   ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
   scale_fill_manual(name = "New Entrants Types", values = c("darkslategray1", "cadetblue4"), labels = c("small", "non-small")) +
   ggtitle("Number of New Entrants Per Year (2001-2016) - All Federal Agencies")+
-  geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
-                  angle = 45) +
-  geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
+  ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
+              ###    angle = 45) +
+  ##geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
+  geom_text(data = subset(FPDS_bargraphCount, registrationYear <= 2016), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
 
 #******************************
 ##chart for DoD
@@ -146,9 +149,10 @@ ggplot(FPDS_bargraphCount, aes(x = registrationYear, y = regpersize, fill = fact
   ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
   scale_fill_manual(name = "New Entrants Types", values = c("darkslategray1", "cadetblue4"), labels = c("small", "non-small")) +
   ggtitle("Number of New Entrants Per Year (2001-2016) - DoD")+
-  geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
-                  angle = 45) +
-  geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
+  ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
+                  ##angle = 45) +
+  ##geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
+  geom_text(data = subset(FPDS_bargraphCount, registrationYear <= 2016), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
 
 
 
