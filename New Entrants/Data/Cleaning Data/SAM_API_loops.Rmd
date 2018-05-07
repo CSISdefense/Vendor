@@ -1,0 +1,191 @@
+---
+title: "SAM API Get and Search Loops"
+author: "Marielle Roth"
+date: "April 9, 2018"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+#Retrieving bulk data from the System for Award Management (SAM)
+
+Due to the way the SAM data and the API are structured, in order to get bulk data and all of the available fields offered by SAM, you have to run through the data twice - first (Search API), using a search parameter, to retrieve the duns numbers and second (Get API), using the list of duns numbers from the search API to get the rest of the fields.  Additionally, there is a limit on the number of requests per day you can make to the API.  For this search, I used the expiration date paramenter to gather the duns numbers.  As they update SAM, if they enable search by registration date, which is said to be in the works, it may be useful to change the code to search by that rather than expiration date since the expiration date can change each year if a firm resubmits its paperwork.
+
+###Querying SAM search API
+
+The search pull provides the DUNs numbers that expire within a certain range of dates (as well as 16 other fields).  Due to limits on the data, I pulled the by years.  The following will give duns numbers expiring from 2010 through 2011.
+
+Note: You may need to request new API keys.  Additionally, as the system updates, the base URL may change.  This one is version 2 (v2).
+  
+* To Do: Change the dates as needed, or set a new parameter depending on for what your are searching.
+```{r, eval=FALSE}
+library(jsonlite)
+library(httr)
+library(openxlsx)
+library(plyr)
+library(jsonlite)
+library(data.table)
+library(tidyverse)
+library(installr)
+installr::install.rtools()
+Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe")
+
+expDate = seq(as.Date("2010-01-01"), as.Date("2011-12-31"), by="days")
+
+base_url.search = "https://api.data.gov/sam/v2/registrations"
+myapikey = "Xkyoz6sJxZgqNyChQoeMydse5BNFmWP53IqBZA93"
+myapikey2 = "pEFRIdk6OwgiRzawvh34wU1MR7ERmw9Ro2PUuDVe"
+
+url = paste(base_url.search,"?","fields=_all_","&","qterms=expirationDate:[",expDate,"]","&api_key=",myapikey, sep = "")
+```
+
+The following will allow you to loop through multiple API keys and see how many requests you have remaining.  Each time you run these variables, it counts as one request each so you don't need to run these each time you run the loop. If your API key changes, these will need to change.
+```{r, eval=FALSE}
+x = as.integer((GET("https://api.data.gov/sam/v2/registrations?fields=_all_&qterms=expirationDate:[2015-01-01]&api_key=Xkyoz6sJxZgqNyChQoeMydse5BNFmWP53IqBZA93"))[["headers"]][["x-ratelimit-remaining"]])
+
+y = as.integer((GET("https://api.data.gov/sam/v2/registrations?fields=_all_&qterms=expirationDate:[2015-01-01]&api_key=pEFRIdk6OwgiRzawvh34wU1MR7ERmw9Ro2PUuDVe"))[["headers"]][["x-ratelimit-remaining"]])
+```
+This creates an empty dataframe to which you will append all new rows.
+```{r, eval=FALSE}
+df.search = data.frame(matrix(NA, nrow = 0, ncol = 0))
+```
+
+The following will retrieve each firm that falls within the requested range.  It also loops through the two API keys, if the first runs out.  As it is running, the loop yields a message as to which entry it is on and where in the loop to more easily identify errors.  In this case, i is the day in the year or two year span.
+```{r, eval=FALSE}
+for(i in 1:length(expDate)){
+  if(x<=0){                          
+    url = paste(base_url.search,"?","fields=_all_","&","qterms=expirationDate:[",expDate,"]","&api_key=",myapikey2, sep = "")
+    y=y-1
+    if(y == 0)
+      break
+  }
+  while(TRUE){
+    get.data <- try(fromJSON(url[i], flatten = TRUE))
+    x=x-1
+    if(!is(get.data, 'try-error')) break
+  }
+  message("retrieving query", i)
+  df = as.data.frame(get.data$results)
+  message("dataframe ", class(df), i)
+  df.search=rbind.fill(df.search, df)
+  message("appended frame", i)
+  
+  Sys.sleep(2)
+}
+```
+
+Note: if you want to run only a portion of the expDate set, such as if there is an error, or you only have a limited number of queries left, you can alter the first line, such that 
+        
+        for(i in x:length(expDate)){
+
+will produce only requests starting from day x, and 
+
+        for(i in 1:x)){
+
+will yield only the firms that expired witin the first x days of the year.
+
+The following will yield a data set of unique entries and write it to your working directory.
+
+* To Do: After each loop runs, change the name of the xlsx file to an appropriate name so as not to overwrite the previous file you saved.
+```{r, eval=FALSE}
+df.unique = df.search[!duplicated(df.search),]
+
+write.xlsx(df.unique, "Search_unique_2010_11.xlsx", asTable = TRUE, col.names=TRUE)
+```
+***
+
+###Querying SAM get API
+
+The get API will yield the rest of the fields that SAM offers.  In this case, you are querying the API by each unique 13 digit duns number.  Since the duns number and the duns+4 number are in seperate fields, the following code will produce a list retrieved from the saved search file.
+
+* To Do: Set your working directory to where your saved search files and change the file name depending on which file you want to read in.
+```{r, eval=FALSE}
+duns_nums = read.xlsx("Search_unique_2010_11.xlsx", cols = c(5,7))
+duns4_nums = print(paste0(duns_nums[,1],duns_nums[,2], sep = ""))
+```
+
+Note: Again, you may need to request new API keys.  Additionally, as the system updates, the base URL may change.  This one is version 4 (v4).
+```{r, eval=FALSE}
+base_url.get = "https://api.data.gov/sam/v4/registrations"
+myapikey = "Xkyoz6sJxZgqNyChQoeMydse5BNFmWP53IqBZA93"
+myapikey2 = "pEFRIdk6OwgiRzawvh34wU1MR7ERmw9Ro2PUuDVe"
+
+url = paste(base_url.get,"/",duns4_nums,"?","return_values=full", "&api_key=",myapikey, sep = "")
+
+f = as.integer((GET("https://api.data.gov/sam/v4/registrations/8784448350000?return_values=full&api_key=Xkyoz6sJxZgqNyChQoeMydse5BNFmWP53IqBZA93"))[["headers"]][["x-ratelimit-remaining"]])
+
+g = as.integer((GET("https://api.data.gov/sam/v4/registrations/8784448350000?return_values=full&api_key=pEFRIdk6OwgiRzawvh34wU1MR7ERmw9Ro2PUuDVe"))[["headers"]][["x-ratelimit-remaining"]])
+```
+This creates an empty dataframe to which you will append all new rows and an empty list, which will list all query numbers that fail for some given reason.
+```{r, eval=FALSE}
+get.df = data.frame(matrix(NA, nrow = 0, ncol = 0))
+
+error = list()
+```
+The following will retrieve a data frame of each firm that falls within the given range with all of the fields offered by SAM.  It also loops through the two API keys, if the first runs out.  As it is running, the loop yields an error message for each i that produces an error and a message after each 100th i completes.  In this case i refers to each individual duns number.
+```{r, eval=FALSE}
+for(i in 1:length(duns4_nums)){
+  if(f <= 0){                          
+    url = paste(base_url.get,"/",duns4_nums,"?","return_values=full", "&api_key=",myapikey, sep = "")
+    g = g-1
+    if(g <= 0)
+          break
+      }
+  if(i %% 100 ==0){
+    cat(paste0("completed", i))
+  }
+  get.data = try(fromJSON(url[i], flatten = TRUE))
+  f=f-1
+  if(class(get.data) != "try-error"){ 
+    dt = t(unlist(get.data$sam_data$registration))
+    df = as.data.frame(dt, col.names=names(dt), row.names = NULL)
+    get.df=rbind.fill(get.df, df)
+  } else if(class(get.data) == "try-error"){
+    message("error", i)
+    error = list(error, i)
+  }
+  Sys.sleep(2)
+}
+```
+
+To rerun any errors produced by the above loop, run the following:
+
+Note: redo_duns will give you the list of duns numbers that you got from the search API but failed in the get API initially.  The duns numbers that work the second time will be appended into the same dataframe as above (get.df).
+```{r, eval=FALSE}
+redo_nums = unlist(error)
+redo_duns = duns4_nums[redo_nums]
+
+error2 = list()
+url = paste(base_url.get,"/",redo_duns,"?","return_values=full", "&api_key=apikey", sep = "")
+
+for(i in 1:length(redo_nums)){
+  get.data = try(fromJSON(url[i], flatten = TRUE))
+  if(class(get.data) != "try-error"){ 
+    message("retrieving query", i)
+    dt = t(unlist(get.data$sam_data$registration))
+    message(class(dt), i)
+    df = as.data.frame(dt, col.names=names(dt), row.names = NULL)
+    message(class(df), i)
+    get.df=rbind.fill(get.df, df)
+    message("appended frame", i)
+  } else if(class(get.data) == "try-error"){
+    message("error", i)
+    error2 = list(error2, i)
+  }
+  Sys.sleep(2)
+}
+errornums = unlist(error2)
+finalerrors = duns4_nums[errornums]  
+```
+
+Note: finalerrors will give you the final list of duns numbers that failed from the get API
+
+The following will yield a data set of unique entries and write it to you r working directory.
+  
+* To Do: After each loop runs, change the name of the csv file to an appropriate name so as not to overwrite the previous file you saved.
+```{r, eval=FALSE}
+get.unique = get.df[!duplicated(get.df[,c('duns','dunsPlus4')]),]
+write.csv(get.unique, "Get_2010_11.csv")
+```
+
+Once you have all the data frames, you can read them all back into R and rbind them together.

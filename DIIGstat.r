@@ -770,7 +770,7 @@ NA_stats<-function(data,col){
 
 
 residual_compare<-function(cbre_old,cbre_new,term_old,term_new,col,x_axis_name,bins=20){
-  if(col %in% model_colnames(cbre_old)){
+  if(col %in% model_colnames(cbre_old) & col %in% model_colnames(term_old)){
     gridExtra::grid.arrange(residuals_cbre_plot(cbre_old,col,bins=bins)+
                               labs(x=x_axis_name),
                             residuals_cbre_plot(cbre_new,col,bins=bins)+
@@ -855,9 +855,9 @@ summary_residual_compare<-function(cbre_old,cbre_new,term_old,term_new,bins=5){
     
   }
   
-    if("c_OffCri" %in% model_colnames(cbre_new)){
-      residual_compare(cbre_old,cbre_new,term_old,term_new,"c_OffCri","Office Crisis %",10)
-    }
+    # if("c_OffCri" %in% model_colnames(cbre_new) & "c_OffCri" %in% model_colnames(term_new)){
+      # residual_compare(cbre_old,cbre_new,term_old,term_new,"c_OffCri","Office Crisis %",10)
+    # }
     
     if("cl_Ceil" %in% model_colnames(cbre_new)){
       residual_compare(cbre_old,cbre_new,term_old,term_new,"cl_Ceil","Centered Log(Ceiling)",20)
@@ -869,8 +869,20 @@ summary_residual_compare<-function(cbre_old,cbre_new,term_old,term_new,bins=5){
   
   if(class(cbre_new)=="glmerMod")
   { 
+    # If the fit is singular or near-singular, there might be a higher chance of a false positive (we’re not necessarily screening out gradient and Hessian checking on singular directions properly); a higher chance that the model has actually misconverged (because the optimization problem is difficult on the boundary); and a reasonable argument that the random effects model should be simplified.
+    # https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html
+    # The definition of singularity is that some of the constrained parameters of the random effects theta parameters are on the boundary (equal to zero, or very very close to zero, say <10−6):
+    ct<-getME(cbre_new,"theta")
+    cl<-getME(cbre_new,"lower")
+    tt<-getME(term_new,"theta")
+    tl<-getME(term_new,"lower")
+    # min(tt[ll==0])
   
-output<-list(car::vif(cbre_new),car::vif(term_new))
+    # min(tt[ll==0])
+output<-list(car::vif(cbre_new),car::vif(term_new),
+             ct[cl==0],
+             tt[tl==0]
+             )
   }
   else{
     output<-list(rbind(deviance_stats(cbre_old,"cbre_old"),
