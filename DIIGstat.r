@@ -96,7 +96,7 @@ binned_fitted_versus_term_residuals<-function(model){
     data <-data.frame(
       fitted=fitted(model),
       residuals=residuals(model),
-      b_Term=model@frame$b_Term,
+      b_Term=model@frame$b_Term
     )
     
   }
@@ -135,7 +135,7 @@ binned_fitted_versus_cbre_residuals<-function(model){
     data <-data.frame(
       fitted=fitted(model),
       residuals=residuals(model),
-      b_CBre=model@frame$b_CBre,
+      b_CBre=model@frame$b_CBre
     )
     
   }
@@ -172,6 +172,11 @@ residuals_term_plot<-function(model,x_col="fitted",bins=40){
       residuals=residuals(model),
       b_Term=model@frame$b_Term
     )
+    if (x_col!="fitted"){
+      data$x_col<-
+        test<-model@frame[,x_col]
+      colnames(data)[colnames(data)=="x_col"]<-x_col
+    }
     
   }
   else
@@ -181,14 +186,15 @@ residuals_term_plot<-function(model,x_col="fitted",bins=40){
       residuals=residuals(model),
       b_Term=model$model$b_Term
     )
+    
+    if (x_col!="fitted"){
+      data$x_col<-
+        test<-model$model[,x_col]
+      colnames(data)[colnames(data)=="x_col"]<-x_col
+    }
   }
   
-  
-  if (x_col!="fitted"){
-    data$x_col<-
-      test<-model$model[,x_col]
-    colnames(data)[colnames(data)=="x_col"]<-x_col
-  }
+
   
   
   data<-binned.resids (data[,x_col],
@@ -216,6 +222,11 @@ residuals_cbre_plot<-function(model,x_col="fitted",bins=40){
       residuals=residuals(model),
       b_CBre=model@frame$b_CBre
     )
+    if (x_col!="fitted"){
+      data$x_col<-
+        test<-model@frame[,x_col]
+      colnames(data)[colnames(data)=="x_col"]<-x_col
+    }
     
   }
   else
@@ -225,13 +236,11 @@ residuals_cbre_plot<-function(model,x_col="fitted",bins=40){
       residuals=residuals(model),
       b_CBre=model$model$b_CBre
     )
-  }
-  
-  
-  if (x_col!="fitted"){
-    data$x_col<-
-      test<-model$model[,x_col]
-    colnames(data)[colnames(data)=="x_col"]<-x_col
+    if (x_col!="fitted"){
+      data$x_col<-
+        test<-model$model[,x_col]
+      colnames(data)[colnames(data)=="x_col"]<-x_col
+    }
   }
   
   
@@ -391,23 +400,22 @@ summary_double_continuous<-function(data,x_col,y_col,bins=20){
 
 summary_discrete_plot<-function(data,x_col,group_col=NA){
   if(is.na(group_col)){
-    sort(data[,x_col])
-    table(unlist(data[,x_col]))
-    table(unlist(data[,x_col]),data[,"CBre"])
-    table(unlist(data[,x_col]),data$Term)
+    output<-list(table(unlist(data[,x_col])),
+    table(unlist(data[,x_col]),data$CBre),
+    table(unlist(data[,x_col]),data$Term))
 
   }
   else{
-    table(unlist(data[,x_col]),unlist(data[,group_col]))
-    table(unlist(data[,x_col]),unlist(data[,group_col]),data$CBre)
-    table(unlist(data[,x_col]),unlist(data[,group_col]),data$Term)
+    output<-list(table(unlist(data[,x_col]),unlist(data[,group_col])),
+    table(unlist(data[,x_col]),unlist(data[,group_col]),data$CBre),
+    table(unlist(data[,x_col]),unlist(data[,group_col]),data$Term))
     
   }
 
   gridExtra::grid.arrange(freq_discrete_plot(data,x_col,group_col,caption=FALSE),
                           discrete_percent_plot(data,x_col,group_col,caption=TRUE))
   
-  
+  output
 }
 
 
@@ -762,7 +770,7 @@ NA_stats<-function(data,col){
 
 
 residual_compare<-function(cbre_old,cbre_new,term_old,term_new,col,x_axis_name,bins=20){
-  if(col %in% colnames(cbre_old$model)){
+  if(col %in% model_colnames(cbre_old) & col %in% model_colnames(term_old)){
     gridExtra::grid.arrange(residuals_cbre_plot(cbre_old,col,bins=bins)+
                               labs(x=x_axis_name),
                             residuals_cbre_plot(cbre_new,col,bins=bins)+
@@ -785,10 +793,37 @@ residual_compare<-function(cbre_old,cbre_new,term_old,term_new,col,x_axis_name,b
 
 
 deviance_stats<-function(model,model_name){
-  data.frame(model=model_name,
-                deviance=model$deviance,
-                null.deviance=model$null.deviance,
-                difference=model$null.deviance-model$deviance)
+  # if(class(model)=="glmerMod")
+  # { 
+  #   getME(model,"devcom")$dev
+  #   output<-data.frame(model=model_name,
+  #                      deviance=model$deviance,
+  #                      null.deviance=model$null.deviance,
+  #                      difference=model$null.deviance-model$deviance)
+  #   
+  # }
+  # else
+  # {
+    output<-data.frame(model=model_name,
+               deviance=model$deviance,
+               null.deviance=model$null.deviance,
+               difference=model$null.deviance-model$deviance)
+  # }
+  output
+  
+}
+
+model_colnames<-function(model){
+  if(class(model)=="glmerMod")
+  { 
+    output<-colnames(model@frame)
+    
+  }
+  else
+  {
+      output<-colnames(model$model)
+  }
+  output
 }
 
 summary_residual_compare<-function(cbre_old,cbre_new,term_old,term_new,bins=5){
@@ -805,9 +840,9 @@ summary_residual_compare<-function(cbre_old,cbre_new,term_old,term_new,bins=5){
 
   if(!is.na(bins)){
     #Plot residuals versus fitted
-    if("c_OffCri" %in% colnames(cbre_old$model)) bins<-bins+5
-    if("cl_Ceil" %in% colnames(cbre_old$model)) bins<-bins+10
-    if("cl_Days" %in% colnames(cbre_old$model)) bins<-bins+5
+    if("c_OffCri" %in% model_colnames(cbre_old)) bins<-bins+5
+    if("cl_Ceil" %in% model_colnames(cbre_old)) bins<-bins+10
+    if("cl_Days" %in% model_colnames(cbre_old)) bins<-bins+5
     gridExtra::grid.arrange(residuals_cbre_plot(cbre_old,bins=bins)+
                               labs(x="Estimated  Pr (Ceiling Breach)"),
                             residuals_cbre_plot(cbre_new,bins=bins)+
@@ -820,24 +855,44 @@ summary_residual_compare<-function(cbre_old,cbre_new,term_old,term_new,bins=5){
     
   }
   
-    if("c_OffCri" %in% colnames(cbre_new$model)){
-      residual_compare(cbre_old,cbre_new,term_old,term_new,"c_OffCri","Office Crisis %",10)
-    }
+    # if("c_OffCri" %in% model_colnames(cbre_new) & "c_OffCri" %in% model_colnames(term_new)){
+      # residual_compare(cbre_old,cbre_new,term_old,term_new,"c_OffCri","Office Crisis %",10)
+    # }
     
-    if("cl_Ceil" %in% colnames(cbre_new$model)){
+    if("cl_Ceil" %in% model_colnames(cbre_new)){
       residual_compare(cbre_old,cbre_new,term_old,term_new,"cl_Ceil","Centered Log(Ceiling)",20)
     }
     
-    if("cl_Days" %in% colnames(cbre_new$model)){
+    if("cl_Days" %in% model_colnames(cbre_new)){
       residual_compare(cbre_old,cbre_new,term_old,term_new,"cl_Days","Centered Log(Days)",10)
     }
   
-  output<-list(rbind(deviance_stats(cbre_old,"cbre_old"),
-        deviance_stats(cbre_new,"cbre_new"),
-        deviance_stats(term_old,"term_old"),
-        deviance_stats(term_new,"term_new")),
-  car::vif(cbre_new),car::vif(term_new)
-  )
+  if(class(cbre_new)=="glmerMod")
+  { 
+    # If the fit is singular or near-singular, there might be a higher chance of a false positive (we’re not necessarily screening out gradient and Hessian checking on singular directions properly); a higher chance that the model has actually misconverged (because the optimization problem is difficult on the boundary); and a reasonable argument that the random effects model should be simplified.
+    # https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html
+    # The definition of singularity is that some of the constrained parameters of the random effects theta parameters are on the boundary (equal to zero, or very very close to zero, say <10−6):
+    ct<-getME(cbre_new,"theta")
+    cl<-getME(cbre_new,"lower")
+    tt<-getME(term_new,"theta")
+    tl<-getME(term_new,"lower")
+    # min(tt[ll==0])
+  
+    # min(tt[ll==0])
+output<-list(car::vif(cbre_new),car::vif(term_new),
+             ct[cl==0],
+             tt[tl==0]
+             )
+  }
+  else{
+    output<-list(rbind(deviance_stats(cbre_old,"cbre_old"),
+                       deviance_stats(cbre_new,"cbre_new"),
+                       deviance_stats(term_old,"term_old"),
+                       deviance_stats(term_new,"term_new")),
+                 car::vif(cbre_new),car::vif(term_new)
+    )
+  }
+  
   
     
   output
