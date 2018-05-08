@@ -30,6 +30,11 @@ myapikey2 = "pEFRIdk6OwgiRzawvh34wU1MR7ERmw9Ro2PUuDVe"
 url = paste(base_url.search,"?","fields=_all_","&","qterms=expirationDate:[",expDate,"]","&api_key=",myapikey, sep = "")
 df.search = data.frame(matrix(NA, nrow = 0, ncol = 0))
 
+x = as.integer((GET("https://api.data.gov/sam/v4/registrations/8784448350000?return_values=full&api_key=Xkyoz6sJxZgqNyChQoeMydse5BNFmWP53IqBZA93"))[["headers"]][["x-ratelimit-remaining"]])
+
+y = as.integer((GET("https://api.data.gov/sam/v4/registrations/8784448350000?return_values=full&api_key=pEFRIdk6OwgiRzawvh34wU1MR7ERmw9Ro2PUuDVe"))[["headers"]][["x-ratelimit-remaining"]])
+
+
 for(i in 1:length(expDate)){
   if(x<=0){                          
     url = paste(base_url.search,"?","fields=_all_","&","qterms=expirationDate:[",expDate,"]","&api_key=",myapikey2, sep = "")
