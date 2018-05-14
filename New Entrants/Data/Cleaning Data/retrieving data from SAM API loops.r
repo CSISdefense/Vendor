@@ -36,7 +36,7 @@ y = as.integer((GET("https://api.data.gov/sam/v4/registrations/8784448350000?ret
 
 
 for(i in 1:length(expDate)){
-  if(x<=0){                          
+  if(x<=0){
     url = paste(base_url.search,"?","fields=_all_","&","qterms=expirationDate:[",expDate,"]","&api_key=",myapikey2, sep = "")
     y=y-1
     if(y == 0)
@@ -52,7 +52,7 @@ for(i in 1:length(expDate)){
   message("dataframe ", class(df), i)
   df.search=rbind.fill(df.search, df)
   message("appended frame", i)
-  
+
   Sys.sleep(2)
 }
 
@@ -84,7 +84,7 @@ error = list()
 
 
 for(i in 1:length(duns4_nums)){
-  if(f <= 0){                          
+  if(f <= 0){
     url = paste(base_url.get,"/",duns4_nums,"?","return_values=full", "&api_key=",myapikey2, sep = "")
     g = g-1
     if(g == 0)
@@ -95,7 +95,7 @@ for(i in 1:length(duns4_nums)){
   }
   get.data = try(fromJSON(url[i], flatten = TRUE))
   f=f-1
-  if(class(get.data) != "try-error"){ 
+  if(class(get.data) != "try-error"){
     dt = t(unlist(get.data$sam_data$registration))
     df = as.data.frame(dt, col.names=names(dt), row.names = NULL)
     get.df=rbind.fill(get.df, df)
@@ -116,7 +116,7 @@ url = paste(base_url.get,"/",redo_duns,"?","return_values=full", "&api_key=Xdud5
 ####apply each seperately and add to data frame
 for(i in 1:length(redo_nums)){
   get.data = try(fromJSON(url[i], flatten = TRUE))
-  if(class(get.data) != "try-error"){ 
+  if(class(get.data) != "try-error"){
     message("retrieving query", i)
     dt = t(unlist(get.data$sam_data$registration))
     message(class(dt), i)
@@ -139,7 +139,7 @@ finalerrors = duns4_nums[errornums]  ###Final list of errors
 get.unique = get.df[!duplicated(get.df[,c('duns','dunsPlus4')]),]
 write.csv(get.unique, "Get_2012_13.csv", asTable = TRUE, col.names=TRUE)
 
-
+redo_nums
 
 #####Loading the xlsx files sometimes caused problems in excel - if so, use write.csv
 #####For importing into SQL Server, us write.table to produce txt
