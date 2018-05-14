@@ -71,10 +71,6 @@ unique_FPDS_duns <- data.frame(table(FPDS_data$Dunsnumber)) ##gives a data frame
 
 FPDS_data <- FPDS_data[order(FPDS_data$FYear, FPDS_data$Dunsnumber), ]
 
-##drop entries in FY before 2000
-
-FPDS_data <- FPDS_data[!(FPDS_data$FYear<2000), ]
-
 
 ##count number of unique duns numbers
 unique_FPDS_duns_studyperiod <- data.frame(table(FPDS_data$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
@@ -643,6 +639,10 @@ str(FPDS_cleaned_unique$registrationYear)
 ##****Save File*********##
 ##********************************##
 
+##drop entries in FY before 2000
+
+FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear<2000), ]
+
 save(FPDS_cleaned_unique, file="FPDS_datapull_all_v2.Rda")
 
 #******************************************************
@@ -665,3 +665,4 @@ Duns_signdate%>% group_by(max_CYear)%>%
   dplyr::summarise(
     DunsCount=length(Dunsnumber)
   )
+

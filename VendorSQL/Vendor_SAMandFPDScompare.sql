@@ -46,3 +46,21 @@ order by CalendarFirstFiscalYear
 
 
   
+
+
+
+
+  select coalesce(sam.duns,fpds.dunsnumber) as DunsNumber
+  ,iif(fpds.dunsnumber is null,0,1) as IsInFPDS
+  ,iif(SAM.duns is null,0,1) as IsInSAM
+  ,SAM.registrationDate
+  ,FirstFPDSfiscalYear
+  FROM [dbo].[allSAM] SAM
+  full outer join (select dunsnumber 
+  ,min(fiscalyear) as FirstFPDSfiscalYear
+  FROM contractor.dunsnumbertoparentcontractorhistory dtpch
+  where dtpch.ispresent=1
+  group by dunsnumber  
+  ) as fpds
+  on sam.duns=fpds.dunsnumber
+
