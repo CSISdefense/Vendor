@@ -10,7 +10,7 @@ GO
 -- Create date: 2013-03-13
 -- Description:	Assign a parent ID to a dunsnumber for a range of years
 -- =============================================
-ALTER PROCEDURE [Location].[SP_OriginCountryHistoryBucketSubCustomer]
+ALTER PROCEDURE [Location].[SP_CountryHistoryBucketSubCustomer]
 	-- Add the parameters for the stored procedure here
 	@country nvarchar(255)
 
@@ -25,8 +25,11 @@ BEGIN
 			l.fiscal_year
 			,l.contractingcustomer
 			,l.contractingsubcustomer
+						
 			,l.fundingagency
 			,l.fundingsubagency
+			,l.productserviceorRndArea
+			,l.PlatformPortfolio
 			,l.isforeignownedandlocated
 			,l.isforeigngovernment
 			,l.isinternationalorganization
@@ -40,7 +43,7 @@ BEGIN
 			,l.placeofmanufactureText
 			,l.BAAcategory
 			,l.ProductOrServiceArea
-			,l.ProductOrServiceArea
+			,l.ProductServiceOrRnDArea
 			,psc.ProductOrServiceCodeText
 			,sum(l.numberOfActions) as SumOfnumberOfActions
 			,sum(l.obligatedAmount) as SumOfobligatedAmount
@@ -54,6 +57,8 @@ BEGIN
 			,l.contractingsubcustomer
 			,l.fundingagency
 			,l.fundingsubagency
+			,l.productserviceorRndArea
+			,l.PlatformPortfolio
 			,l.isforeignownedandlocated
 			,l.isforeigngovernment
 			,l.isinternationalorganization
@@ -67,7 +72,7 @@ BEGIN
 			,l.placeofmanufactureText
 			,l.BAAcategory
 			,l.ProductOrServiceArea
-			,l.ProductOrServiceArea
+			,l.ProductServiceOrRnDArea
 			,psc.ProductOrServiceCodeText
 		end
 	else
@@ -108,28 +113,44 @@ BEGIN
 			,l.contractingsubcustomer
 			,l.fundingagency
 			,l.fundingsubagency
+			,l.productserviceorRndArea
+			,l.PlatformPortfolio
 			,l.isforeignownedandlocated
 			,l.isforeigngovernment
-			,l.isinternationalorganization
+			,l.isinternationalorganization			
+			      ,fundedbyforeignentity
+			,l.PlaceCountryText
 			,l.PlaceIsInternational
 		,l.OriginIsInternational
+		,l.OriginCountryText
 		,l.VendorIsInternational
+		,l.VendorCountryText
 		,sum(l.numberOfActions) as SumOfnumberOfActions
 		,sum(l.obligatedAmount) as SumOfobligatedAmount
 	from location.OriginCountryHistoryBucketSubCustomer as l
-	where  @country in (l.VendorCountryText, l.OriginCountryText )
+		where  @country in (l.VendorCountryText, 
+			l.OriginCountryText ,
+			l.PlaceCountryText
+			)
 	group by 
 		l.fiscal_year
 	,l.contractingcustomer
 			,l.contractingsubcustomer
 			,l.fundingagency
 			,l.fundingsubagency
+						,l.productserviceorRndArea
+			,l.PlatformPortfolio
+			,fundedbyforeignentity
 		,l.isforeignownedandlocated
 		,l.isforeigngovernment
 		,l.isinternationalorganization
-		,l.PlaceIsInternational
+			      ,fundedbyforeignentity
+			,l.PlaceCountryText
+			,l.PlaceIsInternational
 		,l.OriginIsInternational
+		,l.OriginCountryText
 		,l.VendorIsInternational
+		,l.VendorCountryText
 	end
 		
 
