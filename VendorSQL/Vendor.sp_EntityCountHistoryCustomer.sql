@@ -42,7 +42,6 @@ AS
 		  ,FY_presaftabs
 	,FY_absaftpres
 	,minFY_FPDS
-	,IsPresent
 	  FROM [Vendor].EntitySizeHistoryBucketPlatformSubCustomer ent
 	  left outer join Vendor.EntitySizeCode esc
 	  on esc.EntitySizeCode=ent.entitysizecode
@@ -69,7 +68,6 @@ AS
 		  ,FY_presaftabs
 	,FY_absaftpres
 	,minFY_FPDS
-	,ISPresent
 		--End of your query
 		END
 	ELSE --Begin sub path where only services but all Customers will be returned
@@ -99,7 +97,6 @@ AS
 		  ,FY_presaftabs
 		,FY_absaftpres
 		,minFY_FPDS
-		,ISPresent
 	  FROM [Vendor].EntitySizeHistoryBucketPlatformSubCustomer ent
 	  left outer join Vendor.EntitySizeCode esc
 	  on esc.EntitySizeCode=ent.entitysizecode
@@ -123,7 +120,6 @@ AS
 		  ,FY_presaftabs
 	,FY_absaftpres
 	,minFY_FPDS
-	,ISPresent
 		--End of your query
 		END
 
