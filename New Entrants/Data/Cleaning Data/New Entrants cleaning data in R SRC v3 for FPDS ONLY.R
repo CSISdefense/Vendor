@@ -635,6 +635,7 @@ str(FPDS_cleaned_unique$registrationYear)
 # table(SAM_and_FPDS_uniqueDuns$top_smallbiz_bin)
 
 
+
 ##********************************##
 ##****Save File*********##
 ##********************************##
@@ -643,7 +644,7 @@ str(FPDS_cleaned_unique$registrationYear)
 
 FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear<2000), ]
 
-save(FPDS_cleaned_unique, file="FPDS_datapull_all_v2.Rda")
+save(FPDS_cleaned_unique, file="FPDS_datapull_all_v3.Rda")
 
 #******************************************************
 

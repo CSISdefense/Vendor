@@ -90,6 +90,12 @@ table(FPDS_cleaned_unique$top_smallbiz_bin)
 FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear<2001), ]
 FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear>2016), ]
 
+length(unique(FPDS_cleaned_unique$Dunsnumber)) == nrow(FPDS_cleaned_unique)
+
+##find out which are duplicates
+n_occur <- data.frame(table(FPDS_cleaned_unique$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+n_occur[n_occur$Freq > 1, ]
 
 totyear_count <- FPDS_cleaned_unique %>% 
   filter(top_smallbiz_bin == 1 | top_smallbiz_bin == 0) %>% 
@@ -189,5 +195,59 @@ ggplot(SAM_bargraphCount, aes(x = registrationYear, y = regpersize, label = regp
   geom_text_repel(data = subset(SAM_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
                   angle = 45) +
   geom_text(data = subset(SAM_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
+
+#******************************************************************************************************
+
+#*****************************************************************#
+####Calculate the survival and graduation rates using FPDS Data####
+#*****************************************************************#
+
+#********************#
+####Survival Rates####
+#********************#
+
+####2001####
+
+#subset the 2001 data
+data_2001 <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear!="2001"), ]
+
+##create variable describing whether a firm survived 3 years
+
+data_2001 %>%
+  dplyr::mutate(survive_3yr = ifelse(exitYear < 2003, "1", "0"))
+           
+           
+           
+
+
+
+##create a variable describing whether a firm survived 5 years
+
+##create a variable describing whether a firm survived 10 years
+
+
+
+####2002####
+
+
+
+
+####2003####
+
+
+
+####2004####
+
+
+
+####2005####
+
+
+####2006####
+
+
+
+
+
 
 
