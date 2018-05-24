@@ -164,6 +164,8 @@ names(duns_and_NAICS)[names(duns_and_NAICS) == "FPDS_data.NAICS2"] <- "topNAICS"
 
 #step 4: left join between FPDS_data and duns_and_NAICS
 
+FPDS_data$TransactionCount <- FPDS_data$IsSAMduns <- FPDS_data$OriginIsInternational <- NULL
+
 FPDS_data_w_topNAICS <- join(FPDS_data, duns_and_NAICS, by = "Dunsnumber", type = "left", match = "all")
 
 ##check number of NAs again
@@ -282,7 +284,8 @@ str(FPDS_data_w_topNAICS_topSB$biz_size)
 
 table(FPDS_data_w_topNAICS_topSB$biz_size)
 
-
+##drop old top small biz var
+FPDS_data_w_topNAICS_topSB$top_small_biz <- NULL
 
 
 ####calculate whether a vendor graduated during the period####
@@ -342,6 +345,9 @@ str(FPDS_data_w_topNAICS_topSB_minsigneddate$entryyear) ##it's a character
 FPDS_data_w_topNAICS_topSB_minsigneddate$entryyear<-as.numeric(as.character(FPDS_data_w_topNAICS_topSB_minsigneddate$entryyear))
 
 str(FPDS_data_w_topNAICS_topSB_minsigneddate$entryyear)
+
+##drop unnecessary vars
+FPDS_data_w_topNAICS_topSB_minsigneddate$obsv_period_MINsigndate <- NULL
 
 #******
 ##Calculate final year
@@ -406,6 +412,7 @@ FPDS_data_w_topNAICS_topSB_minsigneddate_maxsigndate$finalyear<-as.numeric(as.ch
 
 str(FPDS_data_w_topNAICS_topSB_minsigneddate_maxsigndate$finalyear)
 
+FPDS_data_w_topNAICS_topSB_minsigneddate_maxsigndate$obsv_period_maxsigndate <- NULL
 
 ##now make graduate
 ##step 1: create variable that says whether or not a business was small in its first year of existence
@@ -437,7 +444,7 @@ base_yr_small_data <- base_yr_small_data %>% group_by(Dunsnumber) %>%
 base_yr_small_data$grad_unique <- NULL
 
 #Join
-FPDS_data_w_topNAICS_tobSB <- join(FPDS_data_w_topNAICS_topSB, base_yr_small_data, by = "Dunsnumber", type = "left", match = "all")
+FPDS_data_w_topNAICS_topSB <- join(FPDS_data_w_topNAICS_topSB, base_yr_small_data, by = "Dunsnumber", type = "left", match = "all")
 
 
 ##*****************************************##
@@ -825,46 +832,46 @@ save(FPDS_cleaned_unique, file="FPDS_datapull_all_v3.Rda")
 
 #******************************************************
 
-##make Small business numeric##
-
-str(FPDS_cleaned_unique$top_small_biz)
-
-table(FPDS_cleaned_unique$top_small_biz)
-
-FPDS_cleaned_unique <- FPDS_cleaned_unique[complete.cases(FPDS_cleaned_unique$top_small_biz), ]
-FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$top_small_biz==":"), ]
-
-table(FPDS_cleaned_unique$top_small_biz)
-
-##make top biz_size binary
-FPDS_cleaned_unique$top_smallbiz_bin <- revalue(FPDS_cleaned_unique$top_small_biz, c("S"="1", "O"="0"))
-
-str(FPDS_cleaned_unique$top_smallbiz_bin)
-
-table(FPDS_cleaned_unique$top_smallbiz_bin)
-
-
-##change biz_size to binary
-str(FPDS_cleaned_unique$biz_size)
-
-table(FPDS_cleaned_unique$biz_size)
-
-FPDS_cleaned_unique <- FPDS_cleaned_unique[complete.cases(FPDS_cleaned_unique$biz_size), ]
-FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$biz_size==":"), ]
-
-table(FPDS_cleaned_unique$biz_size)
-
-##make biz_size binary
-FPDS_cleaned_unique$biz_size <- revalue(FPDS_cleaned_unique$biz_size, c("S"="1", "O"="0"))
-
-str(FPDS_cleaned_unique$biz_size)
-
-table(FPDS_cleaned_unique$biz_size)
-
-####save final####
-save(FPDS_cleaned_unique, file="FPDS_datapull_all_v3.Rda")
-
-#***************************************************************************#
+# ##make Small business numeric##
+# 
+# str(FPDS_cleaned_unique$top_small_biz)
+# 
+# table(FPDS_cleaned_unique$top_small_biz)
+# 
+# FPDS_cleaned_unique <- FPDS_cleaned_unique[complete.cases(FPDS_cleaned_unique$top_small_biz), ]
+# FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$top_small_biz==":"), ]
+# 
+# table(FPDS_cleaned_unique$top_small_biz)
+# 
+# ##make top biz_size binary
+# FPDS_cleaned_unique$top_smallbiz_bin <- revalue(FPDS_cleaned_unique$top_small_biz, c("S"="1", "O"="0"))
+# 
+# str(FPDS_cleaned_unique$top_smallbiz_bin)
+# 
+# table(FPDS_cleaned_unique$top_smallbiz_bin)
+# 
+# 
+# ##change biz_size to binary
+# str(FPDS_cleaned_unique$biz_size)
+# 
+# table(FPDS_cleaned_unique$biz_size)
+# 
+# FPDS_cleaned_unique <- FPDS_cleaned_unique[complete.cases(FPDS_cleaned_unique$biz_size), ]
+# FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$biz_size==":"), ]
+# 
+# table(FPDS_cleaned_unique$biz_size)
+# 
+# ##make biz_size binary
+# FPDS_cleaned_unique$biz_size <- revalue(FPDS_cleaned_unique$biz_size, c("S"="1", "O"="0"))
+# 
+# str(FPDS_cleaned_unique$biz_size)
+# 
+# table(FPDS_cleaned_unique$biz_size)
+# 
+# ####save final####
+# save(FPDS_cleaned_unique, file="FPDS_datapull_all_v3.Rda")
+# 
+# #***************************************************************************#
 registrationyear_count <- table(FPDS_cleaned_unique$registrationYear)
 
 registrationyear_count
