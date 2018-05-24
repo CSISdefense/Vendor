@@ -407,7 +407,7 @@ FPDS_data_w_topNAICS_topSB_minsigneddate_maxsigndate$finalyear<-as.numeric(as.ch
 str(FPDS_data_w_topNAICS_topSB_minsigneddate_maxsigndate$finalyear)
 
 
-
+##now make graduate
 ##step 1: create variable that says whether or not a business was small in its first year of existence
 ##finding the one year where fy=entryyear & biz_size==1
 base_yr_small_data <- FPDS_data_w_topNAICS_topSB_minsigneddate_maxsigndate %>% group_by(Dunsnumber) %>%
@@ -419,12 +419,29 @@ base_yr_small_data <- base_yr_small_data %>% group_by(Dunsnumber) %>%
                 finalyr_lgdollars = sum(ifelse(biz_size==0 & FYear==finalyear, obligatedAmount, NA), na.rm=TRUE))
 
 base_yr_small_data <- base_yr_small_data %>% group_by(Dunsnumber) %>%
-  dplyr::mutate(graduated = ifelse(abs(finalyr_lgdollars)>(abs(finalyr_smalldollars) & baseyrsmall==0), 1, 0))
+  dplyr::mutate(grad = ifelse(abs(finalyr_lgdollars)>(abs(finalyr_smalldollars) & baseyrsmall==0), 1, 0))
 
+##collapse on graduated so that duns is a unique identifier
+base_yr_small_data <- base_yr_small_data %>% group_by(Dunsnumber) %>%
+  dplyr::summarize(grad_unique = sum(grad, na.rm=TRUE))
+
+length(unique(base_yr_small_data$Dunsnumber)) == nrow(base_yr_small_data)
+
+base_yr_small_data <- base_yr_small_data %>% group_by(Dunsnumber) %>%
+  dplyr::mutate(graduated = ifelse(grad_unique==0, 0, 1))
+
+
+##MERGE
+#drop unnecessary vars
+
+base_yr_small_data$grad_unique <- NULL
+
+#Join
+FPDS_data_w_topNAICS_tobSB <- join(FPDS_data_w_topNAICS_topSB, base_yr_small_data, by = "Dunsnumber", type = "left", match = "all")
 
 
 ##*****************************************##
-############create the total obligated amount#################
+############create the total obligated amount TIME PERIOD#################
 #associated with each DUNS number over the entire time period
 #*******************************************#
 
@@ -470,7 +487,7 @@ FPDS_data_w_topNAICS_topSB_totalobl <- join(FPDS_data_w_topNAICS_topSB, DO_newva
 
 
 ##*****************************************##
-############create the total obligated amount#################
+############create the total obligated amount YR#################
 #associated with each DUNS number in each year
 #*******************************************#
 
@@ -808,7 +825,46 @@ save(FPDS_cleaned_unique, file="FPDS_datapull_all_v3.Rda")
 
 #******************************************************
 
+##make Small business numeric##
 
+str(FPDS_cleaned_unique$top_small_biz)
+
+table(FPDS_cleaned_unique$top_small_biz)
+
+FPDS_cleaned_unique <- FPDS_cleaned_unique[complete.cases(FPDS_cleaned_unique$top_small_biz), ]
+FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$top_small_biz==":"), ]
+
+table(FPDS_cleaned_unique$top_small_biz)
+
+##make top biz_size binary
+FPDS_cleaned_unique$top_smallbiz_bin <- revalue(FPDS_cleaned_unique$top_small_biz, c("S"="1", "O"="0"))
+
+str(FPDS_cleaned_unique$top_smallbiz_bin)
+
+table(FPDS_cleaned_unique$top_smallbiz_bin)
+
+
+##change biz_size to binary
+str(FPDS_cleaned_unique$biz_size)
+
+table(FPDS_cleaned_unique$biz_size)
+
+FPDS_cleaned_unique <- FPDS_cleaned_unique[complete.cases(FPDS_cleaned_unique$biz_size), ]
+FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$biz_size==":"), ]
+
+table(FPDS_cleaned_unique$biz_size)
+
+##make biz_size binary
+FPDS_cleaned_unique$biz_size <- revalue(FPDS_cleaned_unique$biz_size, c("S"="1", "O"="0"))
+
+str(FPDS_cleaned_unique$biz_size)
+
+table(FPDS_cleaned_unique$biz_size)
+
+####save final####
+save(FPDS_cleaned_unique, file="FPDS_datapull_all_v3.Rda")
+
+#***************************************************************************#
 registrationyear_count <- table(FPDS_cleaned_unique$registrationYear)
 
 registrationyear_count
