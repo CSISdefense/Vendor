@@ -10,14 +10,6 @@ GO
 
 
 
-
-
-
-
-
-
-
-
 ALTER VIEW [Location].[VendorHistoryBucketSubCustomerDiscretization]
 AS
 

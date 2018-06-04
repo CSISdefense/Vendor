@@ -36,7 +36,7 @@ select interior.EntityID
 	, interior.Simple
 	, interior.IsSoCal
 	, interior.IsInSam
-	--, interior.isPresent
+	, interior.isPresent
 	, interior.SAMregyear
 	, interior.duns
 	--, interior.nextfiscal_year
@@ -45,7 +45,6 @@ select interior.EntityID
 	,interior.FY_presaftabs
 	,interior.FY_absaftpres
 	,interior.minFY_FPDS
-	, interior.ISPresent
 	--Assign EntitySize and related states via Unique_Transaction_ID/StandardizedVendorName
 from (select CASE
 		WHEN Parent.ParentID is not null and isnull(Parent.UnknownCompany,0)=0 
@@ -64,6 +63,120 @@ from (select CASE
 		,c.dunsnumber
 		,u.StandardizedVendorName
 		
+	--, CASE
+	--	WHEN Parent.ParentID is not null and isnull(Parent.UnknownCompany,0)=0 
+	--	THEN Parent.ParentID 
+	--	WHEN c.parentdunsnumber is not null and isnull(ParentSquared.UnknownCompany,0)=0 
+	--	THEN ParentDuns.Dunsnumber
+	--	WHEN DtPCH.parentdunsnumber is not null and isnull(PARENTsquaredImputed.UnknownCompany,0)=0 
+	--	THEN DtPCH.parentdunsnumber
+	--	WHEN c.dunsnumber is not null and isnull(Parent.UnknownCompany,0)=0 
+	--	THEN DUNS.Dunsnumber
+	--	ELSE coalesce(vn.standardizedVendorName,Duns.Dunsnumber)
+	--	 end  as Entity
+	-- 	,CASE
+	--	WHEN Parent.ParentID is not null and isnull(Parent.UnknownCompany,0)=0 
+	--	THEN pidh.EntitySizeCode 
+	--	WHEN c.parentdunsnumber is not null and isnull(ParentSquared.UnknownCompany,0)=0 
+	--	THEN ParentDtPCH.EntitySizeCode
+	--	WHEN DtPCH.parentdunsnumber is not null and isnull(PARENTsquaredImputed.UnknownCompany,0)=0 
+	--	THEN ParentDtPCHimputed.EntitySizeCode
+	--	WHEN c.dunsnumber is not null and isnull(Parent.UnknownCompany,0)=0 
+	--	THEN DtPCH.EntitySizeCode
+	--	ELSE coalesce(u.EntitySizeCode,
+	--		DtPCH.EntitySizeCode)
+	--	 end  as EntitySizeCode
+	--, CASE
+	--	WHEN Parent.ParentID is not null and isnull(Parent.UnknownCompany,0)=0 
+	--	THEN 'PID'
+	--	WHEN c.parentdunsnumber is not null and isnull(ParentSquared.UnknownCompany,0)=0 and ParentDtPCH.ChildCount=1
+	--	THEN 'PDuns-1'
+	--	WHEN c.parentdunsnumber is not null and isnull(ParentSquared.UnknownCompany,0)=0 and ParentDtPCH.ChildCount=2
+	--	THEN 'PDuns-2'
+	--	WHEN c.parentdunsnumber is not null and isnull(ParentSquared.UnknownCompany,0)=0 and ParentDtPCH.ChildCount>=3
+	--	THEN 'PDuns-3+'
+	--	--Next check the imputed parentdunsnumber
+	--	WHEN ParentDtPCHimputed.parentdunsnumber is not null and isnull(ParentSquaredImputed.UnknownCompany,0)=0 and ParentDtPCHimputed.ChildCount=1
+	--	THEN 'PDuns-1'
+	--	WHEN ParentDtPCHimputed.parentdunsnumber is not null and isnull(ParentSquaredImputed.UnknownCompany,0)=0 and ParentDtPCHimputed.ChildCount=2
+	--	THEN 'PDuns-2'
+	--	WHEN ParentDtPCHimputed.parentdunsnumber is not null and isnull(ParentSquaredImputed.UnknownCompany,0)=0 and ParentDtPCHimputed.ChildCount>=3
+	--	THEN 'PDuns-3+'
+	--	--Even if using Dunsnumber here other entries may think of this as a parent.
+	--	WHEN c.dunsnumber is not null and isnull(Parent.UnknownCompany,0)=0 and DtPCH.ChildCount=1
+	--	THEN 'PDuns-1'
+	--	WHEN c.dunsnumber is not null and isnull(Parent.UnknownCompany,0)=0 and DtPCH.ChildCount=2
+	--	THEN 'PDuns-2'
+	--	WHEN c.dunsnumber is not null and isnull(Parent.UnknownCompany,0)=0 and DtPCH.ChildCount>=3
+	--	THEN 'PDuns-3+'
+	--	WHEN c.dunsnumber is not null and isnull(Parent.UnknownCompany,0)=0 
+	--	THEN 'Duns'
+	--	WHEN vn.EntityID is not null
+	--	THEN 'Name'
+	--	ELSE 'Duns'
+	--	 END as EntityCategory
+	--,CASE
+	--	WHEN Parent.ParentID is not null and isnull(Parent.UnknownCompany,0)=0 
+	--	THEN pidh.IsEntityAbove2016constantOneMillionThreshold 
+	--	WHEN c.parentdunsnumber is not null and isnull(ParentSquared.UnknownCompany,0)=0 
+	--	THEN ParentDtPCH.IsEntityAbove2016constantOneMillionThreshold
+	--	WHEN DtPCH.parentdunsnumber is not null and isnull(PARENTsquaredImputed.UnknownCompany,0)=0 
+	--	THEN ParentDtPCHimputed.IsEntityAbove2016constantOneMillionThreshold
+	--	WHEN c.dunsnumber is not null and isnull(Parent.UnknownCompany,0)=0 
+	--	THEN DtPCH.IsEntityAbove2016constantOneMillionThreshold
+	--	ELSE coalesce(u.IsEntityAbove2016constantOneMillionThreshold,
+	--		DtPCH.IsEntityAbove2016constantOneMillionThreshold)
+	--	 end  as IsEntityAbove2016constantOneMillionThreshold
+	--,CASE
+	--	WHEN Parent.ParentID is not null and isnull(Parent.UnknownCompany,0)=0 
+	--	THEN pidh.IsEntityAbove2016constantReportingThreshold 
+	--	WHEN c.parentdunsnumber is not null and isnull(ParentSquared.UnknownCompany,0)=0 
+	--	THEN ParentDtPCH.IsEntityAbove2016constantReportingThreshold
+	--	WHEN DtPCH.parentdunsnumber is not null and isnull(PARENTsquaredImputed.UnknownCompany,0)=0 
+	--	THEN ParentDtPCHimputed.IsEntityAbove2016constantReportingThreshold
+	--	WHEN c.dunsnumber is not null and isnull(Parent.UnknownCompany,0)=0 
+	--	THEN DtPCH.IsEntityAbove2016constantReportingThreshold
+	--	ELSE coalesce(u.IsEntityAbove2016constantReportingThreshold,
+	--		DtPCH.IsEntityAbove2016constantReportingThreshold)
+	--	 end  as IsEntityAbove2016constantReportingThreshold
+	--,CASE
+	--	WHEN Parent.ParentID is not null and isnull(Parent.UnknownCompany,0)=0 
+	--	THEN pidh.IsEntityAbove1990constantReportingThreshold 
+	--	WHEN c.parentdunsnumber is not null and isnull(ParentSquared.UnknownCompany,0)=0 
+	--	THEN ParentDtPCH.IsEntityAbove1990constantReportingThreshold
+	--	WHEN DtPCH.parentdunsnumber is not null and isnull(PARENTsquaredImputed.UnknownCompany,0)=0 
+	--	THEN ParentDtPCHimputed.IsEntityAbove1990constantReportingThreshold
+	--	WHEN c.dunsnumber is not null and isnull(Parent.UnknownCompany,0)=0 
+	--	THEN DtPCH.IsEntityAbove1990constantReportingThreshold
+	--	ELSE coalesce(u.IsEntityAbove1990constantReportingThreshold,
+	--		DtPCH.IsEntityAbove1990constantReportingThreshold)
+	--	 end  as IsEntityAbove1990constantReportingThreshold
+	-- ,CASE
+	--	WHEN Parent.ParentID is not null and isnull(Parent.UnknownCompany,0)=0 
+	--	THEN pidh.AnyEntityUSplaceOfPerformance 
+	--	WHEN c.parentdunsnumber is not null and isnull(ParentSquared.UnknownCompany,0)=0 
+	--	THEN ParentDtPCH.AnyEntityUSplaceOfPerformance
+	--	WHEN DtPCH.parentdunsnumber is not null and isnull(PARENTsquaredImputed.UnknownCompany,0)=0 
+	--	THEN ParentDtPCHimputed.AnyEntityUSplaceOfPerformance
+	--	WHEN c.dunsnumber is not null and isnull(Parent.UnknownCompany,0)=0 
+	--	THEN DtPCH.AnyEntityUSplaceOfPerformance
+	--	WHEN DtPCH.parentdunsnumber is not null and isnull(PARENTsquaredImputed.UnknownCompany,0)=0 
+	--	THEN ParentDtPCHimputed.AnyEntityUSplaceOfPerformance
+	--	ELSE coalesce(u.AnyEntityUSplaceOfPerformance,
+	--		DtPCH.AnyEntityUSplaceOfPerformance)
+	--	 end  as AnyEntityUSplaceOfPerformance
+	--,CASE
+	--	WHEN Parent.ParentID is not null and isnull(Parent.UnknownCompany,0)=0 
+	--	THEN pidh.AnyEntityForeignPlaceOfPerformance 
+	--	WHEN c.parentdunsnumber is not null and isnull(ParentSquared.UnknownCompany,0)=0 
+	--	THEN ParentDtPCH.AnyEntityForeignPlaceOfPerformance
+	--	WHEN DtPCH.parentdunsnumber is not null and isnull(PARENTsquaredImputed.UnknownCompany,0)=0 
+	--	THEN ParentDtPCHimputed.AnyEntityForeignPlaceOfPerformance
+	--	WHEN c.dunsnumber is not null and isnull(Parent.UnknownCompany,0)=0 
+	--	THEN DtPCH.AnyEntityForeignPlaceOfPerformance
+	--	ELSE coalesce(u.AnyEntityForeignPlaceOfPerformance,
+	--		DtPCH.AnyEntityForeignPlaceOfPerformance)
+	--	 end  as AnyEntityForeignPlaceOfPerformance
 	,coalesce(parent.ParentID,c.dunsnumber) as AllContractor
 	--,interior.fiscal_year
 	,c.ObligatedAmount
@@ -96,7 +209,6 @@ from (select CASE
 	,presaftabs.fiscalyear as FY_presaftabs
 	,absaftpres.fiscalyear as FY_absaftpres
 	,minfy.minFY_FPDS
-	,present.IsPresent
 	from Contract.FPDS as C
 		LEFT OUTER JOIN Contractor.DunsnumbertoParentContractorHistory as DtPCH
 			ON DtPCH.FiscalYear=C.fiscal_year AND DtPCH.DUNSNUMBER=C.DUNSNumber
@@ -124,14 +236,10 @@ from (select CASE
 			AND  absaftpres.fiscalyear = (c.fiscal_year + 1))  --Not sure about order of operations, so adding perens
 		LEFT JOIN Contractor.DunsnumberToParentContractorHistory as presaftabs
 			ON (presaftabs.dunsnumber = c.dunsnumber 
-			AND  presaftabs.fiscalyear = (c.fiscal_year - 1)) --Not sure about order of operations, so adding perens
+			AND  presaftabs.fiscalyear = c.fiscal_year - 1)
 		INNER JOIN (select dunsnumber, min(fiscal_year) as minFY_FPDS
 			FROM Contract.FPDS 
-			GROUP BY dunsnumber) as minfy ON c.dunsnumber = minfy.dunsnumber  -- query executed quicker for inner join vs left join
-		LEFT JOIN Contractor.DunsnumberToParentContractorHistory as present
-			ON (present.dunsnumber = c.dunsnumber 
-			AND present.fiscalyear = c.fiscal_year)
-
+			GROUP BY dunsnumber) as minfy ON c.dunsnumber = minfy.dunsnumber
 		
 		
 		left outer join contract.CSIStransactionID ctid

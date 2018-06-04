@@ -262,7 +262,7 @@ residuals_cbre_plot<-function(model,x_col="fitted",bins=40){
 freq_discrete_term_plot<-function(data,x_col,
                                   group_col=NA,
                                   na_remove=FALSE,
-                                  caption=TRUE){
+                                  caption=TRUE,rotate_text=FALSE){
   
   if(na_remove==TRUE){
     data<-data[!is.na(data[,group_col]),]
@@ -282,7 +282,12 @@ freq_discrete_term_plot<-function(data,x_col,
   if(caption==TRUE){
     plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
   }
-  plot+labs(title="Frequency by Termination")+
+
+  if(rotate_text==TRUE){
+    plot<-plot+theme(axis.text.x=element_text(angle=90,hjust=1))
+  }
+  
+    plot+labs(title="Frequency by Termination")+
     geom_histogram(stat="count") +
     scale_y_continuous(labels = scales::comma)
 }
@@ -291,7 +296,8 @@ freq_discrete_term_plot<-function(data,x_col,
 freq_discrete_cbre_plot<-function(data,x_col,
                                   group_col=NA,
                                   na_remove=FALSE,
-                                  caption=TRUE){
+                                  caption=TRUE,
+                                  rotate_text=FALSE){
   
   if(na_remove==TRUE){
     data<-data[!is.na(data[,group_col]),]
@@ -313,7 +319,11 @@ freq_discrete_cbre_plot<-function(data,x_col,
   if(caption==TRUE){
     plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
   }
-  plot+labs(title="Frequency by Ceiling Breach")+
+  if(rotate_text==TRUE){
+    plot<-plot+theme(axis.text.x=element_text(angle=90,hjust=1))
+  }
+  
+    plot+labs(title="Frequency by Ceiling Breach")+
   geom_histogram(stat="count") +
     scale_y_continuous(labels = scales::comma) 
     
@@ -323,7 +333,7 @@ freq_discrete_cbre_plot<-function(data,x_col,
 freq_discrete_plot<-function(data,x_col,
                                   group_col=NA,
                                   na_remove=FALSE,
-                             caption=TRUE){
+                             caption=TRUE,rotate_text=FALSE){
   
   if(na_remove==TRUE){
     data<-data[!is.na(data[,group_col]),]
@@ -341,6 +351,9 @@ freq_discrete_plot<-function(data,x_col,
   }
   if(caption==TRUE){
     plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
+  }
+  if(rotate_text==TRUE){
+    plot<-plot+theme(axis.text.x=element_text(angle=90,hjust=1))
   }
   plot+labs(title="Frequency")+
      geom_histogram(stat="count") +
@@ -398,7 +411,7 @@ summary_double_continuous<-function(data,x_col,y_col,bins=20){
   
 }
 
-summary_discrete_plot<-function(data,x_col,group_col=NA){
+summary_discrete_plot<-function(data,x_col,group_col=NA,rotate_text=FALSE){
   if(is.na(group_col)){
     output<-list(table(unlist(data[,x_col])),
     table(unlist(data[,x_col]),data$CBre),
@@ -412,8 +425,8 @@ summary_discrete_plot<-function(data,x_col,group_col=NA){
     
   }
 
-  gridExtra::grid.arrange(freq_discrete_plot(data,x_col,group_col,caption=FALSE),
-                          discrete_percent_plot(data,x_col,group_col,caption=TRUE))
+  gridExtra::grid.arrange(freq_discrete_plot(data,x_col,group_col,caption=FALSE,rotate_text=rotate_text),
+                          discrete_percent_plot(data,x_col,group_col,caption=TRUE,rotate_text=rotate_text))
   
   output
 }
@@ -457,6 +470,7 @@ freq_continuous_plot<-function(data,x_col,group_col=NA,bins=20,
   if(caption==TRUE){
     plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
   }
+  
   plot+labs(title="Frequency")+
     scale_y_continuous(labels = scales::comma) + 
     geom_histogram(bins=bins) 
@@ -669,7 +683,7 @@ discrete_percent_cbre_plot<-function(data,x_col,group_col=NA,caption=TRUE){
   
 }
 
-discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE){
+discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,rotate_text=FALSE){
   data<-data[!is.na(data[,x_col]),]
   if(is.na(group_col)){
     data<-data %>% group_by_(x_col)
@@ -699,6 +713,10 @@ discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE){
   if(caption==TRUE){
     plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
   }
+  if(rotate_text==TRUE){
+    plot<-plot+theme(axis.text.x=element_text(angle=90,hjust=1))
+  }
+  
   plot+geom_point()
 }
 
@@ -866,8 +884,8 @@ summary_residual_compare<-function(cbre_old,cbre_new,term_old,term_new,bins=5){
     if("cl_Days" %in% model_colnames(cbre_new)){
       residual_compare(cbre_old,cbre_new,term_old,term_new,"cl_Days","Centered Log(Days)",10)
     }
-  
-  if(class(cbre_new)=="glmerMod")
+  output<-NULL
+  if(class(cbre_new)=="glmerMod" & class(term_new)=="glmerMod") 
   { 
     # If the fit is singular or near-singular, there might be a higher chance of a false positive (we’re not necessarily screening out gradient and Hessian checking on singular directions properly); a higher chance that the model has actually misconverged (because the optimization problem is difficult on the boundary); and a reasonable argument that the random effects model should be simplified.
     # https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html
@@ -883,8 +901,9 @@ output<-list(car::vif(cbre_new),car::vif(term_new),
              ct[cl==0],
              tt[tl==0]
              )
-  }
-  else{
+  } 
+  else if ((class(cbre_new)!="glmerMod" & class(term_new)!="glmerMod") &
+           (class(cbre_old)!="glmerMod" & class(term_old)!="glmerMod")){
     output<-list(rbind(deviance_stats(cbre_old,"cbre_old"),
                        deviance_stats(cbre_new,"cbre_new"),
                        deviance_stats(term_old,"term_old"),
@@ -892,9 +911,7 @@ output<-list(car::vif(cbre_new),car::vif(term_new),
                  car::vif(cbre_new),car::vif(term_new)
     )
   }
-  
-  
-    
+
   output
    
 }
