@@ -855,7 +855,7 @@ summary_residual_compare<-function(cbre_old,cbre_new,term_old,term_new,bins=5){
                           ncol=2)
   
   #This only works once you have some continuous variables o
-
+  
   if(!is.na(bins)){
     #Plot residuals versus fitted
     if("c_OffCri" %in% model_colnames(cbre_old)) bins<-bins+5
@@ -873,17 +873,17 @@ summary_residual_compare<-function(cbre_old,cbre_new,term_old,term_new,bins=5){
     
   }
   
-    # if("c_OffCri" %in% model_colnames(cbre_new) & "c_OffCri" %in% model_colnames(term_new)){
-      # residual_compare(cbre_old,cbre_new,term_old,term_new,"c_OffCri","Office Crisis %",10)
-    # }
-    
-    if("cl_Ceil" %in% model_colnames(cbre_new)){
-      residual_compare(cbre_old,cbre_new,term_old,term_new,"cl_Ceil","Centered Log(Ceiling)",20)
-    }
-    
-    if("cl_Days" %in% model_colnames(cbre_new)){
-      residual_compare(cbre_old,cbre_new,term_old,term_new,"cl_Days","Centered Log(Days)",10)
-    }
+  # if("c_OffCri" %in% model_colnames(cbre_new) & "c_OffCri" %in% model_colnames(term_new)){
+  # residual_compare(cbre_old,cbre_new,term_old,term_new,"c_OffCri","Office Crisis %",10)
+  # }
+  
+  if("cl_Ceil" %in% model_colnames(cbre_new)){
+    residual_compare(cbre_old,cbre_new,term_old,term_new,"cl_Ceil","Centered Log(Ceiling)",20)
+  }
+  
+  if("cl_Days" %in% model_colnames(cbre_new)){
+    residual_compare(cbre_old,cbre_new,term_old,term_new,"cl_Days","Centered Log(Days)",10)
+  }
   output<-NULL
   if(class(cbre_new)=="glmerMod" & class(term_new)=="glmerMod") 
   { 
@@ -895,12 +895,15 @@ summary_residual_compare<-function(cbre_old,cbre_new,term_old,term_new,bins=5){
     tt<-getME(term_new,"theta")
     tl<-getME(term_new,"lower")
     # min(tt[ll==0])
-  
+    
     # min(tt[ll==0])
-output<-list(car::vif(cbre_new),car::vif(term_new),
-             ct[cl==0],
-             tt[tl==0]
-             )
+    output<-list(car::vif(cbre_new),car::vif(term_new),
+                 ct[cl==0],
+                 tt[tl==0],
+                 cbre_new@optinfo$conv$lme4$messages,
+                 term_new@optinfo$conv$lme4$messages
+                 
+    )
   } 
   else if ((class(cbre_new)!="glmerMod" & class(term_new)!="glmerMod") &
            (class(cbre_old)!="glmerMod" & class(term_old)!="glmerMod")){
@@ -911,7 +914,36 @@ output<-list(car::vif(cbre_new),car::vif(term_new),
                  car::vif(cbre_new),car::vif(term_new)
     )
   }
-
+  
   output
-   
+  
+}
+
+
+glmer_examine<-function(model){
+  output<-car::vif(model)
+  if(class(model)=="glmerMod") 
+  { 
+    
+    # If the fit is singular or near-singular, there might be a higher chance of a false positive (we’re not necessarily screening out gradient and Hessian checking on singular directions properly); a higher chance that the model has actually misconverged (because the optimization problem is difficult on the boundary); and a reasonable argument that the random effects model should be simplified.
+    # https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html
+    # The definition of singularity is that some of the constrained parameters of the random effects theta parameters are on the boundary (equal to zero, or very very close to zero, say <10−6):
+    t<-getME(model,"theta")
+    l<-getME(model,"lower")
+    
+    # min(tt[ll==0])
+    
+    # min(tt[ll==0])
+    if(!is.null(model@optinfo$conv$lme4$messages)){
+      output<-list(car::vif(model),
+                   model@optinfo$conv$lme4$messages,
+      t[l==0])
+    }
+    else{
+      output<-list(car::vif(model),
+                   t[l==0]
+      )
+    }
+  } 
+  output
 }
