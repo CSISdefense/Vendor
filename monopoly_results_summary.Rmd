@@ -65,6 +65,19 @@ First we load the data. The dataset used is a U.S. Defense Contracting dataset d
 # 
 # save(file="Data/transformed_def.Rdata", def)
  load(file="Data/transformed_def.Rdata")
+
+
+create_naics2<-function(data){
+  data$NAICS2<-substring(data$NAICS,1,2)
+  data$NAICS2[data$NAICS2 %in% c('31','32','33')]<-'31-33'
+  data$NAICS2[data$NAICS2 %in% c('44','45')]<-'44-45'
+  data$NAICS2[data$NAICS2 %in% c('48','49')]<-'48-49'
+  data$NAICS2<-factor(data$NAICS2)
+
+}
+summary(def$NAICS)
+
+
 ```
 
 
@@ -150,10 +163,10 @@ NA_stats(def,"Office")`
 
 # Add NAICS title
 
-def$NAICS_Code<-substring(def$NAICS,1,2)
+def$NAICS_Code<-create_naics2(def)
 
-def$NAICS2<-substring(def$NAICS,1,2)
-smp1m$NAICS2<-substring(smp1m$NAICS,1,2)
+
+smp1m$NAICS2<-create_naics2(smp1m)
 
  def<-csis360::read_and_join(def,
                         lookup_file = "Lookup_NAICS_code.csv",
@@ -177,12 +190,12 @@ def$NAICS_label<-factor(def$NAICS_label)
 order<-  rev(levels(def$NAICS_label))
 
 
-NAICS2digitCount<-ggplot(def,
+NAICS2digit<-ggplot(def,
        aes(x=NAICS_label))+
   geom_bar()+coord_flip()+
   scale_y_continuous(label=scales::comma)+scale_x_discrete(limits=order)+
   labs(x="2-Digit NAICS Code",y="Number of Contracts and Task Orders in Unfiltered Dataset")
-ggsave(NAICS2digit,file="NAICS2digitCount.png",width=7,height=7,dpi=600)
+ggsave(NAICS2digit,file="NAICS2digitCount.png",width=10,height=6,dpi=600)
 
 NAICS_summary<-def %>% group_by(NAICS,StartFY,HHI_lag1) %>%
   dplyr::summarise(annual_action_obligation=sum(Action.Obligation),
