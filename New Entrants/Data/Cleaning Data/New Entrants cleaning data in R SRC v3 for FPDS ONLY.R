@@ -164,6 +164,8 @@ names(duns_and_NAICS)[names(duns_and_NAICS) == "FPDS_data.NAICS2"] <- "topNAICS"
 
 #step 4: left join between FPDS_data and duns_and_NAICS
 
+FPDS_data$TransactionCount <- FPDS_data$IsSAMduns <- FPDS_data$OriginIsInternational <- NULL
+
 FPDS_data_w_topNAICS <- join(FPDS_data, duns_and_NAICS, by = "Dunsnumber", type = "left", match = "all")
 
 ##check number of NAs again
@@ -171,7 +173,7 @@ sum(is.na(FPDS_data_w_topNAICS$topNAICS)) ##57420
 
 
 ##*****************************************##
-############Choose small or large depending#################
+####Choose small or large depending####
 #on lgst dollar amount
 #*******************************************#
 
@@ -194,7 +196,7 @@ names(Duns_smallbiz)
 Duns_smallbiz <- Duns_smallbiz[order(Duns_smallbiz$FPDS_data.Dunsnumber, Duns_smallbiz$FPDS_data.FYear, Duns_smallbiz$FPDS_data.biz_size), ]
 
 
-##step 1: use dplyr to create a new data frame grouped by DUNS nad NAICS
+##step 1: use dplyr to create a new data frame grouped by DUNS nad biz_size
 #and sum obligated amount for all unique combinations
 DO_newvar_sb <- Duns_smallbiz %>% group_by(FPDS_data.Dunsnumber, FPDS_data.biz_size) %>%
   dplyr::summarize(obligated_amount=sum(FPDS_data.obligatedAmount, na.rm=TRUE))
@@ -241,8 +243,212 @@ FPDS_data_w_topNAICS_topSB <- join(FPDS_data_w_topNAICS, duns_and_smallbiz, by =
 sum(is.na(FPDS_data_w_topNAICS_topSB$topNAICS)) ##57420 --> 7 percent of the observations
 sum(is.na(FPDS_data_w_topNAICS_topSB$top_small_biz)) ##129 
 
+
+##********************************##
+####change top_small_biz to 1 = small, 0 = non-small####
+##********************************##
+
+##change top_small_biz to 1= small biz and 0 = non-small biz
+
+str(FPDS_data_w_topNAICS_topSB$top_small_biz)
+
+table(FPDS_data_w_topNAICS_topSB$top_small_biz)
+
+FPDS_data_w_topNAICS_topSB <- FPDS_data_w_topNAICS_topSB[complete.cases(FPDS_data_w_topNAICS_topSB$top_small_biz), ]
+FPDS_data_w_topNAICS_topSB <- FPDS_data_w_topNAICS_topSB[!(FPDS_data_w_topNAICS_topSB$top_small_biz==":"), ]
+
+table(FPDS_data_w_topNAICS_topSB$top_small_biz)
+
+##make top biz_size binary
+FPDS_data_w_topNAICS_topSB$top_smallbiz_bin <- revalue(FPDS_data_w_topNAICS_topSB$top_small_biz, c("S"="1", "O"="0"))
+
+str(FPDS_data_w_topNAICS_topSB$top_smallbiz_bin)
+
+table(FPDS_data_w_topNAICS_topSB$top_smallbiz_bin)
+
+
+##change biz_size to binary
+str(FPDS_data_w_topNAICS_topSB$biz_size)
+
+table(FPDS_data_w_topNAICS_topSB$biz_size)
+
+FPDS_data_w_topNAICS_topSB <- FPDS_data_w_topNAICS_topSB[complete.cases(FPDS_data_w_topNAICS_topSB$biz_size), ]
+FPDS_data_w_topNAICS_topSB <- FPDS_data_w_topNAICS_topSB[!(FPDS_data_w_topNAICS_topSB$biz_size==":"), ]
+
+table(FPDS_data_w_topNAICS_topSB$biz_size)
+
+##make biz_size binary
+FPDS_data_w_topNAICS_topSB$biz_size <- revalue(FPDS_data_w_topNAICS_topSB$biz_size, c("S"="1", "O"="0"))
+
+str(FPDS_data_w_topNAICS_topSB$biz_size)
+
+table(FPDS_data_w_topNAICS_topSB$biz_size)
+
+##drop old top small biz var
+FPDS_data_w_topNAICS_topSB$top_small_biz <- NULL
+
+
+####calculate whether a vendor graduated during the period####
+
+##calculate entry year
+
+Duns_minsigndate <- data.frame(FPDS_data$FYear, FPDS_data$Dunsnumber, FPDS_data$obligatedAmount, FPDS_data$AnnualMaxOfSignedDate)
+
+names(Duns_minsigndate)[names(Duns_minsigndate) == "FPDS_data.Dunsnumber"] <- "Dunsnumber"
+names(Duns_minsigndate)[names(Duns_minsigndate) == "FPDS_data.FYear"] <- "FYear"
+names(Duns_minsigndate)[names(Duns_minsigndate) == "FPDS_data.obligatedAmount"] <- "obligated_amount"
+names(Duns_minsigndate)[names(Duns_minsigndate) == "FPDS_data.AnnualMaxOfSignedDate"] <- "AnnualMaxSignedDate"
+
+
+##sort by duns
+names(Duns_minsigndate)
+Duns_minsigndate <- Duns_minsigndate[order(Duns_minsigndate$Dunsnumber, Duns_minsigndate$FYear, Duns_minsigndate$AnnualMaxSignedDate), ]
+
+##create a variable that ranks max signed date, 1 being the lowest signed date
+DO_newvar_minsigndate <- Duns_minsigndate %>% group_by(Dunsnumber) %>%
+  dplyr::mutate(asc_rank = row_number(AnnualMaxSignedDate)) 
+
+##subset DO_max_newvar where rank==1
+
+duns_and_minsigndate <- subset(DO_newvar_minsigndate, asc_rank==1)
+
+
+#check to see if FPDS_data.Dunsnumber is a unique identifier
+##check uniqueness of DUNS as a variable##
+
+n_distinct(duns_and_minsigndate$Dunsnumber) ##returns 8733 when should return 8764
+
+length(unique(duns_and_minsigndate$Dunsnumber)) == nrow(duns_and_minsigndate) ##TRUE
+
+#drop obligatedamount and desc_rank
+
+duns_and_minsigndate$obligated_amount <- duns_and_minsigndate$asc_rank <- duns_and_minsigndate$FYear <- NULL
+
+#change name of 
+names(duns_and_minsigndate)[names(duns_and_minsigndate) == "AnnualMaxSignedDate"] <- "obsv_period_MINsigndate"
+
+##merge data
+FPDS_data_w_topNAICS_topSB_minsigneddate <- join(FPDS_data_w_topNAICS_topSB, duns_and_minsigndate, by = c("Dunsnumber"), type = "left", match = "all")
+
+##change minsigndate to entry year
+FPDS_data_w_topNAICS_topSB_minsigneddate$obsv_period_MINsigndate<-as.Date(as.character(FPDS_data_w_topNAICS_topSB_minsigneddate$obsv_period_MINsigndate))
+
+str(FPDS_data_w_topNAICS_topSB_minsigneddate$obsv_period_MINsigndate)
+
+##create entry year
+FPDS_data_w_topNAICS_topSB_minsigneddate <- FPDS_data_w_topNAICS_topSB_minsigneddate %>%
+  dplyr::mutate(entryyear = (format(FPDS_data_w_topNAICS_topSB_minsigneddate$obsv_period_MINsigndate, "%Y")))
+
+str(FPDS_data_w_topNAICS_topSB_minsigneddate$entryyear) ##it's a character
+
+#make entry year numeric
+FPDS_data_w_topNAICS_topSB_minsigneddate$entryyear<-as.numeric(as.character(FPDS_data_w_topNAICS_topSB_minsigneddate$entryyear))
+
+str(FPDS_data_w_topNAICS_topSB_minsigneddate$entryyear)
+
+##drop unnecessary vars
+FPDS_data_w_topNAICS_topSB_minsigneddate$obsv_period_MINsigndate <- NULL
+
+#******
+##Calculate final year
+##create subsetted data with only FY, duns, obligated amount, and AnnualMaxOfSignedDate
+Duns_maxsigndate <- data.frame(FPDS_data$FYear, FPDS_data$Dunsnumber, 
+                               FPDS_data$obligatedAmount, 
+                               FPDS_data$AnnualMaxOfSignedDate)
+
+names(Duns_maxsigndate)[names(Duns_maxsigndate) == "FPDS_data.Dunsnumber"] <- "Dunsnumber"
+names(Duns_maxsigndate)[names(Duns_maxsigndate) == "FPDS_data.FYear"] <- "FYear"
+names(Duns_maxsigndate)[names(Duns_maxsigndate) == "FPDS_data.obligatedAmount"] <- "obligated_amount"
+names(Duns_maxsigndate)[names(Duns_maxsigndate) == "FPDS_data.AnnualMaxOfSignedDate"] <- "AnnualMaxSignedDate"
+
+
+##sort by duns
+names(Duns_maxsigndate)
+Duns_maxsigndate <- Duns_maxsigndate[order(Duns_maxsigndate$Dunsnumber, Duns_maxsigndate$FYear, Duns_maxsigndate$AnnualMaxSignedDate), ]
+
+
+##create a variable that ranks max signed date, 1 being the highest signed date
+DO_newvar_maxsigndate <- Duns_maxsigndate %>% group_by(Dunsnumber) %>%
+  dplyr::mutate(desc_rank = row_number(desc(AnnualMaxSignedDate))) 
+
+##subset DO_max_newvar where rank==1
+
+duns_and_maxsigndate <- subset(DO_newvar_maxsigndate, desc_rank==1)
+
+#check to see if FPDS_data.Dunsnumber is a unique identifier
+##check uniqueness of DUNS as a variable##
+
+n_distinct(duns_and_maxsigndate$Dunsnumber) 
+
+length(unique(duns_and_maxsigndate$Dunsnumber)) == nrow(duns_and_maxsigndate) ##TRUE
+
+#drop obligatedamount and desc_rank
+names(duns_and_maxsigndate)
+duns_and_maxsigndate$obligated_amount <- duns_and_maxsigndate$desc_rank <- duns_and_maxsigndate$FYear <- NULL
+
+#change name of 
+names(duns_and_maxsigndate)[names(duns_and_maxsigndate) == "AnnualMaxSignedDate"] <- "obsv_period_maxsigndate"
+
+#step 4: left join between FPDS_data and duns_and_NAICS
+
+FPDS_data_w_topNAICS_topSB_minsigneddate_maxsigndate <- 
+  join(FPDS_data_w_topNAICS_topSB_minsigneddate,
+       duns_and_maxsigndate, by = c("Dunsnumber"), 
+       type = "left", match = "all")
+
+##change max sign date to final year
+FPDS_data_w_topNAICS_topSB_minsigneddate_maxsigndate$obsv_period_maxsigndate<-as.Date(as.character(FPDS_data_w_topNAICS_topSB_minsigneddate_maxsigndate$obsv_period_maxsigndate))
+
+str(FPDS_data_w_topNAICS_topSB_minsigneddate_maxsigndate$obsv_period_maxsigndate)
+
+##create final year
+FPDS_data_w_topNAICS_topSB_minsigneddate_maxsigndate <- FPDS_data_w_topNAICS_topSB_minsigneddate_maxsigndate %>%
+  dplyr::mutate(finalyear = (format(obsv_period_maxsigndate, "%Y")))
+
+str(FPDS_data_w_topNAICS_topSB_minsigneddate_maxsigndate$finalyear) ##it's a character
+
+#make final year numeric
+FPDS_data_w_topNAICS_topSB_minsigneddate_maxsigndate$finalyear<-as.numeric(as.character(FPDS_data_w_topNAICS_topSB_minsigneddate_maxsigndate$finalyear))
+
+str(FPDS_data_w_topNAICS_topSB_minsigneddate_maxsigndate$finalyear)
+
+FPDS_data_w_topNAICS_topSB_minsigneddate_maxsigndate$obsv_period_maxsigndate <- NULL
+
+##now make graduate
+##step 1: create variable that says whether or not a business was small in its first year of existence
+##finding the one year where fy=entryyear & biz_size==1
+base_yr_small_data <- FPDS_data_w_topNAICS_topSB_minsigneddate_maxsigndate %>% group_by(Dunsnumber) %>%
+  dplyr::mutate(baseyrsmall = max(ifelse(biz_size==1 & FYear==entryyear, 1, 0), na.rm=TRUE))
+
+
+base_yr_small_data <- base_yr_small_data %>% group_by(Dunsnumber) %>%
+  dplyr::mutate(finalyr_smalldollars = sum(ifelse(biz_size==1 & FYear==finalyear, obligatedAmount, NA), na.rm=TRUE),
+                finalyr_lgdollars = sum(ifelse(biz_size==0 & FYear==finalyear, obligatedAmount, NA), na.rm=TRUE))
+
+base_yr_small_data <- base_yr_small_data %>% group_by(Dunsnumber) %>%
+  dplyr::mutate(grad = ifelse(abs(finalyr_lgdollars)>(abs(finalyr_smalldollars) & baseyrsmall==0), 1, 0))
+
+##collapse on graduated so that duns is a unique identifier
+base_yr_small_data <- base_yr_small_data %>% group_by(Dunsnumber) %>%
+  dplyr::summarize(grad_unique = sum(grad, na.rm=TRUE))
+
+length(unique(base_yr_small_data$Dunsnumber)) == nrow(base_yr_small_data)
+
+base_yr_small_data <- base_yr_small_data %>% group_by(Dunsnumber) %>%
+  dplyr::mutate(graduated = ifelse(grad_unique==0, 0, 1))
+
+
+##MERGE
+#drop unnecessary vars
+
+base_yr_small_data$grad_unique <- NULL
+
+#Join
+FPDS_data_w_topNAICS_topSB <- join(FPDS_data_w_topNAICS_topSB, base_yr_small_data, by = "Dunsnumber", type = "left", match = "all")
+
+
 ##*****************************************##
-############create the total obligated amount#################
+############create the total obligated amount TIME PERIOD#################
 #associated with each DUNS number over the entire time period
 #*******************************************#
 
@@ -288,7 +494,7 @@ FPDS_data_w_topNAICS_topSB_totalobl <- join(FPDS_data_w_topNAICS_topSB, DO_newva
 
 
 ##*****************************************##
-############create the total obligated amount#################
+############create the total obligated amount YR#################
 #associated with each DUNS number in each year
 #*******************************************#
 
@@ -613,41 +819,59 @@ FPDS_cleaned_unique$registrationYear<-as.numeric(as.character(FPDS_cleaned_uniqu
 
 str(FPDS_cleaned_unique$registrationYear)
 
-# ##********************************##
-# ##****change top_small_biz to 1 = small, 0 = non-small*********##
-# ##********************************##
-# 
-# ##change top_small_biz to 1= small biz and 0 = non-small biz
-# 
-# str(SAM_and_FPDS_uniqueDuns$top_small_biz)
-# 
-# table(SAM_and_FPDS_uniqueDuns$top_small_biz)
-# 
-# SAM_and_FPDS_uniqueDuns <- SAM_and_FPDS_uniqueDuns[!(SAM_and_FPDS_uniqueDuns$top_small_biz==":"), ]
-# 
-# table(SAM_and_FPDS_uniqueDuns$top_small_biz)
-# 
-# ##make biz_size binary
-# SAM_and_FPDS_uniqueDuns$top_smallbiz_bin <- revalue(SAM_and_FPDS_uniqueDuns$top_small_biz, c("S"="1", "O"="0"))
-# 
-# str(SAM_and_FPDS_uniqueDuns$top_smallbiz_bin)
-# 
-# table(SAM_and_FPDS_uniqueDuns$top_smallbiz_bin)
-
 
 ##********************************##
-##****Save File*********##
+####****Save File*********#####
 ##********************************##
 
 ##drop entries in FY before 2000
 
 FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear<2000), ]
 
-save(FPDS_cleaned_unique, file="FPDS_datapull_all_v2.Rda")
+save(FPDS_cleaned_unique, file="FPDS_datapull_all_v3.Rda")
 
 #******************************************************
 
-
+# ##make Small business numeric##
+# 
+# str(FPDS_cleaned_unique$top_small_biz)
+# 
+# table(FPDS_cleaned_unique$top_small_biz)
+# 
+# FPDS_cleaned_unique <- FPDS_cleaned_unique[complete.cases(FPDS_cleaned_unique$top_small_biz), ]
+# FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$top_small_biz==":"), ]
+# 
+# table(FPDS_cleaned_unique$top_small_biz)
+# 
+# ##make top biz_size binary
+# FPDS_cleaned_unique$top_smallbiz_bin <- revalue(FPDS_cleaned_unique$top_small_biz, c("S"="1", "O"="0"))
+# 
+# str(FPDS_cleaned_unique$top_smallbiz_bin)
+# 
+# table(FPDS_cleaned_unique$top_smallbiz_bin)
+# 
+# 
+# ##change biz_size to binary
+# str(FPDS_cleaned_unique$biz_size)
+# 
+# table(FPDS_cleaned_unique$biz_size)
+# 
+# FPDS_cleaned_unique <- FPDS_cleaned_unique[complete.cases(FPDS_cleaned_unique$biz_size), ]
+# FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$biz_size==":"), ]
+# 
+# table(FPDS_cleaned_unique$biz_size)
+# 
+# ##make biz_size binary
+# FPDS_cleaned_unique$biz_size <- revalue(FPDS_cleaned_unique$biz_size, c("S"="1", "O"="0"))
+# 
+# str(FPDS_cleaned_unique$biz_size)
+# 
+# table(FPDS_cleaned_unique$biz_size)
+# 
+# ####save final####
+# save(FPDS_cleaned_unique, file="FPDS_datapull_all_v3.Rda")
+# 
+# #***************************************************************************#
 registrationyear_count <- table(FPDS_cleaned_unique$registrationYear)
 
 registrationyear_count
