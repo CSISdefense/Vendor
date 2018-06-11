@@ -284,10 +284,10 @@ nrow(def[def$EffComp=="No Comp.",])/nrow(def)
 sum(def$Action.Obligation[is.na(def$EffComp)],na.rm=TRUE)/sum(def$Action.Obligation,na.rm=TRUE)
 
 
-# Effplot<-freq_discrete_plot(subset(def,"EffComp"))
-# Effplot<-Effplot+labs(x="Effective Competition",y="Contract or Task Order Count")
+Effplot<-freq_discrete_plot(def,"EffComp")
+Effplot<-Effplot+labs(x="Effective Competition",y="Contract or Task Order Count")
 
-# ggsave(Effplot,file="EffFreq.png",width=5.5,height=5.5,dpi=600)
+ggsave(Effplot,file="EffFreq.png",width=5.5,height=5.5,dpi=600)
 
 ```
 
@@ -296,44 +296,44 @@ sum(def$Action.Obligation[is.na(def$EffComp)],na.rm=TRUE)/sum(def$Action.Obligat
  load(file="def_sample.Rdata")
 # save(smp,smp1m,file="def_sample.Rdata")
 smp1m$NAICS2<-create_naics2(smp1m)
-
-complete<-!is.na(def$b_Term)&
-  !is.na(def$b_CBre)&
-  !is.na(def$n_Comp)&
-  !is.na(def$l_Ceil)&
-  !is.na(def$l_Days)&
-  !is.na(def$Veh) &
-  !is.na(def$n_Fixed)&
-  !is.na(def$b_Intl)&
-  !is.na(def$b_UCA)&
-  !is.na(def$NAICS)&
-  !is.na(def$cl_HHI_lag1)
-
-smp<-def[complete,]
-#8818392  to 8818392
-nrow(def[!complete,])/nrow(def)
-sum(def[!complete,]$Action.Obligation,na.rm=TRUE)/sum(def$Action.Obligation,na.rm=TRUE)
-
-smp1m<-smp[sample(nrow(smp),1000000),]
-smp<-smp[sample(nrow(smp),250000),]
-save(file="def_sample.Rdata",smp,smp1m)
-write.foreign(df=smp,
-              datafile="Data//def_sample250k.dat",
-              codefile="Data//def_sample250k_code.do",
-              package = "Stata")
-write.foreign(df=smp1m,
-              datafile="Data//def_sample1m.dat",
-              codefile="Data//def_sample1m_code.do",
-              package = "Stata")
-
-
-
-levels(smp$Intl)<- list("Just U.S."=c("Just U.S."), 
-                                "Any Intl."=c("Any International"))
-levels(smp1m$Intl)<- list("Just U.S."=c("Just U.S."), 
-                                "Any Intl."=c("Any International"))
-write.dta(smp,file="Data//smp250k.dta")
-write.dta(smp1m,file="Data//smp1m.dta")
+# 
+# complete<-!is.na(def$b_Term)&
+#   !is.na(def$b_CBre)&
+#   !is.na(def$n_Comp)&
+#   !is.na(def$l_Ceil)&
+#   !is.na(def$l_Days)&
+#   !is.na(def$Veh) &
+#   !is.na(def$n_Fixed)&
+#   !is.na(def$b_Intl)&
+#   !is.na(def$b_UCA)&
+#   !is.na(def$NAICS)&
+#   !is.na(def$cl_HHI_lag1)
+# 
+# smp<-def[complete,]
+# #8818392  to 8818392
+# nrow(def[!complete,])/nrow(def)
+# sum(def[!complete,]$Action.Obligation,na.rm=TRUE)/sum(def$Action.Obligation,na.rm=TRUE)
+# 
+# smp1m<-smp[sample(nrow(smp),1000000),]
+# smp<-smp[sample(nrow(smp),250000),]
+# save(file="def_sample.Rdata",smp,smp1m)
+# write.foreign(df=smp,
+#               datafile="Data//def_sample250k.dat",
+#               codefile="Data//def_sample250k_code.do",
+#               package = "Stata")
+# write.foreign(df=smp1m,
+#               datafile="Data//def_sample1m.dat",
+#               codefile="Data//def_sample1m_code.do",
+#               package = "Stata")
+# 
+# 
+# 
+# levels(smp$Intl)<- list("Just U.S."=c("Just U.S."), 
+#                                 "Any Intl."=c("Any International"))
+# levels(smp1m$Intl)<- list("Just U.S."=c("Just U.S."), 
+#                                 "Any Intl."=c("Any International"))
+# write.dta(smp,file="Data//smp250k.dta")
+# write.dta(smp1m,file="Data//smp1m.dta")
 
 
 ```
@@ -387,17 +387,34 @@ Term_Cons_08B <- glmer(data=smp1m,
                        b_Term ~cl_HHI_lag1 + 
                          cl_Ceil + cl_Days+ 
                          Veh+
-                         # c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +# c_HHI_lag1:cl_Days +
+                         c_HHI_lag1:cl_Ceil  + 
+                         cl_Ceil:cl_Days  +# c_HHI_lag1:cl_Days +
                          n_Fixed + b_UCA +
-                         # b_Intl + 
-                         # Veh:cl_Days
-                         # Veh:c_HHI_lag1+
+                         b_Intl +
+                         Veh:cl_Days+
+                         Veh:c_HHI_lag1+
                          b_UCA:c_HHI_lag1 +
                          (1 | NAICS2)
                        , family=binomial(link="logit"))
 display(Term_Cons_08B)
 glmer_examine(Term_Cons_08B)
 
+Term_Cons_08B2 <- glmer(data=smp1m,
+                       b_Term ~cl_HHI_lag1 + 
+                         cl_Ceil + cl_Days+ 
+                         Veh+
+                         c_HHI_lag1:cl_Ceil  +
+                         # cl_Ceil:cl_Days  +
+                         # c_HHI_lag1:cl_Days +
+                         n_Fixed + b_UCA +
+                         b_Intl +
+                         Veh:cl_Days+
+                         Veh:c_HHI_lag1+
+                         b_UCA:c_HHI_lag1 +
+                         (1 | NAICS2)
+                       , family=binomial(link="logit"))
+display(Term_Cons_08B2)
+glmer_examine(Term_Cons_08B2)
 
 Term_Cons_08C <- glm(data=smp1m,
                        b_Term ~cl_HHI_lag1 + 
@@ -416,8 +433,28 @@ Term_Cons_08C <- glm(data=smp1m,
 display(Term_Cons_08C)
 glmer_examine(Term_Cons_08C)
 
-save(file="Term_Cons.RData",Term_Cons_08A,Term_Cons_08A2,Term_Cons_08A3,Term_Cons_08B,Term_Cons_08C)
 
+Term_Cons_08D <- glmer(data=smp1m,
+                       b_Term ~cl_HHI_lag1 + 
+                         cl_Ceil + cl_Days+ 
+                         Veh+
+                         c_HHI_lag1:cl_Ceil  +
+                         # cl_Ceil:cl_Days  +
+                         # c_HHI_lag1:cl_Days +
+                         n_Fixed + b_UCA +
+                         b_Intl +
+                         Veh:cl_Days+
+                         Veh:c_HHI_lag1+
+                         b_UCA:c_HHI_lag1 +
+                         (1 | NAICS2) + (1 | NAICS)
+                       , family=binomial(link="logit"))
+display(Term_Cons_08D)
+glmer_examine(Term_Cons_08D)
+
+save(file="Term_Cons.RData",Term_Cons_08A,Term_Cons_08A2,Term_Cons_08A3,Term_Cons_08B,Term_Cons_08B2,Term_Cons_08C)
+summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A2,Term_Cons_08A3,Term_Cons_08B)
+summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A2,Term_Cons_08A3,Term_Cons_08C)
+summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A2,Term_Cons_08A3,Term_Cons_08B2)
 ```
 
 
@@ -458,18 +495,18 @@ glmer_examine(CBre_Cons_05A2)
 
 
 
-# CBre_Cons_08A <- glmer(data=smp1m,
-#                        b_CBre ~ c_HHI_lag1 + 
-#                       cl_Ceil + cl_Days+ 
-#                       Veh+
-#                       n_Fixed + b_UCA +
-#                       c_HHI_lag1:cl_Ceil  + 
-#                       b_Intl +
-#                       Veh:cl_Ceil
-#                       b_UCA:cl_Ceil+
-#                       b_UCA:c_HHI_lag1+
-#                          (1 | NAICS2)
-#                        , family=binomial(link="logit"))
+CBre_Cons_08A <- glmer(data=smp1m,
+                       b_CBre ~ c_HHI_lag1 +
+                      cl_Ceil + cl_Days+
+                      Veh+
+                      n_Fixed + b_UCA +
+                      c_HHI_lag1:cl_Ceil  +
+                      b_Intl +
+                      Veh:cl_Ceil +
+                      b_UCA:cl_Ceil+
+                      b_UCA:c_HHI_lag1+
+                         (1 | NAICS2)
+                       , family=binomial(link="logit"))
 
 display(Term_Cons_08A)
 glmer_examine(Term_Cons_08A)
@@ -631,7 +668,7 @@ Term_Comp_08H <- glmer(data=smp1m,
                          # n_Comp:cl_Ceil  + cl_Ceil:cl_Days  +# n_Comp:cl_Days +
                          n_Fixed + b_UCA +
                          # b_Intl +
-                         # Veh:cl_Days
+                         # Veh:cl_Days +
                          Veh:n_Comp
                          b_UCA:n_Comp +
                          (1 | NAICS2)
@@ -645,7 +682,7 @@ Term_Comp_08H2 <- glm(data=smp1m,
                          # n_Comp:cl_Ceil  + cl_Ceil:cl_Days  +# n_Comp:cl_Days +
                          n_Fixed + b_UCA +
                          # b_Intl +
-                         # Veh:cl_Days
+                         # Veh:cl_Days +
                          Veh:n_Comp+
                          b_UCA:n_Comp +
                          NAICS2, family=binomial(link="logit"))
@@ -659,7 +696,7 @@ Term_Comp_08H3 <- glm(data=smp1m,
                          n_Comp:cl_Ceil  + #cl_Ceil:cl_Days  +# n_Comp:cl_Days +
                          n_Fixed + b_UCA +
                          b_Intl +
-                         # Veh:cl_Days
+                         # Veh:cl_Days+
                          # Veh:n_Comp+
                          b_UCA:n_Comp +
                          NAICS2, family=binomial(link="logit"))
@@ -673,7 +710,7 @@ Term_Comp_08H3_25k <- glm(data=smp,
                          n_Comp:cl_Ceil  + #cl_Ceil:cl_Days  +# n_Comp:cl_Days +
                          n_Fixed + b_UCA +
                          b_Intl +
-                         # Veh:cl_Days
+                         # Veh:cl_Days+
                          # Veh:n_Comp+
                          b_UCA:n_Comp +
                          NAICS2, family=binomial(link="logit"))
@@ -706,8 +743,8 @@ Comp_CBre_05A <- glm (data=smp,
                      n_Comp:cl_Ceil  + 
                      b_Intl+
                      # Veh:cl_Days+
-                     # Veh:n_Comp
-                     Veh:cl_Ceil
+                     # Veh:n_Comp+
+                     Veh:cl_Ceil+
                      b_UCA:cl_Ceil+
                      b_UCA:n_Comp
                    , family=binomial(link="logit"))
@@ -721,7 +758,7 @@ Comp_CBre_08B<- glmer(data=smp1m,
                       n_Fixed + b_UCA +
                       n_Comp:cl_Ceil  + 
                       b_Intl +
-                      Veh:cl_Ceil
+                      Veh:cl_Ceil+
                       b_UCA:cl_Ceil+
                       b_UCA:n_Comp+
                       (1 | NAICS2)
@@ -770,7 +807,7 @@ CBre_Cons_Comp_08B <- glmer(data=smp1m,
                       n_Fixed + b_UCA +
                       c_HHI_lag1:cl_Ceil  + 
                       b_Intl +
-                      Veh:cl_Ceil
+                      Veh:cl_Ceil+
                       b_UCA:cl_Ceil+
                       b_UCA:c_HHI_lag1+
                          (1 | NAICS2)
