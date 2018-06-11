@@ -290,6 +290,7 @@ FPDS_data_w_topNAICS_topSB$top_small_biz <- NULL
 
 ####calculate whether a vendor graduated during the period####
 
+
 ##calculate entry year
 
 Duns_minsigndate <- data.frame(FPDS_data$FYear, FPDS_data$Dunsnumber, FPDS_data$obligatedAmount, FPDS_data$AnnualMaxOfSignedDate)
@@ -316,7 +317,7 @@ duns_and_minsigndate <- subset(DO_newvar_minsigndate, asc_rank==1)
 #check to see if FPDS_data.Dunsnumber is a unique identifier
 ##check uniqueness of DUNS as a variable##
 
-n_distinct(duns_and_minsigndate$Dunsnumber) ##returns 8733 when should return 8764
+n_distinct(duns_and_minsigndate$Dunsnumber) ##
 
 length(unique(duns_and_minsigndate$Dunsnumber)) == nrow(duns_and_minsigndate) ##TRUE
 
