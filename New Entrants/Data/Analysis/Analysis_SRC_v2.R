@@ -102,20 +102,22 @@ n_occur <- data.frame(table(FPDS_cleaned_unique$Dunsnumber)) ##gives a data fram
 
 n_occur[n_occur$Freq > 1, ]
 
-totyear_count <- FPDS_cleaned_unique %>% 
+##creates a dataframe that counts how many new entrants enter in each year
+count_total_newentrants <- FPDS_cleaned_unique %>% 
   filter(top_smallbiz_bin == 1 | top_smallbiz_bin == 0) %>% 
   group_by(registrationYear) %>% 
   dplyr::summarise(n())  
 
-
+##creates a dataframe that counts how many small vendors and how many non-small vendors are in each year
+#and then joins it with the counts of all new vendors in each year
 FPDS_bargraphCount <- FPDS_cleaned_unique %>%
   filter(top_smallbiz_bin == 1 | top_smallbiz_bin == 0) %>%
   group_by(registrationYear, top_smallbiz_bin) %>%
   dplyr::summarise(n()) %>%
   dplyr::rename("regpersize"=`n()`) %>%
-  left_join(totyear_count, by = "registrationYear") %>%
+  left_join(count_total_newentrants, by = "registrationYear") %>%
   dplyr::rename("regperyear"=`n()`) 
-  
+
 
 ggplot(FPDS_bargraphCount, aes(x = registrationYear, y = regpersize, fill = factor(top_smallbiz_bin), label = regperyear)) +
   geom_bar(stat = 'identity', position = 'stack') +
@@ -126,7 +128,7 @@ ggplot(FPDS_bargraphCount, aes(x = registrationYear, y = regpersize, fill = fact
   scale_fill_manual(name = "New Entrants Types", values = c("darkslategray1", "cadetblue4"), labels = c("small", "non-small")) +
   ggtitle("Number of New Entrants Per Year (2001-2016) - All Federal Agencies")+
   ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
-              ###    angle = 45) +
+  ###    angle = 45) +
   ##geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
   geom_text(data = subset(FPDS_bargraphCount, registrationYear <= 2016), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
 
@@ -2034,9 +2036,126 @@ graduated_2005_DOD_10yr
 graduated_2006_10yr
 graduated_2006_DOD_10yr
 
-
-
+#********************************************************************
 
 #********************************************************************
+####% of obligations that go to different subgroups of new entrants in each year####
+#********************************************************************
+
+##drop observations with Registration Year before 2000
+FPDS_cleaned_unique_graphs <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear<2001), ]
+FPDS_cleaned_unique_graphs <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear>2016), ]
+
+ 
+#**********
+##%of obligations that go to new entrants as opposed to incumbent firms in each year##
+#**********
+
+#*********
+##%of obligations that go to small and non-small new entrants in each year##
+#*********
+##ALL Fed Agencies##
+
+##creates a dataframe that counts the total number of obligations in each year
+count_total_obligations <- FPDS_cleaned_unique_graphs %>% 
+  filter(top_smallbiz_bin == 1 | top_smallbiz_bin == 0) %>% 
+  group_by(registrationYear) %>% 
+  dplyr::summarise(sum_obligations = sum(total_obligations)) 
+  
+
+
+##create a dataframe that calculates the number of obligations that go to small vendors in each
+#year and then number of obligations that go to non-small vendors in each year and joins it 
+#with the counts of total number of obligations in each year and then calculate the percent
+#of obligations that go to each group in each year
+FPDS_obligationscount <- FPDS_cleaned_unique_graphs %>%
+  filter(top_smallbiz_bin == 1 | top_smallbiz_bin == 0) %>%
+  group_by(registrationYear, top_smallbiz_bin) %>%
+  dplyr::summarise(sum_obligations = sum(total_obligations)) %>%
+  dplyr::rename("tot_obl_bysize"=`sum_obligations`) %>%
+  left_join(count_total_obligations, by = "registrationYear") %>%
+  dplyr::rename("tot_obl_byyear"=`sum_obligations`) %>%
+  dplyr::mutate(percent_obl_dec = tot_obl_bysize / tot_obl_byyear) %>%
+  dplyr::mutate(percent_obl = percent_obl_dec * 100) %>%
+  dplyr::mutate(percent_obl = round(percent_obl, 0)) %>%
+  dplyr::mutate(total_percent = 100)
+
+
+ggplot(FPDS_obligationscount, aes(x = registrationYear, y = tot_obl_bysize, fill = factor(top_smallbiz_bin), label = percent_obl)) +
+  geom_bar(stat = 'identity', position = 'stack') +
+  ylab("Total Obligations") +
+  xlab("Entry Year") +
+  scale_x_continuous(breaks = c(2001:2016)) +
+  ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
+  scale_fill_manual(name = "New Entrants Types", values = c("darkslategray1", "cadetblue4"), labels = c("non-small", "small")) +
+  ggtitle("Percent of Obligations for Small and Non-Small New Entrants (2001-2016) - All Federal Agencies")+
+  ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
+  ###    angle = 45) +
+  ##geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
+  geom_text_repel(data = subset(FPDS_obligationscount, registrationYear <= 2016), aes(label = scales::percent(percent_obl_dec)), size = 4, position = position_stack(vjust = .3), angle = 90)
+
+
+
+##for DoD only##
+
+FPDS_cleaned_unique_graphs_DOD <- FPDS_cleaned_unique_graphs[(FPDS_cleaned_unique_graphs$customer=="Defense"), ]
+
+##creates a dataframe that counts the total number of obligations in each year
+count_total_obligations_DOD <- FPDS_cleaned_unique_graphs_DOD %>% 
+  filter(top_smallbiz_bin == 1 | top_smallbiz_bin == 0) %>% 
+  group_by(registrationYear) %>% 
+  dplyr::summarise(sum_obligations = sum(total_obligations)) 
+
+
+
+##create a dataframe that calculates the number of obligations that go to small vendors in each
+#year and then number of obligations that go to non-small vendors in each year and joins it 
+#with the counts of total number of obligations in each year and then calculate the percent
+#of obligations that go to each group in each year
+FPDS_obligationscount_DOD <- FPDS_cleaned_unique_graphs_DOD %>%
+  filter(top_smallbiz_bin == 1 | top_smallbiz_bin == 0) %>%
+  group_by(registrationYear, top_smallbiz_bin) %>%
+  dplyr::summarise(sum_obligations = sum(total_obligations)) %>%
+  dplyr::rename("tot_obl_bysize"=`sum_obligations`) %>%
+  left_join(count_total_obligations_DOD, by = "registrationYear") %>%
+  dplyr::rename("tot_obl_byyear"=`sum_obligations`) %>%
+  dplyr::mutate(percent_obl_dec = tot_obl_bysize / tot_obl_byyear) %>%
+  dplyr::mutate(percent_obl = percent_obl_dec * 100) %>%
+  dplyr::mutate(percent_obl = round(percent_obl, 0)) %>%
+  dplyr::mutate(total_percent = 100)
+ 
+
+ggplot(FPDS_obligationscount_DOD, aes(x = registrationYear, y = tot_obl_bysize, fill = factor(top_smallbiz_bin), label = percent_obl)) +
+  geom_bar(stat = 'identity', position = 'stack') +
+  ylab("Total Obligations") +
+  xlab("Entry Year") +
+  scale_x_continuous(breaks = c(2001:2016)) +
+  ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
+  scale_fill_manual(name = "New Entrants Types", values = c("darkslategray1", "cadetblue4"), labels = c("non-small", "small")) +
+  ggtitle("Percent of Obligations for Small and Non-Small New Entrants (2001-2016) - All Federal Agencies")+
+  ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
+  ###    angle = 45) +
+  ##geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
+  geom_text_repel(data = subset(FPDS_obligationscount_DOD, registrationYear <= 2016), aes(label = scales::percent(percent_obl_dec)), size = 4, position = position_stack(vjust = .3), angle = 90)
+
+
+
+#*********
+##%of obligations that go to small and non-small incumbent firms in each year##
+#*********
+
+
+
+#********#
+##%of obligations that go to different setaside programs
+#********#
+
+
+
+
+
+
+
+
 
 
