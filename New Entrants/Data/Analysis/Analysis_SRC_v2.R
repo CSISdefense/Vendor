@@ -2151,8 +2151,76 @@ ggplot(FPDS_obligationscount_DOD, aes(x = registrationYear, y = tot_obl_bysize, 
 #********#
 
 
+##******#
+##% of obligations that go to graduated firms
+#*******#
+
+##create a variable that describes whether a firm graduated and survived 10 yrs
+
+#step one, append all yearly datas to have survived 3 yr, 5 yr, 10 yt etc
+FPDS_all_yrs1 <- rbind(data_2001, data_2002)
+
+FPDS_all_yrs2 <- rbind(FPDS_all_yrs1, data_2003)
+
+FPDS_all_yrs3 <- rbind(FPDS_all_yrs2, data_2004)
+
+FPDS_all_yrs4 <- rbind(FPDS_all_yrs3, data_2005)
+
+FPDS_all_yrs5 <- rbind(FPDS_all_yrs4, data_2006)
 
 
+#step two, create 
+
+
+##creates a dataframe that counts the total number of obligations in each year
+count_total_obligations <- FPDS_cleaned_unique_graphs %>% 
+  filter(top_smallbiz_bin == 1 | top_smallbiz_bin == 0) %>% 
+  group_by(registrationYear) %>% 
+  dplyr::summarise(sum_obligations = sum(total_obligations)) 
+
+
+
+##create a dataframe that calculates the number of obligations that go to small vendors in each
+#year and then number of obligations that go to non-small vendors in each year and joins it 
+#with the counts of total number of obligations in each year and then calculate the percent
+#of obligations that go to each group in each year
+FPDS_obligationscount <- FPDS_cleaned_unique_graphs %>%
+  filter(top_smallbiz_bin == 1 | top_smallbiz_bin == 0) %>%
+  group_by(registrationYear, top_smallbiz_bin) %>%
+  dplyr::summarise(sum_obligations = sum(total_obligations)) %>%
+  dplyr::rename("tot_obl_bysize"=`sum_obligations`) %>%
+  left_join(count_total_obligations, by = "registrationYear") %>%
+  dplyr::rename("tot_obl_byyear"=`sum_obligations`) %>%
+  dplyr::mutate(percent_obl_dec = tot_obl_bysize / tot_obl_byyear) %>%
+  dplyr::mutate(percent_obl = percent_obl_dec * 100) %>%
+  dplyr::mutate(percent_obl = round(percent_obl, 0)) %>%
+  dplyr::mutate(total_percent = 100)
+
+
+ggplot(FPDS_obligationscount, aes(x = registrationYear, y = tot_obl_bysize, fill = factor(top_smallbiz_bin), label = percent_obl)) +
+  geom_bar(stat = 'identity', position = 'stack') +
+  ylab("Total Obligations") +
+  xlab("Entry Year") +
+  scale_x_continuous(breaks = c(2001:2016)) +
+  ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
+  scale_fill_manual(name = "New Entrants Types", values = c("darkslategray1", "cadetblue4"), labels = c("non-small", "small")) +
+  ggtitle("Percent of Obligations for Small and Non-Small New Entrants (2001-2016) - All Federal Agencies")+
+  ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
+  ###    angle = 45) +
+  ##geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
+  geom_text_repel(data = subset(FPDS_obligationscount, registrationYear <= 2016), aes(label = scales::percent(percent_obl_dec)), size = 4, position = position_stack(vjust = .3), angle = 90)
+
+##All Fed Agencies##
+##creates a dataframe that counts the total number of obligations in each year
+count_total_obligations <- FPDS_cleaned_unique_graphs %>% 
+  filter(top_smallbiz_bin == 1 | top_smallbiz_bin == 0) %>% 
+  group_by(registrationYear) %>% 
+  dplyr::summarise(sum_obligations = sum(total_obligations)) 
+
+
+
+
+##for DoD only##
 
 
 

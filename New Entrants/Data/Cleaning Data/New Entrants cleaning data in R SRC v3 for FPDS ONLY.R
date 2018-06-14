@@ -438,7 +438,6 @@ length(unique(base_yr_small_data$Dunsnumber)) == nrow(base_yr_small_data)
 base_yr_small_data <- base_yr_small_data %>% group_by(Dunsnumber) %>%
   dplyr::mutate(graduated = ifelse(grad_unique==0, 0, 1))
 
-
 ##MERGE
 #drop unnecessary vars
 
