@@ -819,6 +819,35 @@ FPDS_cleaned_unique$registrationYear<-as.numeric(as.character(FPDS_cleaned_uniqu
 
 str(FPDS_cleaned_unique$registrationYear)
 
+#*****************************************#
+####Whether a firm is an incumbent firm####
+#*****************************************#
+
+##step 1: take FPDS_cleaned_unique and subset registrationYear, FYear, 
+#Dunsnumber, total_obligations, and top_small_biz_bin
+
+FPDS_cleaned_unique_IF <- FPDS_cleaned_unique %>%
+  dplyr::select(registrationYear, FYear, Dunsnumber, total_obligations, top_smallbiz_bin)
+
+##step 2: merge FPDS_cleaned_unique_IF to FPDS_Data by duns # and FY -> FPDS_Data_IF
+
+FPDS_data_IF <- join(FPDS_data, FPDS_cleaned_unique_IF, by = c("FYear", "Dunsnumber"), type = "left", match = "all")
+
+##step 3: create incumbent var
+FPDS_data_IF <- FPDS_data_IF %>%
+  group_by(Dunsnumber, FYear) %>%
+  dplyr::mutate(incumbent = ifelse(reguistrationYear==FYear, 1, 0))
+
+##step 4: create new entrants var
+FPDS_data_IF <- FPDS_data_IF %>%
+  group_by(Dunsnumber, FYear) %>%
+  dplyr::mutate(new_entrant = ifelse(registrationYear<FYear, 1, 0))
+
+##step 5: save data
+
+FPDS_data_IF <- FPDS_data_IF[!(FPDS_data_IF$registrationYear<2000), ]
+
+save(FPDS_data_IF, file="FPDS_data_IF.Rda")
 
 ##********************************##
 ####****Save File*********#####
