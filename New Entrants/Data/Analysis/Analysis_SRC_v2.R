@@ -14,6 +14,9 @@ library(lubridate)
 library(dplyr)
 library(foreach)
 library(ggrepel)
+library(ggthemes)
+library(extrafont)
+library(scales)
 
 
 #setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/FPDS")
@@ -2048,11 +2051,118 @@ FPDS_cleaned_unique_graphs <- FPDS_cleaned_unique_graphs[!(FPDS_cleaned_unique_g
 
  
 #**********
-##1. %of obligations that go to new entrants as opposed to incumbent firms in each year##
+####1. %of obligations that go to new entrants as opposed to incumbent firms in each year####
 #**********
 
+load(file = "FPDS_cleaned_unique_wtotalobligations.Rda")
+
+FPDS_cleaned_unique_wtotalobl_graphs <- FPDS_cleaned_unique_wtotalobligations[!(FPDS_cleaned_unique_wtotalobligations$registrationYear<2001), ]
+FPDS_cleaned_unique_wtotalobl_graphs <- FPDS_cleaned_unique_wtotalobl_graphs[!(FPDS_cleaned_unique_wtotalobl_graphs$registrationYear>2016), ]
+
+
+##ALL Fed Agencies##
+
+##subset the data so it has each year and total_obligations_allvendors and create a new
+#var that has total_obligations_newentrants 
+names(FPDS_cleaned_unique_wtotalobl_graphs)
+
+count_total_obligations_newentrants <- FPDS_cleaned_unique_wtotalobl_graphs %>%
+  group_by(FYear) %>%
+  dplyr::summarise(sum_obligations_newentrants = sum(FY_obligated_amount, na.rm = TRUE))
+
+count_total_obligations_allvendors <- FPDS_cleaned_unique_wtotalobl_graphs %>%
+  group_by(FYear) %>%
+  dplyr::summarise(total_obligations_allvendors = median(total_obligations_allvendors))
+
+
+##merge the data 
+newentrants_v_incumbent_intermediate <- join(count_total_obligations_newentrants, count_total_obligations_allvendors, by = "FYear", type = "left", match = "all")
+
+##prepare data for graphs
+
+newentrants_v_incumbent_intermediate <- newentrants_v_incumbent_intermediate %>%
+  group_by(FYear) %>%
+  dplyr::mutate(total_obligations_incumbent = total_obligations_allvendors - sum_obligations_newentrants) %>%
+  dplyr::mutate(perc_obligations_NE_decimal = sum_obligations_newentrants / total_obligations_allvendors) %>%
+  dplyr::mutate(perc_obligations_NE = perc_obligations_NE_decimal * 100) %>%
+  dplyr::mutate(perc_obligations_NE = round(perc_obligations_NE, 0)) %>%
+  dplyr::mutate(perc_obligations_inc_decimal = total_obligations_incumbent / total_obligations_allvendors) %>%
+  dplyr::mutate(perc_obligations_inc = perc_obligations_inc_decimal * 100) %>%
+  dplyr::mutate(perc_obligations_inc = round(perc_obligations_inc, 0)) %>%
+  dplyr::mutate(total_percent = 100)
+
+##WHERE YOU START WITH WHAT YOU WROTE DOWN ON PAPER
+
+##subset new_v_incumbent_intermediate to newentrants_graph_intermediate with FY, sumoblNE, percoblNE, totaloblallvend, and CREATE vendortype
+names(newentrants_v_incumbent_intermediate)
+newentrants_graph_intermediate <- data.frame(newentrants_v_incumbent_intermediate$FYear,
+                                             newentrants_v_incumbent_intermediate$sum_obligations_newentrants,
+                                             newentrants_v_incumbent_intermediate$perc_obligations_NE,
+                                             newentrants_v_incumbent_intermediate$total_obligations_allvendors,
+                                             newentrants_v_incumbent_intermediate$perc_obligations_NE_decimal)
+newentrants_graph_intermediate <- newentrants_graph_intermediate %>%
+  dplyr::mutate(vendor_type=1)
+
+names(newentrants_graph_intermediate)
+names(newentrants_graph_intermediate)[names(newentrants_graph_intermediate) == "newentrants_v_incumbent_intermediate.FYear"] <- "FYear"
+names(newentrants_graph_intermediate)[names(newentrants_graph_intermediate) == "newentrants_v_incumbent_intermediate.sum_obligations_newentrants"] <- "sum_obligations"
+names(newentrants_graph_intermediate)[names(newentrants_graph_intermediate) == "newentrants_v_incumbent_intermediate.perc_obligations_NE"] <- "perc_obligations"
+names(newentrants_graph_intermediate)[names(newentrants_graph_intermediate) == "newentrants_v_incumbent_intermediate.total_obligations_allvendors"] <- "total_obligations_allvendors"
+names(newentrants_graph_intermediate)[names(newentrants_graph_intermediate) == "newentrants_v_incumbent_intermediate.perc_obligations_NE_decimal"] <- "perc_obligations_dec"
+
+
+##subset new_v_incumbent_intermediate to incumbent_graph_intermediate with FY, totaloblincumbent, percobligationsinc, totaloblallvend, and CREATE vendortype
+names(newentrants_v_incumbent_intermediate)
+incumbent_graph_intermediate <- data.frame(newentrants_v_incumbent_intermediate$FYear,
+                                           newentrants_v_incumbent_intermediate$total_obligations_incumbent,
+                                           newentrants_v_incumbent_intermediate$perc_obligations_inc,
+                                           newentrants_v_incumbent_intermediate$total_obligations_allvendors,
+                                           newentrants_v_incumbent_intermediate$perc_obligations_inc_decimal)
+
+incumbent_graph_intermediate <- incumbent_graph_intermediate %>%
+  dplyr::mutate(vendor_type=0)
+
+names(incumbent_graph_intermediate)
+names(incumbent_graph_intermediate)[names(incumbent_graph_intermediate) == "newentrants_v_incumbent_intermediate.FYear"] <- "FYear"
+names(incumbent_graph_intermediate)[names(incumbent_graph_intermediate) == "newentrants_v_incumbent_intermediate.total_obligations_incumbent"] <- "sum_obligations"
+names(incumbent_graph_intermediate)[names(incumbent_graph_intermediate) == "newentrants_v_incumbent_intermediate.perc_obligations_inc"] <- "perc_obligations"
+names(incumbent_graph_intermediate)[names(incumbent_graph_intermediate) == "newentrants_v_incumbent_intermediate.total_obligations_allvendors"] <- "total_obligations_allvendors"
+names(incumbent_graph_intermediate)[names(incumbent_graph_intermediate) == "newentrants_v_incumbent_intermediate.perc_obligations_inc_decimal"] <- "perc_obligations_dec"
+
+
+##append incumbent_graph_intermediate to newentrants_graph_intermediate
+
+newentrants_v_incumbent_graphs <- rbind(newentrants_graph_intermediate, incumbent_graph_intermediate)
+
+##sort by fiscal year 1=NEW ENTRANT
+
+newentrants_v_incumbent_graphs <- newentrants_v_incumbent_graphs[order(newentrants_v_incumbent_graphs$FYear), ]
+
+##drop 2017
+newentrants_v_incumbent_graphs <- newentrants_v_incumbent_graphs[!(newentrants_v_incumbent_graphs$FYear>2016), ]
+
+
+##graph
+ggplot(newentrants_v_incumbent_graphs, aes(x = FYear, y = sum_obligations, fill = factor(vendor_type), label = perc_obligations)) +
+  geom_bar(stat = 'identity', position = 'stack') +
+  ylab("Total Obligations") +
+  xlab("Fiscal Year") +
+  scale_x_continuous(breaks = c(2001:2016)) +
+  ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
+  scale_fill_manual(name = "Vendor Type", values = c("darkslategray1", "cadetblue4"), labels = c("Incumbent Firm", "New Entrant")) +
+  ggtitle("Percent of Obligations for New Entrnats vs. Incumbents (2001-2016) - All Federal Agencies")+
+  ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
+  ###    angle = 45) +
+  ##geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
+  geom_text_repel(data = subset(newentrants_v_incumbent_graphs, FYear <= 2016), aes(label = scales::percent(perc_obligations_dec)), size = 4, position = position_stack(vjust = .3), angle = 90)
+
+
+#**********************************************************************************************
+
+
+
 #*********
-##2. %of obligations that go to small and non-small new entrants in each year##
+####2. %of obligations that go to small and non-small new entrants in each year####
 #*********
 ##ALL Fed Agencies##
 
@@ -2141,18 +2251,18 @@ ggplot(FPDS_obligationscount_DOD, aes(x = registrationYear, y = tot_obl_bysize, 
 
 
 #*********
-## 3. %of obligations that go to small and non-small incumbent firms in each year##
+####3. %of obl that go to small/lg new entrants vs. smll/lg incumbent firms in each year####
 #*********
 
 
 
 #********#
-##4. %of obligations that go to different setaside programs
+####4. %of obligations that go to different setaside programs####
 #********#
 
 
 ##******#
-##5. % of obligations that go to graduated firms
+####5. % of obligations that go to graduated firms####
 #*******#
 
 ##step 1create a variable that describes whether a firm graduated and survived 
