@@ -290,6 +290,7 @@ FPDS_data_w_topNAICS_topSB$top_small_biz <- NULL
 
 ####calculate whether a vendor graduated during the period####
 
+
 ##calculate entry year
 
 Duns_minsigndate <- data.frame(FPDS_data$FYear, FPDS_data$Dunsnumber, FPDS_data$obligatedAmount, FPDS_data$AnnualMaxOfSignedDate)
@@ -316,7 +317,7 @@ duns_and_minsigndate <- subset(DO_newvar_minsigndate, asc_rank==1)
 #check to see if FPDS_data.Dunsnumber is a unique identifier
 ##check uniqueness of DUNS as a variable##
 
-n_distinct(duns_and_minsigndate$Dunsnumber) ##returns 8733 when should return 8764
+n_distinct(duns_and_minsigndate$Dunsnumber) ##
 
 length(unique(duns_and_minsigndate$Dunsnumber)) == nrow(duns_and_minsigndate) ##TRUE
 
@@ -436,7 +437,6 @@ length(unique(base_yr_small_data$Dunsnumber)) == nrow(base_yr_small_data)
 
 base_yr_small_data <- base_yr_small_data %>% group_by(Dunsnumber) %>%
   dplyr::mutate(graduated = ifelse(grad_unique==0, 0, 1))
-
 
 ##MERGE
 #drop unnecessary vars
@@ -819,7 +819,6 @@ FPDS_cleaned_unique$registrationYear<-as.numeric(as.character(FPDS_cleaned_uniqu
 
 str(FPDS_cleaned_unique$registrationYear)
 
-
 ##********************************##
 ####****Save File*********#####
 ##********************************##
@@ -831,6 +830,113 @@ FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYea
 save(FPDS_cleaned_unique, file="FPDS_datapull_all_v3.Rda")
 
 #******************************************************
+
+
+#*****************************************#
+####Whether a firm is an incumbent firm####
+#*****************************************#
+
+##because of space  concerns, empty the environment and then reload
+#FPDS_cleaned_unique and FPDS_data
+
+setwd("K:/2018-01 NPS New Entrants/Data/Data/Raw Data/FPDS")
+FPDS_data <- read.delim("Vendor.SP_DunsnumberNewEntrants_all.txt", fill = TRUE, header=TRUE,  na.strings = c("", "NULL"))
+
+
+setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
+load(file = "FPDS_datapull_all_v3.Rda")
+
+
+##step 1: in FPDS_data, create a variable that gives total obligations in each year
+
+#create a dataframe to edit
+FPDS_data_intermediate <- FPDS_data
+
+names(FPDS_data_intermediate)[names(FPDS_data_intermediate) == "ï..fiscal_year"] <- "FYear"
+
+
+##count number of NAs in obligated amount
+sum(is.na(FPDS_data_intermediate$obligatedAmount)) ##1266 
+
+##create subsetted data with only FY, duns, obligated amount
+names(FPDS_data_intermediate)
+FPDS_data_intermediate_obligatedamnt <- data.frame(FPDS_data_intermediate$FYear, FPDS_data_intermediate$Dunsnumber, FPDS_data_intermediate$obligatedAmount)
+
+##count how many rows each Dunsnumber has
+names(FPDS_data_intermediate_obligatedamnt)
+unique_FPDS_data_intermediate_obligatedamnt <- data.frame(table(FPDS_data_intermediate_obligatedamnt$FPDS_data_intermediate.Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+
+##sort by duns
+names(FPDS_data_intermediate_obligatedamnt)
+FPDS_data_intermediate_obligatedamnt <- FPDS_data_intermediate_obligatedamnt[order(Dunsnumber, FYear), ]
+
+
+##step 1: use dplyr to create a new data frame grouped by fiscal year and obligated amount
+#and sum obligated amount for all unique combinations
+FPDS_newvar_totalobligations <- FPDS_data_intermediate_obligatedamnt %>% group_by(FYear) %>%
+  dplyr::summarize(total_obligations=sum(obligatedAmount, na.rm=TRUE))
+
+
+##is unique identifier!
+
+#step 4: left join between FPDS_data and duns_and_NAICS
+
+FPDS_cleaned_unique_and_totalyrobligations <- join(FPDS_cleaned_unique, FPDS_newvar_totalobligations, by = "Dunsnumber", type = "left", match = "all")
+
+
+
+
+
+
+# ##step 1: take FPDS_cleaned_unique and subset registrationYear, FYear, 
+# #Dunsnumber, total_obligations, and top_small_biz_bin
+# 
+# FPDS_cleaned_unique_IF <- FPDS_cleaned_unique %>%
+#   dplyr::select(registrationYear, FYear, Dunsnumber, total_obligations, top_smallbiz_bin)
+# 
+# ##step 2: merge FPDS_cleaned_unique_IF to FPDS_Data by duns # and FY -> FPDS_Data_IF
+# 
+# ##part a: make FPDS_data smaller
+# 
+# FPDS_data_intermediate <- FPDS_data
+# 
+# ##see how many unique duns numbers are in FPDS_data
+#   FPDS_data_intermediate_unique <- data.frame(table(FPDS_data_intermediate$Dunsnumber))
+# 
+# ##drop vars with NA Dunsnumber
+# 
+# FPDS_data_intermediate <- FPDS_data_intermediate[!is.na(FPDS_data_intermediate$Dunsnumber), ]
+# 
+# 
+# FPDS_data_intermediate$biz_size <- FPDS_data_intermediate$veteranownedflag <- FPDS_data_intermediate$minorityownedbusinessflag <- FPDS_data_intermediate$womenownedflag <- FPDS_data_intermediate$womenownedflag <- FPDS_data_intermediate$isforeigngovernment <- FPDS_data_intermediate$VendorIsInternational <- FPDS_data_intermediate$AnnualMaxOfSignedDate <- FPDS_data_intermediate$obligatedAmount <- FPDS_data_intermediate$numberOfActions <- FPDS_data_intermediate$AnnualMaxOfSignedDate <- FPDS_data_intermediate$NAICS2 <- NULL
+# 
+# names(FPDS_data_intermediate)
+# names(FPDS_data_intermediate)[names(FPDS_data_intermediate) == "ï..fiscal_year"] <- "FYear"
+# 
+# FPDS_data_IF <- join(FPDS_data_intermediate, FPDS_cleaned_unique_IF, by=c("Dunsnumber", "FYear"), type = "left", match = "all")
+# 
+# ##sort the data by dunsnumber
+# FPDS_data_IF <- FPDS_data_IF[order(FPDS_data_IF$Dunsnumber, FPDS_data_IF$FYear), ]
+# 
+# 
+# ##step 3: create incumbent var
+# FPDS_data_IF <- FPDS_data_IF %>%
+#   group_by(Dunsnumber, FYear) %>%
+#   dplyr::mutate(incumbent = ifelse(registrationYear<FYear, 1, 0))
+# 
+# ##step 4: create new entrants var
+# FPDS_data_IF <- FPDS_data_IF %>%
+#   group_by(Dunsnumber, FYear) %>%
+#   dplyr::mutate(new_entrant = ifelse(registrationYear==FYear, 1, 0))
+# 
+# ##step 5: save data
+# 
+# FPDS_data_IF <- FPDS_data_IF[!(FPDS_data_IF$registrationYear<2000), ]
+# 
+# save(FPDS_data_IF, file="FPDS_data_IF.Rda")
+
+#**********************************************************
+
 
 # ##make Small business numeric##
 # 

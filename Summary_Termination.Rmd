@@ -1,0 +1,183 @@
+---
+title: "ContractTermination"
+author: "Greg Sanders"
+date: "Wednesday, February 8, 2017"
+output:
+  html_document:
+    keep_md: yes
+--- 
+
+Is Terminated exploration
+============================================================================
+
+#Setup
+```{r InputFiles, echo = TRUE}
+source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/helper.r")
+source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/lookups.r")
+source("https://raw.githubusercontent.com/CSISdefense/Vendor/master/DIIGstat.r")
+source("ContractCleanup.r")
+
+library(csis360)
+library(ggplot2)
+library(scales)
+library(Hmisc)
+library(dplyr)
+# Coloration<-read.csv(
+#     paste(Path,"Lookups\\","lookup_coloration.csv",sep=""),
+#     header=TRUE, sep=",", na.strings="", dec=".", strip.white=TRUE, 
+#     stringsAsFactors=FALSE
+#     )
+# 
+# Coloration<-ddply(Coloration
+#                   , c(.(R), .(G), .(B))
+#                   , mutate
+#                   , ColorRGB=as.character(
+#                       if(min(is.na(c(R,G,B)))) {NA} 
+#                       else {rgb(max(R),max(G),max(B),max=255)}
+#                       )
+#                   )
+
+axis.text.size<-10
+strip.text.size<-10
+legend.text.size<-8
+# table.text.size<-5.75
+title.text.size<-12
+geom.text.size<-12
+
+main.text.size<-1
+note.text.size<-1.40
+
+
+```
+
+Contracts are classified using a mix of numerical and categorical variables. While the changes in numerical variables are easy to grasp and summarize, a contract may have one line item that is competed and another that is not. As is detailed in the exploration on R&D, we are only considering information available prior to contract start. The percentage of contract obligations that were competed is a valuable benchmark, but is highly influenced by factors that occured after contract start..
+
+## Contract Terminations
+
+
+Contract terminations and the number of change orders can be calculated for the entire sample.  Contract termination is determined using the *Reason for Modification* field in FPDS.  A contract is considered to be terminated if it has at least one modification with the following values:
+
+* "Terminate for Default (complete or partial)"
+* "Terminate for Convenience (complete or partial)"
+* "Terminate for Cause"
+* "Legal Contract Cancellation"
+
+These four catetegories and the "Close Out" category are used to mark a contract as closed.  Many contracts in FPDS and in the sample are never marked closed.  
+
+
+##Prepare Data
+
+```{r ReadInData, echo = TRUE}
+  load(file="Data/Federal_contract_CSIScontractID_detail.Rdata")
+debug(transform_contract)
+def_full<-transform_contract(def_full)
+#Unknown or uninitialised column: 'Comp'
+head(def_full)
+
+```
+
+```{r PrepareData}
+
+#ContractWeighted <- apply_lookups(Path,ContractWeighted)
+#Is.Defense left out
+def_full<-decision_tree(def_full)
+
+summary(def_full$DecisionTreeDisplay)
+# def_full<-subset(def_full,DecisionTreeDisplay != "Not in Sample")
+# save(complete_def_full,def_full,file="data//def_full.Rdata")
+
+
+View(def_full[is.na(def_full$DecisionTreeDisplay),])
+
+
+summary(def_full$DecisionTree)
+summary(def_full$DecisionTreeDisplay)
+write.csv(subset(def_full,Term=="Terminated"),"LargeDataSets//Terminated.csv")
+
+save(def_full,file="LargeDataSets//FederalModelForTerminations.RData")
+
+
+```
+
+
+#Analysis
+
+##Data preparation
+```{r SDurSCeilCount, fig.width=6.5,fig.height=5, dpi=600}
+# load(file="LargeDataSets//FederalModelForTerminations.RData")
+TerminatedSDurSCeilStatCount<-subset(def_full,
+         !is.na(Dur.Simple) & 
+           !is.na(Ceil.Simple) &
+           !is.na(Term)) %>% group_by(Dur.Simple,
+      Ceil.Simple,
+      # StartFY,
+      Term,
+      # DecisionTreeDisplay,
+      # Is.Defense,
+      # Intl,
+      # SingleOffer,
+      # UCA
+    ) %>%
+      # DecisionTreeDisplay != "Not in Sample" &
+           # StartFY>=2007 & 
+           # StartFY<=2015 
+           # (DecisionTreeDisplay != "Not in Sample")
+  # &                
+           #     (LastCurrentCompletionDate<=as.Date("2015-09-30") |
+           #          IsClosed==1) &
+           #     UnmodifiedCurrentCompletionDate<as.Date("2015-09-30")),
+    dplyr::summarise(
+    Action.Obligation=sum(Action.Obligation),
+    Count=length(CSIScontractID),
+    metric="Contracts within Period"
+)
+
+
+save(TerminatedSDurSCeilStatCount,file="TerminatedSDurSCeilStatCount.Rdata")
+load(file="TerminatedSDurSCeilStatCount.Rdata")
+
+TerminatedSDurSCeilStatCount$Term<-factor(TerminatedSDurSCeilStatCount$Term,
+                                          levels=c("Unterminated",
+                                                   "Terminated"),
+                                          labels=c("Unterminated",
+                                                   "Complete or Partial Termination"),
+                                            ordered=TRUE)
+
+
+TerminatedSDurSCeilLabels<-TerminatedSDurSCeilStatCount %>%
+    group_by(Dur.Simple,Ceil.Simple) %>%
+    dplyr::summarise(
+    FacetCount=paste("Count:",prettyNum(sum(Count),big.mark=",")),
+    FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action.Obligation)/1000000000,1),"B",sep="")
+    )
+
+
+
+
+# debug(LatticePlotWrapper)
+# top_line_term<-LatticePlotWrapper(
+#   VAR.color.legend.label="Classification",
+#   VAR.main.label="",
+#   VAR.X.label="Fiscal Year",
+#   VAR.Y.label="Constant ($ Billions)",
+#   VAR.Coloration=Coloration,
+#   VAR.long.DF=TerminatedSDurSCeilStatCount,
+#   # NA, #VAR.ncol
+#   VAR.x.variable="StartFY", #VAR.x.variable
+#   VAR.y.variable="Count", #VAR.y.variable
+#   VAR.y.series="Term", #VAR.y.series
+#   VAR.facet.primary="Dur.Simple", #VAR.facet.primary
+#   VAR.facet.secondary= "Ceil.Simple", # VAR.facet.secondary=NA
+#   # ,MovingAverage=0
+#   # ,MovingSides=1
+#   DataLabels=FALSE
+#   #                       ,VAR.override.coloration=NA
+# )+geom_text(data=TerminatedSDurSCeilLabels,
+#               aes(x=2007,y=Ypos,label=FacetValue),
+#               # parse=TRUE,
+#               hjust=0,
+#               vjust=1,
+#               color="black")
+```
+
+
