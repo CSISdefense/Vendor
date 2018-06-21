@@ -71,75 +71,25 @@ These four catetegories and the "Close Out" category are used to mark a contract
 
 ```{r ReadInData, echo = TRUE}
 
-load(file="Data/def_all_complete.Rdata")
-debug(csis360::transform_contract)
-def_full<-transform_contract(def_full)
-head(def_full)
+load(file="Data/defense_CSIScontractID_all.RData")
+# debug(csis360::transform_contract)
+def_all<-transform_contract(def_all)
+
 
 
 debug(FormatContractModel)
-def_full<-FormatContractModel(def_full)
-
-#ContractWeighted <- apply_lookups(Path,ContractWeighted)
-
-
-def_full$TermNum<-as.integer(as.character(factor(def_full$Term,
-                                  levels=c("Terminated","Unterminated"),
-                                  labels=c(1,0))))
-
-def_full$ObligationWT<-def_full$Action.Obligation
-def_full$ObligationWT[def_full$ObligationWT<0]<-NA
-
-def_full<-def_full %>% group_by(Ceil) %>% 
-  mutate(ceil.median.wt = median(UnmodifiedContractBaseAndAllOptionsValue))
+def_all<-FormatContractModel(def_all)
+head(def_all)
 
 
-
-def_full$UnmodifiedYearsFloat<-def_full$UnmodifiedDays/365.25
-def_full$UnmodifiedYearsCat<-floor(def_full$UnmodifiedYearsFloat)
-def_full$Dur[def_full$UnmodifiedYearsCat<0]<-NA
-
-def_full$Dur.Simple<-as.character(def_full$Dur)
-def_full$Dur.Simple[def_full$Dur.Simple %in% c(
-    "[0 months,~2 months)",
-    "[~2 months,~7 months)",
-    "[~7 months-~1 year]")]<-"<~1 year"
-def_full$Dur.Simple<-factor(def_full$Dur.Simple,
-                                          levels=c("<~1 year",
-                                               "(~1 year,~2 years]",
-                                               "(~2 years+]"),
-                                   ordered=TRUE
-                                   )
-
-def_full$Ceil.Simple<-as.character(def_full$Ceil)
-
-def_full$Ceil.Simple[def_full$Ceil.Simple %in% c(
-    "75m+",
-    "10m - <75m")]<-"10m+"
-def_full$Ceil.Simple[def_full$Ceil.Simple %in% c(
-    "1m - <10m",
-    "100k - <1m")]<-"100k - <10m"
-def_full$Ceil.Simple[def_full$Ceil.Simple %in% c(
-    "15k - <100k",
-    "0 - <15k")]<-"0k - <100k"
-def_full$Ceil.Simple<-factor(def_full$Ceil.Simple,
-       levels=c("0k - <100k",
-                "100k - <10m",
-                "10m+"),
-       ordered=TRUE
-       )
-
-
-
-
-write.csv(subset(def_full,Term=="Terminated"),"Terminated.csv")
+write.csv(subset(def_all,Term=="Terminated"),"Terminated.csv")
 
 ```
 
 **A Histogram of the IsTerminated data** showing the distribution of whether or not a contract was terminated each year from 2007.  
 
 ```{r ContractTerminationGraphs, echo = TRUE, fig.width=3,fig.height=9, dpi=600}
-# TerminatedDurSummary<-ddply(subset(def_full,StartFY>=2007 & 
+# TerminatedDurSummary<-ddply(subset(def_all,StartFY>=2007 & 
 #                   !is.na(Ceil)&
 #                   UnmodifiedCompletionDate<=as.Date("2015-09-30")&
 #                       !is.na(Term)),
@@ -248,7 +198,7 @@ write.csv(subset(def_full,Term=="Terminated"),"Terminated.csv")
 # #                 space = "free_y") 
 # # 
 
-head(def_full)
+head(def_all)
 ```
 
 
@@ -269,7 +219,7 @@ head(def_full)
 
 ```{r AnnualTerminationRateAggregateYear, fig.width=3,fig.height=9, dpi=600}
 # 
-# TerminatedUnmodifiedYearsCatStat<-rbind(ddply(subset(def_full,
+# TerminatedUnmodifiedYearsCatStat<-rbind(ddply(subset(def_all,
 #                                 !is.na(Dur) & StartFY>=2007 & 
 #                                     !is.na(UnmodifiedYearsCat) &
 #                                     UnmodifiedCurrentCompletionDate<as.Date("2015-09-30")&
@@ -292,7 +242,7 @@ head(def_full)
 # 
 # 
 # TerminatedUnmodifiedYearsCatStat<-rbind(TerminatedUnmodifiedYearsCatStat,
-#                          ddply(subset(def_full,
+#                          ddply(subset(def_all,
 #                                 !is.na(Dur) & StartFY>=2007 & 
 #                                     !is.na(Ceil) &
 #                                     UnmodifiedCurrentCompletionDate<as.Date("2015-09-30")&
@@ -314,7 +264,7 @@ head(def_full)
 # ))
 # 
 # TerminatedUnmodifiedYearsCatStat<-rbind(TerminatedUnmodifiedYearsCatStat,
-#                          ddply(subset(def_full,
+#                          ddply(subset(def_all,
 #                                 !is.na(Dur) & StartFY>=2007 & 
 #                                     !is.na(Ceil) &
 #                                     UnmodifiedCurrentCompletionDate<as.Date("2015-09-30")&
@@ -338,7 +288,7 @@ head(def_full)
 # 
 # 
 # TerminatedUnmodifiedYearsCatStat<-rbind(TerminatedUnmodifiedYearsCatStat,
-#                          ddply(subset(def_full,
+#                          ddply(subset(def_all,
 #                                 !is.na(Dur) & StartFY>=2007 & 
 #                                     !is.na(Ceil) &
 #                                     UnmodifiedCurrentCompletionDate<as.Date("2015-09-30")&
@@ -377,7 +327,7 @@ head(def_full)
 
 ```{r AnnualTerminationRateAggregateDur, fig.width=3,fig.height=9, dpi=600}
 # 
-# TerminatedDurStat<-rbind(                         ddply(subset(def_full,
+# TerminatedDurStat<-rbind(                         ddply(subset(def_all,
 #                                 !is.na(Dur) & StartFY>=2007 & 
 #                                     StartFY<=2014 & 
 #                                     !is.na(Ceil) &
@@ -400,7 +350,7 @@ head(def_full)
 # 
 # 
 # TerminatedDurStat<-rbind(TerminatedDurStat,
-#                          ddply(subset(def_full,
+#                          ddply(subset(def_all,
 #                                 !is.na(Dur) & StartFY>=2007 & 
 #                                     StartFY<=2014 & 
 #                                     !is.na(Ceil) &
@@ -422,7 +372,7 @@ head(def_full)
 # ))
 # 
 # TerminatedDurStat<-rbind(TerminatedDurStat,
-#                          ddply(subset(def_full,
+#                          ddply(subset(def_all,
 #                                 !is.na(Dur) & StartFY>=2007 & 
 #                                     StartFY<=2014 & 
 #                                     !is.na(Ceil) &
@@ -447,7 +397,7 @@ head(def_full)
 # 
 # 
 # TerminatedDurStat<-rbind(TerminatedDurStat,
-#                          ddply(subset(def_full,
+#                          ddply(subset(def_all,
 #                                 !is.na(Dur) & StartFY>=2007 & 
 #                                     StartFY<=2014 & 
 #                                     !is.na(Ceil) &
@@ -500,7 +450,7 @@ head(def_full)
 
 
 ```{r SDurCount, fig.width=3,fig.height=9, dpi=600}
-# TerminatedDur.SimpleStatCount<-ddply(subset(def_full,
+# TerminatedDur.SimpleStatCount<-ddply(subset(def_all,
 #                                 !is.na(Dur) & StartFY>=2007 & 
 #                                     StartFY<=2014 & 
 #                                     !is.na(Ceil) &
@@ -549,7 +499,7 @@ head(def_full)
 # 
 # 
 # 
-# TerminatedDur.SimpleStat<-rbind(                         ddply(subset(def_full,
+# TerminatedDur.SimpleStat<-rbind(                         ddply(subset(def_all,
 #                                 !is.na(Dur) & StartFY>=2007 & 
 #                                     StartFY<=2014 & 
 #                                     !is.na(Ceil) &
@@ -572,7 +522,7 @@ head(def_full)
 # 
 # 
 # TerminatedDur.SimpleStat<-rbind(TerminatedDur.SimpleStat,
-#                          ddply(subset(def_full,
+#                          ddply(subset(def_all,
 #                                 !is.na(Dur) & StartFY>=2007 & 
 #                                     StartFY<=2014 & 
 #                                     !is.na(Ceil) &
@@ -594,7 +544,7 @@ head(def_full)
 # ))
 # 
 # TerminatedDur.SimpleStat<-rbind(TerminatedDur.SimpleStat,
-#                          ddply(subset(def_full,
+#                          ddply(subset(def_all,
 #                                 !is.na(Dur) & StartFY>=2007 & 
 #                                     StartFY<=2014 & 
 #                                     !is.na(Ceil) &
@@ -619,7 +569,7 @@ head(def_full)
 # 
 # 
 # TerminatedDur.SimpleStat<-rbind(TerminatedDur.SimpleStat,
-#                          ddply(subset(def_full,
+#                          ddply(subset(def_all,
 #                                 !is.na(Dur) & StartFY>=2007 & 
 #                                     StartFY<=2014 & 
 #                                     !is.na(Ceil) &
@@ -672,7 +622,7 @@ head(def_full)
 
 
 ```{r SDurCeilingCount, fig.width=3,fig.height=9, dpi=600}
-# TerminatedSDurSCeilStatCount<-ddply(subset(def_full,
+# TerminatedSDurSCeilStatCount<-ddply(subset(def_all,
 #                                 !is.na(Dur) & StartFY>=2007 & 
 #                                     StartFY<=2014 & 
 #                                     !is.na(Ceil) &
@@ -720,7 +670,7 @@ head(def_full)
 
 ```{r SDurSCeilCount, fig.width=5,fig.height=9, dpi=600}
 TerminatedSDurSCeilStatCount<-
-    subset(def_full,
+    subset(def_all,
            !is.na(Dur.Simple) & 
                !is.na(Ceil.Simple) &
                !is.na(Term) &
@@ -741,7 +691,7 @@ TerminatedSDurSCeilStatCount<-
 )
 
 TerminatedSDurSCeilStatCount<-rbind(TerminatedSDurSCeilStatCount,
-                                    subset(def_full,
+                                    subset(def_all,
                                            !is.na(Dur.Simple) & 
                                                !is.na(Ceil.Simple) &
                                                !is.na(Term) &
@@ -807,9 +757,9 @@ ggplot(TerminatedSDurSCeilStatCount,
 
 
 ```{r FewerDurIntlPercent, fig.width=3,fig.height=9, dpi=600}
-# summary(def_full$Dur)
+# summary(def_all$Dur)
 # 
-# TerminatedDur.SimpleIntlStat<-rbind(                         ddply(subset(def_full,
+# TerminatedDur.SimpleIntlStat<-rbind(                         ddply(subset(def_all,
 #                                 !is.na(Dur) & StartFY>=2007 & 
 #                                     StartFY<=2014 & (LastCurrentCompletionDate<=strptime("2015-09-30","%Y-%m-%d") | IsClosed==1) &
 #                                     !is.na(Ceil) &
@@ -835,7 +785,7 @@ ggplot(TerminatedSDurSCeilStatCount,
 # 
 # 
 # TerminatedDur.SimpleIntlStat<-rbind(TerminatedDur.SimpleIntlStat,
-#                          ddply(subset(def_full,
+#                          ddply(subset(def_all,
 #                                 !is.na(Dur) & StartFY>=2007 & 
 #                                     StartFY<=2014 & (LastCurrentCompletionDate<=strptime("2015-09-30","%Y-%m-%d") | IsClosed==1) &
 #                                     !is.na(Ceil) &
@@ -859,7 +809,7 @@ ggplot(TerminatedSDurSCeilStatCount,
 # ))
 # 
 # TerminatedDur.SimpleIntlStat<-rbind(TerminatedDur.SimpleIntlStat,
-#                          ddply(subset(def_full,
+#                          ddply(subset(def_all,
 #                                 !is.na(Dur) & StartFY>=2007 & 
 #                                     StartFY<=2014 & (LastCurrentCompletionDate<=strptime("2015-09-30","%Y-%m-%d") | IsClosed==1) &
 #                                     !is.na(Ceil) &
@@ -886,7 +836,7 @@ ggplot(TerminatedSDurSCeilStatCount,
 # 
 # 
 # TerminatedDur.SimpleIntlStat<-rbind(TerminatedDur.SimpleIntlStat,
-#                          ddply(subset(def_full,
+#                          ddply(subset(def_all,
 #                                 !is.na(Dur) & StartFY>=2007 & 
 #                                     StartFY<=2014 & (LastCurrentCompletionDate<=strptime("2015-09-30","%Y-%m-%d") | IsClosed==1) &
 #                                     !is.na(Ceil) &
@@ -981,7 +931,7 @@ ggplot(TerminatedSDurSCeilStatCount,
 
 
 # 
-# TerminatedDurCeilStat<-ddply(subset(def_full,
+# TerminatedDurCeilStat<-ddply(subset(def_all,
 #                                 !is.na(Dur) & StartFY>=2007 & 
 #                                     !is.na(Ceil) &
 #                                     UnmodifiedCurrentCompletionDate<as.Date("2015-09-30")&
@@ -1045,7 +995,7 @@ ggplot(TerminatedSDurSCeilStatCount,
 # 
 # 
 # 
-# TerminatedFxCb<-rbind(                         ddply(subset(def_full,
+# TerminatedFxCb<-rbind(                         ddply(subset(def_all,
 #                                 !is.na(FxCb) & StartFY>=2007 & 
 #                                     StartFY<=2014 & (LastCurrentCompletionDate<=strptime("2015-09-30","%Y-%m-%d") | IsClosed==1) &
 #                                     !is.na(Ceil) &
@@ -1068,7 +1018,7 @@ ggplot(TerminatedSDurSCeilStatCount,
 # 
 # 
 # TerminatedFxCb<-rbind(TerminatedFxCb,
-#                          ddply(subset(def_full,
+#                          ddply(subset(def_all,
 #                                 !is.na(FxCb) & StartFY>=2007 & 
 #                                     StartFY<=2014 & (LastCurrentCompletionDate<=strptime("2015-09-30","%Y-%m-%d") | IsClosed==1) &
 #                                     !is.na(Ceil) &
@@ -1090,7 +1040,7 @@ ggplot(TerminatedSDurSCeilStatCount,
 # ))
 # 
 # TerminatedFxCb<-rbind(TerminatedFxCb,
-#                          ddply(subset(def_full,
+#                          ddply(subset(def_all,
 #                                 !is.na(FxCb) & StartFY>=2007 & 
 #                                     StartFY<=2014 & (LastCurrentCompletionDate<=strptime("2015-09-30","%Y-%m-%d") | IsClosed==1) &
 #                                     !is.na(Ceil) &
@@ -1115,7 +1065,7 @@ ggplot(TerminatedSDurSCeilStatCount,
 # 
 # 
 # TerminatedFxCb<-rbind(TerminatedFxCb,
-#                          ddply(subset(def_full,
+#                          ddply(subset(def_all,
 #                                 !is.na(FxCb) & StartFY>=2007 & 
 #                                     StartFY<=2014 & (LastCurrentCompletionDate<=strptime("2015-09-30","%Y-%m-%d") | IsClosed==1) &
 #                                     !is.na(Ceil) &
