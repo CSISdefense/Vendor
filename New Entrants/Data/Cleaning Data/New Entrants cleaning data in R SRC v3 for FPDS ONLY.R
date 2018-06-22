@@ -862,78 +862,39 @@ sum(is.na(FPDS_data_intermediate$obligatedAmount)) ##1266
 names(FPDS_data_intermediate)
 FPDS_data_intermediate_obligatedamnt <- data.frame(FPDS_data_intermediate$FYear, FPDS_data_intermediate$Dunsnumber, FPDS_data_intermediate$obligatedAmount)
 
+names(FPDS_data_intermediate_obligatedamnt)
+names(FPDS_data_intermediate_obligatedamnt)[names(FPDS_data_intermediate_obligatedamnt) == "FPDS_data_intermediate.FYear"] <- "FYear"
+names(FPDS_data_intermediate_obligatedamnt)[names(FPDS_data_intermediate_obligatedamnt) == "FPDS_data_intermediate.Dunsnumber"] <- "Dunsnumber"
+names(FPDS_data_intermediate_obligatedamnt)[names(FPDS_data_intermediate_obligatedamnt) == "FPDS_data_intermediate.obligatedAmount"] <- "obligatedAmount"
+
+
 ##count how many rows each Dunsnumber has
 names(FPDS_data_intermediate_obligatedamnt)
-unique_FPDS_data_intermediate_obligatedamnt <- data.frame(table(FPDS_data_intermediate_obligatedamnt$FPDS_data_intermediate.Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+unique_FPDS_data_intermediate_obligatedamnt <- data.frame(table(FPDS_data_intermediate_obligatedamnt$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+#810382 unique duns numbers
 
 ##sort by duns
 names(FPDS_data_intermediate_obligatedamnt)
-FPDS_data_intermediate_obligatedamnt <- FPDS_data_intermediate_obligatedamnt[order(Dunsnumber, FYear), ]
+FPDS_data_intermediate_obligatedamnt <- FPDS_data_intermediate_obligatedamnt[order(FPDS_data_intermediate_obligatedamnt$FYear, FPDS_data_intermediate_obligatedamnt$Dunsnumber), ]
+
+#remove years before 2001
+FPDS_data_intermediate_obligatedamnt <- FPDS_data_intermediate_obligatedamnt[!(FPDS_data_intermediate_obligatedamnt$FYear<2001), ]
 
 
 ##step 1: use dplyr to create a new data frame grouped by fiscal year and obligated amount
 #and sum obligated amount for all unique combinations
 FPDS_newvar_totalobligations <- FPDS_data_intermediate_obligatedamnt %>% group_by(FYear) %>%
-  dplyr::summarize(total_obligations=sum(obligatedAmount, na.rm=TRUE))
+  dplyr::summarize(total_obligations_allvendors=sum(obligatedAmount, na.rm=TRUE))
 
 
-##is unique identifier!
+#step 4: left join between FPDS_newvar_totalobligations and FPDS_cleaned_unique
 
-#step 4: left join between FPDS_data and duns_and_NAICS
-
-FPDS_cleaned_unique_and_totalyrobligations <- join(FPDS_cleaned_unique, FPDS_newvar_totalobligations, by = "Dunsnumber", type = "left", match = "all")
+FPDS_cleaned_unique_wtotalobligations <- join(FPDS_cleaned_unique, FPDS_newvar_totalobligations, by = "FYear", type = "left", match = "all")
 
 
+##step 5: save data
 
-
-
-
-# ##step 1: take FPDS_cleaned_unique and subset registrationYear, FYear, 
-# #Dunsnumber, total_obligations, and top_small_biz_bin
-# 
-# FPDS_cleaned_unique_IF <- FPDS_cleaned_unique %>%
-#   dplyr::select(registrationYear, FYear, Dunsnumber, total_obligations, top_smallbiz_bin)
-# 
-# ##step 2: merge FPDS_cleaned_unique_IF to FPDS_Data by duns # and FY -> FPDS_Data_IF
-# 
-# ##part a: make FPDS_data smaller
-# 
-# FPDS_data_intermediate <- FPDS_data
-# 
-# ##see how many unique duns numbers are in FPDS_data
-#   FPDS_data_intermediate_unique <- data.frame(table(FPDS_data_intermediate$Dunsnumber))
-# 
-# ##drop vars with NA Dunsnumber
-# 
-# FPDS_data_intermediate <- FPDS_data_intermediate[!is.na(FPDS_data_intermediate$Dunsnumber), ]
-# 
-# 
-# FPDS_data_intermediate$biz_size <- FPDS_data_intermediate$veteranownedflag <- FPDS_data_intermediate$minorityownedbusinessflag <- FPDS_data_intermediate$womenownedflag <- FPDS_data_intermediate$womenownedflag <- FPDS_data_intermediate$isforeigngovernment <- FPDS_data_intermediate$VendorIsInternational <- FPDS_data_intermediate$AnnualMaxOfSignedDate <- FPDS_data_intermediate$obligatedAmount <- FPDS_data_intermediate$numberOfActions <- FPDS_data_intermediate$AnnualMaxOfSignedDate <- FPDS_data_intermediate$NAICS2 <- NULL
-# 
-# names(FPDS_data_intermediate)
-# names(FPDS_data_intermediate)[names(FPDS_data_intermediate) == "ï..fiscal_year"] <- "FYear"
-# 
-# FPDS_data_IF <- join(FPDS_data_intermediate, FPDS_cleaned_unique_IF, by=c("Dunsnumber", "FYear"), type = "left", match = "all")
-# 
-# ##sort the data by dunsnumber
-# FPDS_data_IF <- FPDS_data_IF[order(FPDS_data_IF$Dunsnumber, FPDS_data_IF$FYear), ]
-# 
-# 
-# ##step 3: create incumbent var
-# FPDS_data_IF <- FPDS_data_IF %>%
-#   group_by(Dunsnumber, FYear) %>%
-#   dplyr::mutate(incumbent = ifelse(registrationYear<FYear, 1, 0))
-# 
-# ##step 4: create new entrants var
-# FPDS_data_IF <- FPDS_data_IF %>%
-#   group_by(Dunsnumber, FYear) %>%
-#   dplyr::mutate(new_entrant = ifelse(registrationYear==FYear, 1, 0))
-# 
-# ##step 5: save data
-# 
-# FPDS_data_IF <- FPDS_data_IF[!(FPDS_data_IF$registrationYear<2000), ]
-# 
-# save(FPDS_data_IF, file="FPDS_data_IF.Rda")
+save(FPDS_cleaned_unique_wtotalobligations, file="FPDS_cleaned_unique_wtotalobligations.Rda")
 
 #**********************************************************
 
@@ -974,7 +935,7 @@ FPDS_cleaned_unique_and_totalyrobligations <- join(FPDS_cleaned_unique, FPDS_new
 # 
 # table(FPDS_cleaned_unique$biz_size)
 # 
-# ####save final####
+# save final
 # save(FPDS_cleaned_unique, file="FPDS_datapull_all_v3.Rda")
 # 
 # #***************************************************************************#
