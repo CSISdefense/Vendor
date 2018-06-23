@@ -438,7 +438,6 @@ length(unique(base_yr_small_data$Dunsnumber)) == nrow(base_yr_small_data)
 base_yr_small_data <- base_yr_small_data %>% group_by(Dunsnumber) %>%
   dplyr::mutate(graduated = ifelse(grad_unique==0, 0, 1))
 
-
 ##MERGE
 #drop unnecessary vars
 
@@ -820,7 +819,6 @@ FPDS_cleaned_unique$registrationYear<-as.numeric(as.character(FPDS_cleaned_uniqu
 
 str(FPDS_cleaned_unique$registrationYear)
 
-
 ##********************************##
 ####****Save File*********#####
 ##********************************##
@@ -832,6 +830,74 @@ FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYea
 save(FPDS_cleaned_unique, file="FPDS_datapull_all_v3.Rda")
 
 #******************************************************
+
+
+#*****************************************#
+####Whether a firm is an incumbent firm####
+#*****************************************#
+
+##because of space  concerns, empty the environment and then reload
+#FPDS_cleaned_unique and FPDS_data
+
+setwd("K:/2018-01 NPS New Entrants/Data/Data/Raw Data/FPDS")
+FPDS_data <- read.delim("Vendor.SP_DunsnumberNewEntrants_all.txt", fill = TRUE, header=TRUE,  na.strings = c("", "NULL"))
+
+
+setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
+load(file = "FPDS_datapull_all_v3.Rda")
+
+
+##step 1: in FPDS_data, create a variable that gives total obligations in each year
+
+#create a dataframe to edit
+FPDS_data_intermediate <- FPDS_data
+
+names(FPDS_data_intermediate)[names(FPDS_data_intermediate) == "ï..fiscal_year"] <- "FYear"
+
+
+##count number of NAs in obligated amount
+sum(is.na(FPDS_data_intermediate$obligatedAmount)) ##1266 
+
+##create subsetted data with only FY, duns, obligated amount
+names(FPDS_data_intermediate)
+FPDS_data_intermediate_obligatedamnt <- data.frame(FPDS_data_intermediate$FYear, FPDS_data_intermediate$Dunsnumber, FPDS_data_intermediate$obligatedAmount)
+
+names(FPDS_data_intermediate_obligatedamnt)
+names(FPDS_data_intermediate_obligatedamnt)[names(FPDS_data_intermediate_obligatedamnt) == "FPDS_data_intermediate.FYear"] <- "FYear"
+names(FPDS_data_intermediate_obligatedamnt)[names(FPDS_data_intermediate_obligatedamnt) == "FPDS_data_intermediate.Dunsnumber"] <- "Dunsnumber"
+names(FPDS_data_intermediate_obligatedamnt)[names(FPDS_data_intermediate_obligatedamnt) == "FPDS_data_intermediate.obligatedAmount"] <- "obligatedAmount"
+
+
+##count how many rows each Dunsnumber has
+names(FPDS_data_intermediate_obligatedamnt)
+unique_FPDS_data_intermediate_obligatedamnt <- data.frame(table(FPDS_data_intermediate_obligatedamnt$Dunsnumber)) ##gives a data frame with a list of duns and the number of times they occurred
+#810382 unique duns numbers
+
+##sort by duns
+names(FPDS_data_intermediate_obligatedamnt)
+FPDS_data_intermediate_obligatedamnt <- FPDS_data_intermediate_obligatedamnt[order(FPDS_data_intermediate_obligatedamnt$FYear, FPDS_data_intermediate_obligatedamnt$Dunsnumber), ]
+
+#remove years before 2001
+FPDS_data_intermediate_obligatedamnt <- FPDS_data_intermediate_obligatedamnt[!(FPDS_data_intermediate_obligatedamnt$FYear<2001), ]
+
+
+##step 1: use dplyr to create a new data frame grouped by fiscal year and obligated amount
+#and sum obligated amount for all unique combinations
+FPDS_newvar_totalobligations <- FPDS_data_intermediate_obligatedamnt %>% group_by(FYear) %>%
+  dplyr::summarize(total_obligations_allvendors=sum(obligatedAmount, na.rm=TRUE))
+
+
+#step 4: left join between FPDS_newvar_totalobligations and FPDS_cleaned_unique
+
+FPDS_cleaned_unique_wtotalobligations <- join(FPDS_cleaned_unique, FPDS_newvar_totalobligations, by = "FYear", type = "left", match = "all")
+
+
+##step 5: save data
+
+save(FPDS_cleaned_unique_wtotalobligations, file="FPDS_cleaned_unique_wtotalobligations.Rda")
+
+#**********************************************************
+
 
 # ##make Small business numeric##
 # 
@@ -869,7 +935,7 @@ save(FPDS_cleaned_unique, file="FPDS_datapull_all_v3.Rda")
 # 
 # table(FPDS_cleaned_unique$biz_size)
 # 
-# ####save final####
+# save final
 # save(FPDS_cleaned_unique, file="FPDS_datapull_all_v3.Rda")
 # 
 # #***************************************************************************#
