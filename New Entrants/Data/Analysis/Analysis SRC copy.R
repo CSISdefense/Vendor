@@ -17,7 +17,7 @@ library(ggrepel)
 library(ggthemes)
 library(extrafont)
 library(scales)
-
+library(magrittr)
 
 #setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/FPDS")
 
@@ -237,6 +237,42 @@ data_2001 <- data_2001 %>%
 data_2001 <- data_2001 %>%
   dplyr::mutate(survive_10yr = ifelse(exitYear < 2010, "0", "1")) 
 
+##checking small buinesses
+data_2001_smallbiz <- data_2001[!(data_2001$top_smallbiz_bin!="1"), ]
+min(data_2001_smallbiz$exitYear)
+
+data_2001_nonsmallbiz <- data_2001[!(data_2001$top_smallbiz_bin!="0"), ]
+min(data_2001_nonsmallbiz$exitYear)
+max(data_2001_nonsmallbiz$exitYear)
+
+##make survival vars numeric##
+str(data_2001)
+
+data_2001$survive_3yr<-as.numeric(as.character(data_2001$survive_3yr))
+data_2001$survive_5yr<-as.numeric(as.character(data_2001$survive_5yr))
+data_2001$survive_10yr<-as.numeric(as.character(data_2001$survive_10yr))
+
+str(data_2001)
+
+
+##t-test between small and nonsmall survival rates##
+#3-year#
+
+table(data_2001$top_smallbiz_bin)
+table(data_2001$survive_3yr)
+table(data_2001$top_smallbiz_bin, data_2001$survive_3yr)
+
+t.test(survive_3yr ~ top_smallbiz_bin, data = data_2001)
+
+#5-year#
+table(data_2001$top_smallbiz_bin, data_2001$survive_5yr)
+
+t.test(survive_5yr ~ top_smallbiz_bin, data = data_2001)
+
+#10-year#
+table(data_2001$top_smallbiz_bin, data_2001$survive_10yr)
+
+t.test(survive_10yr ~ top_smallbiz_bin, data = data_2001)
 
 
 
@@ -307,9 +343,10 @@ graduatedALL_2001_10yr
 ##3-year##
 table(data_2001$survive_3yr) #0=10168, 1=17266
 
-numerator_3yrSM_2001 <- length(which(data_2001$survive_3yr==1 & data_2001$biz_size==1))
+numerator_3yrSM_2001 <- length(which(data_2001$survive_3yr==1 & data_2001$top_smallbiz_bin==1))
+numerator_3yrSM_2001
 
-denominator_3yrSM_2001 <- length(which(data_2001$biz_size==1))
+denominator_3yrSM_2001 <- length(which(data_2001$top_smallbiz_bin==1))
 
 survival_3yrSM_2001 <- numerator_3yrSM_2001/denominator_3yrSM_2001
 survival_3yrSM_2001
@@ -317,9 +354,9 @@ survival_3yrSM_2001
 ##5-year##
 table(data_2001$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrSM_2001 <- length(which(data_2001$survive_5yr==1 & data_2001$biz_size==1))
+numerator_5yrSM_2001 <- length(which(data_2001$survive_5yr==1 & data_2001$top_smallbiz_bin==1))
 
-denominator_5yrSM_2001 <- length(which(data_2001$biz_size==1))
+denominator_5yrSM_2001 <- length(which(data_2001$top_smallbiz_bin==1))
 
 survival_5yrSM_2001 <- numerator_5yrSM_2001/denominator_5yrSM_2001
 survival_5yrSM_2001
@@ -327,9 +364,9 @@ survival_5yrSM_2001
 ##10-year##
 table(data_2001$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrSM_2001 <- length(which(data_2001$survive_10yr==1 & data_2001$biz_size==1))
+numerator_10yrSM_2001 <- length(which(data_2001$survive_10yr==1 & data_2001$top_smallbiz_bin==1))
 
-denominator_10yrSM_2001 <- length(which(data_2001$biz_size==1))
+denominator_10yrSM_2001 <- length(which(data_2001$top_smallbiz_bin==1))
 
 survival_10yrSM_2001 <- numerator_10yrSM_2001/denominator_10yrSM_2001
 survival_10yrSM_2001
@@ -342,9 +379,9 @@ survival_10yrSM_2001
 ##3-year##
 table(data_2001$survive_3yr) #0=10168, 1=17266
 
-numerator_3yrNSM_2001 <- length(which(data_2001$survive_3yr==1 & data_2001$biz_size==0))
+numerator_3yrNSM_2001 <- length(which(data_2001$survive_3yr==1 & data_2001$top_smallbiz_bin==0))
 
-denominator_3yrNSM_2001 <- length(which(data_2001$biz_size==0))
+denominator_3yrNSM_2001 <- length(which(data_2001$top_smallbiz_bin==0))
 
 survival_3yrNSM_2001 <- numerator_3yrNSM_2001/denominator_3yrNSM_2001
 survival_3yrNSM_2001
@@ -352,9 +389,9 @@ survival_3yrNSM_2001
 ##5-year##
 table(data_2001$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrNSM_2001 <- length(which(data_2001$survive_5yr==1 & data_2001$biz_size==0))
+numerator_5yrNSM_2001 <- length(which(data_2001$survive_5yr==1 & data_2001$top_smallbiz_bin==0))
 
-denominator_5yrNSM_2001 <- length(which(data_2001$biz_size==0))
+denominator_5yrNSM_2001 <- length(which(data_2001$top_smallbiz_bin==0))
 
 survival_5yrNSM_2001 <- numerator_5yrNSM_2001/denominator_5yrNSM_2001
 survival_5yrNSM_2001
@@ -362,13 +399,15 @@ survival_5yrNSM_2001
 ##10-year##
 table(data_2001$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrNSM_2001 <- length(which(data_2001$survive_10yr==1 & data_2001$biz_size==0))
+numerator_10yrNSM_2001 <- length(which(data_2001$survive_10yr==1 & data_2001$top_smallbiz_bin==0))
 
-denominator_10yrNSM_2001 <- length(which(data_2001$biz_size==0))
+denominator_10yrNSM_2001 <- length(which(data_2001$top_smallbiz_bin==0))
 
 survival_10yrNSM_2001 <- numerator_10yrNSM_2001/denominator_10yrNSM_2001
 survival_10yrNSM_2001
 
+##t-test for the differences between small and non-small survivors
+t.test(survive_10yr ~ top_smallbiz_bin, data = data_2001)
 
 #****************#
 ####2001 DOD only#####
@@ -391,7 +430,32 @@ data_DOD_2001 <- data_DOD_2001 %>%
 data_DOD_2001 <- data_DOD_2001 %>%
   dplyr::mutate(survive_10yr = ifelse(exitYear < 2010, "0", "1")) 
 
+str(data_DOD_2001)
 
+data_DOD_2001$survive_3yr<-as.numeric(as.character(data_DOD_2001$survive_3yr))
+data_DOD_2001$survive_5yr<-as.numeric(as.character(data_DOD_2001$survive_5yr))
+data_DOD_2001$survive_10yr<-as.numeric(as.character(data_DOD_2001$survive_10yr))
+
+str(data_DOD_2001)
+
+##t-test between small and nonsmall survival rates##
+#3-year#
+
+table(data_DOD_2001$top_smallbiz_bin)
+table(data_DOD_2001$survive_3yr)
+table(data_DOD_2001$top_smallbiz_bin, data_DOD_2001$survive_3yr)
+
+t.test(survive_3yr ~ top_smallbiz_bin, data = data_DOD_2001)
+
+#5-year#
+table(data_DOD_2001$top_smallbiz_bin, data_DOD_2001$survive_5yr)
+
+t.test(survive_5yr ~ top_smallbiz_bin, data = data_DOD_2001)
+
+#10-year#
+table(data_DOD_2001$top_smallbiz_bin, data_DOD_2001$survive_10yr)
+
+t.test(survive_10yr ~ top_smallbiz_bin, data = data_DOD_2001)
 
 
 #*****************
@@ -459,9 +523,9 @@ graduatedALL_2001_DoD_10yr
 ##3-year##
 table(data_DOD_2001$survive_3yr) #0=10168, 1=17266
 
-numerator_3yrSM_2001_DoD <- length(which(data_DOD_2001$survive_3yr==1 & data_DOD_2001$biz_size==1))
+numerator_3yrSM_2001_DoD <- length(which(data_DOD_2001$survive_3yr==1 & data_DOD_2001$top_smallbiz_bin==1))
 
-denominator_3yrSM_2001_DoD <- length(which(data_DOD_2001$biz_size==1))
+denominator_3yrSM_2001_DoD <- length(which(data_DOD_2001$top_smallbiz_bin==1))
 
 survival_3yrSM_2001_DoD <- numerator_3yrSM_2001_DoD/denominator_3yrSM_2001_DoD
 survival_3yrSM_2001_DoD
@@ -469,9 +533,9 @@ survival_3yrSM_2001_DoD
 ##5-year##
 table(data_DOD_2001$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrSM_2001_DoD <- length(which(data_DOD_2001$survive_5yr==1 & data_DOD_2001$biz_size==1))
+numerator_5yrSM_2001_DoD <- length(which(data_DOD_2001$survive_5yr==1 & data_DOD_2001$top_smallbiz_bin==1))
 
-denominator_5yrSM_2001_DoD <- length(which(data_DOD_2001$biz_size==1))
+denominator_5yrSM_2001_DoD <- length(which(data_DOD_2001$top_smallbiz_bin==1))
 
 survival_5yrSM_2001_DoD <- numerator_5yrSM_2001_DoD/denominator_5yrSM_2001_DoD
 survival_5yrSM_2001_DoD
@@ -479,9 +543,9 @@ survival_5yrSM_2001_DoD
 ##10-year##
 table(data_DOD_2001$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrSM_2001_DoD <- length(which(data_DOD_2001$survive_10yr==1 & data_DOD_2001$biz_size==1))
+numerator_10yrSM_2001_DoD <- length(which(data_DOD_2001$survive_10yr==1 & data_DOD_2001$top_smallbiz_bin==1))
 
-denominator_10yrSM_2001_DoD <- length(which(data_DOD_2001$biz_size==1))
+denominator_10yrSM_2001_DoD <- length(which(data_DOD_2001$top_smallbiz_bin==1))
 
 survival_10yrSM_2001_DoD <- numerator_10yrSM_2001_DoD/denominator_10yrSM_2001_DoD
 survival_10yrSM_2001_DoD
@@ -494,9 +558,9 @@ survival_10yrSM_2001_DoD
 ##3-year##
 table(data_DOD_2001$survive_3yr) #0=10168, 1=17266
 
-numerator_3yrNSM_2001_DoD <- length(which(data_DOD_2001$survive_3yr==1 & data_DOD_2001$biz_size==0))
+numerator_3yrNSM_2001_DoD <- length(which(data_DOD_2001$survive_3yr==1 & data_DOD_2001$top_smallbiz_bin==0))
 
-denominator_3yrNSM_2001_DoD <- length(which(data_DOD_2001$biz_size==0))
+denominator_3yrNSM_2001_DoD <- length(which(data_DOD_2001$top_smallbiz_bin==0))
 
 survival_3yrNSM_2001_DoD <- numerator_3yrNSM_2001_DoD/denominator_3yrNSM_2001_DoD
 survival_3yrNSM_2001_DoD
@@ -504,9 +568,9 @@ survival_3yrNSM_2001_DoD
 ##5-year##
 table(data_DOD_2001$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrNSM_2001_DoD <- length(which(data_DOD_2001$survive_5yr==1 & data_DOD_2001$biz_size==0))
+numerator_5yrNSM_2001_DoD <- length(which(data_DOD_2001$survive_5yr==1 & data_DOD_2001$top_smallbiz_bin==0))
 
-denominator_5yrNSM_2001_DoD <- length(which(data_DOD_2001$biz_size==0))
+denominator_5yrNSM_2001_DoD <- length(which(data_DOD_2001$top_smallbiz_bin==0))
 
 survival_5yrNSM_2001_DoD <- numerator_5yrNSM_2001_DoD/denominator_5yrNSM_2001_DoD
 survival_5yrNSM_2001_DoD
@@ -514,9 +578,9 @@ survival_5yrNSM_2001_DoD
 ##10-year##
 table(data_DOD_2001$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrNSM_2001_DoD <- length(which(data_DOD_2001$survive_10yr==1 & data_DOD_2001$biz_size==0))
+numerator_10yrNSM_2001_DoD <- length(which(data_DOD_2001$survive_10yr==1 & data_DOD_2001$top_smallbiz_bin==0))
 
-denominator_10yrNSM_2001_DoD <- length(which(data_DOD_2001$biz_size==0))
+denominator_10yrNSM_2001_DoD <- length(which(data_DOD_2001$top_smallbiz_bin==0))
 
 survival_10yrNSM_2001_DoD <- numerator_10yrNSM_2001_DoD/denominator_10yrNSM_2001_DoD
 survival_10yrNSM_2001_DoD
@@ -548,6 +612,31 @@ data_2002 <- data_2002 %>%
 ##create variable describing whether a firm survived 10 years
 data_2002 <- data_2002 %>%
   dplyr::mutate(survive_10yr = ifelse(exitYear < 2011, "0", "1")) 
+
+str(data_2002)
+
+data_2002$survive_3yr<-as.numeric(as.character(data_2002$survive_3yr))
+data_2002$survive_5yr<-as.numeric(as.character(data_2002$survive_5yr))
+data_2002$survive_10yr<-as.numeric(as.character(data_2002$survive_10yr))
+
+str(data_2002)
+
+##t test to test the differences between small and non small survival##
+table(data_2002$top_smallbiz_bin)
+table(data_2002$survive_3yr)
+table(data_2002$top_smallbiz_bin, data_2002$survive_3yr)
+
+t.test(survive_3yr ~ top_smallbiz_bin, data = data_2002)
+
+#5-year#
+table(data_2002$top_smallbiz_bin, data_2002$survive_5yr)
+
+t.test(survive_5yr ~ top_smallbiz_bin, data = data_2002)
+
+#10-year#
+table(data_2002$top_smallbiz_bin, data_2002$survive_10yr)
+
+t.test(survive_10yr ~ top_smallbiz_bin, data = data_2002)
 
 
 #*************
@@ -613,9 +702,9 @@ graduated_2002_10yr
 ##3-year##
 table(data_2002$survive_3yr) #0=12449, 1=21743
 
-numerator_3yrSM_2002 <- length(which(data_2002$survive_3yr==1 & data_2002$biz_size==1))
+numerator_3yrSM_2002 <- length(which(data_2002$survive_3yr==1 & data_2002$top_smallbiz_bin==1))
 
-denominator_3yrSM_2002 <- length(which(data_2002$biz_size==1))
+denominator_3yrSM_2002 <- length(which(data_2002$top_smallbiz_bin==1))
 
 survival_3yrSM_2002 <- numerator_3yrSM_2002/denominator_3yrSM_2002
 survival_3yrSM_2002
@@ -623,9 +712,9 @@ survival_3yrSM_2002
 ##5-year##
 table(data_2002$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrSM_2002 <- length(which(data_2002$survive_5yr==1 & data_2002$biz_size==1))
+numerator_5yrSM_2002 <- length(which(data_2002$survive_5yr==1 & data_2002$top_smallbiz_bin==1))
 
-denominator_5yrSM_2002 <- length(which(data_2002$biz_size==1))
+denominator_5yrSM_2002 <- length(which(data_2002$top_smallbiz_bin==1))
 
 survival_5yrSM_2002 <- numerator_5yrSM_2002/denominator_5yrSM_2002
 survival_5yrSM_2002 
@@ -633,9 +722,9 @@ survival_5yrSM_2002
 ##10-year##
 table(data_2002$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrSM_2002 <- length(which(data_2002$survive_10yr==1 & data_2002$biz_size==1))
+numerator_10yrSM_2002 <- length(which(data_2002$survive_10yr==1 & data_2002$top_smallbiz_bin==1))
 
-denominator_10yrSM_2002 <- length(which(data_2002$biz_size==1))
+denominator_10yrSM_2002 <- length(which(data_2002$top_smallbiz_bin==1))
 
 survival_10yrSM_2002 <- numerator_10yrSM_2002/denominator_10yrSM_2002
 survival_10yrSM_2002
@@ -646,9 +735,9 @@ survival_10yrSM_2002
 ##3-year##
 table(data_2002$survive_3yr) #0=12449, 1=21743
 
-numerator_3yrNSM_2002 <- length(which(data_2002$survive_3yr==1 & data_2002$biz_size==0))
+numerator_3yrNSM_2002 <- length(which(data_2002$survive_3yr==1 & data_2002$top_smallbiz_bin==0))
 
-denominator_3yrNSM_2002 <- length(which(data_2002$biz_size==0))
+denominator_3yrNSM_2002 <- length(which(data_2002$top_smallbiz_bin==0))
 
 survival_3yrNSM_2002 <- numerator_3yrNSM_2002/denominator_3yrNSM_2002
 survival_3yrNSM_2002
@@ -656,9 +745,9 @@ survival_3yrNSM_2002
 ##5-year##
 table(data_2002$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrNSM_2002 <- length(which(data_2002$survive_5yr==1 & data_2002$biz_size==0))
+numerator_5yrNSM_2002 <- length(which(data_2002$survive_5yr==1 & data_2002$top_smallbiz_bin==0))
 
-denominator_5yrNSM_2002 <- length(which(data_2002$biz_size==0))
+denominator_5yrNSM_2002 <- length(which(data_2002$top_smallbiz_bin==0))
 
 survival_5yrNSM_2002 <- numerator_5yrNSM_2002/denominator_5yrNSM_2002
 survival_5yrNSM_2002 
@@ -666,9 +755,9 @@ survival_5yrNSM_2002
 ##10-year##
 table(data_2002$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrNSM_2002 <- length(which(data_2002$survive_10yr==1 & data_2002$biz_size==0))
+numerator_10yrNSM_2002 <- length(which(data_2002$survive_10yr==1 & data_2002$top_smallbiz_bin==0))
 
-denominator_10yrNSM_2002 <- length(which(data_2002$biz_size==0))
+denominator_10yrNSM_2002 <- length(which(data_2002$top_smallbiz_bin==0))
 
 survival_10yrNSM_2002 <- numerator_10yrNSM_2002/denominator_10yrNSM_2002
 survival_10yrNSM_2002
@@ -697,6 +786,31 @@ data_2002_DOD <- data_2002_DOD %>%
 ##create variable describing whether a firm survived 10 years
 data_2002_DOD <- data_2002_DOD %>%
   dplyr::mutate(survive_10yr = ifelse(exitYear < 2011, "0", "1")) 
+
+str(data_2002_DOD)
+
+data_2002_DOD$survive_3yr<-as.numeric(as.character(data_2002_DOD$survive_3yr))
+ddata_2002_DOD$survive_5yr<-as.numeric(as.character(data_2002_DOD$survive_5yr))
+data_2002_DOD$survive_10yr<-as.numeric(as.character(data_2002_DOD$survive_10yr))
+
+str(data_2002_DOD)
+
+##t test to test the differences between small and non small survival##
+table(data_2002_DOD$top_smallbiz_bin)
+table(data_2002_DOD$survive_3yr)
+table(data_2002_DOD$top_smallbiz_bin, data_2002_DOD$survive_3yr)
+
+t.test(survive_3yr ~ top_smallbiz_bin, data = data_2002_DOD)
+
+#5-year#
+table(data_2002_DOD$top_smallbiz_bin, data_2002_DOD$survive_5yr)
+
+t.test(survive_5yr ~ top_smallbiz_bin, data = data_2002_DOD)
+
+#10-year#
+table(data_2002_DOD$top_smallbiz_bin, data_2002_DOD$survive_10yr)
+
+t.test(survive_10yr ~ top_smallbiz_bin, data = data_2002_DOD)
 
 
 #*************
@@ -762,9 +876,9 @@ graduated_2002_DOD_10yr
 ##3-year##
 table(data_2002_DOD$survive_3yr) #0=12449, 1=21743
 
-numerator_3yrSM2002_DOD <- length(which(data_2002_DOD$survive_3yr==1 & data_2002_DOD$biz_size==1))
+numerator_3yrSM2002_DOD <- length(which(data_2002_DOD$survive_3yr==1 & data_2002_DOD$top_smallbiz_bin==1))
 
-denominator_3yrSM2002_DOD <- length(which(data_2002_DOD$biz_size==1))
+denominator_3yrSM2002_DOD <- length(which(data_2002_DOD$top_smallbiz_bin==1))
 
 survival_3yrSM2002_DOD <- numerator_3yrSM2002_DOD/denominator_3yrSM2002_DOD
 survival_3yrSM2002_DOD
@@ -772,9 +886,9 @@ survival_3yrSM2002_DOD
 ##5-year##
 table(data_2002_DOD$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrSM2002_DOD <- length(which(data_2002_DOD$survive_5yr==1 & data_2002_DOD$biz_size==1))
+numerator_5yrSM2002_DOD <- length(which(data_2002_DOD$survive_5yr==1 & data_2002_DOD$top_smallbiz_bin==1))
 
-denominator_5yrSM2002_DOD <- length(which(data_2002_DOD$biz_size==1))
+denominator_5yrSM2002_DOD <- length(which(data_2002_DOD$top_smallbiz_bin==1))
 
 survival_5yrSM2002_DOD <- numerator_5yrSM2002_DOD/denominator_5yrSM2002_DOD
 survival_5yrSM2002_DOD 
@@ -782,9 +896,9 @@ survival_5yrSM2002_DOD
 ##10-year##
 table(data_2002_DOD$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrSM2002_DOD <- length(which(data_2002_DOD$survive_10yr==1 & data_2002_DOD$biz_size==1))
+numerator_10yrSM2002_DOD <- length(which(data_2002_DOD$survive_10yr==1 & data_2002_DOD$top_smallbiz_bin==1))
 
-denominator_10yrSM2002_DOD <- length(which(data_2002_DOD$biz_size==1))
+denominator_10yrSM2002_DOD <- length(which(data_2002_DOD$top_smallbiz_bin==1))
 
 survival_10yrSM2002_DOD <- numerator_10yrSM2002_DOD/denominator_10yrSM2002_DOD
 survival_10yrSM2002_DOD
@@ -795,9 +909,9 @@ survival_10yrSM2002_DOD
 ##3-year##
 table(data_2002_DOD$survive_3yr) #0=12449, 1=21743
 
-numerator_3yrNSM2002_DOD <- length(which(data_2002_DOD$survive_3yr==1 & data_2002_DOD$biz_size==0))
+numerator_3yrNSM2002_DOD <- length(which(data_2002_DOD$survive_3yr==1 & data_2002_DOD$top_smallbiz_bin==0))
 
-denominator_3yrNSM2002_DOD <- length(which(data_2002_DOD$biz_size==0))
+denominator_3yrNSM2002_DOD <- length(which(data_2002_DOD$top_smallbiz_bin==0))
 
 survival_3yrNSM2002_DOD <- numerator_3yrNSM2002_DOD/denominator_3yrNSM2002_DOD
 survival_3yrNSM2002_DOD
@@ -805,9 +919,9 @@ survival_3yrNSM2002_DOD
 ##5-year##
 table(data_2002_DOD$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrNSM2002_DOD <- length(which(data_2002_DOD$survive_5yr==1 & data_2002_DOD$biz_size==0))
+numerator_5yrNSM2002_DOD <- length(which(data_2002_DOD$survive_5yr==1 & data_2002_DOD$top_smallbiz_bin==0))
 
-denominator_5yrNSM2002_DOD <- length(which(data_2002_DOD$biz_size==0))
+denominator_5yrNSM2002_DOD <- length(which(data_2002_DOD$top_smallbiz_bin==0))
 
 survival_5yrNSM2002_DOD <- numerator_5yrNSM2002_DOD/denominator_5yrNSM2002_DOD
 survival_5yrNSM2002_DOD 
@@ -815,9 +929,9 @@ survival_5yrNSM2002_DOD
 ##10-year##
 table(data_2002_DOD$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrNSM2002_DOD <- length(which(data_2002_DOD$survive_10yr==1 & data_2002_DOD$biz_size==0))
+numerator_10yrNSM2002_DOD <- length(which(data_2002_DOD$survive_10yr==1 & data_2002_DOD$top_smallbiz_bin==0))
 
-denominator_10yrNSM2002_DOD <- length(which(data_2002_DOD$biz_size==0))
+denominator_10yrNSM2002_DOD <- length(which(data_2002_DOD$top_smallbiz_bin==0))
 
 survival_10yrNSM2002_DOD <- numerator_10yrNSM2002_DOD/denominator_10yrNSM2002_DOD
 survival_10yrNSM2002_DOD
@@ -850,6 +964,34 @@ data_2003 <- data_2003 %>%
 ##create variable describing whether a firm survived 10 years
 data_2003 <- data_2003 %>%
   dplyr::mutate(survive_10yr = ifelse(exitYear < 2012, "0", "1"))
+
+str(data_2003)
+
+data_2003$survive_3yr<-as.numeric(as.character(data_2003$survive_3yr))
+data_2003$survive_5yr<-as.numeric(as.character(data_2003$survive_5yr))
+data_2003$survive_10yr<-as.numeric(as.character(data_2003$survive_10yr))
+
+str(data_2003)
+
+###
+##t test to test the differences between small and non small survival##
+table(data_2003$top_smallbiz_bin)
+table(data_2003$survive_3yr)
+table(data_2003$top_smallbiz_bin, data_2003$survive_3yr)
+
+t.test(survive_3yr ~ top_smallbiz_bin, data = data_2003)
+
+#5-year#
+table(data_2003$top_smallbiz_bin, data_2002$survive_5yr)
+
+t.test(survive_5yr ~ top_smallbiz_bin, data = data_2003)
+
+#10-year#
+table(data_2003$top_smallbiz_bin, data_2003$survive_10yr)
+
+t.test(survive_10yr ~ top_smallbiz_bin, data = data_2003)
+
+
 
 #***********#
 #survival rates#
@@ -912,9 +1054,9 @@ graduated_2003_10yr
 ##3-year##
 table(data_2003$survive_3yr) #0=12449, 1=21743
 
-numerator_3yrSM_2003 <- length(which(data_2003$survive_3yr==1 & data_2003$biz_size==1))
+numerator_3yrSM_2003 <- length(which(data_2003$survive_3yr==1 & data_2003$top_smallbiz_bin==1))
 
-denominator_3yrSM_2003 <- length(which(data_2003$biz_size==1))
+denominator_3yrSM_2003 <- length(which(data_2003$top_smallbiz_bin==1))
 
 survival_3yrSM_2003 <- numerator_3yrSM_2003/denominator_3yrSM_2003
 survival_3yrSM_2003
@@ -922,9 +1064,9 @@ survival_3yrSM_2003
 ##5-year##
 table(data_2003$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrSM_2003 <- length(which(data_2003$survive_5yr==1 & data_2003$biz_size==1))
+numerator_5yrSM_2003 <- length(which(data_2003$survive_5yr==1 & data_2003$top_smallbiz_bin==1))
 
-denominator_5yrSM_2003 <- length(which(data_2003$biz_size==1))
+denominator_5yrSM_2003 <- length(which(data_2003$top_smallbiz_bin==1))
 
 survival_5yrSM_2003 <- numerator_5yrSM_2003/denominator_5yrSM_2003
 survival_5yrSM_2003
@@ -932,9 +1074,9 @@ survival_5yrSM_2003
 ##10-year##
 table(data_2003$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrSM_2003 <- length(which(data_2003$survive_10yr==1 & data_2003$biz_size==1))
+numerator_10yrSM_2003 <- length(which(data_2003$survive_10yr==1 & data_2003$top_smallbiz_bin==1))
 
-denominator_10yrSM_2003 <- length(which(data_2003$biz_size==1))
+denominator_10yrSM_2003 <- length(which(data_2003$top_smallbiz_bin==1))
 
 survival_10yrSM_2003 <- numerator_10yrSM_2003/denominator_10yrSM_2003
 survival_10yrSM_2003
@@ -945,9 +1087,9 @@ survival_10yrSM_2003
 ##3-year##
 table(data_2003$survive_3yr) #0=12449, 1=21743
 
-numerator_3yrNSM_2003 <- length(which(data_2003$survive_3yr==1 & data_2003$biz_size==0))
+numerator_3yrNSM_2003 <- length(which(data_2003$survive_3yr==1 & data_2003$top_smallbiz_bin==0))
 
-denominator_3yrNSM_2003 <- length(which(data_2003$biz_size==0))
+denominator_3yrNSM_2003 <- length(which(data_2003$top_smallbiz_bin==0))
 
 survival_3yrNSM_2003 <- numerator_3yrNSM_2003/denominator_3yrNSM_2003
 survival_3yrNSM_2003
@@ -955,9 +1097,9 @@ survival_3yrNSM_2003
 ##5-year##
 table(data_2003$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrNSM_2003 <- length(which(data_2003$survive_5yr==1 & data_2003$biz_size==0))
+numerator_5yrNSM_2003 <- length(which(data_2003$survive_5yr==1 & data_2003$top_smallbiz_bin==0))
 
-denominator_5yrNSM_2003 <- length(which(data_2003$biz_size==0))
+denominator_5yrNSM_2003 <- length(which(data_2003$top_smallbiz_bin==0))
 
 survival_5yrNSM_2003 <- numerator_5yrNSM_2003/denominator_5yrNSM_2003
 survival_5yrNSM_2003
@@ -965,9 +1107,9 @@ survival_5yrNSM_2003
 ##10-year##
 table(data_2003$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrNSM_2003 <- length(which(data_2003$survive_10yr==1 & data_2003$biz_size==0))
+numerator_10yrNSM_2003 <- length(which(data_2003$survive_10yr==1 & data_2003$top_smallbiz_bin==0))
 
-denominator_10yrNSM_2003 <- length(which(data_2003$biz_size==0))
+denominator_10yrNSM_2003 <- length(which(data_2003$top_smallbiz_bin==0))
 
 survival_10yrNSM_2003 <- numerator_10yrNSM_2003/denominator_10yrNSM_2003
 survival_10yrNSM_2003
@@ -1000,6 +1142,32 @@ data_2003_DOD <- data_2003_DOD %>%
 ##create variable describing whether a firm survived 10 years
 data_2003_DOD <- data_2003_DOD %>%
   dplyr::mutate(survive_10yr = ifelse(exitYear < 2012, "0", "1"))
+
+str(data_2003_DOD)
+
+data_2003_DOD$survive_3yr<-as.numeric(as.character(data_2003_DOD$survive_3yr))
+data_2003_DOD$survive_5yr<-as.numeric(as.character(data_2003_DOD$survive_5yr))
+data_2003_DOD$survive_10yr<-as.numeric(as.character(data_2003_DOD$survive_10yr))
+
+str(data_2003_DOD)
+
+###
+##t test to test the differences between small and non small survival##
+table(data_2003_DOD$top_smallbiz_bin)
+table(data_2003_DOD$survive_3yr)
+table(data_2003_DOD$top_smallbiz_bin, data_2003_DOD$survive_3yr)
+
+t.test(survive_3yr ~ top_smallbiz_bin, data = data_2003_DOD)
+
+#5-year#
+table(data_2003_DOD$top_smallbiz_bin, data_2002$survive_5yr)
+
+t.test(survive_5yr ~ top_smallbiz_bin, data = data_2003_DOD)
+
+#10-year#
+table(data_2003_DOD$top_smallbiz_bin, data_2003_DOD$survive_10yr)
+
+t.test(survive_10yr ~ top_smallbiz_bin, data = data_2003_DOD)
 
 #***********#
 #survival rates#
@@ -1062,9 +1230,9 @@ graduated_2003_DOD_10yr
 ##3-year##
 table(data_2003_DOD$survive_3yr) #0=12449, 1=21743
 
-numerator_3yrSM_2003_DOD <- length(which(data_2003_DOD$survive_3yr==1 & data_2003_DOD$biz_size==1))
+numerator_3yrSM_2003_DOD <- length(which(data_2003_DOD$survive_3yr==1 & data_2003_DOD$top_smallbiz_bin==1))
 
-denominator_3yrSM_2003_DOD <- length(which(data_2003_DOD$biz_size==1))
+denominator_3yrSM_2003_DOD <- length(which(data_2003_DOD$top_smallbiz_bin==1))
 
 survival_3yrSM_2003_DOD <- numerator_3yrSM_2003_DOD/denominator_3yrSM_2003_DOD
 survival_3yrSM_2003_DOD
@@ -1072,9 +1240,9 @@ survival_3yrSM_2003_DOD
 ##5-year##
 table(data_2003_DOD$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrSM_2003_DOD <- length(which(data_2003_DOD$survive_5yr==1 & data_2003_DOD$biz_size==1))
+numerator_5yrSM_2003_DOD <- length(which(data_2003_DOD$survive_5yr==1 & data_2003_DOD$top_smallbiz_bin==1))
 
-denominator_5yrSM_2003_DOD <- length(which(data_2003_DOD$biz_size==1))
+denominator_5yrSM_2003_DOD <- length(which(data_2003_DOD$top_smallbiz_bin==1))
 
 survival_5yrSM_2003_DOD <- numerator_5yrSM_2003_DOD/denominator_5yrSM_2003_DOD
 survival_5yrSM_2003_DOD
@@ -1082,9 +1250,9 @@ survival_5yrSM_2003_DOD
 ##10-year##
 table(data_2003_DOD$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrSM_2003_DOD <- length(which(data_2003_DOD$survive_10yr==1 & data_2003_DOD$biz_size==1))
+numerator_10yrSM_2003_DOD <- length(which(data_2003_DOD$survive_10yr==1 & data_2003_DOD$top_smallbiz_bin==1))
 
-denominator_10yrSM_2003_DOD <- length(which(data_2003_DOD$biz_size==1))
+denominator_10yrSM_2003_DOD <- length(which(data_2003_DOD$top_smallbiz_bin==1))
 
 survival_10yrSM_2003_DOD <- numerator_10yrSM_2003_DOD/denominator_10yrSM_2003_DOD
 survival_10yrSM_2003_DOD
@@ -1095,9 +1263,9 @@ survival_10yrSM_2003_DOD
 ##3-year##
 table(data_2003_DOD$survive_3yr) #0=12449, 1=21743
 
-numerator_3yrNSM_2003_DOD <- length(which(data_2003_DOD$survive_3yr==1 & data_2003_DOD$biz_size==0))
+numerator_3yrNSM_2003_DOD <- length(which(data_2003_DOD$survive_3yr==1 & data_2003_DOD$top_smallbiz_bin==0))
 
-denominator_3yrNSM_2003_DOD <- length(which(data_2003_DOD$biz_size==0))
+denominator_3yrNSM_2003_DOD <- length(which(data_2003_DOD$top_smallbiz_bin==0))
 
 survival_3yrNSM_2003_DOD <- numerator_3yrNSM_2003_DOD/denominator_3yrNSM_2003_DOD
 survival_3yrNSM_2003_DOD
@@ -1105,9 +1273,9 @@ survival_3yrNSM_2003_DOD
 ##5-year##
 table(data_2003_DOD$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrNSM_2003_DOD <- length(which(data_2003_DOD$survive_5yr==1 & data_2003_DOD$biz_size==0))
+numerator_5yrNSM_2003_DOD <- length(which(data_2003_DOD$survive_5yr==1 & data_2003_DOD$top_smallbiz_bin==0))
 
-denominator_5yrNSM_2003_DOD <- length(which(data_2003_DOD$biz_size==0))
+denominator_5yrNSM_2003_DOD <- length(which(data_2003_DOD$top_smallbiz_bin==0))
 
 survival_5yrNSM_2003_DOD <- numerator_5yrNSM_2003_DOD/denominator_5yrNSM_2003_DOD
 survival_5yrNSM_2003_DOD
@@ -1115,9 +1283,9 @@ survival_5yrNSM_2003_DOD
 ##10-year##
 table(data_2003_DOD$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrNSM_2003_DOD <- length(which(data_2003_DOD$survive_10yr==1 & data_2003_DOD$biz_size==0))
+numerator_10yrNSM_2003_DOD <- length(which(data_2003_DOD$survive_10yr==1 & data_2003_DOD$top_smallbiz_bin==0))
 
-denominator_10yrNSM_2003_DOD <- length(which(data_2003_DOD$biz_size==0))
+denominator_10yrNSM_2003_DOD <- length(which(data_2003_DOD$top_smallbiz_bin==0))
 
 survival_10yrNSM_2003_DOD <- numerator_10yrNSM_2003_DOD/denominator_10yrNSM_2003_DOD
 survival_10yrNSM_2003_DOD
@@ -1146,6 +1314,33 @@ data_2004 <- data_2004 %>%
 ##create variable describing whether a firm survived 10 years
 data_2004 <- data_2004 %>%
   dplyr::mutate(survive_10yr = ifelse(exitYear < 2013, "0", "1")) 
+
+str(data_2004)
+
+data_2004$survive_3yr<-as.numeric(as.character(data_2004$survive_3yr))
+data_2004$survive_5yr<-as.numeric(as.character(data_2004$survive_5yr))
+data_2004$survive_10yr<-as.numeric(as.character(data_2004$survive_10yr))
+
+str(data_2004)
+
+###
+##t test to test the differences between small and non small survival##
+table(data_2004$top_smallbiz_bin)
+table(data_2004$survive_3yr)
+table(data_2004$top_smallbiz_bin, data_2004$survive_3yr)
+
+t.test(survive_3yr ~ top_smallbiz_bin, data = data_2004)
+
+#5-year#
+table(data_2004$top_smallbiz_bin, data_2004$survive_5yr)
+
+t.test(survive_5yr ~ top_smallbiz_bin, data = data_2004)
+
+#10-year#
+table(data_2004$top_smallbiz_bin, data_2004$survive_10yr)
+
+t.test(survive_10yr ~ top_smallbiz_bin, data = data_2004)
+
 
 
 #********#
@@ -1214,9 +1409,9 @@ graduated_2004_10yr
 ##3-year##
 table(data_2004$survive_3yr) #0=12449, 1=21743
 
-numerator_3yrSM_2004 <- length(which(data_2004$survive_3yr==1 & data_2004$biz_size==1))
+numerator_3yrSM_2004 <- length(which(data_2004$survive_3yr==1 & data_2004$top_smallbiz_bin==1))
 
-denominator_3yrSM_2004 <- length(which(data_2004$biz_size==1))
+denominator_3yrSM_2004 <- length(which(data_2004$top_smallbiz_bin==1))
 
 survival_3yrSM_2004 <- numerator_3yrSM_2004/denominator_3yrSM_2004
 survival_3yrSM_2004
@@ -1224,9 +1419,9 @@ survival_3yrSM_2004
 ##5-year##
 table(data_2004$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrSM_2004 <- length(which(data_2004$survive_5yr==1 & data_2004$biz_size==1))
+numerator_5yrSM_2004 <- length(which(data_2004$survive_5yr==1 & data_2004$top_smallbiz_bin==1))
 
-denominator_5yrSM_2004 <- length(which(data_2004$biz_size==1))
+denominator_5yrSM_2004 <- length(which(data_2004$top_smallbiz_bin==1))
 
 survival_5yrSM_2004 <- numerator_5yrSM_2004/denominator_5yrSM_2004
 survival_5yrSM_2004
@@ -1234,9 +1429,9 @@ survival_5yrSM_2004
 ##10-year##
 table(data_2004$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrSM_2004 <- length(which(data_2004$survive_10yr==1 & data_2004$biz_size==1))
+numerator_10yrSM_2004 <- length(which(data_2004$survive_10yr==1 & data_2004$top_smallbiz_bin==1))
 
-denominator_10yrSM_2004 <- length(which(data_2004$biz_size==1))
+denominator_10yrSM_2004 <- length(which(data_2004$top_smallbiz_bin==1))
 
 survival_10yrSM_2004 <- numerator_10yrSM_2004/denominator_10yrSM_2004
 survival_10yrSM_2004
@@ -1249,9 +1444,9 @@ survival_10yrSM_2004
 ##3-year##
 table(data_2004$survive_3yr) #0=12449, 1=21743
 
-numerator_3yrNSM_2004 <- length(which(data_2004$survive_3yr==1 & data_2004$biz_size==0))
+numerator_3yrNSM_2004 <- length(which(data_2004$survive_3yr==1 & data_2004$top_smallbiz_bin==0))
 
-denominator_3yrNSM_2004 <- length(which(data_2004$biz_size==0))
+denominator_3yrNSM_2004 <- length(which(data_2004$top_smallbiz_bin==0))
 
 survival_3yrNSM_2004 <- numerator_3yrNSM_2004/denominator_3yrNSM_2004
 survival_3yrNSM_2004 
@@ -1259,9 +1454,9 @@ survival_3yrNSM_2004
 ##5-year##
 table(data_2004$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrNSM_2004 <- length(which(data_2004$survive_5yr==1 & data_2004$biz_size==0))
+numerator_5yrNSM_2004 <- length(which(data_2004$survive_5yr==1 & data_2004$top_smallbiz_bin==0))
 
-denominator_5yrNSM_2004 <- length(which(data_2004$biz_size==0))
+denominator_5yrNSM_2004 <- length(which(data_2004$top_smallbiz_bin==0))
 
 survival_5yrNSM_2004 <- numerator_5yrNSM_2004/denominator_5yrNSM_2004
 survival_5yrNSM_2004
@@ -1269,9 +1464,9 @@ survival_5yrNSM_2004
 ##10-year##
 table(data_2004$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrNSM_2004 <- length(which(data_2004$survive_10yr==1 & data_2004$biz_size==0))
+numerator_10yrNSM_2004 <- length(which(data_2004$survive_10yr==1 & data_2004$top_smallbiz_bin==0))
 
-denominator_10yrNSM_2004 <- length(which(data_2004$biz_size==0))
+denominator_10yrNSM_2004 <- length(which(data_2004$top_smallbiz_bin==0))
 
 survival_10yrNSM_2004 <- numerator_10yrNSM_2004/denominator_10yrNSM_2004
 survival_10yrNSM_2004 
@@ -1296,6 +1491,32 @@ data_2004_DOD <- data_2004_DOD %>%
 ##create variable describing whether a firm survived 10 years
 data_2004_DOD <- data_2004_DOD %>%
   dplyr::mutate(survive_10yr = ifelse(exitYear < 2013, "0", "1")) 
+
+str(data_2004)
+
+data_2004_DOD$survive_3yr<-as.numeric(as.character(data_2004_DOD$survive_3yr))
+data_2004_DOD$survive_5yr<-as.numeric(as.character(data_2004_DOD$survive_5yr))
+data_2004_DOD$survive_10yr<-as.numeric(as.character(data_2004_DOD$survive_10yr))
+
+str(data_2004_DOD)
+
+###
+##t test to test the differences between small and non small survival##
+table(data_2004_DOD$top_smallbiz_bin)
+table(data_2004_DOD$survive_3yr)
+table(data_2004_DOD$top_smallbiz_bin, data_2004_DOD$survive_3yr)
+
+t.test(survive_3yr ~ top_smallbiz_bin, data = data_2004_DOD)
+
+#5-year#
+table(data_2004_DOD$top_smallbiz_bin, data_2004_DOD$survive_5yr)
+
+t.test(survive_5yr ~ top_smallbiz_bin, data = data_2004_DOD)
+
+#10-year#
+table(data_2004_DOD$top_smallbiz_bin, data_2004_DOD$survive_10yr)
+
+t.test(survive_10yr ~ top_smallbiz_bin, data = data_2004_DOD)
 
 
 #********#
@@ -1363,9 +1584,9 @@ graduated_2004_DOD_10yr
 ##3-year##
 table(data_2004_DOD$survive_3yr) #0=12449, 1=21743
 
-numerator_3yrSM_2004_DOD <- length(which(data_2004_DOD$survive_3yr==1 & data_2004_DOD$biz_size==1))
+numerator_3yrSM_2004_DOD <- length(which(data_2004_DOD$survive_3yr==1 & data_2004_DOD$top_smallbiz_bin==1))
 
-denominator_3yrSM_2004_DOD <- length(which(data_2004_DOD$biz_size==1))
+denominator_3yrSM_2004_DOD <- length(which(data_2004_DOD$top_smallbiz_bin==1))
 
 survival_3yrSM_2004_DOD <- numerator_3yrSM_2004_DOD/denominator_3yrSM_2004_DOD
 survival_3yrSM_2004_DOD
@@ -1373,9 +1594,9 @@ survival_3yrSM_2004_DOD
 ##5-year##
 table(data_2004_DOD$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrSM_2004_DOD <- length(which(data_2004_DOD$survive_5yr==1 & data_2004_DOD$biz_size==1))
+numerator_5yrSM_2004_DOD <- length(which(data_2004_DOD$survive_5yr==1 & data_2004_DOD$top_smallbiz_bin==1))
 
-denominator_5yrSM_2004_DOD <- length(which(data_2004_DOD$biz_size==1))
+denominator_5yrSM_2004_DOD <- length(which(data_2004_DOD$top_smallbiz_bin==1))
 
 survival_5yrSM_2004_DOD <- numerator_5yrSM_2004_DOD/denominator_5yrSM_2004_DOD
 survival_5yrSM_2004_DOD
@@ -1383,9 +1604,9 @@ survival_5yrSM_2004_DOD
 ##10-year##
 table(data_2004_DOD$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrSM_2004_DOD <- length(which(data_2004_DOD$survive_10yr==1 & data_2004_DOD$biz_size==1))
+numerator_10yrSM_2004_DOD <- length(which(data_2004_DOD$survive_10yr==1 & data_2004_DOD$top_smallbiz_bin==1))
 
-denominator_10yrSM_2004_DOD <- length(which(data_2004_DOD$biz_size==1))
+denominator_10yrSM_2004_DOD <- length(which(data_2004_DOD$top_smallbiz_bin==1))
 
 survival_10yrSM_2004_DOD <- numerator_10yrSM_2004_DOD/denominator_10yrSM_2004_DOD
 survival_10yrSM_2004_DOD
@@ -1398,9 +1619,9 @@ survival_10yrSM_2004_DOD
 ##3-year##
 table(data_2004_DOD$survive_3yr) #0=12449, 1=21743
 
-numerator_3yrNSM_2004_DOD <- length(which(data_2004_DOD$survive_3yr==1 & data_2004_DOD$biz_size==0))
+numerator_3yrNSM_2004_DOD <- length(which(data_2004_DOD$survive_3yr==1 & data_2004_DOD$top_smallbiz_bin==0))
 
-denominator_3yrNSM_2004_DOD <- length(which(data_2004_DOD$biz_size==0))
+denominator_3yrNSM_2004_DOD <- length(which(data_2004_DOD$top_smallbiz_bin==0))
 
 survival_3yrNSM_2004_DOD <- numerator_3yrNSM_2004_DOD/denominator_3yrNSM_2004_DOD
 survival_3yrNSM_2004_DOD 
@@ -1408,9 +1629,9 @@ survival_3yrNSM_2004_DOD
 ##5-year##
 table(data_2004_DOD$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrNSM_2004_DOD <- length(which(data_2004_DOD$survive_5yr==1 & data_2004_DOD$biz_size==0))
+numerator_5yrNSM_2004_DOD <- length(which(data_2004_DOD$survive_5yr==1 & data_2004_DOD$top_smallbiz_bin==0))
 
-denominator_5yrNSM_2004_DOD <- length(which(data_2004_DOD$biz_size==0))
+denominator_5yrNSM_2004_DOD <- length(which(data_2004_DOD$top_smallbiz_bin==0))
 
 survival_5yrNSM_2004_DOD <- numerator_5yrNSM_2004_DOD/denominator_5yrNSM_2004_DOD
 survival_5yrNSM_2004_DOD
@@ -1418,9 +1639,9 @@ survival_5yrNSM_2004_DOD
 ##10-year##
 table(data_2004_DOD$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrNSM_2004_DOD <- length(which(data_2004_DOD$survive_10yr==1 & data_2004_DOD$biz_size==0))
+numerator_10yrNSM_2004_DOD <- length(which(data_2004_DOD$survive_10yr==1 & data_2004_DOD$top_smallbiz_bin==0))
 
-denominator_10yrNSM_2004_DOD <- length(which(data_2004_DOD$biz_size==0))
+denominator_10yrNSM_2004_DOD <- length(which(data_2004_DOD$top_smallbiz_bin==0))
 
 survival_10yrNSM_2004_DOD <- numerator_10yrNSM_2004_DOD/denominator_10yrNSM_2004_DOD
 survival_10yrNSM_2004_DOD 
@@ -1451,6 +1672,36 @@ data_2005 <- data_2005 %>%
 ##create variable describing whether a firm survived 10 years
 data_2005 <- data_2005 %>%
   dplyr::mutate(survive_10yr = ifelse(exitYear < 2014, "0", "1")) 
+
+data_2004_DOD <- data_2004_DOD %>%
+  dplyr::mutate(survive_10yr = ifelse(exitYear < 2013, "0", "1")) 
+
+str(data_2005)
+
+data_2005$survive_3yr<-as.numeric(as.character(data_2005$survive_3yr))
+data_2005$survive_5yr<-as.numeric(as.character(data_2005$survive_5yr))
+data_2005$survive_10yr<-as.numeric(as.character(data_2005$survive_10yr))
+
+str(data_2005)
+
+##**********
+##t test to test the differences between small and non small survival##
+table(data_2005$top_smallbiz_bin)
+table(data_2005$survive_3yr)
+table(data_2005$top_smallbiz_bin, data_2005$survive_3yr)
+
+t.test(survive_3yr ~ top_smallbiz_bin, data = data_2005)
+
+#5-year#
+table(data_2005$top_smallbiz_bin, data_2005$survive_5yr)
+
+t.test(survive_5yr ~ top_smallbiz_bin, data = data_2005)
+
+#10-year#
+table(data_2005$top_smallbiz_bin, data_2005$survive_10yr)
+
+t.test(survive_10yr ~ top_smallbiz_bin, data = data_2005)
+
 
 #******#
 #**ALL*#
@@ -1515,9 +1766,9 @@ graduated_2005_10yr
 ##3-year##
 table(data_2005$survive_3yr) #0=12449, 1=21743
 
-numerator_3yrSM_2005 <- length(which(data_2005$survive_3yr==1 & data_2005$biz_size==1))
+numerator_3yrSM_2005 <- length(which(data_2005$survive_3yr==1 & data_2005$top_smallbiz_bin==1))
 
-denominator_3yrSM_2005 <- length(which(data_2005$biz_size==1))
+denominator_3yrSM_2005 <- length(which(data_2005$top_smallbiz_bin==1))
 
 survival_3yrSM_2005 <- numerator_3yrSM_2005/denominator_3yrSM_2005
 survival_3yrSM_2005
@@ -1525,9 +1776,9 @@ survival_3yrSM_2005
 ##5-year##
 table(data_2005$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrSM_2005 <- length(which(data_2005$survive_5yr==1 & data_2005$biz_size==1))
+numerator_5yrSM_2005 <- length(which(data_2005$survive_5yr==1 & data_2005$top_smallbiz_bin==1))
 
-denominator_5yrSM_2005 <- length(which(data_2005$biz_size==1))
+denominator_5yrSM_2005 <- length(which(data_2005$top_smallbiz_bin==1))
 
 survival_5yrSM_2005 <- numerator_5yrSM_2005/denominator_5yrSM_2005
 survival_5yrSM_2005 
@@ -1535,9 +1786,9 @@ survival_5yrSM_2005
 ##10-year##
 table(data_2005$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrSM_2005 <- length(which(data_2005$survive_10yr==1 & data_2005$biz_size==1))
+numerator_10yrSM_2005 <- length(which(data_2005$survive_10yr==1 & data_2005$top_smallbiz_bin==1))
 
-denominator_10yrSM_2005 <- length(which(data_2005$biz_size==1))
+denominator_10yrSM_2005 <- length(which(data_2005$top_smallbiz_bin==1))
 
 survival_10yrSM_2005 <- numerator_10yrSM_2005/denominator_10yrSM_2005
 survival_10yrSM_2005
@@ -1548,9 +1799,9 @@ survival_10yrSM_2005
 ##3-year##
 table(data_2005$survive_3yr) #0=12449, 1=21743
 
-numerator_3yrNSM_2005 <- length(which(data_2005$survive_3yr==1 & data_2005$biz_size==0))
+numerator_3yrNSM_2005 <- length(which(data_2005$survive_3yr==1 & data_2005$top_smallbiz_bin==0))
 
-denominator_3yrNSM_2005 <- length(which(data_2005$biz_size==0))
+denominator_3yrNSM_2005 <- length(which(data_2005$top_smallbiz_bin==0))
 
 survival_3yrNSM_2005 <- numerator_3yrNSM_2005/denominator_3yrNSM_2005
 survival_3yrNSM_2005
@@ -1558,9 +1809,9 @@ survival_3yrNSM_2005
 ##5-year##
 table(data_2005$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrNSM_2005 <- length(which(data_2005$survive_5yr==1 & data_2005$biz_size==0))
+numerator_5yrNSM_2005 <- length(which(data_2005$survive_5yr==1 & data_2005$top_smallbiz_bin==0))
 
-denominator_5yrNSM_2005 <- length(which(data_2005$biz_size==0))
+denominator_5yrNSM_2005 <- length(which(data_2005$top_smallbiz_bin==0))
 
 survival_5yrNSM_2005 <- numerator_5yrNSM_2005/denominator_5yrNSM_2005
 survival_5yrNSM_2005
@@ -1568,9 +1819,9 @@ survival_5yrNSM_2005
 ##10-year##
 table(data_2005$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrNSM_2005 <- length(which(data_2005$survive_10yr==1 & data_2005$biz_size==0))
+numerator_10yrNSM_2005 <- length(which(data_2005$survive_10yr==1 & data_2005$top_smallbiz_bin==0))
 
-denominator_10yrNSM_2005 <- length(which(data_2005$biz_size==0))
+denominator_10yrNSM_2005 <- length(which(data_2005$top_smallbiz_bin==0))
 
 survival_10yrNSM_2005 <- numerator_10yrNSM_2005/denominator_10yrNSM_2005
 survival_10yrNSM_2005
@@ -1595,6 +1846,32 @@ data_2005_DOD <- data_2005_DOD %>%
 ##create variable describing whether a firm survived 10 years
 data_2005_DOD <- data_2005_DOD %>%
   dplyr::mutate(survive_10yr = ifelse(exitYear < 2014, "0", "1")) 
+
+str(data_2005_DOD)
+
+data_2005_DOD$survive_3yr<-as.numeric(as.character(data_2005_DOD$survive_3yr))
+data_2005_DOD$survive_5yr<-as.numeric(as.character(data_2005_DOD$survive_5yr))
+data_2005_DOD$survive_10yr<-as.numeric(as.character(data_2005_DOD$survive_10yr))
+
+str(data_2005_DOD)
+
+##**********
+##t test to test the differences between small and non small survival##
+table(data_2005_DOD$top_smallbiz_bin)
+table(data_2005_DOD$survive_3yr)
+table(data_2005_DOD$top_smallbiz_bin, data_2005_DOD$survive_3yr)
+
+t.test(survive_3yr ~ top_smallbiz_bin, data = data_2005_DOD)
+
+#5-year#
+table(data_2005_DOD$top_smallbiz_bin, data_2005_DOD$survive_5yr)
+
+t.test(survive_5yr ~ top_smallbiz_bin, data = data_2005_DOD)
+
+#10-year#
+table(data_2005_DOD$top_smallbiz_bin, data_2005_DOD$survive_10yr)
+
+t.test(survive_10yr ~ top_smallbiz_bin, data = data_2005_DOD)
 
 #******#
 #**ALL*#
@@ -1658,9 +1935,9 @@ graduated_2005_DOD_10yr
 ##3-year##
 table(data_2005_DOD$survive_3yr) #0=12449, 1=21743
 
-numerator_3yrSM_2005_DOD <- length(which(data_2005_DOD$survive_3yr==1 & data_2005_DOD$biz_size==1))
+numerator_3yrSM_2005_DOD <- length(which(data_2005_DOD$survive_3yr==1 & data_2005_DOD$top_smallbiz_bin==1))
 
-denominator_3yrSM_2005_DOD <- length(which(data_2005_DOD$biz_size==1))
+denominator_3yrSM_2005_DOD <- length(which(data_2005_DOD$top_smallbiz_bin==1))
 
 survival_3yrSM_2005_DOD <- numerator_3yrSM_2005_DOD/denominator_3yrSM_2005_DOD
 survival_3yrSM_2005_DOD
@@ -1668,9 +1945,9 @@ survival_3yrSM_2005_DOD
 ##5-year##
 table(data_2005_DOD$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrSM_2005_DOD <- length(which(data_2005_DOD$survive_5yr==1 & data_2005_DOD$biz_size==1))
+numerator_5yrSM_2005_DOD <- length(which(data_2005_DOD$survive_5yr==1 & data_2005_DOD$top_smallbiz_bin==1))
 
-denominator_5yrSM_2005_DOD <- length(which(data_2005_DOD$biz_size==1))
+denominator_5yrSM_2005_DOD <- length(which(data_2005_DOD$top_smallbiz_bin==1))
 
 survival_5yrSM_2005_DOD <- numerator_5yrSM_2005_DOD/denominator_5yrSM_2005_DOD
 survival_5yrSM_2005_DOD 
@@ -1678,9 +1955,9 @@ survival_5yrSM_2005_DOD
 ##10-year##
 table(data_2005_DOD$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrSM_2005_DOD <- length(which(data_2005_DOD$survive_10yr==1 & data_2005_DOD$biz_size==1))
+numerator_10yrSM_2005_DOD <- length(which(data_2005_DOD$survive_10yr==1 & data_2005_DOD$top_smallbiz_bin==1))
 
-denominator_10yrSM_2005_DOD <- length(which(data_2005_DOD$biz_size==1))
+denominator_10yrSM_2005_DOD <- length(which(data_2005_DOD$top_smallbiz_bin==1))
 
 survival_10yrSM_2005_DOD <- numerator_10yrSM_2005_DOD/denominator_10yrSM_2005_DOD
 survival_10yrSM_2005_DOD
@@ -1691,9 +1968,9 @@ survival_10yrSM_2005_DOD
 ##3-year##
 table(data_2005_DOD$survive_3yr) #0=12449, 1=21743
 
-numerator_3yrNSM_2005_DOD <- length(which(data_2005_DOD$survive_3yr==1 & data_2005_DOD$biz_size==0))
+numerator_3yrNSM_2005_DOD <- length(which(data_2005_DOD$survive_3yr==1 & data_2005_DOD$top_smallbiz_bin==0))
 
-denominator_3yrNSM_2005_DOD <- length(which(data_2005_DOD$biz_size==0))
+denominator_3yrNSM_2005_DOD <- length(which(data_2005_DOD$top_smallbiz_bin==0))
 
 survival_3yrNSM_2005_DOD <- numerator_3yrNSM_2005_DOD/denominator_3yrNSM_2005_DOD
 survival_3yrNSM_2005_DOD
@@ -1701,9 +1978,9 @@ survival_3yrNSM_2005_DOD
 ##5-year##
 table(data_2005_DOD$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrNSM_2005_DOD <- length(which(data_2005_DOD$survive_5yr==1 & data_2005_DOD$biz_size==0))
+numerator_5yrNSM_2005_DOD <- length(which(data_2005_DOD$survive_5yr==1 & data_2005_DOD$top_smallbiz_bin==0))
 
-denominator_5yrNSM_2005_DOD <- length(which(data_2005_DOD$biz_size==0))
+denominator_5yrNSM_2005_DOD <- length(which(data_2005_DOD$top_smallbiz_bin==0))
 
 survival_5yrNSM_2005_DOD <- numerator_5yrNSM_2005_DOD/denominator_5yrNSM_2005_DOD
 survival_5yrNSM_2005_DOD
@@ -1711,9 +1988,9 @@ survival_5yrNSM_2005_DOD
 ##10-year##
 table(data_2005_DOD$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrNSM_2005_DOD <- length(which(data_2005_DOD$survive_10yr==1 & data_2005_DOD$biz_size==0))
+numerator_10yrNSM_2005_DOD <- length(which(data_2005_DOD$survive_10yr==1 & data_2005_DOD$top_smallbiz_bin==0))
 
-denominator_10yrNSM_2005_DOD <- length(which(data_2005_DOD$biz_size==0))
+denominator_10yrNSM_2005_DOD <- length(which(data_2005_DOD$top_smallbiz_bin==0))
 
 survival_10yrNSM_2005_DOD <- numerator_10yrNSM_2005_DOD/denominator_10yrNSM_2005_DOD
 survival_10yrNSM_2005_DOD
@@ -1742,6 +2019,33 @@ data_2006 <- data_2006 %>%
 ##create variable describing whether a firm survived 10 years
 data_2006 <- data_2006 %>%
   dplyr::mutate(survive_10yr = ifelse(exitYear < 2015, "0", "1")) 
+
+str(data_2006)
+
+data_2006$survive_3yr<-as.numeric(as.character(data_2006$survive_3yr))
+data_2006$survive_5yr<-as.numeric(as.character(data_2006$survive_5yr))
+data_2006$survive_10yr<-as.numeric(as.character(data_2006$survive_10yr))
+
+str(data_2006)
+
+#**********
+##t test to test the differences between small and non small survival##
+table(data_2006$top_smallbiz_bin)
+table(data_2006$survive_3yr)
+table(data_2006$top_smallbiz_bin, data_2006$survive_3yr)
+
+t.test(survive_3yr ~ top_smallbiz_bin, data = data_2006)
+
+#5-year#
+table(data_2006$top_smallbiz_bin, data_2006$survive_5yr)
+
+t.test(survive_5yr ~ top_smallbiz_bin, data = data_2006)
+
+#10-year#
+table(data_2006$top_smallbiz_bin, data_2006$survive_10yr)
+
+t.test(survive_10yr ~ top_smallbiz_bin, data = data_2006)
+
 
 #*************#
 #survival rates#
@@ -1806,9 +2110,9 @@ graduated_2006_10yr
 ##3-year##
 table(data_2006$survive_3yr) #0=12449, 1=21743
 
-numerator_3yrSM_2006 <- length(which(data_2006$survive_3yr==1 & data_2006$biz_size==1))
+numerator_3yrSM_2006 <- length(which(data_2006$survive_3yr==1 & data_2006$top_smallbiz_bin==1))
 
-denominator_3yrSM_2006 <- length(which(data_2006$biz_size==1))
+denominator_3yrSM_2006 <- length(which(data_2006$top_smallbiz_bin==1))
 
 survival_3yrSM_2006 <- numerator_3yrSM_2006/denominator_3yrSM_2006
 survival_3yrSM_2006 
@@ -1816,9 +2120,9 @@ survival_3yrSM_2006
 ##5-year##
 table(data_2006$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrSM_2006 <- length(which(data_2006$survive_5yr==1 & data_2006$biz_size==1))
+numerator_5yrSM_2006 <- length(which(data_2006$survive_5yr==1 & data_2006$top_smallbiz_bin==1))
 
-denominator_5yrSM_2006 <- length(which(data_2006$biz_size==1))
+denominator_5yrSM_2006 <- length(which(data_2006$top_smallbiz_bin==1))
 
 survival_5yrSM_2006 <- numerator_5yrSM_2006/denominator_5yrSM_2006
 survival_5yrSM_2006 
@@ -1826,9 +2130,9 @@ survival_5yrSM_2006
 ##10-year##
 table(data_2006$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrSM_2006 <- length(which(data_2006$survive_10yr==1 & data_2006$biz_size==1))
+numerator_10yrSM_2006 <- length(which(data_2006$survive_10yr==1 & data_2006$top_smallbiz_bin==1))
 
-denominator_10yrSM_2006 <- length(which(data_2006$biz_size==1))
+denominator_10yrSM_2006 <- length(which(data_2006$top_smallbiz_bin==1))
 
 survival_10yrSM_2006 <- numerator_10yrSM_2006/denominator_10yrSM_2006
 survival_10yrSM_2006
@@ -1840,9 +2144,9 @@ survival_10yrSM_2006
 ##3-year##
 table(data_2006$survive_3yr) #0=12449, 1=21743
 
-numerator_3yrNSM_2006 <- length(which(data_2006$survive_3yr==1 & data_2006$biz_size==0))
+numerator_3yrNSM_2006 <- length(which(data_2006$survive_3yr==1 & data_2006$top_smallbiz_bin==0))
 
-denominator_3yrNSM_2006 <- length(which(data_2006$biz_size==0))
+denominator_3yrNSM_2006 <- length(which(data_2006$top_smallbiz_bin==0))
 
 survival_3yrNSM_2006 <- numerator_3yrNSM_2006/denominator_3yrNSM_2006
 survival_3yrNSM_2006
@@ -1850,9 +2154,9 @@ survival_3yrNSM_2006
 ##5-year##
 table(data_2006$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrNSM_2006 <- length(which(data_2006$survive_5yr==1 & data_2006$biz_size==0))
+numerator_5yrNSM_2006 <- length(which(data_2006$survive_5yr==1 & data_2006$top_smallbiz_bin==0))
 
-denominator_5yrNSM_2006 <- length(which(data_2006$biz_size==0))
+denominator_5yrNSM_2006 <- length(which(data_2006$top_smallbiz_bin==0))
 
 survival_5yrNSM_2006 <- numerator_5yrNSM_2006/denominator_5yrNSM_2006
 survival_5yrNSM_2006 
@@ -1860,9 +2164,9 @@ survival_5yrNSM_2006
 ##10-year##
 table(data_2006$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrNSM_2006 <- length(which(data_2006$survive_10yr==1 & data_2006$biz_size==0))
+numerator_10yrNSM_2006 <- length(which(data_2006$survive_10yr==1 & data_2006$top_smallbiz_bin==0))
 
-denominator_10yrNSM_2006 <- length(which(data_2006$biz_size==0))
+denominator_10yrNSM_2006 <- length(which(data_2006$top_smallbiz_bin==0))
 
 survival_10yrNSM_2006 <- numerator_10yrNSM_2006/denominator_10yrNSM_2006
 survival_10yrNSM_2006 
@@ -1889,6 +2193,33 @@ data_2006_DOD <- data_2006_DOD %>%
 ##create variable describing whether a firm survived 10 years
 data_2006_DOD <- data_2006_DOD %>%
   dplyr::mutate(survive_10yr = ifelse(exitYear < 2015, "0", "1")) 
+
+str(data_2006_DOD)
+
+data_2006_DOD$survive_3yr<-as.numeric(as.character(data_2006_DOD$survive_3yr))
+data_2006_DOD$survive_5yr<-as.numeric(as.character(data_2006_DOD$survive_5yr))
+data_2006_DOD$survive_10yr<-as.numeric(as.character(data_2006_DOD$survive_10yr))
+
+str(data_2006_DOD)
+
+#**********
+##t test to test the differences between small and non small survival##
+table(data_2006_DOD$top_smallbiz_bin)
+table(data_2006_DOD$survive_3yr)
+table(data_2006_DOD$top_smallbiz_bin, data_2006_DOD$survive_3yr)
+
+t.test(survive_3yr ~ top_smallbiz_bin, data = data_2006_DOD)
+
+#5-year#
+table(data_2006_DOD$top_smallbiz_bin, data_2006_DOD$survive_5yr)
+
+t.test(survive_5yr ~ top_smallbiz_bin, data = data_2006_DOD)
+
+#10-year#
+table(data_2006_DOD$top_smallbiz_bin, data_2006_DOD$survive_10yr)
+
+t.test(survive_10yr ~ top_smallbiz_bin, data = data_2006_DOD)
+
 
 #*************#
 #survival rates#
@@ -1952,9 +2283,9 @@ graduated_2006_DOD_10yr
 ##3-year##
 table(data_2006_DOD$survive_3yr) #0=12449, 1=21743
 
-numerator_3yrSM_2006_DOD <- length(which(data_2006_DOD$survive_3yr==1 & data_2006_DOD$biz_size==1))
+numerator_3yrSM_2006_DOD <- length(which(data_2006_DOD$survive_3yr==1 & data_2006_DOD$top_smallbiz_bin==1))
 
-denominator_3yrSM_2006_DOD <- length(which(data_2006_DOD$biz_size==1))
+denominator_3yrSM_2006_DOD <- length(which(data_2006_DOD$top_smallbiz_bin==1))
 
 survival_3yrSM_2006_DOD <- numerator_3yrSM_2006_DOD/denominator_3yrSM_2006_DOD
 survival_3yrSM_2006_DOD 
@@ -1962,9 +2293,9 @@ survival_3yrSM_2006_DOD
 ##5-year##
 table(data_2006_DOD$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrSM_2006_DOD <- length(which(data_2006_DOD$survive_5yr==1 & data_2006_DOD$biz_size==1))
+numerator_5yrSM_2006_DOD <- length(which(data_2006_DOD$survive_5yr==1 & data_2006_DOD$top_smallbiz_bin==1))
 
-denominator_5yrSM_2006_DOD <- length(which(data_2006_DOD$biz_size==1))
+denominator_5yrSM_2006_DOD <- length(which(data_2006_DOD$top_smallbiz_bin==1))
 
 survival_5yrSM_2006_DOD <- numerator_5yrSM_2006_DOD/denominator_5yrSM_2006_DOD
 survival_5yrSM_2006_DOD 
@@ -1972,9 +2303,9 @@ survival_5yrSM_2006_DOD
 ##10-year##
 table(data_2006_DOD$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrSM_2006_DOD <- length(which(data_2006_DOD$survive_10yr==1 & data_2006_DOD$biz_size==1))
+numerator_10yrSM_2006_DOD <- length(which(data_2006_DOD$survive_10yr==1 & data_2006_DOD$top_smallbiz_bin==1))
 
-denominator_10yrSM_2006_DOD <- length(which(data_2006_DOD$biz_size==1))
+denominator_10yrSM_2006_DOD <- length(which(data_2006_DOD$top_smallbiz_bin==1))
 
 survival_10yrSM_2006_DOD <- numerator_10yrSM_2006_DOD/denominator_10yrSM_2006_DOD
 survival_10yrSM_2006_DOD
@@ -1986,9 +2317,9 @@ survival_10yrSM_2006_DOD
 ##3-year##
 table(data_2006_DOD$survive_3yr) #0=12449, 1=21743
 
-numerator_3yrNSM_2006_DOD <- length(which(data_2006_DOD$survive_3yr==1 & data_2006_DOD$biz_size==0))
+numerator_3yrNSM_2006_DOD <- length(which(data_2006_DOD$survive_3yr==1 & data_2006_DOD$top_smallbiz_bin==0))
 
-denominator_3yrNSM_2006_DOD <- length(which(data_2006_DOD$biz_size==0))
+denominator_3yrNSM_2006_DOD <- length(which(data_2006_DOD$top_smallbiz_bin==0))
 
 survival_3yrNSM_2006_DOD <- numerator_3yrNSM_2006_DOD/denominator_3yrNSM_2006_DOD
 survival_3yrNSM_2006_DOD
@@ -1996,9 +2327,9 @@ survival_3yrNSM_2006_DOD
 ##5-year##
 table(data_2006_DOD$survive_5yr) #0=10168, 1=17266
 
-numerator_5yrNSM_2006_DOD <- length(which(data_2006_DOD$survive_5yr==1 & data_2006_DOD$biz_size==0))
+numerator_5yrNSM_2006_DOD <- length(which(data_2006_DOD$survive_5yr==1 & data_2006_DOD$top_smallbiz_bin==0))
 
-denominator_5yrNSM_2006_DOD <- length(which(data_2006_DOD$biz_size==0))
+denominator_5yrNSM_2006_DOD <- length(which(data_2006_DOD$top_smallbiz_bin==0))
 
 survival_5yrNSM_2006_DOD <- numerator_5yrNSM_2006_DOD/denominator_5yrNSM_2006_DOD
 survival_5yrNSM_2006_DOD 
@@ -2006,9 +2337,9 @@ survival_5yrNSM_2006_DOD
 ##10-year##
 table(data_2006_DOD$survive_10yr) #0=10168, 1=17266
 
-numerator_10yrNSM_2006_DOD <- length(which(data_2006_DOD$survive_10yr==1 & data_2006_DOD$biz_size==0))
+numerator_10yrNSM_2006_DOD <- length(which(data_2006_DOD$survive_10yr==1 & data_2006_DOD$top_smallbiz_bin==0))
 
-denominator_10yrNSM_2006_DOD <- length(which(data_2006_DOD$biz_size==0))
+denominator_10yrNSM_2006_DOD <- length(which(data_2006_DOD$top_smallbiz_bin==0))
 
 survival_10yrNSM_2006_DOD <- numerator_10yrNSM_2006_DOD/denominator_10yrNSM_2006_DOD
 survival_10yrNSM_2006_DOD 

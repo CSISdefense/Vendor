@@ -831,6 +831,25 @@ save(FPDS_cleaned_unique, file="FPDS_datapull_all_v3.Rda")
 
 #******************************************************
 
+##making sure all things are numeric that need to be##
+setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
+load(file = "FPDS_datapull_all_v3.Rda")
+
+str(FPDS_cleaned_unique))
+
+##change top_smallbiz_bin to numeric
+table(FPDS_cleaned_unique$top_smallbiz_bin)
+
+FPDS_cleaned_unique$top_smallbiz_bin<-as.numeric(as.character(FPDS_cleaned_unique$top_smallbiz_bin))
+
+str(FPDS_cleaned_unique$top_smallbiz_bin)
+
+####save again####
+FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear<2000), ]
+
+save(FPDS_cleaned_unique, file="FPDS_datapull_all_v3.Rda")
+
+
 
 #*****************************************#
 ####Whether a firm is an incumbent firm####
