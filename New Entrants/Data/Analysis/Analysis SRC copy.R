@@ -257,7 +257,6 @@ str(data_2001)
 
 ##t-test between small and nonsmall survival rates##
 #3-year#
-
 table(data_2001$top_smallbiz_bin)
 table(data_2001$survive_3yr)
 table(data_2001$top_smallbiz_bin, data_2001$survive_3yr)
