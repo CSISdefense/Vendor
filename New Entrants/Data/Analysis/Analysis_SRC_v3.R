@@ -75,24 +75,24 @@ SAM_and_FPDS_uniqueDuns <- SAM_and_FPDS_uniqueDuns[order(SAM_and_FPDS_uniqueDuns
 #******************************#
 ####bar graph for FPDS Data####
 #******************************#
-str(FPDS_cleaned_unique$top_small_biz)
-#convert biz_size to numeric
-##change top_small_biz to 1= small biz and 0 = non-small biz
-
-str(FPDS_cleaned_unique$top_small_biz)
-
-table(FPDS_cleaned_unique$top_small_biz)
-
-FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$top_small_biz==":"), ]
-
-table(FPDS_cleaned_unique$top_small_biz)
-
-##make biz_size binary
-FPDS_cleaned_unique$top_smallbiz_bin <- revalue(FPDS_cleaned_unique$top_small_biz, c("S"="1", "O"="0"))
-
-str(FPDS_cleaned_unique$top_smallbiz_bin)
-
-table(FPDS_cleaned_unique$top_smallbiz_bin)
+# str(FPDS_cleaned_unique$top_small_biz)
+# #convert biz_size to numeric
+# ##change top_small_biz to 1= small biz and 0 = non-small biz
+# 
+# str(FPDS_cleaned_unique$top_small_biz)
+# 
+# table(FPDS_cleaned_unique$top_small_biz)
+# 
+# FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$top_small_biz==":"), ]
+# 
+# table(FPDS_cleaned_unique$top_small_biz)
+# 
+# ##make biz_size binary
+# FPDS_cleaned_unique$top_smallbiz_bin <- revalue(FPDS_cleaned_unique$top_small_biz, c("S"="1", "O"="0"))
+# 
+# str(FPDS_cleaned_unique$top_smallbiz_bin)
+# 
+# table(FPDS_cleaned_unique$top_smallbiz_bin)
 
 ##drop observations with Registration Year before 2000
 FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear<2001), ]
@@ -128,7 +128,7 @@ ggplot(FPDS_bargraphCount, aes(x = registrationYear, y = regpersize, fill = fact
   xlab("Registration Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
   ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
-  scale_fill_manual(name = "New Entrants Types", values = c("darkslategray1", "cadetblue4"), labels = c("small", "non-small")) +
+  scale_fill_manual(name = "New Entrants Types", values = c("darkslategray1", "cadetblue4"), labels = c("non-small", "small")) +
   ggtitle("Number of New Entrants Per Year (2001-2016) - All Federal Agencies")+
   ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
   ###    angle = 45) +
@@ -138,17 +138,17 @@ ggplot(FPDS_bargraphCount, aes(x = registrationYear, y = regpersize, fill = fact
 #******************************
 ##chart for DoD
 #******************************
-FPDS_cleaned_unique <- FPDS_cleaned_unique[(FPDS_cleaned_unique$customer=="Defense"), ]
+FPDS_cleaned_unique_DOD <- FPDS_cleaned_unique[(FPDS_cleaned_unique$customer=="Defense"), ]
 
 
 
-totyear_count <- FPDS_cleaned_unique %>% 
+totyear_count <- FPDS_cleaned_unique_DOD %>% 
   filter(top_smallbiz_bin == 1 | top_smallbiz_bin == 0) %>% 
   group_by(registrationYear) %>% 
   dplyr::summarise(n())  
 
 
-FPDS_bargraphCount <- FPDS_cleaned_unique %>%
+FPDS_bargraphCount <- FPDS_cleaned_unique_DOD %>%
   filter(top_smallbiz_bin == 1 | top_smallbiz_bin == 0) %>%
   group_by(registrationYear, top_smallbiz_bin) %>%
   dplyr::summarise(n()) %>%
@@ -163,7 +163,7 @@ ggplot(FPDS_bargraphCount, aes(x = registrationYear, y = regpersize, fill = fact
   xlab("Registration Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
   ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
-  scale_fill_manual(name = "New Entrants Types", values = c("darkslategray1", "cadetblue4"), labels = c("small", "non-small")) +
+  scale_fill_manual(name = "New Entrants Types", values = c("darkslategray1", "cadetblue4"), labels = c("non-small", "small")) +
   ggtitle("Number of New Entrants Per Year (2001-2016) - DoD")+
   ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
                   ##angle = 45) +
@@ -593,7 +593,7 @@ survival_10yrNSM_2001_DoD
 ####2002 all fed agencies####
 #***********#
 
-#creae necessary variables to do this#
+#create necessary variables to do this#
 
 #subset the 2001 data
 data_2002 <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear!="2002"), ]
@@ -789,7 +789,7 @@ data_2002_DOD <- data_2002_DOD %>%
 str(data_2002_DOD)
 
 data_2002_DOD$survive_3yr<-as.numeric(as.character(data_2002_DOD$survive_3yr))
-ddata_2002_DOD$survive_5yr<-as.numeric(as.character(data_2002_DOD$survive_5yr))
+data_2002_DOD$survive_5yr<-as.numeric(as.character(data_2002_DOD$survive_5yr))
 data_2002_DOD$survive_10yr<-as.numeric(as.character(data_2002_DOD$survive_10yr))
 
 str(data_2002_DOD)
