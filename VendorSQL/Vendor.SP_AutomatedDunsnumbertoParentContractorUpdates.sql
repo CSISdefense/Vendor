@@ -1,9 +1,10 @@
-/****** Object:  StoredProcedure [Vendor].[SP_AutomatedDunsnumbertoParentContractorUpdates]    Script Date: 4/25/2018 1:37:11 PM ******/
+/****** Object:  StoredProcedure [Vendor].[SP_AutomatedDunsnumbertoParentContractorUpdates]    Script Date: 6/25/2018 11:41:51 AM ******/
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
 GO
+
 
 
 
@@ -808,6 +809,178 @@ where  isnull(base.ParentDUNSnumber,'')<>iif(aggregated.maxofParentDUNSnumber=ag
 
 
 	--***************************************13 and 9 digit dunsnumbers
+
+select len(dunsnumber) as DunsLength
+,count(*) as num
+,sum(obligatedamount) as Obl
+,min(fiscal_year) as MinFY
+,max(fiscal_year) as MaxFY
+from contract.fpds 
+group by len(dunsnumber) 
+
+
+update f
+set dunsnumber=right('000000000'+f.dunsnumber,9)
+from vendor.GirthDunsnumber f
+where len(f.dunsnumber)<9 and f.dunsnumber is not null 
+
+update f
+set dunsnumber=right('000000000'+f.dunsnumber,9)
+from contract.fpds f
+left outer join contractor.dunsnumbertoparentcontractorhistory dtpch
+on dtpch.dunsnumber=f.dunsnumber and dtpch.fiscalyear=f.fiscal_year
+left outer join contractor.parentcontractor pc
+on dtpch.parentid=pc.parentid
+where len(f.dunsnumber)<9 and f.dunsnumber is not null and isnumeric(f.dunsnumber)=1
+and isnull(pc.UnknownCompany,0) =0 and f.dunsnumber<>'.'
+
+
+select right('000000000'+duns.dunsnumber,9) as NewDunsnumber
+,min(duns.dunsnumber) as MinOfD
+,max(duns.dunsnumber) as MaxOfD
+,count(*)
+from contractor.dunsnumber duns
+left outer join contractor.dunsnumber duns2
+on right('000000000'+duns.dunsnumber,9)=duns2.dunsnumber 
+where duns2.dunsnumber is null and isnumeric(duns.dunsnumber)=1
+and len(duns.dunsnumber)<9
+group by right('000000000'+duns.dunsnumber,9)
+having count(*)>1 
+
+insert into  [Contractor].Dunsnumber
+([DUNSnumber]
+,[CEC]
+      ,[CECtext9digit]
+      ,[CECnoleadingzero]
+      ,[ignorebeforeyear]
+      ,[CSISmodifiedDate]
+      ,[CSIScreateddate]
+      ,[CSISmodifiedBy]
+      ,[ignorebeforeyearURL]
+      ,[totalamount]
+      ,[topISO3countrycode]
+      ,[topISO3countrytotalamount]
+      ,[overrideISO3countrycode]
+      ,[ParentDUNSnumber]
+      ,[HeadquarterCode]
+      ,[CAGE]
+      ,[ParentDUNSnumberFirstFiscalYear]
+      ,[HeadquarterCodeFirstFiscalYear]
+      ,[EntityID])
+select right('000000000'+duns.dunsnumber,9) as NewDunsnumber
+,duns.[CEC]
+,duns.[CECtext9digit]
+,duns.[CECnoleadingzero]
+,duns.[ignorebeforeyear]
+,duns.[CSISmodifiedDate]
+,duns.[CSIScreateddate]
+,duns.[CSISmodifiedBy]
+,duns.[ignorebeforeyearURL]
+,duns.[totalamount]
+,duns.[topISO3countrycode]
+,duns.[topISO3countrytotalamount]
+,duns.[overrideISO3countrycode]
+,duns.[ParentDUNSnumber]
+,duns.[HeadquarterCode]
+,duns.[CAGE]
+,duns.[ParentDUNSnumberFirstFiscalYear]
+,duns.[HeadquarterCodeFirstFiscalYear]
+,duns.[EntityID]
+
+from contractor.dunsnumber duns
+--left outer join contractor.parentcontractor pc
+--on duns.parentid=pc.parentid
+left outer join contractor.dunsnumber duns2
+on right('000000000'+duns.dunsnumber,9)=duns2.dunsnumber 
+where len(duns.dunsnumber)<9 and duns.dunsnumber is not null and isnumeric(duns.dunsnumber)=1
+--and isnull(pc.UnknownCompany,0) =0 
+and duns.dunsnumber<>'.'
+and duns2.dunsnumber is null and not duns.dunsnumber in ('2','3','4','5','6','8','9')
+
+
+
+insert into  [Contractor].[DunsnumberToParentContractorHistory]
+([DUNSnumber]
+      ,[CEC]
+      ,[FiscalYear]
+      ,[ParentID]
+      ,[Notes]
+      ,[TooHard]
+      ,[ObligatedAmount]
+      ,[TopVendorNameTotalAmount]
+      ,[NotableSubdivision]
+      ,[SubdivisionName]
+      ,[StandardizedTopContractor]
+      ,[Parentdunsnumber]
+      ,[CSISmodifiedDate]
+      ,[CSIScreateddate]
+      ,[CSISmodifiedBy]
+      ,[fed_funding_amount]
+      ,[TotalAmount]
+      ,[topISO3countrycode]
+      ,[topISO3countrytotalamount]
+      ,[MaxOfCSIScontractIDObligatedAmount]
+      ,[CAGE]
+      ,[HeadquarterCode]
+      ,[AnyIsSmall]
+      ,[AlwaysIsSmall]
+      ,[ObligatedAmountIsSmall]
+      ,[IsOnePercentPlusSmall]
+      ,[EntitySizeCode]
+      ,[IsEntityAbove1990constantReportingThreshold]
+      ,[IsEntityAbove2016constantReportingThreshold]
+      ,[AnyEntityUSplaceOfPerformance]
+      ,[IsEntityAbove2016constantOneMillionThreshold]
+      ,[AnyEntityForeignPlaceOfPerformance]
+      ,[ChildCount]
+      ,[IsPresent]) 
+select right('000000000'+dtpch.dunsnumber,9) as NewDunsnumber
+,DTPCH.[CEC]
+,DTPCH.[FiscalYear]
+,DTPCH.[ParentID]
+,DTPCH.[Notes]
+,DTPCH.[TooHard]
+,DTPCH.[ObligatedAmount]
+,DTPCH.[TopVendorNameTotalAmount]
+,DTPCH.[NotableSubdivision]
+,DTPCH.[SubdivisionName]
+,DTPCH.[StandardizedTopContractor]
+,DTPCH.[Parentdunsnumber]
+,DTPCH.[CSISmodifiedDate]
+,DTPCH.[CSIScreateddate]
+,DTPCH.[CSISmodifiedBy]
+,DTPCH.[fed_funding_amount]
+,DTPCH.[TotalAmount]
+,DTPCH.[topISO3countrycode]
+,DTPCH.[topISO3countrytotalamount]
+,DTPCH.[MaxOfCSIScontractIDObligatedAmount]
+,DTPCH.[CAGE]
+,DTPCH.[HeadquarterCode]
+,DTPCH.[AnyIsSmall]
+,DTPCH.[AlwaysIsSmall]
+,DTPCH.[ObligatedAmountIsSmall]
+,DTPCH.[IsOnePercentPlusSmall]
+,DTPCH.[EntitySizeCode]
+,DTPCH.[IsEntityAbove1990constantReportingThreshold]
+,DTPCH.[IsEntityAbove2016constantReportingThreshold]
+,DTPCH.[AnyEntityUSplaceOfPerformance]
+,DTPCH.[IsEntityAbove2016constantOneMillionThreshold]
+,DTPCH.[AnyEntityForeignPlaceOfPerformance]
+,DTPCH.[ChildCount]
+,DTPCH.[IsPresent]
+from contractor.dunsnumbertoparentcontractorhistory dtpch
+--left outer join contractor.dunsnumber d
+--on dtpch.dunsnumber=d.dunsnumber 
+left outer join contractor.parentcontractor pc
+on dtpch.parentid=pc.parentid
+left outer join contractor.dunsnumbertoparentcontractorhistory dtpch2
+on right('000000000'+dtpch.dunsnumber,9)=dtpch2.dunsnumber 
+and dtpch.fiscalyear=dtpch2.fiscalyear
+where len(dtpch.dunsnumber)<9 and dtpch.dunsnumber is not null and isnumeric(dtpch.dunsnumber)=1
+and isnull(pc.UnknownCompany,0) =0 and dtpch.dunsnumber<>'.'
+and dtpch2.dunsnumber is null
+
+
 	-- Create 9 digit versions of dunsnumbers that are shorter or longer than 9 digits
 update contractor.dunsnumber
 set CECtext9digit=right('000000000'+left(dunsnumber,len(dunsnumber)-4),9)
@@ -845,6 +1018,8 @@ on d.CECtext9digit=dtpch.dunsnumber
 inner join contractor.DunsnumberToParentContractorHistory as dtpch2
 	on dtpch2.DUNSnumber=d.dunsnumber and dtpch.fiscalyear=dtpch2.fiscalyear
 where dtpch.parentid is null and dtpch2.parentid is not null
+
+
 
 --******************************Automate updates based on parentdunsnumbers or headquartercodes
 
