@@ -72,15 +72,15 @@ These four catetegories and the "Close Out" category are used to mark a contract
 ```{r ReadInData, echo = TRUE}
 
 load(file="Data/defense_contract_all.RData")
-undebug(transform_contract)
+debug(transform_contract)
 def_all<-transform_contract(def_all)
 
 
 def_all<-FormatContractModel(def_all)
 head(def_all)
 
-def_all$pNewWork3Sig<-round(
-  def_all$pNewWorkUnmodifiedBaseAndAll,3)
+# def_all$pNewWork3Sig<-round(
+#   def_all$pNewWorkUnmodifiedBaseAndAll,3)
 def_all$pChange3Sig<-round(
   def_all$pChangeOrderUnmodifiedBaseAndAll,3)
 
@@ -1145,7 +1145,7 @@ In addition, there are a number of other modifications that may be undertaken ba
   
   NChgCeil<-ddply(def_all,
                .(SumOfisChangeOrder,
-                 StartFiscalYear,
+                 StartFY,
                  Ceil),
                plyr::summarise,
                ContractCount=length(CSIScontractID),
@@ -1233,7 +1233,7 @@ The % Growth in Base and All Options Value Amount form Change Orders is calculat
 # 
 # pChgCeil<-ddply(def_all,
 #              .(pChange3Sig,
-#                StartFiscalYear,
+#                StartFY,
 #                Ceil),
 #              plyr::summarise,
 #              ContractCount=length(CSIScontractID),
@@ -1246,7 +1246,7 @@ The % Growth in Base and All Options Value Amount form Change Orders is calculat
 #                 pObligationByCeil=Action.Obligation/sum(Action.Obligation))
 # 
 # pChgCeil<-ddply(pChgCeil, 
-#                 .(StartFiscalYear), 
+#                 .(StartFY), 
 #                 transform, 
 #                 pContractByFYear=ContractCount/sum(ContractCount),
 #                 pObligationByFYear=Action.Obligation/sum(Action.Obligation))
@@ -1306,8 +1306,8 @@ The % Growth in Base and All Options Value Amount form Change Orders is calculat
 # 
 # ggplot(
 #   data = subset(pChgCeil,is.finite(pChange3Sig)&
-#                   !is.na(pChange3Sig)&StartFiscalYear>2007&StartFiscalYear<=2014&pChange3Sig!=0),
-#   aes(y = pChange3Sig,x=factor(StartFiscalYear),
+#                   !is.na(pChange3Sig)&StartFY>2007&StartFY<=2014&pChange3Sig!=0),
+#   aes(y = pChange3Sig,x=factor(StartFY),
 #              weight = ContractCount)
 #   ) + geom_violin() + 
 #     facet_grid( Ceil ~ .) +
@@ -1321,8 +1321,8 @@ The % Growth in Base and All Options Value Amount form Change Orders is calculat
 # 
 # ggplot(
 #   data = subset(pChgCeil,is.finite(pChange3Sig)&
-#                   !is.na(pChange3Sig)&StartFiscalYear>2007&StartFiscalYear<=2014),
-#   aes(y = pChange3Sig,x=factor(StartFiscalYear),
+#                   !is.na(pChange3Sig)&StartFY>2007&StartFY<=2014),
+#   aes(y = pChange3Sig,x=factor(StartFY),
 #              weight = ContractCount)
 #   ) + geom_boxplot(outlier.shape = NA,notch=TRUE) + 
 #     facet_grid( Ceil ~ .) +
@@ -1336,8 +1336,8 @@ The % Growth in Base and All Options Value Amount form Change Orders is calculat
 # # Percent of Contracts breakdown by StartYear
 # ggplot(
 #   data = subset(pChgCeil,
-#                 StartFiscalYear>=2007 & 
-#                   StartFiscalYear<=2015 &
+#                 StartFY>=2007 & 
+#                   StartFY<=2015 &
 #                   pChange3Sig!=0),
 #   aes_string(x = "pChange3Sig",
 #              weight="pContractByFYear")
@@ -1346,7 +1346,7 @@ The % Growth in Base and All Options Value Amount form Change Orders is calculat
 #                        y\nInitial Cost Ceiling (Current $ Value)",
 #                        limits=c(-1.25,1.25), labels=percent)+
 #   scale_y_continuous()+
-#   facet_wrap("StartFiscalYear")
+#   facet_wrap("StartFY")
 # 
 # 
 # # Percent of Contracts breakdown by Ceiling
@@ -1411,7 +1411,7 @@ The % Growth in Base and All Options Value Amount form Change Orders is calculat
 
 ```
 
-
+## Ceiling Breach
 ```{r Quantile}
 
 df.QCrai<-subset(def_all,
@@ -1421,7 +1421,7 @@ df.QCrai<-subset(def_all,
                (LastCurrentCompletionDate<=as.Date("2016-09-30") |
                     IsClosed==1) &
                UnmodifiedCurrentCompletionDate<as.Date("2016-09-30"))%>%
-      group_by(StartFiscalYear,
+      group_by(StartFY,
                Ceil,
                Dur)%>%
       dplyr::summarise(
@@ -1442,7 +1442,7 @@ df.QCrai<-rbind(df.QCrai,
                                                !is.na(Dur) & 
                                                !is.na(Ceil) &
                                                !is.na(CRai)%>%
-      group_by(StartFiscalYear,
+      group_by(StartFY,
                Ceil,
                Dur)%>%
       dplyr::summarise(
@@ -1467,13 +1467,13 @@ df.QCrai<-melt(df.QCrai,variable.name="Quantile",value.name="pCRai",measure.vars
 )
 
 ggplot(df.QCrai,
-       aes(x=StartFiscalYear,y=pCRai,color=Quantile))+
+       aes(x=StartFY,y=pCRai,color=Quantile))+
   geom_line()+
   facet_grid(Ceil~Dur)
 
 ggplot(subset(df.QCrai,
                 !Quantile %in% c("X99")),
-       aes(x=StartFiscalYear,y=pCRai,color=Quantile))+
+       aes(x=StartFY,y=pCRai,color=Quantile))+
   geom_line()+
   facet_grid(Ceil~Dur,
              scales="free_y",
@@ -1490,7 +1490,7 @@ df.ecdf<-def_all %>%
       r05 = ecdf(pChangeOrderUnmodifiedBaseAndAll)(0.01)
 )
 
-# df.ecdf<-subset(df.ecdf,StartFiscalYear>=2007&StartFiscalYear<=2014)
+# df.ecdf<-subset(df.ecdf,StartFY>=2007&StartFY<=2014)
 
 # test<-tapply(def_all, pChangeOrderUnmodifiedBaseAndAll, ecdf)
 ```
@@ -1501,12 +1501,12 @@ df.QCrai.SDur<-ddply(subset(def_all,
                                         !is.na(Dur.Simple) & 
                !is.na(Ceil.Big) &
                !is.na(CRai) &
-               StartFiscalYear>=2007 & 
-               StartFiscalYear<=2014 &                
+               StartFY>=2007 & 
+               StartFY<=2014 &                
                (LastCurrentCompletionDate<=as.Date("2015-09-30") |
                     IsClosed==1) &
                UnmodifiedCurrentCompletionDate<as.Date("2015-09-30")),
-      .(StartFiscalYear,
+      .(StartFY,
                Ceil.Big,
                Dur.Simple),
       summarise, 
@@ -1527,9 +1527,9 @@ df.QCrai.SDur<-rbind(df.QCrai.SDur,
                                                !is.na(Dur.Simple) & 
                                                !is.na(Ceil.Big) &
                                                !is.na(CRai) &
-                                               StartFiscalYear>=2007 & 
-                                               StartFiscalYear<=2014),
-      .(StartFiscalYear,
+                                               StartFY>=2007 & 
+                                               StartFY<=2014),
+      .(StartFY,
                Ceil.Big,
                Dur.Simple),
       summarise, 
@@ -1587,7 +1587,7 @@ Ypos<-max(subset(df.QCrai.SDur,
 CRaiOutput<-ggplot(subset(df.QCrai.SDur,
                 !Quantile %in% c("99th Percentile",
                                  "75th Percentile")),
-       aes(x=StartFiscalYear,y=pCRai,color=Quantile))+
+       aes(x=StartFY,y=pCRai,color=Quantile))+
   geom_line(aes(linetype=metric))+
   geom_point(aes(shape=Quantile))+
   geom_text(data=CRaiSDurCeilLabels,
@@ -1614,7 +1614,7 @@ ggplot(subset(df.QCrai.SDur,
                 # !Quantile %in% c("99th Percentile")
                 !Ceil.Big %in% c("15k - <100k","0 - <15k")
               ),
-       aes(x=StartFiscalYear,
+       aes(x=StartFY,
            y=pCRai,
            color=Quantile))+
   geom_line(aes(linetype=metric))+
@@ -1633,13 +1633,13 @@ df.ecdf<-ddply(def_all,
       r05 = ecdf(pChangeOrderUnmodifiedBaseAndAll)(0.01)
 )
 
-# df.ecdf<-subset(df.ecdf,StartFiscalYear>=2007&StartFiscalYear<=2014)
+# df.ecdf<-subset(df.ecdf,StartFY>=2007&StartFY<=2014)
 
 
 CRaiSDurCeilFYearSummary<-ddply(
   subset(df.QCrai.SDur,Quantile=="50th Percentile" &
            metric=="Contracts within Period"),
-    .(Dur.Simple,Ceil.Big,StartFiscalYear),
+    .(Dur.Simple,Ceil.Big,StartFY),
     plyr::summarise,
     FacetCount=paste("Count:",prettyNum(sum(ContractCount),big.mark=",")),
     FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action.Obligation)/1000000000,1),"B",sep="")
@@ -1647,7 +1647,7 @@ CRaiSDurCeilFYearSummary<-ddply(
 
 DurBoundary<-subset(def_all,Ceil=="75m+"&
          Dur=="(~2 years+]"&
-         StartFiscalYear==2013&
+         StartFY==2013&
          UnmodifiedCurrentCompletionDate<as.Date("2015-09-30")
          )
 
@@ -1659,12 +1659,12 @@ DurBoundary<-subset(def_all,Ceil=="75m+"&
 #                                         !is.na(Dur.Simple) & 
 #                !is.na(Ceil.Big) &
 #                !is.na(pNewWorkUnmodifiedBaseAndAll) &
-#                StartFiscalYear>=2007 & 
-#                StartFiscalYear<=2014 &                
+#                StartFY>=2007 & 
+#                StartFY<=2014 &                
 #                (LastCurrentCompletionDate<=as.Date("2015-09-30") |
 #                     IsClosed==1) &
 #                UnmodifiedCurrentCompletionDate<as.Date("2015-09-30")),
-#       .(StartFiscalYear,
+#       .(StartFY,
 #                Ceil.Big,
 #                Dur.Simple),
 #       summarise, 
@@ -1685,9 +1685,9 @@ DurBoundary<-subset(def_all,Ceil=="75m+"&
 #                                                !is.na(Dur.Simple) & 
 #                                                !is.na(Ceil.Big) &
 #                                                !is.na(pNewWorkUnmodifiedBaseAndAll) &
-#                                                StartFiscalYear>=2007 & 
-#                                                StartFiscalYear<=2014),
-#       .(StartFiscalYear,
+#                                                StartFY>=2007 & 
+#                                                StartFY<=2014),
+#       .(StartFY,
 #                Ceil.Big,
 #                Dur.Simple),
 #       summarise, 
@@ -1745,7 +1745,7 @@ DurBoundary<-subset(def_all,Ceil=="75m+"&
 # NWorkOutput<-ggplot(subset(df.QNWork.SDur,
 #                 !Quantile %in% c("99th Percentile",
 #                                  "75th Percentile")),
-#        aes(x=StartFiscalYear,y=pNWork,color=Quantile))+
+#        aes(x=StartFY,y=pNWork,color=Quantile))+
 #   geom_line(aes(linetype=metric))+
 #   geom_point(aes(shape=Quantile))+
 #   geom_text(data=NWorkSDurCeilLabels,
@@ -1768,7 +1768,7 @@ DurBoundary<-subset(def_all,Ceil=="75m+"&
 #                 # !Quantile %in% c("99th Percentile")
 #                 !Ceil.Big %in% c("15k - <100k","0 - <15k")
 #               ),
-#        aes(x=StartFiscalYear,
+#        aes(x=StartFY,
 #            y=pNWork,
 #            color=Quantile))+
 #   geom_line(aes(linetype=metric))+
@@ -1787,13 +1787,13 @@ DurBoundary<-subset(def_all,Ceil=="75m+"&
 #       r05 = ecdf(pNewWorkUnmodifiedBaseAndAll)(0.01)
 # )
 # 
-# # df.ecdf<-subset(df.ecdf,StartFiscalYear>=2007&StartFiscalYear<=2014)
+# # df.ecdf<-subset(df.ecdf,StartFY>=2007&StartFY<=2014)
 # 
 # 
 # NWorkSDurCeilFYearSummary<-ddply(
 #   subset(df.QNWork.SDur,Quantile=="50th Percentile" &
 #            metric=="Contracts within Period"),
-#     .(Dur.Simple,Ceil.Big,StartFiscalYear),
+#     .(Dur.Simple,Ceil.Big,StartFY),
 #     plyr::summarise,
 #     FacetCount=paste("Count:",prettyNum(sum(ContractCount),big.mark=",")),
 #     FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action.Obligation)/1000000000,1),"B",sep="")
@@ -1801,7 +1801,7 @@ DurBoundary<-subset(def_all,Ceil=="75m+"&
 # 
 # DurBoundary<-subset(def_all,Ceil=="75m+"&
 #          Dur=="(~2 years+]"&
-#          StartFiscalYear==2013&
+#          StartFY==2013&
 #          UnmodifiedCurrentCompletionDate<as.Date("2015-09-30")
 #          )
 
