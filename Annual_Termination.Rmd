@@ -686,7 +686,7 @@ These four catetegories and the "Close Out" category are used to mark a contract
 ## Termination Timeline
 
 
-```{r SDurSCeilCount, fig.width=9,fig.height=9, dpi=600}
+```{r TermSDurSCeilCount, fig.width=9,fig.height=9, dpi=600}
 
 
 TerminatedSDurSCeilStatCount<-
@@ -1413,7 +1413,7 @@ The % Growth in Base and All Options Value Amount form Change Orders is calculat
 
 ## Any Ceiling Breach
 
-```{r SDurSCeilCount, fig.width=9,fig.height=9, dpi=600}
+```{r CBreSDurSCeilCount, fig.width=9,fig.height=9, dpi=600}
 
 
 BreachedSDurSCeilStatCount<-
@@ -2131,157 +2131,4 @@ DurBoundary<-subset(def_all,Ceil=="75m+"&
 # View(subset(def_all,Ceil.Big=="75m+" & Dur.Simple=="(~2 years+]" & StartFY==2014))
 
 # write.csv(subset(def_all,Ceil.Big=="75m+" & Dur.Simple=="(~2 years+]" & StartFY==2014),"Long2014.csv")
-```
-
-```{r NewWorkQuantileSimpleDur}
-# df.QNWork.SDur<-ddply(subset(def_all,
-#                                         !is.na(Dur.Simple) & 
-#                !is.na(Ceil.Big) &
-#                !is.na(pNewWorkUnmodifiedBaseAndAll) &
-#                StartFY>=2007 & 
-#                StartFY<=2014 &                
-#                (LastCurrentCompletionDate<=as.Date("2015-09-30") |
-#                     IsClosed==1) &
-#                UnmodifiedCurrentCompletionDate<as.Date("2015-09-30")),
-#       .(StartFY,
-#                Ceil.Big,
-#                Dur.Simple),
-#       summarise, 
-#       X50 = quantile(pNewWorkUnmodifiedBaseAndAll, probs = 0.5,na.rm=TRUE),
-#       X75 = quantile(pNewWorkUnmodifiedBaseAndAll, probs = 0.75,na.rm=TRUE), 
-#       X80 = quantile(pNewWorkUnmodifiedBaseAndAll, probs = 0.80,na.rm=TRUE), 
-#       X90 = quantile(pNewWorkUnmodifiedBaseAndAll, probs = 0.90,na.rm=TRUE), 
-#       X95 = quantile(pNewWorkUnmodifiedBaseAndAll, probs = 0.95,na.rm=TRUE),
-#       X99 = quantile(pNewWorkUnmodifiedBaseAndAll, probs = 0.99,na.rm=TRUE),
-#       ContractCount=length(CSIScontractID),
-#              Action.Obligation=sum(Action.Obligation),
-#       metric="Contracts within Period")
-# 
-# 
-# 
-# df.QNWork.SDur<-rbind(df.QNWork.SDur,
-#                 ddply(subset(def_all,
-#                                                !is.na(Dur.Simple) & 
-#                                                !is.na(Ceil.Big) &
-#                                                !is.na(pNewWorkUnmodifiedBaseAndAll) &
-#                                                StartFY>=2007 & 
-#                                                StartFY<=2014),
-#       .(StartFY,
-#                Ceil.Big,
-#                Dur.Simple),
-#       summarise, 
-#       X50 = quantile(pNewWorkUnmodifiedBaseAndAll, probs = 0.5,na.rm=TRUE),
-#       X75 = quantile(pNewWorkUnmodifiedBaseAndAll, probs = 0.75,na.rm=TRUE), 
-#       X80 = quantile(pNewWorkUnmodifiedBaseAndAll, probs = 0.80,na.rm=TRUE), 
-#       X90 = quantile(pNewWorkUnmodifiedBaseAndAll, probs = 0.90,na.rm=TRUE), 
-#       X95 = quantile(pNewWorkUnmodifiedBaseAndAll, probs = 0.95,na.rm=TRUE),
-#       X99 = quantile(pNewWorkUnmodifiedBaseAndAll, probs = 0.99,na.rm=TRUE),
-#       ContractCount=length(CSIScontractID),
-#              Action.Obligation=sum(Action.Obligation),
-#       metric="Early Results for All Contracts")
-# )
-# 
-# 
-# df.QNWork.SDur<-melt(df.QNWork.SDur,
-#                       variable.name="Quantile",value.name="pNWork",measure.vars=c(
-#   "X50",
-#   "X75",
-#   "X80",
-#   "X90",
-#   "X95",
-#   "X99")
-# )
-# 
-# df.QNWork.SDur$Quantile<-factor(df.QNWork.SDur$Quantile,
-#   levels=c("X50",
-#   "X75",
-#   "X80",
-#   "X90",
-#   "X95",
-#   "X99"),
-#   labels=c("50th Percentile",
-#   "75th Percentile",
-#   "80th Percentile",
-#   "90th Percentile",
-#   "95th Percentile",
-#   "99th Percentile")
-# )
-# 
-# NWorkSDurCeilLabels<-ddply(
-#   subset(df.QNWork.SDur,Quantile=="50th Percentile" &
-#            metric=="Contracts within Period"),
-#     .(Dur.Simple,Ceil.Big),
-#     plyr::summarise,
-#     FacetCount=paste("Count:",prettyNum(sum(ContractCount),big.mark=",")),
-#     FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action.Obligation)/1000000000,1),"B",sep="")
-#     )
-# 
-# Ypos<-max(subset(df.QNWork.SDur,
-#                    !Quantile %in% c("99th Percentile")
-#                  )$pNWork,na.rm=TRUE)
-# 
-# 
-# NWorkOutput<-ggplot(subset(df.QNWork.SDur,
-#                 !Quantile %in% c("99th Percentile",
-#                                  "75th Percentile")),
-#        aes(x=StartFY,y=pNWork,color=Quantile))+
-#   geom_line(aes(linetype=metric))+
-#   geom_point(aes(shape=Quantile))+
-#   geom_text(data=NWorkSDurCeilLabels,
-#               aes(x=2007,y=Ypos,label=FacetValue),
-#               # parse=TRUE,
-#               hjust=0,
-#               vjust=1,
-#               color="black")+
-#   facet_grid(Dur.Simple~Ceil.Big)+
-#                scale_y_continuous("New Work Orders Percent (Current $ Value)",
-#                                   labels=percent)+
-#   scale_x_discrete("Contract Starting Fiscal Year")+
-#   scale_linetype_discrete("Early Results")+
-#   theme(legend.position="bottom") #, position=pd
-# 
-# NWorkOutput
-# 
-# 
-# ggplot(subset(df.QNWork.SDur,
-#                 # !Quantile %in% c("99th Percentile")
-#                 !Ceil.Big %in% c("15k - <100k","0 - <15k")
-#               ),
-#        aes(x=StartFY,
-#            y=pNWork,
-#            color=Quantile))+
-#   geom_line(aes(linetype=metric))+
-#   facet_grid(Ceil.Big~Dur.Simple,
-#              scales="free_y",
-#              space="free_y")+
-#   scale_y_continuous(labels=percent)
-# 
-# #Test to see which percentiles register at all.
-# df.ecdf<-ddply(def_all,
-#       .(Ceil.Big,
-#                Dur.Simple),
-#       summarise, 
-#       r001 = ecdf(pNewWorkUnmodifiedBaseAndAll)(0.001),
-#       r01 = ecdf(pNewWorkUnmodifiedBaseAndAll)(0.01),
-#       r05 = ecdf(pNewWorkUnmodifiedBaseAndAll)(0.01)
-# )
-# 
-# # df.ecdf<-subset(df.ecdf,StartFY>=2007&StartFY<=2014)
-# 
-# 
-# NWorkSDurCeilFYearSummary<-ddply(
-#   subset(df.QNWork.SDur,Quantile=="50th Percentile" &
-#            metric=="Contracts within Period"),
-#     .(Dur.Simple,Ceil.Big,StartFY),
-#     plyr::summarise,
-#     FacetCount=paste("Count:",prettyNum(sum(ContractCount),big.mark=",")),
-#     FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action.Obligation)/1000000000,1),"B",sep="")
-#     )
-# 
-# DurBoundary<-subset(def_all,Ceil=="75m+"&
-#          Dur=="(~2 years+]"&
-#          StartFY==2013&
-#          UnmodifiedCurrentCompletionDate<as.Date("2015-09-30")
-#          )
-
 ```
