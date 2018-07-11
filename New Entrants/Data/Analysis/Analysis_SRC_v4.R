@@ -20,6 +20,9 @@ library(scales)
 library(magrittr)
 library(csis360)
 library(scales)
+library(gtable)
+library(grid)
+library(gridExtra)
 
 #setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/FPDS")
 
@@ -27,13 +30,13 @@ library(scales)
 setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
 
 ##sam laptop
-setwd("/Users/samanthacohen/Desktop/Diig backup/New Entrants/R Data")
+#setwd("/Users/samanthacohen/Desktop/Diig backup/New Entrants/R Data")
 
 load(file = "FPDS_datapull_all_v3.Rda")
 length(unique(FPDS_cleaned_unique$Dunsnumber)) == nrow(FPDS_cleaned_unique)
 
 #******************************************************************
-########################Count number of new entrants in each year! ################################
+####Count number of new entrants in each year! ####
 #******************************************************************
 
 
@@ -43,60 +46,11 @@ registrationyear_count <- table(SAM_and_FPDS_uniqueDuns$registrationYear)
 registrationyear_count
 
 
-##sam data
-load(file = "SAM_datapull_all.Rda")
-registrationyear_count <- table(datapull_all$registrationYear)
-
-registrationyear_count
-
-
-##change top_small_biz to 1= small biz and 0 = non-small biz
-
-str(SAM_and_FPDS_uniqueDuns$top_small_biz)
-
-table(SAM_and_FPDS_uniqueDuns$top_small_biz)
-
-SAM_and_FPDS_uniqueDuns <- SAM_and_FPDS_uniqueDuns[!(SAM_and_FPDS_uniqueDuns$top_small_biz==":"), ]
-
-table(SAM_and_FPDS_uniqueDuns$top_small_biz)
-
-##make biz_size binary
-SAM_and_FPDS_uniqueDuns$top_smallbiz_bin <- revalue(SAM_and_FPDS_uniqueDuns$top_small_biz, c("S"="1", "O"="0"))
-
-str(SAM_and_FPDS_uniqueDuns$top_smallbiz_bin)
-
-table(SAM_and_FPDS_uniqueDuns$top_smallbiz_bin)
-
-##drop years less than 2001
-
-SAM_and_FPDS_uniqueDuns <- SAM_and_FPDS_uniqueDuns[!(SAM_and_FPDS_uniqueDuns$registrationYear<"2001"), ]
-
-SAM_and_FPDS_uniqueDuns <- SAM_and_FPDS_uniqueDuns[order(SAM_and_FPDS_uniqueDuns$registrationYear), ]
-
-
 #******************************#
 ####bar graph for FPDS Data####
 #******************************#
-# str(FPDS_cleaned_unique$top_small_biz)
-# #convert biz_size to numeric
-# ##change top_small_biz to 1= small biz and 0 = non-small biz
-# 
-# str(FPDS_cleaned_unique$top_small_biz)
-# 
-# table(FPDS_cleaned_unique$top_small_biz)
-# 
-# FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$top_small_biz==":"), ]
-# 
-# table(FPDS_cleaned_unique$top_small_biz)
-# 
-# ##make biz_size binary
-# FPDS_cleaned_unique$top_smallbiz_bin <- revalue(FPDS_cleaned_unique$top_small_biz, c("S"="1", "O"="0"))
-# 
-# str(FPDS_cleaned_unique$top_smallbiz_bin)
-# 
-# table(FPDS_cleaned_unique$top_smallbiz_bin)
 
-##drop observations with Registration Year before 2000
+##drop observations with Registration Year before 2001
 FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear<2001), ]
 FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear>2016), ]
 
@@ -142,8 +96,6 @@ ggplot(FPDS_bargraphCount, aes(x = registrationYear, y = regpersize, fill = fact
 #******************************
 FPDS_cleaned_unique_DOD <- FPDS_cleaned_unique[(FPDS_cleaned_unique$customer=="Defense"), ]
 
-
-
 totyear_count <- FPDS_cleaned_unique_DOD %>% 
   filter(top_smallbiz_bin == 1 | top_smallbiz_bin == 0) %>% 
   group_by(registrationYear) %>% 
@@ -171,42 +123,6 @@ ggplot(FPDS_bargraphCount, aes(x = registrationYear, y = regpersize, fill = fact
                   ##angle = 45) +
   ##geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
   geom_text(data = subset(FPDS_bargraphCount, registrationYear <= 2016), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
-
-
-
-
-
-#****************************#
-####bar graph for SAM data####
-#*****************************#
-
-datapull_all <- datapull_all[!(datapull_all$registrationYear<"2001"), ]
-
-
-SAM_totyear_count <- datapull_all %>% 
-  group_by(registrationYear) %>% 
-  dplyr::summarise(n())  
-
-
-SAM_bargraphCount <- datapull_all %>%
-  group_by(registrationYear) %>%
-  dplyr::summarise(n()) %>%
-  dplyr::rename("regpersize"=`n()`) %>%
-  left_join(SAM_totyear_count, by = "registrationYear") %>%
-  dplyr::rename("regperyear"=`n()`) 
-
-
-ggplot(SAM_bargraphCount, aes(x = registrationYear, y = regpersize, label = regperyear)) +
-  geom_bar(stat = 'identity') +
-  ylab("Number of New Entrants") +
-  xlab("Registration Year") +
-  scale_x_continuous(breaks = c(2001:2016)) +
-  ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
-  scale_fill_manual(name = "New Entrants Types", values = c("cadetblue4")) +
-  ggtitle("Number of New Entrants Per Year (2001-2016) - All Federal Agencies")+
-  geom_text_repel(data = subset(SAM_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
-                  angle = 45) +
-  geom_text(data = subset(SAM_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
 
 #******************************************************************************************************
 
@@ -268,6 +184,8 @@ table(data_2001$top_smallbiz_bin)
 table(data_2001$survive_3yr)
 table(data_2001$top_smallbiz_bin, data_2001$survive_3yr)
 
+all_NE <- length(data_2001$top_smallbiz_bin)
+all_NE
 t.test(survive_3yr ~ top_smallbiz_bin, data = data_2001)
 
 #5-year#
@@ -482,12 +400,14 @@ pie_2001_ALL_df <- pie_2001_ALL_df %>%
 
 head(pie_2001_ALL_df)
   
-ggplot(pie_2001_ALL_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2001_ALL <- ggplot(pie_2001_ALL_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999" )) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "Survival Rates 2001 Sample", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "-All New Entrants", y = "Survival Rates (percentages)", x = "") + 
+  guides(fill=FALSE)
   
   
 ##******##
@@ -506,12 +426,13 @@ pie_2001_SM_df <- pie_2001_SM_df %>%
 
 head(pie_2001_SM_df)
 
-ggplot(pie_2001_SM_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2001_SMALL <- ggplot(pie_2001_SM_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999", "#000066" )) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2001 Sample - Small Businesses", y = "Survival Rates (percents)", x = "") 
+  labs(title = "Survival Rates - Small Businesses", y = "Survival Rates (percentages)", x = "Year") 
 
 ##******##
 ##Non-Small NE##
@@ -529,12 +450,21 @@ pie_2001_NS_df <- pie_2001_NS_df %>%
 
 head(pie_2001_NS_df)
 
-ggplot(pie_2001_NS_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2001_NS <- ggplot(pie_2001_NS_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999")) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2001 Sample - Non-Small Businesses", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- Non-Small Businesses", y = "Survival Rates (percentages)", x = "Year") +
+  guides(fill=FALSE)
+
+##*****##
+#combine plots#
+#******##
+#t <- textGrob("Survival Rates 2001 Sample", fontsize=42)
+grid.arrange(plot_2001_SMALL, plot_2001_ALL, plot_2001_NS)
+
 
 ##*****************##
 #**pie for graduation**#
@@ -801,7 +731,7 @@ t.test(survive_2016 ~ top_smallbiz_bin, data = data_DOD_2001)
 
 
 ##**************##
-##Pie Charts for 2001 check - DOD ONLY##
+####Pie Charts for DOD 2001 check####
 #****************#
 
 ##******##
@@ -820,12 +750,14 @@ pie_2001_ALL_DoD_df <- pie_2001_ALL_DoD_df %>%
 
 head(pie_2001_ALL_DoD_df)
 
-ggplot(pie_2001_ALL_DoD_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2001_DoD_ALL <- ggplot(pie_2001_ALL_DoD_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999" )) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "Survival Rates 2001 Sample - DoD", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") + 
+  guides(fill=FALSE)
 
 
 ##******##
@@ -844,12 +776,13 @@ pie_2001_SM_DoD_df <- pie_2001_SM_DoD_df %>%
 
 head(pie_2001_SM_DoD_df)
 
-ggplot(pie_2001_SM_DoD_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2001_DoD_SMALL <- ggplot(pie_2001_SM_DoD_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999", "#000066")) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2001 Sample - Small Businesses", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "Survival Rates 2001 Sample DoD - Small Businesses", y = "Survival Rates (percentages)", x = "Year") 
 
 ##******##
 ##Non-Small NE##
@@ -867,12 +800,22 @@ pie_2001_NS_DoD_df <- pie_2001_NS_DoD_df %>%
 
 head(pie_2001_NS_DoD_df)
 
-ggplot(pie_2001_NS_DoD_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2001_DoD_NS <- ggplot(pie_2001_NS_DoD_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999")) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2001 Sample - Non-Small Businesses", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- Non-Small Buisinesses", y = "Survival Rates (percentages)", x = "Year")+ 
+  guides(fill=FALSE)
+
+##*****##
+#combine plots#
+#******##
+#t <- textGrob("Survival Rates 2001 Sample", fontsize=42)
+grid.arrange(plot_2001_DoD_SMALL, plot_2001_DoD_ALL, plot_2001_DoD_NS)
+
+
 
 #**********************************************************************#
 
@@ -1095,7 +1038,7 @@ t.test(survive_2016 ~ top_smallbiz_bin, data = data_2002)
 
 
 ##**************##
-##Pie Charts for 2002##
+####Pie Charts for 2002####
 #****************#
 
 ##******##
@@ -1114,12 +1057,14 @@ pie_2002_ALL_df <- pie_2002_ALL_df %>%
 
 head(pie_2002_ALL_df)
 
-ggplot(pie_2002_ALL_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2002_ALL <- ggplot(pie_2002_ALL_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999" )) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "Survival Rates 2002 Sample", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") + 
+  guides(fill=FALSE)
 
 
 ##******##
@@ -1138,12 +1083,13 @@ pie_2002_SM_df <- pie_2002_SM_df %>%
 
 head(pie_2002_SM_df)
 
-ggplot(pie_2002_SM_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2002_SMALL <- ggplot(pie_2002_SM_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999", "#000066" )) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2002 Sample - Small Businesses", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "Survival Rates 2002 Sample - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
 
 ##******##
 ##Non-Small NE##
@@ -1161,14 +1107,18 @@ pie_2002_NS_df <- pie_2002_NS_df %>%
 
 head(pie_2002_NS_df)
 
-ggplot(pie_2002_NS_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2002_NS <- ggplot(pie_2002_NS_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999")) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2002 Sample - Non-Small Businesses", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- Non-Small Businesses", y = "Survival Rates (percents)", x = "Year") +
+  guides(fill=FALSE)
 
+##combine plots
 
+grid.arrange(plot_2002_SMALL, plot_2002_ALL, plot_2002_NS)
 
 
 #************#
@@ -1390,7 +1340,7 @@ table(data_2002_DOD$top_smallbiz_bin, data_2002_DOD$survive_2016)
 t.test(survive_2016 ~ top_smallbiz_bin, data = data_2002_DOD)
 
 ##**************##
-##Pie Charts for 2002 - DOD ONLY##
+####Pie Charts for 2002 DoD ####
 #****************#
 
 ##******##
@@ -1409,12 +1359,14 @@ pie_2002_ALL_DoD_df <- pie_2002_ALL_DoD_df %>%
 
 head(pie_2002_ALL_DoD_df)
 
-ggplot(pie_2002_ALL_DoD_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2002_DoD_ALL <- ggplot(pie_2002_ALL_DoD_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999" )) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "Survival Rates 2002 Sample - DoD", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") + 
+  guides(fill=FALSE)
 
 
 ##******##
@@ -1433,12 +1385,13 @@ pie_2002_SM_DoD_df <- pie_2002_SM_DoD_df %>%
 
 head(pie_2002_SM_DoD_df)
 
-ggplot(pie_2002_SM_DoD_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2002_DoD_SMALL <- ggplot(pie_2002_SM_DoD_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999", "#000066")) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2002 Sample - Small Businesses -DoD", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "Survival Rates 2002 Sample DoD - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
 
 ##******##
 ##Non-Small NE##
@@ -1456,12 +1409,18 @@ pie_2002_NS_DoD_df <- pie_2002_NS_DoD_df %>%
 
 head(pie_2002_NS_DoD_df)
 
-ggplot(pie_2002_NS_DoD_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2002_DoD_NS <- ggplot(pie_2002_NS_DoD_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999")) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2002 Sample - Non-Small Businesses - DoD", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- Non-Small Businesses", y = "Survival Rates (percentages)", x = "Year") +
+  guides(fill=FALSE)
+
+
+#combine plots
+grid.arrange(plot_2002_DoD_SMALL, plot_2002_DoD_ALL, plot_2002_DoD_NS)
 
 
 #**********************************************************************#
@@ -1687,7 +1646,7 @@ table(data_2003_DOD$top_smallbiz_bin, data_2003$survive_2016)
 t.test(survive_2016 ~ top_smallbiz_bin, data = data_2003)
 
 ##**************##
-##Pie Charts for 2003##
+####Pie Charts for 2003####
 #****************#
 
 ##******##
@@ -1706,12 +1665,14 @@ pie_2003_ALL_df <- pie_2003_ALL_df %>%
 
 head(pie_2003_ALL_df)
 
-ggplot(pie_2003_ALL_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2003_ALL <- ggplot(pie_2003_ALL_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999" )) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "Survival Rates 2003 Sample", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") + 
+  guides(fill=FALSE)
 
 
 ##******##
@@ -1730,12 +1691,13 @@ pie_2003_SM_df <- pie_2003_SM_df %>%
 
 head(pie_2003_SM_df)
 
-ggplot(pie_2003_SM_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2003_SMALL <- ggplot(pie_2003_SM_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999", "#000066" )) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2003 Sample - Small Businesses", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "Survival Rates 2003 Sample - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
 
 ##******##
 ##Non-Small NE##
@@ -1753,13 +1715,20 @@ pie_2003_NS_df <- pie_2003_NS_df %>%
 
 head(pie_2003_NS_df)
 
-ggplot(pie_2003_NS_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2003_NS <- ggplot(pie_2003_NS_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999")) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2003 Sample - Non-Small Businesses", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- Non-Small Businesses", y = "Survival Rates (percents)", x = "Year") +
+  guides(fill=FALSE)
 
+##*****##
+#combine plots#
+#******##
+#t <- textGrob("Survival Rates 2001 Sample", fontsize=42)
+grid.arrange(plot_2003_SMALL, plot_2003_ALL, plot_2003_NS)
 
 
 #*********#
@@ -1813,7 +1782,7 @@ table(data_2003_DOD$top_smallbiz_bin, data_2003_DOD$survive_3yr)
 t.test(survive_3yr ~ top_smallbiz_bin, data = data_2003_DOD)
 
 #5-year#
-table(data_2003_DOD$top_smallbiz_bin, data_2003$survive_5yr)
+table(data_2003_DOD$top_smallbiz_bin, data_2003_DOD$survive_5yr)
 
 t.test(survive_5yr ~ top_smallbiz_bin, data = data_2003_DOD)
 
@@ -1984,7 +1953,7 @@ t.test(survive_2016 ~ top_smallbiz_bin, data = data_2003_DOD)
 
 
 ##**************##
-##Pie Charts for 2003 - DOD ONLY##
+####Pie Charts for 2003 DoD####
 #****************#
 
 ##******##
@@ -2003,12 +1972,14 @@ pie_2003_ALL_DoD_df <- pie_2003_ALL_DoD_df %>%
 
 head(pie_2003_ALL_DoD_df)
 
-ggplot(pie_2003_ALL_DoD_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2003_DoD_ALL <- ggplot(pie_2003_ALL_DoD_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999" )) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "Survival Rates 2003 Sample - DoD", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") + 
+  guides(fill=FALSE)
 
 
 ##******##
@@ -2016,7 +1987,7 @@ ggplot(pie_2003_ALL_DoD_df, aes(x=group, y=perc_value, fill=group)) +
 ##******##
 pie_2003_SM_DoD_df <- data.frame(
   group = c("3-yr", "5-yr", "10-yr", "2016", "Graduated"),
-  value = c(survival_3yrALL_2003_DOD, survival_5yrALL_2003_DOD, survival_10yrALL_2003_DOD, survivalrate_2016_ALL_2003_DOD, graduated_2003_DOD_10yr)
+  value = c(survival_3yrSM_2003_DOD, survival_5yrSM_2003_DOD, survival_10yrSM_2003_DOD, survivalrate_2016_SM_2003_DOD, graduated_2003_DOD_10yr)
 )
 
 head(pie_2003_SM_DoD_df)
@@ -2027,19 +1998,20 @@ pie_2003_SM_DoD_df <- pie_2003_SM_DoD_df %>%
 
 head(pie_2003_SM_DoD_df)
 
-ggplot(pie_2003_SM_DoD_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2003_DoD_SMALL <- ggplot(pie_2003_SM_DoD_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999", "#000066")) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2003 Sample - Small Businesses -DoD", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "Survival Rates 2003 Sample DoD - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
 
 ##******##
 ##Non-Small NE##
 ##******##
 pie_2003_NS_DoD_df <- data.frame(
   group = c("3-yr", "5-yr", "10-yr", "2016"),
-  value = c(survival_3yrALL_2003_DOD, survival_5yrALL_2003_DOD, survival_10yrALL_2003_DOD, survivalrate_2016_ALL_2003_DOD)
+  value = c(survival_3yrNSM_2003_DOD, survival_5yrNSM_2003_DOD, survival_10yrNSM_2003_DOD, survivalrate_2016_NS_2003_DOD)
 )
 
 head(pie_2003_NS_DoD_df)
@@ -2050,14 +2022,21 @@ pie_2003_NS_DoD_df <- pie_2003_NS_DoD_df %>%
 
 head(pie_2003_NS_DoD_df)
 
-ggplot(pie_2003_NS_DoD_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2003_DoD_NS <- ggplot(pie_2003_NS_DoD_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999")) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2003 Sample - Non-Small Businesses - DoD", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- Non-Small Businesses", y = "Survival Rates (percentages)", x = "Year") +
+  guides(fill=FALSE)
 
 
+##*****##
+#combine plots#
+#******##
+#t <- textGrob("Survival Rates 2001 Sample", fontsize=42)
+grid.arrange(plot_2003_DoD_SMALL, plot_2003_DoD_ALL, plot_2003_DoD_NS)
 
 
 #**********************************************************************#
@@ -2284,7 +2263,7 @@ table(data_2004$top_smallbiz_bin, data_2004$survive_2016)
 t.test(survive_2016 ~ top_smallbiz_bin, data = data_2004)
 
 ##**************##
-##Pie Charts for 2004##
+####Pie Charts for 2004####
 #****************#
 
 ##******##
@@ -2303,12 +2282,14 @@ pie_2004_ALL_df <- pie_2004_ALL_df %>%
 
 head(pie_2004_ALL_df)
 
-ggplot(pie_2004_ALL_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2004_ALL <- ggplot(pie_2004_ALL_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999" )) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "Survival Rates 2004 Sample", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") + 
+  guides(fill=FALSE)
 
 
 ##******##
@@ -2327,12 +2308,13 @@ pie_2004_SM_df <- pie_2004_SM_df %>%
 
 head(pie_2004_SM_df)
 
-ggplot(pie_2004_SM_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2004_SMALL <- ggplot(pie_2004_SM_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999", "#000066" )) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2004 Sample - Small Businesses", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "Survival Rates 2004 Sample - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
 
 ##******##
 ##Non-Small NE##
@@ -2350,13 +2332,20 @@ pie_2004_NS_df <- pie_2004_NS_df %>%
 
 head(pie_2004_NS_df)
 
-ggplot(pie_2004_NS_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2004_NS <- ggplot(pie_2004_NS_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999")) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2004 Sample - Non-Small Businesses", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- Non-Small Businesses", y = "Survival Rates (percentages)", x = "Year") +
+  guides(fill=FALSE)
 
+##*****##
+#combine plots#
+#******##
+#t <- textGrob("Survival Rates 2001 Sample", fontsize=42)
+grid.arrange(plot_2004_SMALL, plot_2004_ALL, plot_2004_NS)
 
 
 #***************#
@@ -2579,7 +2568,7 @@ table(data_2004_DOD$top_smallbiz_bin, data_2004_DOD$survive_2016)
 t.test(survive_2016 ~ top_smallbiz_bin, data = data_2004_DOD)
 
 ##**************##
-##Pie Charts for 2004 - DOD ONLY##
+####Pie Charts for 2004 DoD ####
 #****************#
 
 ##******##
@@ -2598,12 +2587,14 @@ pie_2004_ALL_DoD_df <- pie_2004_ALL_DoD_df %>%
 
 head(pie_2004_ALL_DoD_df)
 
-ggplot(pie_2004_ALL_DoD_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2004_DoD_ALL <- ggplot(pie_2004_ALL_DoD_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999" )) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "Survival Rates 2004 Sample - DoD", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") + 
+  guides(fill=FALSE)
 
 
 ##******##
@@ -2622,12 +2613,13 @@ pie_2004_SM_DoD_df <- pie_2004_SM_DoD_df %>%
 
 head(pie_2004_SM_DoD_df)
 
-ggplot(pie_2004_SM_DoD_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2004_DoD_SMALL <- ggplot(pie_2004_SM_DoD_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999", "#000066")) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2004 Sample - Small Businesses -DoD", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "Survival Rates 2004 Sample DoD - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
 
 ##******##
 ##Non-Small NE##
@@ -2645,14 +2637,21 @@ pie_2004_NS_DoD_df <- pie_2004_NS_DoD_df %>%
 
 head(pie_2004_NS_DoD_df)
 
-ggplot(pie_2004_NS_DoD_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2004_DoD_NS <- ggplot(pie_2004_NS_DoD_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999")) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2004 Sample - Non-Small Businesses - DoD", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- Non-Small Businesses", y = "Survival Rates (percentages)", x = "Year") +
+  guides(fill=FALSE)
 
 
+##*****##
+#combine plots#
+#******##
+#t <- textGrob("Survival Rates 2001 Sample", fontsize=42)
+grid.arrange(plot_2004_DoD_SMALL, plot_2004_DoD_ALL, plot_2004_DoD_NS)
 
 #**********************************************************************#
 
@@ -2875,7 +2874,7 @@ table(data_2005$top_smallbiz_bin, data_2005$survive_2016)
 t.test(survive_2016 ~ top_smallbiz_bin, data = data_2005)
 
 ##**************##
-##Pie Charts for 2005##
+####Pie Charts for 2005####
 #****************#
 
 ##******##
@@ -2894,12 +2893,14 @@ pie_2005_ALL_df <- pie_2005_ALL_df %>%
 
 head(pie_2005_ALL_df)
 
-ggplot(pie_2005_ALL_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2005_ALL <- ggplot(pie_2005_ALL_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999" )) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "Survival Rates 2005 Sample", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") + 
+  guides(fill=FALSE)
 
 
 ##******##
@@ -2918,12 +2919,13 @@ pie_2005_SM_df <- pie_2005_SM_df %>%
 
 head(pie_2005_SM_df)
 
-ggplot(pie_2005_SM_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2005_SMALL <- ggplot(pie_2005_SM_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999", "#000066" )) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2005 Sample - Small Businesses", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "Survival Rates 2005 Sample - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
 
 ##******##
 ##Non-Small NE##
@@ -2941,13 +2943,20 @@ pie_2005_NS_df <- pie_2005_NS_df %>%
 
 head(pie_2005_NS_df)
 
-ggplot(pie_2005_NS_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2005_NS <- ggplot(pie_2005_NS_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999")) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2005 Sample - Non-Small Businesses", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- Non-Small Businesses", y = "Survival Rates (percentages)", x = "Year") +
+  guides(fill=FALSE)
 
+##*****##
+#combine plots#
+#******##
+#t <- textGrob("Survival Rates 2001 Sample", fontsize=42)
+grid.arrange(plot_2005_SMALL, plot_2005_ALL, plot_2005_NS)
 
 
 #************#
@@ -3167,7 +3176,7 @@ t.test(survive_2016 ~ top_smallbiz_bin, data = data_2005_DOD)
 
 
 ##**************##
-##Pie Charts for 2005 - DOD ONLY##
+####Pie Charts for 2005 DoD####
 #****************#
 
 ##******##
@@ -3186,12 +3195,15 @@ pie_2005_ALL_DoD_df <- pie_2005_ALL_DoD_df %>%
 
 head(pie_2005_ALL_DoD_df)
 
-ggplot(pie_2005_ALL_DoD_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2005_DoD_ALL <- ggplot(pie_2005_ALL_DoD_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999" )) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "Survival Rates 2005 Sample - DoD", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") +
+  guides(fill=FALSE)
+
 
 
 ##******##
@@ -3210,19 +3222,20 @@ pie_2005_SM_DoD_df <- pie_2005_SM_DoD_df %>%
 
 head(pie_2005_SM_DoD_df)
 
-ggplot(pie_2005_SM_DoD_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2005_DoD_SMALL <- ggplot(pie_2005_SM_DoD_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999", "#000066")) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2005 Sample - Small Businesses -DoD", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "Survival Rates 2005 Sample DoD - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
 
 ##******##
 ##Non-Small NE##
 ##******##
 pie_2005_NS_DoD_df <- data.frame(
   group = c("3-yr", "5-yr", "10-yr", "2016"),
-  value = c(survival_3yrALL_2005_DOD, survival_5yrALL_2005_DOD, survival_10yrALL_2005_DOD, survivalrate_2016_ALL_2005_DOD)
+  value = c(survival_3yrNSM_2005_DOD, survival_5yrNSM_2005_DOD, survival_10yrNSM_2005_DOD, survivalrate_2016_NS_2005_DOD)
 )
 
 head(pie_2005_NS_DoD_df)
@@ -3233,13 +3246,20 @@ pie_2005_NS_DoD_df <- pie_2005_NS_DoD_df %>%
 
 head(pie_2005_NS_DoD_df)
 
-ggplot(pie_2005_NS_DoD_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2005_DoD_NS <- ggplot(pie_2005_NS_DoD_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999")) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2005 Sample - Non-Small Businesses - DoD", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- Non-Small Businesses - DoD", y = "Survival Rates (percentages)", x = "Year") +
+  guides(fill=FALSE)
 
+##*****##
+#combine plots#
+#******##
+#t <- textGrob("Survival Rates 2001 Sample", fontsize=42)
+grid.arrange(plot_2005_DoD_SMALL, plot_2005_DoD_ALL, plot_2005_DoD_NS)
 
 
 #**********************************************************************#
@@ -3463,7 +3483,7 @@ table(data_2006$top_smallbiz_bin, data_2006$survive_2016)
 t.test(survive_2016 ~ top_smallbiz_bin, data = data_2006)
 
 ##**************##
-##Pie Charts for 2006##
+####Pie Charts for 2006####
 #****************#
 
 ##******##
@@ -3482,12 +3502,14 @@ pie_2006_ALL_df <- pie_2006_ALL_df %>%
 
 head(pie_2006_ALL_df)
 
-ggplot(pie_2006_ALL_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2006_ALL <- ggplot(pie_2006_ALL_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999" )) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "Survival Rates 2006 Sample", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") + 
+  guides(fill=FALSE)
 
 
 ##******##
@@ -3506,12 +3528,13 @@ pie_2006_SM_df <- pie_2006_SM_df %>%
 
 head(pie_2006_SM_df)
 
-ggplot(pie_2006_SM_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2006_SMALL <- ggplot(pie_2006_SM_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999", "#000066" )) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2006 Sample - Small Businesses", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "Survival Rates 2006 Sample - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
 
 ##******##
 ##Non-Small NE##
@@ -3529,15 +3552,22 @@ pie_2006_NS_df <- pie_2006_NS_df %>%
 
 head(pie_2006_NS_df)
 
-ggplot(pie_2006_NS_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2006_NS <- ggplot(pie_2006_NS_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999")) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2006 Sample - Non-Small Businesses", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- Non-Small Businesses", y = "Survival Rates (percentages)", x = "Year") +
+  guides(fill=FALSE)
 
 
 
+##*****##
+#combine plots#
+#******##
+#t <- textGrob("Survival Rates 2001 Sample", fontsize=42)
+grid.arrange(plot_2006_SMALL, plot_2006_ALL, plot_2006_NS)
 
 
 #***************#
@@ -3759,7 +3789,7 @@ table(data_2006_DOD$top_smallbiz_bin, data_2006_DOD$survive_2016)
 t.test(survive_2016 ~ top_smallbiz_bin, data = data_2006_DOD)
 
 ##**************##
-##Pie Charts for 2006 - DOD ONLY##
+####Pie Charts for 2006 DOD####
 #****************#
 
 ##******##
@@ -3778,12 +3808,14 @@ pie_2006_ALL_DoD_df <- pie_2006_ALL_DoD_df %>%
 
 head(pie_2006_ALL_DoD_df)
 
-ggplot(pie_2006_ALL_DoD_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2006_DoD_ALL <- ggplot(pie_2006_ALL_DoD_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999" )) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "Survival Rates 2006 Sample - DoD", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") + 
+  guides(fill=FALSE)
 
 
 ##******##
@@ -3802,19 +3834,20 @@ pie_2006_SM_DoD_df <- pie_2006_SM_DoD_df %>%
 
 head(pie_2006_SM_DoD_df)
 
-ggplot(pie_2006_SM_DoD_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2006_DoD_SMALL <- ggplot(pie_2006_SM_DoD_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999", "#000066")) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2006 Sample - Small Businesses -DoD", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "Survival Rates 2006 Sample DoD - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
 
 ##******##
 ##Non-Small NE##
 ##******##
 pie_2006_NS_DoD_df <- data.frame(
   group = c("3-yr", "5-yr", "10-yr", "2016"),
-  value = c(survival_3yrALL_2006_DOD, survival_5yrALL_2006_DOD, survival_10yrALL_2006_DOD, survivalrate_2016_ALL_2006_DOD)
+  value = c(survival_3yrNSM_2006_DOD, survival_5yrNSM_2006_DOD, survival_10yrNSM_2006_DOD, survivalrate_2016_NS_2006_DOD)
 )
 
 head(pie_2006_NS_DoD_df)
@@ -3825,14 +3858,21 @@ pie_2006_NS_DoD_df <- pie_2006_NS_DoD_df %>%
 
 head(pie_2006_NS_DoD_df)
 
-ggplot(pie_2006_NS_DoD_df, aes(x=group, y=perc_value, fill=group)) +
+plot_2006_DoD_NS <- ggplot(pie_2006_NS_DoD_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999")) +
   geom_bar(stat = "identity", width=0.4) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
+  ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2006 Sample - Non-Small Businesses - DoD", y = "Survival Rates (percents)", x = "Year")
+  labs(title = "- Non-Small Businesses", y = "Survival Rates (percentages)", x = "Year") +
+  guides(fill=FALSE)
 
 
+##*****##
+#combine plots#
+#******##
+#t <- textGrob("Survival Rates 2001 Sample", fontsize=42)
+grid.arrange(plot_2006_DoD_SMALL, plot_2006_DoD_ALL, plot_2006_DoD_NS)
 
 
 #************************************************************************************
