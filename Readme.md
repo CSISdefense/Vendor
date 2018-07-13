@@ -5,9 +5,9 @@ New entrants, monopolies, and other vendor focused CSIS work.
 * [Annual_Termination.md](Annual_Termination.md) Study of annual contract outcomes.
 
 ## Datasets
-* Rdata for completed contracts: [data/transformed_def.Rdata](base dataset), [data/transformed_def.Rdata](extended dataset)
-* Rdata for all contracts: [data/defense_contract_all.RData](minimal dataset)
-* Rdata sample: [data/def_sample.Rdata](1m and 250k sample)
+* Rdata for completed contracts: [base dataset](data/transformed_def.Rdata), [extended dataset](data/transformed_def.Rdata)
+* Rdata for all contracts: [minimal dataset](data/defense_contract_all.RData)
+* Rdata sample: [1m and 250k sample](data/def_sample.Rdata)
 * Stata sample: [1m sample](data/stata_def_sample1m.zip), [250k sample](data/stata_def_sample250k.zip)
 
 ## Statistical model building
