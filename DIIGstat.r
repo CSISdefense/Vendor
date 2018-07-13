@@ -947,3 +947,12 @@ glmer_examine<-function(model){
   } 
   output
 }
+
+create_naics2<-function(NAICS){
+  NAICS2<-substring(NAICS,1,2)
+  NAICS2[NAICS2 %in% c('31','32','33')]<-'31-33'
+  NAICS2[NAICS2 %in% c('44','45')]<-'44-45'
+  NAICS2[NAICS2 %in% c('48','49')]<-'48-49'
+  NAICS2<-factor(NAICS2)
+  NAICS2
+}
