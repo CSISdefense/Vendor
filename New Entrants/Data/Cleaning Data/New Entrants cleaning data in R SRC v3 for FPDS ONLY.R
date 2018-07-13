@@ -80,6 +80,23 @@ unique_FPDS_duns_studyperiod <- data.frame(table(FPDS_data$Dunsnumber)) ##gives 
 # 
 # summary(nchar_)
 
+##*************************************##
+####Deflating Dollar Amounts####
+#****************************************#
+
+
+
+FPDS_data <- deflate(FPDS_data, money_var = "obligatedAmount", fy_var = "FYear")
+
+##update obligatedAmount: change orignial 
+#'obligatedAmount' to 'obligatedAmount_nominal'
+#and
+#'obligatedAmount.Deflator.2016' to 'obligatedAmount'
+
+names(FPDS_data)[names(FPDS_data) == "obligatedAmount"] <- "obligatedAmount_nominal"
+names(FPDS_data)[names(FPDS_data) == "obligatedAmount.Deflator.2016"] <- "obligatedAmount"
+
+
 
 
 ##*****************************************##
@@ -624,7 +641,7 @@ Duns_signdate<-FPDS_data %>% group_by(Dunsnumber) %>%
     max_FYear = max(FYear,na.rm=TRUE),
     min_AnnualMaxOfSignedDate = min(AnnualMaxOfSignedDate_date,na.rm=TRUE),
     max_FYear = max(FYear,na.rm=TRUE),
-    max_AnnualMaxOfSignedDate = max(AnnualMaxOfSignedDate_date,na.rm=TRUE),
+    max_AnnualMaxOfSignedDate = max(AnnualMaxOfSignedDate_date,na.rm=TRUE)
   )
 Duns_signdate<-Duns_signdate %>% mutate(min_CYear=year(min_AnnualMaxOfSignedDate),
                                         max_CYear=year(max_AnnualMaxOfSignedDate))
@@ -831,6 +848,24 @@ save(FPDS_cleaned_unique, file="FPDS_datapull_all_v3.Rda")
 
 #******************************************************
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#***********************************************************************#
 
 #*****************************************#
 ####Whether a firm is an incumbent firm####
