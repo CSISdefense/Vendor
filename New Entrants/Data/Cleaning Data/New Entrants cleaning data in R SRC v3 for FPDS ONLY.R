@@ -915,21 +915,48 @@ FPDS_data_intermediate_obligatedamnt <- FPDS_data_intermediate_obligatedamnt[ord
 #remove years before 2001
 FPDS_data_intermediate_obligatedamnt <- FPDS_data_intermediate_obligatedamnt[!(FPDS_data_intermediate_obligatedamnt$FYear<2001), ]
 
-
 ##step 1: use dplyr to create a new data frame grouped by fiscal year and obligated amount
 #and sum obligated amount for all unique combinations
 FPDS_newvar_totalobligations <- FPDS_data_intermediate_obligatedamnt %>% group_by(FYear) %>%
-  dplyr::summarize(total_obligations_allvendors=sum(obligatedAmount, na.rm=TRUE))
+  dplyr::summarize(total_obligations_allvendors = sum(obligatedAmount, na.rm=TRUE))
 
-
-#step 4: left join between FPDS_newvar_totalobligations and FPDS_cleaned_unique
+#step 2: left join between FPDS_newvar_totalobligations and FPDS_cleaned_unique
 
 FPDS_cleaned_unique_wtotalobligations <- join(FPDS_cleaned_unique, FPDS_newvar_totalobligations, by = "FYear", type = "left", match = "all")
 
+##drop years before 2001
+FPDS_cleaned_unique_wtotalobligations <- FPDS_cleaned_unique_wtotalobligations[!(FPDS_cleaned_unique_wtotalobligations$registrationYear<2001), ]
 
-##step 5: save data
+##step 3: create new entrants total obligations variable
 
-save(FPDS_cleaned_unique_wtotalobligations, file="FPDS_cleaned_unique_wtotalobligations.Rda")
+count_total_obligations_newentrants <- FPDS_cleaned_unique_wtotalobligations %>%
+  group_by(FYear) %>%
+  dplyr::summarise(sum_obligations_newentrants = sum(FY_obligated_amount, na.rm = TRUE))
+
+##step 4: subset the FPDS_cleaned_unique_wtotalobligations data so it's just each year and totalobligations_allvendors
+
+count_total_obligations_allvendors <- FPDS_cleaned_unique_wtotalobligations %>%
+  group_by(FYear) %>%
+  dplyr::summarise(sum_obligation_allvendors = min(total_obligations_allvendors))
+
+
+##step 5: merge the dataframe from step 4 to count_total_obligations_newentrants
+
+count_totalobl_allvend_and_NE <- join(count_total_obligations_newentrants, count_total_obligations_allvendors, by = "FYear", type = "left", match = "all")
+
+##step 6: make a new variable of totalobligations_incumbentfirsms by 
+#subtracting the total_obligations_newentrants from total_obligations_allvendors in each year
+
+count_totalobl_allvend_and_NE <- count_totalobl_allvend_and_NE %>% group_by(FYear) %>%
+  dplyr::mutate(sum_obligations_incumbents = sum_obligation_allvendors - sum_obligations_newentrants)
+
+##step 7: merge data to FPDS_unique
+
+FPDS_cleaned_unique_wtotalobligations_allvend_NE <- join(FPDS_cleaned_unique_wtotalobligations, count_totalobl_allvend_and_NE, by = "FYear", type = "left", match = "all")
+
+##step : save data
+
+save(FPDS_cleaned_unique_wtotalobligations_allvend_NE, file="FPDS_cleaned_unique_wtotalobligations.Rda")
 
 #**********************************************************
 
