@@ -214,7 +214,7 @@ NA_stats(def,"b_Term")
 * cl_Days is the natural log of the initial maximum duration of the contract, in days. The variable is centered, by subtracting its mean (Data is missing for 0.00983 of records and 2.41e-09 of obligated dollars. 
 
 ### Contract Vehicle
-* SIDV, MIDV, and OIDV are dummy variables based on the contract vehicle. They correspond to Single-Award IDVs, Multi-Award IDVs, and Other IDVs, respectively, having a value of 1 when the task order has that vehicle type, and having a 0 other. The remaining types, definitive contracts and purchase orders, are intentionally left out. (Data is missing for 0.000935 of records and 0.000852 of obligated dollars.
+* SIDV, MIDV, and FSS/GWAC, BPA/BOA are dummy variables based on the contract vehicle. They correspond to Single-Award IDVs, Multi-Award IDVs, and Other IDVs, respectively, having a value of 1 when the task order has that vehicle type, and having a 0 other. The remaining types, definitive contracts and purchase orders, are intentionally left out. (Data is missing for 0.000935 of records and 0.000852 of obligated dollars.
 * n_Fixed is a numeric variable based on contract pricing. It has a value of 0 for cost-based, 0.5 or "combination or other", 1 for any fixed price (excluding fixed-price level of effort which is classified as cost-based). (0.9666405)
 * n_Incent is a numeric variable based on fee type. Ig has a value. 1 for incentive fee or cost sharing, 0.5 or "combination or other", 0 for all remaining types. (Data is missing for 0.00132 of records and 1.17e-06 of obligated dollars.)
 * b_UCA is a binary variable with a value of 1 for contracts/task orders that begin as letter contracts or undefinitized contract awards (UCA) and a value of 0 otherwise. Data is missing for 0.0988 of records and 0.123 of obligated dollars.
@@ -267,7 +267,14 @@ NAICS2digit<-ggplot(def,
   geom_bar()+coord_flip()+
   scale_y_continuous(label=scales::comma)+scale_x_discrete(limits=order)+
   labs(x="2-Digit NAICS Code",y="Number of Contracts and Task Orders in Unfiltered Dataset")
-ggsave(NAICS2digit,file="NAICS2digitCount.png",width=10,height=6,dpi=600)
+
+NAICS2digit
+```
+
+![](monopoly_results_summary_files/figure-html/Summary-1.png)<!-- -->
+
+```r
+ggsave(NAICS2digit,file="Output\\NAICS2digitCount.png",width=10,height=6,dpi=600)
 
 NAICS_summary<-def %>% group_by(NAICS,StartFY,HHI_lag1) %>%
   dplyr::summarise(annual_action_obligation=sum(Action.Obligation),
@@ -327,13 +334,7 @@ NAICStop<-ggplot(subset(NAICS_summary,naics_dollar_rank<=4 |
   geom_hline(yintercept=c(1500,2500),linetype="dotted")
 
 NAICStop_paper<-NAICStop+ facet_wrap(~NAICS_shorthand,ncol=2)
-NAICStop_paper
-```
-
-![](monopoly_results_summary_files/figure-html/Summary-1.png)<!-- -->
-
-```r
-ggsave(NAICStop_paper,file="NAICStop.png",width=4,height=8,dpi=600)
+ggsave(NAICStop_paper,file="Output\\NAICStop.png",width=4,height=8,dpi=600)
 
 NAICStop_pp<-NAICStop+ facet_wrap(~NAICS_shorthand,ncol=4)
 NAICStop_pp
@@ -342,7 +343,7 @@ NAICStop_pp
 ![](monopoly_results_summary_files/figure-html/Summary-2.png)<!-- -->
 
 ```r
-ggsave(NAICStop_pp,file="NAICStop_pp.png",width=10.5,height=5.5,dpi=600)
+ggsave(NAICStop_pp,file="Output\\NAICStop_pp.png",width=10.5,height=5.5,dpi=600)
 
 summary(NAICS_summary$naics_count_rank)
 ```
@@ -357,7 +358,17 @@ summary(NAICS_summary$naics_count_rank)
 ```r
 HH1plot<-freq_continuous_plot(def,"HHI_lag1",bins=50)
 HH1plot<-HH1plot+geom_vline(xintercept=c(1500,2500))+labs(x="Annual Herfindahl-Hirschman Index (HHI) for NAICS-6 Sector",y="Contract or Task Order Count")
-ggsave(HH1plot,file="HH1freq.png",width=5.5,height=5.5,dpi=600)
+HH1plot
+```
+
+```
+## Warning: Removed 5775 rows containing non-finite values (stat_bin).
+```
+
+![](monopoly_results_summary_files/figure-html/VarGraph-1.png)<!-- -->
+
+```r
+ggsave(HH1plot,file="Output//HH1freq.png",width=5.5,height=5.5,dpi=600)
 ```
 
 ```
@@ -408,14 +419,14 @@ sum(def$Action.Obligation[is.na(def$EffComp)],na.rm=TRUE)/sum(def$Action.Obligat
 # Effplot<-freq_discrete_plot(subset(def,"EffComp"))
 # Effplot<-Effplot+labs(x="Effective Competition",y="Contract or Task Order Count")
 
-# ggsave(Effplot,file="EffFreq.png",width=5.5,height=5.5,dpi=600)
+# ggsave(Effplot,file="Output//EffFreq.png",width=5.5,height=5.5,dpi=600)
 ```
 
 ### Computational Sample Creation
 
 ```r
  load(file="data//def_sample.Rdata")
-# save(smp,smp1m,file="def_sample.Rdata")
+# save(smp,smp1m,file="data//def_sample.Rdata")
 
 
 
@@ -439,7 +450,7 @@ sum(def$Action.Obligation[is.na(def$EffComp)],na.rm=TRUE)/sum(def$Action.Obligat
 # 
 # smp1m<-smp[sample(nrow(smp),1000000),]
 # smp<-smp[sample(nrow(smp),250000),]
-# save(file="def_sample.Rdata",smp,smp1m)
+# save(file="data//def_sample.Rdata",smp,smp1m)
 write.foreign(df=smp,
               datafile="Data//def_sample250k.dat",
               codefile="Data//def_sample250k_code.do",
@@ -803,35 +814,31 @@ display(Term_Cons_08C)
 ##     b_UCA:c_HHI_lag1 + NAICS2, family = binomial(link = "logit"), 
 ##     data = smp1m)
 ##                        coef.est coef.se
-## (Intercept)             -6.54     0.72 
-## cl_HHI_lag1             -0.16     0.01 
+## (Intercept)             -6.53     0.72 
+## cl_HHI_lag1             -0.15     0.01 
 ## cl_Ceil                 -0.10     0.02 
-## cl_Days                  0.59     0.02 
-## VehS-IDC                -1.25     0.04 
-## VehM-IDC                -0.49     0.09 
-## VehFSS/GWAC             -0.09     0.06 
-## VehBPA/BOA              -0.56     0.12 
+## cl_Days                  0.58     0.02 
+## VehS-IDC                -1.27     0.04 
+## VehM-IDC                -0.51     0.09 
+## VehFSS/GWAC             -0.11     0.06 
+## VehBPA/BOA              -0.57     0.12 
 ## n_Fixed                  1.10     0.09 
-## b_UCA                    1.61     0.07 
+## b_UCA                    1.60     0.07 
 ## b_Intl                   0.13     0.04 
 ## NAICS221                 0.99     0.79 
 ## NAICS222                -0.03     0.78 
-## NAICS223                 0.62     0.71 
-## NAICS231                 0.63     0.72 
-## NAICS232                 1.56     0.71 
-## NAICS233                 1.21     0.71 
+## NAICS223                 0.63     0.71 
+## NAICS231-33              1.21     0.71 
 ## NAICS242                 0.14     0.71 
-## NAICS244                 0.94     0.71 
-## NAICS245                 0.77     0.74 
-## NAICS248                 1.33     0.72 
-## NAICS249                 1.05     0.78 
+## NAICS244-45              0.92     0.71 
+## NAICS248-49              1.30     0.72 
 ## NAICS251                 1.89     0.71 
-## NAICS252                -0.57     1.05 
+## NAICS252                -0.58     1.05 
 ## NAICS253                 1.20     0.72 
 ## NAICS254                 0.47     0.71 
-## NAICS255                -5.32   112.52 
+## NAICS255                -5.35   112.48 
 ## NAICS256                 1.19     0.71 
-## NAICS261                 0.96     0.72 
+## NAICS261                 0.97     0.72 
 ## NAICS262                 2.57     0.71 
 ## NAICS271                 1.53     0.73 
 ## NAICS272                 1.03     0.72 
@@ -840,18 +847,18 @@ display(Term_Cons_08C)
 ## cl_Ceil:c_HHI_lag1       0.06     0.02 
 ## cl_Ceil:cl_Days          0.12     0.01 
 ## cl_Days:c_HHI_lag1       0.03     0.02 
-## cl_Days:VehS-IDC         0.27     0.03 
-## cl_Days:VehM-IDC         0.20     0.07 
-## cl_Days:VehFSS/GWAC     -0.33     0.06 
-## cl_Days:VehBPA/BOA       0.15     0.09 
-## VehS-IDC:c_HHI_lag1     -0.45     0.04 
+## cl_Days:VehS-IDC         0.29     0.03 
+## cl_Days:VehM-IDC         0.21     0.07 
+## cl_Days:VehFSS/GWAC     -0.32     0.06 
+## cl_Days:VehBPA/BOA       0.16     0.09 
+## VehS-IDC:c_HHI_lag1     -0.46     0.04 
 ## VehM-IDC:c_HHI_lag1      0.06     0.05 
 ## VehFSS/GWAC:c_HHI_lag1   0.15     0.05 
 ## VehBPA/BOA:c_HHI_lag1    0.00     0.11 
-## c_HHI_lag1:b_UCA         0.30     0.09 
+## c_HHI_lag1:b_UCA         0.29     0.09 
 ## ---
-##   n = 1000000, k = 46
-##   residual deviance = 111793.9, null deviance = 125945.6 (difference = 14151.7)
+##   n = 1000000, k = 42
+##   residual deviance = 111898.1, null deviance = 125945.6 (difference = 14047.5)
 ```
 
 ```r
@@ -865,24 +872,24 @@ glmer_examine(Term_Cons_08C)
 
 ```
 ##                         GVIF Df GVIF^(1/(2*Df))
-## cl_HHI_lag1         1.992653  1        1.411614
-## cl_Ceil             3.075921  1        1.753830
-## cl_Days             2.668927  1        1.633685
-## Veh                74.816787  4        1.714944
-## n_Fixed             1.111477  1        1.054266
-## b_UCA               1.458251  1        1.207581
-## b_Intl              1.069601  1        1.034215
-## NAICS2              3.595353 23        1.028209
-## cl_Ceil:c_HHI_lag1  2.256209  1        1.502068
-## cl_Ceil:cl_Days     2.384028  1        1.544030
-## cl_Days:c_HHI_lag1  2.526143  1        1.589385
-## cl_Days:Veh        48.633269  4        1.625050
-## Veh:c_HHI_lag1      8.194423  4        1.300738
-## c_HHI_lag1:b_UCA    1.464444  1        1.210142
+## cl_HHI_lag1         1.955690  1        1.398460
+## cl_Ceil             3.080529  1        1.755144
+## cl_Days             2.632514  1        1.622502
+## Veh                74.911184  4        1.715214
+## n_Fixed             1.110970  1        1.054026
+## b_UCA               1.452533  1        1.205211
+## b_Intl              1.070222  1        1.034516
+## NAICS2              3.232484 19        1.031357
+## cl_Ceil:c_HHI_lag1  2.250719  1        1.500240
+## cl_Ceil:cl_Days     2.381780  1        1.543302
+## cl_Days:c_HHI_lag1  2.518971  1        1.587127
+## cl_Days:Veh        48.914992  4        1.626224
+## Veh:c_HHI_lag1      8.173241  4        1.300317
+## c_HHI_lag1:b_UCA    1.460599  1        1.208552
 ```
 
 ```r
-# save(file="Term_Cons.RData",Term_Cons_08A,Term_Cons_08A2,Term_Cons_08A3,
+# save(file="Output//Term_Cons.RData",Term_Cons_08A,Term_Cons_08A2,Term_Cons_08A3,
 #      Term_Cons_08B,Term_Cons_08B2,Term_Cons_08C)
 
 # Term_Cons_08D <- glmer(data=smp1m,
@@ -902,7 +909,7 @@ glmer_examine(Term_Cons_08C)
 # Missing! display(Term_Cons_08D)
 # glmer_examine(Term_Cons_08D)
 
-# save(file="Term_Cons.RData",Term_Cons_08A,Term_Cons_08A2,Term_Cons_08A3,Term_Cons_08B,Term_Cons_08B2,Term_Cons_08C)
+# save(file="Output//Term_Cons.RData",Term_Cons_08A,Term_Cons_08A2,Term_Cons_08A3,Term_Cons_08B,Term_Cons_08B2,Term_Cons_08C)
 # 05A summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A2,Term_Cons_08A3,Term_Cons_08B)
 # 05A summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A2,Term_Cons_08A3,Term_Cons_08C)
 # 05A summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A2,Term_Cons_08A3,Term_Cons_08B2)
@@ -1148,50 +1155,46 @@ display(CBre_Cons_08B)
 ##     b_UCA:cl_Ceil + b_UCA:c_HHI_lag1 + NAICS2, family = binomial(link = "logit"), 
 ##     data = smp1m)
 ##                     coef.est coef.se
-## (Intercept)         -5.17     0.42  
-## cl_HHI_lag1          0.23     0.01  
+## (Intercept)         -5.16     0.42  
+## cl_HHI_lag1          0.22     0.01  
 ## cl_Ceil              0.62     0.02  
-## cl_Days              0.19     0.01  
-## VehS-IDC            -0.06     0.03  
-## VehM-IDC             0.39     0.05  
-## VehFSS/GWAC          0.13     0.06  
-## VehBPA/BOA          -0.01     0.08  
+## cl_Days              0.20     0.01  
+## VehS-IDC            -0.08     0.03  
+## VehM-IDC             0.38     0.05  
+## VehFSS/GWAC          0.12     0.06  
+## VehBPA/BOA          -0.02     0.08  
 ## n_Fixed              0.32     0.04  
-## b_UCA                2.01     0.08  
-## b_Intl              -0.29     0.03  
-## NAICS221             0.69     0.47  
+## b_UCA                2.03     0.08  
+## b_Intl              -0.28     0.03  
+## NAICS221             0.70     0.47  
 ## NAICS222             0.71     0.44  
 ## NAICS223             1.91     0.42  
-## NAICS231            -0.89     0.43  
-## NAICS232            -0.60     0.42  
-## NAICS233            -0.41     0.42  
-## NAICS242            -2.06     0.42  
-## NAICS244            -0.05     0.43  
-## NAICS245             0.04     0.45  
-## NAICS248             0.30     0.42  
-## NAICS249             0.63     0.48  
+## NAICS231-33         -0.45     0.42  
+## NAICS242            -2.03     0.42  
+## NAICS244-45         -0.03     0.42  
+## NAICS248-49          0.33     0.42  
 ## NAICS251             0.64     0.42  
-## NAICS252            -0.74     0.55  
+## NAICS252            -0.72     0.55  
 ## NAICS253             1.71     0.42  
-## NAICS254             0.70     0.42  
-## NAICS255            -5.98    68.92  
+## NAICS254             0.69     0.42  
+## NAICS255            -5.97    68.91  
 ## NAICS256             1.92     0.42  
-## NAICS261             1.58     0.42  
-## NAICS262             0.25     0.43  
-## NAICS271             0.37     0.50  
+## NAICS261             1.57     0.42  
+## NAICS262             0.24     0.43  
+## NAICS271             0.36     0.50  
 ## NAICS272             1.41     0.42  
 ## NAICS281             0.95     0.42  
 ## NAICS292             1.05     0.43  
-## cl_Ceil:c_HHI_lag1  -0.19     0.01  
-## cl_Ceil:VehS-IDC    -0.15     0.02  
+## cl_Ceil:c_HHI_lag1  -0.18     0.01  
+## cl_Ceil:VehS-IDC    -0.14     0.02  
 ## cl_Ceil:VehM-IDC    -0.23     0.03  
 ## cl_Ceil:VehFSS/GWAC  0.04     0.04  
-## cl_Ceil:VehBPA/BOA  -0.33     0.08  
+## cl_Ceil:VehBPA/BOA  -0.32     0.08  
 ## cl_Ceil:b_UCA       -0.39     0.05  
-## b_UCA:c_HHI_lag1     0.44     0.07  
+## b_UCA:c_HHI_lag1     0.45     0.07  
 ## ---
-##   n = 1000000, k = 41
-##   residual deviance = 105726.8, null deviance = 131712.0 (difference = 25985.3)
+##   n = 1000000, k = 37
+##   residual deviance = 105759.9, null deviance = 131712.0 (difference = 25952.1)
 ```
 
 ```r
@@ -1205,18 +1208,18 @@ glmer_examine(CBre_Cons_08B)
 
 ```
 ##                         GVIF Df GVIF^(1/(2*Df))
-## cl_HHI_lag1         1.816226  1        1.347674
-## cl_Ceil             3.865936  1        1.966198
-## cl_Days             1.479621  1        1.216397
-## Veh                13.314747  4        1.382107
-## n_Fixed             1.312650  1        1.145710
-## b_UCA               1.938743  1        1.392387
-## b_Intl              1.091208  1        1.044609
-## NAICS2              3.384512 23        1.026859
-## cl_Ceil:c_HHI_lag1  1.745989  1        1.321359
-## cl_Ceil:Veh        23.516368  4        1.483957
-## cl_Ceil:b_UCA       1.727825  1        1.314468
-## b_UCA:c_HHI_lag1    1.287048  1        1.134481
+## cl_HHI_lag1         1.776737  1        1.332943
+## cl_Ceil             3.859264  1        1.964501
+## cl_Days             1.460222  1        1.208397
+## Veh                13.023061  4        1.378285
+## n_Fixed             1.313157  1        1.145931
+## b_UCA               1.935072  1        1.391069
+## b_Intl              1.089703  1        1.043889
+## NAICS2              3.055352 19        1.029828
+## cl_Ceil:c_HHI_lag1  1.689187  1        1.299687
+## cl_Ceil:Veh        23.439161  4        1.483347
+## cl_Ceil:b_UCA       1.727281  1        1.314261
+## b_UCA:c_HHI_lag1    1.284620  1        1.133411
 ```
 
 ```r
@@ -1263,7 +1266,7 @@ glmer_examine(CBre_Cons_08B)
 
 # summary_residual_compare(CBre_Cons_08C,CBre_Cons_08D,Term_Cons_08B,Term_Cons_08B)
 
-# save(file="CBre_Cons.RData",CBre_Cons_05A,CBre_Cons_08A,CBre_Cons_08B)#,CBre_Cons_08B
+# save(file="Output//CBre_Cons.RData",CBre_Cons_05A,CBre_Cons_08A,CBre_Cons_08B)#,CBre_Cons_08B
 ```
 VIF for cl_ceil:Veh is over 2, and for cl_Ceil is over 8, necessitating removal of a ceiling interaction.
 
@@ -1365,35 +1368,31 @@ display(Term_Comp_05A2)
 ##     Veh:cl_Days + Veh:n_Comp + b_UCA:n_Comp + NAICS2, family = binomial(link = "logit"), 
 ##     data = smp1m)
 ##                     coef.est coef.se
-## (Intercept)         -6.85     0.72  
-## n_Comp               0.50     0.04  
-## cl_Ceil             -0.15     0.02  
+## (Intercept)         -6.84     0.72  
+## n_Comp               0.51     0.04  
+## cl_Ceil             -0.16     0.02  
 ## cl_Days              0.44     0.03  
-## VehS-IDC            -0.80     0.05  
-## VehM-IDC            -0.36     0.10  
-## VehFSS/GWAC         -0.15     0.08  
-## VehBPA/BOA          -0.14     0.12  
-## n_Fixed              1.15     0.09  
+## VehS-IDC            -0.84     0.05  
+## VehM-IDC            -0.37     0.10  
+## VehFSS/GWAC         -0.16     0.08  
+## VehBPA/BOA          -0.15     0.12  
+## n_Fixed              1.14     0.09  
 ## b_UCA                1.86     0.06  
 ## b_Intl               0.09     0.04  
 ## NAICS221             0.90     0.79  
 ## NAICS222            -0.03     0.78  
-## NAICS223             0.87     0.71  
-## NAICS231             0.52     0.72  
-## NAICS232             1.48     0.71  
-## NAICS233             1.22     0.71  
-## NAICS242            -0.10     0.71  
-## NAICS244             0.96     0.72  
-## NAICS245             0.61     0.74  
-## NAICS248             1.33     0.72  
-## NAICS249             1.10     0.78  
+## NAICS223             0.88     0.71  
+## NAICS231-33          1.22     0.71  
+## NAICS242            -0.09     0.71  
+## NAICS244-45          0.91     0.71  
+## NAICS248-49          1.32     0.71  
 ## NAICS251             2.05     0.71  
-## NAICS252            -0.87     1.00  
+## NAICS252            -0.86     1.00  
 ## NAICS253             1.04     0.72  
-## NAICS254             0.59     0.71  
-## NAICS255            -4.51    68.80  
+## NAICS254             0.60     0.71  
+## NAICS255            -4.51    68.78  
 ## NAICS256             1.29     0.71  
-## NAICS261             1.17     0.72  
+## NAICS261             1.18     0.72  
 ## NAICS262             2.66     0.71  
 ## NAICS271             1.72     0.73  
 ## NAICS272             1.29     0.72  
@@ -1401,19 +1400,19 @@ display(Term_Comp_05A2)
 ## NAICS292             0.87     0.74  
 ## n_Comp:cl_Ceil       0.02     0.03  
 ## cl_Ceil:cl_Days      0.13     0.01  
-## n_Comp:cl_Days       0.19     0.03  
-## cl_Days:VehS-IDC     0.35     0.03  
-## cl_Days:VehM-IDC     0.20     0.07  
-## cl_Days:VehFSS/GWAC -0.29     0.06  
+## n_Comp:cl_Days       0.18     0.03  
+## cl_Days:VehS-IDC     0.37     0.03  
+## cl_Days:VehM-IDC     0.21     0.07  
+## cl_Days:VehFSS/GWAC -0.28     0.06  
 ## cl_Days:VehBPA/BOA   0.17     0.09  
-## n_Comp:VehS-IDC     -0.52     0.05  
-## n_Comp:VehM-IDC     -0.33     0.09  
-## n_Comp:VehFSS/GWAC  -0.04     0.09  
-## n_Comp:VehBPA/BOA   -0.92     0.15  
+## n_Comp:VehS-IDC     -0.50     0.05  
+## n_Comp:VehM-IDC     -0.34     0.09  
+## n_Comp:VehFSS/GWAC  -0.05     0.09  
+## n_Comp:VehBPA/BOA   -0.93     0.15  
 ## n_Comp:b_UCA        -1.74     0.25  
 ## ---
-##   n = 1000000, k = 46
-##   residual deviance = 111433.4, null deviance = 125945.6 (difference = 14512.2)
+##   n = 1000000, k = 42
+##   residual deviance = 111539.1, null deviance = 125945.6 (difference = 14406.5)
 ```
 
 ```r
@@ -1427,20 +1426,20 @@ glmer_examine(Term_Comp_05A2)
 
 ```
 ##                       GVIF Df GVIF^(1/(2*Df))
-## n_Comp            3.131594  1        1.769631
-## cl_Ceil           4.476392  1        2.115749
-## cl_Days           3.937385  1        1.984285
-## Veh             265.249457  4        2.008893
-## n_Fixed           1.106040  1        1.051684
-## b_UCA             1.164134  1        1.078950
-## b_Intl            1.076027  1        1.037317
-## NAICS2            2.332696 23        1.018584
-## n_Comp:cl_Ceil    3.419849  1        1.849283
-## cl_Ceil:cl_Days   2.393202  1        1.546998
-## n_Comp:cl_Days    4.790893  1        2.188811
-## cl_Days:Veh      49.198793  4        1.627400
-## n_Comp:Veh       45.690446  4        1.612420
-## n_Comp:b_UCA      1.078420  1        1.038470
+## n_Comp            3.126287  1        1.768131
+## cl_Ceil           4.484547  1        2.117675
+## cl_Days           3.912905  1        1.978106
+## Veh             264.938052  4        2.008598
+## n_Fixed           1.105848  1        1.051593
+## b_UCA             1.162570  1        1.078225
+## b_Intl            1.075616  1        1.037119
+## NAICS2            2.143210 19        1.020263
+## n_Comp:cl_Ceil    3.423357  1        1.850232
+## cl_Ceil:cl_Days   2.398093  1        1.548578
+## n_Comp:cl_Days    4.753810  1        2.180323
+## cl_Days:Veh      49.164402  4        1.627258
+## n_Comp:Veh       45.324391  4        1.610800
+## n_Comp:b_UCA      1.078216  1        1.038372
 ```
 
 ```r
@@ -1464,54 +1463,50 @@ display(Term_Comp_05A3)
 ##     Veh:n_Comp + b_UCA:n_Comp + NAICS2, family = binomial(link = "logit"), 
 ##     data = smp1m)
 ##                     coef.est coef.se
-## (Intercept)         -6.92     0.72  
+## (Intercept)         -6.91     0.72  
 ## n_Comp               0.64     0.03  
 ## cl_Ceil             -0.20     0.02  
-## cl_Days              0.55     0.02  
-## VehS-IDC            -0.84     0.05  
-## VehM-IDC            -0.39     0.11  
-## VehFSS/GWAC         -0.13     0.08  
-## VehBPA/BOA          -0.12     0.12  
+## cl_Days              0.54     0.02  
+## VehS-IDC            -0.87     0.05  
+## VehM-IDC            -0.40     0.11  
+## VehFSS/GWAC         -0.14     0.08  
+## VehBPA/BOA          -0.13     0.12  
 ## n_Fixed              1.14     0.09  
 ## b_UCA                1.85     0.06  
 ## b_Intl               0.10     0.04  
 ## NAICS221             0.89     0.79  
 ## NAICS222            -0.03     0.78  
 ## NAICS223             0.88     0.71  
-## NAICS231             0.53     0.72  
-## NAICS232             1.47     0.71  
-## NAICS233             1.23     0.71  
-## NAICS242            -0.13     0.71  
-## NAICS244             0.96     0.72  
-## NAICS245             0.60     0.74  
-## NAICS248             1.32     0.72  
-## NAICS249             1.10     0.78  
+## NAICS231-33          1.23     0.71  
+## NAICS242            -0.12     0.71  
+## NAICS244-45          0.91     0.71  
+## NAICS248-49          1.30     0.71  
 ## NAICS251             2.05     0.71  
 ## NAICS252            -0.80     1.00  
 ## NAICS253             1.06     0.72  
 ## NAICS254             0.61     0.71  
-## NAICS255            -4.35    68.78  
-## NAICS256             1.29     0.71  
+## NAICS255            -4.35    68.77  
+## NAICS256             1.30     0.71  
 ## NAICS261             1.18     0.72  
-## NAICS262             2.66     0.71  
+## NAICS262             2.67     0.71  
 ## NAICS271             1.72     0.73  
 ## NAICS272             1.28     0.72  
 ## NAICS281             1.19     0.71  
 ## NAICS292             0.85     0.74  
 ## n_Comp:cl_Ceil       0.08     0.02  
-## cl_Ceil:cl_Days      0.14     0.01  
-## cl_Days:VehS-IDC     0.37     0.03  
+## cl_Ceil:cl_Days      0.13     0.01  
+## cl_Days:VehS-IDC     0.39     0.03  
 ## cl_Days:VehM-IDC     0.22     0.07  
 ## cl_Days:VehFSS/GWAC -0.28     0.06  
-## cl_Days:VehBPA/BOA   0.13     0.09  
-## n_Comp:VehS-IDC     -0.51     0.05  
+## cl_Days:VehBPA/BOA   0.14     0.09  
+## n_Comp:VehS-IDC     -0.49     0.05  
 ## n_Comp:VehM-IDC     -0.32     0.09  
-## n_Comp:VehFSS/GWAC  -0.10     0.09  
-## n_Comp:VehBPA/BOA   -0.91     0.15  
+## n_Comp:VehFSS/GWAC  -0.11     0.09  
+## n_Comp:VehBPA/BOA   -0.92     0.15  
 ## n_Comp:b_UCA        -1.72     0.25  
 ## ---
-##   n = 1000000, k = 45
-##   residual deviance = 111470.0, null deviance = 125945.6 (difference = 14475.6)
+##   n = 1000000, k = 41
+##   residual deviance = 111571.7, null deviance = 125945.6 (difference = 14373.9)
 ```
 
 ```r
@@ -1525,19 +1520,19 @@ glmer_examine(Term_Comp_05A3)
 
 ```
 ##                       GVIF Df GVIF^(1/(2*Df))
-## n_Comp            1.778551  1        1.333623
-## cl_Ceil           4.176846  1        2.043733
-## cl_Days           2.388338  1        1.545425
-## Veh             304.887840  4        2.044172
-## n_Fixed           1.106889  1        1.052088
-## b_UCA             1.160934  1        1.077466
-## b_Intl            1.072701  1        1.035713
-## NAICS2            2.316463 23        1.018430
-## n_Comp:cl_Ceil    2.877584  1        1.696344
-## cl_Ceil:cl_Days   2.395990  1        1.547898
-## cl_Days:Veh      50.562825  4        1.632973
-## n_Comp:Veh       46.516446  4        1.616035
-## n_Comp:b_UCA      1.078306  1        1.038415
+## n_Comp            1.777487  1        1.333224
+## cl_Ceil           4.187788  1        2.046409
+## cl_Days           2.359344  1        1.536016
+## Veh             302.675373  4        2.042312
+## n_Fixed           1.106675  1        1.051986
+## b_UCA             1.159493  1        1.076797
+## b_Intl            1.072436  1        1.035585
+## NAICS2            2.126794 19        1.020057
+## n_Comp:cl_Ceil    2.879737  1        1.696979
+## cl_Ceil:cl_Days   2.400425  1        1.549330
+## cl_Days:Veh      50.503999  4        1.632735
+## n_Comp:Veh       46.091015  4        1.614180
+## n_Comp:b_UCA      1.078099  1        1.038315
 ```
 
 ```r
@@ -1565,30 +1560,26 @@ display(Term_Comp_05A4)
 ## n_Comp               0.50     0.02  
 ## cl_Ceil             -0.18     0.02  
 ## cl_Days              0.55     0.02  
-## VehS-IDC            -1.17     0.04  
-## VehM-IDC            -0.59     0.08  
-## VehFSS/GWAC         -0.19     0.05  
-## VehBPA/BOA          -0.54     0.11  
+## VehS-IDC            -1.19     0.04  
+## VehM-IDC            -0.61     0.08  
+## VehFSS/GWAC         -0.21     0.05  
+## VehBPA/BOA          -0.56     0.11  
 ## n_Fixed              1.13     0.09  
-## b_UCA                1.88     0.06  
+## b_UCA                1.89     0.06  
 ## b_Intl               0.09     0.04  
 ## NAICS221             0.88     0.79  
 ## NAICS222            -0.04     0.78  
-## NAICS223             0.85     0.71  
-## NAICS231             0.53     0.72  
-## NAICS232             1.44     0.71  
-## NAICS233             1.24     0.71  
-## NAICS242            -0.19     0.71  
-## NAICS244             0.96     0.72  
-## NAICS245             0.58     0.74  
-## NAICS248             1.31     0.72  
-## NAICS249             1.07     0.78  
+## NAICS223             0.86     0.71  
+## NAICS231-33          1.23     0.71  
+## NAICS242            -0.17     0.71  
+## NAICS244-45          0.91     0.71  
+## NAICS248-49          1.30     0.71  
 ## NAICS251             1.99     0.71  
 ## NAICS252            -0.62     1.00  
 ## NAICS253             1.00     0.72  
 ## NAICS254             0.58     0.71  
-## NAICS255            -4.44    68.78  
-## NAICS256             1.25     0.71  
+## NAICS255            -4.44    68.77  
+## NAICS256             1.26     0.71  
 ## NAICS261             1.17     0.72  
 ## NAICS262             2.64     0.71  
 ## NAICS271             1.69     0.73  
@@ -1597,14 +1588,14 @@ display(Term_Comp_05A4)
 ## NAICS292             0.85     0.74  
 ## n_Comp:cl_Ceil       0.06     0.02  
 ## cl_Ceil:cl_Days      0.13     0.01  
-## cl_Days:VehS-IDC     0.40     0.03  
-## cl_Days:VehM-IDC     0.23     0.07  
+## cl_Days:VehS-IDC     0.42     0.03  
+## cl_Days:VehM-IDC     0.24     0.07  
 ## cl_Days:VehFSS/GWAC -0.28     0.06  
-## cl_Days:VehBPA/BOA   0.16     0.09  
-## n_Comp:b_UCA        -1.84     0.25  
+## cl_Days:VehBPA/BOA   0.17     0.09  
+## n_Comp:b_UCA        -1.85     0.25  
 ## ---
-##   n = 1000000, k = 41
-##   residual deviance = 111600.2, null deviance = 125945.6 (difference = 14345.4)
+##   n = 1000000, k = 37
+##   residual deviance = 111697.9, null deviance = 125945.6 (difference = 14247.7)
 ```
 
 ```r
@@ -1618,18 +1609,18 @@ glmer_examine(Term_Comp_05A4)
 
 ```
 ##                      GVIF Df GVIF^(1/(2*Df))
-## n_Comp           1.183402  1        1.087843
-## cl_Ceil          4.249054  1        2.061323
-## cl_Days          2.372989  1        1.540451
-## Veh             39.254812  4        1.582110
-## n_Fixed          1.103469  1        1.050461
-## b_UCA            1.150271  1        1.072507
-## b_Intl           1.071860  1        1.035306
-## NAICS2           2.193255 23        1.017220
-## n_Comp:cl_Ceil   2.879795  1        1.696996
-## cl_Ceil:cl_Days  2.389268  1        1.545726
-## cl_Days:Veh     50.281820  4        1.631835
-## n_Comp:b_UCA     1.075710  1        1.037165
+## n_Comp           1.182704  1        1.087522
+## cl_Ceil          4.255814  1        2.062962
+## cl_Days          2.343782  1        1.530941
+## Veh             38.564243  4        1.578604
+## n_Fixed          1.103391  1        1.050424
+## b_UCA            1.148729  1        1.071788
+## b_Intl           1.071362  1        1.035066
+## NAICS2           2.021140 19        1.018690
+## n_Comp:cl_Ceil   2.878591  1        1.696641
+## cl_Ceil:cl_Days  2.392554  1        1.546788
+## cl_Days:Veh     50.314540  4        1.631968
+## n_Comp:b_UCA     1.075514  1        1.037070
 ```
 
 ```r
@@ -1653,49 +1644,45 @@ display(Term_Comp_05A5)
 ##     n_Fixed + b_UCA + b_Intl + Veh:cl_Days + b_UCA:n_Comp + NAICS2, 
 ##     family = binomial(link = "logit"), data = smp1m)
 ##                     coef.est coef.se
-## (Intercept)         -6.82     0.72  
+## (Intercept)         -6.81     0.72  
 ## n_Comp               0.51     0.02  
 ## cl_Ceil             -0.14     0.02  
 ## cl_Days              0.55     0.02  
-## VehS-IDC            -1.18     0.04  
-## VehM-IDC            -0.59     0.08  
-## VehFSS/GWAC         -0.19     0.05  
-## VehBPA/BOA          -0.55     0.11  
-## n_Fixed              1.14     0.09  
-## b_UCA                1.87     0.06  
-## b_Intl               0.09     0.04  
+## VehS-IDC            -1.20     0.04  
+## VehM-IDC            -0.61     0.08  
+## VehFSS/GWAC         -0.21     0.05  
+## VehBPA/BOA          -0.56     0.11  
+## n_Fixed              1.13     0.09  
+## b_UCA                1.88     0.06  
+## b_Intl               0.10     0.04  
 ## NAICS221             0.88     0.79  
 ## NAICS222            -0.04     0.78  
 ## NAICS223             0.86     0.71  
-## NAICS231             0.53     0.72  
-## NAICS232             1.44     0.71  
-## NAICS233             1.23     0.71  
-## NAICS242            -0.19     0.71  
-## NAICS244             0.96     0.72  
-## NAICS245             0.58     0.74  
-## NAICS248             1.32     0.72  
-## NAICS249             1.08     0.78  
-## NAICS251             1.99     0.71  
+## NAICS231-33          1.23     0.71  
+## NAICS242            -0.18     0.71  
+## NAICS244-45          0.91     0.71  
+## NAICS248-49          1.31     0.71  
+## NAICS251             2.00     0.71  
 ## NAICS252            -0.63     1.00  
 ## NAICS253             1.00     0.72  
 ## NAICS254             0.58     0.71  
-## NAICS255            -4.43    68.72  
+## NAICS255            -4.44    68.71  
 ## NAICS256             1.25     0.71  
 ## NAICS261             1.17     0.72  
 ## NAICS262             2.64     0.71  
 ## NAICS271             1.69     0.73  
-## NAICS272             1.27     0.72  
+## NAICS272             1.28     0.72  
 ## NAICS281             1.16     0.71  
 ## NAICS292             0.86     0.74  
 ## cl_Ceil:cl_Days      0.13     0.01  
-## cl_Days:VehS-IDC     0.41     0.03  
-## cl_Days:VehM-IDC     0.24     0.07  
-## cl_Days:VehFSS/GWAC -0.28     0.06  
-## cl_Days:VehBPA/BOA   0.16     0.09  
-## n_Comp:b_UCA        -1.82     0.25  
+## cl_Days:VehS-IDC     0.43     0.03  
+## cl_Days:VehM-IDC     0.25     0.07  
+## cl_Days:VehFSS/GWAC -0.27     0.06  
+## cl_Days:VehBPA/BOA   0.17     0.09  
+## n_Comp:b_UCA        -1.83     0.25  
 ## ---
-##   n = 1000000, k = 40
-##   residual deviance = 111607.1, null deviance = 125945.6 (difference = 14338.5)
+##   n = 1000000, k = 36
+##   residual deviance = 111704.7, null deviance = 125945.6 (difference = 14240.9)
 ```
 
 ```r
@@ -1709,17 +1696,17 @@ glmer_examine(Term_Comp_05A5)
 
 ```
 ##                      GVIF Df GVIF^(1/(2*Df))
-## n_Comp           1.092441  1        1.045199
-## cl_Ceil          2.464885  1        1.569995
-## cl_Days          2.370601  1        1.539676
-## Veh             39.206747  4        1.581867
-## n_Fixed          1.103279  1        1.050371
-## b_UCA            1.146681  1        1.070832
-## b_Intl           1.069821  1        1.034321
-## NAICS2           2.168364 23        1.016968
-## cl_Ceil:cl_Days  2.376583  1        1.541617
-## cl_Days:Veh     50.043922  4        1.630868
-## n_Comp:b_UCA     1.074805  1        1.036728
+## n_Comp           1.091558  1        1.044777
+## cl_Ceil          2.477110  1        1.573884
+## cl_Days          2.341167  1        1.530087
+## Veh             38.531916  4        1.578438
+## n_Fixed          1.103194  1        1.050331
+## b_UCA            1.145047  1        1.070069
+## b_Intl           1.069238  1        1.034040
+## NAICS2           1.999830 19        1.018406
+## cl_Ceil:cl_Days  2.381051  1        1.543065
+## cl_Days:Veh     50.086084  4        1.631040
+## n_Comp:b_UCA     1.074607  1        1.036633
 ```
 
 ```r
@@ -1742,45 +1729,41 @@ display(Term_Comp_05A6)
 ##     n_Fixed + b_UCA + b_Intl + b_UCA:n_Comp + NAICS2, family = binomial(link = "logit"), 
 ##     data = smp1m)
 ##                coef.est coef.se
-## (Intercept)    -6.79     0.72  
+## (Intercept)    -6.78     0.72  
 ## n_Comp          0.47     0.02  
-## cl_Ceil        -0.06     0.02  
+## cl_Ceil        -0.07     0.02  
 ## cl_Days         0.71     0.02  
-## VehS-IDC       -0.81     0.03  
-## VehM-IDC       -0.36     0.05  
-## VehFSS/GWAC    -0.35     0.04  
-## VehBPA/BOA     -0.40     0.07  
+## VehS-IDC       -0.83     0.02  
+## VehM-IDC       -0.37     0.05  
+## VehFSS/GWAC    -0.36     0.04  
+## VehBPA/BOA     -0.41     0.07  
 ## n_Fixed         1.02     0.09  
-## b_UCA           1.89     0.06  
-## b_Intl          0.09     0.04  
+## b_UCA           1.90     0.06  
+## b_Intl          0.10     0.04  
 ## NAICS221        0.84     0.79  
 ## NAICS222       -0.05     0.78  
 ## NAICS223        0.87     0.71  
-## NAICS231        0.47     0.72  
-## NAICS232        1.42     0.71  
-## NAICS233        1.23     0.71  
-## NAICS242       -0.37     0.71  
-## NAICS244        0.98     0.72  
-## NAICS245        0.60     0.74  
-## NAICS248        1.32     0.72  
-## NAICS249        1.04     0.78  
+## NAICS231-33     1.22     0.71  
+## NAICS242       -0.36     0.71  
+## NAICS244-45     0.93     0.71  
+## NAICS248-49     1.30     0.71  
 ## NAICS251        1.97     0.71  
 ## NAICS252       -0.65     1.00  
 ## NAICS253        1.09     0.72  
-## NAICS254        0.59     0.71  
+## NAICS254        0.60     0.71  
 ## NAICS255       -4.23    68.52  
 ## NAICS256        1.23     0.71  
-## NAICS261        1.13     0.72  
-## NAICS262        2.67     0.71  
-## NAICS271        1.64     0.73  
+## NAICS261        1.14     0.72  
+## NAICS262        2.68     0.71  
+## NAICS271        1.63     0.73  
 ## NAICS272        1.27     0.72  
 ## NAICS281        1.13     0.71  
 ## NAICS292        0.84     0.74  
 ## n_Comp:cl_Ceil  0.07     0.02  
-## n_Comp:b_UCA   -1.81     0.25  
+## n_Comp:b_UCA   -1.82     0.25  
 ## ---
-##   n = 1000000, k = 36
-##   residual deviance = 111902.7, null deviance = 125945.6 (difference = 14042.8)
+##   n = 1000000, k = 32
+##   residual deviance = 112011.0, null deviance = 125945.6 (difference = 13934.6)
 ```
 
 ```r
@@ -1794,16 +1777,16 @@ glmer_examine(Term_Comp_05A6)
 
 ```
 ##                    GVIF Df GVIF^(1/(2*Df))
-## n_Comp         1.185131  1        1.088637
-## cl_Ceil        2.989115  1        1.728906
-## cl_Days        1.349912  1        1.161857
-## Veh            1.462965  4        1.048707
-## n_Fixed        1.094903  1        1.046376
-## b_UCA          1.149303  1        1.072055
-## b_Intl         1.071883  1        1.035318
-## NAICS2         2.012989 23        1.015325
-## n_Comp:cl_Ceil 2.868178  1        1.693570
-## n_Comp:b_UCA   1.075710  1        1.037164
+## n_Comp         1.184724  1        1.088450
+## cl_Ceil        2.996024  1        1.730903
+## cl_Days        1.313613  1        1.146130
+## Veh            1.419285  4        1.044741
+## n_Fixed        1.095203  1        1.046520
+## b_UCA          1.147800  1        1.071354
+## b_Intl         1.071287  1        1.035030
+## NAICS2         1.867683 19        1.016575
+## n_Comp:cl_Ceil 2.872958  1        1.694980
+## n_Comp:b_UCA   1.075537  1        1.037081
 ```
 
 ```r
@@ -2242,47 +2225,43 @@ display(Term_Comp_08H2)
 ##     b_UCA + Veh:n_Comp + b_UCA:n_Comp + NAICS2, family = binomial(link = "logit"), 
 ##     data = smp1m)
 ##                    coef.est coef.se
-## (Intercept)        -6.90     0.72  
+## (Intercept)        -6.89     0.72  
 ## n_Comp              0.64     0.03  
 ## cl_Ceil            -0.02     0.01  
-## cl_Days             0.68     0.02  
-## VehS-IDC           -0.48     0.04  
+## cl_Days             0.69     0.02  
+## VehS-IDC           -0.50     0.04  
 ## VehM-IDC           -0.22     0.07  
-## VehFSS/GWAC        -0.35     0.07  
+## VehFSS/GWAC        -0.36     0.07  
 ## VehBPA/BOA         -0.01     0.09  
-## n_Fixed             1.05     0.09  
-## b_UCA               1.84     0.06  
+## n_Fixed             1.04     0.09  
+## b_UCA               1.85     0.06  
 ## NAICS221            0.86     0.79  
-## NAICS222           -0.03     0.78  
+## NAICS222           -0.04     0.78  
 ## NAICS223            0.91     0.71  
-## NAICS231            0.46     0.72  
-## NAICS232            1.45     0.71  
-## NAICS233            1.21     0.71  
-## NAICS242           -0.29     0.71  
-## NAICS244            0.98     0.72  
-## NAICS245            0.63     0.74  
-## NAICS248            1.35     0.72  
-## NAICS249            1.11     0.78  
+## NAICS231-33         1.20     0.71  
+## NAICS242           -0.28     0.71  
+## NAICS244-45         0.93     0.71  
+## NAICS248-49         1.34     0.71  
 ## NAICS251            2.03     0.71  
 ## NAICS252           -0.76     1.00  
 ## NAICS253            1.16     0.72  
 ## NAICS254            0.63     0.71  
 ## NAICS255           -4.17    68.50  
 ## NAICS256            1.29     0.71  
-## NAICS261            1.14     0.72  
+## NAICS261            1.15     0.72  
 ## NAICS262            2.70     0.71  
-## NAICS271            1.68     0.73  
+## NAICS271            1.67     0.73  
 ## NAICS272            1.27     0.72  
 ## NAICS281            1.17     0.71  
 ## NAICS292            0.85     0.74  
-## n_Comp:VehS-IDC    -0.56     0.05  
+## n_Comp:VehS-IDC    -0.54     0.05  
 ## n_Comp:VehM-IDC    -0.24     0.09  
 ## n_Comp:VehFSS/GWAC -0.01     0.08  
 ## n_Comp:VehBPA/BOA  -0.91     0.15  
 ## n_Comp:b_UCA       -1.67     0.25  
 ## ---
-##   n = 1000000, k = 38
-##   residual deviance = 111763.4, null deviance = 125945.6 (difference = 14182.1)
+##   n = 1000000, k = 34
+##   residual deviance = 111877.3, null deviance = 125945.6 (difference = 14068.3)
 ```
 
 ```r
@@ -2296,15 +2275,15 @@ glmer_examine(Term_Comp_08H2)
 
 ```
 ##                   GVIF Df GVIF^(1/(2*Df))
-## n_Comp        1.740078  1        1.319120
-## cl_Ceil       1.345883  1        1.160122
-## cl_Days       1.363435  1        1.167662
-## Veh          37.626918  4        1.573756
-## n_Fixed       1.097392  1        1.047565
-## b_UCA         1.156863  1        1.075575
-## NAICS2        2.035673 23        1.015573
-## n_Comp:Veh   43.481029  4        1.602461
-## n_Comp:b_UCA  1.077791  1        1.038167
+## n_Comp        1.739276  1        1.318816
+## cl_Ceil       1.346861  1        1.160543
+## cl_Days       1.328331  1        1.152532
+## Veh          37.418139  4        1.572662
+## n_Fixed       1.097525  1        1.047628
+## b_UCA         1.155420  1        1.074905
+## NAICS2        1.879896 19        1.016750
+## n_Comp:Veh   43.015817  4        1.600308
+## n_Comp:b_UCA  1.077610  1        1.038080
 ```
 
 ```r
@@ -2327,45 +2306,41 @@ display(Term_Comp_08H3)
 ##     n_Fixed + b_UCA + b_Intl + b_UCA:n_Comp + NAICS2, family = binomial(link = "logit"), 
 ##     data = smp1m)
 ##                coef.est coef.se
-## (Intercept)    -6.79     0.72  
+## (Intercept)    -6.78     0.72  
 ## n_Comp          0.47     0.02  
-## cl_Ceil        -0.06     0.02  
+## cl_Ceil        -0.07     0.02  
 ## cl_Days         0.71     0.02  
-## VehS-IDC       -0.81     0.03  
-## VehM-IDC       -0.36     0.05  
-## VehFSS/GWAC    -0.35     0.04  
-## VehBPA/BOA     -0.40     0.07  
+## VehS-IDC       -0.83     0.02  
+## VehM-IDC       -0.37     0.05  
+## VehFSS/GWAC    -0.36     0.04  
+## VehBPA/BOA     -0.41     0.07  
 ## n_Fixed         1.02     0.09  
-## b_UCA           1.89     0.06  
-## b_Intl          0.09     0.04  
+## b_UCA           1.90     0.06  
+## b_Intl          0.10     0.04  
 ## NAICS221        0.84     0.79  
 ## NAICS222       -0.05     0.78  
 ## NAICS223        0.87     0.71  
-## NAICS231        0.47     0.72  
-## NAICS232        1.42     0.71  
-## NAICS233        1.23     0.71  
-## NAICS242       -0.37     0.71  
-## NAICS244        0.98     0.72  
-## NAICS245        0.60     0.74  
-## NAICS248        1.32     0.72  
-## NAICS249        1.04     0.78  
+## NAICS231-33     1.22     0.71  
+## NAICS242       -0.36     0.71  
+## NAICS244-45     0.93     0.71  
+## NAICS248-49     1.30     0.71  
 ## NAICS251        1.97     0.71  
 ## NAICS252       -0.65     1.00  
 ## NAICS253        1.09     0.72  
-## NAICS254        0.59     0.71  
+## NAICS254        0.60     0.71  
 ## NAICS255       -4.23    68.52  
 ## NAICS256        1.23     0.71  
-## NAICS261        1.13     0.72  
-## NAICS262        2.67     0.71  
-## NAICS271        1.64     0.73  
+## NAICS261        1.14     0.72  
+## NAICS262        2.68     0.71  
+## NAICS271        1.63     0.73  
 ## NAICS272        1.27     0.72  
 ## NAICS281        1.13     0.71  
 ## NAICS292        0.84     0.74  
 ## n_Comp:cl_Ceil  0.07     0.02  
-## n_Comp:b_UCA   -1.81     0.25  
+## n_Comp:b_UCA   -1.82     0.25  
 ## ---
-##   n = 1000000, k = 36
-##   residual deviance = 111902.7, null deviance = 125945.6 (difference = 14042.8)
+##   n = 1000000, k = 32
+##   residual deviance = 112011.0, null deviance = 125945.6 (difference = 13934.6)
 ```
 
 ```r
@@ -2379,16 +2354,16 @@ glmer_examine(Term_Comp_08H3)
 
 ```
 ##                    GVIF Df GVIF^(1/(2*Df))
-## n_Comp         1.185131  1        1.088637
-## cl_Ceil        2.989115  1        1.728906
-## cl_Days        1.349912  1        1.161857
-## Veh            1.462965  4        1.048707
-## n_Fixed        1.094903  1        1.046376
-## b_UCA          1.149303  1        1.072055
-## b_Intl         1.071883  1        1.035318
-## NAICS2         2.012989 23        1.015325
-## n_Comp:cl_Ceil 2.868178  1        1.693570
-## n_Comp:b_UCA   1.075710  1        1.037164
+## n_Comp         1.184724  1        1.088450
+## cl_Ceil        2.996024  1        1.730903
+## cl_Days        1.313613  1        1.146130
+## Veh            1.419285  4        1.044741
+## n_Fixed        1.095203  1        1.046520
+## b_UCA          1.147800  1        1.071354
+## b_Intl         1.071287  1        1.035030
+## NAICS2         1.867683 19        1.016575
+## n_Comp:cl_Ceil 2.872958  1        1.694980
+## n_Comp:b_UCA   1.075537  1        1.037081
 ```
 
 ```r
@@ -2413,42 +2388,38 @@ display(Term_Comp_08H3_25k)
 ##                coef.est coef.se
 ## (Intercept)    -5.54     0.75  
 ## n_Comp          0.47     0.04  
-## cl_Ceil        -0.08     0.04  
-## cl_Days         0.74     0.03  
-## VehS-IDC       -0.78     0.05  
-## VehM-IDC       -0.48     0.10  
-## VehFSS/GWAC    -0.38     0.09  
-## VehBPA/BOA     -0.32     0.14  
-## n_Fixed         1.13     0.20  
-## b_UCA           1.83     0.13  
+## cl_Ceil        -0.09     0.04  
+## cl_Days         0.76     0.03  
+## VehS-IDC       -0.80     0.05  
+## VehM-IDC       -0.49     0.10  
+## VehFSS/GWAC    -0.41     0.08  
+## VehBPA/BOA     -0.33     0.14  
+## n_Fixed         1.12     0.20  
+## b_UCA           1.84     0.13  
 ## b_Intl          0.06     0.08  
-## NAICS221        0.10     0.88  
-## NAICS222       -0.73     0.85  
+## NAICS221        0.11     0.88  
+## NAICS222       -0.74     0.85  
 ## NAICS223       -0.64     0.73  
-## NAICS231       -1.05     0.74  
-## NAICS232       -0.19     0.72  
-## NAICS233       -0.18     0.72  
-## NAICS242       -1.64     0.72  
-## NAICS244       -0.30     0.74  
-## NAICS245       -0.29     0.79  
-## NAICS248       -0.59     0.75  
-## NAICS249       -0.63     1.01  
-## NAICS251        0.62     0.72  
-## NAICS252       -1.41     1.24  
+## NAICS231-33    -0.20     0.72  
+## NAICS242       -1.61     0.72  
+## NAICS244-45    -0.28     0.73  
+## NAICS248-49    -0.59     0.75  
+## NAICS251        0.61     0.72  
+## NAICS252       -1.39     1.24  
 ## NAICS253       -0.20     0.74  
 ## NAICS254       -0.77     0.72  
 ## NAICS256       -0.08     0.72  
 ## NAICS261       -0.57     0.76  
 ## NAICS262        1.49     0.73  
-## NAICS271       -0.13     0.81  
-## NAICS272       -0.03     0.74  
-## NAICS281       -0.26     0.73  
+## NAICS271       -0.14     0.81  
+## NAICS272       -0.02     0.74  
+## NAICS281       -0.27     0.73  
 ## NAICS292       -0.54     0.83  
 ## n_Comp:cl_Ceil  0.06     0.05  
-## n_Comp:b_UCA   -1.90     0.52  
+## n_Comp:b_UCA   -1.91     0.52  
 ## ---
-##   n = 250000, k = 35
-##   residual deviance = 27514.8, null deviance = 31009.2 (difference = 3494.4)
+##   n = 250000, k = 31
+##   residual deviance = 27540.3, null deviance = 31009.2 (difference = 3469.0)
 ```
 
 ```r
@@ -2462,16 +2433,16 @@ glmer_examine(Term_Comp_08H3_25k)
 
 ```
 ##                    GVIF Df GVIF^(1/(2*Df))
-## n_Comp         1.181927  1        1.087165
-## cl_Ceil        2.922686  1        1.709586
-## cl_Days        1.355645  1        1.164322
-## Veh            1.465523  4        1.048936
-## n_Fixed        1.084208  1        1.041253
-## b_UCA          1.137040  1        1.066321
-## b_Intl         1.068865  1        1.033859
-## NAICS2         2.029536 22        1.016217
-## n_Comp:cl_Ceil 2.787433  1        1.669561
-## n_Comp:b_UCA   1.072037  1        1.035392
+## n_Comp         1.181404  1        1.086924
+## cl_Ceil        2.931578  1        1.712185
+## cl_Days        1.325584  1        1.151340
+## Veh            1.424220  4        1.045195
+## n_Fixed        1.084971  1        1.041619
+## b_UCA          1.135980  1        1.065824
+## b_Intl         1.067781  1        1.033335
+## NAICS2         1.894656 18        1.017910
+## n_Comp:cl_Ceil 2.793096  1        1.671256
+## n_Comp:b_UCA   1.071950  1        1.035350
 ```
 
 ```r
@@ -2498,7 +2469,7 @@ glmer_examine(Term_Comp_08H3_25k)
 # residuals_term_plot(Term_Comp_08H)+
 #   labs(x="Estimated  Pr (Termination)")
 
-# save(file="Term_Comp.rdata",Term_Comp_05A,Term_Comp_08B,Term_Comp_08C,Term_Comp_08D,Term_Comp_08E,Term_Comp_08F,Term_Comp_08G,Term_Comp_08I)#Term_Comp_08H,
+# save(file="Output//Term_Comp.rdata",Term_Comp_05A,Term_Comp_08B,Term_Comp_08C,Term_Comp_08D,Term_Comp_08E,Term_Comp_08F,Term_Comp_08G,Term_Comp_08I)#Term_Comp_08H,
 ```
 
 ## Competition and Ceiling Breaches
@@ -2737,49 +2708,45 @@ display(Comp_CBre_08B2)
 ##     b_UCA + b_Intl + Veh:cl_Ceil + b_UCA:cl_Ceil + b_UCA:n_Comp + 
 ##     NAICS2, family = binomial(link = "logit"), data = smp1m)
 ##                     coef.est coef.se
-## (Intercept)         -4.90     0.42  
+## (Intercept)         -4.89     0.42  
 ## n_Comp               0.06     0.02  
-## cl_Ceil              0.72     0.02  
+## cl_Ceil              0.71     0.02  
 ## cl_Days              0.17     0.01  
-## VehS-IDC            -0.01     0.03  
+## VehS-IDC            -0.02     0.03  
 ## VehM-IDC             0.34     0.05  
-## VehFSS/GWAC          0.13     0.06  
+## VehFSS/GWAC          0.12     0.06  
 ## VehBPA/BOA           0.00     0.08  
 ## n_Fixed              0.29     0.04  
 ## b_UCA                2.21     0.08  
 ## b_Intl              -0.25     0.03  
-## NAICS221             0.38     0.46  
+## NAICS221             0.39     0.46  
 ## NAICS222             0.40     0.44  
 ## NAICS223             1.40     0.41  
-## NAICS231            -1.15     0.42  
-## NAICS232            -0.76     0.42  
-## NAICS233            -0.77     0.41  
-## NAICS242            -2.28     0.42  
-## NAICS244            -0.44     0.42  
-## NAICS245            -0.18     0.45  
-## NAICS248            -0.18     0.42  
-## NAICS249             0.37     0.47  
+## NAICS231-33         -0.79     0.41  
+## NAICS242            -2.27     0.42  
+## NAICS244-45         -0.38     0.42  
+## NAICS248-49         -0.13     0.42  
 ## NAICS251             0.32     0.42  
-## NAICS252            -0.94     0.55  
+## NAICS252            -0.93     0.55  
 ## NAICS253             1.41     0.42  
 ## NAICS254             0.34     0.41  
 ## NAICS255            -5.91    68.28  
-## NAICS256             1.56     0.41  
+## NAICS256             1.57     0.41  
 ## NAICS261             1.20     0.42  
 ## NAICS262            -0.06     0.42  
-## NAICS271             0.04     0.50  
-## NAICS272             0.81     0.42  
+## NAICS271             0.03     0.50  
+## NAICS272             0.82     0.42  
 ## NAICS281             0.62     0.42  
-## NAICS292             0.68     0.43  
-## cl_Ceil:VehS-IDC    -0.19     0.02  
+## NAICS292             0.69     0.43  
+## cl_Ceil:VehS-IDC    -0.18     0.02  
 ## cl_Ceil:VehM-IDC    -0.22     0.03  
 ## cl_Ceil:VehFSS/GWAC  0.05     0.04  
-## cl_Ceil:VehBPA/BOA  -0.37     0.08  
-## cl_Ceil:b_UCA       -0.34     0.05  
+## cl_Ceil:VehBPA/BOA  -0.36     0.08  
+## cl_Ceil:b_UCA       -0.35     0.05  
 ## n_Comp:b_UCA        -1.42     0.13  
 ## ---
-##   n = 1000000, k = 40
-##   residual deviance = 106074.9, null deviance = 131712.0 (difference = 25637.1)
+##   n = 1000000, k = 36
+##   residual deviance = 106096.6, null deviance = 131712.0 (difference = 25615.4)
 ```
 
 ```r
@@ -2793,17 +2760,17 @@ glmer_examine(Comp_CBre_08B2)
 
 ```
 ##                    GVIF Df GVIF^(1/(2*Df))
-## n_Comp         1.108367  1        1.052790
-## cl_Ceil        3.439639  1        1.854626
-## cl_Days        1.430761  1        1.196144
-## Veh           13.669082  4        1.386652
-## n_Fixed        1.305922  1        1.142769
-## b_UCA          1.975059  1        1.405368
-## b_Intl         1.083015  1        1.040680
-## NAICS2         2.331745 23        1.018575
-## cl_Ceil:Veh   23.543541  4        1.484171
-## cl_Ceil:b_UCA  1.737677  1        1.318210
-## n_Comp:b_UCA   1.288459  1        1.135103
+## n_Comp         1.106082  1        1.051704
+## cl_Ceil        3.426627  1        1.851115
+## cl_Days        1.407903  1        1.186551
+## Veh           13.406756  4        1.383297
+## n_Fixed        1.306031  1        1.142817
+## b_UCA          1.972614  1        1.404498
+## b_Intl         1.082421  1        1.040395
+## NAICS2         2.213369 19        1.021128
+## cl_Ceil:Veh   23.445873  4        1.483400
+## cl_Ceil:b_UCA  1.738184  1        1.318402
+## n_Comp:b_UCA   1.288091  1        1.134941
 ```
 
 ```r
@@ -2828,17 +2795,17 @@ glmer_examine(Comp_CBre_08B2)
 
 ```
 ##                    GVIF Df GVIF^(1/(2*Df))
-## n_Comp         1.108367  1        1.052790
-## cl_Ceil        3.439639  1        1.854626
-## cl_Days        1.430761  1        1.196144
-## Veh           13.669082  4        1.386652
-## n_Fixed        1.305922  1        1.142769
-## b_UCA          1.975059  1        1.405368
-## b_Intl         1.083015  1        1.040680
-## NAICS2         2.331745 23        1.018575
-## cl_Ceil:Veh   23.543541  4        1.484171
-## cl_Ceil:b_UCA  1.737677  1        1.318210
-## n_Comp:b_UCA   1.288459  1        1.135103
+## n_Comp         1.106082  1        1.051704
+## cl_Ceil        3.426627  1        1.851115
+## cl_Days        1.407903  1        1.186551
+## Veh           13.406756  4        1.383297
+## n_Fixed        1.306031  1        1.142817
+## b_UCA          1.972614  1        1.404498
+## b_Intl         1.082421  1        1.040395
+## NAICS2         2.213369 19        1.021128
+## cl_Ceil:Veh   23.445873  4        1.483400
+## cl_Ceil:b_UCA  1.738184  1        1.318402
+## n_Comp:b_UCA   1.288091  1        1.134941
 ```
 
 ```r
@@ -3024,7 +2991,7 @@ stargazer(Comp_CBre_05A,Term_Cons_08A,type="html",out="Output//  Term_2.html")
 ```
 
 ```r
-# save(file="Comp_CBre.rdata",Comp_CBre_05A,Comp_CBre_08A,Comp_CBre_08B)
+# save(file="Output//Comp_CBre.rdata",Comp_CBre_05A,Comp_CBre_08A,Comp_CBre_08B)
 ```
 
 ## Everything
@@ -3050,7 +3017,7 @@ stargazer(Comp_CBre_05A,Term_Cons_08A,type="html",out="Output//  Term_2.html")
 
 ```r
 # texreg::htmlreg(list(Term_Cons_08A3,
-#                      CBre_Cons_08B2),file="ConsModel.html",single.row = TRUE,
+#                      CBre_Cons_08B2),file="Output//ConsModel.html",single.row = TRUE,
 #                 custom.model.name=c("Termination",
 #                                     "Ceiling Breach"),
 #                         stars=c(0.05))
@@ -3068,7 +3035,7 @@ texreg::htmlreg(list(Term_Comp_08G,
 ```
 
 ```r
-# texreg::htmlreg(list(Comp_CBre_08B,Term_Cons_08A),file="Hypothesis1.html")
+# texreg::htmlreg(list(Comp_CBre_08B,Term_Cons_08A),file="Output//Hypothesis1.html")
 
 
 # htmlreg(list(EuropeModel$fixed[[1]],EuropeModel$fixed[[2]],EuropeModel$fixed[[3]]),
