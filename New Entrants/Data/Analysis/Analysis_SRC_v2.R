@@ -22,8 +22,8 @@ library(scales)
 #setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/FPDS")
 
 
-if(file.exists("Data/Cleaning Data/FPDS/FPDS_datapull_all_v3.Rda")){
-  setwd("Data/Cleaning Data/FPDS/")
+if(file.exists("Cleaning Data/FPDS/FPDS_datapull_all_v3.Rda")){
+  setwd("Cleaning Data/FPDS/")
 } else if(file.exists("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS/FPDS_datapull_all_v3.Rda")){
   ##sam work computer
   setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
