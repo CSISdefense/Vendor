@@ -21,13 +21,21 @@ library(scales)
 
 #setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaned Data/FPDS")
 
-##sam work computer
-setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
 
-##sam laptop
-setwd("/Users/samanthacohen/Desktop/Diig backup/New Entrants/R Data")
-
+if(file.exists("Data/Cleaning Data/FPDS/FPDS_datapull_all_v3.Rda")){
+  setwd("Data/Cleaning Data/FPDS/")
+} else if(file.exists("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS/FPDS_datapull_all_v3.Rda")){
+  ##sam work computer
+  setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
+} else if(file.exists("/Users/samanthacohen/Desktop/Diig backup/New Entrants/R Data/FPDS_datapull_all_v3.Rda")){  
+  ##sam laptop
+  setwd("/Users/samanthacohen/Desktop/Diig backup/New Entrants/R Data")
+}
 load(file = "FPDS_datapull_all_v3.Rda")
+# load(file = "FPDS_cleaned_unique_wtotalobligations.Rda")
+
+
+
 length(unique(FPDS_cleaned_unique$Dunsnumber)) == nrow(FPDS_cleaned_unique)
 
 #******************************************************************
@@ -2380,8 +2388,6 @@ ggplot(FPDS_obligationscount_grad_DOD, aes(x = registrationYear, y = tot_obl_byg
   ###    angle = 45) +
   ##geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
   geom_text_repel(data = subset(FPDS_obligationscount_grad_DOD, registrationYear <= 2016), aes(label = scales::percent(percent_obl_dec)), size = 4, position = position_stack(vjust = .3), angle = 90)
-
-
 
 
 
