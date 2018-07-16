@@ -8,11 +8,11 @@ New entrants, monopolies, and other vendor focused CSIS work.
 * Base dataset: [Data/transformed_def.Rdata](Data/transformed_def.Rdata)
 * Extended dataset: [Data/transformed_def.Rdata](Data/transformed_def.Rdata)
 ### Sample
-* R 1 million and 250k sample: [1m and 250k sample](Data/def_sample.Rdata)
+* R 1 million and 250k sample: [Data/def_sample.Rdata](Data/def_sample.Rdata)
 * Stata 1 million: [Data/stata_def_sample1m.zip](Data/stata_def_sample1m.zip), 250k sample: [Data/stata_def_sample250k.zip](Data/stata_def_sample250k.zip)
 
 
-#New Entrants
+# New Entrants
 
 # Monopolies Analysis
 ## Analyses
