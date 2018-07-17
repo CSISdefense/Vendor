@@ -4038,7 +4038,7 @@ ggplot(newentrants_v_incumbent_graphs, aes(x = FYear, y = total_obligations_allv
   xlab("Fiscal Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
   ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
-  scale_fill_manual(name = "Vendor Type", values = c("darkslategray1", "cadetblue4"), labels = c("Incumbent Firm", "New Entrant")) +
+  scale_fill_manual(name = "Vendor Type", values = c("darkslategray1", "cadetblue4"), labels = c("Incumbent Firms", "New Entrant")) +
   ggtitle("Percent of Obligations for New Entrnats vs. Incumbents (2001-2016) - All Federal Agencies")+
   ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
   ###    angle = 45) +
@@ -4055,8 +4055,8 @@ ggplot(newentrants_v_incumbent_graphs, aes(x = FYear, y = total_obligations_allv
 #*********
 ##ALL Fed Agencies##
 
-##creates a dataframe that counts the total number of obligations in each year
-count_total_obligations <- FPDS_cleaned_unique_graphs %>% 
+##creates a dataframe that counts the total number of obligations for each class of new entrants
+#over the entire time period count_total_obligations <- FPDS_cleaned_unique_graphs %>% 
   filter(top_smallbiz_bin == 1 | top_smallbiz_bin == 0) %>% 
   group_by(registrationYear) %>% 
   dplyr::summarise(sum_obligations = sum(total_obligations)) 
