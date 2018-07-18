@@ -56,11 +56,7 @@ output:
 ```
 
 ```
-## Working directory is H:/Users/Greg/Repositories/Vendor
-```
-
-```
-## Warning: package 'R2WinBUGS' was built under R version 3.5.1
+## Working directory is F:/Users/gsanders/Documents/Repositories/Vendor
 ```
 
 ```
@@ -103,11 +99,7 @@ output:
 ```
 
 ```
-##  R package version 5.2.2. https://CRAN.R-project.org/package=stargazer
-```
-
-```
-## Warning: package 'texreg' was built under R version 3.5.1
+##  R package version 5.2.1. https://CRAN.R-project.org/package=stargazer
 ```
 
 ```
@@ -472,45 +464,64 @@ write.foreign(df=smp1m,
 ```r
 load("Output//Term_Cons.RData")
 
-
-Term_Cons_05A <- glm(data=smp,
+#A - No interactions
+Term_Cons_07A <- glm(data=smp,
                        b_Term ~cl_HHI_lag1 +
                          cl_Ceil + cl_Days+
                          Veh+
-                         # c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +# c_HHI_lag1:cl_Days +
+                         # c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +
+                       # c_HHI_lag1:cl_Days +
                          n_Fixed + b_UCA +
-                         # b_Intl +
-                         # Veh:cl_Days
+                         b_Intl +
+                         # Veh:cl_Days +
                          # Veh:c_HHI_lag1+
-                         b_UCA:c_HHI_lag1
-                         # (1 | NAICS2)
+                         # b_UCA:c_HHI_lag1+
+                         NAICS2
                        , family=binomial(link="logit"))
-display(Term_Cons_05A)
+display(Term_Cons_07A)
 ```
 
 ```
 ## glm(formula = b_Term ~ cl_HHI_lag1 + cl_Ceil + cl_Days + Veh + 
-##     n_Fixed + b_UCA + b_UCA:c_HHI_lag1, family = binomial(link = "logit"), 
+##     n_Fixed + b_UCA + b_Intl + NAICS2, family = binomial(link = "logit"), 
 ##     data = smp)
-##                  coef.est coef.se
-## (Intercept)      -6.06     0.20  
-## cl_HHI_lag1      -0.15     0.02  
-## cl_Ceil          -0.08     0.02  
-## cl_Days           0.90     0.03  
-## VehS-IDC         -0.91     0.05  
-## VehM-IDC         -0.27     0.09  
-## VehFSS/GWAC      -0.39     0.08  
-## VehBPA/BOA       -0.28     0.13  
-## n_Fixed           1.51     0.19  
-## b_UCA             1.52     0.14  
-## b_UCA:c_HHI_lag1  0.31     0.17  
+##             coef.est coef.se
+## (Intercept) -5.36     0.74  
+## cl_HHI_lag1 -0.16     0.02  
+## cl_Ceil     -0.05     0.03  
+## cl_Days      0.73     0.03  
+## VehS-IDC    -0.77     0.05  
+## VehM-IDC    -0.44     0.10  
+## VehFSS/GWAC -0.41     0.08  
+## VehBPA/BOA  -0.36     0.14  
+## n_Fixed      1.10     0.20  
+## b_UCA        1.42     0.12  
+## b_Intl       0.08     0.08  
+## NAICS221     0.29     0.88  
+## NAICS222    -0.62     0.85  
+## NAICS223    -0.75     0.73  
+## NAICS231-33 -0.11     0.72  
+## NAICS242    -1.36     0.72  
+## NAICS244-45 -0.20     0.73  
+## NAICS248-49 -0.37     0.75  
+## NAICS251     0.62     0.72  
+## NAICS252    -1.25     1.24  
+## NAICS253    -0.02     0.74  
+## NAICS254    -0.78     0.72  
+## NAICS256    -0.03     0.72  
+## NAICS261    -0.65     0.76  
+## NAICS262     1.50     0.73  
+## NAICS271    -0.19     0.81  
+## NAICS272    -0.17     0.74  
+## NAICS281    -0.27     0.73  
+## NAICS292    -0.44     0.83  
 ## ---
-##   n = 250000, k = 11
-##   residual deviance = 28160.2, null deviance = 31009.2 (difference = 2849.1)
+##   n = 250000, k = 29
+##   residual deviance = 27644.4, null deviance = 31009.2 (difference = 3364.8)
 ```
 
 ```r
-glmer_examine(Term_Cons_05A)
+glmer_examine(Term_Cons_07A)
 ```
 
 ```
@@ -519,18 +530,209 @@ glmer_examine(Term_Cons_05A)
 ```
 
 ```
-##                      GVIF Df GVIF^(1/(2*Df))
-## cl_HHI_lag1      1.073067  1        1.035890
-## cl_Ceil          1.231174  1        1.109583
-## cl_Days          1.242511  1        1.114680
-## Veh              1.145756  4        1.017154
-## n_Fixed          1.029413  1        1.014600
-## b_UCA            1.341611  1        1.158279
-## b_UCA:c_HHI_lag1 1.337608  1        1.156550
+##                 GVIF Df GVIF^(1/(2*Df))
+## cl_HHI_lag1 1.168187  1        1.080827
+## cl_Ceil     1.326117  1        1.151572
+## cl_Days     1.316062  1        1.147197
+## Veh         1.396243  4        1.042606
+## n_Fixed     1.088490  1        1.043307
+## b_UCA       1.027128  1        1.013473
+## b_Intl      1.065479  1        1.032221
+## NAICS2      1.998476 18        1.019419
 ```
 
 ```r
-display(Term_Cons_08A)
+#B - Veh:c_HHI_lag1
+Term_Cons_07B <- glm(data=smp,
+                       b_Term ~cl_HHI_lag1 +
+                         cl_Ceil + cl_Days+
+                         Veh+
+                         # c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +
+                       # c_HHI_lag1:cl_Days +
+                         n_Fixed + b_UCA +
+                         b_Intl +
+                         # Veh:cl_Days +
+                         Veh:c_HHI_lag1+
+                         # b_UCA:c_HHI_lag1+
+                         NAICS2
+                       , family=binomial(link="logit"))
+display(Term_Cons_07B)
+```
+
+```
+## glm(formula = b_Term ~ cl_HHI_lag1 + cl_Ceil + cl_Days + Veh + 
+##     n_Fixed + b_UCA + b_Intl + Veh:c_HHI_lag1 + NAICS2, family = binomial(link = "logit"), 
+##     data = smp)
+##                        coef.est coef.se
+## (Intercept)            -5.31     0.74  
+## cl_HHI_lag1            -0.11     0.04  
+## cl_Ceil                -0.04     0.03  
+## cl_Days                 0.71     0.03  
+## VehS-IDC               -1.03     0.06  
+## VehM-IDC               -0.48     0.12  
+## VehFSS/GWAC            -0.39     0.10  
+## VehBPA/BOA             -0.29     0.15  
+## n_Fixed                 1.11     0.20  
+## b_UCA                   1.43     0.12  
+## b_Intl                  0.08     0.08  
+## NAICS221                0.28     0.88  
+## NAICS222               -0.64     0.85  
+## NAICS223               -0.78     0.73  
+## NAICS231-33            -0.11     0.72  
+## NAICS242               -1.12     0.72  
+## NAICS244-45            -0.19     0.73  
+## NAICS248-49            -0.37     0.75  
+## NAICS251                0.60     0.72  
+## NAICS252               -1.94     1.44  
+## NAICS253                0.03     0.74  
+## NAICS254               -0.81     0.72  
+## NAICS256               -0.02     0.72  
+## NAICS261               -0.67     0.76  
+## NAICS262                1.48     0.73  
+## NAICS271               -0.18     0.81  
+## NAICS272               -0.13     0.74  
+## NAICS281               -0.27     0.73  
+## NAICS292               -0.40     0.83  
+## VehDef/Pur:c_HHI_lag1   0.03     0.06  
+## VehS-IDC:c_HHI_lag1    -0.52     0.09  
+## VehM-IDC:c_HHI_lag1    -0.07     0.14  
+## VehFSS/GWAC:c_HHI_lag1  0.08     0.11  
+## VehBPA/BOA:c_HHI_lag1   0.21     0.19  
+## ---
+##   n = 250000, k = 34
+##   residual deviance = 27582.6, null deviance = 31009.2 (difference = 3426.6)
+```
+
+```r
+glmer_examine(Term_Cons_07B)
+```
+
+```
+## Warning in if (class(model) == "glmerMod") {: the condition has length > 1
+## and only the first element will be used
+```
+
+```
+##                     GVIF Df GVIF^(1/(2*Df))
+## cl_HHI_lag1     3.651422  1        1.910869
+## cl_Ceil         1.326180  1        1.151599
+## cl_Days         1.297245  1        1.138967
+## Veh             6.551881  4        1.264870
+## n_Fixed         1.091378  1        1.044690
+## b_UCA           1.027511  1        1.013662
+## b_Intl          1.068155  1        1.033516
+## NAICS2          3.677218 18        1.036833
+## Veh:c_HHI_lag1 27.278223  5        1.391815
+```
+
+```r
+# summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A,Term_Cons_07A,Term_Cons_07B)
+
+# summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A,Term_Cons_07A,Term_Cons_07B)
+
+#C - Veh:c_HHI_lag1 + b_UCA:c_HHI_lag1
+
+Term_Cons_07C <- glm(data=smp,
+                       b_Term ~cl_HHI_lag1 +
+                         cl_Ceil + cl_Days+
+                         Veh+
+                         # c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +
+                       # c_HHI_lag1:cl_Days +
+                         n_Fixed + b_UCA +
+                         b_Intl +
+                         # Veh:cl_Days +
+                         Veh:c_HHI_lag1+
+                         b_UCA:c_HHI_lag1+
+                         NAICS2
+                       , family=binomial(link="logit"))
+display(Term_Cons_07C)
+```
+
+```
+## glm(formula = b_Term ~ cl_HHI_lag1 + cl_Ceil + cl_Days + Veh + 
+##     n_Fixed + b_UCA + b_Intl + Veh:c_HHI_lag1 + b_UCA:c_HHI_lag1 + 
+##     NAICS2, family = binomial(link = "logit"), data = smp)
+##                        coef.est coef.se
+## (Intercept)            -5.33     0.75  
+## cl_HHI_lag1            -0.11     0.04  
+## cl_Ceil                -0.05     0.03  
+## cl_Days                 0.71     0.03  
+## VehS-IDC               -1.04     0.06  
+## VehM-IDC               -0.47     0.12  
+## VehFSS/GWAC            -0.39     0.10  
+## VehBPA/BOA             -0.30     0.16  
+## n_Fixed                 1.12     0.20  
+## b_UCA                   1.59     0.14  
+## b_Intl                  0.08     0.08  
+## NAICS221                0.31     0.88  
+## NAICS222               -0.62     0.85  
+## NAICS223               -0.76     0.73  
+## NAICS231-33            -0.10     0.72  
+## NAICS242               -1.10     0.72  
+## NAICS244-45            -0.18     0.73  
+## NAICS248-49            -0.35     0.75  
+## NAICS251                0.62     0.72  
+## NAICS252               -1.83     1.44  
+## NAICS253                0.05     0.74  
+## NAICS254               -0.79     0.72  
+## NAICS256                0.00     0.72  
+## NAICS261               -0.65     0.76  
+## NAICS262                1.49     0.73  
+## NAICS271               -0.17     0.81  
+## NAICS272               -0.10     0.74  
+## NAICS281               -0.25     0.73  
+## NAICS292               -0.39     0.83  
+## VehDef/Pur:c_HHI_lag1   0.03     0.06  
+## VehS-IDC:c_HHI_lag1    -0.53     0.09  
+## VehM-IDC:c_HHI_lag1    -0.08     0.14  
+## VehFSS/GWAC:c_HHI_lag1  0.07     0.11  
+## VehBPA/BOA:c_HHI_lag1   0.19     0.19  
+## b_UCA:c_HHI_lag1        0.36     0.18  
+## ---
+##   n = 250000, k = 35
+##   residual deviance = 27579.2, null deviance = 31009.2 (difference = 3430.0)
+```
+
+```r
+glmer_examine(Term_Cons_07C)
+```
+
+```
+## Warning in if (class(model) == "glmerMod") {: the condition has length > 1
+## and only the first element will be used
+```
+
+```
+##                       GVIF Df GVIF^(1/(2*Df))
+## cl_HHI_lag1       3.651528  1        1.910897
+## cl_Ceil           1.326844  1        1.151887
+## cl_Days           1.296821  1        1.138780
+## Veh               6.630929  4        1.266767
+## n_Fixed           1.090963  1        1.044492
+## b_UCA             1.431495  1        1.196451
+## b_Intl            1.068081  1        1.033480
+## NAICS2            3.663584 18        1.036726
+## Veh:c_HHI_lag1   27.904998  5        1.394981
+## b_UCA:c_HHI_lag1  1.440193  1        1.200081
+```
+
+```r
+# debug(summary_residual_compare)
+# summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A,Term_Cons_07B,Term_Cons_07C)
+
+# Term_Cons_08A<-glmer(data=smp1m,
+#                      formula = b_Term ~ c_HHI_lag1 +
+#                        cl_Ceil + cl_Days +
+#                        SIDV + MIDV + FSSGWAC + BPABOA +
+#       n_Fixed +
+#       b_UCA +
+#       SIDV:c_HHI_lag1 +
+#     MIDV:c_HHI_lag1 +
+#       FSSGWAC:c_HHI_lag1 +
+#       BPABOA:c_HHI_lag1 +
+#     b_UCA:c_HHI_lag1 +
+#       (1 | NAICS2), data = smp, family = binomial(link = "logit"))
+display(Term_Cons_08A) # Does not converge
 ```
 
 ```
@@ -591,6 +793,223 @@ glmer_examine(Term_Cons_08A)
 ```
 
 ```r
+# summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A,Term_Cons_07B,Term_Cons_08A)
+
+
+
+
+
+Term_Cons_07G <- glm(data=smp,
+                       b_Term ~cl_HHI_lag1 +
+                         cl_Ceil + cl_Days+
+                         Veh+
+                         c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +
+                       c_HHI_lag1:cl_Days +
+                         n_Fixed + b_UCA +
+                         b_Intl +
+                         Veh:cl_Days +
+                         Veh:c_HHI_lag1+
+                         b_UCA:c_HHI_lag1+
+                         NAICS2
+                       , family=binomial(link="logit"))
+display(Term_Cons_07G)
+```
+
+```
+## glm(formula = b_Term ~ cl_HHI_lag1 + cl_Ceil + cl_Days + Veh + 
+##     c_HHI_lag1:cl_Ceil + cl_Ceil:cl_Days + c_HHI_lag1:cl_Days + 
+##     n_Fixed + b_UCA + b_Intl + Veh:cl_Days + Veh:c_HHI_lag1 + 
+##     b_UCA:c_HHI_lag1 + NAICS2, family = binomial(link = "logit"), 
+##     data = smp)
+##                        coef.est coef.se
+## (Intercept)            -5.35     0.75  
+## cl_HHI_lag1            -0.13     0.03  
+## cl_Ceil                -0.16     0.04  
+## cl_Days                 0.56     0.04  
+## VehS-IDC               -1.36     0.08  
+## VehM-IDC               -1.13     0.23  
+## VehFSS/GWAC            -0.40     0.13  
+## VehBPA/BOA             -0.47     0.21  
+## n_Fixed                 1.24     0.20  
+## b_UCA                   1.51     0.14  
+## b_Intl                  0.08     0.08  
+## NAICS221                0.32     0.88  
+## NAICS222               -0.61     0.85  
+## NAICS223               -0.77     0.73  
+## NAICS231-33            -0.11     0.72  
+## NAICS242               -1.02     0.72  
+## NAICS244-45            -0.21     0.73  
+## NAICS248-49            -0.42     0.75  
+## NAICS251                0.63     0.72  
+## NAICS252               -1.91     1.44  
+## NAICS253               -0.04     0.74  
+## NAICS254               -0.82     0.72  
+## NAICS256               -0.02     0.72  
+## NAICS261               -0.64     0.76  
+## NAICS262                1.39     0.73  
+## NAICS271               -0.14     0.81  
+## NAICS272               -0.12     0.74  
+## NAICS281               -0.24     0.73  
+## NAICS292               -0.46     0.83  
+## cl_Ceil:c_HHI_lag1      0.07     0.03  
+## cl_Ceil:cl_Days         0.17     0.03  
+## cl_Days:c_HHI_lag1      0.06     0.04  
+## cl_Days:VehS-IDC        0.39     0.06  
+## cl_Days:VehM-IDC        0.57     0.16  
+## cl_Days:VehFSS/GWAC    -0.01     0.12  
+## cl_Days:VehBPA/BOA      0.19     0.17  
+## VehS-IDC:c_HHI_lag1    -0.50     0.08  
+## VehM-IDC:c_HHI_lag1    -0.17     0.14  
+## VehFSS/GWAC:c_HHI_lag1  0.01     0.11  
+## VehBPA/BOA:c_HHI_lag1   0.17     0.19  
+## c_HHI_lag1:b_UCA        0.25     0.19  
+## ---
+##   n = 250000, k = 41
+##   residual deviance = 27484.8, null deviance = 31009.2 (difference = 3524.4)
+```
+
+```r
+glmer_examine(Term_Cons_07G)
+```
+
+```
+## Warning in if (class(model) == "glmerMod") {: the condition has length > 1
+## and only the first element will be used
+```
+
+```
+##                          GVIF Df GVIF^(1/(2*Df))
+## cl_HHI_lag1          1.981075  1        1.407507
+## cl_Ceil              3.074390  1        1.753394
+## cl_Days              2.551302  1        1.597280
+## Veh                122.182105  4        1.823375
+## n_Fixed              1.098002  1        1.047856
+## b_UCA                1.458462  1        1.207668
+## b_Intl               1.070135  1        1.034474
+## NAICS2               3.849744 18        1.038155
+## cl_Ceil:c_HHI_lag1   2.130890  1        1.459757
+## cl_Ceil:cl_Days      2.311051  1        1.520214
+## cl_Days:c_HHI_lag1   2.592903  1        1.610249
+## cl_Days:Veh         81.140767  4        1.732427
+## Veh:c_HHI_lag1      10.250614  4        1.337654
+## c_HHI_lag1:b_UCA     1.471580  1        1.213087
+```
+
+```r
+# summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A,Term_Cons_07A,Term_Cons_07B)
+
+
+
+Term_Cons_08C <- glm(data=smp1m,
+                       b_Term ~cl_HHI_lag1 + 
+                         cl_Ceil + cl_Days+ 
+                         Veh+
+                         c_HHI_lag1:cl_Ceil  +
+                         cl_Ceil:cl_Days  +
+                         c_HHI_lag1:cl_Days +
+                         n_Fixed + b_UCA +
+                         b_Intl +
+                         Veh:cl_Days+
+                         Veh:c_HHI_lag1+
+                         b_UCA:c_HHI_lag1 +
+                         NAICS2
+                       , family=binomial(link="logit"))
+display(Term_Cons_08C)
+```
+
+```
+## glm(formula = b_Term ~ cl_HHI_lag1 + cl_Ceil + cl_Days + Veh + 
+##     c_HHI_lag1:cl_Ceil + cl_Ceil:cl_Days + c_HHI_lag1:cl_Days + 
+##     n_Fixed + b_UCA + b_Intl + Veh:cl_Days + Veh:c_HHI_lag1 + 
+##     b_UCA:c_HHI_lag1 + NAICS2, family = binomial(link = "logit"), 
+##     data = smp1m)
+##                        coef.est coef.se
+## (Intercept)             -6.53     0.72 
+## cl_HHI_lag1             -0.15     0.01 
+## cl_Ceil                 -0.10     0.02 
+## cl_Days                  0.58     0.02 
+## VehS-IDC                -1.27     0.04 
+## VehM-IDC                -0.51     0.09 
+## VehFSS/GWAC             -0.11     0.06 
+## VehBPA/BOA              -0.57     0.12 
+## n_Fixed                  1.10     0.09 
+## b_UCA                    1.60     0.07 
+## b_Intl                   0.13     0.04 
+## NAICS221                 0.99     0.79 
+## NAICS222                -0.03     0.78 
+## NAICS223                 0.63     0.71 
+## NAICS231-33              1.21     0.71 
+## NAICS242                 0.14     0.71 
+## NAICS244-45              0.92     0.71 
+## NAICS248-49              1.30     0.72 
+## NAICS251                 1.89     0.71 
+## NAICS252                -0.58     1.05 
+## NAICS253                 1.20     0.72 
+## NAICS254                 0.47     0.71 
+## NAICS255                -5.35   112.48 
+## NAICS256                 1.19     0.71 
+## NAICS261                 0.97     0.72 
+## NAICS262                 2.57     0.71 
+## NAICS271                 1.53     0.73 
+## NAICS272                 1.03     0.72 
+## NAICS281                 1.05     0.71 
+## NAICS292                 0.90     0.74 
+## cl_Ceil:c_HHI_lag1       0.06     0.02 
+## cl_Ceil:cl_Days          0.12     0.01 
+## cl_Days:c_HHI_lag1       0.03     0.02 
+## cl_Days:VehS-IDC         0.29     0.03 
+## cl_Days:VehM-IDC         0.21     0.07 
+## cl_Days:VehFSS/GWAC     -0.32     0.06 
+## cl_Days:VehBPA/BOA       0.16     0.09 
+## VehS-IDC:c_HHI_lag1     -0.46     0.04 
+## VehM-IDC:c_HHI_lag1      0.06     0.05 
+## VehFSS/GWAC:c_HHI_lag1   0.15     0.05 
+## VehBPA/BOA:c_HHI_lag1    0.00     0.11 
+## c_HHI_lag1:b_UCA         0.29     0.09 
+## ---
+##   n = 1000000, k = 42
+##   residual deviance = 111898.1, null deviance = 125945.6 (difference = 14047.5)
+```
+
+```r
+glmer_examine(Term_Cons_08C)
+```
+
+```
+## Warning in if (class(model) == "glmerMod") {: the condition has length > 1
+## and only the first element will be used
+```
+
+```
+##                         GVIF Df GVIF^(1/(2*Df))
+## cl_HHI_lag1         1.955690  1        1.398460
+## cl_Ceil             3.080529  1        1.755144
+## cl_Days             2.632514  1        1.622502
+## Veh                74.911184  4        1.715214
+## n_Fixed             1.110970  1        1.054026
+## b_UCA               1.452533  1        1.205211
+## b_Intl              1.070222  1        1.034516
+## NAICS2              3.232484 19        1.031357
+## cl_Ceil:c_HHI_lag1  2.250719  1        1.500240
+## cl_Ceil:cl_Days     2.381780  1        1.543302
+## cl_Days:c_HHI_lag1  2.518971  1        1.587127
+## cl_Days:Veh        48.914992  4        1.626224
+## Veh:c_HHI_lag1      8.173241  4        1.300317
+## c_HHI_lag1:b_UCA    1.460599  1        1.208552
+```
+
+```r
+# summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A,Term_Cons_07A,Term_Cons_08C)
+# summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A,Term_Cons_08A,Term_Cons_08C)
+
+#Swap Veh:c_HHI_lag1 for Veh:UCA
+# Term_Cons_08A2<-glmer(formula = b_Term ~ c_HHI_lag1 + 
+#                         cl_Ceil + cl_Days + 
+#                         SIDV + MIDV + FSSGWAC + BPABOA + 
+#                         n_Fixed + 
+#                         b_UCA + 
+#                         b_UCA:c_HHI_lag1 + 
+#                         (1 | NAICS2), data = smp1m, family = binomial(link = "logit"))
 display(Term_Cons_08A2)
 ```
 
@@ -790,105 +1209,6 @@ glmer_examine(Term_Cons_08B)
 # glmer_examine(Term_Cons_08B2)
 
 
-Term_Cons_08C <- glm(data=smp1m,
-                       b_Term ~cl_HHI_lag1 + 
-                         cl_Ceil + cl_Days+ 
-                         Veh+
-                         c_HHI_lag1:cl_Ceil  +
-                         cl_Ceil:cl_Days  +
-                         c_HHI_lag1:cl_Days +
-                         n_Fixed + b_UCA +
-                         b_Intl +
-                         Veh:cl_Days+
-                         Veh:c_HHI_lag1+
-                         b_UCA:c_HHI_lag1 +
-                         NAICS2
-                       , family=binomial(link="logit"))
-display(Term_Cons_08C)
-```
-
-```
-## glm(formula = b_Term ~ cl_HHI_lag1 + cl_Ceil + cl_Days + Veh + 
-##     c_HHI_lag1:cl_Ceil + cl_Ceil:cl_Days + c_HHI_lag1:cl_Days + 
-##     n_Fixed + b_UCA + b_Intl + Veh:cl_Days + Veh:c_HHI_lag1 + 
-##     b_UCA:c_HHI_lag1 + NAICS2, family = binomial(link = "logit"), 
-##     data = smp1m)
-##                        coef.est coef.se
-## (Intercept)             -6.53     0.72 
-## cl_HHI_lag1             -0.15     0.01 
-## cl_Ceil                 -0.10     0.02 
-## cl_Days                  0.58     0.02 
-## VehS-IDC                -1.27     0.04 
-## VehM-IDC                -0.51     0.09 
-## VehFSS/GWAC             -0.11     0.06 
-## VehBPA/BOA              -0.57     0.12 
-## n_Fixed                  1.10     0.09 
-## b_UCA                    1.60     0.07 
-## b_Intl                   0.13     0.04 
-## NAICS221                 0.99     0.79 
-## NAICS222                -0.03     0.78 
-## NAICS223                 0.63     0.71 
-## NAICS231-33              1.21     0.71 
-## NAICS242                 0.14     0.71 
-## NAICS244-45              0.92     0.71 
-## NAICS248-49              1.30     0.72 
-## NAICS251                 1.89     0.71 
-## NAICS252                -0.58     1.05 
-## NAICS253                 1.20     0.72 
-## NAICS254                 0.47     0.71 
-## NAICS255                -5.35   112.48 
-## NAICS256                 1.19     0.71 
-## NAICS261                 0.97     0.72 
-## NAICS262                 2.57     0.71 
-## NAICS271                 1.53     0.73 
-## NAICS272                 1.03     0.72 
-## NAICS281                 1.05     0.71 
-## NAICS292                 0.90     0.74 
-## cl_Ceil:c_HHI_lag1       0.06     0.02 
-## cl_Ceil:cl_Days          0.12     0.01 
-## cl_Days:c_HHI_lag1       0.03     0.02 
-## cl_Days:VehS-IDC         0.29     0.03 
-## cl_Days:VehM-IDC         0.21     0.07 
-## cl_Days:VehFSS/GWAC     -0.32     0.06 
-## cl_Days:VehBPA/BOA       0.16     0.09 
-## VehS-IDC:c_HHI_lag1     -0.46     0.04 
-## VehM-IDC:c_HHI_lag1      0.06     0.05 
-## VehFSS/GWAC:c_HHI_lag1   0.15     0.05 
-## VehBPA/BOA:c_HHI_lag1    0.00     0.11 
-## c_HHI_lag1:b_UCA         0.29     0.09 
-## ---
-##   n = 1000000, k = 42
-##   residual deviance = 111898.1, null deviance = 125945.6 (difference = 14047.5)
-```
-
-```r
-glmer_examine(Term_Cons_08C)
-```
-
-```
-## Warning in if (class(model) == "glmerMod") {: the condition has length > 1
-## and only the first element will be used
-```
-
-```
-##                         GVIF Df GVIF^(1/(2*Df))
-## cl_HHI_lag1         1.955690  1        1.398460
-## cl_Ceil             3.080529  1        1.755144
-## cl_Days             2.632514  1        1.622502
-## Veh                74.911184  4        1.715214
-## n_Fixed             1.110970  1        1.054026
-## b_UCA               1.452533  1        1.205211
-## b_Intl              1.070222  1        1.034516
-## NAICS2              3.232484 19        1.031357
-## cl_Ceil:c_HHI_lag1  2.250719  1        1.500240
-## cl_Ceil:cl_Days     2.381780  1        1.543302
-## cl_Days:c_HHI_lag1  2.518971  1        1.587127
-## cl_Days:Veh        48.914992  4        1.626224
-## Veh:c_HHI_lag1      8.173241  4        1.300317
-## c_HHI_lag1:b_UCA    1.460599  1        1.208552
-```
-
-```r
 # save(file="Output//Term_Cons.RData",Term_Cons_08A,Term_Cons_08A2,Term_Cons_08A3,
 #      Term_Cons_08B,Term_Cons_08B2,Term_Cons_08C)
 
@@ -909,8 +1229,8 @@ glmer_examine(Term_Cons_08C)
 # Missing! display(Term_Cons_08D)
 # glmer_examine(Term_Cons_08D)
 
-# save(file="Output//Term_Cons.RData",Term_Cons_08A,Term_Cons_08A2,Term_Cons_08A3,Term_Cons_08B,Term_Cons_08B2,Term_Cons_08C)
-# 05A summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A2,Term_Cons_08A3,Term_Cons_08B)
+# save(file="Output//Term_Cons.RData",Term_Cons_08A,Term_Cons_08A2,Term_Cons_08A3,Term_Cons_08B)#,Term_Cons_08B2
+
 # 05A summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A2,Term_Cons_08A3,Term_Cons_08C)
 # 05A summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A2,Term_Cons_08A3,Term_Cons_08B2)
 ```
@@ -924,6 +1244,84 @@ glmer_examine(Term_Cons_08C)
 ```r
 load("Output//CBre_Cons.RData")
 
+#A - No interactions
+CBre_Cons_07A <- glm(data=smp,
+                       b_CBre ~ c_HHI_lag1 +
+                         cl_Ceil + cl_Days+
+                         Veh+
+                         # c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +
+                       # c_HHI_lag1:cl_Days +
+                         n_Fixed + b_UCA +
+                         b_Intl +
+                         # Veh:cl_Days +
+                         # Veh:c_HHI_lag1+
+                         # b_UCA:c_HHI_lag1+
+                         NAICS2
+                       , family=binomial(link="logit"))
+display(CBre_Cons_07A)
+```
+
+```
+## glm(formula = b_CBre ~ c_HHI_lag1 + cl_Ceil + cl_Days + Veh + 
+##     n_Fixed + b_UCA + b_Intl + NAICS2, family = binomial(link = "logit"), 
+##     data = smp)
+##             coef.est coef.se
+## (Intercept)  -4.39     0.59 
+## c_HHI_lag1    0.19     0.02 
+## cl_Ceil       0.58     0.02 
+## cl_Days       0.22     0.03 
+## VehS-IDC     -0.16     0.04 
+## VehM-IDC      0.16     0.07 
+## VehFSS/GWAC   0.22     0.08 
+## VehBPA/BOA    0.15     0.13 
+## n_Fixed       0.27     0.08 
+## b_UCA         1.27     0.12 
+## b_Intl       -0.10     0.06 
+## NAICS221      0.66     0.66 
+## NAICS222     -0.46     0.70 
+## NAICS223      1.18     0.59 
+## NAICS231-33  -1.14     0.59 
+## NAICS242     -2.58     0.60 
+## NAICS244-45  -1.15     0.62 
+## NAICS248-49  -0.74     0.61 
+## NAICS251      0.01     0.60 
+## NAICS252    -13.22    97.82 
+## NAICS253      0.91     0.60 
+## NAICS254      0.02     0.59 
+## NAICS256      1.26     0.59 
+## NAICS261      1.06     0.60 
+## NAICS262     -0.40     0.62 
+## NAICS271      0.00     0.72 
+## NAICS272      0.47     0.60 
+## NAICS281      0.17     0.60 
+## NAICS292     -0.11     0.64 
+## ---
+##   n = 250000, k = 29
+##   residual deviance = 26706.8, null deviance = 33283.4 (difference = 6576.6)
+```
+
+```r
+glmer_examine(CBre_Cons_07A)
+```
+
+```
+## Warning in if (class(model) == "glmerMod") {: the condition has length > 1
+## and only the first element will be used
+```
+
+```
+##                GVIF Df GVIF^(1/(2*Df))
+## c_HHI_lag1 1.299082  1        1.139773
+## cl_Ceil    1.468302  1        1.211735
+## cl_Days    1.414198  1        1.189201
+## Veh        1.379692  4        1.041053
+## n_Fixed    1.291972  1        1.136649
+## b_UCA      1.020045  1        1.009973
+## b_Intl     1.080397  1        1.039421
+## NAICS2     2.415361 18        1.024798
+```
+
+```r
 CBre_Cons_05A <- glm(data=smp,
                        b_CBre ~ c_HHI_lag1 + 
                       cl_Ceil + cl_Days+ 
@@ -1266,7 +1664,7 @@ glmer_examine(CBre_Cons_08B)
 
 # summary_residual_compare(CBre_Cons_08C,CBre_Cons_08D,Term_Cons_08B,Term_Cons_08B)
 
-# save(file="Output//CBre_Cons.RData",CBre_Cons_05A,CBre_Cons_08A,CBre_Cons_08B)#,CBre_Cons_08B
+# save(file="Output//CBre_Cons.RData",CBre_Cons_08A,CBre_Cons_08B,CBre_Cons_08B)#,
 ```
 VIF for cl_ceil:Veh is over 2, and for cl_Ceil is over 8, necessitating removal of a ceiling interaction.
 
@@ -1274,9 +1672,85 @@ VIF for cl_ceil:Veh is over 2, and for cl_Ceil is over 8, necessitating removal 
 
 
 ```r
-load(file="Output//Comp_Term.Rdata")
+load(file="Output//Term_Comp.Rdata")
+#A - No interactions
+Term_Comp_07A <- glm(data=smp,
+                       b_Term ~n_Comp + 
+                         cl_Ceil + cl_Days+
+                         Veh+
+                         # c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +
+                       # c_HHI_lag1:cl_Days +
+                         n_Fixed + b_UCA +
+                         b_Intl +
+                         # Veh:cl_Days +
+                         # Veh:c_HHI_lag1+
+                         # b_UCA:c_HHI_lag1+
+                         NAICS2
+                       , family=binomial(link="logit"))
+display(Term_Comp_07A)
+```
 
+```
+## glm(formula = b_Term ~ n_Comp + cl_Ceil + cl_Days + Veh + n_Fixed + 
+##     b_UCA + b_Intl + NAICS2, family = binomial(link = "logit"), 
+##     data = smp)
+##             coef.est coef.se
+## (Intercept) -5.76     0.75  
+## n_Comp       0.46     0.04  
+## cl_Ceil     -0.05     0.03  
+## cl_Days      0.76     0.03  
+## VehS-IDC    -0.80     0.05  
+## VehM-IDC    -0.49     0.10  
+## VehFSS/GWAC -0.42     0.08  
+## VehBPA/BOA  -0.35     0.14  
+## n_Fixed      1.12     0.20  
+## b_UCA        1.59     0.12  
+## b_Intl       0.06     0.08  
+## NAICS221     0.35     0.88  
+## NAICS222    -0.50     0.85  
+## NAICS223    -0.42     0.73  
+## NAICS231-33  0.05     0.72  
+## NAICS242    -1.37     0.73  
+## NAICS244-45 -0.05     0.73  
+## NAICS248-49 -0.34     0.75  
+## NAICS251     0.85     0.72  
+## NAICS252    -1.16     1.24  
+## NAICS253     0.03     0.74  
+## NAICS254    -0.54     0.73  
+## NAICS256     0.15     0.73  
+## NAICS261    -0.33     0.76  
+## NAICS262     1.72     0.73  
+## NAICS271     0.10     0.82  
+## NAICS272     0.15     0.74  
+## NAICS281    -0.03     0.73  
+## NAICS292    -0.29     0.83  
+## ---
+##   n = 250000, k = 29
+##   residual deviance = 27564.0, null deviance = 31009.2 (difference = 3445.3)
+```
 
+```r
+glmer_examine(Term_Comp_07A)
+```
+
+```
+## Warning in if (class(model) == "glmerMod") {: the condition has length > 1
+## and only the first element will be used
+```
+
+```
+##             GVIF Df GVIF^(1/(2*Df))
+## n_Comp  1.058439  1        1.028804
+## cl_Ceil 1.331436  1        1.153879
+## cl_Days 1.325054  1        1.151110
+## Veh     1.426411  4        1.045395
+## n_Fixed 1.085468  1        1.041858
+## b_UCA   1.052555  1        1.025941
+## b_Intl  1.065334  1        1.032150
+## NAICS2  1.873233 18        1.017588
+```
+
+```r
 #Create the model
 Term_Comp_05A <- glm (data=smp1m,
                  b_Term ~n_Comp + 
@@ -2202,10 +2676,60 @@ glmer_examine(Term_Comp_08G)
 #                          b_UCA:n_Comp +
 #                          (1 | NAICS2)
 #                        , family=binomial(link="logit"))
-# Missing display(Term_Comp_08H)
-# glmer_examine(Term_Comp_08H)
+display(Term_Comp_08H)
+```
 
+```
+## glmer(formula = b_Term ~ n_Comp + cl_Ceil + cl_Days + SIDV + 
+##     MIDV + FSSGWAC + BPABOA + n_Fixed + b_UCA + SIDV:n_Comp + 
+##     MIDV:n_Comp + FSSGWAC:n_Comp + BPABOA:n_Comp + b_UCA:n_Comp + 
+##     (1 | NAICS2), data = smp1m, family = binomial(link = "logit"))
+##                coef.est coef.se
+## (Intercept)    -6.16     0.10  
+## n_Comp          0.58     0.03  
+## cl_Ceil        -0.04     0.01  
+## cl_Days         0.83     0.01  
+## SIDV           -0.58     0.04  
+## MIDV            0.01     0.07  
+## FSSGWAC        -0.57     0.07  
+## BPABOA          0.00     0.09  
+## n_Fixed         1.42     0.09  
+## b_UCA           1.81     0.06  
+## n_Comp:SIDV    -0.74     0.05  
+## n_Comp:MIDV    -0.37     0.09  
+## n_Comp:FSSGWAC  0.20     0.09  
+## n_Comp:BPABOA  -0.74     0.15  
+## n_Comp:b_UCA   -1.96     0.27  
+## 
+## Error terms:
+##  Groups   Name        Std.Dev.
+##  NAICS2   (Intercept) 0.00    
+##  Residual             1.00    
+## ---
+## number of obs: 1000000, groups: NAICS2, 24
+## AIC = 115294, DIC = 115261.6
+## deviance = 115261.6
+```
 
+```r
+glmer_examine(Term_Comp_08H)
+```
+
+```
+## [[1]]
+##         n_Comp        cl_Ceil        cl_Days           SIDV           MIDV 
+##       1.649048       1.242427       1.291034       2.771881       2.959377 
+##        FSSGWAC         BPABOA        n_Fixed          b_UCA    n_Comp:SIDV 
+##       3.396327       1.557393       1.035338       1.126694       3.064434 
+##    n_Comp:MIDV n_Comp:FSSGWAC  n_Comp:BPABOA   n_Comp:b_UCA 
+##       2.993810       3.460949       1.516373       1.062335 
+## 
+## [[2]]
+## NAICS2.(Intercept) 
+##                  0
+```
+
+```r
 Term_Comp_08H2 <- glm(data=smp1m,
                        b_Term ~n_Comp +
                          cl_Ceil + cl_Days+
@@ -2469,7 +2993,7 @@ glmer_examine(Term_Comp_08H3_25k)
 # residuals_term_plot(Term_Comp_08H)+
 #   labs(x="Estimated  Pr (Termination)")
 
-# save(file="Output//Term_Comp.rdata",Term_Comp_05A,Term_Comp_08B,Term_Comp_08C,Term_Comp_08D,Term_Comp_08E,Term_Comp_08F,Term_Comp_08G,Term_Comp_08I)#Term_Comp_08H,
+# save(file="Output//Term_Comp.rdata",Term_Comp_08B,Term_Comp_08C,Term_Comp_08D,Term_Comp_08E,Term_Comp_08F,Term_Comp_08G,Term_Comp_08H)#Term_Comp_08H,
 ```
 
 ## Competition and Ceiling Breaches
@@ -2477,9 +3001,86 @@ glmer_examine(Term_Comp_08H3_25k)
 
 ```r
 #Create the model
-  load("Output//Comp_CBre.Rdata")
+  load("Output//CBre_Comp.Rdata")
+#A - No interactions
+CBre_Comp_07A <- glm(data=smp,
+                       b_Term ~n_Comp + 
+                         cl_Ceil + cl_Days+
+                         Veh+
+                         # c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +
+                       # c_HHI_lag1:cl_Days +
+                         n_Fixed + b_UCA +
+                         b_Intl +
+                         # Veh:cl_Days +
+                         # Veh:c_HHI_lag1+
+                         # b_UCA:c_HHI_lag1+
+                         NAICS2
+                       , family=binomial(link="logit"))
+display(CBre_Comp_07A)
+```
 
-Comp_CBre_05A <- glm (data=smp,
+```
+## glm(formula = b_Term ~ n_Comp + cl_Ceil + cl_Days + Veh + n_Fixed + 
+##     b_UCA + b_Intl + NAICS2, family = binomial(link = "logit"), 
+##     data = smp)
+##             coef.est coef.se
+## (Intercept) -5.76     0.75  
+## n_Comp       0.46     0.04  
+## cl_Ceil     -0.05     0.03  
+## cl_Days      0.76     0.03  
+## VehS-IDC    -0.80     0.05  
+## VehM-IDC    -0.49     0.10  
+## VehFSS/GWAC -0.42     0.08  
+## VehBPA/BOA  -0.35     0.14  
+## n_Fixed      1.12     0.20  
+## b_UCA        1.59     0.12  
+## b_Intl       0.06     0.08  
+## NAICS221     0.35     0.88  
+## NAICS222    -0.50     0.85  
+## NAICS223    -0.42     0.73  
+## NAICS231-33  0.05     0.72  
+## NAICS242    -1.37     0.73  
+## NAICS244-45 -0.05     0.73  
+## NAICS248-49 -0.34     0.75  
+## NAICS251     0.85     0.72  
+## NAICS252    -1.16     1.24  
+## NAICS253     0.03     0.74  
+## NAICS254    -0.54     0.73  
+## NAICS256     0.15     0.73  
+## NAICS261    -0.33     0.76  
+## NAICS262     1.72     0.73  
+## NAICS271     0.10     0.82  
+## NAICS272     0.15     0.74  
+## NAICS281    -0.03     0.73  
+## NAICS292    -0.29     0.83  
+## ---
+##   n = 250000, k = 29
+##   residual deviance = 27564.0, null deviance = 31009.2 (difference = 3445.3)
+```
+
+```r
+glmer_examine(CBre_Comp_07A)
+```
+
+```
+## Warning in if (class(model) == "glmerMod") {: the condition has length > 1
+## and only the first element will be used
+```
+
+```
+##             GVIF Df GVIF^(1/(2*Df))
+## n_Comp  1.058439  1        1.028804
+## cl_Ceil 1.331436  1        1.153879
+## cl_Days 1.325054  1        1.151110
+## Veh     1.426411  4        1.045395
+## n_Fixed 1.085468  1        1.041858
+## b_UCA   1.052555  1        1.025941
+## b_Intl  1.065334  1        1.032150
+## NAICS2  1.873233 18        1.017588
+```
+
+```r
+CBre_Comp_05A <- glm (data=smp,
                    b_CBre ~n_Comp + 
                      cl_Ceil + cl_Days+ 
                      Veh+
@@ -2492,7 +3093,7 @@ Comp_CBre_05A <- glm (data=smp,
                      b_UCA:cl_Ceil+
                      b_UCA:n_Comp
                    , family=binomial(link="logit"))
-display(Comp_CBre_05A)
+display(CBre_Comp_05A)
 ```
 
 ```
@@ -2524,7 +3125,7 @@ display(Comp_CBre_05A)
 ```
 
 ```r
-glmer_examine(Comp_CBre_05A)
+glmer_examine(CBre_Comp_05A)
 ```
 
 ```
@@ -2548,7 +3149,7 @@ glmer_examine(Comp_CBre_05A)
 ```
 
 ```r
-Comp_CBre_05A2 <- glm (data=smp,
+CBre_Comp_05A2 <- glm (data=smp,
                    b_CBre ~n_Comp + 
                      cl_Ceil + cl_Days+ 
                      Veh+
@@ -2561,7 +3162,7 @@ Comp_CBre_05A2 <- glm (data=smp,
                      b_UCA:cl_Ceil+
                      b_UCA:n_Comp
                    , family=binomial(link="logit"))
-display(Comp_CBre_05A2)
+display(CBre_Comp_05A2)
 ```
 
 ```
@@ -2592,7 +3193,7 @@ display(Comp_CBre_05A2)
 ```
 
 ```r
-glmer_examine(Comp_CBre_05A2)
+glmer_examine(CBre_Comp_05A2)
 ```
 
 ```
@@ -2615,7 +3216,7 @@ glmer_examine(Comp_CBre_05A2)
 ```
 
 ```r
-# Comp_CBre_08B<- glmer(data=smp1m,
+# CBre_Comp_08B<- glmer(data=smp1m,
 #                     b_CBre ~n_Comp + 
 #                       cl_Ceil + cl_Days+ 
 #                       Veh+
@@ -2627,7 +3228,7 @@ glmer_examine(Comp_CBre_05A2)
 #                       b_UCA:n_Comp+
 #                       (1 | NAICS2)
 #                     , family=binomial(link="logit"))
-display(Comp_CBre_08B)
+display(CBre_Comp_08B)
 ```
 
 ```
@@ -2667,7 +3268,7 @@ display(Comp_CBre_08B)
 ```
 
 ```r
-glmer_examine(Comp_CBre_08B)
+glmer_examine(CBre_Comp_08B)
 ```
 
 ```
@@ -2689,7 +3290,7 @@ glmer_examine(Comp_CBre_08B)
 ```
 
 ```r
-Comp_CBre_08B2<- glm(data=smp1m,
+CBre_Comp_08B2<- glm(data=smp1m,
                     b_CBre ~n_Comp + 
                       cl_Ceil + cl_Days+ 
                       Veh+
@@ -2700,7 +3301,7 @@ Comp_CBre_08B2<- glm(data=smp1m,
                       b_UCA:cl_Ceil+
                       b_UCA:n_Comp+
                     NAICS2, family=binomial(link="logit"))
-display(Comp_CBre_08B2)
+display(CBre_Comp_08B2)
 ```
 
 ```
@@ -2750,7 +3351,7 @@ display(Comp_CBre_08B2)
 ```
 
 ```r
-glmer_examine(Comp_CBre_08B2)
+glmer_examine(CBre_Comp_08B2)
 ```
 
 ```
@@ -2785,7 +3386,7 @@ glmer_examine(Comp_CBre_08B2)
 # 
 
 
-glmer_examine(Comp_CBre_08B2)
+glmer_examine(CBre_Comp_08B2)
 ```
 
 ```
@@ -2809,7 +3410,7 @@ glmer_examine(Comp_CBre_08B2)
 ```
 
 ```r
-summary_residual_compare(Comp_CBre_08A,Comp_CBre_08B2,Term_Comp_08G,Term_Comp_08H3)
+summary_residual_compare(CBre_Comp_08A,CBre_Comp_08B2,Term_Comp_08G,Term_Comp_08H3)
 ```
 
 ```
@@ -2887,7 +3488,7 @@ summary_residual_compare(Comp_CBre_08A,Comp_CBre_08B2,Term_Comp_08G,Term_Comp_08
 ```
 
 ```r
-stargazer(Comp_CBre_05A,Term_Cons_08A,type="html",out="Output//  Term_2.html")
+stargazer(CBre_Comp_05A,Term_Cons_08A,type="html",out="Output//Term_2.html")
 ```
 
 ```
@@ -2991,25 +3592,140 @@ stargazer(Comp_CBre_05A,Term_Cons_08A,type="html",out="Output//  Term_2.html")
 ```
 
 ```r
-# save(file="Output//Comp_CBre.rdata",Comp_CBre_05A,Comp_CBre_08A,Comp_CBre_08B)
+# save(file="Output//CBre_Comp.rdata",CBre_Comp_08A,CBre_Comp_08B)
 ```
 
 ## Everything
 
 
 ```r
-# CBre_Cons_Comp_08B <- glmer(data=smp1m,
-#                        b_CBre ~ c_HHI_lag1 + 
-#                       cl_Ceil + cl_Days+ 
-#                       Veh+
-#                       n_Fixed + b_UCA +
-#                       c_HHI_lag1:cl_Ceil  + 
-#                       b_Intl +
-#                       Veh:cl_Ceil+
-#                       b_UCA:cl_Ceil+
-#                       b_UCA:c_HHI_lag1+
-#                          (1 | NAICS2)
-#                        , family=binomial(link="logit"))
+CBre_Cons_Comp_07A <- glm(data=smp1m,
+                       b_CBre ~ c_HHI_lag1 + n_Comp+
+                      cl_Ceil + cl_Days+
+                      Veh+
+                      n_Fixed + b_UCA +
+                      c_HHI_lag1:cl_Ceil  +
+                      b_Intl +
+                      Veh:cl_Ceil+
+                      b_UCA:cl_Ceil+
+                      b_UCA:c_HHI_lag1+
+                         NAICS2
+                       , family=binomial(link="logit"))
+display(CBre_Cons_Comp_07A)
+```
+
+```
+## glm(formula = b_CBre ~ c_HHI_lag1 + n_Comp + cl_Ceil + cl_Days + 
+##     Veh + n_Fixed + b_UCA + c_HHI_lag1:cl_Ceil + b_Intl + Veh:cl_Ceil + 
+##     b_UCA:cl_Ceil + b_UCA:c_HHI_lag1 + NAICS2, family = binomial(link = "logit"), 
+##     data = smp1m)
+##                     coef.est coef.se
+## (Intercept)         -5.16     0.42  
+## c_HHI_lag1           0.26     0.01  
+## n_Comp               0.01     0.02  
+## cl_Ceil              0.63     0.02  
+## cl_Days              0.20     0.01  
+## VehS-IDC            -0.09     0.03  
+## VehM-IDC             0.36     0.05  
+## VehFSS/GWAC          0.14     0.06  
+## VehBPA/BOA          -0.02     0.08  
+## n_Fixed              0.30     0.04  
+## b_UCA                2.03     0.08  
+## b_Intl              -0.27     0.03  
+## NAICS221             0.71     0.47  
+## NAICS222             0.76     0.44  
+## NAICS223             1.81     0.42  
+## NAICS231-33         -0.42     0.42  
+## NAICS242            -2.04     0.42  
+## NAICS244-45         -0.02     0.42  
+## NAICS248-49          0.26     0.42  
+## NAICS251             0.70     0.42  
+## NAICS252            -1.30     0.55  
+## NAICS253             1.74     0.42  
+## NAICS254             0.72     0.42  
+## NAICS255            -6.46    68.86  
+## NAICS256             1.93     0.42  
+## NAICS261             1.60     0.42  
+## NAICS262             0.30     0.43  
+## NAICS271             0.39     0.50  
+## NAICS272             1.32     0.42  
+## NAICS281             1.00     0.42  
+## NAICS292             1.00     0.43  
+## c_HHI_lag1:cl_Ceil  -0.16     0.01  
+## cl_Ceil:VehS-IDC    -0.13     0.02  
+## cl_Ceil:VehM-IDC    -0.23     0.03  
+## cl_Ceil:VehFSS/GWAC  0.04     0.04  
+## cl_Ceil:VehBPA/BOA  -0.31     0.08  
+## cl_Ceil:b_UCA       -0.39     0.05  
+## c_HHI_lag1:b_UCA     0.39     0.07  
+## ---
+##   n = 1000000, k = 38
+##   residual deviance = 105739.4, null deviance = 131712.0 (difference = 25972.6)
+```
+
+```r
+Term_Cons_Comp_07A <- glm(data=smp1m,
+                       b_Term ~ c_HHI_lag1 + n_Comp+
+                      cl_Ceil + cl_Days+
+                      Veh+
+                      n_Fixed + b_UCA +
+                      c_HHI_lag1:cl_Ceil  +
+                      b_Intl +
+                      Veh:cl_Ceil+
+                      b_UCA:cl_Ceil+
+                      b_UCA:c_HHI_lag1+
+                         NAICS2
+                       , family=binomial(link="logit"))
+display(Term_Cons_Comp_07A)
+```
+
+```
+## glm(formula = b_Term ~ c_HHI_lag1 + n_Comp + cl_Ceil + cl_Days + 
+##     Veh + n_Fixed + b_UCA + c_HHI_lag1:cl_Ceil + b_Intl + Veh:cl_Ceil + 
+##     b_UCA:cl_Ceil + b_UCA:c_HHI_lag1 + NAICS2, family = binomial(link = "logit"), 
+##     data = smp1m)
+##                     coef.est coef.se
+## (Intercept)         -6.91     0.72  
+## c_HHI_lag1          -0.25     0.02  
+## n_Comp               0.46     0.02  
+## cl_Ceil             -0.18     0.02  
+## cl_Days              0.68     0.02  
+## VehS-IDC            -0.89     0.03  
+## VehM-IDC            -0.75     0.07  
+## VehFSS/GWAC         -0.54     0.05  
+## VehBPA/BOA          -0.50     0.08  
+## n_Fixed              1.09     0.09  
+## b_UCA                1.96     0.08  
+## b_Intl               0.15     0.04  
+## NAICS221             0.91     0.79  
+## NAICS222            -0.03     0.78  
+## NAICS223             0.78     0.71  
+## NAICS231-33          1.22     0.71  
+## NAICS242            -0.17     0.71  
+## NAICS244-45          0.93     0.71  
+## NAICS248-49          1.33     0.72  
+## NAICS251             1.97     0.71  
+## NAICS252             0.02     1.01  
+## NAICS253             1.15     0.72  
+## NAICS254             0.55     0.71  
+## NAICS255            -3.39    67.95  
+## NAICS256             1.22     0.71  
+## NAICS261             1.10     0.72  
+## NAICS262             2.65     0.71  
+## NAICS271             1.61     0.73  
+## NAICS272             1.12     0.72  
+## NAICS281             1.14     0.71  
+## NAICS292             0.99     0.74  
+## c_HHI_lag1:cl_Ceil   0.08     0.02  
+## cl_Ceil:VehS-IDC     0.38     0.03  
+## cl_Ceil:VehM-IDC     0.53     0.05  
+## cl_Ceil:VehFSS/GWAC  0.47     0.06  
+## cl_Ceil:VehBPA/BOA   0.43     0.08  
+## cl_Ceil:b_UCA       -0.34     0.07  
+## c_HHI_lag1:b_UCA     0.33     0.09  
+## ---
+##   n = 1000000, k = 38
+##   residual deviance = 111478.7, null deviance = 125945.6 (difference = 14466.9)
 ```
 
 
@@ -3017,14 +3733,15 @@ stargazer(Comp_CBre_05A,Term_Cons_08A,type="html",out="Output//  Term_2.html")
 
 ```r
 # texreg::htmlreg(list(Term_Cons_08A3,
-#                      CBre_Cons_08B2),file="Output//ConsModel.html",single.row = TRUE,
+#                   CBre_Cons_08C),#CBre_Cons_08B2
+#                 file="Output//ConsModel.html",single.row = TRUE,
 #                 custom.model.name=c("Termination",
 #                                     "Ceiling Breach"),
 #                         stars=c(0.05))
 
 
 texreg::htmlreg(list(Term_Comp_08G,
-                     Comp_CBre_08B2),file="Output//CompModel.html",single.row = TRUE,
+                     CBre_Comp_08B2),file="Output//CompModel.html",single.row = TRUE,
                 custom.model.name=c("Termination",
                                     "Ceiling Breach"),
                         stars=c(0.05))
@@ -3035,9 +3752,14 @@ texreg::htmlreg(list(Term_Comp_08G,
 ```
 
 ```r
-# texreg::htmlreg(list(Comp_CBre_08B,Term_Cons_08A),file="Output//Hypothesis1.html")
+texreg::htmlreg(list(CBre_Comp_08B,Term_Cons_08A),file="Output//Hypothesis1.html")
+```
 
+```
+## The table was written to the file 'Output//Hypothesis1.html'.
+```
 
+```r
 # htmlreg(list(EuropeModel$fixed[[1]],EuropeModel$fixed[[2]],EuropeModel$fixed[[3]]),
 #         file="Output\\Hypothesis1.html",
 #         custom.model.name=c(as.character(EuropeModel$name[1:3])),
