@@ -63,10 +63,10 @@ First we load the data. The dataset used is a U.S. Defense Contracting dataset d
   load(file="Data/defense_contract_CSIScontractID_detail.Rdata")
   
 
-head(def)
-# undebug(transform_contract)
-def<-transform_contract(def)
-
+# head(def)
+# # undebug(transform_contract)
+# def<-transform_contract(def)
+ load(file="Data/transformed_def.Rdata")
 
 ```
 
@@ -125,27 +125,38 @@ Next, we eliminate missing data entries and then draw a sample. The final comput
 
 ###Computational Sample Creation
 ```{r Sample}
-
-
-smp<-def[!is.na(def$b_Term)&
-                                  !is.na(def$Comp)&
-                                  !is.na(def$l_Ceil)&
-                                  !is.na(def$l_Days)&
-                                  !is.na(def$n_Fixed)&
-                                  !is.na(def$NAICS),]
-
-smp<-smp[sample(nrow(smp),250000),]
+ load(file="data//def_sample.Rdata")
+# save(smp,smp1m,file="data//def_sample.Rdata")
 
 
 
+# complete<-!is.na(def$b_Term)&
+#   !is.na(def$b_CBre)&
+#   !is.na(def$n_Comp)&
+#   !is.na(def$l_Ceil)&
+#   !is.na(def$l_Days)&
+#   !is.na(def$Veh) &
+#   !is.na(def$n_Fixed)&
+#   !is.na(def$b_Intl)&
+#   !is.na(def$b_UCA)&
+#   !is.na(def$NAICS)&
+#   !is.na(def$NAICS2)&
+#   !is.na(def$cl_HHI_lag1)
+# 
+# smp<-def[complete,]
+# #8818392  to 8818392
+# nrow(def[!complete,])/nrow(def)
+# sum(def[!complete,]$Action.Obligation,na.rm=TRUE)/sum(def$Action.Obligation,na.rm=TRUE)
+# 
+# smp1m<-smp[sample(nrow(smp),1000000),]
+# smp<-smp[sample(nrow(smp),250000),]
+# save(file="data//def_sample.Rdata",smp,smp1m)
 
-summary(smp$b_Comp )
-summary(smp$n_Comp )
-summary(smp$Comp )
-summary(smp$CompOffr )
-summary(smp$EffComp )
+# levels(smp$Intl)<- list("Just U.S."=c("Just U.S."), 
+#                                 "Any Intl."=c("Any International"))
+# levels(smp1m$Intl)<- list("Just U.S."=c("Just U.S."), 
+#                                 "Any Intl."=c("Any International"))
 
-head(smp)
 
 ```
 ###Examine Minimium Size
@@ -3218,7 +3229,7 @@ residuals_term_plot(Term_Comp_06B)+
 ```
 ##What
 ### Model 7A: NAICS
-```{r Model11A}
+```{r Model07A}
 corrdisp<-Hmisc::rcorr(
   as.matrix(cbind(subset(crisis_smp, select=c(b_UCA,c_OffCri,cl_Ceil,
                                               cl_Days,n_Fixed,b_Intl)),
@@ -3230,128 +3241,263 @@ corrdisp<-Hmisc::rcorr(
                   dummies::dummy(crisis_smp$Simple))))
 corrdisp[[1]]
 
-
-#Frequency Plot
-freq_discrete_plot(crisis_smp,"NAICS2")
-
-#Percent Terminated Plot 
-discrete_percent_cbre_plot(crisis_smp,"Simple")
+#Sumamry plot
+summary_discrete_plot(smp1m,"NAICS2",rotate_text=TRUE)
 
 #Create the model
 Term_Comp_07A <- glm(data=smp,
                        b_Term ~n_Comp + 
                          cl_Ceil + cl_Days+
                          Veh+
-                         # c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +
-                       # c_HHI_lag1:cl_Days +
+                         # n_Comp:cl_Ceil  + cl_Ceil:cl_Days  +
+                       # n_Comp:cl_Days +
                          n_Fixed + b_UCA +
                          b_Intl +
                          # Veh:cl_Days +
-                         # Veh:c_HHI_lag1+
-                         # b_UCA:c_HHI_lag1+
+                         # Veh:n_Comp+
+                         # b_UCA:n_Comp+
                          NAICS2
                        , family=binomial(link="logit"))
 display(Term_Comp_07A)
 glmer_examine(Term_Comp_07A)
   
-  
-  Term_11A <- glm (data=crisis_smp,
-                   b_Term ~ Crisis +b_NoComp+
-                     b_UCA+
-                     Reach+ c_OffCri+
-                    cl_Ceil+
-                     cl_Days+
-                     Veh+
-                     n_Fixed +
-                     Is.Defense +
-                    cl_Days:b_NoComp+
-                     b_UCA:Crisis+
-                     cl_Days:Veh+ 
-                     cl_Ceil:Veh+
-                     b_NoComp:Veh+
-                   Simple, 
-                   family=binomial(link="logit"))
-  display(Term_11A)
-  
+CBre_Comp_07A <- glm(data=smp,
+                       b_CBre ~n_Comp + 
+                         cl_Ceil + cl_Days+
+                         Veh+
+                         # n_Comp:cl_Ceil  + cl_Ceil:cl_Days  +
+                       # n_Comp:cl_Days +
+                         n_Fixed + b_UCA +
+                         b_Intl +
+                         # Veh:cl_Days +
+                         # Veh:n_Comp+
+                         # b_UCA:n_Comp+
+                         NAICS2
+                       , family=binomial(link="logit"))
+display(CBre_Comp_07A)
+glmer_examine(CBre_Comp_07A)
 
-  stargazer::stargazer(CBre_10A,CBre_11A,Term_10A,Term_11A,type="text",
+  stargazer::stargazer(Term_Comp_07A,CBre_Comp_07A,type="text",
                        digits=2)
   
   
 
-summary_residual_compare(CBre_10A,CBre_11A,Term_10A,Term_11A,bins=20)
+summary_residual_compare(CBre_Comp_07A,CBre_Comp_07A,Term_Comp_07A,Term_Comp_07A,bins=20)
 
 
 ```
 
-```{r Model11A}
-corrdisp<-Hmisc::rcorr(
-  as.matrix(cbind(subset(crisis_smp, select=c(b_UCA,c_OffCri,cl_Ceil,
-                                              cl_Days,n_Fixed,b_Intl)),
-                  dummies::dummy(crisis_smp$Crisis),
-                  dummies::dummy(crisis_smp$NoComp),
-                  dummies::dummy(crisis_smp$Reach),
-                  dummies::dummy(crisis_smp$Veh),
-                  dummies::dummy(crisis_smp$Is.Defense),
-                  dummies::dummy(crisis_smp$Simple))))
-corrdisp[[1]]
+
+### Model 7B: Comp:UCA
+Starting with Competition and UCA. It's strong in both models and thus a natural starting point.
+```{r Model07B}
 
 
-#Frequency Plot
-freq_discrete_plot(crisis_smp,"Simple")
-
-#Percent Terminated Plot 
-discrete_percent_cbre_plot(crisis_smp,"Simple")
+#Sumamry plot
+summary_continuous_plot(smp1m,"n_Comp","b_UCA")
 
 #Create the model
-
-  CBre_11A <- glm (data=crisis_smp,
-                   b_CBre ~ Crisis +NoComp +
-                     b_UCA+
-                     Reach+ c_OffCri+  
-                     cl_Ceil+
-                     cl_Days+
-                     Veh+
-                     n_Fixed +
-                     Is.Defense +
-                    cl_Ceil:NoComp+cl_Days:NoComp+
-                     cl_Days:Veh+ 
-                     cl_Ceil:Veh+
-                   NoComp:Veh+
-                   Simple, 
-                   family=binomial(link="logit"))
-  display(CBre_11A)
+Term_Comp_07B <- glm(data=smp,
+                       b_Term ~n_Comp + 
+                         cl_Ceil + cl_Days+
+                         Veh+
+                         # n_Comp:cl_Ceil  + cl_Ceil:cl_Days  +
+                       # n_Comp:cl_Days +
+                         n_Fixed + b_UCA +
+                         b_Intl +
+                         # Veh:cl_Days +
+                         # Veh:n_Comp+
+                         b_UCA:n_Comp+
+                         NAICS2
+                       , family=binomial(link="logit"))
+display(Term_Comp_07B)
+glmer_examine(Term_Comp_07B)
   
-  Term_11A <- glm (data=crisis_smp,
-                   b_Term ~ Crisis +b_NoComp+
-                     b_UCA+
-                     Reach+ c_OffCri+
-                    cl_Ceil+
-                     cl_Days+
-                     Veh+
-                     n_Fixed +
-                     Is.Defense +
-                    cl_Days:b_NoComp+
-                     b_UCA:Crisis+
-                     cl_Days:Veh+ 
-                     cl_Ceil:Veh+
-                     b_NoComp:Veh+
-                   Simple, 
-                   family=binomial(link="logit"))
-  display(Term_11A)
-  
+CBre_Comp_07B<- glm(data=smp,
+                       b_CBre ~n_Comp + 
+                         cl_Ceil + cl_Days+
+                         Veh+
+                         # n_Comp:cl_Ceil  + cl_Ceil:cl_Days  +
+                       # n_Comp:cl_Days +
+                         n_Fixed + b_UCA +
+                         b_Intl +
+                         # Veh:cl_Days +
+                         # Veh:n_Comp+
+                         b_UCA:n_Comp+
+                         NAICS2
+                       , family=binomial(link="logit"))
+display(CBre_Comp_07B)
+glmer_examine(CBre_Comp_07B)
 
-  stargazer::stargazer(CBre_10A,CBre_11A,Term_10A,Term_11A,type="text",
+  stargazer::stargazer(CBre_Comp_07A,CBre_Comp_07B,Term_Comp_07A,Term_Comp_07B,type="text",
                        digits=2)
   
   
 
-summary_residual_compare(CBre_10A,CBre_11A,Term_10A,Term_11A,bins=20)
+summary_residual_compare(CBre_Comp_07A,CBre_Comp_07B,Term_Comp_07A,Term_Comp_07B,bins=20)
+
+
+```
+The interaction is significant and competion has a powerful affect on reducing the risks of UCA. In diagnostic terms, the residuals for ceiling breaches get a little worse, but the change is marginal.
+
+
+
+### Model 7C: Comp:Days
+The next reintroduction is competition and days. The benefits of competition may reduce over time.
+```{r Model07C}
+
+
+#Sumamry plot
+summary_continuous_plot(smp1m,"cl_Days","n_Comp")
+
+#Create the model
+Term_Comp_07C <- glm(data=smp,
+                       b_Term ~n_Comp + 
+                         cl_Ceil + cl_Days+
+                         Veh+
+                         #n_Comp:cl_Ceil  + #cl_Ceil:cl_Days  +
+                       n_Comp:cl_Days +
+                         n_Fixed + b_UCA +
+                         b_Intl +
+                         # Veh:cl_Days +
+                         # Veh:n_Comp+
+                         b_UCA:n_Comp+
+                         NAICS2
+                       , family=binomial(link="logit"))
+display(Term_Comp_07C)
+glmer_examine(Term_Comp_07C)
+  
+CBre_Comp_07C<- glm(data=smp,
+                       b_CBre ~n_Comp + 
+                         cl_Ceil + cl_Days+
+                         Veh+
+                          #n_Comp:cl_Ceil  +# cl_Ceil:cl_Days  +
+                        n_Comp:cl_Days +
+                         n_Fixed + b_UCA +
+                         b_Intl +
+                         # Veh:cl_Days +
+                         # Veh:n_Comp+
+                         b_UCA:n_Comp+
+                         NAICS2
+                       , family=binomial(link="logit"))
+display(CBre_Comp_07C)
+glmer_examine(CBre_Comp_07C)
+
+  stargazer::stargazer(CBre_Comp_07B,CBre_Comp_07C,Term_Comp_07B,Term_Comp_07C,type="text",
+                       digits=2)
+  
+  
+
+summary_residual_compare(CBre_Comp_07B,CBre_Comp_07C,Term_Comp_07B,Term_Comp_07C,bins=20)
 
 
 ```
 
+This combination adds little in the case of ceiling breach and encounters VIF problems for termination. Leaving it out.
 
+
+### Model 7D: Comp:Ceiling
+The next reintroduction is competition and ceiling. Competition and ceiling might have a negative coefficient, because large contracts might encourage bid to win approaches. 
+```{r Model07D}
+
+
+#Sumamry plot
+summary_continuous_plot(smp1m,"cl_Ceil","n_Comp")
+
+#Create the model
+Term_Comp_07D <- glm(data=smp,
+                       b_Term ~n_Comp + 
+                         cl_Ceil + cl_Days+
+                         Veh+
+                         n_Comp:cl_Ceil  + #cl_Ceil:cl_Days  +
+                         n_Fixed + b_UCA +
+                         b_Intl +
+                         # Veh:cl_Days +
+                         # Veh:n_Comp+
+                         b_UCA:n_Comp+
+                         NAICS2
+                       , family=binomial(link="logit"))
+display(Term_Comp_07D)
+glmer_examine(Term_Comp_07D)
+  
+CBre_Comp_07D<- glm(data=smp,
+                       b_CBre ~n_Comp + 
+                         cl_Ceil + cl_Days+
+                         Veh+
+                          n_Comp:cl_Ceil  +# cl_Ceil:cl_Days  +
+                         n_Fixed + b_UCA +
+                         b_Intl +
+                         # Veh:cl_Days +
+                         # Veh:n_Comp+
+                         b_UCA:n_Comp+
+                         NAICS2
+                       , family=binomial(link="logit"))
+display(CBre_Comp_07D)
+glmer_examine(CBre_Comp_07D)
+
+  stargazer::stargazer(CBre_Comp_07B,CBre_Comp_07D,Term_Comp_07B,Term_Comp_07D,type="text",
+                       digits=2)
+  
+  
+
+summary_residual_compare(CBre_Comp_07B,CBre_Comp_07D,Term_Comp_07B,Term_Comp_07D,bins=20)
+
+
+```
+This interaction adds little and worsens diagnostics.
+
+
+### Model 7E: Comp:Veh
+The next reintroduction is competition and vehicle. Multi-award contracts in particular emphasize competition between the awardees which suggests that it may increase the benefits of competition.
+
+
+```{r Model07E}
+
+
+#Sumamry plot
+summary_discrete_plot(smp1m,"Veh","n_Comp")
+
+#Create the model
+Term_Comp_07E <- glm(data=smp,
+                       b_Term ~n_Comp + 
+                         cl_Ceil + cl_Days+
+                         Veh+
+                          #cl_Ceil:cl_Days  +
+                         n_Fixed + b_UCA +
+                         b_Intl +
+                         # Veh:cl_Days +
+                         Veh:n_Comp+
+                         b_UCA:n_Comp+
+                         NAICS2
+                       , family=binomial(link="logit"))
+display(Term_Comp_07E)
+glmer_examine(Term_Comp_07E)
+  
+CBre_Comp_07E<- glm(data=smp,
+                       b_CBre ~n_Comp + 
+                         cl_Ceil + cl_Days+
+                         Veh+
+                         # cl_Ceil:cl_Days  +
+                         n_Fixed + b_UCA +
+                         b_Intl +
+                         # Veh:cl_Days +
+                         Veh:n_Comp+
+                         b_UCA:n_Comp+
+                         NAICS2
+                       , family=binomial(link="logit"))
+display(CBre_Comp_07E)
+glmer_examine(CBre_Comp_07E)
+
+  stargazer::stargazer(CBre_Comp_07B,CBre_Comp_07E,Term_Comp_07B,Term_Comp_07E,type="text",
+                       digits=2)
+  
+  
+
+summary_residual_compare(CBre_Comp_07B,CBre_Comp_07E,Term_Comp_07B,Term_Comp_07E,bins=20)
+
+
+```
+Competition and vehicle interactions do reduce deviance
 #Multi-Level Model
 
 
