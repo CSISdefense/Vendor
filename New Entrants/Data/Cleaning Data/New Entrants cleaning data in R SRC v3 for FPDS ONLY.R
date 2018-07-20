@@ -915,7 +915,7 @@ FPDS_data_intermediate_obligatedamnt <- FPDS_data_intermediate_obligatedamnt[ord
 #remove years before 2001
 FPDS_data_intermediate_obligatedamnt <- FPDS_data_intermediate_obligatedamnt[!(FPDS_data_intermediate_obligatedamnt$FYear<2001), ]
 
-##step 1: use dplyr to create a new data frame grouped by fiscal year and obligated amount
+##step 1: use dplyr to create a new data frame grouped by fiscal year 
 #and sum obligated amount for all unique combinations
 FPDS_newvar_totalobligations <- FPDS_data_intermediate_obligatedamnt %>% group_by(FYear) %>%
   dplyr::summarize(total_obligations_allvendors = sum(obligatedAmount, na.rm=TRUE))
@@ -931,7 +931,7 @@ FPDS_cleaned_unique_wtotalobligations <- FPDS_cleaned_unique_wtotalobligations[!
 
 count_total_obligations_newentrants <- FPDS_cleaned_unique_wtotalobligations %>%
   group_by(FYear) %>%
-  dplyr::summarise(sum_obligations_newentrants = sum(FY_obligated_amount, na.rm = TRUE))
+  dplyr::summarise(sum_obligations_newentrants = sum(total_obligations, na.rm = TRUE))
 
 ##step 4: subset the FPDS_cleaned_unique_wtotalobligations data so it's just each year and totalobligations_allvendors
 

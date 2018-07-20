@@ -406,7 +406,7 @@ plot_2001_ALL <- ggplot(pie_2001_ALL_df, aes(x=group, y=perc_value, fill=group))
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "-All New Entrants", y = "Survival Rates (percentages)", x = "") + 
+  labs(title = "-All New Entrants All Fed", y = "Survival Rates (percentages)", x = "") + 
   guides(fill=FALSE)
   
   
@@ -432,7 +432,8 @@ plot_2001_SMALL <- ggplot(pie_2001_SM_df, aes(x=group, y=perc_value, fill=group)
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates - Small Businesses", y = "Survival Rates (percentages)", x = "Year") 
+  labs(title = "Survival Rates 2001 All Federal Agencies - Small Businesses", y = "Survival Rates (percentages)", x = "Year") + 
+  guides(fill=FALSE)
 
 ##******##
 ##Non-Small NE##
@@ -456,7 +457,7 @@ plot_2001_NS <- ggplot(pie_2001_NS_df, aes(x=group, y=perc_value, fill=group)) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "- Non-Small Businesses", y = "Survival Rates (percentages)", x = "Year") +
+  labs(title = "- Non-Small Businesses All Fed", y = "Survival Rates (percentages)", x = "Year") +
   guides(fill=FALSE)
 
 ##*****##
@@ -756,7 +757,7 @@ plot_2001_DoD_ALL <- ggplot(pie_2001_ALL_DoD_df, aes(x=group, y=perc_value, fill
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") + 
+  labs(title = "- All New Entrants DoD", y = "Survival Rates (percentages)", x = "Year") + 
   guides(fill=FALSE)
 
 
@@ -782,7 +783,7 @@ plot_2001_DoD_SMALL <- ggplot(pie_2001_SM_DoD_df, aes(x=group, y=perc_value, fil
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2001 Sample DoD - Small Businesses", y = "Survival Rates (percentages)", x = "Year") 
+  labs(title = "Survival Rates 2001 DoD - Small Businesses", y = "Survival Rates (percentages)", x = "Year") 
 
 ##******##
 ##Non-Small NE##
@@ -806,14 +807,14 @@ plot_2001_DoD_NS <- ggplot(pie_2001_NS_DoD_df, aes(x=group, y=perc_value, fill=g
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "- Non-Small Buisinesses", y = "Survival Rates (percentages)", x = "Year")+ 
+  labs(title = "- Non-Small Buisinesses DoD", y = "Survival Rates (percentages)", x = "Year")+ 
   guides(fill=FALSE)
 
 ##*****##
 #combine plots#
 #******##
 #t <- textGrob("Survival Rates 2001 Sample", fontsize=42)
-grid.arrange(plot_2001_DoD_SMALL, plot_2001_DoD_ALL, plot_2001_DoD_NS)
+grid.arrange(plot_2001_SMALL, plot_2001_DoD_SMALL, plot_2001_ALL, plot_2001_DoD_ALL, plot_2001_NS, plot_2001_DoD_NS)
 
 
 
@@ -1063,7 +1064,7 @@ plot_2002_ALL <- ggplot(pie_2002_ALL_df, aes(x=group, y=perc_value, fill=group))
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") + 
+  labs(title = "- All New Entrants All Fed", y = "Survival Rates (percentages)", x = "Year") + 
   guides(fill=FALSE)
 
 
@@ -1089,7 +1090,8 @@ plot_2002_SMALL <- ggplot(pie_2002_SM_df, aes(x=group, y=perc_value, fill=group)
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2002 Sample - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
+  labs(title = "Survival Rates 2002 All Federal Agencies- Small Businesses", y = "Survival Rates (percentages)", x = "Year") + 
+  guides(fill=FALSE)
 
 ##******##
 ##Non-Small NE##
@@ -1113,7 +1115,7 @@ plot_2002_NS <- ggplot(pie_2002_NS_df, aes(x=group, y=perc_value, fill=group)) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "- Non-Small Businesses", y = "Survival Rates (percents)", x = "Year") +
+  labs(title = "- Non-Small Businesses All Fed", y = "Survival Rates (percents)", x = "Year") +
   guides(fill=FALSE)
 
 ##combine plots
@@ -1365,7 +1367,7 @@ plot_2002_DoD_ALL <- ggplot(pie_2002_ALL_DoD_df, aes(x=group, y=perc_value, fill
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") + 
+  labs(title = "- All New Entrants DoD", y = "Survival Rates (percentages)", x = "Year") + 
   guides(fill=FALSE)
 
 
@@ -1391,7 +1393,7 @@ plot_2002_DoD_SMALL <- ggplot(pie_2002_SM_DoD_df, aes(x=group, y=perc_value, fil
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2002 Sample DoD - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
+  labs(title = "Survival Rates 2002 DoD - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
 
 ##******##
 ##Non-Small NE##
@@ -1415,12 +1417,12 @@ plot_2002_DoD_NS <- ggplot(pie_2002_NS_DoD_df, aes(x=group, y=perc_value, fill=g
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "- Non-Small Businesses", y = "Survival Rates (percentages)", x = "Year") +
+  labs(title = "- Non-Small Businesses DoD", y = "Survival Rates (percentages)", x = "Year") +
   guides(fill=FALSE)
 
 
 #combine plots
-grid.arrange(plot_2002_DoD_SMALL, plot_2002_DoD_ALL, plot_2002_DoD_NS)
+grid.arrange(plot_2002_SMALL, plot_2002_DoD_SMALL, plot_2002_ALL, plot_2002_DoD_ALL, plot_2002_NS, plot_2002_DoD_NS)
 
 
 #**********************************************************************#
@@ -1640,7 +1642,7 @@ survivalrate_2016_NS_2003 <- numerator_2016_NS_2003/denominator_2016_NS_2003
 survivalrate_2016_NS_2003
 
 
-table(data_2003_DOD$top_smallbiz_bin, data_2003$survive_2016)
+table(data_2003$top_smallbiz_bin, data_2003$survive_2016)
 
 
 t.test(survive_2016 ~ top_smallbiz_bin, data = data_2003)
@@ -1671,7 +1673,7 @@ plot_2003_ALL <- ggplot(pie_2003_ALL_df, aes(x=group, y=perc_value, fill=group))
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") + 
+  labs(title = "- All New Entrants All Fed", y = "Survival Rates (percentages)", x = "Year") + 
   guides(fill=FALSE)
 
 
@@ -1697,7 +1699,8 @@ plot_2003_SMALL <- ggplot(pie_2003_SM_df, aes(x=group, y=perc_value, fill=group)
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2003 Sample - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
+  labs(title = "Survival Rates 2003 All Federal Agencies - Small Businesses", y = "Survival Rates (percentages)", x = "Year") + 
+  guides(fill=FALSE)
 
 ##******##
 ##Non-Small NE##
@@ -1721,7 +1724,7 @@ plot_2003_NS <- ggplot(pie_2003_NS_df, aes(x=group, y=perc_value, fill=group)) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "- Non-Small Businesses", y = "Survival Rates (percents)", x = "Year") +
+  labs(title = "- Non-Small Businesses All Fed", y = "Survival Rates (percents)", x = "Year") +
   guides(fill=FALSE)
 
 ##*****##
@@ -1978,7 +1981,7 @@ plot_2003_DoD_ALL <- ggplot(pie_2003_ALL_DoD_df, aes(x=group, y=perc_value, fill
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") + 
+  labs(title = "- All New Entrants DoD", y = "Survival Rates (percentages)", x = "Year") + 
   guides(fill=FALSE)
 
 
@@ -2004,7 +2007,7 @@ plot_2003_DoD_SMALL <- ggplot(pie_2003_SM_DoD_df, aes(x=group, y=perc_value, fil
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2003 Sample DoD - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
+  labs(title = "Survival Rates 2003 DoD - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
 
 ##******##
 ##Non-Small NE##
@@ -2028,7 +2031,7 @@ plot_2003_DoD_NS <- ggplot(pie_2003_NS_DoD_df, aes(x=group, y=perc_value, fill=g
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "- Non-Small Businesses", y = "Survival Rates (percentages)", x = "Year") +
+  labs(title = "- Non-Small Businesses DoD", y = "Survival Rates (percentages)", x = "Year") +
   guides(fill=FALSE)
 
 
@@ -2036,7 +2039,7 @@ plot_2003_DoD_NS <- ggplot(pie_2003_NS_DoD_df, aes(x=group, y=perc_value, fill=g
 #combine plots#
 #******##
 #t <- textGrob("Survival Rates 2001 Sample", fontsize=42)
-grid.arrange(plot_2003_DoD_SMALL, plot_2003_DoD_ALL, plot_2003_DoD_NS)
+grid.arrange(plot_2003_SMALL, plot_2003_DoD_SMALL, plot_2003_ALL, plot_2003_DoD_ALL, plot_2003_NS, plot_2003_DoD_NS)
 
 
 #**********************************************************************#
@@ -2288,7 +2291,7 @@ plot_2004_ALL <- ggplot(pie_2004_ALL_df, aes(x=group, y=perc_value, fill=group))
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") + 
+  labs(title = "- All New Entrants All Fed", y = "Survival Rates (percentages)", x = "Year") + 
   guides(fill=FALSE)
 
 
@@ -2314,7 +2317,8 @@ plot_2004_SMALL <- ggplot(pie_2004_SM_df, aes(x=group, y=perc_value, fill=group)
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2004 Sample - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
+  labs(title = "Survival Rates 2004 All Federal Agencies - Small Businesses", y = "Survival Rates (percentages)", x = "Year") + 
+  guides(fill=FALSE)
 
 ##******##
 ##Non-Small NE##
@@ -2338,7 +2342,7 @@ plot_2004_NS <- ggplot(pie_2004_NS_df, aes(x=group, y=perc_value, fill=group)) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "- Non-Small Businesses", y = "Survival Rates (percentages)", x = "Year") +
+  labs(title = "- Non-Small Businesses All Fed", y = "Survival Rates (percentages)", x = "Year") +
   guides(fill=FALSE)
 
 ##*****##
@@ -2593,7 +2597,7 @@ plot_2004_DoD_ALL <- ggplot(pie_2004_ALL_DoD_df, aes(x=group, y=perc_value, fill
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") + 
+  labs(title = "- All New Entrants DoD", y = "Survival Rates (percentages)", x = "Year") + 
   guides(fill=FALSE)
 
 
@@ -2619,7 +2623,7 @@ plot_2004_DoD_SMALL <- ggplot(pie_2004_SM_DoD_df, aes(x=group, y=perc_value, fil
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2004 Sample DoD - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
+  labs(title = "Survival Rates 2004 DoD - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
 
 ##******##
 ##Non-Small NE##
@@ -2643,7 +2647,7 @@ plot_2004_DoD_NS <- ggplot(pie_2004_NS_DoD_df, aes(x=group, y=perc_value, fill=g
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "- Non-Small Businesses", y = "Survival Rates (percentages)", x = "Year") +
+  labs(title = "- Non-Small Businesses DoD", y = "Survival Rates (percentages)", x = "Year") +
   guides(fill=FALSE)
 
 
@@ -2651,7 +2655,7 @@ plot_2004_DoD_NS <- ggplot(pie_2004_NS_DoD_df, aes(x=group, y=perc_value, fill=g
 #combine plots#
 #******##
 #t <- textGrob("Survival Rates 2001 Sample", fontsize=42)
-grid.arrange(plot_2004_DoD_SMALL, plot_2004_DoD_ALL, plot_2004_DoD_NS)
+grid.arrange(plot_2004_SMALL, plot_2004_DoD_SMALL, plot_2004_ALL, plot_2004_DoD_ALL, plot_2004_NS, plot_2004_DoD_NS)
 
 #**********************************************************************#
 
@@ -2899,7 +2903,7 @@ plot_2005_ALL <- ggplot(pie_2005_ALL_df, aes(x=group, y=perc_value, fill=group))
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") + 
+  labs(title = "- All New Entrants All Fed", y = "Survival Rates (percentages)", x = "Year") + 
   guides(fill=FALSE)
 
 
@@ -2925,7 +2929,8 @@ plot_2005_SMALL <- ggplot(pie_2005_SM_df, aes(x=group, y=perc_value, fill=group)
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2005 Sample - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
+  labs(title = "Survival Rates 2005 All Federal Agencies - Small Businesses", y = "Survival Rates (percentages)", x = "Year") + 
+  guides(fill=FALSE)
 
 ##******##
 ##Non-Small NE##
@@ -2949,7 +2954,7 @@ plot_2005_NS <- ggplot(pie_2005_NS_df, aes(x=group, y=perc_value, fill=group)) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "- Non-Small Businesses", y = "Survival Rates (percentages)", x = "Year") +
+  labs(title = "- Non-Small Businesses All Fed", y = "Survival Rates (percentages)", x = "Year") +
   guides(fill=FALSE)
 
 ##*****##
@@ -3201,7 +3206,7 @@ plot_2005_DoD_ALL <- ggplot(pie_2005_ALL_DoD_df, aes(x=group, y=perc_value, fill
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") +
+  labs(title = "- All New Entrants DoD", y = "Survival Rates (percentages)", x = "Year") +
   guides(fill=FALSE)
 
 
@@ -3228,7 +3233,7 @@ plot_2005_DoD_SMALL <- ggplot(pie_2005_SM_DoD_df, aes(x=group, y=perc_value, fil
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2005 Sample DoD - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
+  labs(title = "Survival Rates 2005 DoD - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
 
 ##******##
 ##Non-Small NE##
@@ -3252,14 +3257,14 @@ plot_2005_DoD_NS <- ggplot(pie_2005_NS_DoD_df, aes(x=group, y=perc_value, fill=g
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "- Non-Small Businesses - DoD", y = "Survival Rates (percentages)", x = "Year") +
+  labs(title = "- Non-Small Businesses DoD", y = "Survival Rates (percentages)", x = "Year") +
   guides(fill=FALSE)
 
 ##*****##
 #combine plots#
 #******##
 #t <- textGrob("Survival Rates 2001 Sample", fontsize=42)
-grid.arrange(plot_2005_DoD_SMALL, plot_2005_DoD_ALL, plot_2005_DoD_NS)
+grid.arrange(plot_2005_SMALL, plot_2005_DoD_SMALL, plot_2005_ALL, plot_2005_DoD_ALL, plot_2005_NS, plot_2005_DoD_NS)
 
 
 #**********************************************************************#
@@ -3508,7 +3513,7 @@ plot_2006_ALL <- ggplot(pie_2006_ALL_df, aes(x=group, y=perc_value, fill=group))
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") + 
+  labs(title = "- All New Entrants All Fed", y = "Survival Rates (percentages)", x = "Year") + 
   guides(fill=FALSE)
 
 
@@ -3534,7 +3539,8 @@ plot_2006_SMALL <- ggplot(pie_2006_SM_df, aes(x=group, y=perc_value, fill=group)
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2006 Sample - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
+  labs(title = "Survival Rates 2006 All Federal Agencies - Small Businesses", y = "Survival Rates (percentages)", x = "Year") + 
+  guides(fill=FALSE)
 
 ##******##
 ##Non-Small NE##
@@ -3558,7 +3564,7 @@ plot_2006_NS <- ggplot(pie_2006_NS_df, aes(x=group, y=perc_value, fill=group)) +
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "- Non-Small Businesses", y = "Survival Rates (percentages)", x = "Year") +
+  labs(title = "- Non-Small Businesses All Fed", y = "Survival Rates (percentages)", x = "Year") +
   guides(fill=FALSE)
 
 
@@ -3814,7 +3820,7 @@ plot_2006_DoD_ALL <- ggplot(pie_2006_ALL_DoD_df, aes(x=group, y=perc_value, fill
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
-  labs(title = "- All New Entrants", y = "Survival Rates (percentages)", x = "Year") + 
+  labs(title = "- All New Entrants DoD", y = "Survival Rates (percentages)", x = "Year") + 
   guides(fill=FALSE)
 
 
@@ -3840,7 +3846,7 @@ plot_2006_DoD_SMALL <- ggplot(pie_2006_SM_DoD_df, aes(x=group, y=perc_value, fil
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016", "Graduated")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "Survival Rates 2006 Sample DoD - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
+  labs(title = "Survival Rates 2006 DoD - Small Businesses", y = "Survival Rates (percentages)", x = "Year")
 
 ##******##
 ##Non-Small NE##
@@ -3864,7 +3870,7 @@ plot_2006_DoD_NS <- ggplot(pie_2006_NS_DoD_df, aes(x=group, y=perc_value, fill=g
   scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "2016")) +
   ylim(c(0, 70)) +
   geom_text(aes(label=percent(value)), vjust=-.25, size=3) +
-  labs(title = "- Non-Small Businesses", y = "Survival Rates (percentages)", x = "Year") +
+  labs(title = "- Non-Small Businesses DoD", y = "Survival Rates (percentages)", x = "Year") +
   guides(fill=FALSE)
 
 
@@ -3872,7 +3878,7 @@ plot_2006_DoD_NS <- ggplot(pie_2006_NS_DoD_df, aes(x=group, y=perc_value, fill=g
 #combine plots#
 #******##
 #t <- textGrob("Survival Rates 2001 Sample", fontsize=42)
-grid.arrange(plot_2006_DoD_SMALL, plot_2006_DoD_ALL, plot_2006_DoD_NS)
+grid.arrange(plot_2006_SMALL, plot_2006_DoD_SMALL, plot_2006_ALL, plot_2006_DoD_ALL, plot_2006_NS, plot_2006_DoD_NS)
 
 
 #************************************************************************************
@@ -4038,7 +4044,7 @@ ggplot(newentrants_v_incumbent_graphs, aes(x = FYear, y = total_obligations_allv
   xlab("Fiscal Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
   ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
-  scale_fill_manual(name = "Vendor Type", values = c("darkslategray1", "cadetblue4"), labels = c("Incumbent Firm", "New Entrant")) +
+  scale_fill_manual(name = "Vendor Type", values = c("darkslategray1", "cadetblue4"), labels = c("Incumbent Firms", "New Entrant")) +
   ggtitle("Percent of Obligations for New Entrnats vs. Incumbents (2001-2016) - All Federal Agencies")+
   ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
   ###    angle = 45) +
@@ -4055,8 +4061,8 @@ ggplot(newentrants_v_incumbent_graphs, aes(x = FYear, y = total_obligations_allv
 #*********
 ##ALL Fed Agencies##
 
-##creates a dataframe that counts the total number of obligations in each year
-count_total_obligations <- FPDS_cleaned_unique_graphs %>% 
+##creates a dataframe that counts the total number of obligations for each class of new entrants
+#over the entire time period count_total_obligations <- FPDS_cleaned_unique_graphs %>% 
   filter(top_smallbiz_bin == 1 | top_smallbiz_bin == 0) %>% 
   group_by(registrationYear) %>% 
   dplyr::summarise(sum_obligations = sum(total_obligations)) 
