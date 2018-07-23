@@ -1,0 +1,262 @@
+---
+title: "Defense Contract Statistics Model Complete"
+author: "Greg Sanders"
+date: "Monday, March 23, 2015"
+output: html_document
+---
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+#*************************************Required Libraries******************************************
+require(dplyr)
+require(grid)
+require(reshape2)
+require(stringr)
+require(ggplot2)
+library(Hmisc)
+library(readr)
+library(csis360)
+#*************************************Options*****************************************************
+options(error=recover)
+options(warn=1)
+
+#*************************************Lookup Files*****************************************************
+
+Path<-"https://github.com/CSISdefense/R-scripts-and-data/blob/master/"
+# Path<-"K:\\2007-01 PROFESSIONAL SERVICES\\R scripts and data\\"
+# Path<-"~\\FPDS\\R scripts and data\\"
+# Path<-"C:\\Users\\Greg Sanders\\SkyDrive\\Documents\\R Scripts and Data SkyDrive\\"
+source("https://raw.githubusercontent.com/CSISdefense/Crisis-Funding/master/ContractCleanup.r")
+source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/lookups.r")
+source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/helper.r")
+
+```
+
+#Combining Source Files
+##Sample Criteria
+```{r DetailCustomer}
+if(!exists("def_all")) def_all<-NULL
+# debug(input_sample_criteria)
+debug(input_sample_criteria)
+def_all<-input_sample_criteria(def_all,                                file="Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
+                      drop_incomplete=FALSE)
+  
+# load(file="Data\\def_all_detail.Rdata")
+save(file="Data\\def_all_detail.Rdata",def_all)
+
+```
+
+
+
+## Top PSC Office NAICS
+```{r TopPSCofficeNAICS}
+debug(read_and_join_experiment)
+def_all<-input_contract_psc_office_naics(def_all,                                file="Contract.SP_ContractSampleCriteriaDetailsCustomer.txt")
+
+#This works!  
+test<-readr::read_delim("Data\\Contract.SP_ContractTopPSCofficeNAICS.txt",delim="\t",
+                   na=c("NA","NULL"),
+                   col_types="icdcdcdcd")
+  # c(col_integer(),
+  #   col_character(),
+  #   col_double(),
+  #   col_character(),
+  #   col_double(),
+  #   col_character(),
+  #   col_double(),
+  #   col_character(),
+  #   col_double()))
+
+
+#This has problems. 
+# #lookup<-readr::read_delim(
+#       input,
+#       col_names=TRUE,
+#       delim=ifelse(substring(lookup_file,nchar(lookup_file)-3)==".csv",",","\t"),
+#       na=c("NA","NULL"),
+#       trim_ws=TRUE,
+#       col_types=col_types
+#     )
+
+def_all<-dplyr::left_join(def_all,test,by="CSIScontractID")
+
+
+  def_all$topContractingOfficeAgencyID<-factor(
+    def_all$topContractingOfficeAgencyID
+  )
+  def_all$topContractingOfficeID<-factor(
+    def_all$topContractingOfficeID
+  )
+  def_all$topProductOrServiceCode<-factor(
+    def_all$topProductOrServiceCode
+  )
+  def_all$topPrincipalNAICScode<-factor(
+    def_all$topPrincipalNAICScode
+  )
+  
+  def_all$AgencyID<-def_all$topContractingOfficeAgencyID
+  debug(na_check)
+      def_all<-read_and_join_experiment(def_all,
+                                    "Agency_AgencyID.csv",
+                                     by="AgencyID",
+                                     # replace_na_var="AgencyID",
+                                     add_var=c("Customer","SubCustomer"),
+                                     path = "https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                     directory = ""
+    )
+  def_all<- subset(def_all,Customer=="Defense")
+  def_all<-def_all[,!colnames(def_all) %in% 
+                     c(
+                       # "topContractingOfficeAgencyID",
+                       "topContractingOfficeAgencyIDamount"      ,
+                       # "topContractingOfficeID",
+                       "topContractingOfficeAmount"  ,
+                       # "topProductOrServiceCode",
+                       "topProductOrServiceAmount"               ,
+                       # "topPrincipalNAICScode",
+                       "topPrincipalNAICSamount",
+                       "Customer")]
+  # load(file="Data\\Federal_contract_CSIScontractID_complete.Rdata")
+  
+```
+
+
+##Initial Scope
+```{r Scope}
+# load(file="Data\\defense_contract_all_complete.Rdata")
+# undebug(input_initial_scope)
+def_all<-input_initial_scope(def_all,
+                             file="Contract.SP_ContractUnmodifiedAndOutcomeDetailsCustomer2017.txt")
+
+save(file="Data\\def_all_detail.Rdata",def_all)
+```
+
+## Contract Delta
+
+```{r Delta}
+# load(file="Data\\defense_contract_all_complete.Rdata")
+# undebug(input_initial_scope)
+def_all<-input_contract_delta(def_all,
+                              file="Defense_Contract_SP_ContractModificationDeltaCustomer.csv")
+
+save(file="Data\\def_all_detail.Rdata",def_all)
+```
+
+#Final Cleanup and Output
+##Applying lookups
+```{r PostApply}
+# debug(apply_lookups)
+
+
+def_all<-apply_lookups(Path,def_all)
+
+
+
+
+# def_all<-csis360::read_and_join(
+#   def_all,
+#   "Lookup_SubCustomer.csv",
+#   by=c("Customer","SubCustomer"),
+#   # replace_na_var=NULL,
+#   # overlap_var_replaced=TRUE,
+#   add_var="SubCustomer.sum"
+#   # new_var_checked=TRUE,
+#   # skip_check_var="CHPKisCrisisFunding"
+#   )
+
+# def_all$SubCustomer.sum<-factor(def_all$SubCustomer.sum)
+# def_all$SubCustomer.sum<-droplevels(def_all$SubCustomer.sum)
+# def_all$SubCustomer.sum<-droplevels(def_all$SubCustomer.sum)
+
+
+
+save(file="Data\\def_contract_all_complete.Rdata",def_all)
+# def_all<-rename_dataset(def_all)
+
+```
+##Dataset Output
+
+```{r DatasetOutput}
+load(file="Data\\defense_contract_all_complete.Rdata")
+
+     
+def_all<-rename_dataset(def_all)
+def_all<-def_all[,colnames(def_all) %in% c(
+  "CSIScontractID",
+   # IsIDV,
+  "FxCb",
+  "Fee",
+  "UCA",
+  "Comp",
+  "EffComp",
+  "Urg",
+  # MDAP,
+  # unmodifiedSystemequipmentcode,
+  "Who",
+  "Veh",
+  "PSR",
+  "What",
+  "Where",
+  "Intl",
+  # "LowCeil",
+  "Ceil",
+  "Dur",
+  "Offr",
+  # IsIDV,
+  # Soft,
+  "CBre",
+  "CRai",
+  "NChg",
+  "Term",
+  "UnmodifiedNumberOfOffersReceived",
+  "UnmodifiedContractBaseAndAllOptionsValue",
+  "SumOfisChangeOrder",
+  "ChangeOrderBaseAndAllOptionsValue",
+  "NewWorkUnmodifiedBaseAndAll",
+  # pChangeOrderObligated,
+  "UnmodifiedDays",
+  # "MinOfEffectiveDate",
+  "StartFY",
+  "Action.Obligation",
+  "Agency",
+  "Office",
+  "ProdServ",
+  "NAICS",
+  "MaxOfDecisionTree",
+  # "MaxOfDecisionTreeStep4",
+  "MinOfDecisionTree",
+  # "MinOfDecisionTreeStep4"
+  "LastCurrentCompletionDate",
+  "UnmodifiedCurrentCompletionDate",
+  "IsClosed"
+)]
+# 
+
+   
+
+write.table(def_all
+  ,file=paste("data\\defense_contract_all.csv"
+    ,sep=""
+  )
+  #   ,header=TRUE
+  , sep=","
+  , row.names=FALSE
+  , append=FALSE
+)
+
+
+
+
+summary(def_all$Agency[def_all$Who=="Uncategorized"])
+
+save(def_all,file="data\\defense_contract_all.RData")
+  
+#Strip out the cuts
+
+
+
+```
+
