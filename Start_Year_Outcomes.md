@@ -222,9 +222,9 @@ all_labeled<-function(data){
 
 only_complete<-function(data){
   data<-all_labeled(data)
-  subset(data,(LastCurrentCompletionDate<=as.Date("2016-09-30") |
+  subset(data,(LastCurrentCompletionDate<=as.Date("2017-09-30") |
               IsClosed==1) &
-           UnmodifiedCurrentCompletionDate<as.Date("2016-09-30"))
+           UnmodifiedCurrentCompletionDate<as.Date("2017-09-30"))
 }
 ```
 
@@ -257,36 +257,36 @@ head(def_all)
 ```
 
 ```
-## # A tibble: 6 x 39
-## # Groups:   Ceil [2]
+## # A tibble: 6 x 43
+## # Groups:   Ceil [1]
 ##   CSIScontractID StartFY Action.Obligation LastCurrentCompletionDate
 ##            <int>   <int>             <dbl> <date>                   
-## 1        3375818    2006            92160  2006-09-30               
-## 2        4000840    2006             3097  2006-09-23               
-## 3       21538471    2005             3574  2004-11-08               
-## 4       10123906    2006         20613770. 2008-12-31               
-## 5        5261947    2011             6500  2011-10-29               
-## 6       63603967    2016             3470. 2015-12-09               
-## # ... with 35 more variables:
-## #   UnmodifiedContractBaseAndAllOptionsValue <dbl>, UnmodifiedDays <dbl>,
-## #   Dur <ord>, Ceil <ord>, CBre <ord>,
+## 1           5967    2001                 0 NA                       
+## 2           5968    2001                 0 NA                       
+## 3           5969    2001                 0 NA                       
+## 4           6962    2001                 0 NA                       
+## 5           6961    2001                 0 NA                       
+## 6           6964    2001                 0 NA                       
+## # ... with 39 more variables:
+## #   UnmodifiedContractBaseAndAllOptionsValue <dbl>,
 ## #   ChangeOrderBaseAndAllOptionsValue <dbl>,
 ## #   UnmodifiedNumberOfOffersReceived <int>,
 ## #   UnmodifiedCurrentCompletionDate <date>, IsClosed <fct>, Term <fct>,
-## #   SumOfisChangeOrder <int>, b_CBre <dbl>, j_CBre <dbl>, b_Term <dbl>,
-## #   j_Term <dbl>, pChangeOrderUnmodifiedBaseAndAll <dbl>,
-## #   pChange3Sig <dbl>, CRai <fct>, n_CBre <dbl>, l_CBre <dbl>,
-## #   l_Ceil <dbl>, ceil.median.wt <dbl>, Ceil.Simple <ord>, Ceil.Big <ord>,
-## #   Ceil.1m <ord>, l_Days <dbl>, UnmodifiedYearsFloat <dbl>,
-## #   UnmodifiedYearsCat <dbl>, Dur.Simple <ord>, cl_Ceil <dbl>,
-## #   cl_Days <dbl>, TermNum <int>, ObligationWT <dbl>, NChg <fct>,
-## #   ContractCount <dbl>
+## #   SumOfisChangeOrder <int>, UnmodifiedDays <dbl>, Dur <ord>, Ceil <ord>,
+## #   CBre <ord>, Agency <fct>, Office <fct>, ProdServ <fct>, NAICS <fct>,
+## #   b_CBre <dbl>, j_CBre <dbl>, b_Term <dbl>, j_Term <dbl>,
+## #   pChangeOrderUnmodifiedBaseAndAll <dbl>, pChange3Sig <dbl>, CRai <fct>,
+## #   n_CBre <dbl>, l_CBre <dbl>, l_Ceil <dbl>, ceil.median.wt <dbl>,
+## #   Ceil.Simple <ord>, Ceil.Big <ord>, Ceil.1m <ord>, l_Days <dbl>,
+## #   UnmodifiedYearsFloat <dbl>, UnmodifiedYearsCat <dbl>,
+## #   Dur.Simple <ord>, cl_Ceil <dbl>, cl_Days <dbl>, TermNum <int>,
+## #   ObligationWT <dbl>, NChg <fct>, ContractCount <dbl>
 ```
 
 ```r
 write.csv(subset(def_all,Term=="Terminated"),"Terminated.csv")
 def_all<-subset(def_all,  StartFY>=2007 & 
-                                               StartFY<=2015 
+                                               StartFY<=2016 
                 )
 ```
 
@@ -407,30 +407,30 @@ head(def_all)
 ```
 
 ```
-## # A tibble: 6 x 39
-## # Groups:   Ceil [2]
+## # A tibble: 6 x 43
+## # Groups:   Ceil [1]
 ##   CSIScontractID StartFY Action.Obligation LastCurrentCompletionDate
 ##            <int>   <int>             <dbl> <date>                   
-## 1        5261947    2011             6500  2011-10-29               
-## 2       22544223    2009             7687  2009-07-20               
-## 3        9334467    2010            22000  2010-11-20               
-## 4       61736309    2015              779. 2014-12-18               
-## 5       22071327    2009             4406  2010-08-16               
-## 6       62898001    2015              248. 2015-02-13               
-## # ... with 35 more variables:
-## #   UnmodifiedContractBaseAndAllOptionsValue <dbl>, UnmodifiedDays <dbl>,
-## #   Dur <ord>, Ceil <ord>, CBre <ord>,
+## 1        1192685    2007                 0 NA                       
+## 2        1192686    2007                 0 NA                       
+## 3        1192687    2007                 0 NA                       
+## 4        1192688    2007                 0 NA                       
+## 5        1192693    2008                 0 NA                       
+## 6        1192694    2008                 0 NA                       
+## # ... with 39 more variables:
+## #   UnmodifiedContractBaseAndAllOptionsValue <dbl>,
 ## #   ChangeOrderBaseAndAllOptionsValue <dbl>,
 ## #   UnmodifiedNumberOfOffersReceived <int>,
 ## #   UnmodifiedCurrentCompletionDate <date>, IsClosed <fct>, Term <fct>,
-## #   SumOfisChangeOrder <int>, b_CBre <dbl>, j_CBre <dbl>, b_Term <dbl>,
-## #   j_Term <dbl>, pChangeOrderUnmodifiedBaseAndAll <dbl>,
-## #   pChange3Sig <dbl>, CRai <fct>, n_CBre <dbl>, l_CBre <dbl>,
-## #   l_Ceil <dbl>, ceil.median.wt <dbl>, Ceil.Simple <ord>, Ceil.Big <ord>,
-## #   Ceil.1m <ord>, l_Days <dbl>, UnmodifiedYearsFloat <dbl>,
-## #   UnmodifiedYearsCat <dbl>, Dur.Simple <ord>, cl_Ceil <dbl>,
-## #   cl_Days <dbl>, TermNum <int>, ObligationWT <dbl>, NChg <fct>,
-## #   ContractCount <dbl>
+## #   SumOfisChangeOrder <int>, UnmodifiedDays <dbl>, Dur <ord>, Ceil <ord>,
+## #   CBre <ord>, Agency <fct>, Office <fct>, ProdServ <fct>, NAICS <fct>,
+## #   b_CBre <dbl>, j_CBre <dbl>, b_Term <dbl>, j_Term <dbl>,
+## #   pChangeOrderUnmodifiedBaseAndAll <dbl>, pChange3Sig <dbl>, CRai <fct>,
+## #   n_CBre <dbl>, l_CBre <dbl>, l_Ceil <dbl>, ceil.median.wt <dbl>,
+## #   Ceil.Simple <ord>, Ceil.Big <ord>, Ceil.1m <ord>, l_Days <dbl>,
+## #   UnmodifiedYearsFloat <dbl>, UnmodifiedYearsCat <dbl>,
+## #   Dur.Simple <ord>, cl_Ceil <dbl>, cl_Days <dbl>, TermNum <int>,
+## #   ObligationWT <dbl>, NChg <fct>, ContractCount <dbl>
 ```
 
 
@@ -980,7 +980,7 @@ ggplot(TerminatedSDurSCeilStatCount,
     theme(legend.position="bottom") #, position=pd
 ```
 
-![](Annual_Termination_files/figure-html/TermSDurSCeilCount-1.png)<!-- -->
+![](Start_Year_Outcomes_files/figure-html/TermSDurSCeilCount-1.png)<!-- -->
 
 ```r
 summary(def_all$StartFY
@@ -989,7 +989,7 @@ summary(def_all$StartFY
 
 ```
 ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-##    2007    2009    2011    2011    2014    2015
+##    2007    2010    2014    2013    2015    2016
 ```
 
 ```r
@@ -1001,16 +1001,16 @@ ggplot(def_all,aes(x=l_Days))+geom_histogram()
 ```
 
 ```
-## Warning: Removed 174983 rows containing non-finite values (stat_bin).
+## Warning: Removed 186277 rows containing non-finite values (stat_bin).
 ```
 
-![](Annual_Termination_files/figure-html/TermSDurSCeilCount-2.png)<!-- -->
+![](Start_Year_Outcomes_files/figure-html/TermSDurSCeilCount-2.png)<!-- -->
 
 ```r
 ggplot(subset(def_all,UnmodifiedDays<1),aes(x=UnmodifiedDays))+geom_histogram()
 ```
 
-![](Annual_Termination_files/figure-html/TermSDurSCeilCount-3.png)<!-- -->
+![](Start_Year_Outcomes_files/figure-html/TermSDurSCeilCount-3.png)<!-- -->
 
 
 
@@ -1717,7 +1717,7 @@ ggplot(BreachedSDurSCeilStatCount,
     theme(legend.position="bottom") #, position=pd
 ```
 
-![](Annual_Termination_files/figure-html/CBreSDurSCeilCount-1.png)<!-- -->
+![](Start_Year_Outcomes_files/figure-html/CBreSDurSCeilCount-1.png)<!-- -->
 
 ```r
 summary(def_all$StartFY
@@ -1726,7 +1726,7 @@ summary(def_all$StartFY
 
 ```
 ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-##    2007    2009    2011    2011    2014    2015
+##    2007    2010    2014    2013    2015    2016
 ```
 
 ```r
@@ -1738,16 +1738,16 @@ ggplot(def_all,aes(x=l_Days))+geom_histogram()
 ```
 
 ```
-## Warning: Removed 174983 rows containing non-finite values (stat_bin).
+## Warning: Removed 186277 rows containing non-finite values (stat_bin).
 ```
 
-![](Annual_Termination_files/figure-html/CBreSDurSCeilCount-2.png)<!-- -->
+![](Start_Year_Outcomes_files/figure-html/CBreSDurSCeilCount-2.png)<!-- -->
 
 ```r
 ggplot(subset(def_all,UnmodifiedDays<1),aes(x=UnmodifiedDays))+geom_histogram()
 ```
 
-![](Annual_Termination_files/figure-html/CBreSDurSCeilCount-3.png)<!-- -->
+![](Start_Year_Outcomes_files/figure-html/CBreSDurSCeilCount-3.png)<!-- -->
 
 ```r
 View(subset(def_all,Ceil.Big=="0k - <100k" & Dur.Simple=="(~2 years+]"))
@@ -1788,7 +1788,7 @@ ggplot(df.QCrai,
   facet_grid(Ceil~Dur)+labs(title="All Six Quantiles")
 ```
 
-![](Annual_Termination_files/figure-html/Quantile -1.png)<!-- -->
+![](Start_Year_Outcomes_files/figure-html/Quantile -1.png)<!-- -->
 
 ```r
 ggplot(subset(df.QCrai,
@@ -1803,7 +1803,7 @@ ggplot(subset(df.QCrai,
   labs(title="Five Quantiles (no 99%)")
 ```
 
-![](Annual_Termination_files/figure-html/Quantile -2.png)<!-- -->
+![](Start_Year_Outcomes_files/figure-html/Quantile -2.png)<!-- -->
 
 ```r
 #Test to see which percentiles register at all.
@@ -1920,7 +1920,7 @@ CRaiOutput<-ggplot(subset(df.QCrai.SDur,
 CRaiOutput
 ```
 
-![](Annual_Termination_files/figure-html/QuantileSimpleDur-1.png)<!-- -->
+![](Start_Year_Outcomes_files/figure-html/QuantileSimpleDur-1.png)<!-- -->
 
 ```r
 ggsave("CRaiOutput.png",
@@ -1943,7 +1943,7 @@ ggplot(subset(df.QCrai.SDur,
   scale_y_continuous(labels=percent)
 ```
 
-![](Annual_Termination_files/figure-html/QuantileSimpleDur-2.png)<!-- -->
+![](Start_Year_Outcomes_files/figure-html/QuantileSimpleDur-2.png)<!-- -->
 
 ```r
 #Test to see which percentiles register at all.
@@ -2073,7 +2073,7 @@ CRaiOutput<-ggplot(subset(df.QCrai.SDur,
 CRaiOutput
 ```
 
-![](Annual_Termination_files/figure-html/QuantileSimpleDurSimpleCeil-1.png)<!-- -->
+![](Start_Year_Outcomes_files/figure-html/QuantileSimpleDurSimpleCeil-1.png)<!-- -->
 
 ```r
 ggsave("CRaiOutput.png",
@@ -2096,7 +2096,7 @@ ggplot(subset(df.QCrai.SDur,
   scale_y_continuous(labels=percent)
 ```
 
-![](Annual_Termination_files/figure-html/QuantileSimpleDurSimpleCeil-2.png)<!-- -->
+![](Start_Year_Outcomes_files/figure-html/QuantileSimpleDurSimpleCeil-2.png)<!-- -->
 
 ```r
 #Test to see which percentiles register at all.
@@ -2379,7 +2379,7 @@ CRaiOutput<-ggplot(subset(df.QCrai.SDur,
 CRaiOutput
 ```
 
-![](Annual_Termination_files/figure-html/QuantileSimpleDurCeil.1m-1.png)<!-- -->
+![](Start_Year_Outcomes_files/figure-html/QuantileSimpleDurCeil.1m-1.png)<!-- -->
 
 ```r
 ggsave("CRaiOutput.png",
@@ -2402,7 +2402,7 @@ ggplot(subset(df.QCrai.SDur,
   scale_y_continuous(labels=percent)
 ```
 
-![](Annual_Termination_files/figure-html/QuantileSimpleDurCeil.1m-2.png)<!-- -->
+![](Start_Year_Outcomes_files/figure-html/QuantileSimpleDurCeil.1m-2.png)<!-- -->
 
 ```r
 #Test to see which percentiles register at all.
