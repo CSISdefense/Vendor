@@ -121,6 +121,29 @@ binned_fitted_versus_term_residuals<-function(model){
     labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 }
 
+binned_fitted_versus_residuals<-function(model){
+  if(class(model)=="glmerMod")
+  {
+    if(!is.null(model@frame$b_CBre)){
+      graph<-binned_fitted_versus_cbre_residuals(model)
+    } else if(!is.null(model@frame$b_CBre)){
+      graph<-binned_fitted_versus_term_residuals(model)
+    } 
+    else{stop("Outcome variable not recognized.")}
+  }
+  else
+  {
+    if(!is.null(model$model$b_CBre)){
+      graph<-binned_fitted_versus_cbre_residuals(model)
+    } else if(!is.null(model$model$b_Term)){
+      graph<-binned_fitted_versus_term_residuals(model)
+    } 
+    else{stop("Outcome variable not recognized.")}
+  }
+  graph
+}
+
+
 binned_fitted_versus_cbre_residuals<-function(model){
   
   #Save this for a future GLM
@@ -160,6 +183,30 @@ binned_fitted_versus_cbre_residuals<-function(model){
     labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 }
 
+residuals_plot<-function(model,col="fitted",bins=40){
+  if(class(model)=="glmerMod")
+  {
+    if(!is.null(model@frame$b_CBre)){
+      graph<-residuals_cbre_plot(model,col,bins=bins)
+    } else if(!is.null(model@frame$b_CBre)){
+      graph<-residuals_term_plot(model,col,bins=bins)
+    } 
+    else{stop("Outcome variable not recognized.")}
+  }
+  else
+  {
+    if(!is.null(model$model$b_CBre)){
+      graph<-residuals_cbre_plot(model,col,bins=bins)
+    } else if(!is.null(model$model$b_Term)){
+      graph<-residuals_term_plot(model,col,bins=bins)
+    } 
+    else{stop("Outcome variable not recognized.")}
+  }
+  graph
+}
+  
+
+
 
 residuals_term_plot<-function(model,x_col="fitted",bins=40){
   #Plot the fitted values vs actual results
@@ -173,8 +220,7 @@ residuals_term_plot<-function(model,x_col="fitted",bins=40){
       b_Term=model@frame$b_Term
     )
     if (x_col!="fitted"){
-      data$x_col<-
-        test<-model@frame[,x_col]
+      data$x_col<-model@frame[,x_col]
       colnames(data)[colnames(data)=="x_col"]<-x_col
     }
     
@@ -188,8 +234,7 @@ residuals_term_plot<-function(model,x_col="fitted",bins=40){
     )
     
     if (x_col!="fitted"){
-      data$x_col<-
-        test<-model$model[,x_col]
+      data$x_colt<-model$model[,x_col]
       colnames(data)[colnames(data)=="x_col"]<-x_col
     }
   }
@@ -200,7 +245,7 @@ residuals_term_plot<-function(model,x_col="fitted",bins=40){
   data<-binned.resids (data[,x_col],
                        data$fitted-data$b_Term, nclass=bins)$binned
 
-   ggplot(data=data,
+   br<-ggplot(data=data,
          aes(x=xbar,y-ybar))+
     geom_point(aes(y=ybar))+ #Residuals
     geom_line(aes(y=se2),col="grey")+
@@ -208,7 +253,10 @@ residuals_term_plot<-function(model,x_col="fitted",bins=40){
     labs(title="Binned residual plot",
          y="Average residual")
 
-  
+   if (x_col=="fitted"){
+     br<-br+labs(x="Estimated  Pr (Termination)")
+   }
+  br
 }
 
 residuals_cbre_plot<-function(model,x_col="fitted",bins=40){
@@ -247,7 +295,7 @@ residuals_cbre_plot<-function(model,x_col="fitted",bins=40){
   data<-binned.resids (data[,x_col],
                        data$fitted-data$b_CBre, nclass=bins)$binned
   
-  ggplot(data=data,
+  br<-ggplot(data=data,
          aes(x=xbar,y-ybar))+
     geom_point(aes(y=ybar))+ #Residuals
     geom_line(aes(y=se2),col="grey")+
@@ -255,7 +303,10 @@ residuals_cbre_plot<-function(model,x_col="fitted",bins=40){
     labs(title="Binned residual plot",
          y="Average residual")
   
-  
+  if (x_col=="fitted"){
+    br<-br+labs(x="Estimated  Pr (Ceiling Breach)")
+  }
+  br
 }
 
 
@@ -787,22 +838,22 @@ NA_stats<-function(data,col){
 }
 
 
-residual_compare<-function(cbre_old,cbre_new,term_old,term_new,col,x_axis_name,bins=20){
-  if(col %in% model_colnames(cbre_old) & col %in% model_colnames(term_old)){
-    gridExtra::grid.arrange(residuals_cbre_plot(cbre_old,col,bins=bins)+
+residual_compare<-function(model1_old,model1_new,model2_old,model2_new,col,x_axis_name,bins=20){
+  if(col %in% model_colnames(model1_old) & col %in% model_colnames(model2_old)){
+    gridExtra::grid.arrange(residuals_plot(model1_old,col,bins=bins)+
                               labs(x=x_axis_name),
-                            residuals_cbre_plot(cbre_new,col,bins=bins)+
+                            residuals_plot(model1_new,col,bins=bins)+
                               labs(x=x_axis_name),
-                            residuals_term_plot(term_old,col,bins=bins)+
+                            residuals_plot(model2_old,col,bins=bins)+
                               labs(x=x_axis_name),
-                            residuals_term_plot(term_new,col,bins=bins)+
+                            residuals_plot(model2_new,col,bins=bins)+
                               labs(x=x_axis_name),
                             ncol=2)
   }
   else{#If the variable is just in the new model
-    gridExtra::grid.arrange(residuals_cbre_plot(cbre_new,col,bins=bins)+
+    gridExtra::grid.arrange(residuals_plot(model1_new,col,bins=bins)+
                               labs(x=x_axis_name),
-                            residuals_term_plot(term_new,col,bins=bins)+
+                            residuals_plot(model2_new,col,bins=bins)+
                               labs(x=x_axis_name),
                             ncol=1)
     
@@ -844,79 +895,136 @@ model_colnames<-function(model){
   output
 }
 
-summary_residual_compare<-function(cbre_old,cbre_new,term_old,term_new,bins=5){
+
+
+summary_residual_compare<-function(model1_old,model1_new,model2_old=NULL,model2_new=NULL,bins=5){
   #Plot the fitted values vs actual results
   
-  
-  gridExtra::grid.arrange(binned_fitted_versus_cbre_residuals(cbre_old),
-                          binned_fitted_versus_cbre_residuals(cbre_new),
-                          binned_fitted_versus_term_residuals(term_old),
-                          binned_fitted_versus_term_residuals(term_new),
-                          ncol=2)
-  
-  #This only works once you have some continuous variables o
-  
-  if(!is.na(bins)){
-    #Plot residuals versus fitted
-    if("c_OffCri" %in% model_colnames(cbre_old)) bins<-bins+5
-    if("cl_Ceil" %in% model_colnames(cbre_old)) bins<-bins+10
-    if("cl_Days" %in% model_colnames(cbre_old)) bins<-bins+5
-    gridExtra::grid.arrange(residuals_cbre_plot(cbre_old,bins=bins)+
-                              labs(x="Estimated  Pr (Ceiling Breach)"),
-                            residuals_cbre_plot(cbre_new,bins=bins)+
-                              labs(x="Estimated  Pr (Ceiling Breach)"),
-                            residuals_term_plot(term_old,bins=bins)+
-                              labs(x="Estimated  Pr (Termination)"),
-                            residuals_term_plot(term_new,bins=bins)+
-                              labs(x="Estimated  Pr (Termination)"),
+  if(!is.null(model2_new)){
+    gridExtra::grid.arrange(binned_fitted_versus_residuals(model1_old),
+                            binned_fitted_versus_residuals(model1_new),
+                            binned_fitted_versus_residuals(model2_old),
+                            binned_fitted_versus_residuals(model2_new),
+                            ncol=2)
+    #This only works once you have some continuous variables o
+    
+    if(!is.na(bins)){
+      #Plot residuals versus fitted
+      if("c_OffCri" %in% model_colnames(model1_old)) bins<-bins+5
+      if("cl_Ceil" %in% model_colnames(model1_old)) bins<-bins+10
+      if("cl_Days" %in% model_colnames(model1_old)) bins<-bins+5
+      
+    }      
+      gridExtra::grid.arrange(residuals_plot(model1_old,bins=bins),
+                              residuals_plot(model1_new,bins=bins),
+                              residuals_plot(model2_old,bins=bins),
+                              residuals_plot(model2_new,bins=bins),
+                              ncol=2)
+      
+
+    
+    # if("c_OffCri" %in% model_colnames(model1_new) & "c_OffCri" %in% model_colnames(model2_new)){
+    # residual_compare(model1_old,model1_new,model2_old,model2_new,"c_OffCri","Office Crisis %",10)
+    # }
+    
+    if("cl_Ceil" %in% model_colnames(model1_new)){
+      residual_compare(model1_old,model1_new,model2_old,model2_new,"cl_Ceil","Centered Log(Ceiling)",20)
+    }
+    
+    if("cl_Days" %in% model_colnames(model1_new)){
+      residual_compare(model1_old,model1_new,model2_old,model2_new,"cl_Days","Centered Log(Days)",10)
+    }
+    output<-NULL
+    if(class(model1_new)=="glmerMod" & class(model2_new)=="glmerMod") 
+    { 
+      # If the fit is singular or near-singular, there might be a higher chance of a false positive (we’re not necessarily screening out gradient and Hessian checking on singular directions properly); a higher chance that the model has actually misconverged (because the optimization problem is difficult on the boundary); and a reasonable argument that the random effects model should be simplified.
+      # https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html
+      # The definition of singularity is that some of the constrained parameters of the random effects theta parameters are on the boundary (equal to zero, or very very close to zero, say <10−6):
+      m1t<-getME(model1_new,"theta")
+      m1l<-getME(model1_new,"lower")
+      m2t<-getME(model2_new,"theta")
+      m2l<-getME(model2_new,"lower")
+      # min(m2t[ll==0])
+      
+      # min(m2t[ll==0])
+      output<-list(car::vif(model1_new),car::vif(model2_new),
+                   m1t[m1l==0],
+                   m2t[m2l==0],
+                   model1_new@optinfo$conv$lme4$messages,
+                   model2_new@optinfo$conv$lme4$messages
+      )
+    } 
+    else if ((class(model1_new)!="glmerMod" & class(model2_new)!="glmerMod") &
+             (class(model1_old)!="glmerMod" & class(model2_old)!="glmerMod")){
+      output<-list(rbind(deviance_stats(model1_old,"model1_old"),
+                         deviance_stats(model1_new,"model1_new"),
+                         deviance_stats(model2_old,"model2_old"),
+                         deviance_stats(model2_new,"model2_new")),
+                   car::vif(model1_new),car::vif(model2_new)
+      )
+    }
+    
+  } else{
+    gridExtra::grid.arrange(binned_fitted_versus_residuals(model1_old),
+                            binned_fitted_versus_residuals(model1_new),
                             ncol=2)
     
-  }
-  
-  # if("c_OffCri" %in% model_colnames(cbre_new) & "c_OffCri" %in% model_colnames(term_new)){
-  # residual_compare(cbre_old,cbre_new,term_old,term_new,"c_OffCri","Office Crisis %",10)
-  # }
-  
-  if("cl_Ceil" %in% model_colnames(cbre_new)){
-    residual_compare(cbre_old,cbre_new,term_old,term_new,"cl_Ceil","Centered Log(Ceiling)",20)
-  }
-  
-  if("cl_Days" %in% model_colnames(cbre_new)){
-    residual_compare(cbre_old,cbre_new,term_old,term_new,"cl_Days","Centered Log(Days)",10)
-  }
-  output<-NULL
-  if(class(cbre_new)=="glmerMod" & class(term_new)=="glmerMod") 
-  { 
-    # If the fit is singular or near-singular, there might be a higher chance of a false positive (we’re not necessarily screening out gradient and Hessian checking on singular directions properly); a higher chance that the model has actually misconverged (because the optimization problem is difficult on the boundary); and a reasonable argument that the random effects model should be simplified.
-    # https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html
-    # The definition of singularity is that some of the constrained parameters of the random effects theta parameters are on the boundary (equal to zero, or very very close to zero, say <10−6):
-    ct<-getME(cbre_new,"theta")
-    cl<-getME(cbre_new,"lower")
-    tt<-getME(term_new,"theta")
-    tl<-getME(term_new,"lower")
-    # min(tt[ll==0])
     
-    # min(tt[ll==0])
-    output<-list(car::vif(cbre_new),car::vif(term_new),
-                 ct[cl==0],
-                 tt[tl==0],
-                 cbre_new@optinfo$conv$lme4$messages,
-                 term_new@optinfo$conv$lme4$messages
-                 
-    )
-  } 
-  else if ((class(cbre_new)!="glmerMod" & class(term_new)!="glmerMod") &
-           (class(cbre_old)!="glmerMod" & class(term_old)!="glmerMod")){
-    output<-list(rbind(deviance_stats(cbre_old,"cbre_old"),
-                       deviance_stats(cbre_new,"cbre_new"),
-                       deviance_stats(term_old,"term_old"),
-                       deviance_stats(term_new,"term_new")),
-                 car::vif(cbre_new),car::vif(term_new)
-    )
+    
+    #This only works once you have some continuous variables o
+    
+    if(!is.na(bins)){
+      #Plot residuals versus fitted
+      if("c_OffCri" %in% model_colnames(model1_old)) bins<-bins+5
+      if("cl_Ceil" %in% model_colnames(model1_old)) bins<-bins+10
+      if("cl_Days" %in% model_colnames(model1_old)) bins<-bins+5
+      
+      
+    } 
+      gridExtra::grid.arrange(residuals_plot(model1_old,bins=bins),
+                              residuals_plot(model1_new,bins=bins),
+                              ncol=2)
+     
+    
+    # if("c_OffCri" %in% model_colnames(model1_new) & "c_OffCri" %in% model_colnames(model2_new)){
+    # residual_compare(model1_old,model1_new,model2_old,model2_new,"c_OffCri","Office Crisis %",10)
+    # }
+    
+    # if("cl_Ceil" %in% model_colnames(model1_new)){
+    #   residual_compare(model1_old,model1_new,model2_old,model2_new,"cl_Ceil","Centered Log(Ceiling)",20)
+    # }
+    # 
+    # if("cl_Days" %in% model_colnames(model1_new)){
+    #   residual_compare(model1_old,model1_new,model2_old,model2_new,"cl_Days","Centered Log(Days)",10)
+    # }
+    output<-NULL
+    if(class(model1_new)=="glmerMod") 
+    { 
+      # If the fit is singular or near-singular, there might be a higher chance of a false positive (we’re not necessarily screening out gradient and Hessian checking on singular directions properly); a higher chance that the model has actually misconverged (because the optimization problem is difficult on the boundary); and a reasonable argument that the random effects model should be simplified.
+      # https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html
+      # The definition of singularity is that some of the constrained parameters of the random effects theta parameters are on the boundary (equal to zero, or very very close to zero, say <10−6):
+      m1t<-getME(model1_new,"theta")
+      m1l<-getME(model1_new,"lower")
+      # min(m2t[ll==0])
+      
+      # min(m2t[ll==0])
+      output<-list(car::vif(model1_new),
+                   m1t[m1l==0],
+                   model1_new@optinfo$conv$lme4$messages
+      )
+    } 
+    else if (class(model1_new)!="glmerMod" & class(model1_old)!="glmerMod"){
+      output<-list(rbind(deviance_stats(model1_old,"model1_old"),
+                         deviance_stats(model1_new,"model1_new")),
+                   car::vif(model1_new)
+      )
+    }
   }
-  
-  output
-  
+
+
+
+output
+
 }
 
 
@@ -931,9 +1039,9 @@ glmer_examine<-function(model){
     t<-getME(model,"theta")
     l<-getME(model,"lower")
     
-    # min(tt[ll==0])
+    # min(m2t[ll==0])
     
-    # min(tt[ll==0])
+    # min(m2t[ll==0])
     if(!is.null(model@optinfo$conv$lme4$messages)){
       output<-list(car::vif(model),
                    model@optinfo$conv$lme4$messages,
