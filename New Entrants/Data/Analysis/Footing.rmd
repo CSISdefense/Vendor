@@ -2,11 +2,7 @@
 title: "Footing"
 author: "Greg Sanders"
 date: "July 16, 2018"
-output: 
-  html_document: 
-    fig_caption: yes
-    keep_md: yes
-    toc: yes
+output: html_document
 ---
 ## Setup
 ```{r setup, include=FALSE}
@@ -14,7 +10,6 @@ knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(ggplot2)
 library(csis360)
-
 ```
 
 
@@ -46,37 +41,82 @@ FPDS_data<-csis360::remove_bom(FPDS_data)
 
 FPDS_data<-csis360::deflate(FPDS_data,money_var="obligatedAmount",
                             fy_var="fiscal_year")
+#Calculate first_year
 FPDS_data<-FPDS_data %>%
   group_by(Dunsnumber) %>%
   dplyr::mutate(first_year=min(fiscal_year),
-    entrant=ifelse(min(fiscal_year)==fiscal_year,TRUE,FALSE) )
+    entrant=ifelse(min(fiscal_year)==fiscal_year,TRUE,FALSE))
 
-FPDS_duns_prev_fyear<-FPDS_data %>%
-  group_by(Dunsnumber,fiscal_year) %>%
-  dplyr::summarize(present=ifelse(=sum(obligatedAmount.Deflator.2017,na.rm=TRUE))
-
-
-FPDS_duns_fyear<-subset(FPDS_data,fiscal_year>=2000) %>%
+#Calculate annual spend and presence.
+FPDS_duns_fyear<-FPDS_data %>%
   group_by(Dunsnumber,fiscal_year,entrant,first_year) %>%
-  dplyr::summarize(obligatedAmount.2017=sum(obligatedAmount.Deflator.2017,na.rm=TRUE))
+  dplyr::summarize(obligatedAmount.2017=sum(obligatedAmount.Deflator.2017,na.rm=TRUE),
+                   present=max(obligatedAmount.Deflator.2017,na.rm=TRUE))
+FPDS_duns_fyear$present<-ifelse(FPDS_duns_fyear$present>0,1,0)
+summary(FPDS_duns_fyear$present)
+
+
+#Check if dunsnumber is present in previous year
+FPDS_duns_prev_fyear<-subset(FPDS_duns_fyear,select=c(fiscal_year,Dunsnumber,present))
+FPDS_duns_prev_fyear$fiscal_year<-FPDS_duns_prev_fyear$fiscal_year+1
+colnames(FPDS_duns_prev_fyear)[colnames(FPDS_duns_prev_fyear)=="present"]<-"prev_present"
+FPDS_duns_fyear<-left_join(FPDS_duns_fyear,FPDS_duns_prev_fyear)
+#Label NAs with 0, except when at start or end of series.
+FPDS_duns_fyear$prev_present[is.na(FPDS_duns_fyear$prev_present) & FPDS_duns_fyear$fiscal_year!=2000]<-0
+summary(FPDS_duns_fyear$prev_present)
+rm(FPDS_duns_prev_fyear)
+
+#Check if dunsnumber is present in next year
+FPDS_duns_next_fyear<-subset(FPDS_duns_fyear,select=c(fiscal_year,Dunsnumber,present))
+FPDS_duns_next_fyear$fiscal_year<-FPDS_duns_next_fyear$fiscal_year-1
+colnames(FPDS_duns_next_fyear)[colnames(FPDS_duns_next_fyear)=="present"]<-"next_present"
+FPDS_duns_fyear<-left_join(FPDS_duns_fyear,FPDS_duns_next_fyear)
+#Label NAs with 0, except when at start or end of series.
+FPDS_duns_fyear$next_present[is.na(FPDS_duns_fyear$next_present) & FPDS_duns_fyear$fiscal_year<2017]<-0
+summary(FPDS_duns_fyear$next_present)
+rm(FPDS_duns_next_fyear)
+  
 
 FPDS_duns_fyear$sample_year<-FPDS_duns_fyear$first_year
 FPDS_duns_fyear$sample_year[FPDS_duns_fyear$sample_year<2001 | FPDS_duns_fyear$sample_year>2006]<-"Not in sample"
 FPDS_duns_fyear$sample_year<-factor(FPDS_duns_fyear$sample_year,levels=c("Not in sample","2001","2002","2003","2004","2005","2006"))
 
-FPDS_summary<-FPDS_duns_fyear %>%
-  group_by(fiscal_year,entrant,first_year,sample_year) %>%
-  dplyr::summarize(obligatedAmount.2017=sum(obligatedAmount.2017,na.rm=TRUE))
 
+
+FPDS_duns_fyear$status<-NA
+FPDS_duns_fyear$status[FPDS_duns_fyear$present==0]<-"No net payments"
+FPDS_duns_fyear$status[is.na(FPDS_duns_fyear$status) & FPDS_duns_fyear$prev_present==0 & FPDS_duns_fyear$next_present==0]<-"Blip"
+FPDS_duns_fyear$status[is.na(FPDS_duns_fyear$status) & FPDS_duns_fyear$prev_present==0 & !is.na(FPDS_duns_fyear$next_present)]<-"Enter"
+FPDS_duns_fyear$status[is.na(FPDS_duns_fyear$status) & FPDS_duns_fyear$next_present==0 & !is.na(FPDS_duns_fyear$prev_present)]<-"Exit"
+FPDS_duns_fyear$status[is.na(FPDS_duns_fyear$status) & FPDS_duns_fyear$prev_present==1 & FPDS_duns_fyear$next_present==1]<-"Steady"
+FPDS_duns_fyear$status<-factor(FPDS_duns_fyear$status)
+summary(FPDS_duns_fyear$status)
+
+FPDS_duns_fyear<-subset(FPDS_duns_fyear,fiscal_year>=2000)
+
+save(file="../Cleaning Data/footing.rda",FPDS_data,FPDS_duns_fyear)
 
 ```
 
-## Benchmark plots
+## Count
 
 First lets look at the total number of vendors.
 
-```{r count, echo=FALSE, fig.width=7, fig.height=7}
+```{r count, echo=FALSE, fig.width=6.5, fig.height=9}
 
+build_plot(
+  data=FPDS_summary,
+  chart_geom = "Line Chart",
+  share = TRUE,
+  x_var="fiscal_year",
+  y_var="count", #Name of variable to plot on y-axis
+  color_var="entrant",       # name of coloration variable, as string
+  # facet_var="entrant",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=NULL,
+  column_key=NULL
+)
 
 build_plot(
   data=FPDS_duns_fyear,
@@ -84,8 +124,8 @@ build_plot(
   # share = FALSE,
   x_var="fiscal_year",
   # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
-  color_var="entrant",       # name of coloration variable, as string
-  # facet_var="entrant",        # name of facet variable, as string
+  color_var="status",       # name of coloration variable, as string
+  facet_var="status",        # name of facet variable, as string
   legend=TRUE, #Include a legend
   caption=TRUE, #Include a source caption
   labels_and_colors=NULL,
@@ -101,6 +141,21 @@ build_plot(
   x_var="fiscal_year",
   # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
   color_var="entrant",       # name of coloration variable, as string
+  facet_var="entrant",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=NULL,
+  column_key=NULL
+)+facet_wrap(~entrant,scales="free_y",ncol=1)
+
+
+build_plot(
+  data=FPDS_duns_fyear,
+  chart_geom = "Histogram",
+  # share = FALSE,
+  x_var="fiscal_year",
+  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  color_var="status",       # name of coloration variable, as string
   facet_var="entrant",        # name of facet variable, as string
   legend=TRUE, #Include a legend
   caption=TRUE, #Include a source caption
@@ -141,6 +196,22 @@ build_plot(
 
 
 build_plot(
+  data=FPDS_duns_fyear,
+  chart_geom = "Histogram",
+  # share = FALSE,
+  x_var="fiscal_year",
+  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  color_var="status",       # name of coloration variable, as string
+  facet_var="sample_year",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=NULL,
+  column_key=NULL
+)+facet_wrap(~sample_year,scales="fixed",ncol=1)+
+  labs(x="Fiscal Year of Transaction",y="Number of Contractors")
+
+
+build_plot(
   data=FPDS_cleaned_unique,
   chart_geom = "Histogram",
   # share = FALSE,
@@ -156,7 +227,7 @@ build_plot(
 
 
 ```
-
+# Dollars
 Then the vendor spend.
 
 ```{r dollars, fig.width=7, fig.height=7}
@@ -217,7 +288,7 @@ build_plot(
   caption=TRUE, #Include a source caption
   labels_and_colors=NULL,
   column_key=NULL
-)+facet_wrap(~sample_year,scales="free_y",ncol=1)+
+)+facet_wrap(~sample_year,scales="free_y",space="free_y",ncol=1)+
   labs(x="Fiscal Year of Transaction",y="Obligations 2017 $")
 
 
@@ -234,7 +305,7 @@ build_plot(
   caption=TRUE, #Include a source caption
   labels_and_colors=NULL,
   column_key=NULL
-)+labs(x="Fiscal Year of Contractor First Appearance",y="Obligations 2017 $")
+)labs(x="Fiscal Year of Contractor First Appearance",y="Obligations 2017 $")
 
 
 ```
