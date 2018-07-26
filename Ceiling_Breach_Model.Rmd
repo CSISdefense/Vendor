@@ -1123,11 +1123,18 @@ VIF for ceiling exceeded 2 for consolidated, and we compared a model with  HHI_l
 
 
 
+
+
 ##Type of Contract
 
 The next step adds a measure for whether the contract was cost-based or fixed-price. Prior CSIS research has found that fixed-price contracts do face a higher risk of termination across the board.
 
-###Model 04A: Fixed-Price
+
+##Type of Contract
+
+The next step adds a measure for whether the contract was cost-based or fixed-price. Prior CSIS research has found that fixed-price contracts do face a higher risk of termination across the board.
+
+###Model 04A: Fixed-Price Numerical
 ```{r Model04A}
 
 #Frequency Plot
@@ -1135,6 +1142,16 @@ summary_discrete_plot(smp,"FxCb")
 
 
 #Create the model
+CBre_Cons_03D <- glm (data=smp,
+                 b_CBre ~cl_HHI_lag1 + 
+                   cl_Ceil + cl_Days+ 
+                   Veh +
+                   cl_HHI_lag1:cl_Ceil  + #cl_HHI_lag1:cl_Days +
+                 Veh:cl_Days+
+                   Veh:cl_Ceil+
+                FxCb, family=binomial(link="logit"))
+display(CBre_Cons_03D)
+
 CBre_Comp_04A <- glm (data=smp,
                  b_CBre ~n_Comp + 
                    cl_Ceil + cl_Days+ 
@@ -1181,11 +1198,69 @@ And fixed price contracts do indeed have a significant coefficient that correlat
 
 
 
-##Type of Contract
+###Model 04B: Fixed-Price
+```{r Model04B}
 
-The next step adds a measure for whether the contract was cost-based or fixed-price. Prior CSIS research has found that fixed-price contracts do face a higher risk of termination across the board.
+#Frequency Plot
+summary_discrete_plot(smp,"FxCb")
 
-###Model 04A: Fixed-Price
+
+#Create the model
+CBre_Cons_03D <- glm (data=smp,
+                 b_CBre ~cl_HHI_lag1 + 
+                   cl_Ceil + cl_Days+ 
+                   Veh +
+                   cl_HHI_lag1:cl_Ceil  + #cl_HHI_lag1:cl_Days +
+                 Veh:cl_Days+
+                   Veh:cl_Ceil+
+                FxCb, family=binomial(link="logit"))
+display(CBre_Cons_03D)
+
+CBre_Comp_04B <- glm (data=smp,
+                 b_CBre ~n_Comp + 
+                   cl_Ceil + cl_Days+ 
+                   Veh +
+                   n_Fixed +
+                   #cl_HHI_lag1:cl_Ceil  + 
+                 Veh:cl_Days++
+                   
+                   Veh:cl_Ceil,
+                 family=binomial(link="logit"))
+display(CBre_Comp_04B)
+
+# Plot the model and Vehicle 
+# CBre_Comp_04B_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV){invlogit(
+#   cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+#         Comp*Ceil,Days*Ceil,Days*Comp,
+#         x,
+#         Days*x,Days*MIDV,Days*OIDV,
+#         Comp*x,Comp*MIDV,Comp*OIDV) %*%  coef(CBre_Comp_04A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"SIDV") +
+#   stat_function(fun = CBre_Comp_04A_curve,
+#                              args=list(Comp=0,Ceil=0,Days=0,
+#                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0),color="blue")+
+#   stat_function(fun = CBre_Comp_04A_curve,
+#                              args=list(Comp=2,Ceil=0,Days=0,
+#                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0),color="blue")
+# 
+# 
+# #Plot the fitted values vs actual results
+# binned_fitted_versus_cbre_residuals(CBre_Comp_04A)
+# 
+# #Plot residuals versus fittedO
+# residuals_cbre_plot(CBre_Comp_04A)+
+#   labs(x="Estimated  Pr (Ceiling Breach)")
+
+# residuals_cbre_plot(CBre_Comp_02F,"cl_days")+
+#   labs(x="Centered Log(Days)")
+
+```
+
+And fixed price contracts do indeed have a significant coefficient that correlates with higher termination risk. In addition, the addition of this variable reduces the pattern in the residuals that in the middle range. 
+
+
 ###Model 04B: Fixed-Price and Maximum Duration Intersection 
 Past CSIS research has found that fixed-price contracts do appear to be at higher risk if they have a longer maximum duration. Fixed-price contracting does require upfront estimation of likely costs, and thus a longer duration means more opportunity for changed circumstance.
 
