@@ -98,6 +98,10 @@ annual_summary<-defense_vendor %>%
   
   summarize_annual_naics<-function(data,naics_level=6){
     data$NAICS_Code<-substr(data$NAICS_Code,1,naics_level)
+    if(naics_level==2){
+      data$NAICS_Code<-create_naics2(data$NAICS_Code)
+    }
+    
     data<-data %>% group_by(Fiscal.Year,NAICS_Code)
     
     data<-data %>% #filter(Action.Obligation>0) %>%
