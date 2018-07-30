@@ -149,3 +149,23 @@ write.csv(defense_naics_vendor,"data//defense_naics_vendor.csv")
 write.csv(defense_vendor,"data//defense_vendor.csv")
 write.csv(annual_naics_summary,"data//annual_naics_summary.csv")
 write.csv(annual_summary,"data//annual_summary.csv")
+
+path<-"Data\\Economic\\Comparative Statistics for the United States and the States"
+core<-readr::read_csv(file.path(path,"ECN_2012_US_00CCOMP1_with_ann.csv"))
+core<-core[!core$GEO.id=="Geographic identifier code",]
+if(all(!is.na(core$GEO.id2))){
+  core<-core[,!colnames(core) %in% c("GEO.id2")]
+}
+core$`GEO.display-label`[1]
+if(all(core$GEO.id=="0100000US")){
+  core<-core[,!colnames(core) %in% c("GEO.id")]
+}
+if(all(core$`GEO.display-label`=="United States")){
+  core<-core[,!colnames(core) %in% c("GEO.display-label")]
+}
+if(length(core$NAICS.id[core$YEAR.id=="2012"])!=length(unique(core$NAICS.id[core$YEAR.id=="2012"]))){
+  stop("Duplicate 20012 entry")
+}
+if(length(core$NAICS.id[core$YEAR.id=="2007"])!=length(unique(core$NAICS.id[core$YEAR.id=="2007"]))){
+  stop("Duplicate 20012 entry")
+}
