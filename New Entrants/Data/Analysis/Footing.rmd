@@ -54,8 +54,8 @@ FPDS_data<-FPDS_data %>%
 #Calculate annual spend and presence.
 FPDS_duns_fyear<-FPDS_data %>%
   group_by(Dunsnumber,fiscal_year,entrant,first_year) %>%
-  #dplyr::summarize(obligatedAmount.2017=sum(obligatedAmount.Deflator.2017,na.rm=TRUE),
-  dplyr::summarize(obligatedAmount.Deflator.2016=sum(obligatedAmount.Deflator.2016,na.rm=TRUE),
+  dplyr::summarize(obligatedAmount.2017=sum(obligatedAmount.Deflator.2017,na.rm=TRUE),
+  # dplyr::summarize(obligatedAmount.Deflator.2016=sum(obligatedAmount.Deflator.2016,na.rm=TRUE),
                    present=max(obligatedAmount.Deflator.2016,na.rm=TRUE))
 FPDS_duns_fyear$present<-ifelse(FPDS_duns_fyear$present>0,1,0)
 summary(FPDS_duns_fyear$present)
@@ -100,6 +100,7 @@ summary(FPDS_duns_fyear$status)
 FPDS_duns_fyear<-subset(FPDS_duns_fyear,fiscal_year>=2000)
 
 save(file="../Cleaning Data/footing.rda",FPDS_data,FPDS_duns_fyear)
+# load(file="../Cleaning Data/footing.rda")
 
 ```
 
@@ -203,6 +204,27 @@ build_plot(
   column_key=NULL
 )+labs(x="Fiscal Year of Transaction",y="Number of Contractors") #what do you mean by fiscal year of transaction
 
+
+
+
+
+
+
+build_plot(
+  data=subset(FPDS_duns_fyear,sample_year!="Not in sample")
+  chart_geom = "Histogram",
+  # share = FALSE,
+  x_var="fiscal_year",
+  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  color_var="sample_year",       # name of coloration variable, as string
+  # facet_var="sample_year",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=NULL,
+  column_key=NULL
+)+labs(x="Fiscal Year of Transaction",y="Number of Contractors") #what do you mean by fiscal year of transaction
+
+
 #*******#
 #**SRC**#
 #*******#
@@ -241,6 +263,44 @@ build_plot(
   column_key=NULL
 )+facet_wrap(~sample_year,scales="fixed",ncol=1)+
   labs(x="Fiscal Year of Transaction",y="Number of Contractors")
+
+#GSS2018-07-30 Start year faceted, but only vendors in sample, x is fiscal year
+sample<-subset(FPDS_duns_fyear,sample_year!="Not in sample")
+build_plot(
+  data=sample,
+  chart_geom = "Histogram",
+  # share = FALSE,
+  x_var="fiscal_year",
+  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  color_var="sample_year",       # name of coloration variable, as string
+  facet_var="sample_year",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=NULL,
+  column_key=NULL
+)+facet_wrap(~sample_year,scales="fixed",ncol=1)+
+  labs(x="Fiscal Year of Transaction",y="Number of Contractors")
+
+#GSS2018-07-30 Start year faceted, but only vendors in sample, x is number of years since entry
+
+sample$years_in_sample<-sample$fiscal_year-sample$first_year
+build_plot(
+  data=sample,
+  chart_geom = "Histogram",
+  # share = FALSE,
+  x_var="years_in_sample",
+  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  color_var="sample_year",       # name of coloration variable, as string
+  facet_var="sample_year",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=NULL,
+  column_key=NULL
+)+facet_wrap(~sample_year,scales="fixed",ncol=1)+
+  labs(x="Years Since Vendor Became New Entrant",y="Number of Contractors")
+
+
+
 
 
 build_plot(
