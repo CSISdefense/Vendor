@@ -28,6 +28,10 @@ dir.exists("Analysis")
 file.exists("New Entrants.Rproj")
 list.files("../")
 FPDS_data <- read.delim(file.path("../Raw Data/FPDS","Vendor.SP_DunsnumberNewEntrants_all.txt"), fill = TRUE, header=TRUE,  na.strings = c("", "NULL"))
+
+setwd("K:/2018-01 NPS New Entrants/Data/Data/Raw Data/FPDS")
+FPDS_data <- read.delim("Vendor.SP_DunsnumberNewEntrants_all.txt", fill = TRUE, header=TRUE,  na.strings = c("", "NULL"))
+
 FPDS_data<-as.data.frame(FPDS_data)
 
 ```
@@ -50,8 +54,9 @@ FPDS_data<-FPDS_data %>%
 #Calculate annual spend and presence.
 FPDS_duns_fyear<-FPDS_data %>%
   group_by(Dunsnumber,fiscal_year,entrant,first_year) %>%
-  dplyr::summarize(obligatedAmount.2017=sum(obligatedAmount.Deflator.2017,na.rm=TRUE),
-                   present=max(obligatedAmount.Deflator.2017,na.rm=TRUE))
+  #dplyr::summarize(obligatedAmount.2017=sum(obligatedAmount.Deflator.2017,na.rm=TRUE),
+  dplyr::summarize(obligatedAmount.Deflator.2016=sum(obligatedAmount.Deflator.2016,na.rm=TRUE),
+                   present=max(obligatedAmount.Deflator.2016,na.rm=TRUE))
 FPDS_duns_fyear$present<-ifelse(FPDS_duns_fyear$present>0,1,0)
 summary(FPDS_duns_fyear$present)
 
@@ -103,9 +108,9 @@ save(file="../Cleaning Data/footing.rda",FPDS_data,FPDS_duns_fyear)
 First lets look at the total number of vendors.
 
 ```{r count, echo=FALSE, fig.width=6.5, fig.height=9}
-
+##counting the number of new entrants and incumbent firms##
 build_plot(
-  data=FPDS_summary,
+  data=FPDS_summary, ##where is FPDS summary?
   chart_geom = "Line Chart",
   share = TRUE,
   x_var="fiscal_year",
@@ -118,6 +123,7 @@ build_plot(
   column_key=NULL
 )
 
+##counting the number of new entrants and incumbent firms stacked##
 build_plot(
   data=FPDS_duns_fyear,
   chart_geom = "Histogram",
@@ -133,7 +139,24 @@ build_plot(
 )
 
 
+#*****#
+##SRC##
+#*****#
+#number of new entrants vs incumbent firms
+#drop years before 2001 and after 2016
+FPDS_duns_fyear_op <- FPDS_duns_fyear[!(FPDS_duns_fyear$fiscal_year<2001), ]
+FPDS_duns_fyear_op <- FPDS_duns_fyear_op[!(FPDS_duns_fyear_op$fiscal_year>2016), ]
 
+ggplot(FPDS_duns_fyear_op, aes(x = fiscal_year, fill = factor(entrant))) +
+  geom_histogram(position = "stack", binwidth = 1) +
+  scale_x_continuous(breaks = c(2001:2016)) +
+  xlab("Fiscal Year") +
+  ylab("Number of Vendors") +
+  scale_fill_manual(name = "New Entrants Types", values = c("darkslategray1", "cadetblue4"), labels = c("Incumbent", "New Entrant")) 
+#******************************#
+#******************************#
+
+##counting the number of new entrant and incumbent firms on two separate graphs##
 build_plot(
   data=FPDS_duns_fyear,
   chart_geom = "Histogram",
@@ -164,6 +187,8 @@ build_plot(
 )+facet_wrap(~entrant,scales="free_y",ncol=1)
 
 
+#number of vendors from each sample over time#
+#I think i want drop the "not included in sample" --> use FPDS_duns_fyear_op
 build_plot(
   data=FPDS_duns_fyear,
   chart_geom = "Histogram",
@@ -176,7 +201,30 @@ build_plot(
   caption=TRUE, #Include a source caption
   labels_and_colors=NULL,
   column_key=NULL
-)+labs(x="Fiscal Year of Transaction",y="Number of Contractors")
+)+labs(x="Fiscal Year of Transaction",y="Number of Contractors") #what do you mean by fiscal year of transaction
+
+#*******#
+#**SRC**#
+#*******#
+##drop those not in sample 
+#1. make not in sample binary
+table(FPDS_duns_fyear$sample_year)
+FPDS_duns_fyear$sample_year_bin <- revalue(FPDS_duns_fyear$sample_year, c("Not in sample"="0", "2001"="1", "2002"="2", "2003"="3", "2004"="4", "2005"="5", "2006"="6"))
+str(FPDS_duns_fyear$sample_year_bin)
+table(FPDS_duns_fyear$sample_year_bin)
+FPDS_duns_fyear$sample_year_bin <- as.numeric(as.character(FPDS_duns_fyear$sample_year_bin))
+str(FPDS_duns_fyear$sample_year_bin)
+table(FPDS_duns_fyear$sample_year_bin)
+
+FPDS_duns_fyear_samples <- FPDS_duns_fyear[!(FPDS_duns_fyear$sample_year_bin<1), ]
+FPDS_duns_fyear_samples_op <- FPDS_duns_fyear_samples[!(FPDS_duns_fyear_samples$fiscal_year<2001), ]
+FPDS_duns_fyear_samples_op <- FPDS_duns_fyear_samples_op[!(FPDS_duns_fyear_samples_op$fiscal_year>2016), ]
+
+
+ggplot(FPDS_duns_fyear_samples_op, aes(x = fiscal_year, fill = factor(sample_year))) +
+  geom_histogram(position = "stack", binwidth = .5)
+#*****************************************************************************************#
+#*****************************************************************************************#
 
 
 build_plot(
@@ -209,6 +257,8 @@ build_plot(
   column_key=NULL
 )+facet_wrap(~sample_year,scales="fixed",ncol=1)+
   labs(x="Fiscal Year of Transaction",y="Number of Contractors")
+
+
 
 
 build_plot(
@@ -246,6 +296,8 @@ build_plot(
   column_key=NULL
 )+labs(x="Fiscal Year of Transaction",y="Obligations 2017 $")
 
+
+##fiscal year of transaction
 build_plot(
   data=FPDS_summary,
   chart_geom = "Bar Chart",
