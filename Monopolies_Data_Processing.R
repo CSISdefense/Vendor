@@ -184,12 +184,24 @@ annual_naics2_summary$NAICS_Code
 
 join_economic<-function(data,core,num){
   data<-left_join(data,core,by=c("Fiscal.Year"="YEAR.id","NAICS_Code"="NAICS_Code"))
+  mismatch<-subset(data,Fiscal.Year %in% c(2007,2012) &
+                     is.na(NAICS.id) &!substr(NAICS_Code,1,2) %in% c(11,92) &
+                     !is.na(NAICS_Code))
+  mismatch<-mismatch %>% group_by(NAICS_Code) %>%
+    dplyr::summarize(Action.Obligation=sum(Action.Obligation,na.rm=TRUE),
+              Obligation.2016=sum(Obligation.2016,na.rm=TRUE),
+              minyear=min(Fiscal.Year),
+              maxyear=max(Fiscal.Year)
+              )
+
   write.csv(file=paste("Output\\NAICSunmatched",num,".csv",sep=""),
-            subset(data,Fiscal.Year %in% c(2007,2012) &
-                is.na(NAICS.id) &!substr(NAICS_Code,1,2) %in% c(11,92)))
+            mismatch
+            )
+  data
 }
 
 test<-join_economic(annual_naics2_summary,core,2)
+debug(join_economic)
 test<-join_economic(annual_naics3_summary,core,3)
 test<-join_economic(annual_naics4_summary,core,4)
 test<-join_economic(annual_naics5_summary,core,5)
