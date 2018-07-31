@@ -173,3 +173,24 @@ if(length(core$NAICS.id[core$YEAR.id=="2012"])!=length(unique(core$NAICS.id[core
 if(length(core$NAICS.id[core$YEAR.id=="2007"])!=length(unique(core$NAICS.id[core$YEAR.id=="2007"]))){
   stop("Duplicate 20012 entry")
 }
+core$YEAR.id<-as.numeric(core$YEAR.id)
+core$NAICS_Code<-core$NAICS.id
+core$NAICS_Code[core$NAICS.id %in% c("48-49(104)","48-49(105)")]<-"48-49"
+
+
+core$NAICS.id
+annual_naics2_summary$NAICS_Code
+
+
+join_economic<-function(data,core,num){
+  data<-left_join(data,core,by=c("Fiscal.Year"="YEAR.id","NAICS_Code"="NAICS_Code"))
+  write.csv(file=paste("Output\\NAICSunmatched",num,".csv",sep=""),
+            subset(data,Fiscal.Year %in% c(2007,2012) &
+                is.na(NAICS.id) &!substr(NAICS_Code,1,2) %in% c(11,92)))
+}
+
+test<-join_economic(annual_naics2_summary,core,2)
+test<-join_economic(annual_naics3_summary,core,3)
+test<-join_economic(annual_naics4_summary,core,4)
+test<-join_economic(annual_naics5_summary,core,5)
+test<-join_economic(annual_naics6_summary,core,6)
