@@ -78,7 +78,7 @@ FPDS_bargraphCount <- FPDS_cleaned_unique %>%
   dplyr::rename("regperyear"=`n()`) 
 
 
-ggplot(FPDS_bargraphCount, aes(x = registrationYear, y = regpersize, fill = factor(top_smallbiz_bin), label = regperyear)) +
+NE_count_allfed <- ggplot(FPDS_bargraphCount, aes(x = registrationYear, y = regpersize, fill = factor(top_smallbiz_bin), label = regperyear)) +
   geom_bar(stat = 'identity', position = 'stack') +
   ylab("Number of New Entrants") +
   xlab("Registration Year") +
@@ -111,7 +111,7 @@ FPDS_bargraphCount <- FPDS_cleaned_unique_DOD %>%
   dplyr::rename("regperyear"=`n()`) 
 
 
-ggplot(FPDS_bargraphCount, aes(x = registrationYear, y = regpersize, fill = factor(top_smallbiz_bin), label = regperyear)) +
+NE_count_DoD <- ggplot(FPDS_bargraphCount, aes(x = registrationYear, y = regpersize, fill = factor(top_smallbiz_bin), label = regperyear)) +
   geom_bar(stat = 'identity', position = 'stack') +
   ylab("Number of New Entrants") +
   xlab("Registration Year") +
@@ -123,6 +123,11 @@ ggplot(FPDS_bargraphCount, aes(x = registrationYear, y = regpersize, fill = fact
                   ##angle = 45) +
   ##geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
   geom_text(data = subset(FPDS_bargraphCount, registrationYear <= 2016), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
+
+##combine graphs
+
+grid.arrange(NE_count_allfed, NE_count_DoD)
+
 
 #******************************************************************************************************
 
