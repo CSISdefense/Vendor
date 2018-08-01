@@ -183,9 +183,10 @@ annual_naics2_summary$NAICS_Code
 
 
 join_economic<-function(data,core,num){
+  
   data<-left_join(data,core,by=c("Fiscal.Year"="YEAR.id","NAICS_Code"="NAICS_Code"))
   mismatch<-subset(data,Fiscal.Year %in% c(2007,2012) &
-                     is.na(NAICS.id) &!substr(NAICS_Code,1,2) %in% c(11,92) &
+                     is.na(NAICS.id) &
                      !is.na(NAICS_Code))
   mismatch<-mismatch %>% group_by(NAICS_Code) %>%
     dplyr::summarize(Action.Obligation=sum(Action.Obligation,na.rm=TRUE),
@@ -194,9 +195,27 @@ join_economic<-function(data,core,num){
               maxyear=max(Fiscal.Year)
               )
 
+  mismatch$Note<-""
+  mismatch$Note[substr(mismatch$NAICS_Code,1,2) %in% c(11)]<-"Not tracked: Agriculture"
+  mismatch$Note[substr(mismatch$NAICS_Code,1,2) %in% c(92)]<-"Not tracked: Public Administration"
+  mismatch$Note[substr(mismatch$NAICS_Code,1,3) %in% c(482)]<-"Not tracked: Railroads"
+  mismatch$Note[substr(mismatch$NAICS_Code,1,3) %in% c(491)]<-"Not tracked: Postal Service"
+  mismatch$Note[substr(mismatch$NAICS_Code,1,3) %in% c(814)]<-"Not tracked: Private Households"
+  mismatch$Note[substr(mismatch$NAICS_Code,1,3) %in% c(525)]<-"Not tracked: Finance"
+  mismatch$Note[substr(mismatch$NAICS_Code,1,3) %in% c(233,234,235)]<-"Reassigned in 2002: Contruction"
+  mismatch$Note[substr(mismatch$NAICS_Code,1,3) %in% c(421,422)]<-"Reassigned in 2002: Warehouse"
+  mismatch$Note[substr(mismatch$NAICS_Code,1,3) %in% c(513,514)]<-"Reassigned in 2002: Telecom and Information Services"
+  mismatch$Note[substr(mismatch$NAICS_Code,1,3) %in% c(516)]<-"Reassigned in 2007: Telecom and Information Services"
+  mismatch$Note[substr(mismatch$NAICS_Code,1,4) %in% c(2361,2362,2371,2372,2373,2379,2381,2382,2383,2389)]<-"Uncollated at NAICS 4-5: Construction"
+  mismatch$Note[substr(mismatch$NAICS_Code,1,3) %in% c(5173)]<-"Reassigned in 2007: Telecom and Information Services"
   write.csv(file=paste("Output\\NAICSunmatched",num,".csv",sep=""),
             mismatch
             )
+  
+  write.csv(file=paste("Output\\NAICSmatched",num,".csv",sep=""),
+            subset(data,Fiscal.Year %in% c(2007,2012)
+            )
+  )
   data
 }
 
