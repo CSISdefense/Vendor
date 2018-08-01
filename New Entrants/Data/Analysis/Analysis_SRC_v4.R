@@ -4539,7 +4539,7 @@ ggplot(FPDS_duns_fyear_op, aes(x = fiscal_year, fill = factor(entrant))) +
   scale_x_continuous(breaks = c(2001:2016)) +
   xlab("Fiscal Year") +
   ylab("Number of Vendors") +
-  scale_fill_manual(name = "New Entrants Types", values = c("#66FFFF", "#336666"), labels = c("Incumbent", "New Entrant")) +
+  scale_fill_manual(name = "New Entrants Types", values = c("#66CCCC", "#336666"), labels = c("Incumbent", "New Entrant")) +
   ggtitle("Number of New Entrants vs. Number of Incumbent Firms Over Time")
 
 ##faceted##
@@ -4600,7 +4600,7 @@ obligations_small_v_nsmall_allfed <- ggplot(FPDS_obligationscount, aes(x = regis
   xlab("Entry Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
   ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
-  scale_fill_manual(name = "New Entrants Types", values = c("#66FFFF", "#336666"), labels = c("non-small", "small")) +
+  scale_fill_manual(name = "New Entrants Types", values = c("#66CCCC", "#336666"), labels = c("non-small", "small")) +
   ggtitle("Percent of Obligations for Small and Non-Small New Entrants (2001-2016) - All Federal Agencies")+
   ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
   ###    angle = 45) +
@@ -4644,7 +4644,7 @@ obligations_small_v_nsmall_DoD <- ggplot(FPDS_obligationscount_DOD, aes(x = regi
   xlab("Entry Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
   ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
-  scale_fill_manual(name = "New Entrants Types", values = c("#66FFFF", "#336666"), labels = c("non-small", "small")) +
+  scale_fill_manual(name = "New Entrants Types", values = c("#66CCCC", "#336666"), labels = c("non-small", "small")) +
   ggtitle("Percent of Obligations for Small and Non-Small New Entrants (2001-2016) - DoD")+
   ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
   ###    angle = 45) +
@@ -4661,7 +4661,7 @@ obligations_small_v_nsmall_allfed_facet <- ggplot(FPDS_obligationscount, aes(x =
   xlab("Entry Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
   ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
-  scale_fill_manual(name = "New Entrants Types", values = c("#66FFFF", "#336666"), labels = c("non-small", "small")) +
+  scale_fill_manual(name = "New Entrants Types", values = c("#66CCCC", "#336666"), labels = c("non-small", "small")) +
   ggtitle("Percent of Obligations for Small and Non-Small New Entrants (2001-2016) - All Federal Agencies")+
   ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
   ###    angle = 45) +
@@ -4680,7 +4680,7 @@ obligations_small_v_nsmall_DoD_facet <- ggplot(FPDS_obligationscount_DOD, aes(x 
   xlab("Entry Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
   ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
-  scale_fill_manual(name = "New Entrants Types", values = c("#66FFFF", "#336666"), labels = c("non-small", "small")) +
+  scale_fill_manual(name = "New Entrants Types", values = c("#66CCCC", "#336666"), labels = c("non-small", "small")) +
   ggtitle("Percent of Obligations for Small and Non-Small New Entrants (2001-2016) - DoD")+
   ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
   ###    angle = 45) +
@@ -4716,7 +4716,7 @@ ggplot(FPDS_duns_fyear_op, aes(x = fiscal_year, y = obligatedAmount.Deflator.201
   xlab("Fiscal Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
   scale_fill_manual(name = "Vendor Type", values = c("#66FFFF", "#336666"), labels = c("Incumbent Firms", "New Entrant")) +
-  ggtitle("Obligations for New Entrnats vs. Incumbents (2001-2016) - All Federal Agencies") 
+  ggtitle("Obligations for New Entrants vs. Incumbents (2001-2016) - All Federal Agencies") 
 
 ##is it possible to get percentages on here?
 ##should we remove the negative values?
@@ -4728,8 +4728,8 @@ ggplot(FPDS_duns_fyear_op, aes(x = fiscal_year, y = obligatedAmount.Deflator.201
   ylab("Total Obligations") +
   xlab("Fiscal Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
-  scale_fill_manual(name = "Vendor Type", values = c("#66FFFF", "#336666"), labels = c("Incumbent Firms", "New Entrant")) +
-  ggtitle("Obligations for New Entrnats vs. Incumbents (2001-2016) - All Federal Agencies") +
+  scale_fill_manual(name = "Vendor Type", values = c("#66CCCC", "#336666"), labels = c("Incumbent Firms", "New Entrant")) +
+  ggtitle("Obligations for New Entrants vs. Incumbents (2001-2016) - All Federal Agencies") +
   facet_wrap(~entrant, scales="free", ncol=1) ##ncol=1 stack them above eachother (in 1 column)
 
 
@@ -4835,7 +4835,7 @@ graduated_v_nongrad_allfed <- ggplot(FPDS_obligationscount_grad, aes(x = registr
   xlab("Entry Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
   ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
-  scale_fill_manual(name = "New Entrants Types", values = c("darkslategray1", "cadetblue4"), labels = c("Non-Graduated", "Graduated")) +
+  scale_fill_manual(name = "New Entrants Types", values = c("#66CCCC", "#336666"), labels = c("Non-Graduated", "Graduated")) +
   ggtitle("Percent of Obligations for Graduated and Non-Graduated New Entrants")+
   ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
   ###    angle = 45) +
@@ -4897,7 +4897,7 @@ graduated_v_nongrad_DoD <- ggplot(FPDS_obligationscount_grad_DOD, aes(x = regist
   xlab("Entry Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
   ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
-  scale_fill_manual(name = "New Entrants Types", values = c("darkslategray1", "cadetblue4"), labels = c("Non-Graduated", "Graduated")) +
+  scale_fill_manual(name = "New Entrants Types", values = c("#66CCCC", "#336666"), labels = c("Non-Graduated", "Graduated")) +
   ggtitle("Percent of Obligations for Graduated and Non-Graduated New Entrants DOD")+
   ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
   ###    angle = 45) +
