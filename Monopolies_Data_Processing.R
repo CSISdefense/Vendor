@@ -182,53 +182,64 @@ core$NAICS.id
 annual_naics2_summary$NAICS_Code
 
 
+colnames(core)[colnames(core)=="NAICS.display-label"]<-"NAICS.display.label"
+colnames(core)[colnames(core)=="GEO.display-label"]<-"GEO.display.label"
+
 join_economic<-function(data,core,num){
   
   data<-left_join(data,core,by=c("Fiscal.Year"="YEAR.id","NAICS_Code"="NAICS_Code"))
+  data<-csis360::read_and_join(data,
+                                                lookup_file = "Lookup_NAICS_code.csv",
+                                                path="",
+                                                dir="Lookup\\",
+                                                by="NAICS_Code",
+                                                skip_check_var="NAICS_DESCRIPTION"
+  )
+  
+  data$RCPTOT<-as.numeric(data$RCPTOT)
 
-  mismatch$Mismatch<-""
+  data$Mismatch<-NA
   #11
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,2) %in% c(11)]<-"Not tracked: Agriculture"
+  data$Mismatch[substr(data$NAICS_Code,1,2) %in% c(11)]<-"Not tracked: Agriculture"
   #23
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,3) %in% c(233,234,235)]<-"Reassigned in 2002: Contruction"
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,4) %in% c(2361,2362,2371,2372,2373,2379,2381,2382,2383,2389)]<-"Uncollated at NAICS 4-5: Construction"
+  data$Mismatch[substr(data$NAICS_Code,1,3) %in% c(233,234,235)]<-"Reassigned in 2002: Contruction"
+  data$Mismatch[substr(data$NAICS_Code,1,4) %in% c(2361,2362,2371,2372,2373,2379,2381,2382,2383,2389)]<-"Uncollated at NAICS 4-5: Construction"
   #31
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,6) %in% c(314994,315210,315220,315990,316210,316998)]<-"New in 2012: Missing from Economy Stats"
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,5) %in% c(31528)]<-"New in 2012: Missing from Economy Stats"
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,6) %in% c(316212)]<-"Reassigned in 2012: Footware Consolidation"
+  data$Mismatch[substr(data$NAICS_Code,1,6) %in% c(314994,315210,315220,315990,316210,316998)]<-"New in 2012: Missing from Economy Stats"
+  data$Mismatch[substr(data$NAICS_Code,1,5) %in% c(31528)]<-"New in 2012: Missing from Economy Stats"
+  data$Mismatch[substr(data$NAICS_Code,1,6) %in% c(316212)]<-"Reassigned in 2012: Footware Consolidation"
   #32
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,6) %in% c(322220,322230)]<-"New in 2012: Missing from Economy Stats"
+  data$Mismatch[substr(data$NAICS_Code,1,6) %in% c(322220,322230)]<-"New in 2012: Missing from Economy Stats"
   #33
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,5) %in% c(33324)]<-"New in 2012: Missing from Economy Stats"
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,6) %in% c(331110,331523,332216,332613,333316,333318,333413,333517)]<-"New in 2012: Missing from Economy Stats"
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,6) %in% c(334118,334614,336310,336390)]<-"New in 2012: Missing from Economy Stats"
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,6) %in% c(339111)]<-"Reassigned in 2007: Laboratory Apparatus/Furniture Manufacture"
+  data$Mismatch[substr(data$NAICS_Code,1,5) %in% c(33324)]<-"New in 2012: Missing from Economy Stats"
+  data$Mismatch[substr(data$NAICS_Code,1,6) %in% c(331110,331523,332216,332613,333316,333318,333413,333517)]<-"New in 2012: Missing from Economy Stats"
+  data$Mismatch[substr(data$NAICS_Code,1,6) %in% c(334118,334614,336310,336390)]<-"New in 2012: Missing from Economy Stats"
+  data$Mismatch[substr(data$NAICS_Code,1,6) %in% c(339111)]<-"Reassigned in 2007: Laboratory Apparatus/Furniture Manufacture"
   #42
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,3) %in% c(421,422)]<-"Reassigned in 2002: Warehouse"
+  data$Mismatch[substr(data$NAICS_Code,1,3) %in% c(421,422)]<-"Reassigned in 2002: Warehouse"
   #48
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,3) %in% c(482)]<-"Not tracked: Railroads"
+  data$Mismatch[substr(data$NAICS_Code,1,3) %in% c(482)]<-"Not tracked: Railroads"
   #49
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,3) %in% c(491)]<-"Not tracked: Postal Service"
+  data$Mismatch[substr(data$NAICS_Code,1,3) %in% c(491)]<-"Not tracked: Postal Service"
   #51
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,3) %in% c(513,514)]<-"Reassigned in 2002: Telecom and Information Services"
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,3) %in% c(516)]<-"Reassigned in 2007: Telecom and Information Services"
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,4) %in% c(5173,5175,5181)]<-"Reassigned in 2007: Telecom and Information Services"
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,6) %in% c(517211,517212,517910)]<-"Reassigned in 2007: Telecom and Information Services"
-  #54
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,6) %in% c(541710)]<-"Reassigned in 2007: R&D Phys/Life/Engineering"
-  #56
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,6) %in% c(561310)]<-"Reassigned in 2007: Employment Placement Agencies"
+  data$Mismatch[substr(data$NAICS_Code,1,3) %in% c(513,514)]<-"Reassigned in 2002: Telecom and Information Services"
+  data$Mismatch[substr(data$NAICS_Code,1,3) %in% c(516)]<-"Reassigned in 2007: Telecom and Information Services"
+  data$Mismatch[substr(data$NAICS_Code,1,4) %in% c(5173,5175,5181)]<-"Reassigned in 2007: Telecom and Information Services"
+  data$Mismatch[substr(data$NAICS_Code,1,6) %in% c(517211,517212,517910)]<-"Reassigned in 2007: Telecom and Information Services"
   #52
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,3) %in% c(525)]<-"Not tracked: Pension and Other Funds"
+  data$Mismatch[substr(data$NAICS_Code,1,3) %in% c(525)]<-"Not tracked: Pension and Other Funds"
+  #54
+  data$Mismatch[substr(data$NAICS_Code,1,6) %in% c(541710)]<-"Reassigned in 2007: R&D Phys/Life/Engineering"
+  #56
+  data$Mismatch[substr(data$NAICS_Code,1,6) %in% c(561310)]<-"Reassigned in 2007: Employment Placement Agencies"
   #61
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,4) %in% c(6111,6112,6113)]<-"Not tracked: Schools and Universities"
+  data$Mismatch[substr(data$NAICS_Code,1,4) %in% c(6111,6112,6113)]<-"Not tracked: Schools and Universities"
   #81
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,4) %in% c(8131)]<-"Not tracked: Religious Organizations"
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,5) %in% c(81393,81394)]<-"Not tracked: Labor Unions and Political Organizations"
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,3) %in% c(814)]<-"Not tracked: Private Households"
+  data$Mismatch[substr(data$NAICS_Code,1,4) %in% c(8131)]<-"Not tracked: Religious Organizations"
+  data$Mismatch[substr(data$NAICS_Code,1,5) %in% c(81393,81394)]<-"Not tracked: Labor Unions and Political Organizations"
+  data$Mismatch[substr(data$NAICS_Code,1,3) %in% c(814)]<-"Not tracked: Private Households"
   #92
-  mismatch$Mismatch[substr(mismatch$NAICS_Code,1,2) %in% c(92)]<-"Not tracked: Public Administration"
-
+  data$Mismatch[substr(data$NAICS_Code,1,2) %in% c(92)]<-"Not tracked: Public Administration"
   
   
   mismatch<-subset(data,Fiscal.Year %in% c(2007,2012) &
@@ -242,14 +253,36 @@ join_economic<-function(data,core,num){
     )
   
 
-
+  
+  
+  mismatch<-subset(data,Fiscal.Year %in% c(2007,2012) &
+                     is.na(NAICS.id) &
+                     !is.na(NAICS_Code))
+  mismatch<-mismatch %>% group_by(NAICS_Code,NAICS_DESCRIPTION,Mismatch) %>%
+    dplyr::summarize(Action.Obligation=sum(Action.Obligation,na.rm=TRUE),
+                     Obligation.2016=sum(Obligation.2016,na.rm=TRUE),
+                     minyear=min(Fiscal.Year),
+                     maxyear=max(Fiscal.Year)
+    )
+  
     write.csv(file=paste("Output\\NAICSunmatched",num,".csv",sep=""),
             mismatch
             )
-  
-  write.csv(file=paste("Output\\NAICSmatched",num,".csv",sep=""),
-            subset(data,Fiscal.Year %in% c(2007,2012)
-            )
+    
+    summed<-subset(data,Fiscal.Year>=2007) %>% 
+      group_by(NAICS_Code,NAICS_DESCRIPTION,Mismatch) %>%
+      dplyr::summarize(Action.Obligation=sum(Action.Obligation,na.rm=TRUE),
+                       Obligation.2016=sum(Obligation.2016,na.rm=TRUE),
+                       RCPTOT=sum(RCPTOT,na.rm=TRUE),
+                       minyear=min(Fiscal.Year),
+                       maxyear=max(Fiscal.Year),
+                       NAICS.display.label=max(NAICS.display.label,na.rm=TRUE),
+      )
+    
+    
+  write.csv(file=paste("Output\\NAICSsummed",num,".csv",sep=""),
+            summed
+            
   )
   data
 }
@@ -257,7 +290,7 @@ join_economic<-function(data,core,num){
 
 
 
-
+debug(join_economic)
 test<-join_economic(annual_naics2_summary,core,2)
 test<-join_economic(annual_naics3_summary,core,3)
 test<-join_economic(annual_naics4_summary,core,4)
