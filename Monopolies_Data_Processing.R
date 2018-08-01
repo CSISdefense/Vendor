@@ -185,10 +185,18 @@ annual_naics2_summary$NAICS_Code
 join_economic<-function(data,core,num){
   
   data<-left_join(data,core,by=c("Fiscal.Year"="YEAR.id","NAICS_Code"="NAICS_Code"))
+  data<-csis360::read_and_join(data,
+                                                lookup_file = "Lookup_NAICS_code.csv",
+                                                path="",
+                                                dir="Lookup\\",
+                                                by="NAICS_Code",
+                                                skip_check_var="NAICS_DESCRIPTION"
+  )
+  
   mismatch<-subset(data,Fiscal.Year %in% c(2007,2012) &
                      is.na(NAICS.id) &
                      !is.na(NAICS_Code))
-  mismatch<-mismatch %>% group_by(NAICS_Code) %>%
+  mismatch<-mismatch %>% group_by(NAICS_Code,NAICS_DESCRIPTION) %>%
     dplyr::summarize(Action.Obligation=sum(Action.Obligation,na.rm=TRUE),
               Obligation.2016=sum(Obligation.2016,na.rm=TRUE),
               minyear=min(Fiscal.Year),
@@ -240,11 +248,24 @@ join_economic<-function(data,core,num){
   mismatch$Note[substr(mismatch$NAICS_Code,1,6) %in% c(541710)]<-"Reassigned in 2007: R&D Phys/Life/Engineering"
   mismatch$Note[substr(mismatch$NAICS_Code,1,6) %in% c(561310)]<-"Reassigned in 2007: Employment Placement Agencies"
 
+  
+  
+  
     write.csv(file=paste("Output\\NAICSunmatched",num,".csv",sep=""),
             mismatch
             )
-  
-  write.csv(file=paste("Output\\NAICSmatched",num,".csv",sep=""),
+    
+    summed<-subset(data,Fiscal.Year>=2007,2012) %>% 
+      group_by(NAICS_Code,NAICS_DESCRIPTIO,'NAICS.display-label') %>%
+      dplyr::summarize(Action.Obligation=sum(Action.Obligation,na.rm=TRUE),
+                       Obligation.2016=sum(Obligation.2016,na.rm=TRUE),
+                       RCPTOT=sum(RCPTOT,na.rm=TRUE),
+                       minyear=min(Fiscal.Year),
+                       maxyear=max(Fiscal.Year)
+      )
+    
+    
+  write.csv(file=paste("Output\\NAICSsummed",num,".csv",sep=""),
             subset(data,Fiscal.Year %in% c(2007,2012)
             )
   )
