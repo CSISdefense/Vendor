@@ -185,6 +185,17 @@ annual_naics2_summary$NAICS_Code
 colnames(core)[colnames(core)=="NAICS.display-label"]<-"NAICS.display.label"
 colnames(core)[colnames(core)=="GEO.display-label"]<-"GEO.display.label"
 
+
+View(core[is.na(as.numeric(core$PAYANN)),])
+View(core[is.na(as.numeric(core$EMP)),])
+View(core[is.na(as.numeric(core$RCPTOT)),])
+
+
+core$US_rcp<-as.numeric(core$RCPTOT)*1000
+core$US_pay<-as.numeric(core$PAYANN)*1000
+core$avg_sal<-core$US_pay/as.numeric(core$EMP)
+
+
 join_economic<-function(data,core,num){
   
   data<-left_join(data,core,by=c("Fiscal.Year"="YEAR.id","NAICS_Code"="NAICS_Code"))
@@ -196,7 +207,6 @@ join_economic<-function(data,core,num){
                                                 skip_check_var="NAICS_DESCRIPTION"
   )
   
-  data$RCPTOT<-as.numeric(data$RCPTOT)
 
   data$Mismatch<-NA
   #11
@@ -273,10 +283,12 @@ join_economic<-function(data,core,num){
       group_by(NAICS_Code,NAICS_DESCRIPTION,Mismatch) %>%
       dplyr::summarize(Action.Obligation=sum(Action.Obligation,na.rm=TRUE),
                        Obligation.2016=sum(Obligation.2016,na.rm=TRUE),
-                       RCPTOT=sum(RCPTOT,na.rm=TRUE),
+                       US_rcp=sum(US_rcp),
+                       US_pay=sum(US_pay),
+                       EMP=sum(as.numeric(EMP)),
                        minyear=min(Fiscal.Year),
                        maxyear=max(Fiscal.Year),
-                       NAICS.display.label=max(NAICS.display.label,na.rm=TRUE),
+                       NAICS.display.label=max(NAICS.display.label,na.rm=TRUE)
       )
     
     
@@ -284,14 +296,19 @@ join_economic<-function(data,core,num){
             summed
             
   )
+  
+  overall_naics<-subset(data,Fiscal.Year %in% c(2007,2012))
+  overall_naics$def_pct<-overall_naics$Action.Obligation/overall_naics2$US_rcp
+  write.csv(overall_naics,file=paste("Output\\overall_naics",num,".csv",sep=""))
+  
   data
 }
 
 
 
-
-debug(join_economic)
 test<-join_economic(annual_naics2_summary,core,2)
+
+
 test<-join_economic(annual_naics3_summary,core,3)
 test<-join_economic(annual_naics4_summary,core,4)
 test<-join_economic(annual_naics5_summary,core,5)
