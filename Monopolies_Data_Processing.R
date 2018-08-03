@@ -17,13 +17,13 @@ file<-unz("Data\\Defense_Vendor.SP_EntityIDhistoryNAICS.zip",
  #                           NA = c("","NA","NULL"))
 
 #Import Defense vendor list by NAICS.
-# defense_naics_vendor <- read_delim("Data\\Defense_Vendor.SP_EntityIDhistoryNAICS.txt",
-#                            # header = TRUE,
-#                            na = c("","NA","NULL"),
-#                            # quote="\"",#Necessary because there are some 's in the names.
-#                            delim = "\t")
+defense_naics_vendor <- read_delim("Data\\Defense_Vendor.SP_EntityIDhistoryNAICS.txt",
+                           # header = TRUE,
+                           na = c("","NA","NULL"),
+                           # quote="\"",#Necessary because there are some 's in the names.
+                           delim = "\t")
 
-
+problems(defense_naics_vendor)
 
 #Import Defense Vendor list.
 file<-unz("Data\\Defense_Vendor_EntityIDhistory.zip",
@@ -35,6 +35,10 @@ defense_vendor <- read.table(file,
                                    quote="\"",#Necessary because there are some 's in the names.
                                    sep = "\t")
 
+
+clean_entity<-function(data){
+  
+}
 
 
 defense_vendor<-standardize_variable_names(defense_vendor)
@@ -358,8 +362,6 @@ join_economic<-function(data,core,num){
 
 # View()
   test<-join_economic(annual_naics2_summary,core,2)
-  
-  
   test<-join_economic(annual_naics3_summary,core,3)
   test<-join_economic(annual_naics4_summary,core,4)
   test<-join_economic(annual_naics5_summary,core,5)
