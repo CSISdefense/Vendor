@@ -8,6 +8,7 @@ library(dplyr)
 library(readr)
 
 source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/lookups.r")
+source("DIIGstat.r")
 Path<-"https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/"
 
 file<-unz("Data\\Defense_Vendor.SP_EntityIDhistoryNAICS.zip",
@@ -17,13 +18,13 @@ file<-unz("Data\\Defense_Vendor.SP_EntityIDhistoryNAICS.zip",
  #                           NA = c("","NA","NULL"))
 
 #Import Defense vendor list by NAICS.
-# defense_naics_vendor <- read_delim("Data\\Defense_Vendor.SP_EntityIDhistoryNAICS.txt",
-#                            # header = TRUE,
-#                            na = c("","NA","NULL"),
-#                            # quote="\"",#Necessary because there are some 's in the names.
-#                            delim = "\t")
+defense_naics_vendor <- read_delim("Data\\Defense_Vendor.SP_EntityIDhistoryNAICS.txt",
+                           # header = TRUE,
+                           na = c("","NA","NULL"),
+                           # quote="\"",#Necessary because there are some 's in the names.
+                           delim = "\t")
 
-
+problems(defense_naics_vendor)
 
 #Import Defense Vendor list.
 file<-unz("Data\\Defense_Vendor_EntityIDhistory.zip",
@@ -36,36 +37,37 @@ defense_vendor <- read.table(file,
                                    sep = "\t")
 
 
+clean_entity<-function(data){
+  data<-standardize_variable_names(data)
+  # data<-deflate(data, #Not compatible with calendar year
+  #                               money_var = "Action.Obligation",
+  #                               deflator_var="Deflator.2016"
+  # )
+  # data<-csis360::read_and_join(data,
+  #                                              "Lookup_ParentID.csv",
+  #                                              path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+  #                                              by="ParentID",
+  #                                              directory="vendor//",
+  #                                              new_var_checked=FALSE,
+  #                                              add_var="Abbreviation"
+  #                                              # NA.check.columns="Fair.Competed"
+  # )
+  # 
+  colnames(data)[colnames(data)=="principalNAICScode"]<-"NAICS_Code"
+  colnames(data)[colnames(data)=="principalnaicscodeText"]<-"naics_text"
+  
+  
+  data
+  
+}
 
-defense_vendor<-standardize_variable_names(defense_vendor)
-defense_naics_vendor<-standardize_variable_names(defense_naics_vendor)
-defense_naics_vendor<-deflate(defense_naics_vendor,
-                              money_var = "Action.Obligation",
-                              deflator_var="Deflator.2016"
-                              )
-
-defense_vendor<-csis360::read_and_join(defense_vendor,
-                                       "Lookup_ParentID.csv",
-                                       path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                                       by="ParentID",
-                                       directory="vendor/",
-                                       new_var_checked=FALSE,
-                                       add_var="Abbreviation"
-                                       # NA.check.columns="Fair.Competed"
-)
-
-defense_naics_vendor<-csis360::read_and_join(defense_naics_vendor,
-  "Lookup_ParentID.csv",
-  path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-  by="ParentID",
-  directory="vendor//",
-  new_var_checked=FALSE,
-  add_var="Abbreviation"
-  # NA.check.columns="Fair.Competed"
-)
+defense_naics_vendor<-clean_entity(defense_naics_vendor)
+defense_vendor<-clean_entity(defense_vendor)
 
 
-defense_vendor<-defense_vendor %>% group_by(Fiscal.Year)
+
+
+defense_vendor<-defense_vendor %>% group_by(CalendarYear)
 
 defense_vendor<-defense_vendor %>%
   dplyr::mutate(
@@ -81,8 +83,8 @@ defense_vendor<-defense_vendor %>%
 annual_summary<-defense_vendor %>%
   dplyr::summarize(
   Action.Obligation = sum(Action.Obligation),
-  Obligation.2016 = sum(Action.Obligation.2016),
-  vendor_count=length(Fiscal.Year),
+  # Obligation.2016 = sum(Action.Obligation.2016),
+  vendor_count=length(CalendarYear),
   hh_index=sum((pct*100)^2,na.rm=TRUE),
   top4=sum(ifelse(pos<=4,pct,NA),na.rm=TRUE),
   top8=sum(ifelse(pos<=8,pct,NA),na.rm=TRUE),
@@ -102,14 +104,14 @@ annual_summary<-defense_vendor %>%
       data$NAICS_Code<-create_naics2(data$NAICS_Code)
     }
     
-    data<-data %>% group_by(Fiscal.Year,NAICS_Code)
+    data<-data %>% group_by(CalendarYear,NAICS_Code)
     
     data<-data %>% #filter(Action.Obligation>0) %>%
       dplyr::mutate(
-        pos = rank(-Action.Obligation.Then.Year,
+        pos = rank(-Action.Obligation,
                    ties.method ="min"),
-        pct = ifelse(Action.Obligation.Then.Year>0,
-                     Action.Obligation.Then.Year / sum(Action.Obligation.Then.Year[Action.Obligation.Then.Year>0]),
+        pct = ifelse(Action.Obligation>0,
+                     Action.Obligation / sum(Action.Obligation[Action.Obligation>0]),
                      NA
         )
       )
@@ -117,18 +119,19 @@ annual_summary<-defense_vendor %>%
     #Learned the filtering approach from
     # https://stackoverflow.com/questions/23438476/dplyr-idiom-for-summarize-a-filtered-group-by-and-also-replace-any-nas-due-to
     
-    output<-data %>% group_by(Fiscal.Year,NAICS_Code) %>%
+    output<-data %>% group_by(CalendarYear,NAICS_Code) %>%
       dplyr::summarize( 
-        Action.Obligation = sum(Action.Obligation.Then.Year),
-        Obligation.2016 = sum(Action.Obligation.2016),
-        vendor_count=length(Fiscal.Year),
-        hh_index=sum((pct*100)^2,na.rm=TRUE),
-        pct_sum_check=sum(pct,na.rm=TRUE),
-        top4=sum(pct[pos<=4],na.rm=TRUE),
-        top8=sum(pct[pos<=8],na.rm=TRUE),
-        top12=sum(pct[pos<=12],na.rm=TRUE),
-        top20=sum(pct[pos<=20],na.rm=TRUE),
-        top50=sum(pct[pos<=50],na.rm=TRUE)
+        naics_text=ifelse(naics_level==6, max(naics_text,na.rm=TRUE),NA),
+        def_obl = sum(Action.Obligation),#Action.Obligation.Then.Year
+        # Obligation.2016 = sum(Action.Obligation.2016),
+        def_cont_count=length(CalendarYear),
+        def_hh_index=sum((pct*100)^2,na.rm=TRUE),
+        def_pct_sum_check=sum(pct,na.rm=TRUE),
+        def_top4=sum(pct[pos<=4],na.rm=TRUE),
+        def_top8=sum(pct[pos<=8],na.rm=TRUE),
+        def_top12=sum(pct[pos<=12],na.rm=TRUE),
+        def_top20=sum(pct[pos<=20],na.rm=TRUE),
+        def_top50=sum(pct[pos<=50],na.rm=TRUE)
       )
     output
   }
@@ -138,7 +141,47 @@ annual_summary<-defense_vendor %>%
   annual_naics4_summary<-summarize_annual_naics(defense_naics_vendor,4)
   annual_naics3_summary<-summarize_annual_naics(defense_naics_vendor,3)
   annual_naics2_summary<-summarize_annual_naics(defense_naics_vendor,2)
+
   
+  
+  #Read in Core US data
+  path<-"Data\\Economic\\Comparative Statistics for the United States and the States"
+  core<-readr::read_csv(file.path(path,"ECN_2012_US_00CCOMP1_with_ann.csv"))
+  core<-core[!core$GEO.id=="Geographic identifier code",]
+  if(all(!is.na(core$GEO.id2))){
+    core<-core[,!colnames(core) %in% c("GEO.id2")]
+  }
+  core$`GEO.display-label`[1]
+  if(all(core$GEO.id=="0100000US")){
+    core<-core[,!colnames(core) %in% c("GEO.id")]
+  }
+  if(all(core$`GEO.display-label`=="United States")){
+    core<-core[,!colnames(core) %in% c("GEO.display-label")]
+  }
+  if(length(core$NAICS.id[core$YEAR.id=="2012"])!=length(unique(core$NAICS.id[core$YEAR.id=="2012"]))){
+    stop("Duplicate 20012 entry")
+  }
+  if(length(core$NAICS.id[core$YEAR.id=="2007"])!=length(unique(core$NAICS.id[core$YEAR.id=="2007"]))){
+    stop("Duplicate 20012 entry")
+  }
+  core$YEAR.id<-as.numeric(core$YEAR.id)
+  core$NAICS_Code<-core$NAICS.id
+  core$NAICS_Code[core$NAICS.id %in% c("48-49(104)","48-49(105)")]<-"48-49"
+  
+    colnames(core)[colnames(core)=="NAICS.display-label"]<-"NAICS.display.label"
+  colnames(core)[colnames(core)=="GEO.display-label"]<-"GEO.display.label"
+  
+  
+  View(core[is.na(as.numeric(core$PAYANN)),])
+  View(core[is.na(as.numeric(core$EMP)),])
+  View(core[is.na(as.numeric(core$RCPTOT)),])
+  
+  
+  core$US_rcp<-as.numeric(core$RCPTOT)*1000
+  core$US_pay<-as.numeric(core$PAYANN)*1000
+  core$avg_sal<-core$US_pay/as.numeric(core$EMP)
+  
+    
 save(defense_naics_vendor,
   defense_vendor,
   annual_summary,
@@ -147,6 +190,7 @@ save(defense_naics_vendor,
   annual_naics4_summary,
   annual_naics3_summary,
   annual_naics2_summary,
+  core,
   file="data//defense_naics_vendor.Rdata")
 load(file="data//defense_naics_vendor.Rdata")
 write.csv(defense_naics_vendor,"data//defense_naics_vendor.csv")
@@ -154,51 +198,11 @@ write.csv(defense_vendor,"data//defense_vendor.csv")
 write.csv(annual_naics_summary,"data//annual_naics_summary.csv")
 write.csv(annual_summary,"data//annual_summary.csv")
 
-path<-"Data\\Economic\\Comparative Statistics for the United States and the States"
-core<-readr::read_csv(file.path(path,"ECN_2012_US_00CCOMP1_with_ann.csv"))
-core<-core[!core$GEO.id=="Geographic identifier code",]
-if(all(!is.na(core$GEO.id2))){
-  core<-core[,!colnames(core) %in% c("GEO.id2")]
-}
-core$`GEO.display-label`[1]
-if(all(core$GEO.id=="0100000US")){
-  core<-core[,!colnames(core) %in% c("GEO.id")]
-}
-if(all(core$`GEO.display-label`=="United States")){
-  core<-core[,!colnames(core) %in% c("GEO.display-label")]
-}
-if(length(core$NAICS.id[core$YEAR.id=="2012"])!=length(unique(core$NAICS.id[core$YEAR.id=="2012"]))){
-  stop("Duplicate 20012 entry")
-}
-if(length(core$NAICS.id[core$YEAR.id=="2007"])!=length(unique(core$NAICS.id[core$YEAR.id=="2007"]))){
-  stop("Duplicate 20012 entry")
-}
-core$YEAR.id<-as.numeric(core$YEAR.id)
-core$NAICS_Code<-core$NAICS.id
-core$NAICS_Code[core$NAICS.id %in% c("48-49(104)","48-49(105)")]<-"48-49"
-
-
-core$NAICS.id
-annual_naics2_summary$NAICS_Code
-
-
-colnames(core)[colnames(core)=="NAICS.display-label"]<-"NAICS.display.label"
-colnames(core)[colnames(core)=="GEO.display-label"]<-"GEO.display.label"
-
-
-View(core[is.na(as.numeric(core$PAYANN)),])
-View(core[is.na(as.numeric(core$EMP)),])
-View(core[is.na(as.numeric(core$RCPTOT)),])
-
-
-core$US_rcp<-as.numeric(core$RCPTOT)*1000
-core$US_pay<-as.numeric(core$PAYANN)*1000
-core$avg_sal<-core$US_pay/as.numeric(core$EMP)
 
 
 join_economic<-function(data,core,num){
   
-  data<-left_join(data,core,by=c("Fiscal.Year"="YEAR.id","NAICS_Code"="NAICS_Code"))
+  data<-left_join(data,core,by=c("CalendarYear"="YEAR.id","NAICS_Code"="NAICS_Code"))
   data<-csis360::read_and_join(data,
                                                 lookup_file = "Lookup_NAICS_code.csv",
                                                 path="",
@@ -206,6 +210,7 @@ join_economic<-function(data,core,num){
                                                 by="NAICS_Code",
                                                 skip_check_var="NAICS_DESCRIPTION"
   )
+  data$naics_text[is.na(data$naics_text)]<-data$NAICS_DESCRIPTION[!is.na(data$naics_text)]
   
 
   data$Mismatch<-NA
@@ -252,27 +257,14 @@ join_economic<-function(data,core,num){
   data$Mismatch[substr(data$NAICS_Code,1,2) %in% c(92)]<-"Not tracked: Public Administration"
   
   
-  mismatch<-subset(data,Fiscal.Year %in% c(2007,2012) &
+    mismatch<-subset(data,CalendarYear %in% c(2007,2012) &
                      is.na(NAICS.id) &
                      !is.na(NAICS_Code))
-  mismatch<-mismatch %>% group_by(NAICS_Code) %>%
-    dplyr::summarize(Action.Obligation=sum(Action.Obligation,na.rm=TRUE),
-                     Obligation.2016=sum(Obligation.2016,na.rm=TRUE),
-                     minyear=min(Fiscal.Year),
-                     maxyear=max(Fiscal.Year)
-    )
-  
-
-  
-  
-  mismatch<-subset(data,Fiscal.Year %in% c(2007,2012) &
-                     is.na(NAICS.id) &
-                     !is.na(NAICS_Code))
-  mismatch<-mismatch %>% group_by(NAICS_Code,NAICS_DESCRIPTION,Mismatch) %>%
-    dplyr::summarize(Action.Obligation=sum(Action.Obligation,na.rm=TRUE),
-                     Obligation.2016=sum(Obligation.2016,na.rm=TRUE),
-                     minyear=min(Fiscal.Year),
-                     maxyear=max(Fiscal.Year)
+  mismatch<-mismatch %>% group_by(NAICS_Code,naics_text,Mismatch) %>%
+    dplyr::summarize(def_obl=sum(def_obl,na.rm=TRUE),
+                     # Obligation.2016=sum(Obligation.2016,na.rm=TRUE),
+                     minyear=min(CalendarYear),
+                     maxyear=max(CalendarYear)
     )
   
     write.csv(file=paste("Output\\NAICSunmatched",num,".csv",sep=""),
@@ -280,15 +272,15 @@ join_economic<-function(data,core,num){
             row.names = FALSE
             )
     
-    summed<-subset(data,Fiscal.Year>=2007) %>% 
-      group_by(NAICS_Code,NAICS_DESCRIPTION,Mismatch) %>%
-      dplyr::summarize(Action.Obligation=sum(Action.Obligation,na.rm=TRUE),
-                       Obligation.2016=sum(Obligation.2016,na.rm=TRUE),
+    summed<-subset(data,CalendarYear>=2007) %>% 
+      group_by(NAICS_Code,naics_text,Mismatch) %>%
+      dplyr::summarize(def_obl=sum(def_obl,na.rm=TRUE),
+                       # Obligation.2016=sum(Obligation.2016,na.rm=TRUE),
                        US_rcp=sum(US_rcp),
                        US_pay=sum(US_pay),
                        EMP=sum(as.numeric(EMP)),
-                       minyear=min(Fiscal.Year),
-                       maxyear=max(Fiscal.Year),
+                       minyear=min(CalendarYear),
+                       maxyear=max(CalendarYear),
                        NAICS.display.label=max(NAICS.display.label,na.rm=TRUE)
       )
     
@@ -308,13 +300,12 @@ join_economic<-function(data,core,num){
   #         ifelse(is.na(as.numeric(data$EMP)),paste("NAICS.id:",data$EMP,""),"")
   #         )
   # 
-  data$NAICS_DESCRIPTION[!is.na(data$NAICS.display.label)]<-data$NAICS.display.label[!is.na(data$NAICS.display.label)]
+  data$naics_text[!is.na(data$NAICS.display.label)]<-data$NAICS.display.label[!is.na(data$NAICS.display.label)]
   
-  overall_naics<-subset(data,Fiscal.Year %in% c(2007,2012))
-  overall_naics$def_ratio<-overall_naics$Action.Obligation/overall_naics$US_rcp
-  colnames(overall_naics)[colnames(overall_naics)=="Action.Obligation"]<-"def_obl"
+  overall_naics<-subset(data,CalendarYear %in% c(2007,2012))
+  overall_naics$def_ratio<-overall_naics$def_obl/overall_naics$US_rcp
   colnames(overall_naics)[colnames(overall_naics)=="EMP"]<-"US_emp"
-  colnames(overall_naics)[colnames(overall_naics)=="vendor_count"]<-"def_cont_count"
+  colnames(overall_naics)[colnames(overall_naics)=="def_vendor_count"]<-"def_cont_count"
   colnames(overall_naics)[colnames(overall_naics)=="ESTAB"]<-"us_estab"
   colnames(overall_naics)[colnames(overall_naics)=="avg_sal"]<-"us_avg_sal"
   colnames(overall_naics)[colnames(overall_naics)=="hh_index"]<-"def_hh_index"
@@ -341,8 +332,8 @@ join_economic<-function(data,core,num){
                         )|
                           is.na(overall_naics$NAICS_Code)]<-"Not in stats"
   
-  overall_naics<-overall_naics[order(overall_naics$Fiscal.Year,overall_naics$exclude,overall_naics$NAICS_Code),] 
-  overall_naics<-overall_naics[,c("Fiscal.Year","exclude", "NAICS_Code","NAICS_DESCRIPTION",
+  overall_naics<-overall_naics[order(overall_naics$CalendarYear,overall_naics$exclude,overall_naics$NAICS_Code),] 
+  overall_naics<-overall_naics[,c("CalendarYear","exclude", "NAICS_Code","naics_text",
                                   "Mismatch",
                          "def_obl",  "US_rcp","def_ratio","OPTAX.display-label",  
                          "US_pay","US_emp", "us_avg_sal",
@@ -358,8 +349,6 @@ join_economic<-function(data,core,num){
 
 # View()
   test<-join_economic(annual_naics2_summary,core,2)
-  
-  
   test<-join_economic(annual_naics3_summary,core,3)
   test<-join_economic(annual_naics4_summary,core,4)
   test<-join_economic(annual_naics5_summary,core,5)
