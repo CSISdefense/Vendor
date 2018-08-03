@@ -10,8 +10,6 @@
 # We have to insert d.c. (it is the 9th "state" in alphabetical order)
 
 library ("arm")
-library ("R2WinBUGS")
-library ("lme4")
 data (state)                  # "state" is an R data file
 state.abbr <- c (state.abb[1:8], "DC", state.abb[9:50])
 dc <- 9
@@ -73,8 +71,7 @@ v.prev[not.dc] <- v.prev[not.dc] +
 # Data are at http://www.stat.columbia.edu/~gelman/arm/examples/election88
 
 ## Multilevel logistic regression
-M1 <- glmer (data=presvote,
-             y ~ black + female + (1 | state), family=binomial(link="logit"))
+M1 <- lmer (y ~ black + female + (1 | state), family=binomial(link="logit"))
 display (M1)
  
 ## A fuller model

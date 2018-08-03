@@ -149,3 +149,28 @@ write.csv(defense_naics_vendor,"data//defense_naics_vendor.csv")
 write.csv(defense_vendor,"data//defense_vendor.csv")
 write.csv(annual_naics_summary,"data//annual_naics_summary.csv")
 write.csv(annual_summary,"data//annual_summary.csv")
+
+
+buckets.files<-paste("Data//Economic//2002, 2007, 2012 Economic Census Data Concentration Ratios//"
+                     ,list.files(path= "Data//Economic//2002, 2007, 2012 Economic Census Data Concentration Ratios//"
+                                 ,pattern=".xls"),sep="")
+
+
+
+FPDS.gov.buckets.df<-read.tables(buckets.files,file.type="xls",sheetIndex=1
+                                 # header=TRUE, sep=",", na.strings="NA", dec=".", strip.white=TRUE,
+                                 # stringsAsFactors=FALSE
+)
+
+core_path<-"Data//Economic//Core Business Statistics Series Comparative Statistics for the US and States (1997-2002; 2002-2007; 2007-2012)//"
+core_files<-paste(core_path
+                     ,list.files(path= core_path
+                                 ,pattern=".xls"),sep="")
+
+test<-read.xlsx2(core_files[[1]],sheetIndex=1,startRow = 5)
+core<-read.tables(core_files,file.type="xls",sheetIndex=1,startRow = 5
+                                 # header=TRUE, sep=",", na.strings="NA", dec=".", strip.white=TRUE,
+                                 # stringsAsFactors=FALSE
+)
+
+read
