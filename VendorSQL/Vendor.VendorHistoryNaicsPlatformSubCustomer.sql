@@ -1,4 +1,4 @@
-/****** Object:  View [Vendor].[VendorHistoryNaicsPlatformSubCustomer]    Script Date: 4/3/2018 5:37:33 AM ******/
+/****** Object:  View [Vendor].[VendorHistoryNaicsPlatformSubCustomer]    Script Date: 8/2/2018 4:51:47 PM ******/
 SET ANSI_NULLS ON
 GO
 
@@ -32,10 +32,22 @@ SELECT C.Fiscal_year
 , Parent.IsSiliconValley
 , coalesce(PCN.CSISName, parent.parentid + '^',C.dunsnumber + '^')  as ContractorDisplayName
 , Parent.jointventure
+, C.Dunsnumber
 , C.obligatedAmount
 , C.numberOfActions
-, n.principalnaicscode as NAICS_code
-, n.[principalnaicscodeText] as Industry_TEXT
+, n.principalNAICScode
+, substring(n.principalNAICScode,1,2) NAICS2
+, C.contractingofficerbusinesssizedetermination as DirectCOBSD
+, n.principalnaicscodeText
+, c.SignedDate
+, year(c.SignedDate) as CalendarYear
+, c.veteranownedflag
+, c.minorityownedbusinessflag
+, c.womenownedflag
+, c.isforeigngovernment
+, c.csistransactionID
+, ctid.csiscontractid
+, c.typeofsetaside
 --Grouping Sub-Query
 , IIf(C.contractingofficerbusinesssizedetermination='S' 
    And Not (parent.largegreaterthan3B=1 Or parent.Largegreaterthan3B=1)
@@ -44,6 +56,11 @@ SELECT C.Fiscal_year
 , iif(parent.parentid is null or
 		parent.firstyear>c.fiscal_year or
 		parent.mergeryear<=c.fiscal_year,1,0) as WarningFlag
+		,OriginCountryCode.IsInternational as OriginIsInternational
+,OriginCountryCode.Country3LetterCodeText as OriginCountryText
+,VendorCountryCode.IsInternational as VendorIsInternational
+,VendorCountryCode.Country3LetterCodeText as VendorCountryText
+,iif(uduns.dunsnumber is null,0,1) as IsSAMduns
 FROM Contract.FPDS as C
 			left outer join FPDSTypeTable.AgencyID AS Agency
 			ON C.contractingofficeagencyid = Agency.AgencyID 
@@ -80,8 +97,8 @@ FROM Contract.FPDS as C
 	LEFT JOIN Contractor.ParentContractorNameHistory as PCN
 		ON Parent.ParentID = PCN.ParentID
 		AND C.Fiscal_Year = PCN.FiscalYear
-	left outer join FPDSTypeTable.principalnaicscode n
-		on c.principalnaicscode=n.principalnaicscode
+	left outer join FPDSTypeTable.principalNAICScode n
+		on c.principalnaicscode=n.principalNAICScode
 	--Vendor specific things
 		left outer join contract.UnlabeledDunsnumberUniqueTransactionIDentityIDhistory u
 		on u.unique_transaction_id=c.unique_transaction_id
@@ -96,14 +113,21 @@ FROM Contract.FPDS as C
 		LEFT OUTER JOIN Contractor.Dunsnumber as ParentDUNS
 			ON ParentDUNS.Dunsnumber=ParentDtPCH.Dunsnumber
 		LEFT OUTER JOIN Contractor.ParentContractor as PARENTsquared
-			ON PARENTsquared.ParentID= ParentDtPCH.ParentID ;
+			ON PARENTsquared.ParentID= ParentDtPCH.ParentID 
 
 
-
-
-
-
-
+	LEFT JOIN FPDSTypeTable.Country3lettercode as OriginCountryCode
+		ON C.countryoforigin=OriginCountryCode.Country3LetterCode
+	left outer join location.CountryCodes as OriginISO
+		on OriginCountryCode.isoAlpha3 =OriginISO.[alpha-3]
+	LEFT JOIN FPDSTypeTable.vendorcountrycode as VendorCountryCodePartial
+		ON C.vendorcountrycode=VendorCountryCodePartial.vendorcountrycode
+	LEFT JOIN FPDSTypeTable.Country3lettercode as VendorCountryCode
+		ON vendorcountrycode.Country3LetterCode=VendorCountryCodePartial.Country3LetterCode
+	left outer join location.CountryCodes as VendorISO
+		on VendorCountryCode.isoAlpha3=VendorISO.[alpha-3]
+	left outer join dbo.observations_uniqueDUNS uduns
+		on c.dunsnumber = uduns.dunsnumber
 
 
 
