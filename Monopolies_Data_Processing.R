@@ -210,7 +210,7 @@ join_economic<-function(data,core,num){
                                                 by="NAICS_Code",
                                                 skip_check_var="NAICS_DESCRIPTION"
   )
-  data$naics_text[is.na(data$naics_text)]<-data$NAICS_DESCRIPTION[!is.na(data$naics_text)]
+  data$naics_text[!is.na(data$NAICS_DESCRIPTION)]<-data$NAICS_DESCRIPTION[!is.na(data$NAICS_DESCRIPTION)]
   
 
   data$Mismatch<-NA
