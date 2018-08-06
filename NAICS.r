@@ -66,22 +66,37 @@ label_naics_mismatch<-function(data){
   data$mismatch<-NA
   #11
   data$mismatch[substr(data$NAICS_Code,1,2) %in% c(11)]<-"Not tracked: Agriculture"
+  #21
+  data$mismatch[substr(data$NAICS_Code,1,6) %in% c(221114,221115,221116,221117,221118)]<-"New in 2012: Missing from Economy Stats"
   #23
   data$mismatch[substr(data$NAICS_Code,1,3) %in% c(233,234,235)]<-"Reassigned in 2002"
   data$mismatch[substr(data$NAICS_Code,1,4) %in% c(2361,2362,2371,2372,2373,2379,2381,2382,2383,2389)]<-"Uncollated at NAICS 4-5"
   #31
-  data$mismatch[substr(data$NAICS_Code,1,6) %in% c(314994,315210,315220,315990,316210,316998)]<-"New in 2012: Missing from Economy Stats"
-  data$mismatch[substr(data$NAICS_Code,1,5) %in% c(31528)]<-"New in 2012: Missing from Economy Stats"
+  data$mismatch[substr(data$NAICS_Code,1,6) %in% c(311224,311314,311710,313110,313220,313240,313310)]<-"New in 2012: Missing from Economy Stats"
+  data$mismatch[substr(data$NAICS_Code,1,6) %in% c(314994,314120,314910)]<-"New in 2012: Missing from Economy Stats"
+  data$mismatch[substr(data$NAICS_Code,1,6) %in% c(315110,315190,315210,315220,315990,316210,316998)]<-"New in 2012: Missing from Economy Stats"
+  data$mismatch[substr(data$NAICS_Code,1,5) %in% c(31135,31223,31524,31528)]<-"New in 2012: Missing from Economy Stats"
   data$mismatch[substr(data$NAICS_Code,1,6) %in% c(316212)]<-"Reassigned in 2012"
   #32
-  data$mismatch[substr(data$NAICS_Code,1,6) %in% c(322220,322230)]<-"New in 2012: Missing from Economy Stats"
+  data$mismatch[substr(data$NAICS_Code,1,6) %in% c(322219,322220,322230,323120)]<-"New in 2012: Missing from Economy Stats"
+  data$mismatch[substr(data$NAICS_Code,1,6) %in% c(325130,325180,325194, 325220,327110,327120)]<-"New in 2012: Missing from Economy Stats"
   #33
   data$mismatch[substr(data$NAICS_Code,1,5) %in% c(33324)]<-"New in 2012: Missing from Economy Stats"
-  data$mismatch[substr(data$NAICS_Code,1,6) %in% c(331110,331523,332216,332613,333316,333318,333413,333517)]<-"New in 2012: Missing from Economy Stats"
-  data$mismatch[substr(data$NAICS_Code,1,6) %in% c(334118,334614,336310,336390)]<-"New in 2012: Missing from Economy Stats"
+  data$mismatch[substr(data$NAICS_Code,1,6) %in% c(331110,331313,331318,331410,331420,331523,331529)]<-"New in 2012: Missing from Economy Stats"
+  data$mismatch[substr(data$NAICS_Code,1,6) %in% c(332119,332215,332216,332613)]<-"New in 2012: Missing from Economy Stats"
+  data$mismatch[substr(data$NAICS_Code,1,6) %in% c(333316,333318,333413,333517,333519)]<-"New in 2012: Missing from Economy Stats"
+  data$mismatch[substr(data$NAICS_Code,1,6) %in% c(334118,334614,335210)]<-"New in 2012: Missing from Economy Stats"
+  data$mismatch[substr(data$NAICS_Code,1,6) %in% c(336310,336320,336390,339910,339930,339940)]<-"New in 2012: Missing from Economy Stats"
   data$mismatch[substr(data$NAICS_Code,1,6) %in% c(339111)]<-"Reassigned in 2007"
+  data$mismatch[substr(data$NAICS_Code,1,5) %in% c(33342)]<-"Not tracked: Bad Label"
+  
   #42
   data$mismatch[substr(data$NAICS_Code,1,3) %in% c(421,422)]<-"Reassigned in 2002"
+  #44
+  data$mismatch[substr(data$NAICS_Code,1,5) %in% c(44314)]<-"New in 2012: Missing from Economy Stats"
+  data$mismatch[substr(data$NAICS_Code,1,6) %in% c(441228)]<-"New in 2012: Missing from Economy Stats"
+  #45
+  data$mismatch[substr(data$NAICS_Code,1,6) %in% c(454310)]<-"New in 2012: Missing from Economy Stats"
   #48
   data$mismatch[substr(data$NAICS_Code,1,3) %in% c(482)]<-"Not tracked: Railroads"
   #49
@@ -95,16 +110,21 @@ label_naics_mismatch<-function(data){
   data$mismatch[substr(data$NAICS_Code,1,3) %in% c(525)]<-"Not tracked: Pension and Other Funds"
   #54
   data$mismatch[substr(data$NAICS_Code,1,6) %in% c(541710)]<-"Reassigned in 2007"
+  data$mismatch[substr(data$NAICS_Code,1,5) %in% c(54112)]<-"Not Tracked: Offices of Notaries"
   #56
   data$mismatch[substr(data$NAICS_Code,1,6) %in% c(561310)]<-"Reassigned in 2007"
   #61
   data$mismatch[substr(data$NAICS_Code,1,4) %in% c(6111,6112,6113)]<-"Not tracked: Schools and Universities"
+  #72
+  data$mismatch[substr(data$NAICS_Code,1,4) %in% c(7225)]<-"New in 2012: Missing from Economy Stats"
   #81
   data$mismatch[substr(data$NAICS_Code,1,4) %in% c(8131)]<-"Not tracked: Religious Organizations"
   data$mismatch[substr(data$NAICS_Code,1,5) %in% c(81393,81394)]<-"Not tracked: Labor Unions and Political Organizations"
   data$mismatch[substr(data$NAICS_Code,1,3) %in% c(814)]<-"Not tracked: Private Households"
   #92
   data$mismatch[substr(data$NAICS_Code,1,2) %in% c(92)]<-"Not tracked: Public Administration"
+  #99
+  data$mismatch[substr(data$NAICS_Code,1,2) %in% c(99)]<-"Not tracked: Industries not classified"
   
   
   
@@ -162,7 +182,15 @@ summarize_annual_naics<-function(data,naics_level=6){
       top50=sum(pct[pos<=50],na.rm=TRUE)
     )
   
-  label_naics_mismatch(output)
+  output<-label_naics_mismatch(output)
+  not_in_sample<-output$mismatch %in% get_unstable_list()
+  output$hh_index[not_in_sample]<-NA
+  output$top4[not_in_sample]<-NA
+  output$top8[not_in_sample]<-NA
+  output$top12[not_in_sample]<-NA
+  output$top20[not_in_sample]<-NA
+  output$top50[not_in_sample]<-NA
+  output
 }
 
 fill_in_core_gap<-function(data,
@@ -190,7 +218,12 @@ fill_in_core_gap<-function(data,
 
 
 join_economic<-function(data,core,naics_level){
-  data<-left_join(data,core,by=c("CalendarYear"="YEAR.id","NAICS_Code"="NAICS_Code"))
+  
+  data$census_period<-NA
+  data$census_period[data$CalendarYear>=2007 & data$CalendarYear<2012]<-"2007-2011"
+  data$census_period[data$CalendarYear>=2012 & data$CalendarYear<2017]<-"2012-2016"
+  
+  data<-left_join(data,core,by=c("census_period"="census_period","NAICS_Code"="NAICS_Code"))
   data<-csis360::read_and_join(data,
                                lookup_file = "Lookup_NAICS_code.csv",
                                path="",
@@ -202,7 +235,7 @@ join_economic<-function(data,core,naics_level){
   
   
   
-  mismatch<-subset(data,CalendarYear %in% c(2007,2012) &
+  mismatch<-subset(data,!is.na(census_period) &
                      is.na(NAICS.id) &
                      !is.na(NAICS_Code))
   mismatch<-mismatch %>% group_by(NAICS_Code,naics_text,mismatch) %>%
@@ -217,7 +250,7 @@ join_economic<-function(data,core,naics_level){
             row.names = FALSE
   )
   
-  summed<-subset(data,CalendarYear>=2007) %>% 
+  summed<-subset(data,!is.na(census_period)) %>% 
     group_by(NAICS_Code,naics_text,mismatch) %>%
     dplyr::summarize(obl=sum(obl,na.rm=TRUE),
                      # Obligation.2016=sum(Obligation.2016,na.rm=TRUE),
@@ -247,7 +280,7 @@ join_economic<-function(data,core,naics_level){
   # 
   data$naics_text[!is.na(data$NAICS.display.label)]<-data$NAICS.display.label[!is.na(data$NAICS.display.label)]
   
-  overall_naics<-subset(data,CalendarYear %in% c(2007,2012))
+  overall_naics<-subset(data,!is.na(census_period))
   overall_naics$ratio<-overall_naics$obl/overall_naics$US_rcp
   colnames(overall_naics)[colnames(overall_naics)=="EMP"]<-"US_emp"
   colnames(overall_naics)[colnames(overall_naics)=="cont_count"]<-"def_cont_count"
@@ -263,11 +296,7 @@ join_economic<-function(data,core,naics_level){
   colnames(overall_naics)[colnames(overall_naics)=="top50"]<-"def_top50"
   
   overall_naics$exclude<-"No"
-  overall_naics$exclude[overall_naics$mismatch %in% c("Reassigned in 2002",
-                                                      "Reassigned in 2012",
-                                                      "New in 2012: Missing from Economy Stats",
-                                                      "Reassigned in 2007")
-                        ]<-"Not in sample"
+  overall_naics$exclude[overall_naics$mismatch %in% get_unstable_list()]<-"Not in sample"
   overall_naics$exclude[overall_naics$mismatch %in% get_exclude_list() | is.na(overall_naics$NAICS_Code)]<-"Not in stats"
   
   overall_naics<-overall_naics[order(overall_naics$CalendarYear,overall_naics$exclude,overall_naics$NAICS_Code),] 
@@ -301,8 +330,11 @@ get_exclude_list<-function(){
     "Not tracked: Pension and Other Funds",
     "Not tracked: Schools and Universities",
     "Not tracked: Labor Unions and Political Organizations",
+    "Not Tracked: Offices of Notaries",
     "Not tracked: Religious Organizations",
-    "Not tracked: Private Households"
+    "Not tracked: Private Households",
+    "Not tracked: Industries not classified",
+    "Not tracked: Bad Label"
   )
 }
 
