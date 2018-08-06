@@ -44,15 +44,7 @@ defense_vendor<-clean_entity(defense_vendor)
 
 defense_naics_vendor<-label_naics_mismatch(defense_naics_vendor)
 defense_naics_vendor$exclude<-FALSE
-defense_naics_vendor$exclude[data$Mismatch %in% c("Not tracked: Agriculture",
-                                  "Not tracked: Railroads",
-                                  "Not tracked: Postal Service",
-                                  "Not tracked: Pension and Other Funds",
-                                  "Not tracked: Schools and Universities",
-                                  "Not tracked: Labor Unions and Political Organizations",
-                                  "Not tracked: Religious Organizations",
-                                  "Not tracked: Private Households"
-)| is.na(data$NAICS_Code)]<-TRUE
+defense_naics_vendor$exclude[data$Mismatch %in% get_exclude_list() | is.na(data$NAICS_Code)]<-TRUE
 
 
 #******************Calculate Defense Wide Values****************

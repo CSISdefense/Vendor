@@ -268,7 +268,7 @@ join_economic<-function(data,core,naics_level){
                                                       "New in 2012: Missing from Economy Stats",
                                                       "Reassigned in 2007")
                         ]<-"Not in sample"
-  
+  overall_naics$exclude[overall_naics$mismatch %in% get_exclude_list() | is.na(overall_naics$NAICS_Code)]<-"Not in stats"
   
   overall_naics<-overall_naics[order(overall_naics$CalendarYear,overall_naics$exclude,overall_naics$NAICS_Code),] 
   overall_naics<-overall_naics[,c("CalendarYear","exclude", "NAICS_Code","naics_text",
@@ -292,3 +292,16 @@ join_economic<-function(data,core,naics_level){
   data
 }
 
+
+
+get_exclude_list<-function(){
+  c("Not tracked: Agriculture",
+    "Not tracked: Railroads",
+    "Not tracked: Postal Service",
+    "Not tracked: Pension and Other Funds",
+    "Not tracked: Schools and Universities",
+    "Not tracked: Labor Unions and Political Organizations",
+    "Not tracked: Religious Organizations",
+    "Not tracked: Private Households"
+  )
+}
