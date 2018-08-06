@@ -206,7 +206,7 @@ join_economic<-function(data,core,num){
                      is.na(NAICS.id) &
                      !is.na(NAICS_Code))
   mismatch<-mismatch %>% group_by(NAICS_Code,naics_text,mismatch) %>%
-    dplyr::summarize(def_obl=sum(def_obl,na.rm=TRUE),
+    dplyr::summarize(obl=sum(obl,na.rm=TRUE),
                      # Obligation.2016=sum(Obligation.2016,na.rm=TRUE),
                      minyear=min(CalendarYear),
                      maxyear=max(CalendarYear)
@@ -219,7 +219,7 @@ join_economic<-function(data,core,num){
   
   summed<-subset(data,CalendarYear>=2007) %>% 
     group_by(NAICS_Code,naics_text,mismatch) %>%
-    dplyr::summarize(def_obl=sum(def_obl,na.rm=TRUE),
+    dplyr::summarize(obl=sum(obl,na.rm=TRUE),
                      # Obligation.2016=sum(Obligation.2016,na.rm=TRUE),
                      US_rcp=sum(US_rcp),
                      US_pay=sum(US_pay),
@@ -248,9 +248,11 @@ join_economic<-function(data,core,num){
   data$naics_text[!is.na(data$NAICS.display.label)]<-data$NAICS.display.label[!is.na(data$NAICS.display.label)]
   
   overall_naics<-subset(data,CalendarYear %in% c(2007,2012))
-  overall_naics$def_ratio<-overall_naics$def_obl/overall_naics$US_rcp
+  overall_naics$ratio<-overall_naics$obl/overall_naics$US_rcp
   colnames(overall_naics)[colnames(overall_naics)=="EMP"]<-"US_emp"
-  colnames(overall_naics)[colnames(overall_naics)=="def_vendor_count"]<-"def_cont_count"
+  colnames(overall_naics)[colnames(overall_naics)=="cont_count"]<-"def_cont_count"
+  colnames(overall_naics)[colnames(overall_naics)=="obl"]<-"def_obl"
+  colnames(overall_naics)[colnames(overall_naics)=="ratio"]<-"def_ratio"
   colnames(overall_naics)[colnames(overall_naics)=="ESTAB"]<-"us_estab"
   colnames(overall_naics)[colnames(overall_naics)=="avg_sal"]<-"us_avg_sal"
   colnames(overall_naics)[colnames(overall_naics)=="hh_index"]<-"def_hh_index"
