@@ -107,6 +107,10 @@ annual_summary<-defense_vendor %>%
   if(all(core$`GEO.display-label`=="United States")){
     core<-core[,!colnames(core) %in% c("GEO.display-label")]
   }
+  
+  
+  
+  
   if(length(core$NAICS.id[core$YEAR.id=="2012"])!=length(unique(core$NAICS.id[core$YEAR.id=="2012"]))){
     stop("Duplicate 2012 entry")
   }
@@ -129,7 +133,14 @@ annual_summary<-defense_vendor %>%
   core$US_rcp<-as.numeric(core$RCPTOT)*1000
   core$US_pay<-as.numeric(core$PAYANN)*1000
   core$avg_sal<-core$US_pay/as.numeric(core$EMP)
-  
+
+  const4<-subset(core, nchar(NAICS_Code)==6 & substring(NAICS_Code,1,2)=="23")
+  const4$NAICS_Code<-substring(const4$NAICS_Code,1,4)
+  const4<-const4%>%group_by(YEAR.id,NAICS_Code)%>% 
+    dplyr::summarize(US_rcp=sum(US_rcp),
+                     US_pay=sum(US_pay),
+                     EMP=sum(as.numeric(EMP))
+    )
     
 save(defense_naics_vendor,
   defense_vendor,
