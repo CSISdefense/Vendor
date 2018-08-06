@@ -130,6 +130,9 @@ annual_summary<-defense_vendor %>%
   View(core[is.na(as.numeric(core$RCPTOT)),])
   
   
+  fill_in_NAICS_gap<-function(core,
+                             )
+  
   core$US_rcp<-as.numeric(core$RCPTOT)*1000
   core$US_pay<-as.numeric(core$PAYANN)*1000
   core$avg_sal<-core$US_pay/as.numeric(core$EMP)
