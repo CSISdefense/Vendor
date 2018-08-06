@@ -111,12 +111,7 @@ annual_summary<-defense_vendor %>%
   
   
   
-  if(length(core$NAICS.id[core$YEAR.id=="2012"])!=length(unique(core$NAICS.id[core$YEAR.id=="2012"]))){
-    stop("Duplicate 2012 entry")
-  }
-  if(length(core$NAICS.id[core$YEAR.id=="2007"])!=length(unique(core$NAICS.id[core$YEAR.id=="2007"]))){
-    stop("Duplicate 2012 entry")
-  }
+  duplicate_NAICS_check(core)
   core$YEAR.id<-as.numeric(core$YEAR.id)
   core$NAICS_Code<-core$NAICS.id
   core$NAICS_Code[core$NAICS.id %in% c("48-49(104)","48-49(105)")]<-"48-49"
@@ -125,26 +120,22 @@ annual_summary<-defense_vendor %>%
   colnames(core)[colnames(core)=="GEO.display-label"]<-"GEO.display.label"
   
   
-  View(core[is.na(as.numeric(core$PAYANN)),])
-  View(core[is.na(as.numeric(core$EMP)),])
-  View(core[is.na(as.numeric(core$RCPTOT)),])
-  
-  
-  fill_in_NAICS_gap<-function(core,
-                             )
-  
+  # View(core[is.na(as.numeric(core$PAYANN)),])
+  # View(core[is.na(as.numeric(core$EMP)),])
+  # View(core[is.na(as.numeric(core$RCPTOT)),])
   core$US_rcp<-as.numeric(core$RCPTOT)*1000
   core$US_pay<-as.numeric(core$PAYANN)*1000
-  core$avg_sal<-core$US_pay/as.numeric(core$EMP)
+  
 
-  const4<-subset(core, nchar(NAICS_Code)==6 & substring(NAICS_Code,1,2)=="23")
-  const4$NAICS_Code<-substring(const4$NAICS_Code,1,4)
-  const4<-const4%>%group_by(YEAR.id,NAICS_Code)%>% 
-    dplyr::summarize(US_rcp=sum(US_rcp),
-                     US_pay=sum(US_pay),
-                     EMP=sum(as.numeric(EMP))
-    )
-    
+  core<-rbind(core,fill_in_core_gap(core,4,"23"))
+  core<-rbind(core,fill_in_core_gap(core,5,"23"))
+  duplicate_NAICS_check(core)
+  
+  
+  core$avg_sal<-core$US_pay/as.numeric(core$EMP)
+  
+  
+  #************Saving********************
 save(defense_naics_vendor,
   defense_vendor,
   annual_summary,
@@ -167,6 +158,8 @@ write.csv(annual_summary,"data//annual_summary.csv")
 # dput(colnames(test))
 
 # View()
+debug(join_economic)
+
   test<-join_economic(annual_naics2_summary,core,2)
   test<-join_economic(annual_naics3_summary,core,3)
   test<-join_economic(annual_naics4_summary,core,4)
