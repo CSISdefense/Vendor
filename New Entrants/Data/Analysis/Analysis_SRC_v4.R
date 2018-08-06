@@ -4344,54 +4344,106 @@ FPDS_data<-FPDS_data %>%
                 entrant=ifelse(min(fiscal_year)==fiscal_year,TRUE,FALSE))
 
 #Calculate annual spend and presence.
-FPDS_duns_fyear<-FPDS_data %>%
+fed_duns_fyear<-FPDS_data %>%
   group_by(Dunsnumber,fiscal_year,entrant,first_year) %>%
   #dplyr::summarize(obligatedAmount.2017=sum(obligatedAmount.Deflator.2017,na.rm=TRUE),
   dplyr::summarize(obligatedAmount.Deflator.2016=sum(obligatedAmount.Deflator.2016,na.rm=TRUE),
                    present=max(obligatedAmount.Deflator.2016,na.rm=TRUE))
-FPDS_duns_fyear$present<-ifelse(FPDS_duns_fyear$present>0,1,0)
-summary(FPDS_duns_fyear$present)
+fed_duns_fyear$present<-ifelse(fed_duns_fyear$present>0,1,0)
+summary(fed_duns_fyear$present)
+
+
+##Dod
+dod_duns_fyear<-subset(FPDS_data,customer=="Defense") %>%
+  group_by(Dunsnumber,fiscal_year,entrant,first_year) %>%
+  #dplyr::summarize(obligatedAmount.2017=sum(obligatedAmount.Deflator.2017,na.rm=TRUE),
+  dplyr::summarize(obligatedAmount.Deflator.2016=sum(obligatedAmount.Deflator.2016,na.rm=TRUE),
+                   present=max(obligatedAmount.Deflator.2016,na.rm=TRUE))
+dod_duns_fyear$present<-ifelse(dod_duns_fyear$present>0,1,0)
+summary(dod_duns_fyear$present)
 
 
 #Check if dunsnumber is present in previous year
-FPDS_duns_prev_fyear<-subset(FPDS_duns_fyear,select=c(fiscal_year,Dunsnumber,present))
+FPDS_duns_prev_fyear<-subset(fed_duns_fyear,select=c(fiscal_year,Dunsnumber,present))
 FPDS_duns_prev_fyear$fiscal_year<-FPDS_duns_prev_fyear$fiscal_year+1
 colnames(FPDS_duns_prev_fyear)[colnames(FPDS_duns_prev_fyear)=="present"]<-"prev_present"
-FPDS_duns_fyear<-left_join(FPDS_duns_fyear,FPDS_duns_prev_fyear)
+fed_duns_fyear<-left_join(fed_duns_fyear,FPDS_duns_prev_fyear)
 #Label NAs with 0, except when at start or end of series.
-FPDS_duns_fyear$prev_present[is.na(FPDS_duns_fyear$prev_present) & FPDS_duns_fyear$fiscal_year!=2000]<-0
-summary(FPDS_duns_fyear$prev_present)
+fed_duns_fyear$prev_present[is.na(fed_duns_fyear$prev_present) & fed_duns_fyear$fiscal_year!=2000]<-0
+summary(fed_duns_fyear$prev_present)
 rm(FPDS_duns_prev_fyear)
 
+#dod
+FPDS_duns_prev_fyear_dod<-subset(dod_duns_fyear,select=c(fiscal_year,Dunsnumber,present))
+FPDS_duns_prev_fyear_dod$fiscal_year<-FPDS_duns_prev_fyear_dod$fiscal_year+1
+colnames(FPDS_duns_prev_fyear_dod)[colnames(FPDS_duns_prev_fyear_dod)=="present"]<-"prev_present"
+dod_duns_fyear<-left_join(dod_duns_fyear,FPDS_duns_prev_fyear_dod)
+#Label NAs with 0, except when at start or end of series.
+dod_duns_fyear$prev_present[is.na(dod_duns_fyear$prev_present) & dod_duns_fyear$fiscal_year!=2000]<-0
+summary(dod_duns_fyear$prev_present)
+rm(FPDS_duns_prev_fyear_dod)
+
+
+
 #Check if dunsnumber is present in next year
-FPDS_duns_next_fyear<-subset(FPDS_duns_fyear,select=c(fiscal_year,Dunsnumber,present))
+FPDS_duns_next_fyear<-subset(fed_duns_fyear,select=c(fiscal_year,Dunsnumber,present))
 FPDS_duns_next_fyear$fiscal_year<-FPDS_duns_next_fyear$fiscal_year-1
 colnames(FPDS_duns_next_fyear)[colnames(FPDS_duns_next_fyear)=="present"]<-"next_present"
-FPDS_duns_fyear<-left_join(FPDS_duns_fyear,FPDS_duns_next_fyear)
+fed_duns_fyear<-left_join(fed_duns_fyear,FPDS_duns_next_fyear)
 #Label NAs with 0, except when at start or end of series.
-FPDS_duns_fyear$next_present[is.na(FPDS_duns_fyear$next_present) & FPDS_duns_fyear$fiscal_year<2017]<-0
-summary(FPDS_duns_fyear$next_present)
+fed_duns_fyear$next_present[is.na(fed_duns_fyear$next_present) & fed_duns_fyear$fiscal_year<2017]<-0
+summary(fed_duns_fyear$next_present)
 rm(FPDS_duns_next_fyear)
 
 
-FPDS_duns_fyear$sample_year<-FPDS_duns_fyear$first_year
-FPDS_duns_fyear$sample_year[FPDS_duns_fyear$sample_year<2001 | FPDS_duns_fyear$sample_year>2006]<-"Not in sample"
-FPDS_duns_fyear$sample_year<-factor(FPDS_duns_fyear$sample_year,levels=c("Not in sample","2001","2002","2003","2004","2005","2006"))
+fed_duns_fyear$sample_year<-fed_duns_fyear$first_year
+fed_duns_fyear$sample_year[fed_duns_fyear$sample_year<2001 | fed_duns_fyear$sample_year>2006]<-"Not in sample"
+fed_duns_fyear$sample_year<-factor(fed_duns_fyear$sample_year,levels=c("Not in sample","2001","2002","2003","2004","2005","2006"))
 
 
 
-FPDS_duns_fyear$status<-NA
-FPDS_duns_fyear$status[FPDS_duns_fyear$present==0]<-"No net payments"
-FPDS_duns_fyear$status[is.na(FPDS_duns_fyear$status) & FPDS_duns_fyear$prev_present==0 & FPDS_duns_fyear$next_present==0]<-"Blip"
-FPDS_duns_fyear$status[is.na(FPDS_duns_fyear$status) & FPDS_duns_fyear$prev_present==0 & !is.na(FPDS_duns_fyear$next_present)]<-"Enter"
-FPDS_duns_fyear$status[is.na(FPDS_duns_fyear$status) & FPDS_duns_fyear$next_present==0 & !is.na(FPDS_duns_fyear$prev_present)]<-"Exit"
-FPDS_duns_fyear$status[is.na(FPDS_duns_fyear$status) & FPDS_duns_fyear$prev_present==1 & FPDS_duns_fyear$next_present==1]<-"Steady"
-FPDS_duns_fyear$status<-factor(FPDS_duns_fyear$status)
-summary(FPDS_duns_fyear$status)
+fed_duns_fyear$status<-NA
+fed_duns_fyear$status[fed_duns_fyear$present==0]<-"No net payments"
+fed_duns_fyear$status[is.na(fed_duns_fyear$status) & fed_duns_fyear$prev_present==0 & fed_duns_fyear$next_present==0]<-"Blip"
+fed_duns_fyear$status[is.na(fed_duns_fyear$status) & fed_duns_fyear$prev_present==0 & !is.na(fed_duns_fyear$next_present)]<-"Enter"
+fed_duns_fyear$status[is.na(fed_duns_fyear$status) & fed_duns_fyear$next_present==0 & !is.na(fed_duns_fyear$prev_present)]<-"Exit"
+fed_duns_fyear$status[is.na(fed_duns_fyear$status) & fed_duns_fyear$prev_present==1 & fed_duns_fyear$next_present==1]<-"Steady"
+fed_duns_fyear$status<-factor(fed_duns_fyear$status)
+summary(fed_duns_fyear$status)
 
-FPDS_duns_fyear<-subset(FPDS_duns_fyear,fiscal_year>=2000)
+fed_duns_fyear<-subset(fed_duns_fyear,fiscal_year>=2000)
 
-save(file="../Cleaning Data/footing.rda",FPDS_data,FPDS_duns_fyear)
+
+##DoD
+FPDS_duns_next_fyear_dod<-subset(dod_duns_fyear,select=c(fiscal_year,Dunsnumber,present))
+FPDS_duns_next_fyear_dod$fiscal_year<-FPDS_duns_next_fyear_dod$fiscal_year-1
+colnames(FPDS_duns_next_fyear_dod)[colnames(FPDS_duns_next_fyear_dod)=="present"]<-"next_present"
+dod_duns_fyear<-left_join(dod_duns_fyear,FPDS_duns_next_fyear_dod)
+#Label NAs with 0, except when at start or end of series.
+dod_duns_fyear$next_present[is.na(dod_duns_fyear$next_present) & dod_duns_fyear$fiscal_year<2017]<-0
+summary(dod_duns_fyear$next_present)
+rm(FPDS_duns_next_fyear)
+
+
+dod_duns_fyear$sample_year<-dod_duns_fyear$first_year
+dod_duns_fyear$sample_year[dod_duns_fyear$sample_year<2001 | dod_duns_fyear$sample_year>2006]<-"Not in sample"
+dod_duns_fyear$sample_year<-factor(dod_duns_fyear$sample_year,levels=c("Not in sample","2001","2002","2003","2004","2005","2006"))
+
+
+
+dod_duns_fyear$status<-NA
+dod_duns_fyear$status[dod_duns_fyear$present==0]<-"No net payments"
+dod_duns_fyear$status[is.na(dod_duns_fyear$status) & dod_duns_fyear$prev_present==0 & dod_duns_fyear$next_present==0]<-"Blip"
+dod_duns_fyear$status[is.na(dod_duns_fyear$status) & dod_duns_fyear$prev_present==0 & !is.na(dod_duns_fyear$next_present)]<-"Enter"
+dod_duns_fyear$status[is.na(dod_duns_fyear$status) & dod_duns_fyear$next_present==0 & !is.na(dod_duns_fyear$prev_present)]<-"Exit"
+dod_duns_fyear$status[is.na(dod_duns_fyear$status) & dod_duns_fyear$prev_present==1 & dod_duns_fyear$next_present==1]<-"Steady"
+dod_duns_fyear$status<-factor(dod_duns_fyear$status)
+summary(dod_duns_fyear$status)
+
+dod_duns_fyear<-subset(dod_duns_fyear,fiscal_year>=2000)
+
+
+save(file="../Cleaning Data/footing.rda",FPDS_data,fed_duns_fyear)
 # load(file="../Cleaning Data/footing.rda")
 
 
@@ -4484,25 +4536,28 @@ grid.arrange(NE_count_allfed, NE_count_DoD)
 #####2. Number of New Entrants in each sample and over time####
 #*********#
 
+##****
+#all fed agencies
+#*****
 ##drop those not in sample 
 #1. make not in sample binary
-table(FPDS_duns_fyear$sample_year)
-FPDS_duns_fyear$sample_year_bin <- revalue(FPDS_duns_fyear$sample_year, c("Not in sample"="0", "2001"="1", "2002"="2", "2003"="3", "2004"="4", "2005"="5", "2006"="6"))
-str(FPDS_duns_fyear$sample_year_bin)
-table(FPDS_duns_fyear$sample_year_bin)
-FPDS_duns_fyear$sample_year_bin <- as.numeric(as.character(FPDS_duns_fyear$sample_year_bin))
-str(FPDS_duns_fyear$sample_year_bin)
-table(FPDS_duns_fyear$sample_year_bin)
+table(fed_duns_fyear$sample_year)
+fed_duns_fyear$sample_year_bin <- revalue(fed_duns_fyear$sample_year, c("Not in sample"="0", "2001"="1", "2002"="2", "2003"="3", "2004"="4", "2005"="5", "2006"="6"))
+str(fed_duns_fyear$sample_year_bin)
+table(fed_duns_fyear$sample_year_bin)
+fed_duns_fyear$sample_year_bin <- as.numeric(as.character(fed_duns_fyear$sample_year_bin))
+str(fed_duns_fyear$sample_year_bin)
+table(fed_duns_fyear$sample_year_bin)
 
 #2. drop those not in sample and for the years not included in observation period
-FPDS_duns_fyear_samples <- FPDS_duns_fyear[!(FPDS_duns_fyear$sample_year_bin<1), ]
-FPDS_duns_fyear_samples_op <- FPDS_duns_fyear_samples[!(FPDS_duns_fyear_samples$fiscal_year<2001), ]
-FPDS_duns_fyear_samples_op <- FPDS_duns_fyear_samples_op[!(FPDS_duns_fyear_samples_op$fiscal_year>2016), ]
+fed_duns_fyear_samples <- fed_duns_fyear[!(fed_duns_fyear$sample_year_bin<1), ]
+fed_duns_fyear_samples_op <- fed_duns_fyear_samples[!(fed_duns_fyear_samples$fiscal_year<2001), ]
+fed_duns_fyear_samples_op <- fed_duns_fyear_samples_op[!(fed_duns_fyear_samples_op$fiscal_year>2016), ]
 
 
 ###A. Stacked
 
-ggplot(FPDS_duns_fyear_samples_op, aes(x = fiscal_year, fill = factor(sample_year))) +
+ggplot(fed_duns_fyear_samples_op, aes(x = fiscal_year, fill = factor(sample_year))) +
   geom_histogram(position = "stack", binwidth = .5) +
   ggtitle("Number of New Entrants in Each Sample Over Time") +
   xlab("Fiscal Year") +
@@ -4515,15 +4570,45 @@ ggplot(FPDS_duns_fyear_samples_op, aes(x = fiscal_year, fill = factor(sample_yea
 
 ###B. Faceted (for faceted, x axis is fiscal year)
 
-ggplot(FPDS_duns_fyear_samples_op, aes(x = fiscal_year, fill = factor(sample_year))) +
+NE_eachsample_overtime_allfed <- ggplot(fed_duns_fyear_samples_op, aes(x = fiscal_year, fill = factor(sample_year))) +
   geom_histogram(binwidth = .5) +
-  ggtitle("Number of New Entrants in Each Sample Over Time") +
+  ggtitle("Number of New Entrants in Each Sample Over Time - All Fed Agencies") +
+  xlab("Fiscal Year") +
+  ylab("Count") +
+  scale_fill_manual(name = "Sample", values = c("#33CCCC", "#000066","#3399CC", "#66FFFF", "#336666", "#999999"), labels = c("2001", "2002", "2003", "2004", "2005", "2006")) +
+  scale_x_continuous(breaks = c(2001:2016)) +
+  facet_wrap(~sample_year, scales="fixed", ncol=1) + 
+  guides(fill=FALSE)
+
+##****
+#DoD
+#*****
+table(dod_duns_fyear$sample_year)
+dod_duns_fyear$sample_year_bin <- revalue(dod_duns_fyear$sample_year, c("Not in sample"="0", "2001"="1", "2002"="2", "2003"="3", "2004"="4", "2005"="5", "2006"="6"))
+str(dod_duns_fyear$sample_year_bin)
+table(dod_duns_fyear$sample_year_bin)
+dod_duns_fyear$sample_year_bin <- as.numeric(as.character(dod_duns_fyear$sample_year_bin))
+str(dod_duns_fyear$sample_year_bin)
+table(dod_duns_fyear$sample_year_bin)
+
+#2. drop those not in sample and for the years not included in observation period
+dod_duns_fyear_samples <- dod_duns_fyear[!(dod_duns_fyear$sample_year_bin<1), ]
+dod_duns_fyear_samples_op <- dod_duns_fyear_samples[!(dod_duns_fyear_samples$fiscal_year<2001), ]
+dod_duns_fyear_samples_op <- dod_duns_fyear_samples_op[!(dod_duns_fyear_samples_op$fiscal_year>2016), ]
+
+
+
+NE_eachsample_overtime_dod <- ggplot(dod_duns_fyear_samples_op, aes(x = fiscal_year, fill = factor(sample_year))) +
+  geom_histogram(binwidth = .5) +
+  ggtitle("Number of New Entrants in Each Sample Over Time - DoD") +
   xlab("Fiscal Year") +
   ylab("Count") +
   scale_fill_manual(name = "Sample", values = c("#33CCCC", "#000066","#3399CC", "#66FFFF", "#336666", "#999999"), labels = c("2001", "2002", "2003", "2004", "2005", "2006")) +
   scale_x_continuous(breaks = c(2001:2016)) +
   facet_wrap(~sample_year, scales="fixed", ncol=1)
 
+##combine all fed agencies with dod
+grid.arrange(NE_eachsample_overtime_allfed, NE_eachsample_overtime_dod, ncol=2)
 
 
 #**********#
@@ -4531,10 +4616,10 @@ ggplot(FPDS_duns_fyear_samples_op, aes(x = fiscal_year, fill = factor(sample_yea
 #*********#
 ##stacked##
 #drop years before 2001 and after 2016
-FPDS_duns_fyear_op <- FPDS_duns_fyear[!(FPDS_duns_fyear$fiscal_year<2001), ]
-FPDS_duns_fyear_op <- FPDS_duns_fyear_op[!(FPDS_duns_fyear_op$fiscal_year>2016), ]
+fed_duns_fyear_op <- fed_duns_fyear[!(fed_duns_fyear$fiscal_year<2001), ]
+fed_duns_fyear_op <- fed_duns_fyear_op[!(fed_duns_fyear_op$fiscal_year>2016), ]
 
-ggplot(FPDS_duns_fyear_op, aes(x = fiscal_year, fill = factor(entrant))) +
+ggplot(fed_duns_fyear_op, aes(x = fiscal_year, fill = factor(entrant))) +
   geom_histogram(position = "stack", binwidth = .5) +
   scale_x_continuous(breaks = c(2001:2016)) +
   xlab("Fiscal Year") +
@@ -4545,7 +4630,7 @@ ggplot(FPDS_duns_fyear_op, aes(x = fiscal_year, fill = factor(entrant))) +
 ##faceted##
 
 
-ggplot(FPDS_duns_fyear_op, aes(x = fiscal_year, fill = factor(entrant))) +
+ggplot(fed_duns_fyear_op, aes(x = fiscal_year, fill = factor(entrant))) +
   geom_histogram(position = "stack", binwidth = .5) +
   scale_x_continuous(breaks = c(2001:2016)) +
   xlab("Fiscal Year") +
@@ -4710,7 +4795,7 @@ grid.arrange(obligations_small_v_nsmall_allfed_facet, obligations_small_v_nsmall
 ##all fed agencies##
 ##************##
 ###A. Stacked
-ggplot(FPDS_duns_fyear_op, aes(x = fiscal_year, y = obligatedAmount.Deflator.2016, fill = factor(entrant))) +
+ggplot(fed_duns_fyear_op, aes(x = fiscal_year, y = obligatedAmount.Deflator.2016, fill = factor(entrant))) +
   geom_bar(stat = 'identity', position = 'stack') + 
   ylab("Total Obligations") +
   xlab("Fiscal Year") +
@@ -4723,7 +4808,7 @@ ggplot(FPDS_duns_fyear_op, aes(x = fiscal_year, y = obligatedAmount.Deflator.201
 
 
 ###B. Faceted 
-ggplot(FPDS_duns_fyear_op, aes(x = fiscal_year, y = obligatedAmount.Deflator.2016, fill = factor(entrant))) +
+ggplot(fed_duns_fyear_op, aes(x = fiscal_year, y = obligatedAmount.Deflator.2016, fill = factor(entrant))) +
   geom_bar(stat = 'identity', position = 'stack') + 
   ylab("Total Obligations") +
   xlab("Fiscal Year") +
@@ -4758,7 +4843,7 @@ ggplot(FPDS_duns_fyear_op, aes(x = fiscal_year, y = obligatedAmount.Deflator.201
 ###A. Stacked
 
 ##all fed agencies
-ggplot(FPDS_duns_fyear_samples_op, aes(x = fiscal_year, y = obligatedAmount.Deflator.2016, fill = factor(sample_year))) +
+ggplot(fed_duns_fyear_samples_op, aes(x = fiscal_year, y = obligatedAmount.Deflator.2016, fill = factor(sample_year))) +
   geom_bar(stat = 'identity', position = 'stack') +
   ylab("Total Obligations") +
   xlab("New Entrant Sample") +
@@ -4771,7 +4856,7 @@ ggplot(FPDS_duns_fyear_samples_op, aes(x = fiscal_year, y = obligatedAmount.Defl
 
 ###B. Faceted
 ##all fed agencies
-ggplot(FPDS_duns_fyear_samples_op, aes(x = fiscal_year, y = obligatedAmount.Deflator.2016, fill = factor(sample_year))) +
+ggplot(fed_duns_fyear_samples_op, aes(x = fiscal_year, y = obligatedAmount.Deflator.2016, fill = factor(sample_year))) +
   geom_bar(stat = 'identity', position = 'stack') +
   ylab("Total Obligations") +
   xlab("New Entrant Sample") +
