@@ -305,3 +305,10 @@ get_exclude_list<-function(){
     "Not tracked: Private Households"
   )
 }
+
+get_unstable_list<-function(){
+  c("Reassigned in 2002",
+  "Reassigned in 2012",
+  "New in 2012: Missing from Economy Stats",
+  "Reassigned in 2007")
+}

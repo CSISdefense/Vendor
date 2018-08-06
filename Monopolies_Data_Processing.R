@@ -101,8 +101,6 @@ annual_summary<-defense_vendor %>%
   }
   
   
-  
-  
   duplicate_NAICS_check(core)
   core$YEAR.id<-as.numeric(core$YEAR.id)
   core$NAICS_Code<-core$NAICS.id
@@ -125,7 +123,9 @@ annual_summary<-defense_vendor %>%
   
   
   core$avg_sal<-core$US_pay/as.numeric(core$EMP)
-  
+  core$census_period<-NA
+  core$census_period[core$YEAR.id==2007]<-"2007-2011"
+  core$census_period[core$YEAR.id==2012]<-"2012-2016"
   
   #************Saving********************
 save(defense_naics_vendor,
