@@ -189,7 +189,7 @@ fill_in_core_gap<-function(data,
 }
 
 
-join_economic<-function(data,core,num){
+join_economic<-function(data,core,naics_level){
   data<-left_join(data,core,by=c("CalendarYear"="YEAR.id","NAICS_Code"="NAICS_Code"))
   data<-csis360::read_and_join(data,
                                lookup_file = "Lookup_NAICS_code.csv",
@@ -212,7 +212,7 @@ join_economic<-function(data,core,num){
                      maxyear=max(CalendarYear)
     )
   
-  write.csv(file=paste("Output\\NAICSunmatched",num,".csv",sep=""),
+  write.csv(file=paste("Output\\NAICSunmatched",naics_level,".csv",sep=""),
             mismatch,
             row.names = FALSE
   )
@@ -230,7 +230,7 @@ join_economic<-function(data,core,num){
     )
   
   
-  write.csv(file=paste("Output\\NAICSsummed",num,".csv",sep=""),
+  write.csv(file=paste("Output\\NAICSsummed",naics_level,".csv",sep=""),
             summed,
             row.names = FALSE
             
@@ -286,7 +286,7 @@ join_economic<-function(data,core,num){
   
   
   
-  write.csv(overall_naics,file=paste("Output\\overall_naics",num,".csv",sep=""),
+  write.csv(overall_naics,file=paste("Output\\overall_naics",naics_level,".csv",sep=""),
             row.names = FALSE)
   
   data
