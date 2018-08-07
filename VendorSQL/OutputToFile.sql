@@ -5,6 +5,19 @@ GO
 --For instructions see https://github.com/CSISdefense/DIIGsql/blob/master/Doc/Output_Large_Dataset.md
 
 
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+
+DECLARE	@return_value int
+
+--EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
+EXEC	@return_value = [Vendor].SP_EntityIDhistoryCalendar
+--EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
+		@Customer = 'Defense'
+		
+--SELECT	'Return Value' = @return_value
+
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
@@ -17,6 +30,18 @@ EXEC	@return_value = [Vendor].[SP_EntityIDhistoryNAICS]
 		
 --SELECT	'Return Value' = @return_value
 
+
+
+--SET ANSI_WARNINGS OFF;
+--SET NOCOUNT ON;
+--DECLARE	@return_value int
+
+----EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
+--EXEC	@return_value = [Vendor].[SP_EntityIDhistoryNAICS]
+----EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
+--		@Customer = NULL
+--This resulted in a blank file!
+--SELECT	'Return Value' = @return_value
 
 
 SET ANSI_WARNINGS OFF;

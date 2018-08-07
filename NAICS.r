@@ -135,6 +135,7 @@ label_naics_mismatch<-function(data){
 
 
 duplicate_NAICS_check<-function(core){
+  core$NAICS.id[is.na(core$NAICS.id)]<-core$NAICS_Code[is.na(core$NAICS.id)]
   if(length(core$NAICS.id[core$YEAR.id=="2012"])!=length(unique(core$NAICS.id[core$YEAR.id=="2012"]))){
     stop("Duplicate 2012 entry")
   }
@@ -183,6 +184,7 @@ summarize_annual_naics<-function(data,naics_level=6){
     )
   
   output<-label_naics_mismatch(output)
+  output$mismatch[output$exclude==TRUE & is.na(output$mismatch)]<-"Not tracked: Excluded at Lower Level"
   not_in_sample<-output$mismatch %in% get_unstable_list()
   output$hh_index[not_in_sample]<-NA
   output$top4[not_in_sample]<-NA
@@ -217,9 +219,45 @@ fill_in_core_gap<-function(data,
   as.data.frame(newrow[,colnames(data)])
 }
 
+impute_from_higher_NAICS<-function(data,naics_level){
+  #Input protection
+  if(naics_level<=2) stop("There is no higher level than NAICS 2")
+  if(naics_level==3) stop("Haven't yet implemented handling for the oddities of NAICS 2 (e.g. 33-35)")
+  
+  #Create the higher level dataframe
+  higher<-subset(data,nchar(NAICS.id)==naics_level-1)
+  higher<-higher[c("NAICS.id","YEAR.id","ratio","avg_sal")]
+  
+  colnames(higher)[colnames(higher)=="NAICS.id"]<-"higher.NAICS.id"
+  colnames(higher)[colnames(higher)=="ratio"]<-"higher.ratio"
+  colnames(higher)[colnames(higher)=='avg_sal']<-"higher.avg_sal"
+  
+  #Label targets rows with a NAICS level one higher
+  data$higher.NAICS.id<-NA
+  impute_list<-nchar(data$NAICS.id)==naics_level & (is.na(data$avg_sal) | is.na(data$ratio)) 
+  data[impute_list,]
+  data$higher.NAICS.id[impute_list]<-substr(data$NAICS.id[impute_list],1,naics_level-1)
+  duplicated(higher[c("higher.NAICS.id","YEAR.id")])
+  data<-left_join(data,higher)
+  avg_sal_impute_list<-impute_list&is.na(data$avg_sal)
+  data$mismatch[avg_sal_impute_list]<-paste(ifelse(is.na(data$mismatch[avg_sal_impute_list]),"",data$mismatch[avg_sal_impute_list]),
+                                            "Avg_sal imputed from higher level NAICS",data$higher.NAICS.id[avg_sal_impute_list])
+  
+  data$avg_sal[avg_sal_impute_list]<-data$higher.avg_sal[avg_sal_impute_list]
+  
+  ratio_impute_list<-impute_list&is.na(data$ratio)
+  data$mismatch[ratio_impute_list]<-paste(ifelse(is.na(data$mismatch[ratio_impute_list]),"",data$mismatch[ratio_impute_list]),
+                                          "Ratio imputed from a higher level NAICS: ",data$higher.NAICS.id[ratio_impute_list])
+  
+  data$ratio[ratio_impute_list]<-data$higher.ratio[ratio_impute_list]
+  data[!colnames(data) %in% c("higher.NAICS.id","higher.ratio","higher.avg_sal")]
+}
+
+
 
 join_economic<-function(data,core,naics_level){
-  
+  #Removing mismatch as it can be brought in from data.
+  core<-core[!colnames(core) %in% "mismatch"]
   data$census_period<-NA
   data$census_period[data$CalendarYear>=2007 & data$CalendarYear<2012]<-"2007-2011"
   data$census_period[data$CalendarYear>=2012 & data$CalendarYear<2017]<-"2012-2016"
@@ -318,8 +356,8 @@ join_economic<-function(data,core,naics_level){
   
   
   
-  write.csv(overall_naics,file=paste("Output\\overall_naics",naics_level,".csv",sep=""),
-            row.names = FALSE)
+  # write.csv(overall_naics,file=paste("Output\\overall_naics",naics_level,".csv",sep=""),
+  #           row.names = FALSE)
   
   overall_naics
 }
@@ -337,7 +375,8 @@ get_exclude_list<-function(){
     "Not tracked: Religious Organizations",
     "Not tracked: Private Households",
     "Not tracked: Industries not classified",
-    "Not tracked: Bad Label"
+    "Not tracked: Bad Label",
+    "Not tracked: Excluded at Lower Level"
   )
 }
 

@@ -154,9 +154,13 @@ defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54
   core$census_period[core$YEAR.id==2012]<-"2012-2016"
   
   def_all_levels<-rbind(annual_naics2_summary,annual_naics3_summary,annual_naics4_summary,
-        annual_naics5_summary,annual_naics6_summary)
-  def_all_levels<-subset(def_all_levels,CalendarYear %in% c(2007,2012))
+        annual_naics5_summary,
+        subset(annual_naics6_summary,nchar(NAICS_Code)==6))#Extra step for R&D fix
+  def_all_levels<-subset(def_all_levels,CalendarYear %in% c(2007,2012) & exclude==FALSE)
+  def_all_levels[duplicated(def_all_levels[c("NAICS_Code","CalendarYear")]),]
+  
   core<-full_join(core,def_all_levels,by=c("YEAR.id"="CalendarYear","NAICS_Code"="NAICS_Code"))
+  duplicate_NAICS_check(core)
   core<-core[colnames(core) %in% c("GEO.id2", "NAICS.id", "NAICS.display.label",
                                   "OPTAX.id", "OPTAX.display.label",  "YEAR.id",
                                   "ESTAB", "RCPTOT", "PAYANN", "EMP", 
@@ -168,69 +172,23 @@ defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54
   core$ratio<-core$obl/core$rcp
   colnames(core)[colnames(core)=="obl"]<-"period_obl"
   
-  debug(impute_from_higher_NAICS)
+  
   core<-impute_from_higher_NAICS(core,4)
+  core<-impute_from_higher_NAICS(core,5)
+  core<-impute_from_higher_NAICS(core,6)
   
-  impute_from_higher_NAICS<-function(data,naics_level){
-    #Input protection
-    if(naics_level<=2) stop("There is no higher level than NAICS 2")
-    if(naics_level==3) stop("Haven't yet implemented handling for the oddities of NAICS 2 (e.g. 33-35)")
-    
-    #Create the higher level dataframe
-    higher<-data
-    colnames(higher)
-    higher<-higher[c("NAICS.id","YEAR.id","ratio","avg_sal")]
-    colnames(higher)[colnames(higher)=="NAICS.id"]<-"higher.NAICS.id"
-    colnames(higher)[colnames(higher)=="ratio"]<-"higher.ratio"
-    colnames(higher)[colnames(higher)=='avg_sal']<-"higher.avg_sal"
-    
-    #Label targets rows with a NAICS level one higher
-    data$higher.NAICS.id<-NA
-    impute_list<-nchar(data$NAICS.id)==naics_level & (is.na(data$avg_sal) | is.na(data$ratio))
-    data[impute_list,]
-    data$higher.NAICS.id[impute_list]<-substr(data$NAICS.id,1,naics_level-1)
-    
-    data<-left_join(data,higher)
-    avg_sal_impute_list<-impute_list&is.na(data$avg_sal)
-    data$mismatch[avg_sal_impute_list]<-paste(ifelse(is.na(data$mismatch[avg_sal_impute_list]),"",data$mismatch[avg_sal_impute_list]),
-                                              "Avg_sal imputed from higher level NAICS",data$higher.NAICS.id[avg_sal_impute_list])
-    
-    data$avg_sal[avg_sal_impute_list]<-data$higher.avg_sal[avg_sal_impute_list]
-    
-    ratio_impute_list<-impute_list&is.na(data$ratio)
-    data$mismatch[ratio_impute_list]<-paste(ifelse(is.na(data$mismatch[ratio_impute_list]),"",data$mismatch[ratio_impute_list]),
-                                            "Ratio imputed from a higher level NAICS: ",data$higher.NAICS.id[ratio_impute_list])
-    
-    data$ratio[ratio_impute_list]<-data$higher.ratio[ratio_impute_list]
-    data[!colnames(data) %in% c("higher.NAICS.id","higher.ratio","higher.avg_sal")]
-  }
+  duplicate_NAICS_check(core)
   
-  
-  
-  # View(core[!is.na(core$PAYANN)&is.na(core$pay),])
+  View(core[!is.na(core$PAYANN)&is.na(core$pay),])
   # View(core[!is.na(core$EMP)&is.na(as.numeric(core$EMP)),])
   # View(core[!is.na(core$RCPTOT)&is.na(as.numeric(core$RCPTOT)),])
   
   sum(core$period_obl[!is.na(core$PAYANN)&is.na(core$pay)],na.rm=TRUE)
   sum(core$period_obl[!is.na(core$EMP)&is.na(as.numeric(core$EMP))],na.rm=TRUE)
-  sum(core$period_obl[!is.na(core$RCPTOT)&is.na(as.numeric(core$RCPTOT))],na.rm=TRUE)
+  sum(core$period_obl[!is.na(core$RCPTOT)&is.na(core$rcp)],na.rm=TRUE)
+  sum(core$period_obl[is.na(core$avg_sal)&is.na(as.numeric(core$RCPTOT))],na.rm=TRUE)
+  sum(core$period_obl[is.na(core$ratio)&is.na(as.numeric(core$RCPTOT))],na.rm=TRUE)
   
-  #************Saving********************
-save(defense_naics_vendor,
-  defense_vendor,
-  annual_summary,
-  annual_naics6_summary,
-  annual_naics5_summary,
-  annual_naics4_summary,
-  annual_naics3_summary,
-  annual_naics2_summary,
-  core,
-  file="data//defense_naics_vendor.Rdata")
-load(file="data//defense_naics_vendor.Rdata")
-write.csv(defense_naics_vendor,"data//defense_naics_vendor.csv")
-write.csv(defense_vendor,"data//defense_vendor.csv")
-write.csv(annual_naics_summary,"data//annual_naics_summary.csv")
-write.csv(annual_summary,"data//annual_summary.csv")
 
 
 #**********************Combine Econ and Def**************
@@ -238,9 +196,30 @@ write.csv(annual_summary,"data//annual_summary.csv")
 # dput(colnames(test))
 
 # View()
-debug(join_economic)
-  test2<-join_economic(annual_naics2_summary,core,2)
-  test3<-join_economic(annual_naics3_summary,core,3)
-  test4<-join_economic(annual_naics4_summary,core,4)
-  test5<-join_economic(annual_naics5_summary,core,5)
-  test6<-join_economic(annual_naics6_summary,core,6)
+# debug(join_economic)
+annual_naics2_summary<-join_economic(annual_naics2_summary,core,2)
+annual_naics3_summary<-join_economic(annual_naics3_summary,core,3)
+annual_naics4_summary<-join_economic(annual_naics4_summary,core,4)
+annual_naics5_summary<-join_economic(annual_naics5_summary,core,5)
+annual_naics6_summary<-join_economic(annual_naics6_summary,core,6)
+
+#************Saving********************
+save(defense_naics_vendor,
+     defense_vendor,
+     annual_summary,
+     annual_naics6_summary,
+     annual_naics5_summary,
+     annual_naics4_summary,
+     annual_naics3_summary,
+     annual_naics2_summary,
+     core,
+     file="data//defense_naics_vendor.Rdata")
+load(file="data//defense_naics_vendor.Rdata")
+write.csv(defense_naics_vendor,"data//defense_naics_vendor.csv")
+write.csv(defense_vendor,"output//defense_vendor.csv")
+write.csv(annual_naics2_summary,"output//annual_naics2_summary.csv")
+write.csv(annual_naics3_summary,"output//annual_naics3_summary.csv")
+write.csv(annual_naics4_summary,"output//annual_naics4_summary.csv")
+write.csv(annual_naics5_summary,"output//annual_naics5_summary.csv")
+write.csv(annual_naics6_summary,"output//annual_naics6_summary.csv")
+# write.csv(annual_summary,"data//annual_summary.csv")
