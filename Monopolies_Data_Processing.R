@@ -113,17 +113,39 @@ defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54
   colnames(core)[colnames(core)=="GEO.display-label"]<-"GEO.display.label"
   colnames(core)[colnames(core)=="OPTAX.display-label"]<-"OPTAX.display.label"
   
-  
-  core$PAYANN[is.na(as.numeric(core$PAYANN)) & !is.na(core$PAYANN) &
-         substr(core$PAYANN,nchar(core$PAYANN)-2,nchar(core$PAYANN))=="(r)"]
-  
-  # View(core[!is.na(core$PAYANN)&is.na(as.numeric(core$PAYANN)),])
-  # View(core[is.na(as.numeric(core$EMP)),])
-  # View(core[is.na(as.numeric(core$RCPTOT)),])
+
   core$rcp<-as.numeric(core$RCPTOT)*1000
   core$pay<-as.numeric(core$PAYANN)*1000
   
 
+  #Remove (r) footnotes, which denote revised data and prevent conversion to numerall
+  #Annual pay
+  revised_list<-is.na(core$pay) & !is.na(core$PAYANN) &
+    substr(core$PAYANN,nchar(core$PAYANN)-2,nchar(core$PAYANN))=="(r)"
+  core$PAYANN[revised_list]
+  core$pay[revised_list]<-substr(core$PAYANN[revised_list],1,nchar(core$PAYANN[revised_list])-3)
+  
+  #Reciepts
+  revised_list<-is.na(core$rcp) & !is.na(core$RCPTOT) &
+    substr(core$RCPTOT,nchar(core$RCPTOT)-2,nchar(core$RCPTOT))=="(r)"
+  core$RCPTOT[revised_list]
+  core$rcp[revised_list]<-substr(core$RCPTOT[revised_list],1,nchar(core$RCPTOT[revised_list])-3)
+  
+  #Employees
+  revised_list<-is.na(as.numeric(core$EMP)) & !is.na(core$EMP) &
+    substr(core$EMP,nchar(core$EMP)-2,nchar(core$EMP))=="(r)"
+  core$EMP[revised_list]
+  core$EMP[revised_list]<-substr(core$EMP[revised_list],1,nchar(core$EMP[revised_list])-3)
+  
+  
+  # View(core[!is.na(core$PAYANN)&is.na(core$pay),])
+  # View(core[!is.na(core$EMP)&is.na(as.numeric(core$EMP)),])
+  # View(core[!is.na(core$RCPTOT)&is.na(as.numeric(core$RCPTOT)),])
+  
+  sum(core$period_obl[!is.na(core$PAYANN)&is.na(core$pay)],na.rm=TRUE)
+  sum(core$period_obl[!is.na(core$EMP)&is.na(as.numeric(core$EMP))],na.rm=TRUE)
+  sum(core$period_obl[!is.na(core$RCPTOT)&is.na(as.numeric(core$RCPTOT))],na.rm=TRUE)
+  
   core<-rbind(core,fill_in_core_gap(core,4,"23"))
   core<-rbind(core,fill_in_core_gap(core,5,"23"))
   duplicate_NAICS_check(core)
