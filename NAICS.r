@@ -356,8 +356,8 @@ join_economic<-function(data,core,naics_level){
   
   
   
-  write.csv(overall_naics,file=paste("Output\\overall_naics",naics_level,".csv",sep=""),
-            row.names = FALSE)
+  # write.csv(overall_naics,file=paste("Output\\overall_naics",naics_level,".csv",sep=""),
+  #           row.names = FALSE)
   
   overall_naics
 }

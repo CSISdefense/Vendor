@@ -189,22 +189,6 @@ defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54
   sum(core$period_obl[is.na(core$avg_sal)&is.na(as.numeric(core$RCPTOT))],na.rm=TRUE)
   sum(core$period_obl[is.na(core$ratio)&is.na(as.numeric(core$RCPTOT))],na.rm=TRUE)
   
-  #************Saving********************
-save(defense_naics_vendor,
-  defense_vendor,
-  annual_summary,
-  annual_naics6_summary,
-  annual_naics5_summary,
-  annual_naics4_summary,
-  annual_naics3_summary,
-  annual_naics2_summary,
-  core,
-  file="data//defense_naics_vendor.Rdata")
-load(file="data//defense_naics_vendor.Rdata")
-write.csv(defense_naics_vendor,"data//defense_naics_vendor.csv")
-write.csv(defense_vendor,"data//defense_vendor.csv")
-write.csv(annual_naics_summary,"data//annual_naics_summary.csv")
-write.csv(annual_summary,"data//annual_summary.csv")
 
 
 #**********************Combine Econ and Def**************
@@ -212,9 +196,30 @@ write.csv(annual_summary,"data//annual_summary.csv")
 # dput(colnames(test))
 
 # View()
-debug(join_economic)
+# debug(join_economic)
 annual_naics2_summary<-join_economic(annual_naics2_summary,core,2)
 annual_naics3_summary<-join_economic(annual_naics3_summary,core,3)
 annual_naics4_summary<-join_economic(annual_naics4_summary,core,4)
 annual_naics5_summary<-join_economic(annual_naics5_summary,core,5)
 annual_naics6_summary<-join_economic(annual_naics6_summary,core,6)
+
+#************Saving********************
+save(defense_naics_vendor,
+     defense_vendor,
+     annual_summary,
+     annual_naics6_summary,
+     annual_naics5_summary,
+     annual_naics4_summary,
+     annual_naics3_summary,
+     annual_naics2_summary,
+     core,
+     file="data//defense_naics_vendor.Rdata")
+load(file="data//defense_naics_vendor.Rdata")
+write.csv(defense_naics_vendor,"data//defense_naics_vendor.csv")
+write.csv(defense_vendor,"output//defense_vendor.csv")
+write.csv(annual_naics2_summary,"output//annual_naics2_summary.csv")
+write.csv(annual_naics3_summary,"output//annual_naics3_summary.csv")
+write.csv(annual_naics4_summary,"output//annual_naics4_summary.csv")
+write.csv(annual_naics5_summary,"output//annual_naics5_summary.csv")
+write.csv(annual_naics6_summary,"output//annual_naics6_summary.csv")
+# write.csv(annual_summary,"data//annual_summary.csv")
