@@ -77,6 +77,9 @@ annual_summary<-defense_vendor %>%
 
 #*****************NAICS 6****************************
 
+defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54171"]<-"54171"
+
+
   annual_naics6_summary<-summarize_annual_naics(defense_naics_vendor)
   annual_naics5_summary<-summarize_annual_naics(defense_naics_vendor,5)
   annual_naics4_summary<-summarize_annual_naics(defense_naics_vendor,4)

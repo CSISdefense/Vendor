@@ -109,7 +109,7 @@ label_naics_mismatch<-function(data){
   #52
   data$mismatch[substr(data$NAICS_Code,1,3) %in% c(525)]<-"Not tracked: Pension and Other Funds"
   #54
-  data$mismatch[substr(data$NAICS_Code,1,6) %in% c(541710)]<-"Reassigned in 2007"
+  data$mismatch[substr(data$NAICS_Code,1,5) %in% c(54171)]<-"Scientific R&D Manual Aggregation"
   data$mismatch[substr(data$NAICS_Code,1,5) %in% c(54112)]<-"Not Tracked: Offices of Notaries"
   #56
   data$mismatch[substr(data$NAICS_Code,1,6) %in% c(561310)]<-"Reassigned in 2007"
@@ -222,7 +222,11 @@ join_economic<-function(data,core,naics_level){
   data$census_period<-NA
   data$census_period[data$CalendarYear>=2007 & data$CalendarYear<2012]<-"2007-2011"
   data$census_period[data$CalendarYear>=2012 & data$CalendarYear<2017]<-"2012-2016"
+  data$exclude<-"No"
+  data$exclude[data$mismatch %in% get_unstable_list()]<-"Not in sample"
+  data$exclude[data$mismatch %in% get_exclude_list() | is.na(data$NAICS_Code)]<-"Not in stats"
   
+    
   data<-left_join(data,core,by=c("census_period"="census_period","NAICS_Code"="NAICS_Code"))
   data<-csis360::read_and_join(data,
                                lookup_file = "Lookup_NAICS_code.csv",
@@ -238,7 +242,7 @@ join_economic<-function(data,core,naics_level){
   mismatch<-subset(data,!is.na(census_period) &
                      is.na(NAICS.id) &
                      !is.na(NAICS_Code))
-  mismatch<-mismatch %>% group_by(NAICS_Code,naics_text,mismatch) %>%
+  mismatch<-mismatch %>% group_by(NAICS_Code,naics_text,mismatch,exclude) %>%
     dplyr::summarize(obl=sum(obl,na.rm=TRUE),
                      # Obligation.2016=sum(Obligation.2016,na.rm=TRUE),
                      minyear=min(CalendarYear),
@@ -251,7 +255,7 @@ join_economic<-function(data,core,naics_level){
   )
   
   summed<-subset(data,!is.na(census_period)) %>% 
-    group_by(NAICS_Code,naics_text,mismatch) %>%
+    group_by(NAICS_Code,naics_text,mismatch,exclude) %>%
     dplyr::summarize(obl=sum(obl,na.rm=TRUE),
                      # Obligation.2016=sum(Obligation.2016,na.rm=TRUE),
                      US_rcp=sum(US_rcp),
@@ -295,9 +299,6 @@ join_economic<-function(data,core,naics_level){
   colnames(overall_naics)[colnames(overall_naics)=="top20"]<-"def_top20"
   colnames(overall_naics)[colnames(overall_naics)=="top50"]<-"def_top50"
   
-  overall_naics$exclude<-"No"
-  overall_naics$exclude[overall_naics$mismatch %in% get_unstable_list()]<-"Not in sample"
-  overall_naics$exclude[overall_naics$mismatch %in% get_exclude_list() | is.na(overall_naics$NAICS_Code)]<-"Not in stats"
   
   overall_naics<-overall_naics[order(overall_naics$CalendarYear,overall_naics$exclude,overall_naics$NAICS_Code),] 
   overall_naics<-overall_naics[,c("CalendarYear","exclude", "NAICS_Code","naics_text",
