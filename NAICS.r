@@ -200,8 +200,8 @@ fill_in_core_gap<-function(data,
   data<-subset(core, nchar(NAICS_Code)==6 & substring(NAICS_Code,1,nchar(naics_limiter))==naics_limiter)
   data$NAICS_Code<-substring(data$NAICS_Code,1,level)
   newrow<-data%>%group_by(YEAR.id,NAICS_Code)%>% 
-    dplyr::summarize(US_rcp=sum(US_rcp),
-                     US_pay=sum(US_pay),
+    dplyr::summarize(rcp=sum(rcp),
+                     pay=sum(pay),
                      EMP=sum(as.numeric(EMP))
     )
   newrow$EMP<-as.character(newrow$EMP)
@@ -209,7 +209,7 @@ fill_in_core_gap<-function(data,
   newrow$NAICS.id<-newrow$NAICS_Code
   newrow$NAICS.display.label<-as.character(NA)
   newrow$OPTAX.id<-as.character(NA)
-  newrow$'OPTAX.display-label'<-as.character(NA)
+  newrow$OPTAX.display.label<-as.character(NA)
   newrow$ESTAB<-as.character(NA)
   newrow$RCPTOT<-as.character(NA)
   newrow$PAYANN<-as.character(NA)
@@ -258,8 +258,8 @@ join_economic<-function(data,core,naics_level){
     group_by(NAICS_Code,naics_text,mismatch,exclude) %>%
     dplyr::summarize(obl=sum(obl,na.rm=TRUE),
                      # Obligation.2016=sum(Obligation.2016,na.rm=TRUE),
-                     US_rcp=sum(US_rcp),
-                     US_pay=sum(US_pay),
+                     rcp=sum(rcp),
+                     pay=sum(pay),
                      EMP=sum(as.numeric(EMP)),
                      minyear=min(CalendarYear),
                      maxyear=max(CalendarYear),
@@ -285,41 +285,42 @@ join_economic<-function(data,core,naics_level){
   data$naics_text[!is.na(data$NAICS.display.label)]<-data$NAICS.display.label[!is.na(data$NAICS.display.label)]
   
   overall_naics<-subset(data,!is.na(census_period))
-  overall_naics$ratio<-overall_naics$obl/overall_naics$US_rcp
-  colnames(overall_naics)[colnames(overall_naics)=="EMP"]<-"US_emp"
-  colnames(overall_naics)[colnames(overall_naics)=="cont_count"]<-"def_cont_count"
-  colnames(overall_naics)[colnames(overall_naics)=="obl"]<-"def_obl"
-  colnames(overall_naics)[colnames(overall_naics)=="ratio"]<-"def_ratio"
-  colnames(overall_naics)[colnames(overall_naics)=="ESTAB"]<-"us_estab"
-  colnames(overall_naics)[colnames(overall_naics)=="avg_sal"]<-"us_avg_sal"
-  colnames(overall_naics)[colnames(overall_naics)=="hh_index"]<-"def_hh_index"
-  colnames(overall_naics)[colnames(overall_naics)=="top4"]<-"def_top4"
-  colnames(overall_naics)[colnames(overall_naics)=="top8"]<-"def_top8"
-  colnames(overall_naics)[colnames(overall_naics)=="top12"]<-"def_top12"
-  colnames(overall_naics)[colnames(overall_naics)=="top20"]<-"def_top20"
-  colnames(overall_naics)[colnames(overall_naics)=="top50"]<-"def_top50"
-  
+  overall_naics$ratio<-overall_naics$obl/overall_naics$rcp
+  colnames(overall_naics)[colnames(overall_naics)=="EMP"]<-"emp"
+  colnames(overall_naics)[colnames(overall_naics)=="ESTAB"]<-"estab"
+
   
   overall_naics<-overall_naics[order(overall_naics$CalendarYear,overall_naics$exclude,overall_naics$NAICS_Code),] 
-  overall_naics<-overall_naics[,c("CalendarYear","exclude", "NAICS_Code","naics_text",
+  overall_naics<-overall_naics[colnames(overall_naics) %in% c("CalendarYear","exclude", "NAICS_Code","naics_text",
                                   "mismatch",
-                                  "def_obl",  "US_rcp","def_ratio","OPTAX.display-label",  
-                                  "US_pay","US_emp", "us_avg_sal",
-                                  "def_cont_count", "us_estab",
-                                  "def_hh_index",  "def_top4", "def_top8", "def_top12", "def_top20", "def_top50"
+                                  "obl",  "rcp","ratio","OPTAX.display.label",  
+                                  "pay","emp", "avg_sal",
+                                  "cont_count", "estab",
+                                  "hh_index",  "top4", "top8", "top12", "top20", "top50"
+  )]
+  overall_naics<-overall_naics[c("CalendarYear","exclude", "NAICS_Code","naics_text",
+                                  "mismatch",
+                                  "obl",  "rcp","ratio","OPTAX.display.label",  
+                                  "pay","emp", "avg_sal",
+                                  "cont_count", "estab",
+                                  "hh_index",  "top4", "top8", "top12", "top20", "top50"
   )]
   
-  colnames(overall_naics)[colnames(overall_naics) %in% c("obl", "cont_count", "hh_index", "pct_sum_check",
+  colnames(overall_naics)[colnames(overall_naics) %in% c("obl", "ratio", "cont_count", "hh_index", "pct_sum_check",
                                                          "top4", "top8", "top12", "top20", "top50", "mismatch")]<-
-    paste("def",naics_level,"_",colnames(overall_naics)[colnames(overall_naics) %in% c("obl", "cont_count", "hh_index", "pct_sum_check",
+    paste("def",naics_level,"_",colnames(overall_naics)[colnames(overall_naics) %in% c("obl", "ratio","cont_count", "hh_index", "pct_sum_check",
                                                                                        "top4", "top8", "top12", "top20", "top50","mismatch")],sep="")
+  
+  colnames(overall_naics)[colnames(overall_naics) %in% c("rcp", "pay", "avg_sal", "emp", "estab")]<-
+    paste("US",naics_level,"_",colnames(overall_naics)[colnames(overall_naics) %in% c(
+      "rcp", "pay", "avg_sal", "emp", "estab")],sep="")
   
   
   
   write.csv(overall_naics,file=paste("Output\\overall_naics",naics_level,".csv",sep=""),
             row.names = FALSE)
   
-  data
+  overall_naics
 }
 
 
