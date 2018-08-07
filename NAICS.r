@@ -285,7 +285,7 @@ join_economic<-function(data,core,naics_level){
   data$naics_text[!is.na(data$NAICS.display.label)]<-data$NAICS.display.label[!is.na(data$NAICS.display.label)]
   
   overall_naics<-subset(data,!is.na(census_period))
-  overall_naics$ratio<-overall_naics$obl/overall_naics$rcp
+  
   colnames(overall_naics)[colnames(overall_naics)=="EMP"]<-"emp"
   colnames(overall_naics)[colnames(overall_naics)=="ESTAB"]<-"estab"
 
@@ -293,22 +293,22 @@ join_economic<-function(data,core,naics_level){
   overall_naics<-overall_naics[order(overall_naics$CalendarYear,overall_naics$exclude,overall_naics$NAICS_Code),] 
   overall_naics<-overall_naics[colnames(overall_naics) %in% c("CalendarYear","exclude", "NAICS_Code","naics_text",
                                   "mismatch",
-                                  "obl",  "rcp","ratio","OPTAX.display.label",  
+                                  "obl","period_obl",  "rcp","ratio","OPTAX.display.label",  
                                   "pay","emp", "avg_sal",
                                   "cont_count", "estab",
                                   "hh_index",  "top4", "top8", "top12", "top20", "top50"
   )]
   overall_naics<-overall_naics[c("CalendarYear","exclude", "NAICS_Code","naics_text",
                                   "mismatch",
-                                  "obl",  "rcp","ratio","OPTAX.display.label",  
+                                  "obl", "period_obl", "rcp","ratio","OPTAX.display.label",  
                                   "pay","emp", "avg_sal",
                                   "cont_count", "estab",
                                   "hh_index",  "top4", "top8", "top12", "top20", "top50"
   )]
   
-  colnames(overall_naics)[colnames(overall_naics) %in% c("obl", "ratio", "cont_count", "hh_index", "pct_sum_check",
+  colnames(overall_naics)[colnames(overall_naics) %in% c("obl", "period_obl","ratio", "cont_count", "hh_index", "pct_sum_check",
                                                          "top4", "top8", "top12", "top20", "top50", "mismatch")]<-
-    paste("def",naics_level,"_",colnames(overall_naics)[colnames(overall_naics) %in% c("obl", "ratio","cont_count", "hh_index", "pct_sum_check",
+    paste("def",naics_level,"_",colnames(overall_naics)[colnames(overall_naics) %in% c("obl", "period_obl","ratio","cont_count", "hh_index", "pct_sum_check",
                                                                                        "top4", "top8", "top12", "top20", "top50","mismatch")],sep="")
   
   colnames(overall_naics)[colnames(overall_naics) %in% c("rcp", "pay", "avg_sal", "emp", "estab")]<-

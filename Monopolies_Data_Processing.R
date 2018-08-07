@@ -131,6 +131,21 @@ defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54
   core$census_period[core$YEAR.id==2007]<-"2007-2011"
   core$census_period[core$YEAR.id==2012]<-"2012-2016"
   
+  def_all_levels<-rbind(annual_naics2_summary,annual_naics3_summary,annual_naics4_summary,
+        annual_naics5_summary,annual_naics6_summary)
+  def_all_levels<-subset(def_all_levels,CalendarYear %in% c(2007,2012))
+  core<-full_join(core,def_all_levels,by=c("YEAR.id"="CalendarYear","NAICS_Code"="NAICS_Code"))
+  core<-core[colnames(core) %in% c("GEO.id2", "NAICS.id", "NAICS.display.label",
+                                  "OPTAX.id", "OPTAX.display.label",  "YEAR.id",
+                                  "ESTAB", "RCPTOT", "PAYANN", "EMP", 
+                                  "NAICS_Code", "rcp", "pay", "avg_sal", "census_period" ,
+                                   "obl")]
+  
+  #Insert handling of 92 here
+  core<-subset(core,!is.na(NAICS.id) | !is.na(rcp))
+  core$ratio<-core$obl/core$rcp
+  colnames(core)[colnames(core)=="obl"]<-"period_obl"
+  
   #************Saving********************
 save(defense_naics_vendor,
   defense_vendor,
