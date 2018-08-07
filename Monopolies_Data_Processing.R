@@ -142,8 +142,7 @@ defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54
   core$mismatch[revised_list]<-paste(ifelse(is.na(core$mismatch[revised_list]),"",core$mismatch[revised_list])
                                                   ,"Removed revised footnote from EMP")
   core$EMP[revised_list]<-substr(core$EMP[revised_list],1,nchar(core$EMP[revised_list])-3)
-  
- debug(fill_in_core_gap)
+  # debug(fill_in_core_gap)
   core<-rbind(core,fill_in_core_gap(core,4,"23"))
   core<-rbind(core,fill_in_core_gap(core,5,"23"))
   duplicate_NAICS_check(core)
@@ -169,14 +168,41 @@ defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54
   core$ratio<-core$obl/core$rcp
   colnames(core)[colnames(core)=="obl"]<-"period_obl"
   
+  debug(impute_from_higher_NAICS)
+  core<-impute_from_higher_NAICS(core,4)
   
-  
-  colnames(higher)
-  higher<-higher[c(NAICS.id)]
-  
-  impute_from_higher_naics(core,level){
-    higher<-core
+  impute_from_higher_NAICS<-function(data,naics_level){
+    #Input protection
+    if(naics_level<=2) stop("There is no higher level than NAICS 2")
+    if(naics_level==3) stop("Haven't yet implemented handling for the oddities of NAICS 2 (e.g. 33-35)")
     
+    #Create the higher level dataframe
+    higher<-data
+    colnames(higher)
+    higher<-higher[c("NAICS.id","YEAR.id","ratio","avg_sal")]
+    colnames(higher)[colnames(higher)=="NAICS.id"]<-"higher.NAICS.id"
+    colnames(higher)[colnames(higher)=="ratio"]<-"higher.ratio"
+    colnames(higher)[colnames(higher)=='avg_sal']<-"higher.avg_sal"
+    
+    #Label targets rows with a NAICS level one higher
+    data$higher.NAICS.id<-NA
+    impute_list<-nchar(data$NAICS.id)==naics_level & (is.na(data$avg_sal) | is.na(data$ratio))
+    data[impute_list,]
+    data$higher.NAICS.id[impute_list]<-substr(data$NAICS.id,1,naics_level-1)
+    
+    data<-left_join(data,higher)
+    avg_sal_impute_list<-impute_list&is.na(data$avg_sal)
+    data$mismatch[avg_sal_impute_list]<-paste(ifelse(is.na(data$mismatch[avg_sal_impute_list]),"",data$mismatch[avg_sal_impute_list]),
+                                              "Avg_sal imputed from higher level NAICS",data$higher.NAICS.id[avg_sal_impute_list])
+    
+    data$avg_sal[avg_sal_impute_list]<-data$higher.avg_sal[avg_sal_impute_list]
+    
+    ratio_impute_list<-impute_list&is.na(data$ratio)
+    data$mismatch[ratio_impute_list]<-paste(ifelse(is.na(data$mismatch[ratio_impute_list]),"",data$mismatch[ratio_impute_list]),
+                                            "Ratio imputed from a higher level NAICS: ",data$higher.NAICS.id[ratio_impute_list])
+    
+    data$ratio[ratio_impute_list]<-data$higher.ratio[ratio_impute_list]
+    data[!colnames(data) %in% c("higher.NAICS.id","higher.ratio","higher.avg_sal")]
   }
   
   

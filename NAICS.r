@@ -213,6 +213,7 @@ fill_in_core_gap<-function(data,
   newrow$ESTAB<-as.character(NA)
   newrow$RCPTOT<-as.character(NA)
   newrow$PAYANN<-as.character(NA)
+  newrow$mismatch<-as.character(NA)
   as.data.frame(newrow[,colnames(data)])
 }
 
