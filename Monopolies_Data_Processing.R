@@ -113,7 +113,10 @@ defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54
   colnames(core)[colnames(core)=="GEO.display-label"]<-"GEO.display.label"
   
   
-  # View(core[is.na(as.numeric(core$PAYANN)),])
+  core$PAYANN[is.na(as.numeric(core$PAYANN)) & !is.na(core$PAYANN) &
+         substr(core$PAYANN,nchar(core$PAYANN)-2,nchar(core$PAYANN))=="(r)"]
+  
+  # View(core[!is.na(core$PAYANN)&is.na(as.numeric(core$PAYANN)),])
   # View(core[is.na(as.numeric(core$EMP)),])
   # View(core[is.na(as.numeric(core$RCPTOT)),])
   core$US_rcp<-as.numeric(core$RCPTOT)*1000
