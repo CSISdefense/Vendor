@@ -111,13 +111,14 @@ defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54
   
     colnames(core)[colnames(core)=="NAICS.display-label"]<-"NAICS.display.label"
   colnames(core)[colnames(core)=="GEO.display-label"]<-"GEO.display.label"
+  colnames(core)[colnames(core)=="OPTAX.display-label"]<-"OPTAX.display.label"
   
   
   # View(core[is.na(as.numeric(core$PAYANN)),])
   # View(core[is.na(as.numeric(core$EMP)),])
   # View(core[is.na(as.numeric(core$RCPTOT)),])
-  core$US_rcp<-as.numeric(core$RCPTOT)*1000
-  core$US_pay<-as.numeric(core$PAYANN)*1000
+  core$rcp<-as.numeric(core$RCPTOT)*1000
+  core$pay<-as.numeric(core$PAYANN)*1000
   
 
   core<-rbind(core,fill_in_core_gap(core,4,"23"))
@@ -125,7 +126,7 @@ defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54
   duplicate_NAICS_check(core)
   
   
-  core$avg_sal<-core$US_pay/as.numeric(core$EMP)
+  core$avg_sal<-core$pay/as.numeric(core$EMP)
   core$census_period<-NA
   core$census_period[core$YEAR.id==2007]<-"2007-2011"
   core$census_period[core$YEAR.id==2012]<-"2012-2016"
@@ -154,9 +155,8 @@ write.csv(annual_summary,"data//annual_summary.csv")
 
 # View()
 debug(join_economic)
-
-  test<-join_economic(annual_naics2_summary,core,2)
-  test<-join_economic(annual_naics3_summary,core,3)
-  test<-join_economic(annual_naics4_summary,core,4)
-  test<-join_economic(annual_naics5_summary,core,5)
-  test<-join_economic(annual_naics6_summary,core,6)
+  test2<-join_economic(annual_naics2_summary,core,2)
+  test3<-join_economic(annual_naics3_summary,core,3)
+  test4<-join_economic(annual_naics4_summary,core,4)
+  test5<-join_economic(annual_naics5_summary,core,5)
+  test6<-join_economic(annual_naics6_summary,core,6)
