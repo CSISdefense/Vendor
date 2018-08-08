@@ -214,7 +214,7 @@ save(defense_naics_vendor,
      annual_naics2_summary,
      core,
      file="data//defense_naics_vendor.Rdata")
-load(file="data//defense_naics_vendor.Rdata")
+
 write.csv(defense_naics_vendor,"data//defense_naics_vendor.csv")
 write.csv(defense_vendor,"output//defense_vendor.csv")
 write.csv(annual_naics2_summary,"output//annual_naics2_summary.csv")
