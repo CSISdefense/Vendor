@@ -45,9 +45,8 @@ def_all_detail<-input_sample_criteria(def_all_detail,                           
                       drop_incomplete=FALSE)
   
 
-debug(input_sample_criteria)
-def_detail<-input_sample_criteria(def_detail,                                file="Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
-                      drop_incomplete=FALSE)
+# def_detail<-input_sample_criteria(def_detail,                                file="Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
+#                       drop_incomplete=FALSE)
   
 load(file="Data\\defense_contract_all_detail.Rdata")
 save(file="Data\\defense_contract_all_detail.Rdata",def_all_detail)
@@ -63,17 +62,17 @@ def_all_detail<-input_contract_psc_office_naics(def_all_detail,                 
 
 #This works!  
 test<-readr::read_delim("Data\\Contract.SP_ContractTopPSCofficeNAICS.txt",delim="\t",
-                   na=c("NA","NULL"),
-                   col_types="icdcdcdcd")
-  # c(col_integer(),
-  #   col_character(),
-  #   col_double(),
-  #   col_character(),
-  #   col_double(),
-  #   col_character(),
-  #   col_double(),
-  #   col_character(),
-  #   col_double()))
+                        na=c("NA","NULL"),
+                        col_types="icdcdcdcd")
+# c(col_integer(),
+#   col_character(),
+#   col_double(),
+#   col_character(),
+#   col_double(),
+#   col_character(),
+#   col_double(),
+#   col_character(),
+#   col_double()))
 
 
 #This has problems. 
@@ -88,44 +87,43 @@ test<-readr::read_delim("Data\\Contract.SP_ContractTopPSCofficeNAICS.txt",delim=
 
 def_all_detail<-dplyr::left_join(def_all_detail,test,by="CSIScontractID")
 
+def_all_detail$topContractingOfficeAgencyID<-factor(
+  def_all_detail$topContractingOfficeAgencyID
+)
+def_all_detail$topContractingOfficeID<-factor(
+  def_all_detail$topContractingOfficeID
+)
+def_all_detail$topProductOrServiceCode<-factor(
+  def_all_detail$topProductOrServiceCode
+)
+def_all_detail$topPrincipalNAICScode<-factor(
+  def_all_detail$topPrincipalNAICScode
+)
 
-  def_all_detail$topContractingOfficeAgencyID<-factor(
-    def_all_detail$topContractingOfficeAgencyID
-  )
-  def_all_detail$topContractingOfficeID<-factor(
-    def_all_detail$topContractingOfficeID
-  )
-  def_all_detail$topProductOrServiceCode<-factor(
-    def_all_detail$topProductOrServiceCode
-  )
-  def_all_detail$topPrincipalNAICScode<-factor(
-    def_all_detail$topPrincipalNAICScode
-  )
-  
-  def_all_detail$AgencyID<-def_all_detail$topContractingOfficeAgencyID
-  debug(na_check)
-      def_all_detail<-read_and_join_experiment(def_all_detail,
-                                    "Agency_AgencyID.csv",
-                                     by="AgencyID",
-                                     # replace_na_var="AgencyID",
-                                     add_var=c("Customer","SubCustomer"),
-                                     path = "https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                                     directory = ""
-    )
-  def_all_detail<- subset(def_all_detail,Customer=="Defense")
-  def_all_detail<-def_all_detail[,!colnames(def_all_detail) %in% 
-                     c(
-                       # "topContractingOfficeAgencyID",
-                       "topContractingOfficeAgencyIDamount"      ,
-                       # "topContractingOfficeID",
-                       "topContractingOfficeAmount"  ,
-                       # "topProductOrServiceCode",
-                       "topProductOrServiceAmount"               ,
-                       # "topPrincipalNAICScode",
-                       "topPrincipalNAICSamount",
-                       "Customer")]
-  # load(file="Data\\defense_contract_all_detail.Rdata")
-  
+def_all_detail$AgencyID<-def_all_detail$topContractingOfficeAgencyID
+debug(na_check)
+def_all_detail<-read_and_join_experiment(def_all_detail,
+                                         "Agency_AgencyID.csv",
+                                         by="AgencyID",
+                                         # replace_na_var="AgencyID",
+                                         add_var=c("Customer","SubCustomer"),
+                                         path = "https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                         directory = ""
+)
+def_all_detail<- subset(def_all_detail,Customer=="Defense")
+def_all_detail<-def_all_detail[,!colnames(def_all_detail) %in% 
+                                 c(
+                                   # "topContractingOfficeAgencyID",
+                                   "topContractingOfficeAgencyIDamount"      ,
+                                   # "topContractingOfficeID",
+                                   "topContractingOfficeAmount"  ,
+                                   # "topProductOrServiceCode",
+                                   "topProductOrServiceAmount"               ,
+                                   # "topPrincipalNAICScode",
+                                   "topPrincipalNAICSamount",
+                                   "Customer")]
+# load(file="Data\\defense_contract_all_detail.Rdata")
+
 ```
 
 
@@ -136,9 +134,9 @@ def_all_detail<-dplyr::left_join(def_all_detail,test,by="CSIScontractID")
 def_all_detail<-input_initial_scope(def_all_detail,
                              file="Contract.SP_ContractUnmodifiedAndOutcomeDetailsCustomer.txt")
 
-debug(input_initial_scope)
-def_detail<-input_initial_scope(def_detail,
-                             file="Contract.SP_ContractUnmodifiedAndOutcomeDetailsCustomer.txt")
+# debug(input_initial_scope)
+# def_detail<-input_initial_scope(def_detail,
+#                              file="Contract.SP_ContractUnmodifiedAndOutcomeDetailsCustomer.txt")
 save(file="Data\\defense_contract_all_detail.Rdata",def_all_detail)
 ```
 
@@ -162,8 +160,8 @@ save(file="Data\\defense_contract_all_detail.Rdata",def_all_detail)
 def_detail<-def_all_detail
 rm(def_all_detail)
 #Drop contracts starting before the study period and not clearly end within it
-def_detail<-subset(def_detail, StartFY>=2007   &
-    (LastCurrentCompletionDate<="2017-09-30" | IsClosed==1)
+def_detail<-subset(def_detail, StartFY>=2007   & year(MinOfSignedDate)<2017 & 
+    (LastCurrentCompletionDate<"2017-01-01" | IsClosed==1)
 )
 
 # load(file="Data\\defense_contract_complete_detail.Rdata")
