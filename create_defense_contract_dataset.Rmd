@@ -38,14 +38,19 @@ source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/
 #Combining Source Files
 ##Sample Criteria
 ```{r DetailCustomer}
-if(!exists("def_all")) def_all<-NULL
+if(!exists("def_all_detail")) def_all_detail<-NULL
 # debug(input_sample_criteria)
 debug(input_sample_criteria)
-def_all<-input_sample_criteria(def_all,                                file="Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
+def_all_detail<-input_sample_criteria(def_all_detail,                                file="Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
                       drop_incomplete=FALSE)
   
-load(file="Data\\defense_contract_all.RData")
-save(file="Data\\defense_contract_all.RData",def_all)
+
+debug(input_sample_criteria)
+def_detail<-input_sample_criteria(def_detail,                                file="Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
+                      drop_incomplete=FALSE)
+  
+load(file="Data\\defense_contract_all_detail.Rdata")
+save(file="Data\\defense_contract_all_detail.Rdata",def_all_detail)
 
 ```
 
@@ -54,7 +59,7 @@ save(file="Data\\defense_contract_all.RData",def_all)
 ## Top PSC Office NAICS
 ```{r TopPSCofficeNAICS}
 debug(read_and_join_experiment)
-def_all<-input_contract_psc_office_naics(def_all,                                file="Contract.SP_ContractSampleCriteriaDetailsCustomer.txt")
+def_all_detail<-input_contract_psc_office_naics(def_all_detail,                                file="Contract.SP_ContractSampleCriteriaDetailsCustomer.txt")
 
 #This works!  
 test<-readr::read_delim("Data\\Contract.SP_ContractTopPSCofficeNAICS.txt",delim="\t",
@@ -81,25 +86,25 @@ test<-readr::read_delim("Data\\Contract.SP_ContractTopPSCofficeNAICS.txt",delim=
 #       col_types=col_types
 #     )
 
-def_all<-dplyr::left_join(def_all,test,by="CSIScontractID")
+def_all_detail<-dplyr::left_join(def_all_detail,test,by="CSIScontractID")
 
 
-  def_all$topContractingOfficeAgencyID<-factor(
-    def_all$topContractingOfficeAgencyID
+  def_all_detail$topContractingOfficeAgencyID<-factor(
+    def_all_detail$topContractingOfficeAgencyID
   )
-  def_all$topContractingOfficeID<-factor(
-    def_all$topContractingOfficeID
+  def_all_detail$topContractingOfficeID<-factor(
+    def_all_detail$topContractingOfficeID
   )
-  def_all$topProductOrServiceCode<-factor(
-    def_all$topProductOrServiceCode
+  def_all_detail$topProductOrServiceCode<-factor(
+    def_all_detail$topProductOrServiceCode
   )
-  def_all$topPrincipalNAICScode<-factor(
-    def_all$topPrincipalNAICScode
+  def_all_detail$topPrincipalNAICScode<-factor(
+    def_all_detail$topPrincipalNAICScode
   )
   
-  def_all$AgencyID<-def_all$topContractingOfficeAgencyID
+  def_all_detail$AgencyID<-def_all_detail$topContractingOfficeAgencyID
   debug(na_check)
-      def_all<-read_and_join_experiment(def_all,
+      def_all_detail<-read_and_join_experiment(def_all_detail,
                                     "Agency_AgencyID.csv",
                                      by="AgencyID",
                                      # replace_na_var="AgencyID",
@@ -107,8 +112,8 @@ def_all<-dplyr::left_join(def_all,test,by="CSIScontractID")
                                      path = "https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
                                      directory = ""
     )
-  def_all<- subset(def_all,Customer=="Defense")
-  def_all<-def_all[,!colnames(def_all) %in% 
+  def_all_detail<- subset(def_all_detail,Customer=="Defense")
+  def_all_detail<-def_all_detail[,!colnames(def_all_detail) %in% 
                      c(
                        # "topContractingOfficeAgencyID",
                        "topContractingOfficeAgencyIDamount"      ,
@@ -119,48 +124,51 @@ def_all<-dplyr::left_join(def_all,test,by="CSIScontractID")
                        # "topPrincipalNAICScode",
                        "topPrincipalNAICSamount",
                        "Customer")]
-  # load(file="Data\\Defense_contract_CSIScontractID_complete.RData")
+  # load(file="Data\\defense_contract_all_detail.Rdata")
   
 ```
 
 
 ##Initial Scope
 ```{r Scope}
-# load(file="Data\\defense_contract_all.RData")
+# load(file="Data\\defense_contract_all_detail.Rdata")
 # undebug(input_initial_scope)
-def_all<-input_initial_scope(def_all,
-                             file="Contract.SP_ContractUnmodifiedAndOutcomeDetailsCustomer2017.txt")
+def_all_detail<-input_initial_scope(def_all_detail,
+                             file="Contract.SP_ContractUnmodifiedAndOutcomeDetailsCustomer.txt")
 
-save(file="Data\\defense_contract_all.RData",def_all)
+debug(input_initial_scope)
+def_detail<-input_initial_scope(def_detail,
+                             file="Contract.SP_ContractUnmodifiedAndOutcomeDetailsCustomer.txt")
+save(file="Data\\defense_contract_all_detail.Rdata",def_all_detail)
 ```
 
 ## Contract Delta
 
 ```{r Delta}
-# load(file="Data\\defense_contract_all.RData")
+# load(file="Data\\defense_contract_all_detail.Rdata")
 # undebug(input_initial_scope)
-def_all<-input_contract_delta(def_all,
+def_all_detail<-input_contract_delta(def_all_detail,
              file="Defense_Contract_SP_ContractModificationDeltaCustomer.csv")
 
-save(file="Data\\defense_contract_all.RData",def_all)
+save(file="Data\\defense_contract_all_detail.Rdata",def_all_detail)
 ```
 
-# Split between def_full and def
+# Split between def_all_detail and def_detail
 
 ##Location
 ```{r Location}
 
 
-def<-def_all
-rm(def_all)
+def_detail<-def_all_detail
+rm(def_all_detail)
 #Drop contracts starting before the study period and not clearly end within it
-def<-subset(def, StartFY>=2007   &
+def_detail<-subset(def_detail, StartFY>=2007   &
     (LastCurrentCompletionDate<="2017-09-30" | IsClosed==1)
 )
 
-# load(file="Data\\defense_contract_complete.Rdata")
+# load(file="Data\\defense_contract_complete_detail.Rdata")
 
-def<-csis360::read_and_join_experiment(def,
+def_detail<-csis360::read_and_join_experiment(def_detail,
     "Contract.SP_ContractLocationCustomer.txt"
   ,path=""
   ,dir="Data\\"
@@ -169,53 +177,53 @@ def<-csis360::read_and_join_experiment(def,
   # ,zip_file="Contract.SP_ContractLocationCustomer.zip"
 )
 
-def<-csis360::standardize_variable_names(def)
+def_detail<-csis360::standardize_variable_names(def_detail)
 
 
 
-# def$pIsInternational<-
-#   as.double(def$ObligatedAmountPlaceIsInternational)/
-#   as.double(def$Action.Obligation)
-# length(def$pIsInternational[
-#   # is.na(def$pIsInternational)&
-#     def$PlaceIsInternational==1
+# def_detail$pIsInternational<-
+#   as.double(def_detail$ObligatedAmountPlaceIsInternational)/
+#   as.double(def_detail$Action.Obligation)
+# length(def_detail$pIsInternational[
+#   # is.na(def_detail$pIsInternational)&
+#     def_detail$PlaceIsInternational==1
 # ])<-0
-# summary(def$pIsInternational)
-# summary(def$PlaceIsInternational)
-# summary(subset(def,is.finite(pIsInternational)))
+# summary(def_detail$pIsInternational)
+# summary(def_detail$PlaceIsInternational)
+# summary(subset(def_detail,is.finite(pIsInternational)))
 # 
-# ggplot(def, aes(x=ObligatedAmountPlaceIsInternational))+geom_histogram()
+# ggplot(def_detail, aes(x=ObligatedAmountPlaceIsInternational))+geom_histogram()
 
-# summary(def$ObligatedAmountPlaceIsInternational)
-# summary(def$PlaceIsInternational)
+# summary(def_detail$ObligatedAmountPlaceIsInternational)
+# summary(def_detail$PlaceIsInternational)
 
-def$AnyPlaceInternational[is.na(def$PlaceIsInternational) &
-    is.na(def$UnmodifiedPlaceIsInternational)]<-NA
+def_detail$AnyPlaceInternational[is.na(def_detail$PlaceIsInternational) &
+    is.na(def_detail$UnmodifiedPlaceIsInternational)]<-NA
 
-summary(def$AnyPlaceInternational)
-summary(def$PlaceIsInternational)
-summary(def$UnmodifiedPlaceIsInternational)
-summary(factor(def$PlaceCountryISO3))
-summary(factor(def$UnmodifiedPlaceCountryISO3))
+summary(def_detail$AnyPlaceInternational)
+summary(def_detail$PlaceIsInternational)
+summary(def_detail$UnmodifiedPlaceIsInternational)
+summary(factor(def_detail$PlaceCountryISO3))
+summary(factor(def_detail$UnmodifiedPlaceCountryISO3))
 
 
-if(is.numeric(def$AnyPlaceInternational)){
-  def$AnyPlaceInternational<-factor(def$AnyPlaceInternational,
+if(is.numeric(def_detail$AnyPlaceInternational)){
+  def_detail$AnyPlaceInternational<-factor(def_detail$AnyPlaceInternational,
     exclude=NULL,
     levels=c(0,1,NA),
     labels=c("Just U.S.","Any International",NA)
   )
 }
 
-summary(def$AnyPlaceInternational)
-def$UnmodifiedPlaceCountryISO3[is.na(def$UnmodifiedPlaceCountryISO3)]<-
-  def$PlaceCountryISO3[is.na(def$UnmodifiedPlaceCountryISO3)]
-def$UnmodifiedPlaceCountryISO3<-factor(def$UnmodifiedPlaceCountryISO3)
+summary(def_detail$AnyPlaceInternational)
+def_detail$UnmodifiedPlaceCountryISO3[is.na(def_detail$UnmodifiedPlaceCountryISO3)]<-
+  def_detail$PlaceCountryISO3[is.na(def_detail$UnmodifiedPlaceCountryISO3)]
+def_detail$UnmodifiedPlaceCountryISO3<-factor(def_detail$UnmodifiedPlaceCountryISO3)
 
 
-def$AnyPlaceInternational<-droplevels(def$AnyPlaceInternational)
+def_detail$AnyPlaceInternational<-droplevels(def_detail$AnyPlaceInternational)
 
-def<-def[,!colnames(def) %in% 
+def_detail<-def_detail[,!colnames(def_detail) %in% 
     c(
   # "PlaceCountryISO3",
   # "UnmodifiedPlaceCountryISO3",
@@ -239,7 +247,7 @@ def<-def[,!colnames(def) %in%
     )]
 
 
-save(file="Data\\defense_contract_complete.Rdata",def)
+save(file="Data\\defense_contract_complete_detail.Rdata",def_detail)
 
 
 ```
@@ -248,9 +256,9 @@ save(file="Data\\defense_contract_complete.Rdata",def)
 
 ##BucketPlatform
 ```{r BucketPlatform}
-# load(file="Data\\Defense_contract_CSIScontractID_complete.RData")
+# load(file="Data\\defense_contract_complete_detail.Rdata")
 #Note to identify is.defense here.
-def<-csis360::read_and_join_experiment(data=def
+def_detail<-csis360::read_and_join_experiment(data=def_detail
   ,"Contract.SP_ContractBucketPlatformCustomer.txt"
   ,path=""
   ,"Data\\"
@@ -258,119 +266,119 @@ def<-csis360::read_and_join_experiment(data=def
   ,new_var_checked=FALSE
 )
 # 
-# def$ObligatedAmountIsProducts<-FactorToNumber(def$ObligatedAmountIsProducts)
+# def_detail$ObligatedAmountIsProducts<-FactorToNumber(def_detail$ObligatedAmountIsProducts)
 # 
-# def$ObligatedAmountIsServices<-FactorToNumber(def$ObligatedAmountIsServices)
+# def_detail$ObligatedAmountIsServices<-FactorToNumber(def_detail$ObligatedAmountIsServices)
 # 
-# def$ObligatedAmountIsRnD<-FactorToNumber(def$ObligatedAmountIsRnD)
+# def_detail$ObligatedAmountIsRnD<-FactorToNumber(def_detail$ObligatedAmountIsRnD)
 # 
-# def$pIsProducts <- def$ObligatedAmountIsProducts/def$Action.Obligation
-# def$pIsProducts[is.na(def$ObligatedAmountIsProducts)] <- 0
+# def_detail$pIsProducts <- def_detail$ObligatedAmountIsProducts/def_detail$Action.Obligation
+# def_detail$pIsProducts[is.na(def_detail$ObligatedAmountIsProducts)] <- 0
 # 
-# def$pIsServices <- def$ObligatedAmountIsServices/def$Action.Obligation
-# def$pIsServices[is.na(def$ObligatedAmountIsServices)] <- 0
+# def_detail$pIsServices <- def_detail$ObligatedAmountIsServices/def_detail$Action.Obligation
+# def_detail$pIsServices[is.na(def_detail$ObligatedAmountIsServices)] <- 0
 # 
-# def$pIsRnD <- def$ObligatedAmountIsRnD/def$Action.Obligation
-# def$pIsRnD[is.na(def$ObligatedAmountIsRnD)] <- 0
+# def_detail$pIsRnD <- def_detail$ObligatedAmountIsRnD/def_detail$Action.Obligation
+# def_detail$pIsRnD[is.na(def_detail$ObligatedAmountIsRnD)] <- 0
 
 #Need to update these to the new platform portfolios
 # 
 # 
-# def$ObligatedAmountIsLand<-FactorToNumber(def$ObligatedAmountIsLand)
+# def_detail$ObligatedAmountIsLand<-FactorToNumber(def_detail$ObligatedAmountIsLand)
 # 
-# def$ObligatedAmountIsVessel<-FactorToNumber(def$ObligatedAmountIsVessel)
-# 
-# 
-# def$ObligatedAmountIsVessel<-FactorToNumber(def$ObligatedAmountIsAir)
-# 
-# def$ObligatedAmountIsVessel<-FactorToNumber(def$ObligatedAmountIsOtherPP)
-# 
-# def$ObligatedAmountIsWnA<-FactorToNumber(def$ObligatedAmountIsWnA)
-# 
-# def$ObligatedAmountIsMnS<-FactorToNumber(def$ObligatedAmountIsMnS)
-# 
-# def$ObligatedAmountIsEnC<-FactorToNumber(def$ObligatedAmountIsEnC)
-# 
-# def$ObligatedAmountIsFRSnC<-FactorToNumber(def$ObligatedAmountIsFRSnC)
+# def_detail$ObligatedAmountIsVessel<-FactorToNumber(def_detail$ObligatedAmountIsVessel)
 # 
 # 
-# def$pIsLand <- def$ObligatedAmountIsLand/def$Action.Obligation
-# def$pIsLand[is.nan(def$pIsLand)|is.infinite(def$pIsLand)|is.na(def$ObligatedAmountIsLand)] <- 0
+# def_detail$ObligatedAmountIsVessel<-FactorToNumber(def_detail$ObligatedAmountIsAir)
 # 
-# def$pIsVessel <- def$ObligatedAmountIsVessel/def$Action.Obligation
-# def$pIsVessel[is.nan(def$pIsVessel)|is.infinite(def$pIsVessel)|is.na(def$ObligatedAmountIsVessel)] <- 0
+# def_detail$ObligatedAmountIsVessel<-FactorToNumber(def_detail$ObligatedAmountIsOtherPP)
 # 
-# def$pIsOtherPP <- def$ObligatedAmountIsOtherPP/def$Action.Obligation
-# def$pIsOtherPP[is.nan(def$pIsOtherPP)|is.infinite(def$pIsOtherPP)|is.na(def$ObligatedAmountIsOtherPP)] <- 0
+# def_detail$ObligatedAmountIsWnA<-FactorToNumber(def_detail$ObligatedAmountIsWnA)
 # 
-# def$pIsAir <- def$ObligatedAmountIsAir/def$Action.Obligation
-# def$pIsAir[is.nan(def$pIsAir)|is.infinite(def$pIsAir)|is.na(def$ObligatedAmountIsAir)] <- 0
+# def_detail$ObligatedAmountIsMnS<-FactorToNumber(def_detail$ObligatedAmountIsMnS)
 # 
-# def$pIsEnC <- def$ObligatedAmountIsEnC/def$Action.Obligation
-# def$pIsEnC[is.nan(def$pIsEnC)|is.infinite(def$pIsEnC)|is.na(def$ObligatedAmountIsEnC)] <- 0
+# def_detail$ObligatedAmountIsEnC<-FactorToNumber(def_detail$ObligatedAmountIsEnC)
 # 
-# def$pIsFRSnC <- def$ObligatedAmountIsFRSnC/def$Action.Obligation
-# def$pIsFRSnC[is.nan(def$pIsFRSnC)|is.infinite(def$pIsFRSnC)|is.na(def$ObligatedAmountIsFRSnC)] <- 0
+# def_detail$ObligatedAmountIsFRSnC<-FactorToNumber(def_detail$ObligatedAmountIsFRSnC)
 # 
 # 
-# def$pIsMnS <- def$ObligatedAmountIsMnS/def$Action.Obligation
-# def$pIsMnS[is.nan(def$pIsMnS)|is.infinite(def$pIsMnS)|is.na(def$ObligatedAmountIsMnS)] <- 0
+# def_detail$pIsLand <- def_detail$ObligatedAmountIsLand/def_detail$Action.Obligation
+# def_detail$pIsLand[is.nan(def_detail$pIsLand)|is.infinite(def_detail$pIsLand)|is.na(def_detail$ObligatedAmountIsLand)] <- 0
+# 
+# def_detail$pIsVessel <- def_detail$ObligatedAmountIsVessel/def_detail$Action.Obligation
+# def_detail$pIsVessel[is.nan(def_detail$pIsVessel)|is.infinite(def_detail$pIsVessel)|is.na(def_detail$ObligatedAmountIsVessel)] <- 0
+# 
+# def_detail$pIsOtherPP <- def_detail$ObligatedAmountIsOtherPP/def_detail$Action.Obligation
+# def_detail$pIsOtherPP[is.nan(def_detail$pIsOtherPP)|is.infinite(def_detail$pIsOtherPP)|is.na(def_detail$ObligatedAmountIsOtherPP)] <- 0
+# 
+# def_detail$pIsAir <- def_detail$ObligatedAmountIsAir/def_detail$Action.Obligation
+# def_detail$pIsAir[is.nan(def_detail$pIsAir)|is.infinite(def_detail$pIsAir)|is.na(def_detail$ObligatedAmountIsAir)] <- 0
+# 
+# def_detail$pIsEnC <- def_detail$ObligatedAmountIsEnC/def_detail$Action.Obligation
+# def_detail$pIsEnC[is.nan(def_detail$pIsEnC)|is.infinite(def_detail$pIsEnC)|is.na(def_detail$ObligatedAmountIsEnC)] <- 0
+# 
+# def_detail$pIsFRSnC <- def_detail$ObligatedAmountIsFRSnC/def_detail$Action.Obligation
+# def_detail$pIsFRSnC[is.nan(def_detail$pIsFRSnC)|is.infinite(def_detail$pIsFRSnC)|is.na(def_detail$ObligatedAmountIsFRSnC)] <- 0
+# 
+# 
+# def_detail$pIsMnS <- def_detail$ObligatedAmountIsMnS/def_detail$Action.Obligation
+# def_detail$pIsMnS[is.nan(def_detail$pIsMnS)|is.infinite(def_detail$pIsMnS)|is.na(def_detail$ObligatedAmountIsMnS)] <- 0
 
 
 # TempList<-c("PlatformPortfolio","UnmodifiedPlatformPortfolio","ObligatedAmountIsAir","ObligatedAmountIsEnC","ObligatedAmountIsFRSnC","ObligatedAmountIsLand","ObligatedAmountIsMnS","ObligatedAmountIsOtherPP","ObligatedAmountIsVessel","ObligatedAmountIsWnA","ProductOrServiceArea","UnmodifiedProductOrServiceArea","SimpleArea","UnmodifiedSimpleArea","ObligatedAmountIsProducts","ObligatedAmountIsServices","ObligatedAmountIsRnD","MaxOfIsPossibleSoftwareEngineering")
 
-# TempList<-TempList[TempList %in% names(def)]
-# def<-subset(def,select=-c(PlatformPortfolio,
+# TempList<-TempList[TempList %in% names(def_detail)]
+# def_detail<-subset(def_detail,select=-c(PlatformPortfolio,
 #                                                       UnmodifiedPlatformPortfolio,
 #                                                       SimpleArea,UnmodifiedSimpleArea ))
 
-NASimpleArea<-(def$SimpleArea=="Mixed or Unlabeled" | is.na(def$SimpleArea))&
-  !is.na(def$UnmodifiedSimpleArea) & def$UnmodifiedSimpleArea!="NULL"
-def$SimpleArea[NASimpleArea]<-def$UnmodifiedSimpleArea[NASimpleArea]
-# def$SimpleArea[def$SimpleArea=="Mixed or Unlabeled" & def$pIsProducts>0.5]<-"Products"
-# def$SimpleArea[def$SimpleArea=="Mixed or Unlabeled" & def$pIsServices>0.5]<-"Services"
-# def$SimpleArea[def$SimpleArea=="Mixed or Unlabeled" & def$pIsRnD>0.5]<-"R&D"
+NASimpleArea<-(def_detail$SimpleArea=="Mixed or Unlabeled" | is.na(def_detail$SimpleArea))&
+  !is.na(def_detail$UnmodifiedSimpleArea) & def_detail$UnmodifiedSimpleArea!="NULL"
+def_detail$SimpleArea[NASimpleArea]<-def_detail$UnmodifiedSimpleArea[NASimpleArea]
+# def_detail$SimpleArea[def_detail$SimpleArea=="Mixed or Unlabeled" & def_detail$pIsProducts>0.5]<-"Products"
+# def_detail$SimpleArea[def_detail$SimpleArea=="Mixed or Unlabeled" & def_detail$pIsServices>0.5]<-"Services"
+# def_detail$SimpleArea[def_detail$SimpleArea=="Mixed or Unlabeled" & def_detail$pIsRnD>0.5]<-"R&D"
 
 
 
-# def$PlatformPortfolio.sum[def$pIsLand>=0.75&
-#     def$PlatformPortfolio.sum=="Unlabeled"]<-"Land Vehicles"
-# def$PlatformPortfolio.sum[def$pIsVessel>=0.75&
-#     def$PlatformPortfolio.sum=="Unlabeled"]<-"Ships & Submarines"
-# def$PlatformPortfolio.sum[def$pIsAir>=0.75&
-#     def$PlatformPortfolio.sum=="Unlabeled"]<-"Aircraft and Drones"
-# def$PlatformPortfolio.sum[def$pIsOtherPP>=0.75&
-#     def$PlatformPortfolio.sum=="Unlabeled"]<-"Other"
-# def$PlatformPortfolio.sum[def$pIsWnA>=0.75&
-#     def$PlatformPortfolio.sum=="Unlabeled"]<-"Weapons and Ammunition"
-# def$PlatformPortfolio.sum[def$pIsMnS>=0.75&
-#     def$PlatformPortfolio.sum=="Unlabeled"]<-"Missile and Space Systems"
-# def$PlatformPortfolio.sum[def$pIsEnC>=0.75&
-#     def$PlatformPortfolio.sum=="Unlabeled"]<-"Electronics and Communications"
-# def$PlatformPortfolio.sum[def$pIsFRSnC>=0.75&
-#     def$PlatformPortfolio.sum=="Unlabeled"]<-"Facilities and Construction"
+# def_detail$PlatformPortfolio.sum[def_detail$pIsLand>=0.75&
+#     def_detail$PlatformPortfolio.sum=="Unlabeled"]<-"Land Vehicles"
+# def_detail$PlatformPortfolio.sum[def_detail$pIsVessel>=0.75&
+#     def_detail$PlatformPortfolio.sum=="Unlabeled"]<-"Ships & Submarines"
+# def_detail$PlatformPortfolio.sum[def_detail$pIsAir>=0.75&
+#     def_detail$PlatformPortfolio.sum=="Unlabeled"]<-"Aircraft and Drones"
+# def_detail$PlatformPortfolio.sum[def_detail$pIsOtherPP>=0.75&
+#     def_detail$PlatformPortfolio.sum=="Unlabeled"]<-"Other"
+# def_detail$PlatformPortfolio.sum[def_detail$pIsWnA>=0.75&
+#     def_detail$PlatformPortfolio.sum=="Unlabeled"]<-"Weapons and Ammunition"
+# def_detail$PlatformPortfolio.sum[def_detail$pIsMnS>=0.75&
+#     def_detail$PlatformPortfolio.sum=="Unlabeled"]<-"Missile and Space Systems"
+# def_detail$PlatformPortfolio.sum[def_detail$pIsEnC>=0.75&
+#     def_detail$PlatformPortfolio.sum=="Unlabeled"]<-"Electronics and Communications"
+# def_detail$PlatformPortfolio.sum[def_detail$pIsFRSnC>=0.75&
+#     def_detail$PlatformPortfolio.sum=="Unlabeled"]<-"Facilities and Construction"
 # 
-# def$SoftwareEng<-factor(def$MaxOfIsPossibleSoftwareEngineering,
+# def_detail$SoftwareEng<-factor(def_detail$MaxOfIsPossibleSoftwareEngineering,
 #   levels=c(0,1),
 #   labels=c("Not Software Eng.","Possible Software Eng.")
 # )
 # 
-# def$SoftwareEng[is.na(def$SoftwareEng)&
-#     !is.na(def$SimpleArea)]<-"Not Software Eng."
+# def_detail$SoftwareEng[is.na(def_detail$SoftwareEng)&
+#     !is.na(def_detail$SimpleArea)]<-"Not Software Eng."
 
 
 
-def$PlatformPortfolio<-factor(def$PlatformPortfolio)
-def$UnmodifiedPlatformPortfolio<-factor(def$UnmodifiedPlatformPortfolio)
+def_detail$PlatformPortfolio<-factor(def_detail$PlatformPortfolio)
+def_detail$UnmodifiedPlatformPortfolio<-factor(def_detail$UnmodifiedPlatformPortfolio)
 
-def$ProductOrServiceArea<-factor(def$ProductOrServiceArea)
-def$UnmodifiedProductOrServiceArea<-factor(def$UnmodifiedProductOrServiceArea)
+def_detail$ProductOrServiceArea<-factor(def_detail$ProductOrServiceArea)
+def_detail$UnmodifiedProductOrServiceArea<-factor(def_detail$UnmodifiedProductOrServiceArea)
 
-def$SimpleArea<-factor(def$SimpleArea)
-def$UnmodifiedSimpleArea<-factor(def$UnmodifiedSimpleArea)
+def_detail$SimpleArea<-factor(def_detail$SimpleArea)
+def_detail$UnmodifiedSimpleArea<-factor(def_detail$UnmodifiedSimpleArea)
 
 
-def<-subset(def,select=-c(
+def_detail<-subset(def_detail,select=-c(
   # UnmodifiedSimpleArea,
   # SimpleArea,
   MaxOfIsPossibleSoftwareEngineering
@@ -392,20 +400,20 @@ def<-subset(def,select=-c(
 
 
 
-def$SimpleArea<-droplevels(def$SimpleArea)
+def_detail$SimpleArea<-droplevels(def_detail$SimpleArea)
 
 
-save(file="Data\\Defense_contract_CSIScontractID_complete.RData",def)
+save(file="Data\\defense_contract_complete_detail.Rdata",def_detail)
 
 ```
 
 ##Competition Vehicle
 ```{r CompetitionVehicle}
-# load(file="Data\\Defense_contract_CSIScontractID_complete.RData")
+# load(file="Data\\defense_contract_complete_detail.Rdata")
 
 
 ##Contract_SP_ContractUnmodifiedCompetitionvehicleCustomer.txt
-def<-csis360::read_and_join_experiment(data=def
+def_detail<-csis360::read_and_join_experiment(data=def_detail
   ,"Contract.SP_ContractUnmodifiedCompetitionvehicleCustomer.txt"
   ,path=""
   ,"Data\\"
@@ -414,7 +422,7 @@ def<-csis360::read_and_join_experiment(data=def
 )
 
 #Contract.SP_ContractCompetitionVehicleCustomer.txt
-def<-csis360::read_and_join_experiment(data=def
+def_detail<-csis360::read_and_join_experiment(data=def_detail
   ,"Contract.SP_ContractCompetitionVehicleCustomer.txt"
   ,path=""
   ,"Data\\"
@@ -424,24 +432,24 @@ def<-csis360::read_and_join_experiment(data=def
 
 
 #Number of Offers
-def$UnmodifiedNumberOfOffersReceived[def$UnmodifiedNumberOfOffersReceived==0]<-NA
-def$NumberOfOffersReceived[def$NumberOfOffersReceived==0]<-NA
-def$UnmodifiedNumberOfOffersReceived<-FactorToNumber(def$UnmodifiedNumberOfOffersReceived)
-def$NumberOfOffersReceived<-FactorToNumber(def$NumberOfOffersReceived)
-def$UnmodifiedNumberOfOffersReceived[is.null(def$UnmodifiedNumberOfOffersReceived)]<-NA
-def$NumberOfOffersReceived[is.null(def$NumberOfOffersReceived)]<-NA
+def_detail$UnmodifiedNumberOfOffersReceived[def_detail$UnmodifiedNumberOfOffersReceived==0]<-NA
+def_detail$NumberOfOffersReceived[def_detail$NumberOfOffersReceived==0]<-NA
+def_detail$UnmodifiedNumberOfOffersReceived<-FactorToNumber(def_detail$UnmodifiedNumberOfOffersReceived)
+def_detail$NumberOfOffersReceived<-FactorToNumber(def_detail$NumberOfOffersReceived)
+def_detail$UnmodifiedNumberOfOffersReceived[is.null(def_detail$UnmodifiedNumberOfOffersReceived)]<-NA
+def_detail$NumberOfOffersReceived[is.null(def_detail$NumberOfOffersReceived)]<-NA
 
-def$UnmodifiedNumberOfOffersReceived<-impute_unmodified(
-  def$UnmodifiedNumberOfOffersReceived,
-  def$NumberOfOffersReceived
+def_detail$UnmodifiedNumberOfOffersReceived<-impute_unmodified(
+  def_detail$UnmodifiedNumberOfOffersReceived,
+  def_detail$NumberOfOffersReceived
 )
 
-def$Offr <- cut2(def$UnmodifiedNumberOfOffersReceived,cuts=c(1,2,3,5))
+def_detail$Offr <- cut2(def_detail$UnmodifiedNumberOfOffersReceived,cuts=c(1,2,3,5))
 
 
 
-if (all(levels(def$Offr)==c("  1","  2","[  3,  5)","[  5,999]"))){
-  def$Offr<-factor(def$Offr, 
+if (all(levels(def_detail$Offr)==c("  1","  2","[  3,  5)","[  5,999]"))){
+  def_detail$Offr<-factor(def_detail$Offr, 
     levels=c("  1","  2","[  3,  5)","[  5,999]"),
     labels=c("1","2","3-4","5+"),
     ordered=TRUE
@@ -456,40 +464,40 @@ if (all(levels(def$Offr)==c("  1","  2","[  3,  5)","[  5,999]"))){
 
 #IsSomeCompetition Impute missing values when labeled entries have a consistent value.
 
-def$UnmodifiedIsSomeCompetition<-impute_unmodified(
-  def$UnmodifiedIsSomeCompetition,
-  def$IsSomeCompetition
+def_detail$UnmodifiedIsSomeCompetition<-impute_unmodified(
+  def_detail$UnmodifiedIsSomeCompetition,
+  def_detail$IsSomeCompetition
 )
 
 
 #Set is some competion = 1 when it is blank and there are multiple offers
 
-def$UnmodifiedIsSomeCompetition[is.na(def$UnmodifiedIsSomeCompetition)&
-    !is.na(def$UnmodifiedNumberOfOffersReceived)&
-    def$UnmodifiedNumberOfOffersReceived>1
+def_detail$UnmodifiedIsSomeCompetition[is.na(def_detail$UnmodifiedIsSomeCompetition)&
+    !is.na(def_detail$UnmodifiedNumberOfOffersReceived)&
+    def_detail$UnmodifiedNumberOfOffersReceived>1
   ]<-1
 
 #Set number of offers =1 when there is a NA and no competition
-def$Offr[is.na(def$Offr)&
-    !is.na(def$UnmodifiedIsSomeCompetition)&
-    def$UnmodifiedIsSomeCompetition==0
+def_detail$Offr[is.na(def_detail$Offr)&
+    !is.na(def_detail$UnmodifiedIsSomeCompetition)&
+    def_detail$UnmodifiedIsSomeCompetition==0
   ]<-"1"
 
-def$UnmodifiedNumberOfOffersReceived[is.na(def$UnmodifiedNumberOfOffersReceived)&
-    !is.na(def$UnmodifiedIsSomeCompetition)&
-    def$UnmodifiedIsSomeCompetition==0
+def_detail$UnmodifiedNumberOfOffersReceived[is.na(def_detail$UnmodifiedNumberOfOffersReceived)&
+    !is.na(def_detail$UnmodifiedIsSomeCompetition)&
+    def_detail$UnmodifiedIsSomeCompetition==0
   ]<-1
 
 
 #Produce Comp factor
-def$Comp[def$UnmodifiedIsSomeCompetition==0]<-"No Comp."
-# def$Comp[def$UnmodifiedIsSomeCompetition=="Comp." &
-#                            def$UnmodifiedIsFullAndOpen=="Not Full & Open"]<-"Comp."
-# def$Comp[def$UnmodifiedIsSomeCompetition=="Comp." &
-#                            def$UnmodifiedIsFullAndOpen=="Comp."]<-"Comp."
-def$Comp[def$UnmodifiedIsSomeCompetition==1]<-"Comp."
+def_detail$Comp[def_detail$UnmodifiedIsSomeCompetition==0]<-"No Comp."
+# def_detail$Comp[def_detail$UnmodifiedIsSomeCompetition=="Comp." &
+#                            def_detail$UnmodifiedIsFullAndOpen=="Not Full & Open"]<-"Comp."
+# def_detail$Comp[def_detail$UnmodifiedIsSomeCompetition=="Comp." &
+#                            def_detail$UnmodifiedIsFullAndOpen=="Comp."]<-"Comp."
+def_detail$Comp[def_detail$UnmodifiedIsSomeCompetition==1]<-"Comp."
 
-def$Comp<-factor(def$Comp,
+def_detail$Comp<-factor(def_detail$Comp,
                                levels=c("No Comp.","Comp.")
                                                               )
 
@@ -497,115 +505,115 @@ def$Comp<-factor(def$Comp,
 #Produce EffComp factor
 
 #Competition and Offer  
-def$EffComp<-as.character(def$Comp)
+def_detail$EffComp<-as.character(def_detail$Comp)
 
-def$EffComp[def$Comp=="Comp." & !is.na(def$Comp)]<-
-  ifelse(def$UnmodifiedNumberOfOffersReceived[
-    def$Comp=="Comp." & !is.na(def$Comp)]>1,"2+ Offers","1 Offer")
+def_detail$EffComp[def_detail$Comp=="Comp." & !is.na(def_detail$Comp)]<-
+  ifelse(def_detail$UnmodifiedNumberOfOffersReceived[
+    def_detail$Comp=="Comp." & !is.na(def_detail$Comp)]>1,"2+ Offers","1 Offer")
 
-def$EffComp<-factor(def$EffComp,
+def_detail$EffComp<-factor(def_detail$EffComp,
                                levels=c("No Comp.","1 Offer","2+ Offers")
                                )
 
 
 #Impute missing urgency values
-def$UnmodifiedIsUrgency<-impute_unmodified(
-  def$UnmodifiedIsUrgency,
-  def$IsUrgency
+def_detail$UnmodifiedIsUrgency<-impute_unmodified(
+  def_detail$UnmodifiedIsUrgency,
+  def_detail$IsUrgency
 )
 #If there's competition, than the urgency exception wasn't used
-def$UnmodifiedIsUrgency[is.na(def$UnmodifiedIsUrgency)&
-                               !is.na(def$UnmodifiedIsSomeCompetition)&
-                               def$UnmodifiedIsSomeCompetition==1]<-0
+def_detail$UnmodifiedIsUrgency[is.na(def_detail$UnmodifiedIsUrgency)&
+                               !is.na(def_detail$UnmodifiedIsSomeCompetition)&
+                               def_detail$UnmodifiedIsSomeCompetition==1]<-0
 
 
-def$Urg[def$UnmodifiedIsUrgency==0]<-"Not Urgency"
-def$Urg[def$UnmodifiedIsUrgency==1]<-"Urgency Except."
-def$Urg<-factor(def$Urg,
+def_detail$Urg[def_detail$UnmodifiedIsUrgency==0]<-"Not Urgency"
+def_detail$Urg[def_detail$UnmodifiedIsUrgency==1]<-"Urgency Except."
+def_detail$Urg<-factor(def_detail$Urg,
                                levels=c("Not Urgency","Urgency Except.")
                                )
 
 #Vehicle
 #Award_Type_Code Impute missing values when labeled entries have a consistent value.
-def$unmodifiedaward_type_code<-impute_unmodified(
-  def$unmodifiedaward_type_code,
-  def$Award_Type_Code
+def_detail$unmodifiedaward_type_code<-impute_unmodified(
+  def_detail$unmodifiedaward_type_code,
+  def_detail$Award_Type_Code
 )
 
 #idv_type_code Impute missing values when labeled entries have a consistent value.
-def$unmodifiedidv_type_code<-impute_unmodified(
-  def$unmodifiedidv_type_code,
-  def$IDV_Type_Code
+def_detail$unmodifiedidv_type_code<-impute_unmodified(
+  def_detail$unmodifiedidv_type_code,
+  def_detail$IDV_Type_Code
 )
 
 
 #Unmodifiedmultipleorsingleawardidc Impute missing values when labeled entries have a consistent value.
-def$Unmodifiedmultipleorsingleawardidc<-impute_unmodified(
-  def$Unmodifiedmultipleorsingleawardidc,
-  def$multipleorsingleawardidc
+def_detail$Unmodifiedmultipleorsingleawardidc<-impute_unmodified(
+  def_detail$Unmodifiedmultipleorsingleawardidc,
+  def_detail$multipleorsingleawardidc
 )
 
 #Assign Is IDV
 #A = BPA Call, C = Delivery Order
-def$IsIDV[!is.na(def$unmodifiedaward_type_code) &
-                               def$unmodifiedaward_type_code %in% c("A","C")]<-1
+def_detail$IsIDV[!is.na(def_detail$unmodifiedaward_type_code) &
+                               def_detail$unmodifiedaward_type_code %in% c("A","C")]<-1
 #B = Purchase Order, D = Definitive Contract
-def$IsIDV[!is.na(def$unmodifiedaward_type_code) &
-                               def$unmodifiedaward_type_code %in% c("B","D")]<-0
-def$IsIDV[!is.na(def$unmodifiedidv_type_code)]<-1
+def_detail$IsIDV[!is.na(def_detail$unmodifiedaward_type_code) &
+                               def_detail$unmodifiedaward_type_code %in% c("B","D")]<-0
+def_detail$IsIDV[!is.na(def_detail$unmodifiedidv_type_code)]<-1
 
-if(is.numeric(def$IsIDV)){
-  def$IsIDV<-factor(def$IsIDV,levels=c(0,1),labels=c("Def/Pur","IDV"))
+if(is.numeric(def_detail$IsIDV)){
+  def_detail$IsIDV<-factor(def_detail$IsIDV,levels=c(0,1),labels=c("def_detail/Pur","IDV"))
 }
 
 
 #Simple Vehicle, which consolidates IDV and award types
-def$Veh[
-  !is.na(def$unmodifiedaward_type_code) &
-    def$unmodifiedaward_type_code %in% c("B","D")]<-"Def/Pur"
+def_detail$Veh[
+  !is.na(def_detail$unmodifiedaward_type_code) &
+    def_detail$unmodifiedaward_type_code %in% c("B","D")]<-"def_detail/Pur"
 
 
-def$Veh[
-  !is.na(def$unmodifiedidv_type_code) &
-    def$unmodifiedidv_type_code %in% c("B") &
-    !is.na(def$Unmodifiedmultipleorsingleawardidc)]<-
-  paste(def$Unmodifiedmultipleorsingleawardidc[
-     !is.na(def$unmodifiedidv_type_code) &
-    def$unmodifiedidv_type_code %in% c("B") &
-    !is.na(def$Unmodifiedmultipleorsingleawardidc)
+def_detail$Veh[
+  !is.na(def_detail$unmodifiedidv_type_code) &
+    def_detail$unmodifiedidv_type_code %in% c("B") &
+    !is.na(def_detail$Unmodifiedmultipleorsingleawardidc)]<-
+  paste(def_detail$Unmodifiedmultipleorsingleawardidc[
+     !is.na(def_detail$unmodifiedidv_type_code) &
+    def_detail$unmodifiedidv_type_code %in% c("B") &
+    !is.na(def_detail$Unmodifiedmultipleorsingleawardidc)
   ],"IDC")
 
 #IDV_type_Code D = BOA, E=BPA, Award_Type_code A=BPA Call
-def$Veh[
-  !is.na(def$unmodifiedidv_type_code) &
-    def$unmodifiedidv_type_code %in% c("D","E") |
-  !is.na(def$unmodifiedaward_type_code) &
-    def$unmodifiedaward_type_code %in% c("A") 
+def_detail$Veh[
+  !is.na(def_detail$unmodifiedidv_type_code) &
+    def_detail$unmodifiedidv_type_code %in% c("D","E") |
+  !is.na(def_detail$unmodifiedaward_type_code) &
+    def_detail$unmodifiedaward_type_code %in% c("A") 
     ]<-
   "BPA/BOA"
 #IDV_type_cde A=GWAC C=FSS
-def$Veh[
-  !is.na(def$unmodifiedidv_type_code)
-  & def$unmodifiedidv_type_code 
+def_detail$Veh[
+  !is.na(def_detail$unmodifiedidv_type_code)
+  & def_detail$unmodifiedidv_type_code 
   %in% c('A','C')]<-"FSS/GWAC"
 
 #Imputing that when Multiple Award/Single Award is known, but IDV_type_code is not
 #that the vehicle type is an IDC
-def$Veh[
-  is.na(def$Veh)&
-  is.na(def$unmodifiedidv_type_code) &
-    !is.na(def$Unmodifiedmultipleorsingleawardidc)]<-
-  paste(def$Unmodifiedmultipleorsingleawardidc[
-  is.na(def$Veh)&
-  is.na(def$unmodifiedidv_type_code) &
-    !is.na(def$Unmodifiedmultipleorsingleawardidc)],"IDC")
+def_detail$Veh[
+  is.na(def_detail$Veh)&
+  is.na(def_detail$unmodifiedidv_type_code) &
+    !is.na(def_detail$Unmodifiedmultipleorsingleawardidc)]<-
+  paste(def_detail$Unmodifiedmultipleorsingleawardidc[
+  is.na(def_detail$Veh)&
+  is.na(def_detail$unmodifiedidv_type_code) &
+    !is.na(def_detail$Unmodifiedmultipleorsingleawardidc)],"IDC")
 
-def$Veh<-factor(def$Veh)
-summary(def$Veh)
+def_detail$Veh<-factor(def_detail$Veh)
+summary(def_detail$Veh)
 #Imputing that when the simple vehicle is a kind of IDV, IsIDV should follow as well
-def$IsIDV[
-  is.na(def$IsIDV)&
-    def$Veh %in% c(
+def_detail$IsIDV[
+  is.na(def_detail$IsIDV)&
+    def_detail$Veh %in% c(
       'BPA/BOA','FSS/GWAC','MULTIPLE AWARD IDC','SINGLE AWARD IDC'
     )]<-"IDV"
 
@@ -613,7 +621,7 @@ def$IsIDV[
 
 
 
-def<-def[,!colnames(def) %in% 
+def_detail<-def_detail[,!colnames(def_detail) %in% 
     c(
   #     UnmodifiedIsFullAndOpen,
   # "UnmodifiedIsOnlyOneSource",
@@ -634,18 +642,18 @@ def<-def[,!colnames(def) %in%
   "unmodifiedidv_type_code",
   "NumberOfOffersReceived"
 )]
-str(def)
+str(def_detail)
   
-save(file="Data\\Defense_contract_CSIScontractID_complete.RData",def)
+save(file="Data\\defense_contract_complete_detail.Rdata",def_detail)
 
 ```
 
 
 ##Pricing
 ```{r Pricing}
-# load(file="Data\\Defense_contract_CSIScontractID_complete.RData")
+# load(file="Data\\defense_contract_complete_detail.Rdata")
 
-def<-csis360::read_and_join_experiment(data=def
+def_detail<-csis360::read_and_join_experiment(data=def_detail
   ,"Contract.SP_ContractPricingCustomer.txt"
   ,path=""
   ,"Data\\"
@@ -654,26 +662,26 @@ def<-csis360::read_and_join_experiment(data=def
 )
 
 #Process Fixed Or Cost
-def$pIsFixedPrice<-percent_obligated(def,
+def_detail$pIsFixedPrice<-percent_obligated(def_detail,
                                           "ObligatedAmountIsFixedPrice",
                                             "Action.Obligation",
                                           "UnmodifiedIsFixedPrice",
                                           "IsFixedPrice")
 
-def$pIsCostBased<-percent_obligated(def,
+def_detail$pIsCostBased<-percent_obligated(def_detail,
                                           "ObligatedAmountIsCostBased",
                                             "Action.Obligation",
                                           "UnmodifiedIsCostBased",
                                           "IsCostBased")
 
 
-def$pIsCombination<-percent_obligated(def,
+def_detail$pIsCombination<-percent_obligated(def_detail,
                                           "ObligatedAmountIsCombination",
                                             "Action.Obligation",
                                           "UnmodifiedIsCombination",
                                           "IsCombination")
 
-def$pIsOtherFee<-percent_obligated(def,
+def_detail$pIsOtherFee<-percent_obligated(def_detail,
                                           "ObligatedAmountIsOtherFee",
                                             "Action.Obligation",
                                           "UnmodifiedIsOtherFee",
@@ -681,25 +689,25 @@ def$pIsOtherFee<-percent_obligated(def,
 
 
 #Assign FxCb
-def$FxCb[def$pIsFixedPrice>0  |
-    def$pIsCostBased>0 | 
-    def$pIsCombination>0 | 
-      def$pIsOtherFee>0]<-"Combination or Other"
+def_detail$FxCb[def_detail$pIsFixedPrice>0  |
+    def_detail$pIsCostBased>0 | 
+    def_detail$pIsCombination>0 | 
+      def_detail$pIsOtherFee>0]<-"Combination or Other"
 
-def$FxCb[def$pIsFixedPrice>=0.95|(def$IsFixedPrice==1 & (def$pIsCombination<=0.05 | is.na(def$pIsCombination)))]<-"Fixed-Price"
-def$FxCb[def$pIsCostBased>=0.95|(def$IsCostBased==1 & (def$pIsCombination<=0.05 | is.na(def$pIsCombination)))]<-"Cost-Based"
-def$FxCb<-factor(def$FxCb,levels=c("Fixed-Price","Cost-Based","Combination or Other"))
+def_detail$FxCb[def_detail$pIsFixedPrice>=0.95|(def_detail$IsFixedPrice==1 & (def_detail$pIsCombination<=0.05 | is.na(def_detail$pIsCombination)))]<-"Fixed-Price"
+def_detail$FxCb[def_detail$pIsCostBased>=0.95|(def_detail$IsCostBased==1 & (def_detail$pIsCombination<=0.05 | is.na(def_detail$pIsCombination)))]<-"Cost-Based"
+def_detail$FxCb<-factor(def_detail$FxCb,levels=c("Fixed-Price","Cost-Based","Combination or Other"))
 #Process Fee
 
-View(subset(def,is.na(FxCb) & !is.na(FxCb)))
-def$pIsIncentive<-percent_obligated(def,
+View(subset(def_detail,is.na(FxCb) & !is.na(FxCb)))
+def_detail$pIsIncentive<-percent_obligated(def_detail,
                                           "ObligatedAmountIsIncentive",
                                             "Action.Obligation",
                                           "UnmodifiedIsIncentive",
                                           "IsIncentive")
 
 
-def$pIsAwardFee<-percent_obligated(def,
+def_detail$pIsAwardFee<-percent_obligated(def_detail,
                                           "ObligatedAmountIsAwardFee",
                                             "Action.Obligation",
                                           "UnmodifiedIsAwardFee",
@@ -707,14 +715,14 @@ def$pIsAwardFee<-percent_obligated(def,
 
 
 
-def$pIsFFPorNoFee<-percent_obligated(def,
+def_detail$pIsFFPorNoFee<-percent_obligated(def_detail,
                                           "ObligatedAmountIsFFPorNoFee",
                                             "Action.Obligation",
                                           "UnmodifiedIsFFPorNoFee",
                                           "IsFFPorNoFee")
 
 
-def$pIsFixedFee<-percent_obligated(def,
+def_detail$pIsFixedFee<-percent_obligated(def_detail,
                                           "ObligatedAmountIsFixedFee",
                                             "Action.Obligation",
                                           "UnmodifiedIsFixedFee",
@@ -726,61 +734,61 @@ def$pIsFixedFee<-percent_obligated(def,
 
 #AssignFee
 
-def$Fee[def$pIsAwardFee>0  |
-    def$pIsIncentive>0 | 
-    def$pIsFFPorNoFee>0 |
-      def$pIsFixedFee>0 |
-      def$pIsOtherFee>0 |
-      def$pIsCombination>0]<-"Combination"
+def_detail$Fee[def_detail$pIsAwardFee>0  |
+    def_detail$pIsIncentive>0 | 
+    def_detail$pIsFFPorNoFee>0 |
+      def_detail$pIsFixedFee>0 |
+      def_detail$pIsOtherFee>0 |
+      def_detail$pIsCombination>0]<-"Combination"
 
-def$Fee[def$pIsAwardFee>=0.9|(def$IsAwardFee==1
-  & (def$pIsCombination<=0.05 | is.na(def$pIsCombination))) ]<-"Award Fee"
-def$Fee[def$pIsIncentive>=0.9|(def$IsIncentive==1
-  & (def$pIsCombination<=0.05 | is.na(def$pIsCombination)))]<-"Incentive"
-def$Fee[def$pIsFFPorNoFee>=0.9|(def$IsFFPorNoFee==1
-  & (def$pIsCombination<=0.05 | is.na(def$pIsCombination)))]<-"FFP or No Fee"
-def$Fee[def$pIsFixedFee>=0.9|(def$IsFixedFee==1
-  & (def$pIsCombination<=0.05 | is.na(def$pIsCombination)))]<-"Fixed Fee"
-def$Fee[def$pIsOtherFee>=0.9|(def$IsOtherFee==1
-  & (def$pIsCombination<=0.05 | is.na(def$pIsCombination)))]<-"Other Fee"
+def_detail$Fee[def_detail$pIsAwardFee>=0.9|(def_detail$IsAwardFee==1
+  & (def_detail$pIsCombination<=0.05 | is.na(def_detail$pIsCombination))) ]<-"Award Fee"
+def_detail$Fee[def_detail$pIsIncentive>=0.9|(def_detail$IsIncentive==1
+  & (def_detail$pIsCombination<=0.05 | is.na(def_detail$pIsCombination)))]<-"Incentive"
+def_detail$Fee[def_detail$pIsFFPorNoFee>=0.9|(def_detail$IsFFPorNoFee==1
+  & (def_detail$pIsCombination<=0.05 | is.na(def_detail$pIsCombination)))]<-"FFP or No Fee"
+def_detail$Fee[def_detail$pIsFixedFee>=0.9|(def_detail$IsFixedFee==1
+  & (def_detail$pIsCombination<=0.05 | is.na(def_detail$pIsCombination)))]<-"Fixed Fee"
+def_detail$Fee[def_detail$pIsOtherFee>=0.9|(def_detail$IsOtherFee==1
+  & (def_detail$pIsCombination<=0.05 | is.na(def_detail$pIsCombination)))]<-"Other Fee"
 
 
-def$Fee<-ordered(def$Fee,
+def_detail$Fee<-ordered(def_detail$Fee,
   levels=c("Incentive","Fixed Fee","Award Fee",
     "FFP or No Fee","Other Fee","Combination"))
 
 
-summary(def$Fee)
-summary(def$FxCb)
+summary(def_detail$Fee)
+summary(def_detail$FxCb)
 #Undefinitized Contract Awards
-# def$Veh[def$AwardOrIDVcontractActionType == "Letter Contract"]<-"Letter"
-# def$Veh[def$AwardOrIDVcontractActionType %in%
+# def_detail$Veh[def_detail$AwardOrIDVcontractActionType == "Letter Contract"]<-"Letter"
+# def_detail$Veh[def_detail$AwardOrIDVcontractActionType %in%
 #     c("Indefinite Delivery Contract",
 #       "Delivery Order")]<-
-#   as.character(def$multipleorsingleawardidc[def$AwardOrIDVcontractActionType %in%
+#   as.character(def_detail$multipleorsingleawardidc[def_detail$AwardOrIDVcontractActionType %in%
 #       c("Indefinite Delivery Contract",
 #         "Delivery Order")])
 
 
 #Impute UCA unmodified values when consistent for the remainder of the vehicle
-def$UnmodifiedIsUCA[is.na(def$UnmodifiedIsUCA)&
-  !is.na(def$IsUCA)]<-
-  def$IsUCA[is.na(def$UnmodifiedIsUCA)&
-  !is.na(def$IsUCA)]
+def_detail$UnmodifiedIsUCA[is.na(def_detail$UnmodifiedIsUCA)&
+  !is.na(def_detail$IsUCA)]<-
+  def_detail$IsUCA[is.na(def_detail$UnmodifiedIsUCA)&
+  !is.na(def_detail$IsUCA)]
 
 
 
-def$UCA<-factor(def$UnmodifiedIsUCA,
+def_detail$UCA<-factor(def_detail$UnmodifiedIsUCA,
   levels=c(0,1),
   labels=c("Not UCA","UCA")
 )
 
 #Imputing to make up for absence of 
 #There's no obligations in the dataset to UCAs using the regulated vehicle of FSS/GWAC
-def$UCA[is.na(def$UCA)&
-               def$Veh=="FSS/GWAC"]<-"Not UCA"
-summary(def$UCA)
-def<-def[,!colnames(def) %in% 
+def_detail$UCA[is.na(def_detail$UCA)&
+               def_detail$Veh=="FSS/GWAC"]<-"Not UCA"
+summary(def_detail$UCA)
+def_detail<-def_detail[,!colnames(def_detail) %in% 
     c(
   # Pricing.Mechanism.Code,
   "UnmodifiedTypeOfContractPricing",
@@ -821,26 +829,28 @@ def<-def[,!colnames(def) %in%
   # Fee,
     )]
 
-str(def)
+str(def_detail)
 
-save(file="Data\\Defense_contract_CSIScontractID_complete.RData",def)
+save(file="Data\\defense_contract_complete_detail.Rdata",def_detail)
+
 ```
 
 #Final Cleanup and Output
 ##Applying lookups
 ```{r PostApply}
 # debug(apply_lookups)
+load(file="Data\\defense_contract_all_detail.Rdata")
+load(file="Data\\defense_contract_complete_detail.Rdata")
 
+def_all_detail<-apply_lookups(Path,def_all_detail)
+#Hitting errors, but nothing vital
+debug(apply_lookups)
+def_detail<-apply_lookups(Path,def_detail)
 
-def_all<-apply_lookups(Path,def_all)
+summary
 
-
-def<-apply_lookups(Path,def)
-
-
-
-# def_all<-csis360::read_and_join(
-#   def_all,
+# def_all_detail<-csis360::read_and_join(
+#   def_all_detail,
 #   "Lookup_SubCustomer.csv",
 #   by=c("Customer","SubCustomer"),
 #   # replace_na_var=NULL,
@@ -850,73 +860,29 @@ def<-apply_lookups(Path,def)
 #   # skip_check_var="CHPKisCrisisFunding"
 #   )
 
-# def_all$SubCustomer.sum<-factor(def_all$SubCustomer.sum)
-# def_all$SubCustomer.sum<-droplevels(def_all$SubCustomer.sum)
-# def_all$SubCustomer.sum<-droplevels(def_all$SubCustomer.sum)
+# def_all_detail$SubCustomer.sum<-factor(def_all_detail$SubCustomer.sum)
+# def_all_detail$SubCustomer.sum<-droplevels(def_all_detail$SubCustomer.sum)
+# def_all_detail$SubCustomer.sum<-droplevels(def_all_detail$SubCustomer.sum)
 
 
 
-save(file="Data\\def_contract_all_complete.Rdata",def_all)
-# def_all<-rename_dataset(def_all)
+save(file="Data\\defense_contract_all_detail.Rdata",def_all_detail)
+save(file="Data\\defense_contract_complete_detail.Rdata",def_detail)
+# def_all_detail<-rename_dataset(def_all_detail)
 
 ```
 ##Dataset Output
 
 ```{r DatasetOutput}
-load(file="Data\\defense_contract_all.RData")
-
+load(file="Data\\defense_contract_all_detail.Rdata")
+load(file="Data\\defense_contract_complete_detail.Rdata")
      
-def_all<-rename_dataset(def_all)
-def_all<-def_all[,colnames(def_all) %in% c(
-  "CSIScontractID",
-   # IsIDV,
-  "FxCb",
-  "Fee",
-  "UCA",
-  "Comp",
-  "EffComp",
-  "Urg",
-  # MDAP,
-  # unmodifiedSystemequipmentcode,
-  "Who",
-  "Veh",
-  "PSR",
-  "What",
-  "Where",
-  "Intl",
-  # "LowCeil",
-  "Ceil",
-  "Dur",
-  "Offr",
-  # IsIDV,
-  # Soft,
-  "CBre",
-  "CRai",
-  "NChg",
-  "Term",
-  "UnmodifiedNumberOfOffersReceived",
-  "UnmodifiedContractBaseAndAllOptionsValue",
-  "SumOfisChangeOrder",
-  "ChangeOrderBaseAndAllOptionsValue",
-  "NewWorkUnmodifiedBaseAndAll",
-  # pChangeOrderObligated,
-  "UnmodifiedDays",
-  # "MinOfEffectiveDate",
-  "StartFY",
-  "Action.Obligation",
-  "Agency",
-  "Office",
-  "ProdServ",
-  "NAICS",
-  "MaxOfDecisionTree",
-  # "MaxOfDecisionTreeStep4",
-  "MinOfDecisionTree",
-  # "MinOfDecisionTreeStep4"
-  "LastCurrentCompletionDate",
-  "UnmodifiedCurrentCompletionDate",
-  "IsClosed"
-)]
-# 
+load(file="Data\\defense_contract_CSIScontractID_detail.Rdata")
+def_all<-rename_dataset(def_all_detail)
+def_all<-trim_dataset(def_all)
+def<-rename_dataset(def_detail)
+def<-trim_dataset(def)
+
 
 
 write.table(def_all
@@ -935,6 +901,7 @@ write.table(def_all
 summary(def_all$Agency[def_all$Who=="Uncategorized"])
 
 save(def_all,file="data\\defense_contract_all.RData")
+save(def,file="data\\defense_contract_complete.RData")
   
 #Strip out the cuts
 
