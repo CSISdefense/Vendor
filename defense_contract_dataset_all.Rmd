@@ -149,9 +149,16 @@ save(file="Data\\defense_contract_all.RData",def_all)
 
 ##Location
 ```{r Location}
-def<-def_full
-rm(def_full)
-# load(file="Data\\Defense_contract_CSIScontractID_complete.RData")
+
+
+def<-def_all
+rm(def_all)
+#Drop contracts starting before the study period and not clearly end within it
+def<-subset(def, StartFY>=2007   &
+    (LastCurrentCompletionDate<="2017-09-30" | IsClosed==1)
+)
+
+# load(file="Data\\defense_contract_complete.Rdata")
 
 def<-csis360::read_and_join_experiment(def,
     "Contract.SP_ContractLocationCustomer.txt"
@@ -206,6 +213,7 @@ def$UnmodifiedPlaceCountryISO3[is.na(def$UnmodifiedPlaceCountryISO3)]<-
 def$UnmodifiedPlaceCountryISO3<-factor(def$UnmodifiedPlaceCountryISO3)
 
 
+def$AnyPlaceInternational<-droplevels(def$AnyPlaceInternational)
 
 def<-def[,!colnames(def) %in% 
     c(
@@ -231,7 +239,7 @@ def<-def[,!colnames(def) %in%
     )]
 
 
-save(file="Data\\Defense_contract_CSIScontractID_complete.RData",def)
+save(file="Data\\defense_contract_complete.Rdata",def)
 
 
 ```
@@ -243,7 +251,7 @@ save(file="Data\\Defense_contract_CSIScontractID_complete.RData",def)
 # load(file="Data\\Defense_contract_CSIScontractID_complete.RData")
 #Note to identify is.defense here.
 def<-csis360::read_and_join_experiment(data=def
-  ,"Contract_SP_ContractBucketPlatformCustomer.txt"
+  ,"Contract.SP_ContractBucketPlatformCustomer.txt"
   ,path=""
   ,"Data\\"
   ,by="CSIScontractID"
@@ -382,7 +390,6 @@ def<-subset(def,select=-c(
 ))
 
 
-def$AnyPlaceInternational<-droplevels(def$AnyPlaceInternational)
 
 
 def$SimpleArea<-droplevels(def$SimpleArea)
@@ -666,6 +673,11 @@ def$pIsCombination<-percent_obligated(def,
                                           "UnmodifiedIsCombination",
                                           "IsCombination")
 
+def$pIsOtherFee<-percent_obligated(def,
+                                          "ObligatedAmountIsOtherFee",
+                                            "Action.Obligation",
+                                          "UnmodifiedIsOtherFee",
+                                          "IsOtherFee")
 
 
 #Assign FxCb
@@ -711,12 +723,6 @@ def$pIsFixedFee<-percent_obligated(def,
 
 
 
-def$pIsOtherFee<-percent_obligated(def,
-                                          "ObligatedAmountIsOtherFee",
-                                            "Action.Obligation",
-                                          "UnmodifiedIsOtherFee",
-                                          "IsOtherFee")
-
 
 #AssignFee
 
@@ -756,10 +762,10 @@ summary(def$FxCb)
 #         "Delivery Order")])
 
 
-#Imput UCA unmodified values when consistent for the remainder of the vehicle
+#Impute UCA unmodified values when consistent for the remainder of the vehicle
 def$UnmodifiedIsUCA[is.na(def$UnmodifiedIsUCA)&
   !is.na(def$IsUCA)]<-
-  def$UCA[is.na(def$UnmodifiedIsUCA)&
+  def$IsUCA[is.na(def$UnmodifiedIsUCA)&
   !is.na(def$IsUCA)]
 
 
@@ -828,6 +834,8 @@ save(file="Data\\Defense_contract_CSIScontractID_complete.RData",def)
 
 def_all<-apply_lookups(Path,def_all)
 
+
+def<-apply_lookups(Path,def)
 
 
 
