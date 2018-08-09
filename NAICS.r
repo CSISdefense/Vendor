@@ -185,7 +185,7 @@ summarize_annual_naics<-function(data,naics_level=6){
   
   output<-label_naics_mismatch(output)
   output$mismatch[output$exclude==TRUE & is.na(output$mismatch)]<-"Not tracked: Excluded at Lower Level"
-  not_in_sample<-output$mismatch %in% get_unstable_list()
+  not_in_sample<-(output$mismatch %in% get_unstable_list()) | output$hh_index==0
   output$hh_index[not_in_sample]<-NA
   output$top4[not_in_sample]<-NA
   output$top8[not_in_sample]<-NA

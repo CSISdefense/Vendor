@@ -76,7 +76,7 @@ annual_summary<-defense_vendor %>%
 
 
 #*****************NAICS 6****************************
-
+load(     file="data//defense_naics_vendor.Rdata")
 defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54171"]<-"54171"
 
 
