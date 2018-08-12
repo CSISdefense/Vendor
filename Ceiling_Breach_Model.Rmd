@@ -65,8 +65,7 @@ First we load the data. The dataset used is a U.S. Defense Contracting dataset d
  # load(file="Data/defense_contract_complete.Rdata")
 # head(def)
 # debug(transform_contract)
-# def<-transform_contract(def)
-   load(file="Data/transformed_def.Rdata")
+# def<-transform_contract(def)  
  # save(file="Data/transformed_def.Rdata",def)
 
     
@@ -362,27 +361,33 @@ The greatest distinctiveness can be found in types of indefinite delivery vehicl
 
 ## Study Variable Consolidation
 
-### Model 01E: def6_HHI_lag1
+### Level 6
+#### Model NCS6A: def6_HHI_lag1
 The expectation of the hypotheses is that consolidation will vary with consolidation, but does not predict a direction.
 
-```{r Model01E_CBre}
+
+```{r ModelNCS6A_CBre}
 #Frequency Plot for unlogged ceiling
 summary_continuous_plot(smp,"def6_HHI_lag1")
+summary_continuous_plot(smp,"def5_HHI_lag1")
+summary_continuous_plot(smp,"def4_HHI_lag1")
+summary_continuous_plot(smp,"def3_HHI_lag1")
+summary_continuous_plot(smp,"def2_HHI_lag1")
 
 #Model
-CBre_Cons_01E <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1, family=binomial(link="logit"))
-display(CBre_Cons_01E)
+CBre_Cons_NCS6A <- glm (data=smp,
+                 b_CBre ~c_def6_HHI_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS6A)
 
 
-#Plot the fitted model plot
-CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
-
-#Competition curves
-fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
-                             args=list(Comp=0),color="blue")+
-  stat_function(fun = CBre_Comp_02A_curve, 
-                             args=list(Comp=2),color="blue")
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
 
 
 
@@ -390,51 +395,638 @@ fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve,
 binned_fitted_versus_cbre_residuals(CBre_Comp_02A)
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_01E,type="text",
+  stargazer::stargazer(CBre_Cons_NCS6A,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_01E,CBre_Cons_01E,bins=20)
+summary_residual_compare(CBre_Cons_NCS6A,CBre_Cons_NCS6A,bins=20)
 
 
 ```
-### Model 01F: l_def6_HHI_lag1
+#### Model NCS6B: l_def6_HHI_lag1
 
 Expectations are  unchanged.
-```{r Model01E_CBre}
+```{r ModelNCS6A_CBre}
 #Frequency Plot for unlogged ceiling
 summary_continuous_plot(smp,"l_def6_HHI_lag1")
+summary_continuous_plot(smp,"l_def5_HHI_lag1")
+summary_continuous_plot(smp,"l_def4_HHI_lag1")
+summary_continuous_plot(smp,"l_def3_HHI_lag1")
+summary_continuous_plot(smp,"l_def2_HHI_lag1")
+
 
 #Model
-CBre_Cons_01F <- glm (data=smp,
+CBre_Cons_NCS6B <- glm (data=smp,
                  b_CBre ~cl_def6_HHI_lag1, family=binomial(link="logit"))
-display(CBre_Cons_01F)
+display(CBre_Cons_NCS6B)
 
 
-#Plot the fitted model plot
-CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+# 
 
-#Competition curves
-fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
-                             args=list(Comp=0),color="blue")+
-  stat_function(fun = CBre_Comp_02A_curve, 
-                             args=list(Comp=2),color="blue")
-
-
-
-#Plot the fitted values vs actual results
-binned_fitted_versus_cbre_residuals(CBre_Comp_02A)
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_01E,CBre_Cons_01F,type="text",
+  stargazer::stargazer(CBre_Cons_NCS6A,CBre_Cons_NCS6B,CBre_Cons_NCS6C,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_01E,CBre_Cons_01F,bins=20)
+summary_residual_compare(CBre_Cons_NCS6A,CBre_Cons_NCS6B,bins=20)
 
 
 ```
 The use of log doesn't change the direction of finding, but it does reduce the magnitude of the residuals and smooths out the trend. 
+
+
+#### Model NCS6C: cl_def6_obl_lag1
+Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
+Expectations are  unchanged.
+```{r ModelNCS6C_CBre}
+#Frequency Plot for unlogged ceiling
+summary_continuous_plot(smp,"def6_obl_lag1")
+smp$l_def6_obl_lag1<-log(smp$def6_obl_lag1)
+smp$cl_def6_obl_lag1<-scale(smp$l_def6_obl_lag1)
+summary_continuous_plot(smp,"l_def6_obl_lag1")
+summary_continuous_plot(smp,"def5_obl_lag1")
+smp$l_def5_obl_lag1<-log(smp$def5_obl_lag1)
+summary_continuous_plot(smp,"l_def5_obl_lag1")
+summary_continuous_plot(smp,"def4_obl_lag1")
+smp$cl_def5_obl_lag1<-scale(smp$l_def5_obl_lag1)
+smp$l_def4_obl_lag1<-log(smp$def4_obl_lag1)
+summary_continuous_plot(smp,"l_def4_obl_lag1")
+summary_continuous_plot(smp,"def3_obl_lag1")
+smp$cl_def4_obl_lag1<-scale(smp$l_def4_obl_lag1)
+smp$l_def3_obl_lag1<-log(smp$def3_obl_lag1)
+summary_continuous_plot(smp,"l_def4_obl_lag1")
+summary_continuous_plot(smp,"def2_obl_lag1")
+smp$cl_def3_obl_lag1<-scale(smp$l_def3_obl_lag1)
+
+smp$l_def2_obl_lag1<-log(smp$def2_obl_lag1)
+summary_continuous_plot(smp,"l_def2_obl_lag1")
+smp$cl_def2_obl_lag1<-scale(smp$l_def2_obl_lag1)
+
+#Model
+CBre_Cons_NCS6C <- glm (data=smp,
+                 b_CBre ~cl_def6_HHI_lag1+cl_def6_obl_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS6C)
+
+
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(CBre_Cons_NCS6A,CBre_Cons_NCS6B,CBre_Cons_NCS6C,type="text",
+                       digits=2)
+
+
+summary_residual_compare(CBre_Cons_NCS6B,CBre_Cons_NCS6C,bins=20)
+
+
+```
+
+#### Model NCS6D: Interaction of HHI and size
+Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
+```{r ModelNCS6C_CBre}
+#Frequency Plot for unlogged ceiling
+
+
+#Model
+CBre_Cons_NCS6D <- glm (data=smp,
+                 b_CBre ~cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS6D)
+
+
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,type="text",
+                       digits=2)
+
+
+summary_residual_compare(CBre_Cons_NCS6C,CBre_Cons_NCS6D,bins=20)
+
+
+```
+Expectations were not uphelped. That said relaxing the assumption that the interaction will result in a higher risk of breaches and just looking at whether it is an effective predictor of a greater magnitude of change, that holds.
+### Level 5
+#### Model NCS5A: cl_def5_HHI
+```{r ModelNCS5A_CBre}
+#Frequency Plot for unlogged ceiling
+summary_continuous_plot(smp,"l_def6_HHI_lag1")
+summary_continuous_plot(smp,"l_def5_HHI_lag1")
+summary_continuous_plot(smp,"l_def4_HHI_lag1")
+summary_continuous_plot(smp,"l_def3_HHI_lag1")
+summary_continuous_plot(smp,"l_def2_HHI_lag1")
+
+
+#Model
+CBre_Cons_NCS5A <- glm (data=smp,
+                 b_CBre ~cl_def5_HHI_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS5A)
+
+
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+# 
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,CBre_Cons_NCS5A,type="text",
+                       digits=2)
+
+
+summary_residual_compare(CBre_Cons_NCS6B,CBre_Cons_NCS5A,bins=20)
+
+
+```
+#### Model NCSB: cl_def5_obl_lag1
+Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
+Expectations are  unchanged.
+```{r ModelNCSB_CBre}
+
+
+#Model
+CBre_Cons_NCSB <- glm (data=smp,
+                 b_CBre ~cl_def5_HHI_lag1+cl_def5_obl_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCSB)
+
+
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,
+                       CBre_Cons_NCS5A,CBre_Cons_NCSB,type="text",
+                       digits=2)
+
+
+
+  #Compare to prior at same level
+summary_residual_compare(CBre_Cons_NCS5A,CBre_Cons_NCSB,bins=20)
+#Compare to prior at lower level
+summary_residual_compare(CBre_Cons_NCS6C,CBre_Cons_NCSB,bins=20)
+```
+Size seems to ad less to the model at level 5 than level 6.
+
+#### Model NCS5C: Interaction of HHI and size
+Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
+```{r ModelNCS5C_CBre}
+#Frequency Plot for unlogged ceiling
+
+
+#Model
+CBre_Cons_NCS5C <- glm (data=smp,
+                 b_CBre ~cl_def5_HHI_lag1+cl_def5_obl_lag1+cl_def5_HHI_lag1:cl_def5_obl_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS5C)
+
+
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,
+                       CBre_Cons_NCS5A,CBre_Cons_NCSB,CBre_Cons_NCS5C,type="text",
+                       digits=2)
+
+  #Compare to prior at same level
+summary_residual_compare(CBre_Cons_NCSB,CBre_Cons_NCS5C,bins=20)
+#Compare to prior at lower level
+summary_residual_compare(CBre_Cons_NCS6D,CBre_Cons_NCS5C,bins=20)
+
+
+```
+Expectations were not uphelped. The interaction appears to badly misjudge some contracts at the estimated low risk of the scale, although deviance for other estimates reduces. Level 5 seems on the whole to be less effective an estimator than level 6.
+
+### Level 4
+#### Model NCS4A: cl_def4_HHI
+```{r ModelNCS4A_CBre}
+#Frequency Plot for unlogged ceiling
+summary_continuous_plot(smp,"l_def4_HHI_lag1")
+
+
+#Model
+CBre_Cons_NCS4A <- glm (data=smp,
+                 b_CBre ~cl_def4_HHI_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS4A)
+
+
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+# 
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,CBre_Cons_NCS4A,type="text",
+                       digits=2)
+
+
+summary_residual_compare(CBre_Cons_NCS6B,CBre_Cons_NCS4A,bins=20)
+
+
+```
+
+Level 4 HHI seems to slightly out perform level 6.
+#### Model NCS4B: cl_def4_obl_lag1
+Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
+Expectations are  unchanged.
+```{r ModelNCS4B_CBre}
+
+
+#Model
+CBre_Cons_NCS4B <- glm (data=smp,
+                 b_CBre ~cl_def4_HHI_lag1+cl_def4_obl_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS4B)
+
+
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,
+                       CBre_Cons_NCS4A,CBre_Cons_NCS4B,type="text",
+                       digits=2)
+
+
+
+  #Compare to prior at same level
+summary_residual_compare(CBre_Cons_NCS4A,CBre_Cons_NCS4B,bins=20)
+#Compare to prior at lower level
+summary_residual_compare(CBre_Cons_NCS6C,CBre_Cons_NCS4B,bins=20)
+```
+Size seems to add less to the model at level 4 than level 6.
+
+#### Model NCS4C: Interaction of HHI and size
+Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
+```{r ModelNCS4C_CBre}
+#Frequency Plot for unlogged ceiling
+
+
+#Model
+CBre_Cons_NCS4C <- glm (data=smp,
+                 b_CBre ~cl_def4_HHI_lag1+cl_def4_obl_lag1+cl_def4_HHI_lag1:cl_def4_obl_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS4C)
+
+
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,
+                       CBre_Cons_NCS4A,CBre_Cons_NCS4B,CBre_Cons_NCS4C,type="text",
+                       digits=2)
+
+  #Compare to prior at same level
+summary_residual_compare(CBre_Cons_NCS4B,CBre_Cons_NCS4C,bins=20)
+#Compare to prior at lower level
+summary_residual_compare(CBre_Cons_NCS6D,CBre_Cons_NCS4C,bins=20)
+
+
+```
+Expectations were not uphelped. Level 4 doesn't seem to be quite as effective as level 6 with the multiple measures included, but it does better than 5
+
+### Level 3
+#### Model NCS3A: cl_def3_HHI
+```{r ModelNCS3A_CBre}
+#Frequency Plot for unlogged ceiling
+summary_continuous_plot(smp,"l_def3_HHI_lag1")
+
+
+#Model
+CBre_Cons_NCS3A <- glm (data=smp,
+                 b_CBre ~cl_def3_HHI_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS3A)
+
+
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+# 
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,CBre_Cons_NCS3A,type="text",
+                       digits=2)
+
+
+summary_residual_compare(CBre_Cons_NCS6B,CBre_Cons_NCS3A,bins=20)
+
+
+```
+
+Level 3 HHI seems to slightly out perform level 6.
+#### Model NCS3B: cl_def3_obl_lag1
+Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
+Expectations are  unchanged.
+```{r ModelNCS3B_CBre}
+
+
+#Model
+CBre_Cons_NCS3B <- glm (data=smp,
+                 b_CBre ~cl_def3_HHI_lag1+cl_def3_obl_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS3B)
+
+
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,
+                       CBre_Cons_NCS3A,CBre_Cons_NCS3B,type="text",
+                       digits=2)
+
+
+
+  #Compare to prior at same level
+summary_residual_compare(CBre_Cons_NCS3A,CBre_Cons_NCS3B,bins=20)
+#Compare to prior at lower level
+summary_residual_compare(CBre_Cons_NCS6C,CBre_Cons_NCS3B,bins=20)
+```
+Size seems to add less to the model at level 3 than level 6.
+
+#### Model NCS3C: Interaction of HHI and size
+Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
+```{r ModelNCS3C_CBre}
+#Frequency Plot for unlogged ceiling
+
+
+#Model
+CBre_Cons_NCS3C <- glm (data=smp,
+                 b_CBre ~cl_def3_HHI_lag1+cl_def3_obl_lag1+cl_def3_HHI_lag1:cl_def3_obl_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS3C)
+
+
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,
+                       CBre_Cons_NCS3A,CBre_Cons_NCS3B,CBre_Cons_NCS3C,type="text",
+                       digits=2)
+
+  #Compare to prior at same level
+summary_residual_compare(CBre_Cons_NCS3B,CBre_Cons_NCS3C,bins=20)
+#Compare to prior at lower level
+summary_residual_compare(CBre_Cons_NCS6D,CBre_Cons_NCS3C,bins=20)
+
+
+```
+Expectations were not uphelped. Level 3 seems to outperform level 6. Which suggests further exploration is worthwhile. That said, sector size just doesn't add that much to this model relative to level 6.
+
+#### Model NCS3D: NAICS 6 and NAICS 3
+Consolidation at lessa nd more granular levels may have differnt effects. The magnitude of NAICS 3 should be greater than that of NAICS6, 
+```{r ModelNCS3C_CBre}
+#Frequency Plot for unlogged ceiling
+
+
+#Model
+CBre_Cons_NCS3C <- glm (data=smp,
+                 b_CBre ~cl_def3_HHI_lag1+cl_def3_obl_lag1+cl_def3_HHI_lag1:cl_def3_obl_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS3C)
+
+
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,
+                       CBre_Cons_NCS3A,CBre_Cons_NCS3B,CBre_Cons_NCS3C,type="text",
+                       digits=2)
+
+  #Compare to prior at same level
+summary_residual_compare(CBre_Cons_NCS3B,CBre_Cons_NCS3C,bins=20)
+#Compare to prior at lower level
+summary_residual_compare(CBre_Cons_NCS6D,CBre_Cons_NCS3C,bins=20)
+
+
+```
+### Level 2
+#### Model NCS2A: cl_def2_HHI
+```{r ModelNCS2A_CBre}
+#Frequency Plot for unlogged ceiling
+summary_continuous_plot(smp,"l_def2_HHI_lag1")
+
+
+#Model
+CBre_Cons_NCS2A <- glm (data=smp,
+                 b_CBre ~cl_def2_HHI_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS2A)
+
+
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+# 
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,CBre_Cons_NCS2A,type="text",
+                       digits=2)
+
+
+summary_residual_compare(CBre_Cons_NCS6B,CBre_Cons_NCS2A,bins=20)
+
+
+```
+
+Level 2 HHI seems to slightly out perform level 6.
+#### Model NCS2B: cl_def2_obl_lag1
+Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
+Expectations are  unchanged.
+```{r ModelNCS2B_CBre}
+
+
+#Model
+CBre_Cons_NCS2B <- glm (data=smp,
+                 b_CBre ~cl_def2_HHI_lag1+cl_def2_obl_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS2B)
+
+
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,
+                       CBre_Cons_NCS2A,CBre_Cons_NCS2B,type="text",
+                       digits=2)
+
+
+
+  #Compare to prior at same level
+summary_residual_compare(CBre_Cons_NCS2A,CBre_Cons_NCS2B,bins=10)
+#Compare to prior at lower level
+summary_residual_compare(CBre_Cons_NCS6C,CBre_Cons_NCS2B,bins=10)
+summary_residual_compare(CBre_Cons_NCS3B,CBre_Cons_NCS2B,bins=10)
+```
+Size seems to add less to the model at level 2 than level 6.
+
+#### Model NCS2C: Interaction of HHI and size
+Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
+```{r ModelNCS2C_CBre}
+#Frequency Plot for unlogged ceiling
+
+
+#Model
+CBre_Cons_NCS2C <- glm (data=smp,
+                 b_CBre ~cl_def2_HHI_lag1+cl_def2_obl_lag1+cl_def2_HHI_lag1:cl_def2_obl_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS2C)
+
+
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,
+                       CBre_Cons_NCS2A,CBre_Cons_NCS2B,CBre_Cons_NCS2C,type="text",
+                       digits=2)
+
+  #Compare to prior at same level
+summary_residual_compare(CBre_Cons_NCS2B,CBre_Cons_NCS2C,bins=10)
+#Compare to prior at lower level
+summary_residual_compare(CBre_Cons_NCS6D,CBre_Cons_NCS2C,bins=10)
+
+
+```
+This interaction adds nothing to this model.
+
 ##Scope Variables
 ###Model 02A: Cost Ceiling
 
