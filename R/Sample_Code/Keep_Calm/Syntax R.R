@@ -6,7 +6,8 @@
 #######################
 #VARIABLE DESCRIPTIONS#
 #######################
-load("Dataset - Keep Calm and Learn Multilevel Logistic Modeling (R).rdata")
+
+load("R\\Sample_Code\\Keep_Calm\\Dataset R.rdata")
 
 attr(d$pupils, "labels") <-  "level-1 identifier"
 attr(d$classes, "labels") <-  "level-2 identifier"
@@ -54,6 +55,7 @@ summary(M0)
 
 icc <- M0@theta[1]^2/ (M0@theta[1]^2 + (3.14159^2/3))
 icc
+get_icc(M0)
 
 #########
 #RESULTS#
