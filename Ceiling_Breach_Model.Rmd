@@ -433,7 +433,7 @@ display(CBre_Cons_NCS6B)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6A,CBre_Cons_NCS6B,CBre_Cons_NCS6C,type="text",
+  stargazer::stargazer(CBre_Cons_NCS6A,CBre_Cons_NCS6B,CBre_Cons_NCS6E,type="text",
                        digits=2)
 
 
@@ -444,10 +444,129 @@ summary_residual_compare(CBre_Cons_NCS6A,CBre_Cons_NCS6B,bins=20)
 The use of log doesn't change the direction of finding, but it does reduce the magnitude of the residuals and smooths out the trend. 
 
 
-#### Model NCS6C: cl_def6_obl_lag1
+#### Model NCS6C: Defense to Overall ratio
+The higher the ratio of defense obligations to reciepts in the overall economy, the DoD holds a monosopy over a sector. Given the challenges of monosopy, the a higher ratio estimates a greater  risk of ceiling breaches.
+```{r ModelNCS6C_CBre}
+#Frequency Plot for unlogged ceiling
+
+cap<-function(column,cap){
+  column[column>cap]<-cap
+  column
+}
+
+smp$capped_def6_ratio_lag1<-cap(smp$def6_ratio_lag1,1)
+smp$l_def6_ratio_lag1<-log(smp$def6_ratio_lag1)
+smp$cl_def6_ratio_lag1<-scale(smp$def6_ratio_lag1)
+summary_continuous_plot(smp,"capped_def6_ratio_lag1")
+summary_continuous_plot(smp,"l_def6_ratio_lag1")
+smp$capped_def5_ratio_lag1<-cap(smp$def5_ratio_lag1,1)
+smp$l_def5_ratio_lag1<-log(smp$def5_ratio_lag1)
+smp$cl_def5_ratio_lag1<-scale(smp$def5_ratio_lag1)
+summary_continuous_plot(smp,"capped_def5_ratio_lag1")
+summary_continuous_plot(smp,"l_def5_ratio_lag1")
+smp$capped_def4_ratio_lag1<-cap(smp$def4_ratio_lag1,1)
+smp$l_def4_ratio_lag1<-log(smp$def4_ratio_lag1)
+smp$cl_def4_ratio_lag1<-scale(smp$def4_ratio_lag1)
+summary_continuous_plot(smp,"capped_def4_ratio_lag1")
+summary_continuous_plot(smp,"l_def4_ratio_lag1")
+smp$capped_def3_ratio_lag1<-cap(smp$def3_ratio_lag1,1)
+smp$l_def3_ratio_lag1<-log(smp$def3_ratio_lag1)
+smp$cl_def3_ratio_lag1<-scale(smp$def3_ratio_lag1)
+summary_continuous_plot(smp,"capped_def3_ratio_lag1")
+summary_continuous_plot(smp,"l_def3_ratio_lag1")
+smp$capped_def2_ratio_lag1<-cap(smp$def2_ratio_lag1,1)
+smp$l_def2_ratio_lag1<-log(smp$def2_ratio_lag1)
+smp$cl_def2_ratio_lag1<-scale(smp$def2_ratio_lag1)
+summary_continuous_plot(smp,"capped_def2_ratio_lag1")
+summary_continuous_plot(smp,"l_def2_ratio_lag1")
+
+#Model
+CBre_Cons_NCS6C <- glm (data=smp,
+                 b_CBre ~cl_def6_HHI_lag1+cl_def6_ratio_lag1, 
+                 family=binomial(link="logit"))
+display(CBre_Cons_NCS6C)
+
+CBre_Comp_NCS6C <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def6_ratio_lag1, 
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS6C)
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,
+                       CBre_Comp_01B,CBre_Comp_NCS6C,type="text",
+                       digits=2)
+
+
+summary_residual_compare(CBre_Cons_NCS6B,CBre_Cons_NCS6C,bins=20)
+summary_residual_compare(CBre_Comp_01B,CBre_Comp_NCS6C,bins=2)
+
+
+```
+The results align with the hypothesis and are significant, although the magnitude is minimal.
+
+
+#### Model NCS6D: Defense to Overall ratio
+When there is a larger market available, consolidation may matter less, for better or wrose. Thus interaction of consolidation and ratio will estimate greater magnitude than HHI index on its own. Per the hypothesis, this does not necessarily. 
+
+For competition, the effects may be greatest outside of a monospy context, thus the competition will estimate a lower occurance of ceiling breaches but the interaction of competition and ratio will estimate a higher rate.
+
+```{r ModelNCS6D_CBre}
+#Frequency Plot for unlogged ceiling
+
+
+#Model
+CBre_Cons_NCS6D <- glm (data=smp,
+                 b_CBre ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_HHI_lag1:cl_def6_ratio_lag1, 
+                 family=binomial(link="logit"))
+display(CBre_Cons_NCS6D)
+
+CBre_Comp_NCS6D <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def6_ratio_lag1+n_Comp:cl_def6_ratio_lag1, 
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS6D)
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,
+                       CBre_Comp_01B,CBre_Comp_NCS6C,CBre_Comp_NCS6D,type="text",
+                       digits=2)
+
+
+summary_residual_compare(CBre_Cons_NCS6C,CBre_Cons_NCS6D,bins=20)
+summary_residual_compare(CBre_Comp_NCS6C,CBre_Comp_NCS6D,bins=2)
+
+
+```
+Adding the interaction for consolidation does has minimal effect, contrary to expectation, although the results are significant. For competition, the results violate VIF and will not be included. The interaction will not be added.
+
+
+#### Model NCS6E: cl_def6_obl_lag1
 Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
 Expectations are  unchanged.
-```{r ModelNCS6C_CBre}
+```{r ModelNCS6E_CBre}
 #Frequency Plot for unlogged ceiling
 summary_continuous_plot(smp,"def6_obl_lag1")
 smp$l_def6_obl_lag1<-log(smp$def6_obl_lag1)
@@ -472,10 +591,15 @@ summary_continuous_plot(smp,"l_def2_obl_lag1")
 smp$cl_def2_obl_lag1<-scale(smp$l_def2_obl_lag1)
 
 #Model
-CBre_Cons_NCS6C <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1+cl_def6_obl_lag1, family=binomial(link="logit"))
-display(CBre_Cons_NCS6C)
+CBre_Cons_NCS6E <- glm (data=smp,
+                 b_CBre ~cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS6E)
 
+
+CBre_Comp_NCS6E <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1, 
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS6E)
 
 # 
 # #Plot the fitted model plot
@@ -491,25 +615,28 @@ display(CBre_Cons_NCS6C)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6A,CBre_Cons_NCS6B,CBre_Cons_NCS6C,type="text",
-                       digits=2)
+  stargazer::stargazer(CBre_Cons_NCS6C,CBre_Cons_NCS6E,
+                       CBre_Comp_NCS6C,CBre_Comp_NCS6E,
+                       type="text",digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS6B,CBre_Cons_NCS6C,bins=20)
+summary_residual_compare(CBre_Cons_NCS6C,CBre_Cons_NCS6E,bins=20)
+summary_residual_compare(CBre_Comp_NCS6C,CBre_Comp_NCS6E,bins=20)
 
 
 ```
+Estimated results occur. Residuals increase in magnitude for consolidation but reduce for competition.
 
-#### Model NCS6D: Interaction of HHI and size
+#### Model NCS6F: Interaction of HHI and size
 Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
-```{r ModelNCS6C_CBre}
+```{r ModelNCS6F_CBre}
 #Frequency Plot for unlogged ceiling
 
 
 #Model
-CBre_Cons_NCS6D <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1, family=binomial(link="logit"))
-display(CBre_Cons_NCS6D)
+CBre_Cons_NCS6F <- glm (data=smp,
+                 b_CBre ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS6F)
 
 
 # 
@@ -526,15 +653,78 @@ display(CBre_Cons_NCS6D)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,type="text",
-                       digits=2)
+
+  stargazer::stargazer(CBre_Cons_NCS6C,CBre_Cons_NCS6E,CBre_Cons_NCS6F,
+                       CBre_Comp_NCS6C,CBre_Comp_NCS6E,
+                       type="text",digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS6C,CBre_Cons_NCS6D,bins=20)
+summary_residual_compare(CBre_Cons_NCS6E,CBre_Cons_NCS6F,bins=20)
+
 
 
 ```
 Expectations were not uphelped. That said relaxing the assumption that the interaction will result in a higher risk of breaches and just looking at whether it is an effective predictor of a greater magnitude of change, that holds.
+
+#### Model NCS6G: Average Salary
+Average salary can be an proxy for unobserved skill requirements. We expect that a greater skill requirement will estimate a greater risk of ceiling breaches.
+```{r ModelNCS6G_CBre}
+#Frequency Plot for unlogged ceiling
+
+
+summary_continuous_plot(smp,"US6_avg_sal_lag1")
+smp$l_US6_avg_sal_lag1<-log(smp$US6_avg_sal_lag1)
+smp$cl_US6_avg_sal_lag1<-scale(smp$l_US6_avg_sal_lag1)
+summary_continuous_plot(smp,"l_US6_avg_sal_lag1")
+
+summary_continuous_plot(smp,"US5_avg_sal_lag1")
+summary_continuous_plot(smp,"US4_avg_sal_lag1")
+summary_continuous_plot(smp,"US3_avg_sal_lag1")
+summary_continuous_plot(smp,"US2_avg_sal_lag1")
+
+#Model
+
+CBre_Cons_NCS6G <- glm (data=smp,
+                 b_CBre ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1 , family=binomial(link="logit"))
+display(CBre_Cons_NCS6G)
+
+
+CBre_Comp_NCS6G <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS6G)
+
+
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+ stargazer::stargazer(CBre_Cons_NCS6C,CBre_Cons_NCS6E,CBre_Cons_NCS6F,CBre_Cons_NCS6G,
+                       CBre_Comp_NCS6C,CBre_Comp_NCS6E,CBre_Comp_NCS6G,
+                       type="text",digits=2)
+
+
+
+summary_residual_compare(CBre_Cons_NCS6F,CBre_Cons_NCS6G,bins=20)
+summary_residual_compare(CBre_Comp_NCS6E,CBre_Comp_NCS6G,bins=20)
+
+
+
+```
+The results were significant but in the opposite direction expected. This also reverses the sign on ratio, contrary to hypothesis.
+
+
 ### Level 5
 #### Model NCS5A: cl_def5_HHI
 ```{r ModelNCS5A_CBre}
@@ -564,7 +754,7 @@ display(CBre_Cons_NCS5A)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,CBre_Cons_NCS5A,type="text",
+  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6E,CBre_Cons_NCS6F,CBre_Cons_NCS5A,type="text",
                        digits=2)
 
 
@@ -572,18 +762,28 @@ summary_residual_compare(CBre_Cons_NCS6B,CBre_Cons_NCS5A,bins=20)
 
 
 ```
-#### Model NCSB: cl_def5_obl_lag1
-Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
-Expectations are  unchanged.
-```{r ModelNCSB_CBre}
 
+#### Model NCS5B: Defense to Overall ratio
+The higher the ratio of defense obligations to reciepts in the overall economy, the DoD holds a monosopy over a sector. Given the challenges of monosopy, the a higher ratio estimates a greater  risk of ceiling breaches.
+```{r ModelNCS5B_CBre}
+#Frequency Plot for unlogged ceiling
+
+
+
+
+summary_continuous_plot(smp,"capped_def5_ratio_lag1")
+summary_continuous_plot(smp,"l_def5_ratio_lag1")
 
 #Model
-CBre_Cons_NCSB <- glm (data=smp,
-                 b_CBre ~cl_def5_HHI_lag1+cl_def5_obl_lag1, family=binomial(link="logit"))
-display(CBre_Cons_NCSB)
+CBre_Cons_NCS5B <- glm (data=smp,
+                 b_CBre ~cl_def5_HHI_lag1+cl_def5_ratio_lag1, 
+                 family=binomial(link="logit"))
+display(CBre_Cons_NCS5B)
 
-
+CBre_Comp_NCS5B <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def5_ratio_lag1, 
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS5B)
 # 
 # #Plot the fitted model plot
 # CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
@@ -598,29 +798,115 @@ display(CBre_Cons_NCSB)
 
 
 #Plot residuals versus fitted
-stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,
-                       CBre_Cons_NCS5A,CBre_Cons_NCSB,type="text",
+  stargazer::stargazer(CBre_Cons_NCS6D,CBre_Cons_NCS5A,CBre_Cons_NCS5B,
+                       CBre_Comp_01B,CBre_Comp_NCS6D,CBre_Comp_NCS5B,type="text",
                        digits=2)
 
 
+summary_residual_compare(CBre_Cons_NCS5A,CBre_Cons_NCS5B,bins=20)
+summary_residual_compare(CBre_Cons_NCS6D,CBre_Cons_NCS5B,bins=20)
+summary_residual_compare(CBre_Comp_01B,CBre_Comp_NCS5B,bins=2)
+summary_residual_compare(CBre_Comp_NCS6D,CBre_Comp_NCS5B,bins=2)
 
-  #Compare to prior at same level
-summary_residual_compare(CBre_Cons_NCS5A,CBre_Cons_NCSB,bins=20)
-#Compare to prior at lower level
-summary_residual_compare(CBre_Cons_NCS6C,CBre_Cons_NCSB,bins=20)
+
 ```
-Size seems to ad less to the model at level 5 than level 6.
+The results align with the hypothesis, although the magnitude is minimal, if larger in magnitude than the level 6 version.
 
-#### Model NCS5C: Interaction of HHI and size
-Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
+#### Model NCS5C: Defense to Overall ratio
+When there is a larger market available, consolidation may matter less, for better or wrose. Thus interaction of consolidation and ratio will estimate greater magnitude than HHI index on its own. Per the hypothesis, this does not necessarily. 
+
+For competition, the effects may be greatest outside of a monospy context, thus the competition will estimate a lower occurance of ceiling breaches but the interaction of competition and ratio will estimate a higher rate.
+
 ```{r ModelNCS5C_CBre}
 #Frequency Plot for unlogged ceiling
 
 
 #Model
 CBre_Cons_NCS5C <- glm (data=smp,
-                 b_CBre ~cl_def5_HHI_lag1+cl_def5_obl_lag1+cl_def5_HHI_lag1:cl_def5_obl_lag1, family=binomial(link="logit"))
+                 b_CBre ~cl_def5_HHI_lag1+cl_def5_ratio_lag1+cl_def5_HHI_lag1:cl_def5_ratio_lag1, 
+                 family=binomial(link="logit"))
 display(CBre_Cons_NCS5C)
+
+CBre_Comp_NCS5C <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def5_ratio_lag1+n_Comp:cl_def5_ratio_lag1, 
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS5C)
+# 
+# #Plot the fitted model plot
+# CBre_Comp_05A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_05A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_05A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_05A_curve, 
+#                              args=list(Comp=5),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(CBre_Cons_NCS5A,CBre_Cons_NCS5B,CBre_Cons_NCS5C,
+                       CBre_Comp_01B,CBre_Comp_NCS5B,CBre_Comp_NCS5C,type="text",
+                       digits=2)
+
+
+summary_residual_compare(CBre_Cons_NCS5B,CBre_Cons_NCS5C,bins=10)
+summary_residual_compare(CBre_Comp_NCS5B,CBre_Comp_NCS5C,bins=5)
+
+
+```
+Both exceed VIF of 2.
+#### Model NCSD: cl_def5_obl_lag1
+Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
+Expectations are  unchanged.
+```{r ModelNCSD_CBre}
+
+
+#Model
+CBre_Cons_NCS5D <- glm (data=smp,
+                 b_CBre ~cl_def5_HHI_lag1+cl_def5_ratio_lag1+cl_def5_obl_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS5D)
+
+
+CBre_Comp_NCS5D <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def5_ratio_lag1+cl_def5_obl_lag1, 
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS5D)
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(CBre_Cons_NCS5A,CBre_Cons_NCS5B,CBre_Cons_NCS5D,
+                       CBre_Comp_01B,CBre_Comp_NCS5B,CBre_Comp_NCS5D,type="text",
+                       digits=2)
+
+
+summary_residual_compare(CBre_Cons_NCS5B,CBre_Cons_NCS5D,bins=10)
+summary_residual_compare(CBre_Comp_NCS5B,CBre_Comp_NCS5D,bins=5)
+
+```
+Size seems to ad less to the model at level 5 than level 6.
+
+#### Model NCS5E: Interaction of HHI and size
+Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
+```{r ModelNCS5E_CBre}
+#Frequency Plot for unlogged ceiling
+
+#Model
+CBre_Cons_NCS5E <- glm (data=smp,
+                 b_CBre ~cl_def5_HHI_lag1+cl_def5_ratio_lag1+cl_def5_obl_lag1+
+                   cl_def5_HHI_lag1:cl_def5_obl_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS5E)
 
 
 # 
@@ -637,14 +923,13 @@ display(CBre_Cons_NCS5C)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,
-                       CBre_Cons_NCS5A,CBre_Cons_NCSB,CBre_Cons_NCS5C,type="text",
+  stargazer::stargazer(CBre_Cons_NCS5D,CBre_Cons_NCS5E,CBre_Cons_NCS6F,
+                       CBre_Comp_NCS5D,CBre_Comp_NCS6E,type="text",
                        digits=2)
 
   #Compare to prior at same level
-summary_residual_compare(CBre_Cons_NCSB,CBre_Cons_NCS5C,bins=20)
-#Compare to prior at lower level
-summary_residual_compare(CBre_Cons_NCS6D,CBre_Cons_NCS5C,bins=20)
+summary_residual_compare(CBre_Cons_NCS5D,CBre_Cons_NCS5E,bins=20)
+summary_residual_compare(CBre_Cons_NCS6F,CBre_Cons_NCS5E,bins=20)
 
 
 ```
@@ -675,7 +960,7 @@ display(CBre_Cons_NCS4A)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,CBre_Cons_NCS4A,type="text",
+  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6E,CBre_Cons_NCS6F,CBre_Cons_NCS4A,type="text",
                        digits=2)
 
 
@@ -685,18 +970,30 @@ summary_residual_compare(CBre_Cons_NCS6B,CBre_Cons_NCS4A,bins=20)
 ```
 
 Level 4 HHI seems to slightly out perform level 6.
-#### Model NCS4B: cl_def4_obl_lag1
-Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
-Expectations are  unchanged.
-```{r ModelNCS4B_CBre}
 
+
+
+#### Model NCS4B: Defense to Overall ratio
+The higher the ratio of defense obligations to reciepts in the overall economy, the DoD holds a monosopy over a sector. Given the challenges of monosopy, the a higher ratio estimates a greater  risk of ceiling breaches.
+```{r ModelNCS4B_CBre}
+#Frequency Plot for unlogged ceiling
+
+
+
+
+summary_continuous_plot(smp,"capped_def4_ratio_lag1")
+summary_continuous_plot(smp,"l_def4_ratio_lag1")
 
 #Model
 CBre_Cons_NCS4B <- glm (data=smp,
-                 b_CBre ~cl_def4_HHI_lag1+cl_def4_obl_lag1, family=binomial(link="logit"))
+                 b_CBre ~cl_def4_HHI_lag1+cl_def4_ratio_lag1, 
+                 family=binomial(link="logit"))
 display(CBre_Cons_NCS4B)
 
-
+CBre_Comp_NCS4B <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def4_ratio_lag1, 
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS4B)
 # 
 # #Plot the fitted model plot
 # CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
@@ -711,29 +1008,122 @@ display(CBre_Cons_NCS4B)
 
 
 #Plot residuals versus fitted
-stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,
-                       CBre_Cons_NCS4A,CBre_Cons_NCS4B,type="text",
+  stargazer::stargazer(CBre_Cons_NCS5B,CBre_Cons_NCS4A,CBre_Cons_NCS4B,
+                       CBre_Comp_01B,CBre_Comp_NCS5B,CBre_Comp_NCS4B,type="text",
                        digits=2)
 
 
-
-  #Compare to prior at same level
 summary_residual_compare(CBre_Cons_NCS4A,CBre_Cons_NCS4B,bins=20)
-#Compare to prior at lower level
-summary_residual_compare(CBre_Cons_NCS6C,CBre_Cons_NCS4B,bins=20)
-```
-Size seems to add less to the model at level 4 than level 6.
+summary_residual_compare(CBre_Cons_NCS5B,CBre_Cons_NCS4B,bins=20)
+summary_residual_compare(CBre_Comp_01B,CBre_Comp_NCS4B,bins=2)
+summary_residual_compare(CBre_Comp_NCS5B,CBre_Comp_NCS4B,bins=2)
 
-#### Model NCS4C: Interaction of HHI and size
-Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
+
+```
+The results align with the hypothesis, although the magnitude is small, if larger in magnitude than the level 5 version.
+
+#### Model NCS4C: Defense to Overall ratio
+When there is a larger market available, consolidation may matter less, for better or wrose. Thus interaction of consolidation and ratio will estimate greater magnitude than HHI index on its own. Per the hypothesis, this does not necessarily. 
+
+For competition, the effects may be greatest outside of a monospy context, thus the competition will estimate a lower occurance of ceiling breaches but the interaction of competition and ratio will estimate a higher rate.
+
 ```{r ModelNCS4C_CBre}
 #Frequency Plot for unlogged ceiling
 
 
 #Model
 CBre_Cons_NCS4C <- glm (data=smp,
-                 b_CBre ~cl_def4_HHI_lag1+cl_def4_obl_lag1+cl_def4_HHI_lag1:cl_def4_obl_lag1, family=binomial(link="logit"))
+                 b_CBre ~cl_def4_HHI_lag1+cl_def4_ratio_lag1+cl_def4_HHI_lag1:cl_def4_ratio_lag1, 
+                 family=binomial(link="logit"))
 display(CBre_Cons_NCS4C)
+
+CBre_Comp_NCS4C <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def4_ratio_lag1+n_Comp:cl_def4_ratio_lag1, 
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS4C)
+# 
+# #Plot the fitted model plot
+# CBre_Comp_04A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_04A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_04A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_04A_curve, 
+#                              args=list(Comp=4),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(CBre_Cons_NCS4A,CBre_Cons_NCS4B,CBre_Cons_NCS4C,
+                       CBre_Comp_01B,CBre_Comp_NCS4B,CBre_Comp_NCS4C,type="text",
+                       digits=2)
+
+
+summary_residual_compare(CBre_Cons_NCS2B,CBre_Cons_NCS2C,bins=10)
+summary_residual_compare(CBre_Comp_NCS2B,CBre_Comp_NCS2C,bins=5)
+
+
+```
+VIF exceeded in both cases.
+
+
+#### Model NCS4D: cl_def4_obl_lag1
+Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
+Expectations are  unchanged.
+```{r ModelNCS4D_CBre}
+
+
+#Model
+CBre_Cons_NCS4D <- glm (data=smp,
+                 b_CBre ~cl_def4_HHI_lag1+cl_def4_ratio_lag1+cl_def4_obl_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS4D)
+
+
+CBre_Comp_NCS4D <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def4_ratio_lag1+ cl_def4_obl_lag1,
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS4D)
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+stargazer::stargazer(CBre_Cons_NCS4B,CBre_Cons_NCS4D,CBre_Cons_NCS6E,
+                       CBre_Comp_NCS4B,CBre_Comp_NCS4D,CBre_Comp_NCS6E,type="text",
+                       digits=2)
+
+
+
+  #Compare to prior at same level
+summary_residual_compare(CBre_Cons_NCS4B,CBre_Cons_NCS4D,bins=20)
+#Compare to prior at lower level
+summary_residual_compare(CBre_Cons_NCS6E,CBre_Cons_NCS4D,bins=20)
+summary_residual_compare(CBre_Co_NCS4B,CBre_Comp_NCS4D,bins=20)
+```
+Size seems to add less to the model at level 4 than level 6.
+
+#### Model NCS4E: Interaction of HHI and size
+Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
+```{r ModelNCS4E_CBre}
+#Frequency Plot for unlogged ceiling
+
+
+#Model
+
+CBre_Cons_NCS4E <- glm (data=smp,
+                 b_CBre ~cl_def4_HHI_lag1+cl_def4_ratio_lag1+cl_def4_obl_lag1+
+                   cl_def4_HHI_lag1:cl_def4_obl_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS4E)
 
 
 # 
@@ -749,16 +1139,15 @@ display(CBre_Cons_NCS4C)
 
 
 
+
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,
-                       CBre_Cons_NCS4A,CBre_Cons_NCS4B,CBre_Cons_NCS4C,type="text",
+  stargazer::stargazer(CBre_Cons_NCS4D,CBre_Cons_NCS4E,CBre_Cons_NCS6F,
+                       CBre_Comp_NCS4D,CBre_Comp_NCS6E,type="text",
                        digits=2)
 
   #Compare to prior at same level
-summary_residual_compare(CBre_Cons_NCS4B,CBre_Cons_NCS4C,bins=20)
-#Compare to prior at lower level
-summary_residual_compare(CBre_Cons_NCS6D,CBre_Cons_NCS4C,bins=20)
-
+summary_residual_compare(CBre_Cons_NCS4D,CBre_Cons_NCS4E,bins=20)
+summary_residual_compare(CBre_Cons_NCS6F,CBre_Cons_NCS4E,bins=20)
 
 ```
 Expectations were not uphelped. Level 4 doesn't seem to be quite as effective as level 6 with the multiple measures included, but it does better than 5
@@ -788,7 +1177,7 @@ display(CBre_Cons_NCS3A)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,CBre_Cons_NCS3A,type="text",
+  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6E,CBre_Cons_NCS6F,CBre_Cons_NCS3A,type="text",
                        digits=2)
 
 
@@ -798,18 +1187,29 @@ summary_residual_compare(CBre_Cons_NCS6B,CBre_Cons_NCS3A,bins=20)
 ```
 
 Level 3 HHI seems to slightly out perform level 6.
-#### Model NCS3B: cl_def3_obl_lag1
-Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
-Expectations are  unchanged.
-```{r ModelNCS3B_CBre}
 
+
+#### Model NCS3B: Defense to Overall ratio
+The higher the ratio of defense obligations to reciepts in the overall economy, the DoD holds a monosopy over a sector. Given the challenges of monosopy, the a higher ratio estimates a greater  risk of ceiling breaches.
+```{r ModelNCS3B_CBre}
+#Frequency Plot for unlogged ceiling
+
+
+
+
+summary_continuous_plot(smp,"capped_def3_ratio_lag1")
+summary_continuous_plot(smp,"l_def3_ratio_lag1")
 
 #Model
 CBre_Cons_NCS3B <- glm (data=smp,
-                 b_CBre ~cl_def3_HHI_lag1+cl_def3_obl_lag1, family=binomial(link="logit"))
+                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1, 
+                 family=binomial(link="logit"))
 display(CBre_Cons_NCS3B)
 
-
+CBre_Comp_NCS3B <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def3_ratio_lag1, 
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS3B)
 # 
 # #Plot the fitted model plot
 # CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
@@ -824,29 +1224,120 @@ display(CBre_Cons_NCS3B)
 
 
 #Plot residuals versus fitted
-stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,
-                       CBre_Cons_NCS3A,CBre_Cons_NCS3B,type="text",
+  stargazer::stargazer(CBre_Cons_NCS4B,CBre_Cons_NCS3A,CBre_Cons_NCS3B,
+                       CBre_Comp_01B,CBre_Comp_NCS4B,CBre_Comp_NCS3B,type="text",
                        digits=2)
 
 
-
-  #Compare to prior at same level
 summary_residual_compare(CBre_Cons_NCS3A,CBre_Cons_NCS3B,bins=20)
-#Compare to prior at lower level
-summary_residual_compare(CBre_Cons_NCS6C,CBre_Cons_NCS3B,bins=20)
-```
-Size seems to add less to the model at level 3 than level 6.
+summary_residual_compare(CBre_Cons_NCS4B,CBre_Cons_NCS3B,bins=20)
+summary_residual_compare(CBre_Comp_01B,CBre_Comp_NCS3B,bins=2)
+summary_residual_compare(CBre_Comp_NCS4B,CBre_Comp_NCS3B,bins=2)
 
-#### Model NCS3C: Interaction of HHI and size
-Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
+
+```
+The results align with the hypothesis, although the magnitude is small, if larger in magnitude than the level 4 version. Although the residuals also notably increase in magnitude with the introduction of this variable.
+
+#### Model NCS3C: Defense to Overall ratio
+When there is a larger market available, consolidation may matter less, for better or wrose. Thus interaction of consolidation and ratio will estimate greater magnitude than HHI index on its own. Per the hypothesis, this does not necessarily. 
+
+For competition, the effects may be greatest outside of a monospy context, thus the competition will estimate a lower occurance of ceiling breaches but the interaction of competition and ratio will estimate a higher rate.
+
 ```{r ModelNCS3C_CBre}
 #Frequency Plot for unlogged ceiling
 
 
 #Model
 CBre_Cons_NCS3C <- glm (data=smp,
-                 b_CBre ~cl_def3_HHI_lag1+cl_def3_obl_lag1+cl_def3_HHI_lag1:cl_def3_obl_lag1, family=binomial(link="logit"))
+                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+cl_def3_HHI_lag1:cl_def3_ratio_lag1, 
+                 family=binomial(link="logit"))
 display(CBre_Cons_NCS3C)
+
+CBre_Comp_NCS3C <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def3_ratio_lag1+n_Comp:cl_def3_ratio_lag1, 
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS3C)
+# 
+# #Plot the fitted model plot
+# CBre_Comp_03A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_03A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_03A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_03A_curve, 
+#                              args=list(Comp=3),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(CBre_Cons_NCS3A,CBre_Cons_NCS3B,CBre_Cons_NCS3C,
+                       CBre_Comp_01B,CBre_Comp_NCS3B,CBre_Comp_NCS3C,type="text",
+                       digits=2)
+
+
+summary_residual_compare(CBre_Cons_NCS2B,CBre_Cons_NCS2C,bins=10)
+summary_residual_compare(CBre_Comp_NCS2B,CBre_Comp_NCS2C,bins=5)
+
+
+```
+Both exceed VIF of 2.
+
+
+
+#### Model NCS3D: cl_def3_obl_lag1
+Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
+Expectations are  unchanged.
+```{r ModelNCS3D_CBre}
+
+
+#Model
+CBre_Cons_NCS3D <- glm (data=smp,
+                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+cl_def3_obl_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS3D)
+
+
+CBre_Comp_NCS3D <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def3_ratio_lag1+ cl_def3_obl_lag1,
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS3D)
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+stargazer::stargazer(CBre_Cons_NCS3B,CBre_Cons_NCS3E,CBre_Cons_NCS6F,
+                       CBre_Cons_NCS3B,CBre_Cons_NCS3D,type="text",
+                       digits=2)
+
+
+
+  #Compare to prior at same level
+summary_residual_compare(CBre_Cons_NCS3A,CBre_Cons_NCS3D,bins=20)
+#Compare to prior at lower level
+summary_residual_compare(CBre_Cons_NCS6E,CBre_Cons_NCS3D,bins=20)
+```
+Size seems to add less to the model at level 3 than level 6.
+
+#### Model NCS3E: Interaction of HHI and size
+Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
+```{r ModelNCS3E_CBre}
+#Frequency Plot for unlogged ceiling
+
+
+#Model
+CBre_Cons_NCS3E <- glm (data=smp,
+                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+cl_def3_obl_lag1+cl_def3_HHI_lag1:cl_def3_obl_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS3E)
 
 
 # 
@@ -862,30 +1353,83 @@ display(CBre_Cons_NCS3C)
 
 
 
+
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,
-                       CBre_Cons_NCS3A,CBre_Cons_NCS3B,CBre_Cons_NCS3C,type="text",
+  stargazer::stargazer(CBre_Cons_NCS3D,CBre_Cons_NCS3E,CBre_Cons_NCS6F,
+                       CBre_Comp_NCS3D,CBre_Comp_NCS6E,type="text",
                        digits=2)
 
   #Compare to prior at same level
-summary_residual_compare(CBre_Cons_NCS3B,CBre_Cons_NCS3C,bins=20)
-#Compare to prior at lower level
-summary_residual_compare(CBre_Cons_NCS6D,CBre_Cons_NCS3C,bins=20)
+summary_residual_compare(CBre_Cons_NCS3D,CBre_Cons_NCS3E,bins=20)
+summary_residual_compare(CBre_Cons_NCS6F,CBre_Cons_NCS3E,bins=20)
 
 
 ```
 Expectations were not uphelped. Level 3 seems to outperform level 6. Which suggests further exploration is worthwhile. That said, sector size just doesn't add that much to this model relative to level 6.
 
-#### Model NCS3D: NAICS 6 and NAICS 3
-Consolidation at lessa nd more granular levels may have differnt effects. The magnitude of NAICS 3 should be greater than that of NAICS6, 
-```{r ModelNCS3C_CBre}
+#### Model NCS3F: Average Salary
+Average salary can be an proxy for unobserved skill requirements. We expect that a greater skill requirement will estimate a greater risk of ceiling breaches.
+```{r ModelNCS3F_CBre}
 #Frequency Plot for unlogged ceiling
 
 
+summary_continuous_plot(smp,"US3_avg_sal_lag1")
+smp$l_US3_avg_sal_lag1<-log(smp$US3_avg_sal_lag1)
+smp$cl_US3_avg_sal_lag1<-scale(smp$l_US3_avg_sal_lag1)
+summary_continuous_plot(smp,"l_US3_avg_sal_lag1")
+
+summary_continuous_plot(smp,"US5_avg_sal_lag1")
+summary_continuous_plot(smp,"US4_avg_sal_lag1")
+summary_continuous_plot(smp,"US3_avg_sal_lag1")
+summary_continuous_plot(smp,"US2_avg_sal_lag1")
+
 #Model
-CBre_Cons_NCS3C <- glm (data=smp,
-                 b_CBre ~cl_def3_HHI_lag1+cl_def3_obl_lag1+cl_def3_HHI_lag1:cl_def3_obl_lag1, family=binomial(link="logit"))
-display(CBre_Cons_NCS3C)
+
+CBre_Cons_NCS3F <- glm (data=smp,
+                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+cl_def3_obl_lag1+
+                  cl_US3_avg_sal_lag1+cl_def3_HHI_lag1:cl_def3_obl_lag1 , family=binomial(link="logit"))
+display(CBre_Cons_NCS3F)
+
+
+CBre_Comp_NCS3F <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def3_ratio_lag1+cl_def3_obl_lag1+cl_US3_avg_sal_lag1, 
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS3F)
+
+
+
+glmer_examine(CBre_Cons_NCS3F)
+glmer_examine(CBre_Comp_NCS3F)
+
+
+CBre_Cons_NCS3F2 <- glm (data=smp,
+                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1
+                  cl_US3_avg_sal_lag1 , family=binomial(link="logit"))#+cl_def3_HHI_lag1:cl_def3_obl_lag1
+display(CBre_Cons_NCS3F2)
+
+
+CBre_Comp_NCS3F2 <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def3_ratio_lag1+cl_US3_avg_sal_lag1, #cl_def3_obl_lag1+
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS3F2)
+
+
+CBre_Cons_NCS3F3 <- glm (data=smp,
+                 b_CBre ~cl_def3_HHI_lag1+cl_def3_obl_lag1+#cl_def3_ratio_lag1
+                  cl_US3_avg_sal_lag1+cl_def3_HHI_lag1:cl_def3_obl_lag1 , family=binomial(link="logit"))
+display(CBre_Cons_NCS3F3)
+glmer_examine(CBre_Cons_NCS3F3)
+
+CBre_Cons_NCS3F4 <- glm (data=smp,
+                 b_CBre ~cl_def3_HHI_lag1+cl_def3_obl_lag1+#cl_def3_ratio_lag1
+                  cl_US3_avg_sal_lag1 , family=binomial(link="logit"))#+cl_def3_HHI_lag1:cl_def3_obl_lag1
+display(CBre_Cons_NCS3F4)
+glmer_examine(CBre_Cons_NCS3F4)
+
+CBre_Comp_NCS3F3 <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def3_obl_lag1+cl_US3_avg_sal_lag1, #cl_def3_ratio_lag1
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS3F3)
 
 
 # 
@@ -902,17 +1446,112 @@ display(CBre_Cons_NCS3C)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,
-                       CBre_Cons_NCS3A,CBre_Cons_NCS3B,CBre_Cons_NCS3C,type="text",
-                       digits=2)
+ stargazer::stargazer(CBre_Cons_NCS3E,CBre_Cons_NCS3F2,CBre_Cons_NCS3F4,CBre_Cons_NCS6G,
+                       CBre_Comp_NCS3D,CBre_Comp_NCS3F2,CBre_Comp_NCS3F3,CBre_Comp_NCS6G,
+                       type="text",digits=2)
 
-  #Compare to prior at same level
-summary_residual_compare(CBre_Cons_NCS3B,CBre_Cons_NCS3C,bins=20)
-#Compare to prior at lower level
-summary_residual_compare(CBre_Cons_NCS6D,CBre_Cons_NCS3C,bins=20)
+
+summary_residual_compare(CBre_Cons_NCS3F,CBre_Cons_NCS3F2,bins=20)
+summary_residual_compare(CBre_Comp_NCS3D,CBre_Comp_NCS3F2,bins=10)
+summary_residual_compare(CBre_Cons_NCS3F2,CBre_Cons_NCS3F4,bins=20)
+summary_residual_compare(CBre_Comp_NCS3F2,CBre_Comp_NCS3F3,bins=10)
+
+summary_residual_compare(CBre_Cons_NCS3F,CBre_Cons_NCS3F4,bins=20)
+summary_residual_compare(CBre_Comp_NCS3D,CBre_Comp_NCS3F3,bins=10)
 
 
 ```
+After sorting out VIF, obligations has more contained residuals and for consolidation a lower deviance. For competition the deviance is lower for when salary is not included and both ratio and defense obligations are.
+
+#### Model NCS3G: NAICS 6 and NAICS 3
+Consolidation at lessa nd more granular levels may have different effects. Efficiencies are often used to describe sectors, like utilities, with high barriers to entry. Many of these aspects seem like they would already be captured at less granular NAICS levels, e.g. power plants, rather than more specific NAICS levels, like solar vs. coal. As a result, consolidation for more granular NAICS codes should estimate higher rates of ceiling breaches compared to less granular NAICS code.
+
+We'll start by adding in everything from both models and seeing what violates VIF.
+```{r ModelNCS3G_CBre}
+#Frequency Plot for unlogged ceiling
+
+
+#Model
+CBre_Cons_NCS3G <- glm (data=smp,
+                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+cl_def3_obl_lag1+
+                  cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1  , family=binomial(link="logit"))
+display(CBre_Cons_NCS3G)
+vif(CBre_Cons_NCS3G)
+#Defense obl 3 have the highest VIF and no coefficient to speak of, dropping it
+CBre_Cons_NCS3G2 <- glm (data=smp,
+                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                  cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                  cl_US6_avg_sal_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1  , family=binomial(link="logit"))
+display(CBre_Cons_NCS3G2)
+vif(CBre_Cons_NCS3G2)
+#Average salary 6 has the highest VIF though but both average salaries are over 2.0 and 3 is more contrary to expectations. Taking it out.
+CBre_Cons_NCS3G3 <- glm (data=smp,
+                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                  #cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                  cl_US6_avg_sal_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1  , family=binomial(link="logit"))
+display(CBre_Cons_NCS3G3)
+vif(CBre_Cons_NCS3G3)
+
+
+CBre_Comp_NCS3G <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def3_ratio_lag1+cl_def3_obl_lag1+cl_US3_avg_sal_lag1+
+                   n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS3G)
+vif(CBre_Comp_NCS3G)
+#Defense obl 3 have the highest VIF and no coefficient to speak of, dropping it
+CBre_Comp_NCS3G2 <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def3_ratio_lag1+cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                   n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS3G2)
+vif(CBre_Comp_NCS3G2)
+#Taking out average salary 3 to keep the models snced up.
+CBre_Comp_NCS3G3 <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                   n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS3G3)
+vif(CBre_Comp_NCS3G3)
+
+
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+ stargazer::stargazer(CBre_Cons_NCS3E,CBre_Cons_NCS3F2,CBre_Cons_NCS3F4,CBre_Cons_NCS6G,CBre_Cons_NCS3G3,
+                       CBre_Comp_NCS3D,CBre_Comp_NCS3F2,CBre_Comp_NCS3F3,CBre_Comp_NCS6G,CBre_Comp_NCS3G3,
+                       type="text",digits=2)
+
+
+summary_residual_compare(CBre_Cons_NCS3F4,CBre_Cons_NCS3G3,bins=20)
+summary_residual_compare(CBre_Comp_NCS3F3,CBre_Comp_NCS3G3,bins=10)
+summary_residual_compare(CBre_Cons_NCS3F2,CBre_Cons_NCS3G3,bins=20)
+summary_residual_compare(CBre_Comp_NCS3F2,CBre_Comp_NCS3G3,bins=10)
+
+summary_residual_compare(CBre_Cons_NCS3F,CBre_Cons_NCS3G3,bins=20)
+summary_residual_compare(CBre_Comp_NCS3D,CBre_Comp_NCS3G3,bins=10)
+summary_residual_compare(CBre_Cons_NCS6G,CBre_Cons_NCS3G3,bins=20)
+summary_residual_compare(CBre_Comp_NCS6G,CBre_Comp_NCS3G3,bins=10)
+
+```
+The hypothesis is upheld. Deviance is a little lower and residuals a little higher than the prior forms of consolidation for the level 3 model.  For the level 6 model, deviance is reduced some in both cases.
+
+
 ### Level 2
 #### Model NCS2A: cl_def2_HHI
 ```{r ModelNCS2A_CBre}
@@ -938,7 +1577,7 @@ display(CBre_Cons_NCS2A)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,CBre_Cons_NCS2A,type="text",
+  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6E,CBre_Cons_NCS6F,CBre_Cons_NCS2A,type="text",
                        digits=2)
 
 
@@ -948,18 +1587,28 @@ summary_residual_compare(CBre_Cons_NCS6B,CBre_Cons_NCS2A,bins=20)
 ```
 
 Level 2 HHI seems to slightly out perform level 6.
-#### Model NCS2B: cl_def2_obl_lag1
-Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
-Expectations are  unchanged.
-```{r ModelNCS2B_CBre}
 
+#### Model NCS2B: Defense to Overall ratio
+The higher the ratio of defense obligations to reciepts in the overall economy, the DoD holds a monosopy over a sector. Given the challenges of monosopy, the a higher ratio estimates a greater  risk of ceiling breaches.
+```{r ModelNCS2B_CBre}
+#Frequency Plot for unlogged ceiling
+
+
+
+
+summary_continuous_plot(smp,"capped_def2_ratio_lag1")
+summary_continuous_plot(smp,"l_def2_ratio_lag1")
 
 #Model
 CBre_Cons_NCS2B <- glm (data=smp,
-                 b_CBre ~cl_def2_HHI_lag1+cl_def2_obl_lag1, family=binomial(link="logit"))
+                 b_CBre ~cl_def2_HHI_lag1+cl_def2_ratio_lag1, 
+                 family=binomial(link="logit"))
 display(CBre_Cons_NCS2B)
 
-
+CBre_Comp_NCS2B <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def2_ratio_lag1, 
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS2B)
 # 
 # #Plot the fitted model plot
 # CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
@@ -974,30 +1623,122 @@ display(CBre_Cons_NCS2B)
 
 
 #Plot residuals versus fitted
-stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,
-                       CBre_Cons_NCS2A,CBre_Cons_NCS2B,type="text",
+  stargazer::stargazer(CBre_Cons_NCS3B,CBre_Cons_NCS2A,CBre_Cons_NCS2B,
+                       CBre_Comp_01B,CBre_Comp_NCS3B,CBre_Comp_NCS2B,type="text",
                        digits=2)
 
 
-
-  #Compare to prior at same level
 summary_residual_compare(CBre_Cons_NCS2A,CBre_Cons_NCS2B,bins=10)
-#Compare to prior at lower level
-summary_residual_compare(CBre_Cons_NCS6C,CBre_Cons_NCS2B,bins=10)
-summary_residual_compare(CBre_Cons_NCS3B,CBre_Cons_NCS2B,bins=10)
-```
-Size seems to add less to the model at level 2 than level 6.
+summary_residual_compare(CBre_Cons_NCS3B,CBre_Cons_NCS2B,bins=20)
+summary_residual_compare(CBre_Comp_01B,CBre_Comp_NCS2B,bins=2)
+summary_residual_compare(CBre_Comp_NCS3B,CBre_Comp_NCS2B,bins=2)
 
-#### Model NCS2C: Interaction of HHI and size
-Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
+
+```
+The results align with the hypothesis on competition but not on consolidation, showing a surprising divergence.
+
+
+#### Model NCS2C: Defense to Overall ratio
+When there is a larger market available, consolidation may matter less, for better or wrose. Thus interaction of consolidation and ratio will estimate greater magnitude than HHI index on its own. Per the hypothesis, this does not necessarily. 
+
+For competition, the effects may be greatest outside of a monospy context, thus the competition will estimate a lower occurance of ceiling breaches but the interaction of competition and ratio will estimate a higher rate.
+
 ```{r ModelNCS2C_CBre}
 #Frequency Plot for unlogged ceiling
 
 
 #Model
 CBre_Cons_NCS2C <- glm (data=smp,
-                 b_CBre ~cl_def2_HHI_lag1+cl_def2_obl_lag1+cl_def2_HHI_lag1:cl_def2_obl_lag1, family=binomial(link="logit"))
+                 b_CBre ~cl_def2_HHI_lag1+cl_def2_ratio_lag1+cl_def2_HHI_lag1:cl_def2_ratio_lag1, 
+                 family=binomial(link="logit"))
 display(CBre_Cons_NCS2C)
+
+CBre_Comp_NCS2C <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def2_ratio_lag1+n_Comp:cl_def2_ratio_lag1, 
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS2C)
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(CBre_Cons_NCS2A,CBre_Cons_NCS2B,CBre_Cons_NCS2C,
+                       CBre_Comp_01B,CBre_Comp_NCS2B,CBre_Comp_NCS2C,type="text",
+                       digits=2)
+
+
+summary_residual_compare(CBre_Cons_NCS2B,CBre_Cons_NCS2C,bins=10)
+summary_residual_compare(CBre_Comp_NCS2B,CBre_Comp_NCS2C,bins=5)
+
+
+```
+Ratio 2 and consolidation continues to tell us fairly little, with the contrary to the hypothesis result that ratio and hhi show no particular relationship. Competition violates VIF. Leaving this out.
+
+
+
+#### Model NCS2D: cl_def2_obl_lag1
+Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
+Expectations are  unchanged.
+```{r ModelNCS2D_CBre}
+
+
+#Model
+CBre_Cons_NCS2D <- glm (data=smp,
+                 b_CBre ~cl_def2_HHI_lag1+cl_def2_ratio_lag1+cl_def2_obl_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS2D)
+
+
+CBre_Comp_NCS2D <- glm (data=smp,
+                 b_CBre ~n_Comp+cl_def2_ratio_lag1+cl_def2_obl_lag1, 
+                 family=binomial(link="logit"))
+display(CBre_Comp_NCS2D)
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6E,CBre_Cons_NCS6F,
+                       CBre_Cons_NCS2A,CBre_Cons_NCS2D,type="text",
+                       digits=2)
+
+
+
+  #Compare to prior at same level
+summary_residual_compare(CBre_Cons_NCS2A,CBre_Cons_NCS2D,bins=10)
+#Compare to prior at lower level
+summary_residual_compare(CBre_Cons_NCS6E,CBre_Cons_NCS2D,bins=10)
+summary_residual_compare(CBre_Cons_NCS3G,CBre_Cons_NCS2D,bins=10)
+```
+Size seems to add less to the model at level 2 than level 6.
+
+#### Model NCS2E: Interaction of HHI and size
+Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
+```{r ModelNCS2E_CBre}
+#Frequency Plot for unlogged ceiling
+
+
+#Model
+CBre_Cons_NCS2E <- glm (data=smp,
+                 b_CBre ~cl_def2_HHI_lag1+cl_def2_obl_lag1+cl_def2_HHI_lag1:cl_def2_obl_lag1, family=binomial(link="logit"))
+display(CBre_Cons_NCS2E)
 
 
 # 
@@ -1013,16 +1754,21 @@ display(CBre_Cons_NCS2C)
 
 
 
+
+
+
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,
-                       CBre_Cons_NCS2A,CBre_Cons_NCS2B,CBre_Cons_NCS2C,type="text",
+stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6D,CBre_Cons_NCS6E,
+                       CBre_Comp_NCS2B,CBre_Comp_NCS2D,CBre_Comp_NCS6E,type="text",
                        digits=2)
 
-  #Compare to prior at same level
-summary_residual_compare(CBre_Cons_NCS2B,CBre_Cons_NCS2C,bins=10)
-#Compare to prior at lower level
-summary_residual_compare(CBre_Cons_NCS6D,CBre_Cons_NCS2C,bins=10)
 
+
+  #Compare to prior at same level
+summary_residual_compare(CBre_Cons_NCS2B,CBre_Cons_NCS2D,bins=20)
+#Compare to prior at lower level
+summary_residual_compare(CBre_Cons_NCS6E,CBre_Cons_NCS2D,bins=20)
+summary_residual_compare(CBre_Co_NCS2B,CBre_Comp_NCS2D,bins=20)
 
 ```
 This interaction adds nothing to this model.
