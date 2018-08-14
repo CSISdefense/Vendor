@@ -393,9 +393,19 @@ get_icc(naics36_term)
 get_icc(naics02_term,1)
 get_icc(naics36_term,1)
 get_icc(naics36_term,2)
+library(sjstats)
+sjstats::icc(naics36_term)
 iccbin(which(colnames(smp)=="NAICS"),
        which(colnames(smp)=="b_CBre"),smp)
+sum(get_re_var(naics36_term)) / (sum(get_re_var(naics36_term)) + get_re_var(naics36_term, "sigma_2"))
+get_re_var(naics36_term)[2] / sum(get_re_var(naics36_term))
 
+# Caution: For three-level-models, depending on the nested structure of the model, the ICC only
+# reports the proportion of variance explained for each grouping level. However, the proportion of
+# variance for specific levels related to each other (e.g., similarity of level-1-units within level-2-
+# units or level-2-units within level-3-units) must be computed manually. Use get_re_var to get the
+# between-group-variances and residual variance of the model, and calculate the ICC for the various
+# level correlations.
 
 naics36_cbre <- glmer(data=smp,
                  b_CBre ~ (1 | NAICS3/NAICS)
@@ -406,7 +416,11 @@ get_icc(naics36_cbre)
 get_icc(naics02_cbre)
 
 levels(smp$NAICS3)
-
+save(naics06_cbre,naics06_term,
+     #naics236_cbre,naics236_term,
+     naics26_cbre,naics26_term,
+     naics36_cbre,naics36_term,
+     file="empty_models.rdata")
 ```
 
 #Initial Logit Model
