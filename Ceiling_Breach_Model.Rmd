@@ -18,7 +18,6 @@ library(dplyr)
 library(arm)
 library(R2WinBUGS)
 library(Hmisc)
-# library(ICCbin)
 library(sjstats)
 source("DIIGstat.r")
 source("NAICS.r")
@@ -415,8 +414,6 @@ get_icc(naics36_term,1)
 get_icc(naics36_term,2)
 
 sjstats::icc(naics36_term)
-iccbin(which(colnames(smp)=="NAICS"),
-       which(colnames(smp)=="b_CBre"),smp)
 sum(get_re_var(naics36_term)) / (sum(get_re_var(naics36_term)) + get_re_var(naics36_term, "sigma_2"))
 get_re_var(naics36_term)[2] / sum(get_re_var(naics36_term))
 
@@ -438,6 +435,47 @@ get_icc(naics02_cbre)
 levels(smp$NAICS3)
 naics36_comp <- glmer(data=smp,
                  b_Comp ~ (1 | NAICS3/NAICS)
+                  , family=binomial(link="logit"))
+```
+
+
+### NAICS 4/6
+```{r NAICSlevel46}
+smp$NAICS<-factor(smp$NAICS)
+smp$NAICS4<-factor(smp$NAICS4)
+naics46_term <- glmer(data=smp,
+                 b_Term ~ (1 | NAICS4/NAICS)
+                  , family=binomial(link="logit"))
+display(naics46_term)
+summary(naics46_term)
+get_icc(naics46_term)
+get_icc(naics02_term,1)
+get_icc(naics46_term,1)
+get_icc(naics46_term,2)
+
+sjstats::icc(naics46_term)
+
+sum(get_re_var(naics46_term)) / (sum(get_re_var(naics46_term)) + get_re_var(naics46_term, "sigma_2"))
+get_re_var(naics46_term)[2] / sum(get_re_var(naics46_term))
+
+# Caution: For three-level-models, depending on the nested structure of the model, the ICC only
+# reports the proportion of variance explained for each grouping level. However, the proportion of
+# variance for specific levels related to each other (e.g., similarity of level-1-units within level-2-
+# units or level-2-units within level-4-units) must be computed manually. Use get_re_var to get the
+# between-group-variances and residual variance of the model, and calculate the ICC for the various
+# level correlations.
+
+naics46_cbre <- glmer(data=smp,
+                 b_CBre ~ (1 | NAICS4/NAICS)
+                  , family=binomial(link="logit"))
+display(naics46_cbre)
+summary(naics46_cbre)
+get_icc(naics46_cbre)
+get_icc(naics02_cbre)
+
+levels(smp$NAICS4)
+naics46_comp <- glmer(data=smp,
+                 b_Comp ~ (1 | NAICS4/NAICS)
                   , family=binomial(link="logit"))
 ```
 
@@ -464,8 +502,10 @@ get_icc(naics05_cbre)
 get_icc(naics06_cbre)
 get_icc(naics26_cbre)
 get_icc(naics36_cbre)
+get_icc(naics46_cbre)
 get_icc(naics236_cbre)
-
+get_icc(StartFY_cbre)
+get_icc(StartCY_cbre)
 
 get_icc(naics02_term)
 get_icc(naics03_term)
@@ -474,7 +514,10 @@ get_icc(naics05_term)
 get_icc(naics06_term)
 get_icc(naics26_term)
 get_icc(naics36_term)
+get_icc(naics46_term)
 get_icc(naics236_term)
+get_icc(StartFY_term)
+get_icc(StartCY_term)
 
 get_icc(naics02_comp)
 get_icc(naics03_comp)
@@ -483,7 +526,107 @@ get_icc(naics05_comp)
 get_icc(naics06_comp)
 get_icc(naics26_comp)
 get_icc(naics36_comp)
+get_icc(naics46_comp)
 get_icc(naics236_comp)
+get_icc(StartFY_comp)
+get_icc(StartCY_comp)
+```
+The ideal levels varies some depending on the output variable. On the whole NAICS 3 and NAICS 6 combined seem to explain comparatively high levels of variance when summed and are reasonably balanced between the two levels.
+
+Fiscal year generally has more explanatory power than calendar year.
+
+## Start Year
+### Fiscal Year
+```{r StartFY}
+StartFY_term <- glmer(data=smp,
+                 b_Term ~ (1 | StartFY)
+                  , family=binomial(link="logit"))
+display(StartFY_term)
+summary(StartFY_term)
+get_icc(StartFY_term)
+
+StartFY_cbre <- glmer(data=smp,
+                 b_CBre ~ (1 | StartFY)
+                  , family=binomial(link="logit"))
+display(StartFY_cbre)
+summary(StartFY_cbre)
+get_icc(StartFY_cbre)
+
+StartFY_comp <- glmer(data=smp,
+                 b_Comp ~ (1 | StartFY)
+                  , family=binomial(link="logit"))
+
+
+```
+### Calendar Year
+```{r StartCY}
+StartCY_term <- glmer(data=smp,
+                 b_Term ~ (1 | StartCY)
+                  , family=binomial(link="logit"))
+display(StartCY_term)
+summary(StartCY_term)
+get_icc(StartCY_term)
+
+StartCY_cbre <- glmer(data=smp,
+                 b_CBre ~ (1 | StartCY)
+                  , family=binomial(link="logit"))
+display(StartCY_cbre)
+summary(StartCY_cbre)
+get_icc(StartCY_cbre)
+
+StartCY_comp <- glmer(data=smp,
+                 b_Comp ~ (1 | StartCY)
+                  , family=binomial(link="logit"))
+
+
+```
+
+##Customer
+### Office
+```{r Office}
+smp$Office
+Office_term <- glmer(data=smp,
+                 b_Term ~ (1 | Office)
+                  , family=binomial(link="logit"))
+display(Office_term)
+summary(Office_term)
+get_icc(Office_term)
+
+Office_cbre <- glmer(data=smp,
+                 b_CBre ~ (1 | Office)
+                  , family=binomial(link="logit"))
+display(Office_cbre)
+summary(Office_cbre)
+get_icc(Office_cbre)
+
+Office_comp <- glmer(data=smp,
+                 b_Comp ~ (1 | Office)
+                  , family=binomial(link="logit"))
+
+
+```
+
+### Office
+```{r Office}
+smp$Office
+Office_term <- glmer(data=smp,
+                 b_Term ~ (1 | Office)
+                  , family=binomial(link="logit"))
+display(Office_term)
+summary(Office_term)
+get_icc(Office_term)
+
+Office_cbre <- glmer(data=smp,
+                 b_CBre ~ (1 | Office)
+                  , family=binomial(link="logit"))
+display(Office_cbre)
+summary(Office_cbre)
+get_icc(Office_cbre)
+
+Office_comp <- glmer(data=smp,
+                 b_Comp ~ (1 | Office)
+                  , family=binomial(link="logit"))
+
 
 ```
 
