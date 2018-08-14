@@ -18,7 +18,8 @@ library(dplyr)
 library(arm)
 library(R2WinBUGS)
 library(Hmisc)
-library(ICCbin)
+# library(ICCbin)
+library(sjstats)
 source("DIIGstat.r")
 source("NAICS.r")
 
@@ -227,14 +228,10 @@ display(naics06_cbre)
 summary(naics06_cbre)
 get_icc(naics06_cbre)
 
+naics06_comp <- glmer(data=smp,
+                 b_Comp ~ (1 | NAICS)
+                  , family=binomial(link="logit"))
 
-
-M0 <- glmer(bieber ~ ( 1 | classes), data=d, family = "binomial")
-summary(M0)
-
-icc <- M0@theta[1]^2/ (M0@theta[1]^2 + (3.14159^2/3))
-icc
-get_icc(M0)
 
 ```
 
@@ -255,6 +252,9 @@ summary(naics05_cbre)
 get_icc(naics05_cbre)
 
 
+naics05_comp <- glmer(data=smp,
+                 b_Comp ~ (1 | NAICS5)
+                  , family=binomial(link="logit"))
 ```
 
 ### NAICS level 4
@@ -274,6 +274,9 @@ summary(naics04_cbre)
 get_icc(naics04_cbre)
 
 
+naics04_comp <- glmer(data=smp,
+                 b_Comp ~ (1 | NAICS4)
+                  , family=binomial(link="logit"))
 ```
 
 ### NAICS level 3
@@ -292,7 +295,14 @@ display(naics03_cbre)
 summary(naics03_cbre)
 get_icc(naics03_cbre)
 
+naics03_comp <- glmer(data=smp,
+                 b_Comp ~ (1 | NAICS3)
+                  , family=binomial(link="logit"))
 
+
+display(naics03_cbre)
+summary(naics03_cbre)
+get_icc(naics03_cbre)
 ```
 ### NAICS level 2
 ```{r NAICSlevel2}
@@ -310,7 +320,9 @@ display(naics02_cbre)
 summary(naics02_cbre)
 get_icc(naics02_cbre)
 
-
+naics02_comp<- glmer(data=smp,
+                 b_Comp ~ (1 | NAICS2)
+                  , family=binomial(link="logit"))
 ```
 
 
@@ -336,21 +348,27 @@ get_icc(naics236_term)
 
 
 
-display(naics23456_term)
-summary(naics23456_term)
-get_icc(naics23456_term)
+display(naics236_term)
+summary(naics236_term)
+get_icc(naics236_term)
 
 naics236_cbre <- glmer(data=smp,
                  b_CBre ~ (1 | NAICS2/NAICS3/NAICS)
                   , family=binomial(link="logit"))
-display(naics23456_cbre)
-summary(naics23456_cbre)
-get_icc(naics23456_cbre)
+display(naics236_cbre)
+summary(naics236_cbre)
+get_icc(naics236_cbre)
 get_icc(naics02_cbre)
 
 levels(smp$NAICS2)
 levels(smp$NAICS)
 smp$NAICS5<-factor(smp$NAICS5)
+
+naics236_comp <- glmer(data=smp,
+                 b_Comp ~ (1 | NAICS2/NAICS3/NAICS)
+                  , family=binomial(link="logit"))
+
+
 
 ```
 ### NAICS 2/6
@@ -378,7 +396,9 @@ get_icc(naics36_cbre)
 get_icc(naics03_cbre)
 
 levels(smp$NAICS2)
-
+naics26_comp <- glmer(data=smp,
+                 b_Comp ~ (1 | NAICS2/NAICS)
+                  , family=binomial(link="logit"))
 ```
 ### NAICS 3/6
 ```{r NAICSlevel36}
@@ -393,7 +413,7 @@ get_icc(naics36_term)
 get_icc(naics02_term,1)
 get_icc(naics36_term,1)
 get_icc(naics36_term,2)
-library(sjstats)
+
 sjstats::icc(naics36_term)
 iccbin(which(colnames(smp)=="NAICS"),
        which(colnames(smp)=="b_CBre"),smp)
@@ -416,11 +436,55 @@ get_icc(naics36_cbre)
 get_icc(naics02_cbre)
 
 levels(smp$NAICS3)
-save(naics06_cbre,naics06_term,
-     #naics236_cbre,naics236_term,
-     naics26_cbre,naics26_term,
-     naics36_cbre,naics36_term,
-     file="empty_models.rdata")
+naics36_comp <- glmer(data=smp,
+                 b_Comp ~ (1 | NAICS3/NAICS)
+                  , family=binomial(link="logit"))
+```
+
+### Compare
+
+```{r Empty_Compare}
+
+save(naics02_cbre,naics02_term,naics02_comp,
+     naics03_cbre,naics03_term,naics03_comp,
+     naics04_cbre,naics04_term,naics05_comp,
+     naics05_cbre,naics05_term,naics05_comp,
+     naics06_cbre,naics06_term,naics06_comp,
+     naics26_cbre,naics26_term,naics26_comp,
+     naics36_cbre,naics36_term,naics36_comp,
+     #naics236_cbre,naics236_term,naics236_comp,
+     file="Output//empty_models.rdata")
+
+load(file="Output//empty_models.rdata")
+
+get_icc(naics02_cbre)
+get_icc(naics03_cbre)
+get_icc(naics04_cbre)
+get_icc(naics05_cbre)
+get_icc(naics06_cbre)
+get_icc(naics26_cbre)
+get_icc(naics36_cbre)
+get_icc(naics236_cbre)
+
+
+get_icc(naics02_term)
+get_icc(naics03_term)
+get_icc(naics04_term)
+get_icc(naics05_term)
+get_icc(naics06_term)
+get_icc(naics26_term)
+get_icc(naics36_term)
+get_icc(naics236_term)
+
+get_icc(naics02_comp)
+get_icc(naics03_comp)
+get_icc(naics04_comp)
+get_icc(naics05_comp)
+get_icc(naics06_comp)
+get_icc(naics26_comp)
+get_icc(naics36_comp)
+get_icc(naics236_comp)
+
 ```
 
 #Initial Logit Model

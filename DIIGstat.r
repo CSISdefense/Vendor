@@ -1044,11 +1044,13 @@ glmer_examine<-function(model){
     # min(m2t[ll==0])
     if(!is.null(model@optinfo$conv$lme4$messages)){
       output<-list(car::vif(model),
+                   icc(model),
                    model@optinfo$conv$lme4$messages,
       t[l==0])
     }
     else{
       output<-list(car::vif(model),
+                   icc(model),
                    t[l==0]
       )
     }
@@ -1060,6 +1062,15 @@ get_icc<-function(model,level=1){
 ############################################################################################################################
 #Keep Calm and Learn Multilevel Logistic Modeling: A Simplified Three-Step Procedure for Beginners Using SPSS, Stata, and R#
 ############################################################################################################################
-  icc <- model@theta^2/ (model@theta^2 + (3.14159^2/3))
-  icc
+  # icc <- model@theta^2/ (model@theta^2 + (3.14159^2/3))
+  # icc
+  
+  if(!is.null(model@optinfo$conv$lme4$messages)){
+    output<-list(icc(model),
+                 model@optinfo$conv$lme4$messages)
+  }
+  else{
+    output<-icc(model)
+  }
+  output
 }
