@@ -2,11 +2,7 @@
 title: "empty_model_multilevel_check"
 author: "Greg Sanders"
 date: "August 15, 2018"
-output: 
-  html_document: 
-    fig_caption: yes
-    keep_md: yes
-    toc: yes
+output: html_document
 ---
 
 
@@ -298,7 +294,7 @@ get_icc(display=TRUE,naics46_comp)
 
 save(naics02_cbre,naics02_term,naics02_comp,
      naics03_cbre,naics03_term,naics03_comp,
-     naics04_cbre,naics04_term,naics04_comp,
+     naics04_cbre,naics04_term,naics05_comp,
      naics05_cbre,naics05_term,naics05_comp,
      naics06_cbre,naics06_term,naics06_comp,
      naics26_cbre,naics26_term,naics26_comp,
@@ -474,9 +470,7 @@ Signed month has ICC values typically below 0.03 and it appears it can be safely
 ##Customer
 ### Office
 ```{r Office}
-
 load(file="Output//who_empty_models.rdata")
-
 if(!exists("Office_term"))
   Office_term <- glmer(data=smp,
                        b_Term ~ (1 | Agency:Office)
@@ -545,13 +539,13 @@ get_icc(display=TRUE,NestedOffice_comp)
 ```{r NAICS36_Office}
 if(!exists("naics36_Office_term"))
   naics36_Office_term <- glmer(data=smp,
-                             b_Term ~  (1 | NAICS3/NAICS) + (1 | Agency:Office)
+                             b_Term ~  (1 | NAICS3/NAICS) + (1 | Agency/Office)
                              , family=binomial(link="logit"))
 get_icc(display=TRUE,naics36_Office_term)
 
 if(!exists("naics36_Office_cbre"))
   naics36_Office_cbre <- glmer(data=smp,
-                             b_CBre ~  (1 | NAICS3/NAICS) + (1 | Agency:Office)
+                             b_CBre ~  (1 | NAICS3/NAICS) + (1 | Agency/Office)
                              , family=binomial(link="logit"))
 get_icc(display=TRUE,naics36_Office_cbre)
 
@@ -590,14 +584,14 @@ NAICS06 does come in a bit higher in summed VIF than NAICS36, but only a little.
 ### NAICS 4/6 Office
 ```{r naics46_Office}
 if(!exists("naics46_Office_term"))
-naics46_Office_term <- glmer(data=smp,
-                             b_Term ~  (1 | NAICS4/NAICS) + (1 | Agency:Office)
+  naics46_Office_term <- glmer(data=smp,
+                             b_Term ~  (1 | NAICS4/NAICS) + (1 | Agency/Office)
                              , family=binomial(link="logit"))
 get_icc(display=TRUE,naics46_Office_term)
 
 if(!exists("naics46_Office_cbre"))
   naics46_Office_cbre <- glmer(data=smp,
-                             b_CBre ~  (1 | NAICS4/NAICS) + (1 | Agency:Office)
+                             b_CBre ~  (1 | NAICS4/NAICS) + (1 | Agency/Office)
                              , family=binomial(link="logit"))
 get_icc(display=TRUE,naics46_Office_cbre)
 
@@ -616,15 +610,14 @@ get_icc(display=TRUE,naics46_Office_comp)
 #   naics36_When_Office_term <- glmer(data=smp,
 #                              b_Term ~  (1 | NAICS3/NAICS) + (1 | StartCY) + (1 | Agency:Office)
 #                              , family=binomial(link="logit"))
-get_icc(display=TRUE,naics36_When_Office_term)
+# get_icc(display=TRUE,naics36_When_Office_term)
 # 
 # if(!exists("naics36_When_Office_cbre"))
 #   naics36_When_Office_cbre <- glmer(data=smp,
-#                              b_CBre ~  (1 | NAICS3/NAICS)+ (1 | StartCY) + (1 | Agency:Office)
+#                              b_CBre ~  (1 | NAICS3/NAICS)+ (1 | StartCY) + (1 | Agency;Office)
 #                              , family=binomial(link="logit"))
 # get_icc(display=TRUE,naics36_When_Office_cbre)
-# # odel failed to converge with max|grad| = 0.343334 (tol = 0.001, component 1)Model is nearly unidentifiable: very large eigenvalue
-# #  - Rescale variables?
+# 
 # if(!exists("naics36_When_Office_comp"))
 #   naics36_When_Office_comp <- glmer(data=smp,
 #                              b_Comp ~  (1 | NAICS3/NAICS)+ (1 | StartCY) + (1 | Agency:Office)
@@ -632,7 +625,29 @@ get_icc(display=TRUE,naics36_When_Office_term)
 # get_icc(display=TRUE,naics36_When_Office_comp)
 
 ```
-Attempting to combine all three failed due to a very large eigenvalue. 
+
+### NAICS When Office
+```{r naics06_When_Office}
+if(!exists("naics06_When_Office_term"))
+  naics06_When_Office_term <- glmer(data=smp,
+                             b_Term ~  (1 | NAICS) + (1 | StartCY) + (1 | Agency:Office)
+                             , family=binomial(link="logit"))
+get_icc(display=TRUE,naics06_When_Office_term)
+
+if(!exists("naics06_When_Office_cbre"))
+  naics06_When_Office_cbre <- glmer(data=smp,
+                             b_CBre ~  (1 | NAICS)+ (1 | StartCY) + (1 | Agency:Office)
+                             , family=binomial(link="logit"))
+get_icc(display=TRUE,naics06_When_Office_cbre)
+
+if(!exists("naics06_When_Office_comp"))
+  naics06_When_Office_comp <- glmer(data=smp,
+                             b_Comp ~  (1 | NAICS)+ (1 | StartCY) + (1 | Agency:Office)
+                             , family=binomial(link="logit"))
+get_icc(display=TRUE,naics06_When_Office_comp)
+
+```
+
 
 ### Compare Who
 ```{r Empty_Compare_Who}
@@ -645,6 +660,8 @@ save(Office_cbre,Office_term,Office_comp,
      naics46_Office_cbre,naics46_Office_term,naics46_Office_comp,
      # naics36_When_Office_cbre,naics36_When_Office_term,naics36_When_Office_comp,
      file="Output//who_empty_models.rdata")
+
+
 
 
 get_icc(naics36_term)
@@ -665,7 +682,7 @@ get_icc(Agency_cbre)
 get_icc(NestedOffice_cbre)
 get_icc(naics36_Office_cbre)
 get_icc(naics06_Office_cbre)
-get_icc(naics46_Office_cbre)
+get_icc(naics46_Office_term)
 # get_icc(naics36_When_Office_cbre)
 
 get_icc(naics36_comp)
@@ -675,7 +692,7 @@ get_icc(Agency_comp)
 get_icc(NestedOffice_comp)
 get_icc(naics36_Office_comp)
 get_icc(naics06_Office_comp)
-get_icc(naics46_Office_comp)
+get_icc(naics46_Office_term)
 # get_icc(naics36_When_Office_comp)
 
 ```
