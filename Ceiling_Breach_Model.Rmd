@@ -322,6 +322,8 @@ get_icc(naics02_cbre)
 naics02_comp<- glmer(data=smp,
                  b_Comp ~ (1 | NAICS2)
                   , family=binomial(link="logit"))
+
+summary(naics02_comp)
 ```
 
 
@@ -398,6 +400,8 @@ levels(smp$NAICS2)
 naics26_comp <- glmer(data=smp,
                  b_Comp ~ (1 | NAICS2/NAICS)
                   , family=binomial(link="logit"))
+
+summary(naics26_comp)
 ```
 ### NAICS 3/6
 ```{r NAICSlevel36}
@@ -450,13 +454,27 @@ get_icc(naics36_term)
 get_icc(naics02_term,1)
 get_icc(naics36_term,1)
 get_icc(naics36_term,2)
-library(sjstats)
+
 sjstats::icc(naics36_term)
 iccbin(which(colnames(smp)=="NAICS"),
        which(colnames(smp)=="b_CBre"),smp)
 sum(get_re_var(naics36_term)) / (sum(get_re_var(naics36_term)) + get_re_var(naics36_term, "sigma_2"))
 get_re_var(naics36_term)[2] / sum(get_re_var(naics36_term))
 
+
+naics36_cbre <- glmer(data=smp,
+                 b_CBre ~ (1 | NAICS3/NAICS)
+                  , family=binomial(link="logit"))
+display(naics36_cbre)
+summary(naics36_cbre)
+get_icc(naics36_cbre)
+get_icc(naics02_cbre)
+
+levels(smp$NAICS4)
+naics36_comp <- glmer(data=smp,
+                 b_Comp ~ (1 | NAICS3/NAICS)
+                  , family=binomial(link="logit"))
+```
 
 ### NAICS 4/6
 ```{r NAICSlevel46}
@@ -498,7 +516,7 @@ naics46_comp <- glmer(data=smp,
                   , family=binomial(link="logit"))
 ```
 
-### Compare
+### Compare NAICS
 
 ```{r Empty_Compare}
 
@@ -509,10 +527,11 @@ save(naics02_cbre,naics02_term,naics02_comp,
      naics06_cbre,naics06_term,naics06_comp,
      naics26_cbre,naics26_term,naics26_comp,
      naics36_cbre,naics36_term,naics36_comp,
-     #naics236_cbre,naics236_term,naics236_comp,
-     file="Output//empty_models.rdata")
+     naics46_cbre,naics46_term,naics46_comp,
+     naics236_cbre,naics236_term,naics236_comp,
+     file="Output//naics_empty_models.rdata")
 
-load(file="Output//empty_models.rdata")
+load(file="Output//naics_empty_models.rdata")
 
 get_icc(naics02_cbre)
 get_icc(naics03_cbre)
@@ -523,9 +542,8 @@ get_icc(naics26_cbre)
 get_icc(naics36_cbre)
 get_icc(naics46_cbre)
 get_icc(naics236_cbre)
-get_icc(StartFY_cbre)
-get_icc(StartCY_cbre)
 
+coef(StartCY_comp)
 get_icc(naics02_term)
 get_icc(naics03_term)
 get_icc(naics04_term)
@@ -535,8 +553,6 @@ get_icc(naics26_term)
 get_icc(naics36_term)
 get_icc(naics46_term)
 get_icc(naics236_term)
-get_icc(StartFY_term)
-get_icc(StartCY_term)
 
 get_icc(naics02_comp)
 get_icc(naics03_comp)
@@ -547,39 +563,14 @@ get_icc(naics26_comp)
 get_icc(naics36_comp)
 get_icc(naics46_comp)
 get_icc(naics236_comp)
-get_icc(StartFY_comp)
-get_icc(StartCY_comp)
+
 ```
 The ideal levels varies some depending on the output variable. On the whole NAICS 3 and NAICS 6 combined seem to explain comparatively high levels of variance when summed and are reasonably balanced between the two levels.
 
 Fiscal year generally has more explanatory power than calendar year.
 
 ## Start Year
-### Quarter
-```{r StartFY}
-lubridate::month(smp$MinOfSignedDate)
-lubridate::month(smp$MinOfSignedDate)  
-  floor((12-1)/4)
-StartFY_term <- glmer(data=smp,
-                 b_Term ~ (1 | StartFY)
-                  , family=binomial(link="logit"))
-display(StartFY_term)
-summary(StartFY_term)
-get_icc(StartFY_term)
 
-StartFY_cbre <- glmer(data=smp,
-                 b_CBre ~ (1 | StartFY)
-                  , family=binomial(link="logit"))
-display(StartFY_cbre)
-summary(StartFY_cbre)
-get_icc(StartFY_cbre)
-
-StartFY_comp <- glmer(data=smp,
-                 b_Comp ~ (1 | StartFY)
-                  , family=binomial(link="logit"))
-
-
-```
 ### Calendar Year
 ```{r StartCY}
 StartCY_term <- glmer(data=smp,
@@ -603,6 +594,113 @@ StartCY_comp <- glmer(data=smp,
 
 ```
 
+The ICC is highest for ceiling breaches and is backloaded, with 2015 and 2016 having lower than usual odds. This is likely an artifact of those years having fewer completed longer contracts. That said, this should be largely compensated for with the inclusion of initial duration. If this proves challenges to manage, it may be worth considering dropping 2016. 
+
+### Month Unnested
+```{r StartMonth}
+smp$SignedMonth<-lubridate::month(smp$MinOfSignedDate)
+
+  floor((12-1)/4)
+SignedMonth_term <- glmer(data=smp,
+                 b_Term ~ (1 | StartCY:SignedMonth)
+                  , family=binomial(link="logit"))
+display(SignedMonth_term)
+summary(SignedMonth_term)
+get_icc(SignedMonth_term)
+
+SignedMonth_cbre <- glmer(data=smp,
+                 b_CBre ~ (1 | StartCY:SignedMonth)
+                  , family=binomial(link="logit"))
+display(SignedMonth_cbre)
+summary(SignedMonth_cbre)
+get_icc(SignedMonth_cbre)
+
+SignedMonth_comp <- glmer(data=smp,
+                 b_Comp ~ (1 | StartCY:SignedMonth)
+                  , family=binomial(link="logit"))
+
+
+```
+
+### Month Nested
+```{r NestedMonth}
+NestedMonth_term <- glmer(data=smp,
+                 b_Term ~ (1 | StartCY/SignedMonth)
+                  , family=binomial(link="logit"))
+display(NestedMonth_term)
+summary(NestedMonth_term)
+get_icc(NestedMonth_term)
+
+NestedMonth_cbre <- glmer(data=smp,
+                 b_CBre ~ (1 | StartCY/SignedMonth)
+                  , family=binomial(link="logit"))
+display(NestedMonth_cbre)
+summary(NestedMonth_cbre)
+get_icc(NestedMonth_cbre)
+
+NestedMonth_comp <- glmer(data=smp,
+                 b_Comp ~ (1 | StartCY/SignedMonth)
+                  , family=binomial(link="logit"))
+
+
+```
+
+### Calendar Year and NAICS
+```{r NAICS_StartCY}
+
+NAICS_StartCY_term <- glmer(data=smp,
+                 b_Term ~  (1 | NAICS3/NAICS) + (1 | StartCY)
+                  , family=binomial(link="logit"))
+display(NAICS_StartCY_term)
+summary(NAICS_StartCY_term)
+get_icc(NAICS_StartCY_term)
+
+StartCY_cbre <- glmer(data=smp,
+                 b_CBre ~  (1 | NAICS3/NAICS) + (1 | StartCY)
+                  , family=binomial(link="logit"))
+display(StartCY_cbre)
+summary(StartCY_cbre)
+get_icc(StartCY_cbre)
+
+StartCY_comp <- glmer(data=smp,
+                 b_Comp ~  (1 | NAICS3/NAICS) + (1 | StartCY)
+                  , family=binomial(link="logit"))
+
+
+```
+
+### Compare Signed Dates
+```{r Empty_Compare_Time}
+
+save(StartCY_cbre,StartCY_term,StartCY_comp,
+     SignedMonth_cbre,SignedMonth_term,SignedMonth_comp,
+     NestedMonth_cbre,NestedMonth_term,NestedMonth_comp,
+     #NAICS_StartCY_cbre,NAICS_StartCY_term,NAICS_StartCY_comp,
+     file="Output//date_empty_models.rdata")
+
+load(file="Output//date_empty_models.rdata")
+
+get_icc(naics36_cbre)
+get_icc(StartCY_cbre)
+get_icc(SignedMonth_cbre)
+get_icc(NestedMonth_cbre)
+get_icc(NAICS_StartCY_cbre)
+
+get_icc(naics36_term)
+get_icc(StartCY_term)
+get_icc(SignedMonth_term)
+get_icc(NestedMonth_term)
+get_icc(NAICS_StartCY_term)
+
+get_icc(naics36_comp)
+get_icc(StartCY_comp)
+coef(StartCY_comp)
+get_icc(SignedMonth_comp)
+get_icc(NestedMonth_comp)
+get_icc(NAICS_StartCY_comp)
+
+```
+Signed month has ICC values typically below 0.03 and it appears it can be safely left out as start calendar year captures most of the variance. Interestingly, while start year had been most prominent for ceiling breaches no longer stands out once NAICS are incoporated in the model.
 ##Customer
 ### Office
 ```{r Office}
@@ -628,25 +726,24 @@ Office_comp <- glmer(data=smp,
 
 ```
 
-### Office
-```{r Office}
-smp$Office
-Office_term <- glmer(data=smp,
-                 b_Term ~ (1 | Office)
+### Agency
+```{r Agency}
+Agency_term <- glmer(data=smp,
+                 b_Term ~ (1 | Agency)
                   , family=binomial(link="logit"))
-display(Office_term)
-summary(Office_term)
-get_icc(Office_term)
+display(Agency_term)
+summary(Agency_term)
+get_icc(Agency_term)
 
-Office_cbre <- glmer(data=smp,
-                 b_CBre ~ (1 | Office)
+Agency_cbre <- glmer(data=smp,
+                 b_CBre ~ (1 | Agency)
                   , family=binomial(link="logit"))
-display(Office_cbre)
-summary(Office_cbre)
-get_icc(Office_cbre)
+display(Agency_cbre)
+summary(Agency_cbre)
+get_icc(Agency_cbre)
 
-Office_comp <- glmer(data=smp,
-                 b_Comp ~ (1 | Office)
+Agency_comp <- glmer(data=smp,
+                 b_Comp ~ (1 | Agency)
                   , family=binomial(link="logit"))
 
 
