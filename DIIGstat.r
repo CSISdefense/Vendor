@@ -1056,15 +1056,28 @@ glmer_examine<-function(model){
     }
   } 
   output
+  
+  # sjstats::icc(naics46_term)
+  # 
+  # sum(get_re_var(naics46_term)) / (sum(get_re_var(naics46_term)) + get_re_var(naics46_term, "sigma_2"))
+  # get_re_var(naics46_term)[2] / sum(get_re_var(naics46_term))
+  # 
+  # # Caution: For three-level-models, depending on the nested structure of the model, the ICC only
+  # # reports the proportion of variance explained for each grouping level. However, the proportion of
+  # # variance for specific levels related to each other (e.g., similarity of level-1-units within level-2-
+  # # units or level-2-units within level-4-units) must be computed manually. Use get_re_var to get the
+  # # between-group-variances and residual variance of the model, and calculate the ICC for the various
+  # # level correlations.
+  # 
 }
 
-get_icc<-function(model,level=1){
+get_icc<-function(model,display=FALSE){
 ############################################################################################################################
 #Keep Calm and Learn Multilevel Logistic Modeling: A Simplified Three-Step Procedure for Beginners Using SPSS, Stata, and R#
 ############################################################################################################################
   # icc <- model@theta^2/ (model@theta^2 + (3.14159^2/3))
   # icc
-  
+  if(display==TRUE) display(model)
   if(!is.null(model@optinfo$conv$lme4$messages)){
     output<-list(icc(model),
                  model@optinfo$conv$lme4$messages)
