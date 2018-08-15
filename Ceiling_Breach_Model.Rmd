@@ -131,41 +131,6 @@ Next, we eliminate missing data entries and then draw a sample. The final comput
 # save(smp,smp1m,file="data//def_sample.Rdata")
 
 
-smp$Pricing<-as.character(smp$FxCb)
-summary(smp$Fee)
-summary(factor(smp$Pricing))
-smp$Pricing[smp$Pricing=="Fixed-Price" & smp$Fee=="FFP or No Fee"]<-"FFP"
-smp$Pricing[smp$Pricing=="Fixed-Price" & smp$Fee!="FFP or No Fee"]<-"Other FP"
-smp$Pricing[smp$Pricing=="Cost-Based" & smp$Fee=="Other Fee"]<-"T&M/LH/FPLOE"
-smp$Pricing<-factor(smp$Pricing,c("FFP","Other FP","Combination or Other",
-                                  "Cost-Based","T&M/LH/FPLOE"))
-summary(smp$Fee)
-summary(factor(smp$Pricing))
-smp$PricingFee<-as.character(smp$Pricing)
-smp$PricingFee[smp$Fee=="Incentive"]<-"Incentive"
-# smp$PricingFee[smp$PricingFee %in% c("Other FP","FFP")] <-"Other FP"
-smp$PricingFee[smp$PricingFee %in% c("Cost-Based")] <-"Other CB"
-# smp$PricingFee<-factor(smp$PricingFee,c("Other FP","Incentive",
-#                                         "Combination or Other",
-#                                   "Other CB","T&M/LH/FPLOE"))
-smp$PricingFee<-factor(smp$PricingFee,c("FFP","Other FP","Incentive",
-                                        "Combination or Other",
-                                  "Other CB","T&M/LH/FPLOE"))
-
-
-smp$ODoD<-smp$Who
-levels(smp$ODoD)<- list("Military Departments"=c("Air Force","Army","Navy"),
-                          "Other DoD"=c("Other DoD"))
-smp$Who[smp$Who=="Uncategorized"]<-NA
-#Frequency Plot
-summary_discrete_plot(smp,"Who",rotate_text=TRUE)
-
-smp$b_ODoD<-smp$Who
-levels(smp$b_ODoD)<- list("1"=c("Other DoD"), 
-                                "0"=c("Air Force","Army","Navy"))
-smp$b_ODoD<-as.integer(as.character(smp$b_ODoD))
-summary_discrete_plot(smp,"b_ODoD",rotate_text=TRUE)
-
 # complete<-!is.na(def$b_Term)&
 #   !is.na(def$b_CBre)&
 #   !is.na(def$n_Comp)&
@@ -481,37 +446,19 @@ The use of log doesn't change the direction of finding, but it does reduce the m
 The higher the ratio of defense obligations to reciepts in the overall economy, the DoD holds a monosopy over a sector. Given the challenges of monosopy, the a higher ratio estimates a greater  risk of ceiling breaches.
 ```{r ModelNCS6C_CBre}
 #Frequency Plot for unlogged ceiling
+summary_continuous_plot(contract,"capped_def6_ratio_lag1")
+      summary_continuous_plot(contract,"l_def6_ratio_lag1")
+      summary_continuous_plot(contract,"capped_def5_ratio_lag1")
+      summary_continuous_plot(contract,"l_def5_ratio_lag1")
+      
+      summary_continuous_plot(contract,"capped_def4_ratio_lag1")
+      summary_continuous_plot(contract,"l_def4_ratio_lag1")
+      summary_continuous_plot(contract,"capped_def3_ratio_lag1")
+      summary_continuous_plot(contract,"l_def3_ratio_lag1")
+      summary_continuous_plot(contract,"capped_def2_ratio_lag1")
+      summary_continuous_plot(contract,"l_def2_ratio_lag1")
+      
 
-cap<-function(column,cap){
-  column[column>cap]<-cap
-  column
-}
-
-smp$capped_def6_ratio_lag1<-cap(smp$def6_ratio_lag1,1)
-smp$l_def6_ratio_lag1<-log(smp$def6_ratio_lag1)
-smp$cl_def6_ratio_lag1<-scale(smp$def6_ratio_lag1)
-summary_continuous_plot(smp,"capped_def6_ratio_lag1")
-summary_continuous_plot(smp,"l_def6_ratio_lag1")
-smp$capped_def5_ratio_lag1<-cap(smp$def5_ratio_lag1,1)
-smp$l_def5_ratio_lag1<-log(smp$def5_ratio_lag1)
-smp$cl_def5_ratio_lag1<-scale(smp$def5_ratio_lag1)
-summary_continuous_plot(smp,"capped_def5_ratio_lag1")
-summary_continuous_plot(smp,"l_def5_ratio_lag1")
-smp$capped_def4_ratio_lag1<-cap(smp$def4_ratio_lag1,1)
-smp$l_def4_ratio_lag1<-log(smp$def4_ratio_lag1)
-smp$cl_def4_ratio_lag1<-scale(smp$def4_ratio_lag1)
-summary_continuous_plot(smp,"capped_def4_ratio_lag1")
-summary_continuous_plot(smp,"l_def4_ratio_lag1")
-smp$capped_def3_ratio_lag1<-cap(smp$def3_ratio_lag1,1)
-smp$l_def3_ratio_lag1<-log(smp$def3_ratio_lag1)
-smp$cl_def3_ratio_lag1<-scale(smp$def3_ratio_lag1)
-summary_continuous_plot(smp,"capped_def3_ratio_lag1")
-summary_continuous_plot(smp,"l_def3_ratio_lag1")
-smp$capped_def2_ratio_lag1<-cap(smp$def2_ratio_lag1,1)
-smp$l_def2_ratio_lag1<-log(smp$def2_ratio_lag1)
-smp$cl_def2_ratio_lag1<-scale(smp$def2_ratio_lag1)
-summary_continuous_plot(smp,"capped_def2_ratio_lag1")
-summary_continuous_plot(smp,"l_def2_ratio_lag1")
 
 #Model
 CBre_Cons_NCS6C <- glm (data=smp,
@@ -602,26 +549,21 @@ Expectations are  unchanged.
 ```{r ModelNCS6E_CBre}
 #Frequency Plot for unlogged ceiling
 summary_continuous_plot(smp,"def6_obl_lag1")
-smp$l_def6_obl_lag1<-log(smp$def6_obl_lag1)
-smp$cl_def6_obl_lag1<-scale(smp$l_def6_obl_lag1)
+
+
 summary_continuous_plot(smp,"l_def6_obl_lag1")
 summary_continuous_plot(smp,"def5_obl_lag1")
-smp$l_def5_obl_lag1<-log(smp$def5_obl_lag1)
+
 summary_continuous_plot(smp,"l_def5_obl_lag1")
 summary_continuous_plot(smp,"def4_obl_lag1")
-smp$cl_def5_obl_lag1<-scale(smp$l_def5_obl_lag1)
-smp$l_def4_obl_lag1<-log(smp$def4_obl_lag1)
+
 summary_continuous_plot(smp,"l_def4_obl_lag1")
 summary_continuous_plot(smp,"def3_obl_lag1")
-smp$cl_def4_obl_lag1<-scale(smp$l_def4_obl_lag1)
-smp$l_def3_obl_lag1<-log(smp$def3_obl_lag1)
+
 summary_continuous_plot(smp,"l_def4_obl_lag1")
 summary_continuous_plot(smp,"def2_obl_lag1")
-smp$cl_def3_obl_lag1<-scale(smp$l_def3_obl_lag1)
 
-smp$l_def2_obl_lag1<-log(smp$def2_obl_lag1)
 summary_continuous_plot(smp,"l_def2_obl_lag1")
-smp$cl_def2_obl_lag1<-scale(smp$l_def2_obl_lag1)
 
 #Model
 CBre_Cons_NCS6E <- glm (data=smp,
@@ -706,8 +648,7 @@ Average salary can be an proxy for unobserved skill requirements. We expect that
 
 
 summary_continuous_plot(smp,"US6_avg_sal_lag1")
-smp$l_US6_avg_sal_lag1<-log(smp$US6_avg_sal_lag1)
-smp$cl_US6_avg_sal_lag1<-scale(smp$l_US6_avg_sal_lag1)
+
 summary_continuous_plot(smp,"l_US6_avg_sal_lag1")
 
 summary_continuous_plot(smp,"US5_avg_sal_lag1")
@@ -1407,8 +1348,6 @@ Average salary can be an proxy for unobserved skill requirements. We expect that
 
 
 summary_continuous_plot(smp,"US3_avg_sal_lag1")
-smp$l_US3_avg_sal_lag1<-log(smp$US3_avg_sal_lag1)
-smp$cl_US3_avg_sal_lag1<-scale(smp$l_US3_avg_sal_lag1)
 summary_continuous_plot(smp,"l_US3_avg_sal_lag1")
 
 summary_continuous_plot(smp,"US5_avg_sal_lag1")
@@ -3645,6 +3584,9 @@ Adding who resulted in a range of models that failed to converge. The one except
 ###Model 06A: Sub Customer 
 Other DoD stands out for its sheer quantity of contracts and task orders and also its lower termination rate. It includes the DLA which specializes in logistic delivery, and may thus estimate a lower rate of ceiling breahces.
 ```{r Model06A}
+    #Frequency Plot
+    summary_discrete_plot(contract,"Who",rotate_text=TRUE)
+    summary_discrete_plot(contract,"b_ODoD",rotate_text=TRUE)
 
 
 #Create the model
