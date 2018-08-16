@@ -68,8 +68,8 @@ First we load the data. The dataset used is a U.S. Defense Contracting dataset d
 # debug(transform_contract)
 # def<-transform_contract(def)  
  # save(file="Data/transformed_def.Rdata",def)
-load(file="Data/transformed_def.Rdata",def)
-    
+load(file="Data/transformed_def.Rdata")
+
 ```
 
 
@@ -129,8 +129,57 @@ Next, we eliminate missing data entries and then draw a sample. The final comput
 ```{r Sample}
  load(file="data//def_sample.Rdata")
 # save(smp,smp1m,file="data//def_sample.Rdata")
-
-
+#Code to update sample w/o recreating.
+# smp<-smp["CSIScontractID"]
+# smp<-left_join(smp,def)
+# smp1m<-smp1m["CSIScontractID"]
+# smp1m<-left_join(smp1m,def)
+add_who<-function(contract){
+  if(!"AgencyID" %in% colnames(contract))
+     colnames(contract)[colnames(contract)=="Agency"]<-"AgencyID"
+  csis360::read_and_join(contract,
+                         path = "https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                         dir="",
+                         "Agency_AgencyID.csv",
+                         by=c("AgencyID"),
+                         add_var=c("Customer",	"SubCustomer"))
+  colnames(contract)[colnames(contract)=="AgencyID"]<-"Agency"
+  colnames(contract)[colnames(contract)=="SubCustomer"]<-"Who"
+  
+  
+  
+  #Customer
+  if(!"Is.Defense" %in% colnames(contract) & "Who" %in% colnames(contract)){
+    contract$Is.Defense<-as.character(contract$Who)
+    contract$Is.Defense[contract$Is.Defense %in%
+                     c("Air Force","Army",
+                       "Navy","Other DoD","Uncategorized"  )
+                   ]<-"Defense"
+    contract$Is.Defense<-factor(contract$Is.Defense)
+    
+    contract$Who[contract$Who=="Uncategorized"]<-NA
+    
+    #b_ODoD
+    contract$b_ODoD<-contract$Who
+    levels(contract$b_ODoD)<- list("1"=c("Other DoD"),
+                              "0"=c("Air Force","Army","Navy"))
+    
+    contract$b_ODoD<-as.integer(as.character(contract$b_ODoD))
+    
+    contract$ODoD<-contract$Who
+    levels(contract$ODoD)<- list("Military Departments"=c("Air Force","Army","Navy"),
+                            "Other DoD"=c("Other DoD"))
+    
+    
+    
+    
+    
+  }
+  contract
+}
+debug(add_who)
+smp<-add_who(smp)
+smp1m<-add_who(smp1m)
 # complete<-!is.na(def$b_Term)&
 #   !is.na(def$b_CBre)&
 #   !is.na(def$n_Comp)&
@@ -612,6 +661,7 @@ summary_continuous_plot(smp,"US3_avg_sal_lag1")
 summary_continuous_plot(smp,"US2_avg_sal_lag1")
 
 #Model
+#cl_def6_obl_lag1
 
 CBre_Cons_NCS6G <- glm (data=smp,
                  b_CBre ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
@@ -3177,7 +3227,7 @@ summary_residual_compare(CBre_Cons_04I,CBre_Cons_04J2,CBre_Comp_04I,CBre_Comp_04
 
 UCA:l_Days violates VIF even with removal of other da 
 
-###Model 04J: UCA and Ceiling
+###Model 04K: UCA and Ceiling
 
 Here the possible risk is similar to days, that larger, and thus possibly more complex projects, are at greater risk with UCA and that UCA and high ceiling estimate a higher chance of breaches.
 ```{r Model04K_Term}
@@ -3284,6 +3334,86 @@ summary_residual_compare(CBre_Cons_04I,CBre_Cons_04K,CBre_Comp_04I,CBre_Comp_04K
 
 ```
 The results are counter-intuitive but strong. Based on the descriptive statistics it appears that  mid-range, not the largest UCAs, have the great risk of breaches.
+
+###Model 04L: Pricing and Average Wage
+Fixed Price is less  appropriate as an approach when there is greater uncertainty. A phenomenon likely to extend to time and materials / labor hours contracts. By comparison, fixed price incentive and cost based should estimate a lower risk of ceiling breaches and terminations.
+
+```{r Model04L_Wage}
+
+
+#Frequency Plot
+summary_continuous_plot(smp,"l_Ceil","UCA")
+
+CBre_Cons_04L <- glm (data=smp,
+b_CBre ~cl_def6_HHI_lag1 + 
+                   cl_Ceil + cl_Days+ 
+                   Veh +
+                   PricingFee + b_UCA +
+                   # cl_def6_HHI_lag1:cl_Ceil  +
+                 Veh:cl_Days+
+                   # Veh:cl_def6_HHI_lag1  +
+                   Veh:cl_Ceil+
+  cl_Ceil:PricingFee+
+  cl_US6_avg_sal_lag1+
+  cl_US6_avg_sal_lag1:PricingFee+
+  # b_UCA:cl_Ceil+
+                b_UCA:cl_def6_HHI_lag1 + 
+                  b_UCA:cl_Ceil
+                    , family=binomial(link="logit"))
+display(CBre_Cons_04L)
+
+CBre_Comp_04L <- glm (data=smp,
+b_CBre ~n_Comp + 
+                   cl_Ceil + cl_Days+ 
+                   Veh  +
+  PricingFee+ b_UCA +
+                 Veh:cl_Days+
+                   
+                   Veh:cl_Ceil+
+  cl_Ceil:PricingFee+
+  # b_UCA:cl_Ceil+
+                   
+  cl_US6_avg_sal_lag1+
+  cl_US6_avg_sal_lag1:PricingFee+
+                b_UCA:n_Comp + 
+                  b_UCA:cl_Ceil
+                    , family=binomial(link="logit"))
+display(CBre_Comp_04L)
+
+
+
+
+# Plot the model and Vehicle 
+# Term_Comp_04L_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
+#   cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+#         Comp*Ceil,Days*Ceil,Days*Comp,
+#         Fixed,x,
+#         Days*x,Days*MIDV,Days*OIDV,
+#         Comp*x,Comp*MIDV,Comp*OIDV,
+#         Comp*x,Days*x) %*%  coef(Term_Comp_04L))}
+# 
+# #Days curves
+# discrete_fitted_term_model(smp,"SIDV") +
+#   stat_function(fun = Term_Comp_04L_curve,
+#                              args=list(Comp=0,Ceil=0,Days=0,
+#                                        MIDV=0,SIDV=0,OIDV=0,
+#                                        Fixed=1),color="blue")+
+#   stat_function(fun = Term_Comp_04L_curve,
+#                              args=list(Comp=2,Ceil=0,Days=1,
+#                                        MIDV=0,SIDV=0,OIDV=0,
+#                                        Fixed=1),color="blue")
+
+
+
+
+stargazer::stargazer(CBre_Cons_04L,
+                     CBre_Comp_04L,type="text",
+                       digits=2)
+summary_residual_compare(CBre_Cons_04L,CBre_Cons_04L,CBre_Comp_04L,CBre_Comp_04L,bins=20)
+
+
+
+```
 ##Place of Performance
 ###Model 05A: Any International
 
@@ -4098,7 +4228,7 @@ CBre_Cons_07B2 <- glm (data=smp,
                         Veh +
                         PricingFee + b_UCA +
                         b_Intl+
-                        Who+
+                        # Who+ Who is missing
                         # cl_def6_HHI_lag1:cl_Ceil  +
                         Veh:cl_Days+
                         # Veh:cl_def6_HHI_lag1  +
@@ -4132,7 +4262,7 @@ CBre_Comp_07B2 <- glm (data=smp,
                         b_UCA:cl_Ceil+
                         
                         b_Intl:Veh +
-                   Who+#+ Who:b_Intl+
+                   # Who+#+ Who:b_Intl+
                    NAICS2
                       , family=binomial(link="logit"))
 display(CBre_Comp_07B2)
@@ -4147,6 +4277,169 @@ summary_residual_compare(CBre_Cons_07A,CBre_Cons_07B2,CBre_Comp_07A,CBre_Comp_07
 
 ```
 
+### Model 07C No Who, but sector data
+```{r Model07B}
+
+
+#Sumamry plot
+
+
+
+CBre_Cons_07C <- glm (data=smp,
+                      b_CBre ~cl_def6_HHI_lag1 +cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1+ 
+                        cl_Ceil + cl_Days+ 
+                        Veh +
+                        PricingFee + b_UCA +
+                        b_Intl+
+                        # Who+ Who is missing
+                        # cl_def6_HHI_lag1:cl_Ceil  +
+                        Veh:cl_Days+
+                        # Veh:cl_def6_HHI_lag1  +
+                        Veh:cl_Ceil+
+                        cl_Ceil:PricingFee+
+                        # b_UCA:cl_Ceil+
+                        b_UCA:cl_def6_HHI_lag1 + 
+                        b_UCA:cl_Ceil+
+                        
+                        b_Intl:Veh+ 
+                        # ODoD:cl_def6_HHI_lag1+
+                       # Who:b_Intl+
+                        NAICS2
+                      , family=binomial(link="logit"))
+display(CBre_Cons_07C)
+glmer_examine(CBre_Cons_07C)
+
+CBre_Comp_07C <- glm (data=smp,
+                      b_CBre ~n_Comp +
+                        cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+ 
+                        cl_Ceil + cl_Days+ 
+                        Veh  +
+                        PricingFee+ b_UCA +
+                        b_Intl+
+                        Veh:cl_Days+
+                        
+                        Veh:cl_Ceil+
+                        cl_Ceil:PricingFee+
+                        # b_UCA:cl_Ceil+
+                        
+                        b_UCA:n_Comp + 
+                        b_UCA:cl_Ceil+
+                        
+                        b_Intl:Veh +
+                   # Who+#+ Who:b_Intl+
+                   NAICS2
+                      , family=binomial(link="logit"))
+display(CBre_Comp_07C)
+glmer_examine(CBre_Comp_07C)
+
+
+
+CBre_Cons_07C2 <- glm (data=smp,
+                      b_CBre ~cl_def6_HHI_lag1 +cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1+ 
+                        cl_Ceil + cl_Days+ 
+                        Veh +
+                        PricingFee + b_UCA +
+                        b_Intl+
+                        # Who+ Who is missing
+                        # cl_def6_HHI_lag1:cl_Ceil  +
+                        Veh:cl_Days+
+                        # Veh:cl_def6_HHI_lag1  +
+                        # Veh:cl_Ceil+
+                        cl_Ceil:PricingFee+
+                        # b_UCA:cl_Ceil+
+                        b_UCA:cl_def6_HHI_lag1 + 
+                        b_UCA:cl_Ceil+
+                        
+                        b_Intl:Veh+ 
+                        # ODoD:cl_def6_HHI_lag1+
+                       # Who:b_Intl+
+                        NAICS2
+                      , family=binomial(link="logit"))
+display(CBre_Cons_07C2)
+glmer_examine(CBre_Cons_07C2)
+
+CBre_Comp_07C2 <- glm (data=smp,
+                      b_CBre ~n_Comp +
+                        cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+ 
+                        cl_Ceil + cl_Days+ 
+                        Veh  +
+                        PricingFee+ b_UCA +
+                        b_Intl+
+                        Veh:cl_Days+
+                        
+                        # Veh:cl_Ceil+
+                        cl_Ceil:PricingFee+
+                        # b_UCA:cl_Ceil+
+                        
+                        b_UCA:n_Comp + 
+                        b_UCA:cl_Ceil+
+                        
+                        b_Intl:Veh +
+                   # Who+#+ Who:b_Intl+
+                   NAICS2
+                      , family=binomial(link="logit"))
+display(CBre_Comp_07C2)
+glmer_examine(CBre_Comp_07C2)
+
+
+
+CBre_Cons_07C3 <- glm (data=smp,
+                      b_CBre ~cl_def6_HHI_lag1 +cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1+ 
+                        cl_Ceil + cl_Days+ 
+                        Veh +
+                        PricingFee + b_UCA +
+                        b_Intl+
+                        # Who+ Who is missing
+                        # cl_def6_HHI_lag1:cl_Ceil  +
+                        Veh:cl_Days+
+                        # Veh:cl_def6_HHI_lag1  +
+                        # Veh:cl_Ceil+
+                        # cl_Ceil:PricingFee+
+                        # b_UCA:cl_Ceil+
+                        b_UCA:cl_def6_HHI_lag1 + 
+                        b_UCA:cl_Ceil+
+                        
+                        b_Intl:Veh+ 
+                        # ODoD:cl_def6_HHI_lag1+
+                       # Who:b_Intl+
+                        NAICS2
+                      , family=binomial(link="logit"))
+display(CBre_Cons_07C3)
+glmer_examine(CBre_Cons_07C3)
+
+CBre_Comp_07C3 <- glm (data=smp,
+                      b_CBre ~n_Comp +
+                        cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+ 
+                        cl_Ceil + cl_Days+ 
+                        Veh  +
+                        PricingFee+ b_UCA +
+                        b_Intl+
+                        Veh:cl_Days+
+                        
+                        # Veh:cl_Ceil+
+                        # cl_Ceil:PricingFee+
+                        # b_UCA:cl_Ceil+
+                        
+                        b_UCA:n_Comp + 
+                        b_UCA:cl_Ceil+
+                        
+                        b_Intl:Veh +
+                   # Who+#+ Who:b_Intl+
+                   NAICS2
+                      , family=binomial(link="logit"))
+display(CBre_Comp_07C3)
+glmer_examine(CBre_Comp_07C3)
+  stargazer::stargazer(CBre_Cons_07B2,CBre_Cons_07C2,CBre_Cons_07C3,CBre_Comp_07B2,CBre_Comp_07C2,CBre_Comp_07C3,type="text",
+                       digits=2)
+  
+summary_residual_compare(CBre_Cons_07B2,CBre_Cons_07C2,CBre_Comp_07B2,CBre_Comp_07C2,bins=20)
+summary_residual_compare(CBre_Cons_07B2,CBre_Cons_07C3,CBre_Comp_07B2,CBre_Comp_07C3,bins=20)
+
+
+```
 # Interactions
 ### Model 10A: NAICS
 ```{r Model10A}
