@@ -126,7 +126,7 @@ binned_fitted_versus_residuals<-function(model){
   {
     if(!is.null(model@frame$b_CBre)){
       graph<-binned_fitted_versus_cbre_residuals(model)
-    } else if(!is.null(model@frame$b_CBre)){
+    } else if(!is.null(model@frame$b_Term)){
       graph<-binned_fitted_versus_term_residuals(model)
     } 
     else{stop("Outcome variable not recognized.")}
@@ -188,7 +188,7 @@ residuals_plot<-function(model,col="fitted",bins=40){
   {
     if(!is.null(model@frame$b_CBre)){
       graph<-residuals_cbre_plot(model,col,bins=bins)
-    } else if(!is.null(model@frame$b_CBre)){
+    } else if(!is.null(model@frame$b_Term)){
       graph<-residuals_term_plot(model,col,bins=bins)
     } 
     else{stop("Outcome variable not recognized.")}
@@ -897,7 +897,7 @@ model_colnames<-function(model){
 
 
 
-summary_residual_compare<-function(model1_old,model1_new,model2_old=NULL,model2_new=NULL,bins=5){
+summary_residual_compare<-function(model1_old,model1_new,model2_old=NULL,model2_new=NULL,bins=5,suppress_vif=FALSE){
   #Plot the fitted values vs actual results
   
   if(!is.null(model2_new)){
@@ -947,7 +947,8 @@ summary_residual_compare<-function(model1_old,model1_new,model2_old=NULL,model2_
       # min(m2t[ll==0])
       
       # min(m2t[ll==0])
-      output<-list(car::vif(model1_new),car::vif(model2_new),
+      output<-list(ifelse(suppress_vif==FALSE,car::vif(model1_new),NA),
+                   ifelse(suppress_vif==FALSE,car::vif(model2_new),NA),
                    m1t[m1l==0],
                    m2t[m2l==0],
                    model1_new@optinfo$conv$lme4$messages,
@@ -960,7 +961,8 @@ summary_residual_compare<-function(model1_old,model1_new,model2_old=NULL,model2_
                          deviance_stats(model1_new,"model1_new"),
                          deviance_stats(model2_old,"model2_old"),
                          deviance_stats(model2_new,"model2_new")),
-                   car::vif(model1_new),car::vif(model2_new)
+                   ifelse(suppress_vif==FALSE,car::vif(model1_new),NA),
+                          ifelse(suppress_vif==FALSE,car::vif(model2_new),NA)
       )
     }
     
@@ -1008,7 +1010,7 @@ summary_residual_compare<-function(model1_old,model1_new,model2_old=NULL,model2_
       # min(m2t[ll==0])
       
       # min(m2t[ll==0])
-      output<-list(car::vif(model1_new),
+      output<-list(ifelse(suppress_vif==FALSE,car::vif(model1_new),NA),
                    m1t[m1l==0],
                    model1_new@optinfo$conv$lme4$messages
       )
