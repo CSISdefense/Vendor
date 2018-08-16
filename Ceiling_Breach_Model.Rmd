@@ -4501,11 +4501,10 @@ Competition and vehicle results are interesting, but run afowl of VIF test. Cons
 #Multi-Level Model
 
 
-
+## NAICS6
 ###Model 11A: NAICS
+This initial run proved a bit premature, as incorporation of Agency as a dummy variable showed that many of the interactions included 
 ```{r Model11A}
-
-
 
 CBre_Cons_11A <- glmer (data=smp,
                       b_CBre ~cl_def6_HHI_lag1 +cl_def6_ratio_lag1+cl_def6_obl_lag1+
@@ -4612,11 +4611,12 @@ glmer_examine(CBre_Comp_11B)
 summary_residual_compare(CBre_Cons_07B2,CBre_Cons_11B,CBre_Comp_07B2,CBre_Comp_07C3,bins=20)
 ```
 
-###Model 11C: Agency/Office+NAICS6/NAICS3
+## NAICS3/6
+###Model 12A: Agency/Office+NAICS6/NAICS3
 The North American Industrial Classification system captures the sector of each contract, which are each given a seperate intercept in the model.
-```{r Model11C}
+```{r Model12A}
 
-CBre_Cons_11C <- glmer (data=smp,
+CBre_Cons_12A <- glmer (data=smp,
 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                   #cl_US3_avg_sal_lag1+
                    cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
@@ -4644,15 +4644,15 @@ b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                         verbose=1)
 
 
-glmer_examine(CBre_Cons_11C)
-glmer_examine(CBre_Cons_11C)
+glmer_examine(CBre_Cons_12A)
+glmer_examine(CBre_Cons_12A)
 
 ```
 
-###Model 11D: Agency/Office+NAICS6/NAICS3 trimmed
-```{r Model11D}
+###Model 12B: Agency/Office+NAICS6/NAICS3 trimmed
+```{r Model12B}
 
-CBre_Cons_11D <- glmer (data=smp,
+CBre_Cons_12B <- glmer (data=smp,
                  b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                   #cl_US3_avg_sal_lag1+
                    cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
@@ -4680,10 +4680,10 @@ CBre_Cons_11D <- glmer (data=smp,
                         verbose=1)
 
 
-glmer_examine(CBre_Cons_11D)
-glmer_examine(CBre_Cons_11D)
+glmer_examine(CBre_Cons_12B)
+glmer_examine(CBre_Cons_12B)
 
-CBre_Comp_11D <- glmer (data=smp,
+CBre_Comp_12B <- glmer (data=smp,
                         b_CBre ~n_Comp+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                    n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         cl_Ceil + cl_Days+
@@ -4702,8 +4702,8 @@ CBre_Comp_11D <- glmer (data=smp,
                    # NAICS2
                       , family=binomial(link="logit"),
                         verbose=1)
-glmer_examine(CBre_Comp_11D)
-glmer_examine(CBre_Comp_11D)
+glmer_examine(CBre_Comp_12B)
+glmer_examine(CBre_Comp_12B)
 
 ```
 
@@ -4713,34 +4713,36 @@ glmer_examine(CBre_Comp_11D)
 
 
 
-## Model 08A: NAICS
+## NAICS2
 The North American Industrial Classification system captures the sector of each contract, which are each given a seperate intercept in the model.
 
-```{r Model08A}
+### Model 13A
+
+```{r Model13A}
 
 #Frequency Plot
 summary_discrete_plot(smp,"NAICS2")
 
 
-CBre_Comp_08A <- glmer(data=smp,
-b_CBre ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   Veh +
-                   n_Fixed + b_UCA +
-                   n_Comp:cl_Ceil  + 
-                 Veh:cl_Days++
-                   
-                   Veh:cl_Ceil+
-  b_UCA:cl_Ceil+
-                b_UCA:n_Comp+
-                   (1 | NAICS2)
-                  , family=binomial(link="logit"))
-glmer_examine(CBre_Comp_08A)
+CBre_Comp_13A <- glmer(data=smp,
+                       b_CBre ~n_Comp + 
+                         cl_Ceil + cl_Days+ 
+                         Veh +
+                         n_Fixed + b_UCA +
+                         n_Comp:cl_Ceil  + 
+                         Veh:cl_Days++
+                         
+                         Veh:cl_Ceil+
+                         b_UCA:cl_Ceil+
+                         b_UCA:n_Comp+
+                         (1 | NAICS2)
+                       , family=binomial(link="logit"))
+glmer_examine(CBre_Comp_13A)
 
 
 
 #Create the model
-# CBre_Comp_08A <- glmer(data=smp,
+# CBre_Comp_13A <- glmer(data=smp,
 #                  b_CBre ~n_Comp + 
 #                    cl_Ceil + cl_Days+ 
 #                    Veh +
@@ -4752,38 +4754,28 @@ glmer_examine(CBre_Comp_08A)
 #                    b_UCA:n_Comp+
 #                    (1 | NAICS)
 #                     , family=binomial(link="logit"))
-# glmer_examine(CBre_Comp_08A)
+# glmer_examine(CBre_Comp_13A)
 #Ran for two hours Model failed to converge with max|grad| = 0.186396 (tol = 0.001, component 1)
 # Plot the model and Vehicle 
-CBre_Comp_08A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
-  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
-        Comp*Ceil,Days*Ceil,Days*Comp,
-        Fixed,UCA,x,
-        Days*x,Days*MIDV,Days*OIDV,
-        UCA*Comp) %*%  coef(CBre_Comp_08A))}
+# CBre_Comp_13A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
+#   cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
+#         Comp*Ceil,Days*Ceil,Days*Comp,
+#         Fixed,UCA,x,
+#         Days*x,Days*MIDV,Days*OIDV,
+#         UCA*Comp) %*%  coef(CBre_Comp_13A))}
+# 
+# #Days curves
+# fitted_cbre_model(smp,"SIDV") +
+#   stat_function(fun = CBre_Comp_13A_curve,
+#                              args=list(Comp=0,Ceil=0,Days=0,
+#                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
+#                                        Fixed=1,UCA=0),color="blue")+
+#   stat_function(fun = CBre_Comp_13A_curve,
+#                              args=list(Comp=2,Ceil=0,Days=1,
+#                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
+#                                        Fixed=1,UCA=0),color="blue")
 
-#Days curves
-fitted_cbre_model(smp,"SIDV") +
-  stat_function(fun = CBre_Comp_08A_curve,
-                             args=list(Comp=0,Ceil=0,Days=0,
-                                       MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
-                                       Fixed=1,UCA=0),color="blue")+
-  stat_function(fun = CBre_Comp_08A_curve,
-                             args=list(Comp=2,Ceil=0,Days=1,
-                                       MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
-                                       Fixed=1,UCA=0),color="blue")
 
-
-#Plot the fitted values vs actual results
-binned_fitted_versus_cbre_residuals(CBre_Comp_08A)
-
-#Plot residuals versus fittedO
-residuals_cbre_plot(CBre_Comp_08A)+
-  labs(x="Estimated  Pr (Ceiling Breach)")
-
-# residuals_cbre_plot(CBre_Comp_02F,"cl_days")+
-#   labs(x="Centered Log(Days)")
-save("Comp_CBre.Rdata","")
 ```
 
 The initial attempt to include the pre-existing intercepts and all inputs resulted in a model that initially failed to converge. Conservatively the intercepts have been temporarily removed to be added back in a subsequent step.
@@ -4794,257 +4786,7 @@ Unfortunately, after including Start Fiscal Year, the model again failed to conv
 
 
 
-###Model 08B: Product/Service/R&D and Platform
-```{r Model08B}
-
-#Frequency Plot
-summary_discrete_plot(smp,"PSR_What",rotate_text=TRUE)
-
-
-
-#Create the model
-Term_Comp_08B <- glmer(data=Term_Comp_smp1m,
-                 b_Term ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   Veh + 
-                   n_Fixed + b_UCA + 
-                   Veh:cl_Days+
-                   # Veh:n_Comp +
-                   # b_Intl +
-                  # n_Comp:cl_Ceil + #+ cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                   (1 | NAICS)
-                  , family=binomial(link="logit"))
-glmer_examine(Term_Comp_08B)
-#Model failed to converge with max|grad| = 0.00858407 (tol = 0.001, component 1)
-# Term_Comp_08B <- glmer(data=smp,
-#                  b_Term ~n_Comp + 
-#                    cl_Ceil + cl_Days+ 
-#                    Veh + 
-#                    n_Comp:cl_Ceil  +
-#                    # cl_Ceil:cl_Days  + 
-#                    n_Comp:cl_Days +
-#                    n_Fixed + b_UCA + 
-#                    b_Intl + 
-#                    Veh:cl_Days+
-#                    Veh:n_Comp +
-#                    b_UCA:n_Comp+
-#                    (1 | PSR) + (1 | PSR_What)
-#                     , family=binomial(link="logit"))
-# glmer_examine(Term_Comp_08B)
-
-# Plot the model and Vehicle 
-# Term_Comp_08B_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
-#   cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
-#         Comp*Ceil,Days*Ceil,Days*Comp,
-#         Fixed,UCA,x,
-#         Days*x,Days*MIDV,Days*OIDV,
-#         UCA*Comp) %*%  coef(Term_Comp_08B))}
-# save(Term_Comp_08B,file="Term08B.Rdata")
-load("Term08B.Rdata")
-#Days curves
-discrete_fitted_term_model(smp,"SIDV") +
-  stat_function(fun = Term_Comp_08B_curve,
-                             args=list(Comp=0,Ceil=0,Days=0,
-                                       MIDV=0,SIDV=0,OIDV=0,
-                                       Fixed=1,UCA=0),color="blue")+
-  stat_function(fun = Term_Comp_08B_curve,
-                             args=list(Comp=2,Ceil=0,Days=1,
-                                       MIDV=0,SIDV=0,OIDV=0,
-                                       Fixed=1,UCA=0),color="blue")
-
-#Plot the fitted values vs actual results
-binned_fitted_versus_residuals(Term_Comp_08B)
-
-#Plot residuals versus fittedO
-residuals_term_plot(Term_Comp_08B)+
-  labs(x="Estimated  Pr (Termination)")
-
-# residuals_term_plot(Term_Comp_02F,"cl_days")+
-#   labs(x="Centered Log(Days)")
-
-
-
-```
 After the incorporation of NAICS intercepts, ceiling related interactions had strange consequences (left out for speed of running RMD reasons). The interaction of Competition and Ceiling, even when introduced alone  had a positive coefficient and removed the effect of Ceiling by itself. When all three interactions were included,  Ceiling and Duration similarly had a notable negative coefficient, which seemed contrary to past literature that suggests greater risks when trying to do a large contract too fast. The interaction of competition and days had a positive coefficient, but was not significant. Single Award IDV does have a significant negative coefficient in interaction with Competition, but the other two types do not and the model fails to converge (with the 250k or 1m sample) and exhibit a peak at the lower end of the residuals.
-###Model 08C: Interactions
-```{r Model 6 Exploration}
-#, fig.height = 10, fig.width = 6.5
-#Effective Competition
-#Frequency Plot
-summary_discrete_plot(smp,"PSR_What","EffComp",rotate_text=TRUE)
-
-#Percent Terminated Plot 
-summary_discrete_plot(smp,"EffComp","PSR",rotate_text=TRUE)
-
-summary_discrete_plot(smp,"EffComp","What",rotate_text=TRUE)
-
-summary_discrete_plot(smp,"EffComp","PSR_What",rotate_text=TRUE)
-
-
-#Effective Competition
-#Frequency Plot
-summary_discrete_plot(smp,"PSR_What","Veh",rotate_text=TRUE)
-
-#Percent Terminated Plot 
-summary_discrete_plot(smp,"Veh","PSR",rotate_text=TRUE)
-
-summary_discrete_plot(smp,"Veh","What",rotate_text=TRUE)
-
-summary_discrete_plot(smp,"Veh","PSR_What",rotate_text=TRUE)
-
-#FxCb
-#Frequency Plot
-summary_discrete_plot(smp,"PSR_What","FxCb",rotate_text=TRUE)
-
-#Percent Terminated Plot 
-summary_discrete_plot(smp,"FxCb","PSR",rotate_text=TRUE)
-
-summary_discrete_plot(smp,"FxCb","What",rotate_text=TRUE)
-
-summary_discrete_plot(smp,"FxCb","PSR_What",rotate_text=TRUE)
-
-
-Term_Comp_08C <- glmer(data=Term_Comp_smp1m,
-                 b_Term ~n_Comp +
-                   cl_Ceil + cl_Days+
-                   Veh + 
-                   # n_Comp:cl_Ceil  +
-                   # cl_Ceil:cl_Days  +
-                   # n_Comp:cl_Days +
-                   n_Fixed + b_UCA +
-                   # b_Intl +
-                   
-                   # Veh:n_Comp +
-                   b_UCA:n_Comp+
-                   (1 | NAICS)
-                    , family=binomial(link="logit"))
-glmer_examine(Term_Comp_08C)
-save(Term_Comp_08C,file="Term08C.Rdata")
-
-Term_Comp_08D <- glmer(data=smp,
-                 b_Term ~ n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   Veh + 
-                   n_Comp:cl_Ceil  +
-                   # cl_Ceil:cl_Days  + 
-                   n_Comp:cl_Days +
-                   n_Fixed + b_UCA + 
-                   b_Intl + 
-                   Veh:cl_Days+
-                   Veh:n_Comp +
-                   b_UCA:n_Comp+
-                   (1  | PSR) + (1 + n_Comp| PSR_What)
-                    , family=binomial(link="logit"))
-glmer_examine(Term_Comp_08D)
-
-#Plot the fitted values vs actual results
-binned_fitted_versus_residuals(Term_Comp_08C)
-
-
-#Plot residuals versus fittedO
-residuals_term_plot(Term_Comp_08C)+
-  labs(x="Estimated  Pr (Termination)")
-
-
-# Term_Comp_08E <- glmer(data=smp,
-#                  b_Term ~ n_Comp + 
-#                    cl_Ceil + cl_Days+ 
-#                    Veh + 
-#                    n_Comp:cl_Ceil  +
-#                    # cl_Ceil:cl_Days  + 
-#                    n_Comp:cl_Days +
-#                    n_Fixed + b_UCA + 
-#                    b_Intl + 
-#                    Veh:cl_Days+
-#                    Veh:n_Comp +
-#                    b_UCA:n_Comp+
-#                    (1+n_Comp  | PSR) + (1+ n_Comp | PSR_What)
-#                     , family=binomial(link="logit"))
-# glmer_examine(Term_Comp_08E)
-# failure to converge in 10000 evaluations
-
-#Plot the fitted values vs actual results
-binned_fitted_versus_residuals(Term_Comp_08C)
-
-
-#Plot residuals versus fittedO
-residuals_term_plot(Term_Comp_08C)+
-  labs(x="Estimated  Pr (Termination)")
-
-
-#Plot the fitted values vs actual results
-binned_fitted_versus_residuals(Term_Comp_08D)
-
-
-#Plot residuals versus fittedO
-residuals_term_plot(Term_Comp_08D)+
-  labs(x="Estimated  Pr (Termination)")
-
-```
-The use of Comp as 
-
-```{r Model09A}
-
-#Frequency Plot
-summary_discrete_plot(smp,"NAICS")
-
-#Model failed to converge with max|grad| = 0.00993991 (tol = 0.001, component 1)
-Term_Comp_09A <- glmer(data=smp,
-                 b_Term ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   Veh + 
-                   n_Fixed + b_UCA + 
-                   b_Intl + 
-                   (1 | Agency)
-                  , family=binomial(link="logit"))
-glmer_examine(Term_Comp_09A)
-
-#Create the model
-# Term_Comp_08A <- glmer(data=smp,
-#                  b_Term ~n_Comp + 
-#                    cl_Ceil + cl_Days+ 
-#                    Veh + 
-#                    n_Fixed + b_UCA + 
-#                    b_Intl + 
-#                    n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-#                    Veh:cl_Days+
-#                    Veh:n_Comp +
-#                    b_UCA:n_Comp+
-#                    (1 | NAICS)
-#                     , family=binomial(link="logit"))
-# glmer_examine(Term_Comp_08A)
-#Ran for two hours Model failed to converge with max|grad| = 0.186396 (tol = 0.001, component 1)
-# Plot the model and Vehicle 
-Term_Comp_08A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
-  cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
-        Comp*Ceil,Days*Ceil,Days*Comp,
-        Fixed,UCA,x,
-        Days*x,Days*MIDV,Days*OIDV,
-        UCA*Comp) %*%  coef(Term_Comp_08A))}
-
-#Days curves
-discrete_fitted_term_model(smp,"SIDV") +
-  stat_function(fun = Term_Comp_08A_curve,
-                             args=list(Comp=0,Ceil=0,Days=0,
-                                       MIDV=0,SIDV=0,OIDV=0,
-                                       Fixed=1,UCA=0),color="blue")+
-  stat_function(fun = Term_Comp_08A_curve,
-                             args=list(Comp=2,Ceil=0,Days=1,
-                                       MIDV=0,SIDV=0,OIDV=0,
-                                       Fixed=1,UCA=0),color="blue")
-
-
-#Plot the fitted values vs actual results
-binned_fitted_versus_residuals(Term_Comp_08A)
-
-#Plot residuals versus fittedO
-residuals_term_plot(Term_Comp_08A)+
-  labs(x="Estimated  Pr (Termination)")
-
-# residuals_term_plot(Term_Comp_02F,"cl_days")+
-#   labs(x="Centered Log(Days)")
-
-```
 
 
 # Appendix
