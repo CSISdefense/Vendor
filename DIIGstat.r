@@ -1030,7 +1030,8 @@ output
 }
 
 
-glmer_examine<-function(model){
+glmer_examine<-function(model,display=TRUE){
+  display(model)
   output<-car::vif(model)
   if(class(model)=="glmerMod") 
   { 
