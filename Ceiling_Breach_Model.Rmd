@@ -4499,40 +4499,131 @@ Competition and vehicle results are interesting, but run afowl of VIF test. Cons
 
 
 #Multi-Level Model
+##   NAICS2 & Agency
+
+### Model 11A: No interactions
+This model runs comparatively fast because it only deals in the agency and NAICS2, the broadest categories. The study team initially feared that only this level of analysis might work when it comes to avoiding convergence errors, but subsequent research ( https://rdrr.io/cran/lme4/man/convergence.html ) revealed that large datasets can be a source of false positive warnings.
+```{r Model11A}
+#Frequency Plot
+summary_discrete_plot(smp,"NAICS2")
+
+#This is currently running at home
+
+CBre_Cons_11A <- glmer (data=smp,
+                        b_CBre ~cl_def6_HHI_lag1 +cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                          cl_US6_avg_sal_lag1+
+                          cl_Ceil + cl_Days+ 
+                          Veh +
+                          PricingFee + b_UCA +
+                          b_Intl+
+                          
+                          # cl_def6_HHI_lag1:cl_Ceil  +
+                          # Veh:cl_def6_HHI_lag1  +
+                          # cl_def6_HHI_lag1:cl_def6_obl_lag1+ 
+                          # b_UCA:cl_def6_HHI_lag1 + 
+                          # b_UCA:cl_Ceil+
+
+                          (1 | NAICS2) + (1 | Agency)
+                        
+                        , family=binomial(link="logit"),
+                        verbose=1)
+
+glmer_examine(CBre_Cons_11A)
+
+CBre_Comp_11A <- glmer (data=smp,
+                      b_CBre ~n_Comp +
+                        cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                        cl_Ceil + cl_Days+
+                        Veh  +
+                        PricingFee+ b_UCA +
+                        b_Intl+
+                    
+                        # b_UCA:n_Comp +
+                        # b_UCA:cl_Ceil+
+
+                   (1 | NAICS2) + (1 | Agency)
+
+                   , family=binomial(link="logit"),
+                  verbose=1)
+
+glmer_examine(CBre_Comp_11A)
+
+
+any(diag.vals<1e-6)
+CBre_Comp_11A.devfun<-devfun
+if(!exists("CBre_Comp_11A.devfun"))
+  CBre_Comp_11A.devfun <- update(CBre_Comp_11A, devFunOnly=TRUE)
+
+if (isLMM(CBre_Comp_11A)) {
+  pars <- getME(CBre_Comp_11A,"theta")
+} else {
+  ## GLMM: requires both random and fixed parameters
+  pars <- getME(CBre_Comp_11A, c("theta","fixef"))
+}
+if (require("numDeriv")) {
+  cat("hess:\n"); print(hess <- hessian(CBre_Comp_11A.devfun, unlist(pars)))
+  cat("grad:\n"); print(grad <- grad(CBre_Comp_11A.devfun, unlist(pars)))
+  cat("scaled gradient:\n")
+  print(scgrad <- solve(chol(hess), grad))
+}
+## compare with internal calculations:
+CBre_Comp_11A@optinfo$derivs
+
+if(!exists("CBre_Comp_11A.restart"))
+  CBre_Comp_11A.restart <- update(CBre_Comp_11A, start=pars)
+glmer_examine(CBre_Comp_11A.restart)
+
+
+
+stargazer::stargazer(CBre_Cons_11A,CBre_Comp_11A.restart,CBre_Comp_11A.restart
+                     ,type="text",
+                       digits=2)
+
+summary_residual_compare(CBre_Cons_07B2,CBre_Cons_11A,CBre_Comp_07B2,CBre_Comp_07C3,bins=20)
+CBre_Cons_11A<-CBre_Cons_14A
+CBre_Comp_11A<-CBre_Comp_14A
+CBre_Comp_11A.restart<-CBre_Comp_14A.restart
+CBre_Comp_11A.devfun<-CBre_Comp_14A.devfun
+summary_residual_compare(CBre_Cons_11A,CBre_Cons_11A,CBre_Comp_11A,CBre_Comp_11A.restart,bins=20)
+save(CBre_Cons_11A,CBre_Comp_11A.restart,CBre_Comp_11A.devfun,CBre_Comp_11A.restart,file="output/CBre_11.rdata")
+
+```
 
 
 ## Agency/Office & NAICS6
-###Model 11A: Too many Interactions
+###Model 12A: Too many Interactions
 This initial run proved a bit premature, as incorporation of Agency as a dummy variable showed that many of the interactions included 
-```{r Model11A}
+```{r Model12A}
+load(file="Output//CBre_Cons_12A.rdata")
 
-CBre_Cons_11A <- glmer (data=smp,
-                      b_CBre ~cl_def6_HHI_lag1 +cl_def6_ratio_lag1+cl_def6_obl_lag1+
-                  cl_US6_avg_sal_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1+ 
-                        cl_Ceil + cl_Days+ 
-                        Veh +
-                        PricingFee + b_UCA +
-                        b_Intl+
-                        # Who+ Who is missing
-                        # cl_def6_HHI_lag1:cl_Ceil  +
-                        Veh:cl_Days+
-                        # Veh:cl_def6_HHI_lag1  +
-                        
-                        cl_Ceil:PricingFee+
-                        
-                        b_UCA:cl_def6_HHI_lag1 + 
-                        b_UCA:cl_Ceil+
-                        # 6
-                        
-                       # Who:b_Intl+
-                   (1 | NAICS) + (1 | Agency/Office)
-                      , family=binomial(link="logit"),
-                  verbose=1)
-glmer_examine(CBre_Cons_11A)
-glmer_examine(CBre_Cons_11A)
-get_icc(CBre_Cons_11A)
-save(CBre_Cons_11A,file="CBre_Cons_11A.rdata")
-# CBre_Comp_11A <- glmer (data=smp,
+if(!exists("CBre_Cons_12A"))
+  CBre_Cons_12A <- glmer (data=smp,
+                          b_CBre ~cl_def6_HHI_lag1 +cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                            cl_US6_avg_sal_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1+ 
+                            cl_Ceil + cl_Days+ 
+                            Veh +
+                            PricingFee + b_UCA +
+                            b_Intl+
+                            # Who+ Who is missing
+                            # cl_def6_HHI_lag1:cl_Ceil  +
+                            Veh:cl_Days+
+                            # Veh:cl_def6_HHI_lag1  +
+                            
+                            cl_Ceil:PricingFee+
+                            
+                            b_UCA:cl_def6_HHI_lag1 + 
+                            b_UCA:cl_Ceil+
+                            # 6
+                            
+                            # Who:b_Intl+
+                            (1 | NAICS) + (1 | Agency/Office)
+                          , family=binomial(link="logit"),
+                          verbose=1)
+glmer_examine(CBre_Cons_12A)
+glmer_examine(CBre_Cons_12A)
+get_icc(CBre_Cons_12A)
+
+# CBre_Comp_12A <- glmer (data=smp,
 #                       b_CBre ~n_Comp +
 #                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+ 
 #                         cl_Ceil + cl_Days+ 
@@ -4541,35 +4632,36 @@ save(CBre_Cons_11A,file="CBre_Cons_11A.rdata")
 #                         b_Intl+
                         # Who+ Who is missing
                         # cl_def6_HHI_lag1:cl_Ceil  +
-                        Veh:cl_Days+
+                        # Veh:cl_Days+
                         # Veh:cl_def6_HHI_lag1  +
-                        
-                        cl_Ceil:PricingFee+
-                        
-                        b_UCA:cl_def6_HHI_lag1 + 
-                        b_UCA:cl_Ceil+
+                        # 
+                        # cl_Ceil:PricingFee+
+                        # 
+                        # b_UCA:cl_def6_HHI_lag1 + 
+                        # b_UCA:cl_Ceil+
                         # 6
                         
                        # Who:b_Intl+
 #                    (1 | NAICS) + (1 | Agency/Office)
 #                       , family=binomial(link="logit"),
                   # verbose=1)
-# glmer_examine(CBre_Comp_11A)
-# glmer_examine(CBre_Comp_11A)
+# glmer_examine(CBre_Comp_12A)
+# glmer_examine(CBre_Comp_12A)
 # failure to converge in 10000 evaluation
-summary_residual_compare(CBre_Cons_07B2,CBre_Cons_11A,CBre_Comp_07B2,CBre_Comp_07C3,bins=20)
+summary_residual_compare(CBre_Cons_07B2,CBre_Cons_12A,CBre_Comp_07B2,CBre_Comp_07C3,bins=20)
+save(CBre_Cons_12A,file="Output//CBre_Cons_12A.rdata")
 ```
 
 The initial attempt to include the pre-existing intercepts and all inputs resulted in a model that initially failed to converge. Conservatively the intercepts have been temporarily removed to be added back in a subsequent step.
 
-### Model 11B: Trimmed 
-```{r Model11B}
+### Model 12B: Trimmed 
+```{r Model12B}
 #Frequency Plot
 summary_discrete_plot(smp,"NAICS")
 
 #This is currently running at home
 
-CBre_Cons_11B <- glmer (data=smp,
+CBre_Cons_12B <- glmer (data=smp,
                         b_CBre ~cl_def6_HHI_lag1 +cl_def6_ratio_lag1+cl_def6_obl_lag1+
                           cl_US6_avg_sal_lag1+
                           cl_Ceil + cl_Days+ 
@@ -4588,9 +4680,9 @@ CBre_Cons_11B <- glmer (data=smp,
                         , family=binomial(link="logit"),
                         verbose=1)
 
-glmer_examine(CBre_Cons_11B)
+glmer_examine(CBre_Cons_12B)
 
-CBre_Comp_11B <- glmer (data=smp,
+CBre_Comp_12B <- glmer (data=smp,
                       b_CBre ~n_Comp +
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         cl_Ceil + cl_Days+
@@ -4606,53 +4698,55 @@ CBre_Comp_11B <- glmer (data=smp,
                    , family=binomial(link="logit"),
                   verbose=1)
 
-glmer_examine(CBre_Comp_11B)
+glmer_examine(CBre_Comp_12B)
 
-summary_residual_compare(CBre_Cons_07B2,CBre_Cons_11B,CBre_Comp_07B2,CBre_Comp_07C3,bins=20)
+summary_residual_compare(CBre_Cons_07B2,CBre_Cons_12B,CBre_Comp_07B2,CBre_Comp_07C3,bins=20)
 ```
 
 ## Agency/Office & NAICS3/6
-###Model 12A: Agency/Office+NAICS6/NAICS3
+###Model 13A: Agency/Office+NAICS6/NAICS3
 The North American Industrial Classification system captures the sector of each contract, which are each given a seperate intercept in the model.
-```{r Model12A}
+```{r Model13A}
+load(file="Output//CBre_Cons_13A.rdata")
 
-CBre_Cons_12A <- glmer (data=smp,
-b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
-                  #cl_US3_avg_sal_lag1+
-                   cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
-                  cl_US6_avg_sal_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1+
-  cl_Ceil + cl_Days+ 
-                        Veh +
-                        PricingFee + b_UCA +
-                        b_Intl+
-                        # Who+
-                        # cl_def6_HHI_lag1:cl_Ceil  +
-                        Veh:cl_Days+
-                        # Veh:cl_def6_HHI_lag1  +
-                        Veh:cl_Ceil+
-                        cl_Ceil:PricingFee+
-                        
-                        b_UCA:cl_def6_HHI_lag1 + 
-                        b_UCA:cl_Ceil+
-                        # 6
-                        b_Intl:Veh+ 
-                        (1 | NAICS3/NAICS) + 
-                        (1 | Agency/Office) 
-                       # Who:b_Intl+
-                        # NAICS2
-                      , family=binomial(link="logit"),
-                        verbose=1)
+if(!exists("CBre_Cons_13A"))
+  CBre_Cons_13A <- glmer (data=smp,
+                          b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                            #cl_US3_avg_sal_lag1+
+                            cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                            cl_US6_avg_sal_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                            cl_Ceil + cl_Days+ 
+                            Veh +
+                            PricingFee + b_UCA +
+                            b_Intl+
+                            # Who+
+                            # cl_def6_HHI_lag1:cl_Ceil  +
+                            Veh:cl_Days+
+                            # Veh:cl_def6_HHI_lag1  +
+                            Veh:cl_Ceil+
+                            cl_Ceil:PricingFee+
+                            
+                            b_UCA:cl_def6_HHI_lag1 + 
+                            b_UCA:cl_Ceil+
+                            # 6
+                            b_Intl:Veh+ 
+                            (1 | NAICS3/NAICS) + 
+                            (1 | Agency/Office) 
+                          # Who:b_Intl+
+                          # NAICS2
+                          , family=binomial(link="logit"),
+                          verbose=1)
 
 
-glmer_examine(CBre_Cons_12A)
-glmer_examine(CBre_Cons_12A)
+glmer_examine(CBre_Cons_13A)
 
+save(CBre_Cons_13A,file="Output//CBre_Cons_13A.rdata")
 ```
 
-###Model 12B: Agency/Office+NAICS6/NAICS3 trimmed
-```{r Model12B}
+###Model 13B: Agency/Office+NAICS6/NAICS3 trimmed
+```{r Model13B}
 
-CBre_Cons_12B <- glmer (data=smp,
+CBre_Cons_13B <- glmer (data=smp,
                  b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                   #cl_US3_avg_sal_lag1+
                    cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
@@ -4680,10 +4774,10 @@ CBre_Cons_12B <- glmer (data=smp,
                         verbose=1)
 
 
-glmer_examine(CBre_Cons_12B)
-glmer_examine(CBre_Cons_12B)
+glmer_examine(CBre_Cons_13B)
 
-CBre_Comp_12B <- glmer (data=smp,
+save(CBre_Cons_13B,file="Output//CBre_Cons_13B.rdata")
+CBre_Comp_13B <- glmer (data=smp,
                         b_CBre ~n_Comp+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                    n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         cl_Ceil + cl_Days+
@@ -4702,9 +4796,8 @@ CBre_Comp_12B <- glmer (data=smp,
                    # NAICS2
                       , family=binomial(link="logit"),
                         verbose=1)
-glmer_examine(CBre_Comp_12B)
-glmer_examine(CBre_Comp_12B)
-
+glmer_examine(CBre_Comp_13B)
+save(CBre_Cons_13B,CBre_Comp_13B,file="Output//CBre_Cons_13B.rdata")
 ```
 
 
@@ -4787,6 +4880,9 @@ Unfortunately, after including Start Fiscal Year, the model again failed to conv
 
 
 After the incorporation of NAICS intercepts, ceiling related interactions had strange consequences (left out for speed of running RMD reasons). The interaction of Competition and Ceiling, even when introduced alone  had a positive coefficient and removed the effect of Ceiling by itself. When all three interactions were included,  Ceiling and Duration similarly had a notable negative coefficient, which seemed contrary to past literature that suggests greater risks when trying to do a large contract too fast. The interaction of competition and days had a positive coefficient, but was not significant. Single Award IDV does have a significant negative coefficient in interaction with Competition, but the other two types do not and the model fails to converge (with the 250k or 1m sample) and exhibit a peak at the lower end of the residuals.
+
+
+
 
 
 # Appendix
