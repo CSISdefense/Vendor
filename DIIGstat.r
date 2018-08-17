@@ -91,7 +91,7 @@ binned_fitted_versus_term_residuals<-function(model){
   #                        cb_Comp=Term_01A@frame$cb_Comp
   #                        )
   
-  if(class(model)=="glmerMod")
+  if(class(model)[1]=="glmerMod")
   {
     data <-data.frame(
       fitted=fitted(model),
@@ -122,11 +122,11 @@ binned_fitted_versus_term_residuals<-function(model){
 }
 
 binned_fitted_versus_residuals<-function(model){
-  if(class(model)=="glmerMod")
+  if(class(model)[1]=="glmerMod")
   {
     if(!is.null(model@frame$b_CBre)){
       graph<-binned_fitted_versus_cbre_residuals(model)
-    } else if(!is.null(model@frame$b_Term)){
+    } else if(!is.null(model@frame$b_CBre)){
       graph<-binned_fitted_versus_term_residuals(model)
     } 
     else{stop("Outcome variable not recognized.")}
@@ -153,7 +153,7 @@ binned_fitted_versus_cbre_residuals<-function(model){
   #                        cb_Comp=CBre_01A@frame$cb_Comp
   #                        )
   
-  if(class(model)=="glmerMod")
+  if(class(model)[1]=="glmerMod")
   {
     data <-data.frame(
       fitted=fitted(model),
@@ -184,11 +184,11 @@ binned_fitted_versus_cbre_residuals<-function(model){
 }
 
 residuals_plot<-function(model,col="fitted",bins=40){
-  if(class(model)=="glmerMod")
+  if(class(model)[1]=="glmerMod")
   {
     if(!is.null(model@frame$b_CBre)){
       graph<-residuals_cbre_plot(model,col,bins=bins)
-    } else if(!is.null(model@frame$b_Term)){
+    } else if(!is.null(model@frame$b_CBre)){
       graph<-residuals_term_plot(model,col,bins=bins)
     } 
     else{stop("Outcome variable not recognized.")}
@@ -212,7 +212,7 @@ residuals_term_plot<-function(model,x_col="fitted",bins=40){
   #Plot the fitted values vs actual results
   
   
-  if(class(model)=="glmerMod")
+  if(class(model)[1]=="glmerMod")
   {
     data <-data.frame(
       fitted=fitted(model),
@@ -263,7 +263,7 @@ residuals_cbre_plot<-function(model,x_col="fitted",bins=40){
   #Plot the fitted values vs actual results
   
   
-  if(class(model)=="glmerMod")
+  if(class(model)[1]=="glmerMod")
   {
     data <-data.frame(
       fitted=fitted(model),
@@ -862,7 +862,7 @@ residual_compare<-function(model1_old,model1_new,model2_old,model2_new,col,x_axi
 
 
 deviance_stats<-function(model,model_name){
-  # if(class(model)=="glmerMod")
+  # if(class(model)[1]=="glmerMod")
   # { 
   #   getME(model,"devcom")$dev
   #   output<-data.frame(model=model_name,
@@ -883,7 +883,7 @@ deviance_stats<-function(model,model_name){
 }
 
 model_colnames<-function(model){
-  if(class(model)=="glmerMod")
+  if(class(model)[1]=="glmerMod")
   { 
     output<-colnames(model@frame)
     
@@ -897,7 +897,7 @@ model_colnames<-function(model){
 
 
 
-summary_residual_compare<-function(model1_old,model1_new,model2_old=NULL,model2_new=NULL,bins=5,suppress_vif=FALSE){
+summary_residual_compare<-function(model1_old,model1_new,model2_old=NULL,model2_new=NULL,bins=5){
   #Plot the fitted values vs actual results
   
   if(!is.null(model2_new)){
@@ -947,8 +947,7 @@ summary_residual_compare<-function(model1_old,model1_new,model2_old=NULL,model2_
       # min(m2t[ll==0])
       
       # min(m2t[ll==0])
-      output<-list(ifelse(suppress_vif==FALSE,car::vif(model1_new),NA),
-                   ifelse(suppress_vif==FALSE,car::vif(model2_new),NA),
+      output<-list(car::vif(model1_new),car::vif(model2_new),
                    m1t[m1l==0],
                    m2t[m2l==0],
                    model1_new@optinfo$conv$lme4$messages,
@@ -961,8 +960,7 @@ summary_residual_compare<-function(model1_old,model1_new,model2_old=NULL,model2_
                          deviance_stats(model1_new,"model1_new"),
                          deviance_stats(model2_old,"model2_old"),
                          deviance_stats(model2_new,"model2_new")),
-                   ifelse(suppress_vif==FALSE,car::vif(model1_new),NA),
-                          ifelse(suppress_vif==FALSE,car::vif(model2_new),NA)
+                   car::vif(model1_new),car::vif(model2_new)
       )
     }
     
@@ -1010,7 +1008,7 @@ summary_residual_compare<-function(model1_old,model1_new,model2_old=NULL,model2_
       # min(m2t[ll==0])
       
       # min(m2t[ll==0])
-      output<-list(ifelse(suppress_vif==FALSE,car::vif(model1_new),NA),
+      output<-list(car::vif(model1_new),
                    m1t[m1l==0],
                    model1_new@optinfo$conv$lme4$messages
       )
@@ -1030,10 +1028,10 @@ output
 }
 
 
-glmer_examine<-function(model,display=TRUE){
-  display(model)
+glmer_examine<-function(model,display=FALSE){
+  if(display==TRUE) display(model)
   output<-car::vif(model)
-  if(class(model)=="glmerMod") 
+  if(class(model)[1]=="glmerMod") 
   { 
     
     # If the fit is singular or near-singular, there might be a higher chance of a false positive (we’re not necessarily screening out gradient and Hessian checking on singular directions properly); a higher chance that the model has actually misconverged (because the optimization problem is difficult on the boundary); and a reasonable argument that the random effects model should be simplified.
@@ -1059,28 +1057,15 @@ glmer_examine<-function(model,display=TRUE){
     }
   } 
   output
-  
-  # sjstats::icc(naics46_term)
-  # 
-  # sum(get_re_var(naics46_term)) / (sum(get_re_var(naics46_term)) + get_re_var(naics46_term, "sigma_2"))
-  # get_re_var(naics46_term)[2] / sum(get_re_var(naics46_term))
-  # 
-  # # Caution: For three-level-models, depending on the nested structure of the model, the ICC only
-  # # reports the proportion of variance explained for each grouping level. However, the proportion of
-  # # variance for specific levels related to each other (e.g., similarity of level-1-units within level-2-
-  # # units or level-2-units within level-4-units) must be computed manually. Use get_re_var to get the
-  # # between-group-variances and residual variance of the model, and calculate the ICC for the various
-  # # level correlations.
-  # 
 }
 
-get_icc<-function(model,display=FALSE){
+get_icc<-function(model,level=1){
 ############################################################################################################################
 #Keep Calm and Learn Multilevel Logistic Modeling: A Simplified Three-Step Procedure for Beginners Using SPSS, Stata, and R#
 ############################################################################################################################
   # icc <- model@theta^2/ (model@theta^2 + (3.14159^2/3))
   # icc
-  if(display==TRUE) display(model)
+  
   if(!is.null(model@optinfo$conv$lme4$messages)){
     output<-list(icc(model),
                  model@optinfo$conv$lme4$messages)
