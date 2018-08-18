@@ -556,13 +556,20 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE){
   if(is.na(group_col)){
     data$bin_x<-bin_df(data,x_col,bins=bins)
     data<-data %>% group_by(bin_x)
-    term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   
+
+    
+    comp<-data %>% summarise_ (   mean_y = "mean(b_MultiOffr)"   
                                   , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
     cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   
                                   , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+        term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   
+                                  , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+    
     term$output<-"Terminations"
     cbre$output<-"Ceiling Breaches"
-    data<-rbind(term,cbre)
+    comp$output<-"Multiple Offers"
+    data<-rbind(comp,cbre,term)
+    data$output<-factor(data$output,c("Multiple Offers","Ceiling Breaches","Terminations"))
     plot<-ggplot(data=data,
                  aes(y=mean_y,x=mean_x))+facet_wrap(~output)
   }
@@ -572,13 +579,18 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE){
     data<-data %>%
       group_by_("bin_x",group_col)
     
-    term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   
+    cbre<-data %>% summarise_ (   mean_y = "mean(b_MultiOffr)"   
                                   , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
     cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   
                                   , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+    term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   
+                                  , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
     term$output<-"Term."
     cbre$output<-"C. Bre."
-    data<-rbind(term,cbre)
+    comp$output<-"Multi"
+    
+    data<-rbind(comp,cbre,term)
+    data$output<-factor(data$output,c("Multi.","C. Bre.","Term."))
     plot<-ggplot(data=data,
                  aes(y=mean_y,x=mean_x))+
       facet_grid(as.formula(paste("output~",group_col)),scales="free_y")

@@ -37,22 +37,9 @@ note.text.size<-1.40
 
 Contracts are classified using a mix of numerical and categorical variables. While the changes in numerical variables are easy to grasp and summarize, a contract may have one line item that is competed and another that is not. As is detailed in the exploration on R&D, we are only considering information available prior to contract start. The percentage of contract obligations that were competed is a valuable benchmark, but is highly influenced by factors that occured after contract start.
 
-## Contract Terminations
+## Contract Competition
 
-Contract terminations and the number of change orders can be calculated for the entire sample.  Contract termination is determined using the *Reason for Modification* field in FPDS.  A contract is considered to be terminated if it has at least one modification with the following values:
-
-* "Terminate for Default (complete or partial)"
-* "Terminate for Convenience (complete or partial)"
-* "Terminate for Cause"
-* "Legal Contract Cancellation"
-
-These four catetegories and the "Close Out" category are used to mark a contract as closed.  Many contracts in FPDS and in the sample are never marked closed.  
-
-
-## Contract Ceiling Breaches
-
-Contract Ceiling Breaches and the number of change orders can be calculated for the entire sample.  Change orders are determined using the *Reason for Modification* field in FPDS. 
-
+Modeling comepetition with logit model requires limiting to two staes. We limit it to 0 for sole source and 1 for competition, whether there is 1 or more offers.
 
 ##Prepare Data
 First we load the data. The dataset used is a U.S. Defense Contracting dataset derived from   FPDS.
@@ -77,8 +64,8 @@ load(file="Data/transformed_def.Rdata")
 NA_stats(def,"b_Crai"))
 * b_Term is a binary variable that has a value of 1 for any contracts that have experienced a partial or complete termination, 0 otherwise. ('r summary(def$b_Term)
 NA_stats(def,"b_Term"))
-* b_Comp is a binary variable based on competition. It has a value of 0 for uncompeted contracts and a value of 1 for competition, regardless of number of offers. 'r  summary(def$b_Comp);
-NA_stats(def,"b_Comp")'
+* b_MultiOffr is a binary variable based on competition. It has a value of 0 for uncompeted contracts and a value of 1 for competition, regardless of number of offers. 'r  summary(def$b_MultiOffr);
+NA_stats(def,"b_MultiOffr")'
 * n_Comp is a numeric variable based on competition and number of offers. It has a value of 0 for uncompeted contracts and a value of 1 for single-offer competition, and a value of 2 for multi-offer competition. 'r summary(def$n_Comp);
 NA_stats(def,"n_Comp")'
 * n_Offr is a numeric variable based on competition and with more granularity on number offers. It has a value of 0 for uncompeted contracts and a value of 1 for single-offer competition, and a value of 2 for 2-offers, 3 for 3-4 offers, and 4 for 5+ offers. 'r summary(def$n_Offr);
@@ -128,6 +115,16 @@ Next, we eliminate missing data entries and then draw a sample. The final comput
 ###Computational Sample Creation
 ```{r Sample}
  load(file="data//def_sample.Rdata")
+
+
+levels(smp$EffComp)
+smp$b_MultiOffr<-smp$EffComp
+levels(smp$b_MultiOffr)<-list("0"=c("No Comp.","1 Offer"),
+                           "1"="2+ Offers")
+summary(smp$b_MultiOffr)
+summary(smp$EffComp)
+smp$b_MultiOffr<-as.numeric(as.character(smp$b_MultiOffr))
+
 # save(smp,smp1m,file="data//def_sample.Rdata")
 #Code to update sample w/o recreating.
 # smp<-smp["CSIScontractID"]
@@ -136,40 +133,8 @@ Next, we eliminate missing data entries and then draw a sample. The final comput
 # smp1m<-left_join(smp1m,def)
 
   
-  #Customer
-  if(!"Is.Defense" %in% colnames(contract) & "Who" %in% colnames(contract)){
-    contract$Is.Defense<-as.character(contract$Who)
-    contract$Is.Defense[contract$Is.Defense %in%
-                     c("Air Force","Army",
-                       "Navy","Other DoD","Uncategorized"  )
-                   ]<-"Defense"
-    contract$Is.Defense<-factor(contract$Is.Defense)
-    
-    contract$Who[contract$Who=="Uncategorized"]<-NA
-    
-    #b_ODoD
-    contract$b_ODoD<-contract$Who
-    levels(contract$b_ODoD)<- list("1"=c("Other DoD"),
-                              "0"=c("Air Force","Army","Navy"))
-    
-    contract$b_ODoD<-as.integer(as.character(contract$b_ODoD))
-    
-    contract$ODoD<-contract$Who
-    levels(contract$ODoD)<- list("Military Departments"=c("Air Force","Army","Navy"),
-                            "Other DoD"=c("Other DoD"))
-    
-    
-    
-    
-    
-  }
-  contract
-}
-debug(add_who)
-smp<-add_who(smp)
-smp1m<-add_who(smp1m)
 # complete<-!is.na(def$b_Term)&
-#   !is.na(def$b_CBre)&
+#   !is.na(def$b_MultiOffr)&
 #   !is.na(def$n_Comp)&
 #   !is.na(def$l_Ceil)&
 #   !is.na(def$l_Days)&
@@ -202,161 +167,13 @@ smp1m<-add_who(smp1m)
 
 #Initial Logit Model
 
-##Study Variable: Competition
-Competition has the potential to reduce terminations by giving the government more options in vendors and encouraging better behavior from the contractor that was chosen. 
-###Model 01A: No Competition / Competition
-
-
-```{r Model01A_CBre}
-
-#Frequency Plot
-summary_discrete_plot(smp,"Comp")
-
-#Model
-CBre_Comp_01A <- glm (data=smp,
-                 b_CBre ~ cb_Comp, family=binomial(link="logit"))
-glmer_examine(CBre_Comp_01A)
-
-#Plot the new variable and coefficients
-# Add the fitted regression line
-fitted_cbre_model(smp,"cb_Comp") +
-  stat_function(fun = fit_curve, args=list(a=coef(CBre_Comp_01A)[1],                                                        b=coef(CBre_Comp_01A)[2]),color="blue")
-
-
-
-```
-Competition alone has a very slight, but significant, negative correlation with terminations. The next step is to check alternate formulations. There's not yet enough in this model for any meaningful residual models. The next step is to look at a more detailed model, where single offer competition is broken out as a middle option between competition and no competion.
-
-
-
-###Model 01B: Effective Competition
-
-```{r Model01B_CBre}
-
-#Frequency Plot
-summary_discrete_plot(smp,"EffComp")
-
-
-#Model
-CBre_Comp_01B <- glm (data=smp,
-                 b_CBre ~ n_Comp, family=binomial(link="logit"))
-glmer_examine(CBre_Comp_01B)
-
-#Plot the Fitted
-#Add the fitted regression line
-fitted_cbre_model(smp,"n_Comp") +
-  stat_function(fun = fit_curve, args=list(a=coef(CBre_Comp_01B)[1],
-                                           b=coef(CBre_Comp_01B)[2]),
-                color="blue")
-
-
-
-
-```
-
-
-The correltion between the three categories of competition has a smaller coefficent, but is still signficant. In the next step, the multiple award competition is broken down in greater detail.
-
-
-
-###Model 01C: No Competition / Number of Offer Categories 
-
-```{r Model01C_CBre}
-
-#Frequency Plot
-summary_discrete_plot(smp,"CompOffr")
-
-#Model
-CBre_Comp_01C <- glm (data=smp,
-                 b_CBre ~ cn_Offr, family=binomial(link="logit"))
-glmer_examine(CBre_Comp_01C)
-
-#Plot the Fitted
-#Add the fitted regression line
-fitted_cbre_model(smp,"n_Comp") +
-  stat_function(fun = fit_curve, args=list(a=coef(CBre_Comp_01C)[1],
-                                           b=coef(CBre_Comp_01C)[2]),
-                color="blue")
-
-
-
-```
-
-As measured by residual deviance, this variable has slightly less predictive power than random noise. That can likely be attributed to the fact that 5+ offers category has a higher termination rate than 2 and 3-4. In theory, this could be because of non-liner relationship, for example higher number of offers competition may be more vulnerable to aggressive bidding beavior. However, this explaination would likely be better captured by other hidden variables such as competition methods rather than having a direct relationship with an increased number of offers. As a result, we are not testing offers as a categorical variable with dummies. 
-
-Instead, the last variant to be checked is the number of offers directly. This is handled logarithmicly because the differences between number of offers at the bottom end of the scale mtters much more than at the high end of the scale. In this method, contracts that were not open to competition are grouped with contracts that received only a single offer.
-
-
-###Model 01D: Number of Offer Categories 
-
-```{r Model01D_CBre}
-
-#Frequency Plot
-summary_continuous_plot(smp,"l_Offr")
-
-#Percent Terminated Plot
-summary_continuous_plot(smp,"l_Offr","FxCb")
-
-#Percent Terminated Plot
-summary_continuous_plot(smp,"l_Offr","PSR")
-
-#Percent Terminated Plot
-summary_continuous_plot(smp,"l_Offr","Veh")
-
-
-#Model
-CBre_Comp_01D <- glm (data=smp,
-                 b_CBre ~ cl_Offr, family=binomial(link="logit"))
-glmer_examine(CBre_Comp_01D)
-
-#Variant Model
-smp$clsqr_Offer<-smp$cl_Offr^2
-CBre_Comp_01E <- glm (data=smp,
-                 b_CBre ~ cl_Offr +clsqr_Offer, family=binomial(link="logit"))
-glmer_examine(CBre_Comp_01E)
-
-#Plot the data and fitted curve
-CBre_Comp_01D_plot<-ggplot(data=smp,
-       aes(y=j_Term,x=cl_Offr))+geom_jitter(alpha=0.01,height=0)+scale_y_sqrt() +
-  labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
-
-#Plot the Fitted
-#Add the fitted regression line
-fitted_cbre_model(smp,"cl_Offr") +
-  stat_function(fun = fit_curve, args=list(a=coef(CBre_Comp_01D)[1],
-                                           b=coef(CBre_Comp_01D)[2]),
-                             color="blue")
-
-#Plot the fitted values vs actual results
-binned_fitted_versus_cbre_residuals(CBre_Comp_01D)
-
-
-
-#Plot residuals versus fitted
-residuals_cbre_plot(CBre_Comp_01D,bins=3)+
-  labs(x="Estimated  Pr (Ceiling Breach)")
-
-
-
-
-```
-
-Closer examination further undercuts the idea that more offers is associated with a lower termination risk. As measured by deviance, the number offers adds less to the model than random noise. A quick experiment also found that use of number of offer squared only made the model slightly better than noise.
-
-A variety of binned percent terminated graphs found that in the middle range of the number of offers, there is often an increase in the percent terminated. The study team had expected that this phenomenon may prove isolated to a certain type of contracting mechanism or product/service, but that did not prove to be the case.
-
-The difference between single-offer and effective competition is worth exploring, even if it lowers the significance of the starting model. Happily, this decision is supported by the fact that this three category variable offers the greatest reduction in residual deviance. However, lacking a specific theoretical argument for the importance of a greater number of offers, and given the results, the more detailed competition breakdowns will not be used. This may be an issue worth exploring more in a future work.
-
-The greatest distinctiveness can be found in types of indefinite delivery vehicles. Definitive contracts and purchase orders show a higher termination rate as the number of offers increase. However, for single and multiple award IDVs, there's a decline in terminations rates correlated with low levels of competition, that often fades and even reverses as the number of offers increases. However, the results do not seem consistent with am exponential relationship.
-
 ## Study Variable Consolidation
 
 ### Level 6
 #### Model NCS6A: def6_HHI_lag1
-The expectation of the hypotheses is that consolidation will vary with consolidation, but does not predict a direction.
+The expectation of the hypotheses is that a lower rate of consolidation will estimate higher levels of competition.
 
-
-```{r ModelNCS6A_CBre}
+```{r ModelNCS6A_Comp}
 #Frequency Plot for unlogged ceiling
 summary_continuous_plot(smp,"def6_HHI_lag1")
 summary_continuous_plot(smp,"def5_HHI_lag1")
@@ -365,9 +182,9 @@ summary_continuous_plot(smp,"def3_HHI_lag1")
 summary_continuous_plot(smp,"def2_HHI_lag1")
 
 #Model
-CBre_Cons_NCS6A <- glm (data=smp,
-                 b_CBre ~c_def6_HHI_lag1, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS6A)
+Comp_Cons_NCS6A <- glm (data=smp,
+                 b_MultiOffr ~c_def6_HHI_lag1, family=binomial(link="logit"))
+glmer_examine(Comp_Cons_NCS6A,suppress_vif=TRUE)
 
 
 # #Plot the fitted model plot
@@ -381,22 +198,21 @@ glmer_examine(CBre_Cons_NCS6A)
 
 
 
-#Plot the fitted values vs actual results
-binned_fitted_versus_cbre_residuals(CBre_Comp_02A)
-
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6A,type="text",
+  stargazer::stargazer(Comp_Cons_NCS6A,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS6A,CBre_Cons_NCS6A,bins=20)
+summary_residual_compare(Comp_Cons_NCS6A,Comp_Cons_NCS6A,bins=20)
 
 
 ```
+Both the summary statistics and the results are surprising. More consolidated sectors are more likely to have competition.
+
 #### Model NCS6B: l_def6_HHI_lag1
 
 Expectations are  unchanged.
-```{r ModelNCS6A_CBre}
+```{r ModelNCS6A_Comp}
 #Frequency Plot for unlogged ceiling
 summary_continuous_plot(smp,"l_def6_HHI_lag1")
 summary_continuous_plot(smp,"l_def5_HHI_lag1")
@@ -406,9 +222,9 @@ summary_continuous_plot(smp,"l_def2_HHI_lag1")
 
 
 #Model
-CBre_Cons_NCS6B <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS6B)
+Comp_Cons_NCS6B <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1, family=binomial(link="logit"))
+glmer_examine(Comp_Cons_NCS6B)
 
 
 # #Plot the fitted model plot
@@ -423,11 +239,11 @@ glmer_examine(CBre_Cons_NCS6B)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6A,CBre_Cons_NCS6B,CBre_Cons_NCS6E,type="text",
+  stargazer::stargazer(Comp_Cons_NCS6A,Comp_Cons_NCS6B,Comp_Cons_NCS6E,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS6A,CBre_Cons_NCS6B,bins=20)
+summary_residual_compare(Comp_Cons_NCS6A,Comp_Cons_NCS6B,bins=20)
 
 
 ```
@@ -435,31 +251,31 @@ The use of log doesn't change the direction of finding, but it does reduce the m
 
 
 #### Model NCS6C: Defense to Overall ratio
-The higher the ratio of defense obligations to reciepts in the overall economy, the DoD holds a monosopy over a sector. Given the challenges of monosopy, the a higher ratio estimates a greater  risk of ceiling breaches.
-```{r ModelNCS6C_CBre}
+The lower the ratio of defense obligations to reciepts in the overall economy, the more potential competitors, but also the less developed industrial base. Given the difficulties the DoD has access many more traditional firms, a very low ratio may estimate a lower rate of competition. Interestingly both contradictory expectations find some support in the exploratory statistics, which show a sweet spot well below 5% where competition seems to peak.
+```{r ModelNCS6C_Comp}
 #Frequency Plot for unlogged ceiling
-summary_continuous_plot(contract,"capped_def6_ratio_lag1")
-      summary_continuous_plot(contract,"l_def6_ratio_lag1")
-      summary_continuous_plot(contract,"capped_def5_ratio_lag1")
-      summary_continuous_plot(contract,"l_def5_ratio_lag1")
+summary_continuous_plot(smp,"capped_def6_ratio_lag1")
+      summary_continuous_plot(smp,"l_def6_ratio_lag1")
+      summary_continuous_plot(smp,"capped_def5_ratio_lag1")
+      summary_continuous_plot(smp,"l_def5_ratio_lag1")
       
-      summary_continuous_plot(contract,"capped_def4_ratio_lag1")
-      summary_continuous_plot(contract,"l_def4_ratio_lag1")
-      summary_continuous_plot(contract,"capped_def3_ratio_lag1")
-      summary_continuous_plot(contract,"l_def3_ratio_lag1")
-      summary_continuous_plot(contract,"capped_def2_ratio_lag1")
-      summary_continuous_plot(contract,"l_def2_ratio_lag1")
+      summary_continuous_plot(smp,"capped_def4_ratio_lag1")
+      summary_continuous_plot(smp,"l_def4_ratio_lag1")
+      summary_continuous_plot(smp,"capped_def3_ratio_lag1")
+      summary_continuous_plot(smp,"l_def3_ratio_lag1")
+      summary_continuous_plot(smp,"capped_def2_ratio_lag1")
+      summary_continuous_plot(smp,"l_def2_ratio_lag1")
       
 
 
 #Model
-CBre_Cons_NCS6C <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1+cl_def6_ratio_lag1, 
+Comp_Cons_NCS6C <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1+cl_def6_ratio_lag1, 
                  family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS6C)
+glmer_examine(Comp_Cons_NCS6C)
 
 CBre_Comp_NCS6C <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def6_ratio_lag1, 
+                 b_MultiOffr ~n_Comp+cl_def6_ratio_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS6C)
 # 
@@ -476,12 +292,12 @@ glmer_examine(CBre_Comp_NCS6C)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,
+  stargazer::stargazer(Comp_Cons_NCS6B,Comp_Cons_NCS6C,
                        CBre_Comp_01B,CBre_Comp_NCS6C,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS6B,CBre_Cons_NCS6C,bins=20)
+summary_residual_compare(Comp_Cons_NCS6B,Comp_Cons_NCS6C,bins=20)
 summary_residual_compare(CBre_Comp_01B,CBre_Comp_NCS6C,bins=2)
 
 
@@ -494,18 +310,18 @@ When there is a larger market available, consolidation may matter less, for bett
 
 For competition, the effects may be greatest outside of a monospy context, thus the competition will estimate a lower occurance of ceiling breaches but the interaction of competition and ratio will estimate a higher rate.
 
-```{r ModelNCS6D_CBre}
+```{r ModelNCS6D_Comp}
 #Frequency Plot for unlogged ceiling
 
 
 #Model
-CBre_Cons_NCS6D <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_HHI_lag1:cl_def6_ratio_lag1, 
+Comp_Cons_NCS6D <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_HHI_lag1:cl_def6_ratio_lag1, 
                  family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS6D)
+glmer_examine(Comp_Cons_NCS6D)
 
 CBre_Comp_NCS6D <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def6_ratio_lag1+n_Comp:cl_def6_ratio_lag1, 
+                 b_MultiOffr ~n_Comp+cl_def6_ratio_lag1+n_Comp:cl_def6_ratio_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS6D)
 # 
@@ -522,12 +338,12 @@ glmer_examine(CBre_Comp_NCS6D)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6C,CBre_Cons_NCS6D,
+  stargazer::stargazer(Comp_Cons_NCS6B,Comp_Cons_NCS6C,Comp_Cons_NCS6D,
                        CBre_Comp_01B,CBre_Comp_NCS6C,CBre_Comp_NCS6D,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS6C,CBre_Cons_NCS6D,bins=20)
+summary_residual_compare(Comp_Cons_NCS6C,Comp_Cons_NCS6D,bins=20)
 summary_residual_compare(CBre_Comp_NCS6C,CBre_Comp_NCS6D,bins=2)
 
 
@@ -538,7 +354,7 @@ Adding the interaction for consolidation does has minimal effect, contrary to ex
 #### Model NCS6E: cl_def6_obl_lag1
 Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
 Expectations are  unchanged.
-```{r ModelNCS6E_CBre}
+```{r ModelNCS6E_Comp}
 #Frequency Plot for unlogged ceiling
 summary_continuous_plot(smp,"def6_obl_lag1")
 
@@ -558,13 +374,13 @@ summary_continuous_plot(smp,"def2_obl_lag1")
 summary_continuous_plot(smp,"l_def2_obl_lag1")
 
 #Model
-CBre_Cons_NCS6E <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS6E)
+Comp_Cons_NCS6E <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1, family=binomial(link="logit"))
+glmer_examine(Comp_Cons_NCS6E)
 
 
 CBre_Comp_NCS6E <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1, 
+                 b_MultiOffr ~n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS6E)
 
@@ -582,12 +398,12 @@ glmer_examine(CBre_Comp_NCS6E)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6C,CBre_Cons_NCS6E,
+  stargazer::stargazer(Comp_Cons_NCS6C,Comp_Cons_NCS6E,
                        CBre_Comp_NCS6C,CBre_Comp_NCS6E,
                        type="text",digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS6C,CBre_Cons_NCS6E,bins=20)
+summary_residual_compare(Comp_Cons_NCS6C,Comp_Cons_NCS6E,bins=20)
 summary_residual_compare(CBre_Comp_NCS6C,CBre_Comp_NCS6E,bins=20)
 
 
@@ -596,14 +412,14 @@ Estimated results occur. Residuals increase in magnitude for consolidation but r
 
 #### Model NCS6F: Interaction of HHI and size
 Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
-```{r ModelNCS6F_CBre}
+```{r ModelNCS6F_Comp}
 #Frequency Plot for unlogged ceiling
 
 
 #Model
-CBre_Cons_NCS6F <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS6F)
+Comp_Cons_NCS6F <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1, family=binomial(link="logit"))
+glmer_examine(Comp_Cons_NCS6F)
 
 
 # 
@@ -621,12 +437,12 @@ glmer_examine(CBre_Cons_NCS6F)
 
 #Plot residuals versus fitted
 
-  stargazer::stargazer(CBre_Cons_NCS6C,CBre_Cons_NCS6E,CBre_Cons_NCS6F,
+  stargazer::stargazer(Comp_Cons_NCS6C,Comp_Cons_NCS6E,Comp_Cons_NCS6F,
                        CBre_Comp_NCS6C,CBre_Comp_NCS6E,
                        type="text",digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS6E,CBre_Cons_NCS6F,bins=20)
+summary_residual_compare(Comp_Cons_NCS6E,Comp_Cons_NCS6F,bins=20)
 
 
 
@@ -635,7 +451,7 @@ Expectations were not uphelped. That said relaxing the assumption that the inter
 
 #### Model NCS6G: Average Salary
 Average salary can be an proxy for unobserved skill requirements. We expect that a greater skill requirement will estimate a greater risk of ceiling breaches.
-```{r ModelNCS6G_CBre}
+```{r ModelNCS6G_Comp}
 #Frequency Plot for unlogged ceiling
 
 
@@ -651,14 +467,14 @@ summary_continuous_plot(smp,"US2_avg_sal_lag1")
 #Model
 #cl_def6_obl_lag1
 
-CBre_Cons_NCS6G <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+Comp_Cons_NCS6G <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
                   cl_US6_avg_sal_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1 , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS6G)
+glmer_examine(Comp_Cons_NCS6G)
 
 
 CBre_Comp_NCS6G <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
+                 b_MultiOffr ~n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS6G)
 
@@ -677,13 +493,13 @@ glmer_examine(CBre_Comp_NCS6G)
 
 
 #Plot residuals versus fitted
- stargazer::stargazer(CBre_Cons_NCS6C,CBre_Cons_NCS6E,CBre_Cons_NCS6F,CBre_Cons_NCS6G,
+ stargazer::stargazer(Comp_Cons_NCS6C,Comp_Cons_NCS6E,Comp_Cons_NCS6F,Comp_Cons_NCS6G,
                        CBre_Comp_NCS6C,CBre_Comp_NCS6E,CBre_Comp_NCS6G,
                        type="text",digits=2)
 
 
 
-summary_residual_compare(CBre_Cons_NCS6F,CBre_Cons_NCS6G,bins=20)
+summary_residual_compare(Comp_Cons_NCS6F,Comp_Cons_NCS6G,bins=20)
 summary_residual_compare(CBre_Comp_NCS6E,CBre_Comp_NCS6G,bins=20)
 
 
@@ -694,7 +510,7 @@ The results were significant but in the opposite direction expected. This also r
 
 ### Level 5
 #### Model NCS5A: cl_def5_HHI
-```{r ModelNCS5A_CBre}
+```{r ModelNCS5A_Comp}
 #Frequency Plot for unlogged ceiling
 summary_continuous_plot(smp,"l_def6_HHI_lag1")
 summary_continuous_plot(smp,"l_def5_HHI_lag1")
@@ -704,9 +520,9 @@ summary_continuous_plot(smp,"l_def2_HHI_lag1")
 
 
 #Model
-CBre_Cons_NCS5A <- glm (data=smp,
-                 b_CBre ~cl_def5_HHI_lag1, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS5A)
+Comp_Cons_NCS5A <- glm (data=smp,
+                 b_MultiOffr ~cl_def5_HHI_lag1, family=binomial(link="logit"))
+glmer_examine(Comp_Cons_NCS5A)
 
 
 # #Plot the fitted model plot
@@ -721,18 +537,18 @@ glmer_examine(CBre_Cons_NCS5A)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6E,CBre_Cons_NCS6F,CBre_Cons_NCS5A,type="text",
+  stargazer::stargazer(Comp_Cons_NCS6B,Comp_Cons_NCS6E,Comp_Cons_NCS6F,Comp_Cons_NCS5A,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS6B,CBre_Cons_NCS5A,bins=20)
+summary_residual_compare(Comp_Cons_NCS6B,Comp_Cons_NCS5A,bins=20)
 
 
 ```
 
 #### Model NCS5B: Defense to Overall ratio
 The higher the ratio of defense obligations to reciepts in the overall economy, the DoD holds a monosopy over a sector. Given the challenges of monosopy, the a higher ratio estimates a greater  risk of ceiling breaches.
-```{r ModelNCS5B_CBre}
+```{r ModelNCS5b_MultiOffr}
 #Frequency Plot for unlogged ceiling
 
 
@@ -742,13 +558,13 @@ summary_continuous_plot(smp,"capped_def5_ratio_lag1")
 summary_continuous_plot(smp,"l_def5_ratio_lag1")
 
 #Model
-CBre_Cons_NCS5B <- glm (data=smp,
-                 b_CBre ~cl_def5_HHI_lag1+cl_def5_ratio_lag1, 
+Comp_Cons_NCS5B <- glm (data=smp,
+                 b_MultiOffr ~cl_def5_HHI_lag1+cl_def5_ratio_lag1, 
                  family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS5B)
+glmer_examine(Comp_Cons_NCS5B)
 
 CBre_Comp_NCS5B <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def5_ratio_lag1, 
+                 b_MultiOffr ~n_Comp+cl_def5_ratio_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS5B)
 # 
@@ -765,13 +581,13 @@ glmer_examine(CBre_Comp_NCS5B)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6D,CBre_Cons_NCS5A,CBre_Cons_NCS5B,
+  stargazer::stargazer(Comp_Cons_NCS6D,Comp_Cons_NCS5A,Comp_Cons_NCS5B,
                        CBre_Comp_01B,CBre_Comp_NCS6D,CBre_Comp_NCS5B,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS5A,CBre_Cons_NCS5B,bins=20)
-summary_residual_compare(CBre_Cons_NCS6D,CBre_Cons_NCS5B,bins=20)
+summary_residual_compare(Comp_Cons_NCS5A,Comp_Cons_NCS5B,bins=20)
+summary_residual_compare(Comp_Cons_NCS6D,Comp_Cons_NCS5B,bins=20)
 summary_residual_compare(CBre_Comp_01B,CBre_Comp_NCS5B,bins=2)
 summary_residual_compare(CBre_Comp_NCS6D,CBre_Comp_NCS5B,bins=2)
 
@@ -784,18 +600,18 @@ When there is a larger market available, consolidation may matter less, for bett
 
 For competition, the effects may be greatest outside of a monospy context, thus the competition will estimate a lower occurance of ceiling breaches but the interaction of competition and ratio will estimate a higher rate.
 
-```{r ModelNCS5C_CBre}
+```{r ModelNCS5C_Comp}
 #Frequency Plot for unlogged ceiling
 
 
 #Model
-CBre_Cons_NCS5C <- glm (data=smp,
-                 b_CBre ~cl_def5_HHI_lag1+cl_def5_ratio_lag1+cl_def5_HHI_lag1:cl_def5_ratio_lag1, 
+Comp_Cons_NCS5C <- glm (data=smp,
+                 b_MultiOffr ~cl_def5_HHI_lag1+cl_def5_ratio_lag1+cl_def5_HHI_lag1:cl_def5_ratio_lag1, 
                  family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS5C)
+glmer_examine(Comp_Cons_NCS5C)
 
 CBre_Comp_NCS5C <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def5_ratio_lag1+n_Comp:cl_def5_ratio_lag1, 
+                 b_MultiOffr ~n_Comp+cl_def5_ratio_lag1+n_Comp:cl_def5_ratio_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS5C)
 # 
@@ -812,12 +628,12 @@ glmer_examine(CBre_Comp_NCS5C)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS5A,CBre_Cons_NCS5B,CBre_Cons_NCS5C,
+  stargazer::stargazer(Comp_Cons_NCS5A,Comp_Cons_NCS5B,Comp_Cons_NCS5C,
                        CBre_Comp_01B,CBre_Comp_NCS5B,CBre_Comp_NCS5C,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS5B,CBre_Cons_NCS5C,bins=10)
+summary_residual_compare(Comp_Cons_NCS5B,Comp_Cons_NCS5C,bins=10)
 summary_residual_compare(CBre_Comp_NCS5B,CBre_Comp_NCS5C,bins=5)
 
 
@@ -826,17 +642,17 @@ Both exceed VIF of 2.
 #### Model NCSD: cl_def5_obl_lag1
 Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
 Expectations are  unchanged.
-```{r ModelNCSD_CBre}
+```{r ModelNCSD_Comp}
 
 
 #Model
-CBre_Cons_NCS5D <- glm (data=smp,
-                 b_CBre ~cl_def5_HHI_lag1+cl_def5_ratio_lag1+cl_def5_obl_lag1, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS5D)
+Comp_Cons_NCS5D <- glm (data=smp,
+                 b_MultiOffr ~cl_def5_HHI_lag1+cl_def5_ratio_lag1+cl_def5_obl_lag1, family=binomial(link="logit"))
+glmer_examine(Comp_Cons_NCS5D)
 
 
 CBre_Comp_NCS5D <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def5_ratio_lag1+cl_def5_obl_lag1, 
+                 b_MultiOffr ~n_Comp+cl_def5_ratio_lag1+cl_def5_obl_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS5D)
 # 
@@ -853,12 +669,12 @@ glmer_examine(CBre_Comp_NCS5D)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS5A,CBre_Cons_NCS5B,CBre_Cons_NCS5D,
+  stargazer::stargazer(Comp_Cons_NCS5A,Comp_Cons_NCS5B,Comp_Cons_NCS5D,
                        CBre_Comp_01B,CBre_Comp_NCS5B,CBre_Comp_NCS5D,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS5B,CBre_Cons_NCS5D,bins=10)
+summary_residual_compare(Comp_Cons_NCS5B,Comp_Cons_NCS5D,bins=10)
 summary_residual_compare(CBre_Comp_NCS5B,CBre_Comp_NCS5D,bins=5)
 
 ```
@@ -866,14 +682,14 @@ Size seems to ad less to the model at level 5 than level 6.
 
 #### Model NCS5E: Interaction of HHI and size
 Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
-```{r ModelNCS5E_CBre}
+```{r ModelNCS5E_Comp}
 #Frequency Plot for unlogged ceiling
 
 #Model
-CBre_Cons_NCS5E <- glm (data=smp,
-                 b_CBre ~cl_def5_HHI_lag1+cl_def5_ratio_lag1+cl_def5_obl_lag1+
+Comp_Cons_NCS5E <- glm (data=smp,
+                 b_MultiOffr ~cl_def5_HHI_lag1+cl_def5_ratio_lag1+cl_def5_obl_lag1+
                    cl_def5_HHI_lag1:cl_def5_obl_lag1, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS5E)
+glmer_examine(Comp_Cons_NCS5E)
 
 
 # 
@@ -890,13 +706,13 @@ glmer_examine(CBre_Cons_NCS5E)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS5D,CBre_Cons_NCS5E,CBre_Cons_NCS6F,
+  stargazer::stargazer(Comp_Cons_NCS5D,Comp_Cons_NCS5E,Comp_Cons_NCS6F,
                        CBre_Comp_NCS5D,CBre_Comp_NCS6E,type="text",
                        digits=2)
 
   #Compare to prior at same level
-summary_residual_compare(CBre_Cons_NCS5D,CBre_Cons_NCS5E,bins=20)
-summary_residual_compare(CBre_Cons_NCS6F,CBre_Cons_NCS5E,bins=20)
+summary_residual_compare(Comp_Cons_NCS5D,Comp_Cons_NCS5E,bins=20)
+summary_residual_compare(Comp_Cons_NCS6F,Comp_Cons_NCS5E,bins=20)
 
 
 ```
@@ -904,15 +720,15 @@ Expectations were not uphelped. The interaction appears to badly misjudge some c
 
 ### Level 4
 #### Model NCS4A: cl_def4_HHI
-```{r ModelNCS4A_CBre}
+```{r ModelNCS4A_Comp}
 #Frequency Plot for unlogged ceiling
 summary_continuous_plot(smp,"l_def4_HHI_lag1")
 
 
 #Model
-CBre_Cons_NCS4A <- glm (data=smp,
-                 b_CBre ~cl_def4_HHI_lag1, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS4A)
+Comp_Cons_NCS4A <- glm (data=smp,
+                 b_MultiOffr ~cl_def4_HHI_lag1, family=binomial(link="logit"))
+glmer_examine(Comp_Cons_NCS4A)
 
 
 # #Plot the fitted model plot
@@ -927,11 +743,11 @@ glmer_examine(CBre_Cons_NCS4A)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6E,CBre_Cons_NCS6F,CBre_Cons_NCS4A,type="text",
+  stargazer::stargazer(Comp_Cons_NCS6B,Comp_Cons_NCS6E,Comp_Cons_NCS6F,Comp_Cons_NCS4A,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS6B,CBre_Cons_NCS4A,bins=20)
+summary_residual_compare(Comp_Cons_NCS6B,Comp_Cons_NCS4A,bins=20)
 
 
 ```
@@ -942,7 +758,7 @@ Level 4 HHI seems to slightly out perform level 6.
 
 #### Model NCS4B: Defense to Overall ratio
 The higher the ratio of defense obligations to reciepts in the overall economy, the DoD holds a monosopy over a sector. Given the challenges of monosopy, the a higher ratio estimates a greater  risk of ceiling breaches.
-```{r ModelNCS4B_CBre}
+```{r ModelNCS4b_MultiOffr}
 #Frequency Plot for unlogged ceiling
 
 
@@ -952,13 +768,13 @@ summary_continuous_plot(smp,"capped_def4_ratio_lag1")
 summary_continuous_plot(smp,"l_def4_ratio_lag1")
 
 #Model
-CBre_Cons_NCS4B <- glm (data=smp,
-                 b_CBre ~cl_def4_HHI_lag1+cl_def4_ratio_lag1, 
+Comp_Cons_NCS4B <- glm (data=smp,
+                 b_MultiOffr ~cl_def4_HHI_lag1+cl_def4_ratio_lag1, 
                  family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS4B)
+glmer_examine(Comp_Cons_NCS4B)
 
 CBre_Comp_NCS4B <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def4_ratio_lag1, 
+                 b_MultiOffr ~n_Comp+cl_def4_ratio_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS4B)
 # 
@@ -975,13 +791,13 @@ glmer_examine(CBre_Comp_NCS4B)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS5B,CBre_Cons_NCS4A,CBre_Cons_NCS4B,
+  stargazer::stargazer(Comp_Cons_NCS5B,Comp_Cons_NCS4A,Comp_Cons_NCS4B,
                        CBre_Comp_01B,CBre_Comp_NCS5B,CBre_Comp_NCS4B,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS4A,CBre_Cons_NCS4B,bins=20)
-summary_residual_compare(CBre_Cons_NCS5B,CBre_Cons_NCS4B,bins=20)
+summary_residual_compare(Comp_Cons_NCS4A,Comp_Cons_NCS4B,bins=20)
+summary_residual_compare(Comp_Cons_NCS5B,Comp_Cons_NCS4B,bins=20)
 summary_residual_compare(CBre_Comp_01B,CBre_Comp_NCS4B,bins=2)
 summary_residual_compare(CBre_Comp_NCS5B,CBre_Comp_NCS4B,bins=2)
 
@@ -994,18 +810,18 @@ When there is a larger market available, consolidation may matter less, for bett
 
 For competition, the effects may be greatest outside of a monospy context, thus the competition will estimate a lower occurance of ceiling breaches but the interaction of competition and ratio will estimate a higher rate.
 
-```{r ModelNCS4C_CBre}
+```{r ModelNCS4C_Comp}
 #Frequency Plot for unlogged ceiling
 
 
 #Model
-CBre_Cons_NCS4C <- glm (data=smp,
-                 b_CBre ~cl_def4_HHI_lag1+cl_def4_ratio_lag1+cl_def4_HHI_lag1:cl_def4_ratio_lag1, 
+Comp_Cons_NCS4C <- glm (data=smp,
+                 b_MultiOffr ~cl_def4_HHI_lag1+cl_def4_ratio_lag1+cl_def4_HHI_lag1:cl_def4_ratio_lag1, 
                  family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS4C)
+glmer_examine(Comp_Cons_NCS4C)
 
 CBre_Comp_NCS4C <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def4_ratio_lag1+n_Comp:cl_def4_ratio_lag1, 
+                 b_MultiOffr ~n_Comp+cl_def4_ratio_lag1+n_Comp:cl_def4_ratio_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS4C)
 # 
@@ -1022,12 +838,12 @@ glmer_examine(CBre_Comp_NCS4C)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS4A,CBre_Cons_NCS4B,CBre_Cons_NCS4C,
+  stargazer::stargazer(Comp_Cons_NCS4A,Comp_Cons_NCS4B,Comp_Cons_NCS4C,
                        CBre_Comp_01B,CBre_Comp_NCS4B,CBre_Comp_NCS4C,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS2B,CBre_Cons_NCS2C,bins=10)
+summary_residual_compare(Comp_Cons_NCS2B,Comp_Cons_NCS2C,bins=10)
 summary_residual_compare(CBre_Comp_NCS2B,CBre_Comp_NCS2C,bins=5)
 
 
@@ -1038,17 +854,17 @@ VIF exceeded in both cases.
 #### Model NCS4D: cl_def4_obl_lag1
 Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
 Expectations are  unchanged.
-```{r ModelNCS4D_CBre}
+```{r ModelNCS4D_Comp}
 
 
 #Model
-CBre_Cons_NCS4D <- glm (data=smp,
-                 b_CBre ~cl_def4_HHI_lag1+cl_def4_ratio_lag1+cl_def4_obl_lag1, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS4D)
+Comp_Cons_NCS4D <- glm (data=smp,
+                 b_MultiOffr ~cl_def4_HHI_lag1+cl_def4_ratio_lag1+cl_def4_obl_lag1, family=binomial(link="logit"))
+glmer_examine(Comp_Cons_NCS4D)
 
 
 CBre_Comp_NCS4D <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def4_ratio_lag1+ cl_def4_obl_lag1,
+                 b_MultiOffr ~n_Comp+cl_def4_ratio_lag1+ cl_def4_obl_lag1,
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS4D)
 # 
@@ -1065,32 +881,32 @@ glmer_examine(CBre_Comp_NCS4D)
 
 
 #Plot residuals versus fitted
-stargazer::stargazer(CBre_Cons_NCS4B,CBre_Cons_NCS4D,CBre_Cons_NCS6E,
+stargazer::stargazer(Comp_Cons_NCS4B,Comp_Cons_NCS4D,Comp_Cons_NCS6E,
                        CBre_Comp_NCS4B,CBre_Comp_NCS4D,CBre_Comp_NCS6E,type="text",
                        digits=2)
 
 
 
   #Compare to prior at same level
-summary_residual_compare(CBre_Cons_NCS4B,CBre_Cons_NCS4D,bins=20)
+summary_residual_compare(Comp_Cons_NCS4B,Comp_Cons_NCS4D,bins=20)
 #Compare to prior at lower level
-summary_residual_compare(CBre_Cons_NCS6E,CBre_Cons_NCS4D,bins=20)
+summary_residual_compare(Comp_Cons_NCS6E,Comp_Cons_NCS4D,bins=20)
 summary_residual_compare(CBre_Co_NCS4B,CBre_Comp_NCS4D,bins=20)
 ```
 Size seems to add less to the model at level 4 than level 6.
 
 #### Model NCS4E: Interaction of HHI and size
 Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
-```{r ModelNCS4E_CBre}
+```{r ModelNCS4E_Comp}
 #Frequency Plot for unlogged ceiling
 
 
 #Model
 
-CBre_Cons_NCS4E <- glm (data=smp,
-                 b_CBre ~cl_def4_HHI_lag1+cl_def4_ratio_lag1+cl_def4_obl_lag1+
+Comp_Cons_NCS4E <- glm (data=smp,
+                 b_MultiOffr ~cl_def4_HHI_lag1+cl_def4_ratio_lag1+cl_def4_obl_lag1+
                    cl_def4_HHI_lag1:cl_def4_obl_lag1, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS4E)
+glmer_examine(Comp_Cons_NCS4E)
 
 
 # 
@@ -1108,28 +924,28 @@ glmer_examine(CBre_Cons_NCS4E)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS4D,CBre_Cons_NCS4E,CBre_Cons_NCS6F,
+  stargazer::stargazer(Comp_Cons_NCS4D,Comp_Cons_NCS4E,Comp_Cons_NCS6F,
                        CBre_Comp_NCS4D,CBre_Comp_NCS6E,type="text",
                        digits=2)
 
   #Compare to prior at same level
-summary_residual_compare(CBre_Cons_NCS4D,CBre_Cons_NCS4E,bins=20)
-summary_residual_compare(CBre_Cons_NCS6F,CBre_Cons_NCS4E,bins=20)
+summary_residual_compare(Comp_Cons_NCS4D,Comp_Cons_NCS4E,bins=20)
+summary_residual_compare(Comp_Cons_NCS6F,Comp_Cons_NCS4E,bins=20)
 
 ```
 Expectations were not uphelped. Level 4 doesn't seem to be quite as effective as level 6 with the multiple measures included, but it does better than 5
 
 ### Level 3
 #### Model NCS3A: cl_def3_HHI
-```{r ModelNCS3A_CBre}
+```{r ModelNCS3A_Comp}
 #Frequency Plot for unlogged ceiling
 summary_continuous_plot(smp,"l_def3_HHI_lag1")
 
 
 #Model
-CBre_Cons_NCS3A <- glm (data=smp,
-                 b_CBre ~cl_def3_HHI_lag1, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS3A)
+Comp_Cons_NCS3A <- glm (data=smp,
+                 b_MultiOffr ~cl_def3_HHI_lag1, family=binomial(link="logit"))
+glmer_examine(Comp_Cons_NCS3A)
 
 
 # #Plot the fitted model plot
@@ -1144,11 +960,11 @@ glmer_examine(CBre_Cons_NCS3A)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6E,CBre_Cons_NCS6F,CBre_Cons_NCS3A,type="text",
+  stargazer::stargazer(Comp_Cons_NCS6B,Comp_Cons_NCS6E,Comp_Cons_NCS6F,Comp_Cons_NCS3A,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS6B,CBre_Cons_NCS3A,bins=20)
+summary_residual_compare(Comp_Cons_NCS6B,Comp_Cons_NCS3A,bins=20)
 
 
 ```
@@ -1158,7 +974,7 @@ Level 3 HHI seems to slightly out perform level 6.
 
 #### Model NCS3B: Defense to Overall ratio
 The higher the ratio of defense obligations to reciepts in the overall economy, the DoD holds a monosopy over a sector. Given the challenges of monosopy, the a higher ratio estimates a greater  risk of ceiling breaches.
-```{r ModelNCS3B_CBre}
+```{r ModelNCS3b_MultiOffr}
 #Frequency Plot for unlogged ceiling
 
 
@@ -1168,13 +984,13 @@ summary_continuous_plot(smp,"capped_def3_ratio_lag1")
 summary_continuous_plot(smp,"l_def3_ratio_lag1")
 
 #Model
-CBre_Cons_NCS3B <- glm (data=smp,
-                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1, 
+Comp_Cons_NCS3B <- glm (data=smp,
+                 b_MultiOffr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1, 
                  family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS3B)
+glmer_examine(Comp_Cons_NCS3B)
 
 CBre_Comp_NCS3B <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def3_ratio_lag1, 
+                 b_MultiOffr ~n_Comp+cl_def3_ratio_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS3B)
 # 
@@ -1191,13 +1007,13 @@ glmer_examine(CBre_Comp_NCS3B)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS4B,CBre_Cons_NCS3A,CBre_Cons_NCS3B,
+  stargazer::stargazer(Comp_Cons_NCS4B,Comp_Cons_NCS3A,Comp_Cons_NCS3B,
                        CBre_Comp_01B,CBre_Comp_NCS4B,CBre_Comp_NCS3B,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS3A,CBre_Cons_NCS3B,bins=20)
-summary_residual_compare(CBre_Cons_NCS4B,CBre_Cons_NCS3B,bins=20)
+summary_residual_compare(Comp_Cons_NCS3A,Comp_Cons_NCS3B,bins=20)
+summary_residual_compare(Comp_Cons_NCS4B,Comp_Cons_NCS3B,bins=20)
 summary_residual_compare(CBre_Comp_01B,CBre_Comp_NCS3B,bins=2)
 summary_residual_compare(CBre_Comp_NCS4B,CBre_Comp_NCS3B,bins=2)
 
@@ -1210,18 +1026,18 @@ When there is a larger market available, consolidation may matter less, for bett
 
 For competition, the effects may be greatest outside of a monospy context, thus the competition will estimate a lower occurance of ceiling breaches but the interaction of competition and ratio will estimate a higher rate.
 
-```{r ModelNCS3C_CBre}
+```{r ModelNCS3C_Comp}
 #Frequency Plot for unlogged ceiling
 
 
 #Model
-CBre_Cons_NCS3C <- glm (data=smp,
-                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+cl_def3_HHI_lag1:cl_def3_ratio_lag1, 
+Comp_Cons_NCS3C <- glm (data=smp,
+                 b_MultiOffr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+cl_def3_HHI_lag1:cl_def3_ratio_lag1, 
                  family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS3C)
+glmer_examine(Comp_Cons_NCS3C)
 
 CBre_Comp_NCS3C <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def3_ratio_lag1+n_Comp:cl_def3_ratio_lag1, 
+                 b_MultiOffr ~n_Comp+cl_def3_ratio_lag1+n_Comp:cl_def3_ratio_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS3C)
 # 
@@ -1238,12 +1054,12 @@ glmer_examine(CBre_Comp_NCS3C)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS3A,CBre_Cons_NCS3B,CBre_Cons_NCS3C,
+  stargazer::stargazer(Comp_Cons_NCS3A,Comp_Cons_NCS3B,Comp_Cons_NCS3C,
                        CBre_Comp_01B,CBre_Comp_NCS3B,CBre_Comp_NCS3C,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS2B,CBre_Cons_NCS2C,bins=10)
+summary_residual_compare(Comp_Cons_NCS2B,Comp_Cons_NCS2C,bins=10)
 summary_residual_compare(CBre_Comp_NCS2B,CBre_Comp_NCS2C,bins=5)
 
 
@@ -1255,17 +1071,17 @@ Both exceed VIF of 2.
 #### Model NCS3D: cl_def3_obl_lag1
 Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
 Expectations are  unchanged.
-```{r ModelNCS3D_CBre}
+```{r ModelNCS3D_Comp}
 
 
 #Model
-CBre_Cons_NCS3D <- glm (data=smp,
-                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+cl_def3_obl_lag1, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS3D)
+Comp_Cons_NCS3D <- glm (data=smp,
+                 b_MultiOffr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+cl_def3_obl_lag1, family=binomial(link="logit"))
+glmer_examine(Comp_Cons_NCS3D)
 
 
 CBre_Comp_NCS3D <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def3_ratio_lag1+ cl_def3_obl_lag1,
+                 b_MultiOffr ~n_Comp+cl_def3_ratio_lag1+ cl_def3_obl_lag1,
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS3D)
 # 
@@ -1282,29 +1098,29 @@ glmer_examine(CBre_Comp_NCS3D)
 
 
 #Plot residuals versus fitted
-stargazer::stargazer(CBre_Cons_NCS3B,CBre_Cons_NCS3E,CBre_Cons_NCS6F,
-                       CBre_Cons_NCS3B,CBre_Cons_NCS3D,type="text",
+stargazer::stargazer(Comp_Cons_NCS3B,Comp_Cons_NCS3E,Comp_Cons_NCS6F,
+                       Comp_Cons_NCS3B,Comp_Cons_NCS3D,type="text",
                        digits=2)
 
 
 
   #Compare to prior at same level
-summary_residual_compare(CBre_Cons_NCS3A,CBre_Cons_NCS3D,bins=20)
+summary_residual_compare(Comp_Cons_NCS3A,Comp_Cons_NCS3D,bins=20)
 #Compare to prior at lower level
-summary_residual_compare(CBre_Cons_NCS6E,CBre_Cons_NCS3D,bins=20)
+summary_residual_compare(Comp_Cons_NCS6E,Comp_Cons_NCS3D,bins=20)
 ```
 Size seems to add less to the model at level 3 than level 6.
 
 #### Model NCS3E: Interaction of HHI and size
 Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
-```{r ModelNCS3E_CBre}
+```{r ModelNCS3E_Comp}
 #Frequency Plot for unlogged ceiling
 
 
 #Model
-CBre_Cons_NCS3E <- glm (data=smp,
-                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+cl_def3_obl_lag1+cl_def3_HHI_lag1:cl_def3_obl_lag1, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS3E)
+Comp_Cons_NCS3E <- glm (data=smp,
+                 b_MultiOffr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+cl_def3_obl_lag1+cl_def3_HHI_lag1:cl_def3_obl_lag1, family=binomial(link="logit"))
+glmer_examine(Comp_Cons_NCS3E)
 
 
 # 
@@ -1322,13 +1138,13 @@ glmer_examine(CBre_Cons_NCS3E)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS3D,CBre_Cons_NCS3E,CBre_Cons_NCS6F,
+  stargazer::stargazer(Comp_Cons_NCS3D,Comp_Cons_NCS3E,Comp_Cons_NCS6F,
                        CBre_Comp_NCS3D,CBre_Comp_NCS6E,type="text",
                        digits=2)
 
   #Compare to prior at same level
-summary_residual_compare(CBre_Cons_NCS3D,CBre_Cons_NCS3E,bins=20)
-summary_residual_compare(CBre_Cons_NCS6F,CBre_Cons_NCS3E,bins=20)
+summary_residual_compare(Comp_Cons_NCS3D,Comp_Cons_NCS3E,bins=20)
+summary_residual_compare(Comp_Cons_NCS6F,Comp_Cons_NCS3E,bins=20)
 
 
 ```
@@ -1336,7 +1152,7 @@ Expectations were not uphelped. Level 3 seems to outperform level 6. Which sugge
 
 #### Model NCS3F: Average Salary
 Average salary can be an proxy for unobserved skill requirements. We expect that a greater skill requirement will estimate a greater risk of ceiling breaches.
-```{r ModelNCS3F_CBre}
+```{r ModelNCS3F_Comp}
 #Frequency Plot for unlogged ceiling
 
 
@@ -1350,49 +1166,49 @@ summary_continuous_plot(smp,"US2_avg_sal_lag1")
 
 #Model
 
-CBre_Cons_NCS3F <- glm (data=smp,
-                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+cl_def3_obl_lag1+
+Comp_Cons_NCS3F <- glm (data=smp,
+                 b_MultiOffr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+cl_def3_obl_lag1+
                   cl_US3_avg_sal_lag1+cl_def3_HHI_lag1:cl_def3_obl_lag1 , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS3F)
+glmer_examine(Comp_Cons_NCS3F)
 
 
 CBre_Comp_NCS3F <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def3_ratio_lag1+cl_def3_obl_lag1+cl_US3_avg_sal_lag1, 
+                 b_MultiOffr ~n_Comp+cl_def3_ratio_lag1+cl_def3_obl_lag1+cl_US3_avg_sal_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS3F)
 
 
 
-glmer_examine(CBre_Cons_NCS3F)
+glmer_examine(Comp_Cons_NCS3F)
 glmer_examine(CBre_Comp_NCS3F)
 
 
-CBre_Cons_NCS3F2 <- glm (data=smp,
-                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1
+Comp_Cons_NCS3F2 <- glm (data=smp,
+                 b_MultiOffr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1
                   cl_US3_avg_sal_lag1 , family=binomial(link="logit"))#+cl_def3_HHI_lag1:cl_def3_obl_lag1
-glmer_examine(CBre_Cons_NCS3F2)
+glmer_examine(Comp_Cons_NCS3F2)
 
 
 CBre_Comp_NCS3F2 <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def3_ratio_lag1+cl_US3_avg_sal_lag1, #cl_def3_obl_lag1+
+                 b_MultiOffr ~n_Comp+cl_def3_ratio_lag1+cl_US3_avg_sal_lag1, #cl_def3_obl_lag1+
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS3F2)
 
 
-CBre_Cons_NCS3F3 <- glm (data=smp,
-                 b_CBre ~cl_def3_HHI_lag1+cl_def3_obl_lag1+#cl_def3_ratio_lag1
+Comp_Cons_NCS3F3 <- glm (data=smp,
+                 b_MultiOffr ~cl_def3_HHI_lag1+cl_def3_obl_lag1+#cl_def3_ratio_lag1
                   cl_US3_avg_sal_lag1+cl_def3_HHI_lag1:cl_def3_obl_lag1 , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS3F3)
-glmer_examine(CBre_Cons_NCS3F3)
+glmer_examine(Comp_Cons_NCS3F3)
+glmer_examine(Comp_Cons_NCS3F3)
 
-CBre_Cons_NCS3F4 <- glm (data=smp,
-                 b_CBre ~cl_def3_HHI_lag1+cl_def3_obl_lag1+#cl_def3_ratio_lag1
+Comp_Cons_NCS3F4 <- glm (data=smp,
+                 b_MultiOffr ~cl_def3_HHI_lag1+cl_def3_obl_lag1+#cl_def3_ratio_lag1
                   cl_US3_avg_sal_lag1 , family=binomial(link="logit"))#+cl_def3_HHI_lag1:cl_def3_obl_lag1
-glmer_examine(CBre_Cons_NCS3F4)
-glmer_examine(CBre_Cons_NCS3F4)
+glmer_examine(Comp_Cons_NCS3F4)
+glmer_examine(Comp_Cons_NCS3F4)
 
 CBre_Comp_NCS3F3 <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def3_obl_lag1+cl_US3_avg_sal_lag1, #cl_def3_ratio_lag1
+                 b_MultiOffr ~n_Comp+cl_def3_obl_lag1+cl_US3_avg_sal_lag1, #cl_def3_ratio_lag1
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS3F3)
 
@@ -1411,17 +1227,17 @@ glmer_examine(CBre_Comp_NCS3F3)
 
 
 #Plot residuals versus fitted
- stargazer::stargazer(CBre_Cons_NCS3E,CBre_Cons_NCS3F2,CBre_Cons_NCS3F4,CBre_Cons_NCS6G,
+ stargazer::stargazer(Comp_Cons_NCS3E,Comp_Cons_NCS3F2,Comp_Cons_NCS3F4,Comp_Cons_NCS6G,
                        CBre_Comp_NCS3D,CBre_Comp_NCS3F2,CBre_Comp_NCS3F3,CBre_Comp_NCS6G,
                        type="text",digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS3F,CBre_Cons_NCS3F2,bins=20)
+summary_residual_compare(Comp_Cons_NCS3F,Comp_Cons_NCS3F2,bins=20)
 summary_residual_compare(CBre_Comp_NCS3D,CBre_Comp_NCS3F2,bins=10)
-summary_residual_compare(CBre_Cons_NCS3F2,CBre_Cons_NCS3F4,bins=20)
+summary_residual_compare(Comp_Cons_NCS3F2,Comp_Cons_NCS3F4,bins=20)
 summary_residual_compare(CBre_Comp_NCS3F2,CBre_Comp_NCS3F3,bins=10)
 
-summary_residual_compare(CBre_Cons_NCS3F,CBre_Cons_NCS3F4,bins=20)
+summary_residual_compare(Comp_Cons_NCS3F,Comp_Cons_NCS3F4,bins=20)
 summary_residual_compare(CBre_Comp_NCS3D,CBre_Comp_NCS3F3,bins=10)
 
 
@@ -1432,52 +1248,52 @@ After sorting out VIF, obligations has more contained residuals and for consolid
 Consolidation at lessa nd more granular levels may have different effects. Efficiencies are often used to describe sectors, like utilities, with high barriers to entry. Many of these aspects seem like they would already be captured at less granular NAICS levels, e.g. power plants, rather than more specific NAICS levels, like solar vs. coal. As a result, consolidation for more granular NAICS codes should estimate higher rates of ceiling breaches compared to less granular NAICS code.
 
 We'll start by adding in everything from both models and seeing what violates VIF.
-```{r ModelNCS3G_CBre}
+```{r ModelNCS3G_Comp}
 #Frequency Plot for unlogged ceiling
 
 
 #Model
-CBre_Cons_NCS3G <- glm (data=smp,
-                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+cl_def3_obl_lag1+
+Comp_Cons_NCS3G <- glm (data=smp,
+                 b_MultiOffr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+cl_def3_obl_lag1+
                   cl_US3_avg_sal_lag1+
                    cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
                   cl_US6_avg_sal_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1  , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS3G)
-vif(CBre_Cons_NCS3G)
+glmer_examine(Comp_Cons_NCS3G)
+vif(Comp_Cons_NCS3G)
 #Defense obl 3 have the highest VIF and no coefficient to speak of, dropping it
-CBre_Cons_NCS3G2 <- glm (data=smp,
-                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+Comp_Cons_NCS3G2 <- glm (data=smp,
+                 b_MultiOffr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                   cl_US3_avg_sal_lag1+
                    cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
                   cl_US6_avg_sal_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1  , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS3G2)
-vif(CBre_Cons_NCS3G2)
+glmer_examine(Comp_Cons_NCS3G2)
+vif(Comp_Cons_NCS3G2)
 #Average salary 6 has the highest VIF though but both average salaries are over 2.0 and 3 is more contrary to expectations. Taking it out.
-CBre_Cons_NCS3G3 <- glm (data=smp,
-                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+Comp_Cons_NCS3G3 <- glm (data=smp,
+                 b_MultiOffr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                   #cl_US3_avg_sal_lag1+
                    cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
                   cl_US6_avg_sal_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1  , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS3G3)
-vif(CBre_Cons_NCS3G3)
+glmer_examine(Comp_Cons_NCS3G3)
+vif(Comp_Cons_NCS3G3)
 
 
 CBre_Comp_NCS3G <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def3_ratio_lag1+cl_def3_obl_lag1+cl_US3_avg_sal_lag1+
+                 b_MultiOffr ~n_Comp+cl_def3_ratio_lag1+cl_def3_obl_lag1+cl_US3_avg_sal_lag1+
                    n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS3G)
 vif(CBre_Comp_NCS3G)
 #Defense obl 3 have the highest VIF and no coefficient to speak of, dropping it
 CBre_Comp_NCS3G2 <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def3_ratio_lag1+cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                 b_MultiOffr ~n_Comp+cl_def3_ratio_lag1+cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                    n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS3G2)
 vif(CBre_Comp_NCS3G2)
 #Taking out average salary 3 to keep the models snced up.
 CBre_Comp_NCS3G3 <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                 b_MultiOffr ~n_Comp+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                    n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS3G3)
@@ -1498,19 +1314,19 @@ vif(CBre_Comp_NCS3G3)
 
 
 #Plot residuals versus fitted
- stargazer::stargazer(CBre_Cons_NCS3E,CBre_Cons_NCS3F2,CBre_Cons_NCS3F4,CBre_Cons_NCS6G,CBre_Cons_NCS3G3,
+ stargazer::stargazer(Comp_Cons_NCS3E,Comp_Cons_NCS3F2,Comp_Cons_NCS3F4,Comp_Cons_NCS6G,Comp_Cons_NCS3G3,
                        CBre_Comp_NCS3D,CBre_Comp_NCS3F2,CBre_Comp_NCS3F3,CBre_Comp_NCS6G,CBre_Comp_NCS3G3,
                        type="text",digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS3F4,CBre_Cons_NCS3G3,bins=20)
+summary_residual_compare(Comp_Cons_NCS3F4,Comp_Cons_NCS3G3,bins=20)
 summary_residual_compare(CBre_Comp_NCS3F3,CBre_Comp_NCS3G3,bins=10)
-summary_residual_compare(CBre_Cons_NCS3F2,CBre_Cons_NCS3G3,bins=20)
+summary_residual_compare(Comp_Cons_NCS3F2,Comp_Cons_NCS3G3,bins=20)
 summary_residual_compare(CBre_Comp_NCS3F2,CBre_Comp_NCS3G3,bins=10)
 
-summary_residual_compare(CBre_Cons_NCS3F,CBre_Cons_NCS3G3,bins=20)
+summary_residual_compare(Comp_Cons_NCS3F,Comp_Cons_NCS3G3,bins=20)
 summary_residual_compare(CBre_Comp_NCS3D,CBre_Comp_NCS3G3,bins=10)
-summary_residual_compare(CBre_Cons_NCS6G,CBre_Cons_NCS3G3,bins=20)
+summary_residual_compare(Comp_Cons_NCS6G,Comp_Cons_NCS3G3,bins=20)
 summary_residual_compare(CBre_Comp_NCS6G,CBre_Comp_NCS3G3,bins=10)
 
 ```
@@ -1519,15 +1335,15 @@ The hypothesis is upheld. Deviance is a little lower and residuals a little high
 
 ### Level 2
 #### Model NCS2A: cl_def2_HHI
-```{r ModelNCS2A_CBre}
+```{r ModelNCS2A_Comp}
 #Frequency Plot for unlogged ceiling
 summary_continuous_plot(smp,"l_def2_HHI_lag1")
 
 
 #Model
-CBre_Cons_NCS2A <- glm (data=smp,
-                 b_CBre ~cl_def2_HHI_lag1, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS2A)
+Comp_Cons_NCS2A <- glm (data=smp,
+                 b_MultiOffr ~cl_def2_HHI_lag1, family=binomial(link="logit"))
+glmer_examine(Comp_Cons_NCS2A)
 
 
 # #Plot the fitted model plot
@@ -1542,11 +1358,11 @@ glmer_examine(CBre_Cons_NCS2A)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6E,CBre_Cons_NCS6F,CBre_Cons_NCS2A,type="text",
+  stargazer::stargazer(Comp_Cons_NCS6B,Comp_Cons_NCS6E,Comp_Cons_NCS6F,Comp_Cons_NCS2A,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS6B,CBre_Cons_NCS2A,bins=20)
+summary_residual_compare(Comp_Cons_NCS6B,Comp_Cons_NCS2A,bins=20)
 
 
 ```
@@ -1555,7 +1371,7 @@ Level 2 HHI seems to slightly out perform level 6.
 
 #### Model NCS2B: Defense to Overall ratio
 The higher the ratio of defense obligations to reciepts in the overall economy, the DoD holds a monosopy over a sector. Given the challenges of monosopy, the a higher ratio estimates a greater  risk of ceiling breaches.
-```{r ModelNCS2B_CBre}
+```{r ModelNCS2b_MultiOffr}
 #Frequency Plot for unlogged ceiling
 
 
@@ -1565,13 +1381,13 @@ summary_continuous_plot(smp,"capped_def2_ratio_lag1")
 summary_continuous_plot(smp,"l_def2_ratio_lag1")
 
 #Model
-CBre_Cons_NCS2B <- glm (data=smp,
-                 b_CBre ~cl_def2_HHI_lag1+cl_def2_ratio_lag1, 
+Comp_Cons_NCS2B <- glm (data=smp,
+                 b_MultiOffr ~cl_def2_HHI_lag1+cl_def2_ratio_lag1, 
                  family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS2B)
+glmer_examine(Comp_Cons_NCS2B)
 
 CBre_Comp_NCS2B <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def2_ratio_lag1, 
+                 b_MultiOffr ~n_Comp+cl_def2_ratio_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS2B)
 # 
@@ -1588,13 +1404,13 @@ glmer_examine(CBre_Comp_NCS2B)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS3B,CBre_Cons_NCS2A,CBre_Cons_NCS2B,
+  stargazer::stargazer(Comp_Cons_NCS3B,Comp_Cons_NCS2A,Comp_Cons_NCS2B,
                        CBre_Comp_01B,CBre_Comp_NCS3B,CBre_Comp_NCS2B,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS2A,CBre_Cons_NCS2B,bins=10)
-summary_residual_compare(CBre_Cons_NCS3B,CBre_Cons_NCS2B,bins=20)
+summary_residual_compare(Comp_Cons_NCS2A,Comp_Cons_NCS2B,bins=10)
+summary_residual_compare(Comp_Cons_NCS3B,Comp_Cons_NCS2B,bins=20)
 summary_residual_compare(CBre_Comp_01B,CBre_Comp_NCS2B,bins=2)
 summary_residual_compare(CBre_Comp_NCS3B,CBre_Comp_NCS2B,bins=2)
 
@@ -1608,18 +1424,18 @@ When there is a larger market available, consolidation may matter less, for bett
 
 For competition, the effects may be greatest outside of a monospy context, thus the competition will estimate a lower occurance of ceiling breaches but the interaction of competition and ratio will estimate a higher rate.
 
-```{r ModelNCS2C_CBre}
+```{r ModelNCS2C_Comp}
 #Frequency Plot for unlogged ceiling
 
 
 #Model
-CBre_Cons_NCS2C <- glm (data=smp,
-                 b_CBre ~cl_def2_HHI_lag1+cl_def2_ratio_lag1+cl_def2_HHI_lag1:cl_def2_ratio_lag1, 
+Comp_Cons_NCS2C <- glm (data=smp,
+                 b_MultiOffr ~cl_def2_HHI_lag1+cl_def2_ratio_lag1+cl_def2_HHI_lag1:cl_def2_ratio_lag1, 
                  family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS2C)
+glmer_examine(Comp_Cons_NCS2C)
 
 CBre_Comp_NCS2C <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def2_ratio_lag1+n_Comp:cl_def2_ratio_lag1, 
+                 b_MultiOffr ~n_Comp+cl_def2_ratio_lag1+n_Comp:cl_def2_ratio_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS2C)
 # 
@@ -1636,12 +1452,12 @@ glmer_examine(CBre_Comp_NCS2C)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_NCS2A,CBre_Cons_NCS2B,CBre_Cons_NCS2C,
+  stargazer::stargazer(Comp_Cons_NCS2A,Comp_Cons_NCS2B,Comp_Cons_NCS2C,
                        CBre_Comp_01B,CBre_Comp_NCS2B,CBre_Comp_NCS2C,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS2B,CBre_Cons_NCS2C,bins=10)
+summary_residual_compare(Comp_Cons_NCS2B,Comp_Cons_NCS2C,bins=10)
 summary_residual_compare(CBre_Comp_NCS2B,CBre_Comp_NCS2C,bins=5)
 
 
@@ -1653,17 +1469,17 @@ Ratio 2 and consolidation continues to tell us fairly little, with the contrary 
 #### Model NCS2D: cl_def2_obl_lag1
 Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
 Expectations are  unchanged.
-```{r ModelNCS2D_CBre}
+```{r ModelNCS2D_Comp}
 
 
 #Model
-CBre_Cons_NCS2D <- glm (data=smp,
-                 b_CBre ~cl_def2_HHI_lag1+cl_def2_ratio_lag1+cl_def2_obl_lag1, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS2D)
+Comp_Cons_NCS2D <- glm (data=smp,
+                 b_MultiOffr ~cl_def2_HHI_lag1+cl_def2_ratio_lag1+cl_def2_obl_lag1, family=binomial(link="logit"))
+glmer_examine(Comp_Cons_NCS2D)
 
 
 CBre_Comp_NCS2D <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def2_ratio_lag1+cl_def2_obl_lag1, 
+                 b_MultiOffr ~n_Comp+cl_def2_ratio_lag1+cl_def2_obl_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS2D)
 # 
@@ -1680,30 +1496,30 @@ glmer_examine(CBre_Comp_NCS2D)
 
 
 #Plot residuals versus fitted
-stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6E,CBre_Cons_NCS6F,
-                       CBre_Cons_NCS2A,CBre_Cons_NCS2D,type="text",
+stargazer::stargazer(Comp_Cons_NCS6B,Comp_Cons_NCS6E,Comp_Cons_NCS6F,
+                       Comp_Cons_NCS2A,Comp_Cons_NCS2D,type="text",
                        digits=2)
 
 
 
   #Compare to prior at same level
-summary_residual_compare(CBre_Cons_NCS2A,CBre_Cons_NCS2D,bins=10)
+summary_residual_compare(Comp_Cons_NCS2A,Comp_Cons_NCS2D,bins=10)
 #Compare to prior at lower level
-summary_residual_compare(CBre_Cons_NCS6E,CBre_Cons_NCS2D,bins=10)
-summary_residual_compare(CBre_Cons_NCS3G,CBre_Cons_NCS2D,bins=10)
+summary_residual_compare(Comp_Cons_NCS6E,Comp_Cons_NCS2D,bins=10)
+summary_residual_compare(Comp_Cons_NCS3G,Comp_Cons_NCS2D,bins=10)
 ```
 Size seems to add less to the model at level 2 than level 6.
 
 #### Model NCS2E: Interaction of HHI and size
 Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
-```{r ModelNCS2E_CBre}
+```{r ModelNCS2E_Comp}
 #Frequency Plot for unlogged ceiling
 
 
 #Model
-CBre_Cons_NCS2E <- glm (data=smp,
-                 b_CBre ~cl_def2_HHI_lag1+cl_def2_obl_lag1+cl_def2_HHI_lag1:cl_def2_obl_lag1, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS2E)
+Comp_Cons_NCS2E <- glm (data=smp,
+                 b_MultiOffr ~cl_def2_HHI_lag1+cl_def2_obl_lag1+cl_def2_HHI_lag1:cl_def2_obl_lag1, family=binomial(link="logit"))
+glmer_examine(Comp_Cons_NCS2E)
 
 
 # 
@@ -1723,16 +1539,16 @@ glmer_examine(CBre_Cons_NCS2E)
 
 
 #Plot residuals versus fitted
-stargazer::stargazer(CBre_Cons_NCS6B,CBre_Cons_NCS6D,CBre_Cons_NCS6E,
+stargazer::stargazer(Comp_Cons_NCS6B,Comp_Cons_NCS6D,Comp_Cons_NCS6E,
                        CBre_Comp_NCS2B,CBre_Comp_NCS2D,CBre_Comp_NCS6E,type="text",
                        digits=2)
 
 
 
   #Compare to prior at same level
-summary_residual_compare(CBre_Cons_NCS2B,CBre_Cons_NCS2D,bins=20)
+summary_residual_compare(Comp_Cons_NCS2B,Comp_Cons_NCS2D,bins=20)
 #Compare to prior at lower level
-summary_residual_compare(CBre_Cons_NCS6E,CBre_Cons_NCS2D,bins=20)
+summary_residual_compare(Comp_Cons_NCS6E,Comp_Cons_NCS2D,bins=20)
 summary_residual_compare(CBre_Co_NCS2B,CBre_Comp_NCS2D,bins=20)
 
 ```
@@ -1741,7 +1557,7 @@ This interaction adds nothing to this model.
 
 #### Model NCS2F: Average Salary
 Average salary can be an proxy for unobserved skill requirements. We expect that a greater skill requirement will estimate a greater risk of ceiling breaches.
-```{r ModelNCS2F_CBre}
+```{r ModelNCS2F_Comp}
 #Frequency Plot for unlogged ceiling
 
 
@@ -1755,50 +1571,50 @@ summary_continuous_plot(smp,"US2_avg_sal_lag1")
 
 #Model
 
-CBre_Cons_NCS2F <- glm (data=smp,
-                 b_CBre ~cl_def2_HHI_lag1+cl_def2_ratio_lag1+cl_def2_obl_lag1+
+Comp_Cons_NCS2F <- glm (data=smp,
+                 b_MultiOffr ~cl_def2_HHI_lag1+cl_def2_ratio_lag1+cl_def2_obl_lag1+
                   cl_US2_avg_sal_lag1+cl_def2_HHI_lag1:cl_def2_obl_lag1 , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS2F)
+glmer_examine(Comp_Cons_NCS2F)
 
 
 CBre_Comp_NCS2F <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def2_ratio_lag1+cl_def2_obl_lag1+cl_US2_avg_sal_lag1, 
+                 b_MultiOffr ~n_Comp+cl_def2_ratio_lag1+cl_def2_obl_lag1+cl_US2_avg_sal_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS2F)
 
 
 
-glmer_examine(CBre_Cons_NCS2F)
+glmer_examine(Comp_Cons_NCS2F)
 glmer_examine(CBre_Comp_NCS2F)
 
 
-CBre_Cons_NCS2F2 <- glm (data=smp,
-                 b_CBre ~cl_def2_HHI_lag1+cl_def2_ratio_lag1+#cl_def2_obl_lag1
+Comp_Cons_NCS2F2 <- glm (data=smp,
+                 b_MultiOffr ~cl_def2_HHI_lag1+cl_def2_ratio_lag1+#cl_def2_obl_lag1
                   cl_US2_avg_sal_lag1 , family=binomial(link="logit"))#+cl_def2_HHI_lag1:cl_def2_obl_lag1
-glmer_examine(CBre_Cons_NCS2F2)
+glmer_examine(Comp_Cons_NCS2F2)
 
 
 CBre_Comp_NCS2F2 <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def2_ratio_lag1+cl_US2_avg_sal_lag1, #cl_def2_obl_lag1+
+                 b_MultiOffr ~n_Comp+cl_def2_ratio_lag1+cl_US2_avg_sal_lag1, #cl_def2_obl_lag1+
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS2F2)
 
 
-glmer_examine(CBre_Cons_NCS2F2)
-glmer_examine(CBre_Cons_NCS2F2)
+glmer_examine(Comp_Cons_NCS2F2)
+glmer_examine(Comp_Cons_NCS2F2)
 
-CBre_Cons_NCS2F3 <- glm (data=smp,
-                 b_CBre ~cl_def2_HHI_lag1+cl_def2_obl_lag1+#cl_def2_ratio_lag1
+Comp_Cons_NCS2F3 <- glm (data=smp,
+                 b_MultiOffr ~cl_def2_HHI_lag1+cl_def2_obl_lag1+#cl_def2_ratio_lag1
                   cl_US2_avg_sal_lag1 , family=binomial(link="logit"))#+cl_def2_HHI_lag1:cl_def2_obl_lag1
 
 
 CBre_Comp_NCS2F3 <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def2_obl_lag1+cl_US2_avg_sal_lag1, #cl_def2_ratio_lag1
+                 b_MultiOffr ~n_Comp+cl_def2_obl_lag1+cl_US2_avg_sal_lag1, #cl_def2_ratio_lag1
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS2F2)
 
-glmer_examine(CBre_Cons_NCS2F3)
-glmer_examine(CBre_Cons_NCS2F3)
+glmer_examine(Comp_Cons_NCS2F3)
+glmer_examine(Comp_Cons_NCS2F3)
 # 
 # #Plot the fitted model plot
 # CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
@@ -1813,17 +1629,17 @@ glmer_examine(CBre_Cons_NCS2F3)
 
 
 #Plot residuals versus fitted
- stargazer::stargazer(CBre_Cons_NCS2D,CBre_Cons_NCS2F2,CBre_Cons_NCS2F3,#CBre_Cons_NCS6G,
+ stargazer::stargazer(Comp_Cons_NCS2D,Comp_Cons_NCS2F2,Comp_Cons_NCS2F3,#Comp_Cons_NCS6G,
                        CBre_Comp_NCS2D,CBre_Comp_NCS2F2,CBre_Comp_NCS2F3,#CBre_Comp_NCS6G,
                        type="text",digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS2D,CBre_Cons_NCS2F2,bins=10)
+summary_residual_compare(Comp_Cons_NCS2D,Comp_Cons_NCS2F2,bins=10)
 summary_residual_compare(CBre_Comp_NCS2D,CBre_Comp_NCS2F2,bins=5)
-summary_residual_compare(CBre_Cons_NCS2F2,CBre_Cons_NCS2F3,bins=10)
+summary_residual_compare(Comp_Cons_NCS2F2,Comp_Cons_NCS2F3,bins=10)
 summary_residual_compare(CBre_Comp_NCS2F2,CBre_Comp_NCS2F3,bins=5)
 
-summary_residual_compare(CBre_Cons_NCS2F,CBre_Cons_NCS2F3,bins=20)
+summary_residual_compare(Comp_Cons_NCS2F,Comp_Cons_NCS2F3,bins=20)
 summary_residual_compare(CBre_Comp_NCS2D,CBre_Comp_NCS2F3,bins=10)
 
 
@@ -1833,54 +1649,54 @@ Sticking with  ratio and dropping with Obl, prioritizing alignment with expectat
 Consolidation at lessa nd more granular levels may have different effects. Efficiencies are often used to describe sectors, like utilities, with high barriers to entry. Many of these aspects seem like they would already be captured at less granular NAICS levels, e.g. power plants, rather than more specific NAICS levels, like solar vs. coal. As a result, consolidation for more granular NAICS codes should estimate higher rates of ceiling breaches compared to less granular NAICS code.
 
 We'll start by adding in everything from both models and seeing what violates VIF.
-```{r ModelNCS2G_CBre}
+```{r ModelNCS2G_Comp}
 #Frequency Plot for unlogged ceiling
 
 
 #Model
-CBre_Cons_NCS2G <- glm (data=smp,
-                 b_CBre ~cl_def2_HHI_lag1+cl_def2_ratio_lag1+
+Comp_Cons_NCS2G <- glm (data=smp,
+                 b_MultiOffr ~cl_def2_HHI_lag1+cl_def2_ratio_lag1+
                   cl_US2_avg_sal_lag1+
                    cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
                   cl_US6_avg_sal_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1  , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS2G)
+glmer_examine(Comp_Cons_NCS2G)
 
 
 #Defense obl 2 have the highest VIF and no coefficient to speak of, dropping it
-CBre_Cons_NCS2G <- glm (data=smp,
-                 b_CBre ~cl_def2_HHI_lag1+cl_def2_ratio_lag1+
+Comp_Cons_NCS2G <- glm (data=smp,
+                 b_MultiOffr ~cl_def2_HHI_lag1+cl_def2_ratio_lag1+
                   #cl_US2_avg_sal_lag1+
                    cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
                   cl_US6_avg_sal_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1  , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS2G)
+glmer_examine(Comp_Cons_NCS2G)
 
 
 #Checking if removing the interaction can let us keep HHI2
-CBre_Cons_NCS2G3 <- glm (data=smp,
-                 b_CBre ~cl_def2_HHI_lag1+cl_def2_ratio_lag1+
+Comp_Cons_NCS2G3 <- glm (data=smp,
+                 b_MultiOffr ~cl_def2_HHI_lag1+cl_def2_ratio_lag1+
                   #cl_US2_avg_sal_lag1+
                    cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
                   cl_US6_avg_sal_lag1,#+cl_def6_HHI_lag1:cl_def6_obl_lag1  ,
                  family=binomial(link="logit"))
-glmer_examine(CBre_Cons_NCS2G3)
+glmer_examine(Comp_Cons_NCS2G3)
 
 
 
 
- stargazer::stargazer(CBre_Cons_NCS2D,CBre_Cons_NCS2F2,CBre_Cons_NCS2G3,#CBre_Cons_NCS6G,
+ stargazer::stargazer(Comp_Cons_NCS2D,Comp_Cons_NCS2F2,Comp_Cons_NCS2G3,#Comp_Cons_NCS6G,
                        CBre_Comp_NCS2D,CBre_Comp_NCS2F2,CBre_Comp_NCS2G3,#CBre_Comp_NCS6G,
                        type="text",digits=2)
 
 
 
 CBre_Comp_NCS2G <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def2_ratio_lag1+cl_US2_avg_sal_lag1+
+                 b_MultiOffr ~n_Comp+cl_def2_ratio_lag1+cl_US2_avg_sal_lag1+
                    cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS2G)
 #Average salary 6 has the highest VIF though but both average salaries are over 2.0 and 2 is more contrary to expectations. Taking it out.
 CBre_Comp_NCS2G2 <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def2_ratio_lag1+#cl_US2_avg_sal_lag1+
+                 b_MultiOffr ~n_Comp+cl_def2_ratio_lag1+#cl_US2_avg_sal_lag1+
                    cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS2G2)
@@ -1906,19 +1722,19 @@ glmer_examine(CBre_Comp_NCS2G2)
 
 
 #Plot residuals versus fitted
- stargazer::stargazer(CBre_Cons_NCS3E,CBre_Cons_NCS3F2,CBre_Cons_NCS3F4,CBre_Cons_NCS6G,CBre_Cons_NCS3G3,
+ stargazer::stargazer(Comp_Cons_NCS3E,Comp_Cons_NCS3F2,Comp_Cons_NCS3F4,Comp_Cons_NCS6G,Comp_Cons_NCS3G3,
                        CBre_Comp_NCS3D,CBre_Comp_NCS3F2,CBre_Comp_NCS3F3,CBre_Comp_NCS6G,CBre_Comp_NCS3G3,
                        type="text",digits=2)
 
 
-summary_residual_compare(CBre_Cons_NCS3F4,CBre_Cons_NCS3G3,bins=20)
+summary_residual_compare(Comp_Cons_NCS3F4,Comp_Cons_NCS3G3,bins=20)
 summary_residual_compare(CBre_Comp_NCS3F3,CBre_Comp_NCS3G3,bins=10)
-summary_residual_compare(CBre_Cons_NCS3F2,CBre_Cons_NCS3G3,bins=20)
+summary_residual_compare(Comp_Cons_NCS3F2,Comp_Cons_NCS3G3,bins=20)
 summary_residual_compare(CBre_Comp_NCS3F2,CBre_Comp_NCS3G3,bins=10)
 
-summary_residual_compare(CBre_Cons_NCS3F,CBre_Cons_NCS3G3,bins=20)
+summary_residual_compare(Comp_Cons_NCS3F,Comp_Cons_NCS3G3,bins=20)
 summary_residual_compare(CBre_Comp_NCS3D,CBre_Comp_NCS3G3,bins=10)
-summary_residual_compare(CBre_Cons_NCS6G,CBre_Cons_NCS3G3,bins=20)
+summary_residual_compare(Comp_Cons_NCS6G,Comp_Cons_NCS3G3,bins=20)
 summary_residual_compare(CBre_Comp_NCS6G,CBre_Comp_NCS3G3,bins=10)
 
 ```
@@ -1929,7 +1745,7 @@ The hypothesis is upheld. Deviance is a little lower and residuals a little high
 ###Model 02A: Cost Ceiling
 
 
-```{r Model02A_CBre}
+```{r Model02A_Comp}
 #Frequency Plot for unlogged ceiling
 summary_continuous_plot(smp,"UnmodifiedContractBaseAndAllOptionsValue",
                bins=1000)
@@ -1941,13 +1757,13 @@ summary_continuous_plot(subset(smp,UnmodifiedContractBaseAndAllOptionsValue<1000
 summary_continuous_plot(smp,"l_Ceil")
 
 #Model
-CBre_Cons_02A <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_02A <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_02C)
+glmer_examine(Comp_Cons_02C)
 
 CBre_Comp_02A <- glm (data=smp,
-                 b_CBre ~n_Comp + cl_Ceil, family=binomial(link="logit"))
+                 b_MultiOffr ~n_Comp + cl_Ceil, family=binomial(link="logit"))
 glmer_examine(CBre_Comp_02A)
 
 
@@ -1966,11 +1782,11 @@ fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve,
 binned_fitted_versus_cbre_residuals(CBre_Comp_02A)
 
 #Plot residuals versus fitted
-  stargazer::stargazer(CBre_Cons_01F, CBre_Cons_02A,CBre_Comp_01B,CBre_Comp_02A,type="text",
+  stargazer::stargazer(Comp_Cons_01F, Comp_Cons_02A,CBre_Comp_01B,CBre_Comp_02A,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_01F,CBre_Cons_02A,CBre_Comp_01B,CBre_Comp_02A,bins=2)
+summary_residual_compare(Comp_Cons_01F,Comp_Cons_02A,CBre_Comp_01B,CBre_Comp_02A,bins=2)
 
 
 ```
@@ -1984,21 +1800,21 @@ Contract ceiling has a significant relationship.
 ###Model 02C: Cost Ceiling and Competition
 Larger contracts may encourage bid to win strategies  that could raise ceiling breaches for competition. That is a more indirect effect in consolidated markets.
 
-```{r Model02C_CBre}
+```{r Model02C_Comp}
 
 #Frequency Plot
 summary_continuous_plot(smp,"l_Ceil","EffComp")
 
 
 #Create the model
-CBre_Cons_02C <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_02C <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + 
                    cl_def6_HHI_lag1:cl_Ceil, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_02C)
+glmer_examine(Comp_Cons_02C)
 
 CBre_Comp_02C <- glm (data=smp,
-                 b_CBre ~n_Comp + 
+                 b_MultiOffr ~n_Comp + 
                    cl_Ceil + 
                    n_Comp:cl_Ceil, family=binomial(link="logit"))
 glmer_examine(CBre_Comp_02C)
@@ -2013,11 +1829,11 @@ fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02C_curve,
                              args=list(Comp=2),color="blue")
 
 #Plot the fitted values vs actual results
-  stargazer::stargazer(CBre_Cons_02A,CBre_Cons_02C,CBre_Comp_02A,CBre_Comp_02C,type="text",
+  stargazer::stargazer(Comp_Cons_02A,Comp_Cons_02C,CBre_Comp_02A,CBre_Comp_02C,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_02A,CBre_Cons_02C,CBre_Comp_02A,CBre_Comp_02C,bins=20)
+summary_residual_compare(Comp_Cons_02A,Comp_Cons_02C,CBre_Comp_02A,CBre_Comp_02C,bins=20)
 
 
 ```
@@ -2028,7 +1844,7 @@ The weaker expectation was not upheld with consolidation but is significant. Lea
 ###Model 02D: Maximum Duration
 
 
-```{r Model02D_CBre}
+```{r Model02D_Comp}
 #Frequency Plot for max duration
 summary_continuous_plot(smp,"UnmodifiedDays",
                bins=1000)
@@ -2039,14 +1855,14 @@ summary_continuous_plot(smp,"l_Days")
 
 
 #Model
-CBre_Cons_02D <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_02D <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days + 
                    cl_def6_HHI_lag1:cl_Ceil, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_02D)
+glmer_examine(Comp_Cons_02D)
 
 CBre_Comp_02D <- glm (data=smp,
-                 b_CBre ~n_Comp + 
+                 b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days , family=binomial(link="logit"))
 glmer_examine(CBre_Comp_02D)
 
@@ -2077,17 +1893,17 @@ residuals_cbre_plot(CBre_Comp_02D)+
   # labs(x="Centered Log(Ceiling)")
 
 
-  stargazer::stargazer(CBre_Cons_02D,CBre_Comp_02D,type="text",
+  stargazer::stargazer(Comp_Cons_02D,CBre_Comp_02D,type="text",
                        digits=2)
 
-summary_residual_compare(CBre_Cons_02C,CBre_Cons_02D,CBre_Comp_02A,CBre_Comp_02D,bins=20)
+summary_residual_compare(Comp_Cons_02C,Comp_Cons_02D,CBre_Comp_02A,CBre_Comp_02D,bins=20)
 
 ```
 The initial model results are surprising as ceiling change direction, reducing and correlates with a lower risk of termiation now, although the interaction between competition and ceiling remains roughly the same. The graph of the fitted values shows that this model The next step will be to look at the interaction of ceiling and duration. The difference in deviance for residual difference has more than trippled, an indication of the correlative power of duration. However, the residuals do show a clear pattern that indicates another exponential variable may be necessary. However, the interaction between ceiling and duration is a more important analytical question and will be the next variable added.
 
 
 ###Model 02E: Ceiling and Duration
-```{r Mode02E_CBre}
+```{r Mode02E_Comp}
 
 #First a quick scatter plot for terminations by duration and ceiling
 ggplot(data=subset(smp,!is.na(l_Ceil)),
@@ -2097,16 +1913,16 @@ ggplot(data=subset(smp,!is.na(l_Ceil)),
 
 
 #Create the model
-CBre_Cons_02E <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_02E <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days + 
                    cl_def6_HHI_lag1:cl_Ceil+
                     cl_Ceil:cl_Days, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_02E)
+glmer_examine(Comp_Cons_02E)
 
 
 CBre_Comp_02E <- glm (data=smp,
-                 b_CBre ~n_Comp + 
+                 b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+
                     cl_Ceil:cl_Days, family=binomial(link="logit"))
 glmer_examine(CBre_Comp_02E)
@@ -2130,11 +1946,11 @@ fitted_cbre_model(smp,"cl_Days") +  stat_function(fun = CBre_Comp_02E_curve,
                              args=list(Comp=0,Ceil=1),color="blue")
 
 
-  stargazer::stargazer(CBre_Cons_02D,CBre_Cons_02E,CBre_Comp_02D,CBre_Comp_02E,type="text",
+  stargazer::stargazer(Comp_Cons_02D,Comp_Cons_02E,CBre_Comp_02D,CBre_Comp_02E,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_02D,CBre_Cons_02E,CBre_Comp_02D,CBre_Comp_02E,bins=20)
+summary_residual_compare(Comp_Cons_02D,Comp_Cons_02E,CBre_Comp_02D,CBre_Comp_02E,bins=20)
 
 ```
 
@@ -2146,21 +1962,21 @@ Skipping duration^2 and removal of ceiling ^2
 
 Greater duration may limit the influence of competition, at least under the policy guidance that encourages  regular recompeting. In theor this same logic could apply to consolidation as it locks in market conditions at a particular point.
 
-```{r Mode02H_CBre}
+```{r Mode02H_Comp}
 
 #Frequency Plot
 summary_continuous_plot(smp,"l_Days","EffComp")
 
 #Create the model
-CBre_Cons_02H <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_02H <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+
                    cl_def6_HHI_lag1:cl_Ceil+
                    cl_def6_HHI_lag1:cl_Days, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_02H)
+glmer_examine(Comp_Cons_02H)
 
 CBre_Comp_02H <- glm (data=smp,
-                 b_CBre ~n_Comp + 
+                 b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    n_Comp:cl_Days, family=binomial(link="logit"))
 glmer_examine(CBre_Comp_02H)
@@ -2185,11 +2001,11 @@ glmer_examine(CBre_Comp_02H)
 # residuals_cbre_plot(CBre_Comp_02F,"cl_days")+
 #   labs(x="Centered Log(Days)")
 
-stargazer::stargazer(CBre_Cons_02D,CBre_Cons_02H,CBre_Comp_02D,CBre_Comp_02H,type="text",
+stargazer::stargazer(Comp_Cons_02D,Comp_Cons_02H,CBre_Comp_02D,CBre_Comp_02H,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_02D,CBre_Cons_02H,CBre_Comp_02D,CBre_Comp_02H,bins=20)
+summary_residual_compare(Comp_Cons_02D,Comp_Cons_02H,CBre_Comp_02D,CBre_Comp_02H,bins=20)
 
 
 ```
@@ -2204,24 +2020,24 @@ Our dataset includes both stand alone contract awards and task orders that are u
 ###Model 03A: Single-Award, Multi-Award, and Other Indefinite Delivery Vehicles
 
 
-```{r Model03A_CBre}
+```{r Model03A_Comp}
 #Frequency Plot
 summary_discrete_plot(smp,"Veh")
 
 
 #Create the model
-CBre_Cons_03A <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_03A <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    cl_def6_HHI_lag1:cl_Ceil  +
                    cl_def6_HHI_lag1:cl_Days
                  , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_03A)
+glmer_examine(Comp_Cons_03A)
 
 
 CBre_Comp_03A <- glm (data=smp,
-                 b_CBre ~n_Comp + 
+                 b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh
                    # cl_def6_HHI_lag1:cl_Ceil  +
@@ -2274,11 +2090,11 @@ glmer_examine(CBre_Comp_03A)
 
 
 #Plot the fitted values vs actual results
-stargazer::stargazer(CBre_Cons_02H,CBre_Cons_03A,CBre_Comp_02D,CBre_Comp_03A,type="text",
+stargazer::stargazer(Comp_Cons_02H,Comp_Cons_03A,CBre_Comp_02D,CBre_Comp_03A,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_02H,CBre_Cons_03A,CBre_Comp_02D,CBre_Comp_03A,bins=20)
+summary_residual_compare(Comp_Cons_02H,Comp_Cons_03A,CBre_Comp_02D,CBre_Comp_03A,bins=20)
 
 ```
 
@@ -2288,7 +2104,7 @@ This may reflect that the Ceiling and Days entries reflect only the task order a
 
 ###Model 03B: Vehicle and Duration
 Expectation, those vehicles that are prone towards particularly short task orders may estimate greater ceiling breaches when they interact with longer durations. This covers Single-Award IDCs and to a lesser extent the dual peaked BPA/BOAs.
-```{r Model03B_CBre}
+```{r Model03b_MultiOffr}
 
 #Frequency Plot
 summary_continuous_plot(smp,"l_Days","Veh")
@@ -2297,20 +2113,20 @@ summary_continuous_plot(smp,"l_Days","Veh")
 
 
 #Create the model
-CBre_Cons_03B <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_03B <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    cl_def6_HHI_lag1:cl_Ceil  +
                    cl_def6_HHI_lag1:cl_Days +
                  Veh:cl_Days
                  , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_03B)
+glmer_examine(Comp_Cons_03B)
 
-glmer_examine(CBre_Cons_03B)
+glmer_examine(Comp_Cons_03B)
 
 CBre_Comp_03B <- glm (data=smp,
-                 b_CBre ~n_Comp + 
+                 b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    #cl_def6_HHI_lag1:cl_Ceil  + 
@@ -2367,20 +2183,20 @@ glmer_examine(CBre_Comp_03B)
 
 
   
-  CBre_Cons_03B2 <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1 + 
+  Comp_Cons_03B2 <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    cl_def6_HHI_lag1:cl_Ceil  +
                    # cl_def6_HHI_lag1:cl_Days +
                  Veh:cl_Days
                  , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_03B2)
+glmer_examine(Comp_Cons_03B2)
 
-  stargazer::stargazer(CBre_Cons_03A,CBre_Cons_03B2,CBre_Comp_03A,CBre_Comp_03B,type="text",
+  stargazer::stargazer(Comp_Cons_03A,Comp_Cons_03B2,CBre_Comp_03A,CBre_Comp_03B,type="text",
                          digits=2)
   
-  summary_residual_compare(CBre_Cons_03A,CBre_Cons_03B2,CBre_Comp_03A,CBre_Comp_03B,bins=20)
+  summary_residual_compare(Comp_Cons_03A,Comp_Cons_03B2,CBre_Comp_03A,CBre_Comp_03B,bins=20)
 
   
 ```
@@ -2398,24 +2214,24 @@ This variable necessitates the removal of l_days::hhi_lag1. This is a difficult 
 Competition occurs more regularly with definitive contracts, multiple award IDCs, GWACs/FSS, and some BPA/BOA. As a result we expect those vehicles that when interacting with competitive contracts to estiamte lower risk of ceiling breach. For consolidation, we expect single award IDCs and perhaps BPA/BOAs, which  are sometime single award, to be highly influenced by consolidation as competition  doesn't occur after initial selection but the overall market dynamic would instead influence whether contracting officers feel pressured to use that mechanism.
 
 
-```{r Model03C_CBre}
+```{r Model03C_Comp}
 
 #Frequency Plot
 summary_discrete_plot(smp,"EffComp","Veh")
 summary_continuous_plot(smp,"HHI_lag1","Veh")
 
 #Create the model
-CBre_Cons_03C <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_03C <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    cl_def6_HHI_lag1:cl_Ceil  + #cl_def6_HHI_lag1:cl_Days +
                  Veh:cl_Days+
                    Veh:cl_def6_HHI_lag1, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_03C)
+glmer_examine(Comp_Cons_03C)
 
 CBre_Comp_03C <- glm (data=smp,
-                 b_CBre ~n_Comp + 
+                 b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                  Veh:cl_Days+
@@ -2472,11 +2288,11 @@ glmer_examine(CBre_Comp_03C)
 #                              args=list(Comp=2,Ceil=0,Days=0,
 #                                        SIDV=0,MIDV=0),color="blue")
 
-  stargazer::stargazer(CBre_Cons_03B2,CBre_Cons_03C,CBre_Comp_03B,CBre_Comp_03C,type="text",
+  stargazer::stargazer(Comp_Cons_03B2,Comp_Cons_03C,CBre_Comp_03B,CBre_Comp_03C,type="text",
                        digits=2)
 
 
-summary_residual_compare(CBre_Cons_03B2,CBre_Cons_03C,CBre_Comp_03B,CBre_Comp_03C,bins=20)
+summary_residual_compare(Comp_Cons_03B2,Comp_Cons_03C,CBre_Comp_03B,CBre_Comp_03C,bins=20)
 
 ```
 The average plots did show varying relationships and slopes between different types of vehicles. However, 
@@ -2501,18 +2317,18 @@ summary_continuous_plot(smp,"l_Ceil","Veh")
 
 
 #Create the model
-CBre_Cons_03D <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_03D <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    cl_def6_HHI_lag1:cl_Ceil  + #cl_def6_HHI_lag1:cl_Days +
                  Veh:cl_Days+
                    Veh:cl_Ceil, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_03D)
-glmer_examine(CBre_Cons_03D)
+glmer_examine(Comp_Cons_03D)
+glmer_examine(Comp_Cons_03D)
 
 CBre_Comp_03D <- glm (data=smp,
-                 b_CBre ~n_Comp + 
+                 b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    #cl_def6_HHI_lag1:cl_Ceil  +
@@ -2578,21 +2394,21 @@ glmer_examine(CBre_Comp_03D)
 
 
 
-CBre_Cons_03D2 <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_03D2 <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    # cl_def6_HHI_lag1:cl_Ceil  + #cl_def6_HHI_lag1:cl_Days +
                  Veh:cl_Days+
                    Veh:cl_Ceil, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_03D2)
+glmer_examine(Comp_Cons_03D2)
 
 
-stargazer::stargazer(CBre_Cons_03B2,CBre_Cons_03D2,
+stargazer::stargazer(Comp_Cons_03B2,Comp_Cons_03D2,
                      CBre_Comp_03B,CBre_Comp_03D,type="text",
                        digits=2)
-summary_residual_compare(CBre_Cons_03B2,CBre_Cons_03D2,CBre_Comp_03B,CBre_Comp_03D,bins=20)
-summary_residual_compare(CBre_Cons_03A,CBre_Cons_03D2,bins=20)
+summary_residual_compare(Comp_Cons_03B2,Comp_Cons_03D2,CBre_Comp_03B,CBre_Comp_03D,bins=20)
+summary_residual_compare(Comp_Cons_03A,Comp_Cons_03D2,bins=20)
 
 ```
 
@@ -2618,18 +2434,18 @@ summary_discrete_plot(smp,"FxCb")
 
 
 #Create the model
-CBre_Cons_04A <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_04A <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    # cl_def6_HHI_lag1:cl_Ceil  + #cl_def6_HHI_lag1:cl_Days +
                  Veh:cl_Days+
                    Veh:cl_Ceil+
                 n_Fixed, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_04A)
+glmer_examine(Comp_Cons_04A)
 
 CBre_Comp_04A <- glm (data=smp,
-                 b_CBre ~n_Comp + 
+                 b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh   + 
                  Veh:cl_Days+
@@ -2666,10 +2482,10 @@ glmer_examine(CBre_Comp_04A)
 # residuals_cbre_plot(CBre_Comp_02F,"cl_days")+
 #   labs(x="Centered Log(Days)")
 
-stargazer::stargazer(CBre_Cons_03D2,CBre_Cons_04A,
+stargazer::stargazer(Comp_Cons_03D2,Comp_Cons_04A,
                      CBre_Comp_03D,CBre_Comp_04A,type="text",
                        digits=2)
-summary_residual_compare(CBre_Cons_03D2,CBre_Cons_04A,CBre_Comp_03D,CBre_Comp_04A,bins=20)
+summary_residual_compare(Comp_Cons_03D2,Comp_Cons_04A,CBre_Comp_03D,CBre_Comp_04A,bins=20)
 
 ```
 
@@ -2685,18 +2501,18 @@ summary_discrete_plot(smp,"FxCb")
 
 
 #Create the model
-CBre_Cons_04B <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_04B <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    # cl_def6_HHI_lag1:cl_Ceil  + #cl_def6_HHI_lag1:cl_Days +
                  Veh:cl_Days+
                    Veh:cl_Ceil+
                 FxCb, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_04B)
+glmer_examine(Comp_Cons_04B)
 
 CBre_Comp_04B <- glm (data=smp,
-                 b_CBre ~n_Comp + 
+                 b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    FxCb +
@@ -2734,10 +2550,10 @@ glmer_examine(CBre_Comp_04B)
 # residuals_cbre_plot(CBre_Comp_02F,"cl_days")+
 #   labs(x="Centered Log(Days)")
 
-stargazer::stargazer(CBre_Cons_04A,CBre_Cons_04B,
+stargazer::stargazer(Comp_Cons_04A,Comp_Cons_04B,
                      CBre_Comp_04A,CBre_Comp_04B,type="text",
                        digits=2)
-summary_residual_compare(CBre_Cons_04A,CBre_Cons_04B,CBre_Comp_04A,CBre_Comp_04B,bins=20)
+summary_residual_compare(Comp_Cons_04A,Comp_Cons_04B,CBre_Comp_04A,CBre_Comp_04B,bins=20)
 
 ```
 
@@ -2759,18 +2575,18 @@ summary_discrete_plot(smp,"FxCb","Fee")
 summary_discrete_plot(smp,"Pricing",rotate=FALSE)
 
 #Create the model
-CBre_Cons_04C <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_04C <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    # cl_def6_HHI_lag1:cl_Ceil  + #cl_def6_HHI_lag1:cl_Days +
                  Veh:cl_Days+
                    Veh:cl_Ceil+
                 Pricing, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_04C)
+glmer_examine(Comp_Cons_04C)
 
 CBre_Comp_04C <- glm (data=smp,
-                 b_CBre ~n_Comp + 
+                 b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    Pricing +
@@ -2808,10 +2624,10 @@ glmer_examine(CBre_Comp_04C)
 # residuals_cbre_plot(CBre_Comp_02F,"cl_days")+
 #   labs(x="Centered Log(Days)")
 
-stargazer::stargazer(CBre_Cons_04B,CBre_Cons_04C,
+stargazer::stargazer(Comp_Cons_04B,Comp_Cons_04C,
                      CBre_Comp_04B,CBre_Comp_04C,type="text",
                        digits=2)
-summary_residual_compare(CBre_Cons_04A,CBre_Cons_04B,CBre_Comp_04B,CBre_Comp_04C,bins=20)
+summary_residual_compare(Comp_Cons_04A,Comp_Cons_04B,CBre_Comp_04B,CBre_Comp_04C,bins=20)
 
 ```
 
@@ -2821,7 +2637,7 @@ summary_residual_compare(CBre_Cons_04A,CBre_Cons_04B,CBre_Comp_04B,CBre_Comp_04C
 In the performance of the defense acquisition system report, the benefits found were reduced cost overruns. That could help avoid terminations, but it's an indirect connection at best. Unfortunately, incentive fees are incredibly rare, which makes them challenging to examine directly.
 
 
-```{r Model04D_CBre}
+```{r Model04D_Comp}
 
 #Frequency Plot
 summary_discrete_plot(smp,"Fee")
@@ -2831,18 +2647,18 @@ summary_discrete_plot(smp,"Fee")
 summary(factor(smp$PricingFee))
 
 #Create the model
-CBre_Cons_04D <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_04D <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    # cl_def6_HHI_lag1:cl_Ceil  + #cl_def6_HHI_lag1:cl_Days +
                  Veh:cl_Days+
                    Veh:cl_Ceil+
                 PricingFee, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_04D)
+glmer_examine(Comp_Cons_04D)
 
 CBre_Comp_04D <- glm (data=smp,
-                 b_CBre ~n_Comp + 
+                 b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    #cl_def6_HHI_lag1:cl_Ceil  + 
@@ -2883,10 +2699,10 @@ glmer_examine(CBre_Comp_04D)
 # residuals_cbre_plot(CBre_Comp_02F,"cl_days")+
 #   labs(x="Centered Log(Days)")
 
-stargazer::stargazer(CBre_Cons_04C,CBre_Cons_04D,
+stargazer::stargazer(Comp_Cons_04C,Comp_Cons_04D,
                      CBre_Comp_04C,CBre_Comp_04D,type="text",
                        digits=2)
-summary_residual_compare(CBre_Cons_04C,CBre_Cons_04D,
+summary_residual_compare(Comp_Cons_04C,Comp_Cons_04D,
                          CBre_Comp_04C,CBre_Comp_04D,bins=20)
 
 ```
@@ -2898,14 +2714,14 @@ The effect of incentive fees are not significant. They do have a noteworthy coef
 Past CSIS research has found that fixed-price contracts do appear to be at higher risk if they have a longer maximum duration. Fixed-price contracting does require upfront estimation of likely costs, and thus a longer duration means more opportunity for changed circumstance.
 
 Time&Materials/Labor Hours/Fixed-Price Level of Effort are typically used for smaller projects, but may not scale as well for longer lasting projects. 
-```{r Model04E_CBre}
+```{r Model04E_Comp}
 
 #Frequency Plot
 summary_continuous_plot(smp,"l_Days","PricingFee")
 
 #Create the model
-CBre_Cons_04E <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_04E <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    # cl_def6_HHI_lag1:cl_Ceil  + #cl_def6_HHI_lag1:cl_Days +
@@ -2913,11 +2729,11 @@ CBre_Cons_04E <- glm (data=smp,
                    Veh:cl_Ceil+
                 PricingFee+
                    cl_Days:PricingFee, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_04E)
-glmer_examine(CBre_Cons_04E)
+glmer_examine(Comp_Cons_04E)
+glmer_examine(Comp_Cons_04E)
 
 CBre_Comp_04E <- glm (data=smp,
-                 b_CBre ~n_Comp + 
+                 b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    #cl_def6_HHI_lag1:cl_Ceil  + 
@@ -2960,8 +2776,8 @@ glmer_examine(CBre_Comp_04E)
 #   labs(x="Centered Log(Days)")
 
 
-CBre_Cons_04E2 <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_04E2 <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    # cl_def6_HHI_lag1:cl_Ceil  + #cl_def6_HHI_lag1:cl_Days +
@@ -2969,11 +2785,11 @@ CBre_Cons_04E2 <- glm (data=smp,
                    Veh:cl_Ceil+
                 PricingFee+
                    cl_Days:PricingFee, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_04E2)
-glmer_examine(CBre_Cons_04E2)
+glmer_examine(Comp_Cons_04E2)
+glmer_examine(Comp_Cons_04E2)
 
 CBre_Comp_04E2 <- glm (data=smp,
-                 b_CBre ~n_Comp + 
+                 b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    #cl_def6_HHI_lag1:cl_Ceil  + 
@@ -2985,10 +2801,10 @@ CBre_Comp_04E2 <- glm (data=smp,
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_04E2)
 
-stargazer::stargazer(CBre_Cons_04C,CBre_Cons_04E2,
+stargazer::stargazer(Comp_Cons_04C,Comp_Cons_04E2,
                      CBre_Comp_04C,CBre_Comp_04E2,type="text",
                        digits=2)
-summary_residual_compare(CBre_Cons_04C,CBre_Cons_04E2,CBre_Comp_04C,CBre_Comp_04E2,bins=20)
+summary_residual_compare(Comp_Cons_04C,Comp_Cons_04E2,CBre_Comp_04C,CBre_Comp_04E2,bins=20)
 
 ```
 The probability of termination by duration chart is more clearcut with fixed price than with cost-based contracts. However, the variable does not appreciably decrease the deviation, is not significant, and undercuts the significance of other variables. It will not be added tto the model.
@@ -2997,7 +2813,7 @@ The probability of termination by duration chart is more clearcut with fixed pri
 ###Model 04F: Fixed-Price and Vehicle
 
 
-```{r Model04F_CBre}
+```{r Model04F_Comp}
 
 #Frequency Plot
 summary_discrete_plot(smp,"FxCb","Veh")
@@ -3005,18 +2821,18 @@ summary_discrete_plot(smp,"FxCb","Veh")
 #Create the model
 
 #Create the model
-CBre_Cons_04F <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_04F <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    # cl_def6_HHI_lag1:cl_Ceil  + #cl_def6_HHI_lag1:cl_Days +
                  Veh:cl_Days+
                    Veh:cl_Ceil+
                 FxCb+FxCb:Veh, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_04F)
+glmer_examine(Comp_Cons_04F)
 
 CBre_Comp_04F <- glm (data=smp,
-                 b_CBre ~n_Comp + 
+                 b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    FxCb +
@@ -3057,10 +2873,10 @@ glmer_examine(CBre_Comp_04F)
 
 # residuals_cbre_plot(CBre_Comp_02F,"cl_days")+
 #   labs(x="Centered Log(Days)")
-stargazer::stargazer(CBre_Cons_04C,CBre_Cons_04F,
+stargazer::stargazer(Comp_Cons_04C,Comp_Cons_04F,
                      CBre_Comp_04C,CBre_Comp_04F,type="text",
                        digits=2)
-summary_residual_compare(CBre_Cons_04C,CBre_Cons_04F,CBre_Comp_04C,CBre_Comp_04F,bins=20)
+summary_residual_compare(Comp_Cons_04C,Comp_Cons_04F,CBre_Comp_04C,CBre_Comp_04F,bins=20)
 
 ```
 The interactions are not significant and do little to reduce the residual deviance. They will not be added to the model. They exceed VIF of 2 in both cases.
@@ -3074,14 +2890,14 @@ Time&Materials/Labor Hours/Fixed-Price Level of Effort are typically used for sm
 
 Incentive fees, in theory, should do a estimate lower ceiling breaches as they incentive cost savings and are more oriented towards large projects.
 
-```{r Model04G_CBre}
+```{r Model04G_Comp}
 
 #Frequency Plot
 summary_continuous_plot(smp,"l_Ceil","PricingFee")
 
 #Create the model
-CBre_Cons_04G <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_04G <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    # cl_def6_HHI_lag1:cl_Ceil  + #cl_def6_HHI_lag1:cl_Days +
@@ -3089,11 +2905,11 @@ CBre_Cons_04G <- glm (data=smp,
                    Veh:cl_Ceil+
                 PricingFee+
                    cl_Ceil:PricingFee, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_04G)
-glmer_examine(CBre_Cons_04G)
+glmer_examine(Comp_Cons_04G)
+glmer_examine(Comp_Cons_04G)
 
 CBre_Comp_04G <- glm (data=smp,
-                 b_CBre ~n_Comp + 
+                 b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    #cl_def6_HHI_lag1:cl_Ceil  + 
@@ -3135,10 +2951,10 @@ glmer_examine(CBre_Comp_04G)
 #   labs(x="Centered Log(Days)")
 
 
-stargazer::stargazer(CBre_Cons_04C,CBre_Cons_04G,
+stargazer::stargazer(Comp_Cons_04C,Comp_Cons_04G,
                      CBre_Comp_04C,CBre_Comp_04G,type="text",
                        digits=2)
-summary_residual_compare(CBre_Cons_04C,CBre_Cons_04G,CBre_Comp_04C,CBre_Comp_04G,bins=20)
+summary_residual_compare(Comp_Cons_04C,Comp_Cons_04G,CBre_Comp_04C,CBre_Comp_04G,bins=20)
 
 ```
 
@@ -3146,7 +2962,7 @@ summary_residual_compare(CBre_Cons_04C,CBre_Cons_04G,CBre_Comp_04C,CBre_Comp_04G
 Undefinitized Contract Awards allow for quick action in situations where there is not time or information to establish all of a contracts properties at the time of signing. They have been found by the GAO and the Performance of the Defense Acquisition studies to contain notable risks, primarily relating to cost overruns and thus ceiling breaches. Will these risks also carry into terminations and ceiling breaches?
 
 
-```{r Model04H_CBre}
+```{r Model04H_Comp}
 
 #Frequency Plot
 summary_discrete_plot(smp,"UCA")
@@ -3154,8 +2970,8 @@ summary_discrete_plot(smp,"UCA")
 
 
 #Create the model
-CBre_Cons_04H <- glm (data=smp,
-                 b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_04H <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    # cl_def6_HHI_lag1:cl_Ceil  + #cl_def6_HHI_lag1:cl_Days +
@@ -3163,13 +2979,13 @@ CBre_Cons_04H <- glm (data=smp,
                    Veh:cl_Ceil+
                 PricingFee+ b_UCA +
                    cl_Ceil:PricingFee, family=binomial(link="logit"))
-glmer_examine(CBre_Cons_04H)
-glmer_examine(CBre_Cons_04H)
+glmer_examine(Comp_Cons_04H)
+glmer_examine(Comp_Cons_04H)
 
 
 #Create the model
 CBre_Comp_04H <- glm (data=smp,
-b_CBre ~n_Comp + 
+b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                     b_UCA +
@@ -3210,10 +3026,10 @@ glmer_examine(CBre_Comp_04H)
 
 # residuals_cbre_plot(CBre_Comp_02F,"cl_days")+
 #   labs(x="Centered Log(Days)")
-stargazer::stargazer(CBre_Cons_04G,CBre_Cons_04H,
+stargazer::stargazer(Comp_Cons_04G,Comp_Cons_04H,
                      CBre_Comp_04G,CBre_Comp_04H,type="text",
                        digits=2)
-summary_residual_compare(CBre_Cons_04G,CBre_Cons_04H,CBre_Comp_04G,CBre_Comp_04H,bins=20)
+summary_residual_compare(Comp_Cons_04G,Comp_Cons_04H,CBre_Comp_04G,CBre_Comp_04H,bins=20)
 
 
 ```
@@ -3229,8 +3045,8 @@ summary_continuous_plot(smp,"cl_def6_HHI_lag1","UCA")
 
 #Create the model
 
-CBre_Cons_04I <- glm (data=smp,
-b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_04I <- glm (data=smp,
+b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    PricingFee + b_UCA +
@@ -3242,10 +3058,10 @@ b_CBre ~cl_def6_HHI_lag1 +
   # b_UCA:cl_Ceil+
                 b_UCA:cl_def6_HHI_lag1
                     , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_04I)
+glmer_examine(Comp_Cons_04I)
 
 CBre_Comp_04I <- glm (data=smp,
-b_CBre ~n_Comp + 
+b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh  +
   PricingFee+ b_UCA +
@@ -3280,10 +3096,10 @@ glmer_examine(CBre_Comp_04I)
 #                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
 #                                        Fixed=1),color="blue")
 
-stargazer::stargazer(CBre_Cons_04H,CBre_Cons_04I,
+stargazer::stargazer(Comp_Cons_04H,Comp_Cons_04I,
                      CBre_Comp_04H,CBre_Comp_04I,type="text",
                        digits=2)
-summary_residual_compare(CBre_Cons_04H,CBre_Cons_04I,CBre_Comp_04H,CBre_Comp_04I,bins=20)
+summary_residual_compare(Comp_Cons_04H,Comp_Cons_04I,CBre_Comp_04H,CBre_Comp_04I,bins=20)
 
 
 ```
@@ -3303,8 +3119,8 @@ While duration tracks the base duration and not the length spent in UCA, nonethe
 #Frequency Plot
 summary_continuous_plot(smp,"l_Days","UCA")
 
-CBre_Cons_04J <- glm (data=smp,
-b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_04J <- glm (data=smp,
+b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    PricingFee + b_UCA +
@@ -3317,10 +3133,10 @@ b_CBre ~cl_def6_HHI_lag1 +
                 b_UCA:cl_def6_HHI_lag1 + 
                   b_UCA:l_Days
                     , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_04J)
+glmer_examine(Comp_Cons_04J)
 
 CBre_Comp_04J <- glm (data=smp,
-b_CBre ~n_Comp + 
+b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh  +
   PricingFee+ b_UCA +
@@ -3358,8 +3174,8 @@ glmer_examine(CBre_Comp_04J)
 #                                        MIDV=0,SIDV=0,OIDV=0,
 #                                        Fixed=1),color="blue")
 
-CBre_Cons_04J2 <- glm (data=smp,
-b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_04J2 <- glm (data=smp,
+b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    PricingFee + b_UCA +
@@ -3372,10 +3188,10 @@ b_CBre ~cl_def6_HHI_lag1 +
                 b_UCA:cl_def6_HHI_lag1 + 
                   b_UCA:l_Days
                     , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_04J2)
+glmer_examine(Comp_Cons_04J2)
 
 CBre_Comp_04J2 <- glm (data=smp,
-b_CBre ~n_Comp + 
+b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh  +
   PricingFee+ b_UCA +
@@ -3392,10 +3208,10 @@ glmer_examine(CBre_Comp_04J2)
 
 
 
-stargazer::stargazer(CBre_Cons_04I,CBre_Cons_04J2,
+stargazer::stargazer(Comp_Cons_04I,Comp_Cons_04J2,
                      CBre_Comp_04I,CBre_Comp_04J2,type="text",
                        digits=2)
-summary_residual_compare(CBre_Cons_04I,CBre_Cons_04J2,CBre_Comp_04I,CBre_Comp_04J2,bins=20)
+summary_residual_compare(Comp_Cons_04I,Comp_Cons_04J2,CBre_Comp_04I,CBre_Comp_04J2,bins=20)
 
 
 
@@ -3412,8 +3228,8 @@ Here the possible risk is similar to days, that larger, and thus possibly more c
 #Frequency Plot
 summary_continuous_plot(smp,"l_Ceil","UCA")
 
-CBre_Cons_04K <- glm (data=smp,
-b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_04K <- glm (data=smp,
+b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    PricingFee + b_UCA +
@@ -3426,10 +3242,10 @@ b_CBre ~cl_def6_HHI_lag1 +
                 b_UCA:cl_def6_HHI_lag1 + 
                   b_UCA:cl_Ceil
                     , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_04K)
+glmer_examine(Comp_Cons_04K)
 
 CBre_Comp_04K <- glm (data=smp,
-b_CBre ~n_Comp + 
+b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh  +
   PricingFee+ b_UCA +
@@ -3467,8 +3283,8 @@ glmer_examine(CBre_Comp_04K)
 #                                        MIDV=0,SIDV=0,OIDV=0,
 #                                        Fixed=1),color="blue")
 
-CBre_Cons_04K2 <- glm (data=smp,
-b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_04K2 <- glm (data=smp,
+b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    PricingFee + b_UCA +
@@ -3481,10 +3297,10 @@ b_CBre ~cl_def6_HHI_lag1 +
                 b_UCA:cl_def6_HHI_lag1 + 
                   b_UCA:l_Days
                     , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_04K2)
+glmer_examine(Comp_Cons_04K2)
 
 CBre_Comp_04K2 <- glm (data=smp,
-b_CBre ~n_Comp + 
+b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh  +
   PricingFee+ b_UCA +
@@ -3501,10 +3317,10 @@ glmer_examine(CBre_Comp_04K2)
 
 
 
-stargazer::stargazer(CBre_Cons_04I,CBre_Cons_04K,
+stargazer::stargazer(Comp_Cons_04I,Comp_Cons_04K,
                      CBre_Comp_04I,CBre_Comp_04K,type="text",
                        digits=2)
-summary_residual_compare(CBre_Cons_04I,CBre_Cons_04K,CBre_Comp_04I,CBre_Comp_04K,bins=20)
+summary_residual_compare(Comp_Cons_04I,Comp_Cons_04K,CBre_Comp_04I,CBre_Comp_04K,bins=20)
 
 
 
@@ -3520,8 +3336,8 @@ Fixed Price is less  appropriate as an approach when there is greater uncertaint
 #Frequency Plot
 summary_continuous_plot(smp,"l_Ceil","UCA")
 
-CBre_Cons_04L <- glm (data=smp,
-b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_04L <- glm (data=smp,
+b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    PricingFee + b_UCA +
@@ -3536,10 +3352,10 @@ b_CBre ~cl_def6_HHI_lag1 +
                 b_UCA:cl_def6_HHI_lag1 + 
                   b_UCA:cl_Ceil
                     , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_04L)
+glmer_examine(Comp_Cons_04L)
 
 CBre_Comp_04L <- glm (data=smp,
-b_CBre ~n_Comp + 
+b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh  +
   PricingFee+ b_UCA +
@@ -3560,8 +3376,8 @@ glmer_examine(CBre_Comp_04L)
 #Frequency Plot
 
 
-CBre_Cons_04L2 <- glm (data=smp,
-b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_04L2 <- glm (data=smp,
+b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    PricingFee + b_UCA +
@@ -3576,10 +3392,10 @@ b_CBre ~cl_def6_HHI_lag1 +
                 b_UCA:cl_def6_HHI_lag1 + 
                   b_UCA:cl_Ceil
                     , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_04L2)
+glmer_examine(Comp_Cons_04L2)
 
 CBre_Comp_04L2 <- glm (data=smp,
-b_CBre ~n_Comp + 
+b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh  +
   PricingFee+ b_UCA +
@@ -3621,10 +3437,10 @@ glmer_examine(CBre_Comp_04L2)
 
 
 
-stargazer::stargazer(CBre_Cons_04L2,
+stargazer::stargazer(Comp_Cons_04L2,
                      CBre_Comp_04L2,type="text",
                        digits=2)
-summary_residual_compare(CBre_Cons_04L2,CBre_Cons_04L2,CBre_Comp_04L2,CBre_Comp_04L2,bins=20)
+summary_residual_compare(Comp_Cons_04L2,Comp_Cons_04L2,CBre_Comp_04L2,CBre_Comp_04L2,bins=20)
 
 
 
@@ -3641,8 +3457,8 @@ summary_discrete_plot(smp,"Intl")
 
 
 #Create the model
-CBre_Cons_05A <- glm (data=smp,
-b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_05A <- glm (data=smp,
+b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    PricingFee + b_UCA +
@@ -3656,10 +3472,10 @@ b_CBre ~cl_def6_HHI_lag1 +
                 b_UCA:cl_def6_HHI_lag1 + 
                   b_UCA:cl_Ceil
                     , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_05A)
+glmer_examine(Comp_Cons_05A)
 
 CBre_Comp_05A <- glm (data=smp,
-b_CBre ~n_Comp + 
+b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh  +
   PricingFee+ b_UCA +
@@ -3696,10 +3512,10 @@ glmer_examine(CBre_Comp_05A)
 #                                        Fixed=1,UCA=0),color="blue")
 
 
-stargazer::stargazer(CBre_Cons_04K,CBre_Cons_05A,
+stargazer::stargazer(Comp_Cons_04K,Comp_Cons_05A,
                      CBre_Comp_04K,CBre_Comp_05A,type="text",
                        digits=2)
-summary_residual_compare(CBre_Cons_04K,CBre_Cons_05A,CBre_Comp_04K,CBre_Comp_05A,bins=20)
+summary_residual_compare(Comp_Cons_04K,Comp_Cons_05A,CBre_Comp_04K,CBre_Comp_05A,bins=20)
 
 
 
@@ -3711,7 +3527,7 @@ International performance of contract had a positive  coefficent as expected.
 ###Model 05B: Fixed Price and Any International
 
 Firm fixed price contracts and to a less degree other fixed-price contracts and time and materials/labor hours/fixed price level of effort contracts may be more vulnerable to changing conditions internationally. Thus they may estimate a higher rate of ceiling breaches.
-```{r Model05B_Comp}
+```{r Model05b_MultiOffr}
 
 #Frequency Plot
 summary_discrete_plot(smp,"Intl","PricingFee")
@@ -3719,8 +3535,8 @@ summary_discrete_plot(smp,"Intl","PricingFee")
 
 
 #Create the model
-CBre_Cons_05B <- glm (data=smp,
-b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_05B <- glm (data=smp,
+b_MultiOffr ~cl_def6_HHI_lag1 + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    PricingFee + b_UCA +
@@ -3736,10 +3552,10 @@ b_CBre ~cl_def6_HHI_lag1 +
   
   b_Intl:PricingFee
                     , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_05B)
+glmer_examine(Comp_Cons_05B)
 
 CBre_Comp_05B <- glm (data=smp,
-b_CBre ~n_Comp + 
+b_MultiOffr ~n_Comp + 
                    cl_Ceil + cl_Days+ 
                    Veh  +
   PricingFee+ b_UCA +
@@ -3778,10 +3594,10 @@ glmer_examine(CBre_Comp_05B)
 #                                        Fixed=1,UCA=0),color="blue")
 
 
-stargazer::stargazer(CBre_Cons_05A,CBre_Cons_05B,
+stargazer::stargazer(Comp_Cons_05A,Comp_Cons_05B,
                      CBre_Comp_05A,CBre_Comp_05B,type="text",
                        digits=2)
-summary_residual_compare(CBre_Cons_05A,CBre_Cons_05B,CBre_Comp_05A,CBre_Comp_05B,bins=20)
+summary_residual_compare(Comp_Cons_05A,Comp_Cons_05B,CBre_Comp_05A,CBre_Comp_05B,bins=20)
 
 
 
@@ -3799,8 +3615,8 @@ summary_discrete_plot(smp,"Intl","Veh")
 
 
 #Create the model
-CBre_Cons_05C <- glm (data=smp,
-                      b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_05C <- glm (data=smp,
+                      b_MultiOffr ~cl_def6_HHI_lag1 + 
                         cl_Ceil + cl_Days+ 
                         Veh +
                         PricingFee + b_UCA +
@@ -3816,10 +3632,10 @@ CBre_Cons_05C <- glm (data=smp,
                         
                         b_Intl:Veh
                       , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_05C)
+glmer_examine(Comp_Cons_05C)
 
 CBre_Comp_05C <- glm (data=smp,
-                      b_CBre ~n_Comp + 
+                      b_MultiOffr ~n_Comp + 
                         cl_Ceil + cl_Days+ 
                         Veh  +
                         PricingFee+ b_UCA +
@@ -3869,10 +3685,10 @@ glmer_examine(CBre_Comp_05C)
 
 # residuals_term_plot(Term_Comp_02F,"cl_days")+
 #   labs(x="Centered Log(Days)")
-stargazer::stargazer(CBre_Cons_05A,CBre_Cons_05C,
+stargazer::stargazer(Comp_Cons_05A,Comp_Cons_05C,
                      CBre_Comp_05A,CBre_Comp_05C,type="text",
                        digits=2)
-summary_residual_compare(CBre_Cons_05A,CBre_Cons_05C,CBre_Comp_05A,CBre_Comp_05C,bins=20)
+summary_residual_compare(Comp_Cons_05A,Comp_Cons_05C,CBre_Comp_05A,CBre_Comp_05C,bins=20)
 
 ```
 
@@ -3891,8 +3707,8 @@ Other DoD stands out for its sheer quantity of contracts and task orders and als
 
 
 #Create the model
-CBre_Cons_06A <- glm (data=smp,
-                      b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_06A <- glm (data=smp,
+                      b_MultiOffr ~cl_def6_HHI_lag1 + 
                         cl_Ceil + cl_Days+ 
                         Veh +
                         PricingFee + b_UCA +
@@ -3909,10 +3725,10 @@ CBre_Cons_06A <- glm (data=smp,
                         
                         b_Intl:Veh
                       , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_06A)
+glmer_examine(Comp_Cons_06A)
 
-CBre_Cons_06A2 <- glm (data=smp,
-                      b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_06A2 <- glm (data=smp,
+                      b_MultiOffr ~cl_def6_HHI_lag1 + 
                         cl_Ceil + cl_Days+ 
                         Veh +
                         PricingFee + b_UCA +
@@ -3929,11 +3745,11 @@ CBre_Cons_06A2 <- glm (data=smp,
                         
                         b_Intl:Veh
                       , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_06A2)
+glmer_examine(Comp_Cons_06A2)
 
 
-CBre_Cons_06A3 <- glm (data=smp,
-                      b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_06A3 <- glm (data=smp,
+                      b_MultiOffr ~cl_def6_HHI_lag1 + 
                         cl_Ceil + cl_Days+ 
                         Veh +
                         PricingFee + b_UCA +
@@ -3950,11 +3766,11 @@ CBre_Cons_06A3 <- glm (data=smp,
                         
                         b_Intl:Veh
                       , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_06A3)
+glmer_examine(Comp_Cons_06A3)
 
 
 CBre_Comp_06A <- glm (data=smp,
-                      b_CBre ~n_Comp + 
+                      b_MultiOffr ~n_Comp + 
                         cl_Ceil + cl_Days+ 
                         Veh  +
                         PricingFee+ b_UCA +
@@ -3974,7 +3790,7 @@ CBre_Comp_06A <- glm (data=smp,
 glmer_examine(CBre_Comp_06A)
 
 CBre_Comp_06A2 <- glm (data=smp,
-                      b_CBre ~n_Comp + 
+                      b_MultiOffr ~n_Comp + 
                         cl_Ceil + cl_Days+ 
                         Veh  +
                         PricingFee+ b_UCA +
@@ -3995,7 +3811,7 @@ glmer_examine(CBre_Comp_06A2)
 
 
 CBre_Comp_06A3 <- glm (data=smp,
-                      b_CBre ~n_Comp + 
+                      b_MultiOffr ~n_Comp + 
                         cl_Ceil + cl_Days+ 
                         Veh  +
                         PricingFee+ b_UCA +
@@ -4018,12 +3834,12 @@ glmer_examine(CBre_Comp_06A3)
 
 
 
-  stargazer::stargazer(CBre_Cons_05C,CBre_Cons_06A3,CBre_Comp_05C,CBre_Comp_06A3,type="text",
+  stargazer::stargazer(Comp_Cons_05C,Comp_Cons_06A3,CBre_Comp_05C,CBre_Comp_06A3,type="text",
                        digits=2)
   
-summary_residual_compare(CBre_Cons_05C,CBre_Cons_06A3,CBre_Comp_05C,CBre_Comp_06A3,bins=20)
+summary_residual_compare(Comp_Cons_05C,Comp_Cons_06A3,CBre_Comp_05C,CBre_Comp_06A3,bins=20)
 
-rm(CBre_Comp_06A,CBre_Comp_06A2,CBre_Cons_06A,CBre_Cons_06A2)
+rm(CBre_Comp_06A,CBre_Comp_06A2,Comp_Cons_06A,Comp_Cons_06A2)
 ```
 
 
@@ -4039,8 +3855,8 @@ After inclusion of agency, the deviance of both models are reduced considerably 
     
 
 
-CBre_Cons_06B <- glm (data=smp,
-                      b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_06B <- glm (data=smp,
+                      b_MultiOffr ~cl_def6_HHI_lag1 + 
                         cl_Ceil + cl_Days+ 
                         Veh +
                         Pricing + b_UCA +
@@ -4057,12 +3873,12 @@ CBre_Cons_06B <- glm (data=smp,
                         
                         b_Intl:Veh
                       , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_06B)
+glmer_examine(Comp_Cons_06B)
 
 
 
 CBre_Comp_06B <- glm (data=smp,
-                      b_CBre ~n_Comp + 
+                      b_MultiOffr ~n_Comp + 
                         cl_Ceil + cl_Days+ 
                         Veh  +
                         Pricing+ b_UCA +
@@ -4085,12 +3901,12 @@ glmer_examine(CBre_Comp_06B)
 
 
 
-  stargazer::stargazer(CBre_Cons_06A3,CBre_Cons_06B,CBre_Comp_06A3,CBre_Comp_06B,type="text",
+  stargazer::stargazer(Comp_Cons_06A3,Comp_Cons_06B,CBre_Comp_06A3,CBre_Comp_06B,type="text",
                        digits=2)
   
-summary_residual_compare(CBre_Cons_06A3,CBre_Cons_06B,CBre_Comp_06A3,CBre_Comp_06B,bins=20)
+summary_residual_compare(Comp_Cons_06A3,Comp_Cons_06B,CBre_Comp_06A3,CBre_Comp_06B,bins=20)
 
-rm(CBre_Cons_06B,CBre_Comp_06B)
+rm(Comp_Cons_06B,CBre_Comp_06B)
 
 ```
 Even with the simpler version of pricing, VIF exceeds 2 in both cases, leaving this out.
@@ -4103,8 +3919,8 @@ While not strictly violating VIF, l_Day:Veh has vif values approaching 2 and is 
 
 #Create the model
 
-CBre_Cons_06C <- glm (data=smp,
-                      b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_06C <- glm (data=smp,
+                      b_MultiOffr ~cl_def6_HHI_lag1 + 
                         cl_Ceil + cl_Days+ 
                         Veh +
                         PricingFee + b_UCA +
@@ -4120,11 +3936,11 @@ CBre_Cons_06C <- glm (data=smp,
                         
                         b_Intl:Veh
                       , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_06C)
+glmer_examine(Comp_Cons_06C)
 
 
 CBre_Comp_06C <- glm (data=smp,
-                      b_CBre ~n_Comp + 
+                      b_MultiOffr ~n_Comp + 
                         cl_Ceil + cl_Days+ 
                         Veh  +
                         PricingFee+ b_UCA +
@@ -4146,10 +3962,10 @@ glmer_examine(CBre_Comp_06C)
 
 
 
-  stargazer::stargazer(CBre_Cons_06A3,CBre_Cons_06C,CBre_Comp_06A3,CBre_Comp_06C,type="text",
+  stargazer::stargazer(Comp_Cons_06A3,Comp_Cons_06C,CBre_Comp_06A3,CBre_Comp_06C,type="text",
                        digits=2)
   
-summary_residual_compare(CBre_Cons_06A3,CBre_Cons_06C,CBre_Comp_06A3,CBre_Comp_06C,bins=20)
+summary_residual_compare(Comp_Cons_06A3,Comp_Cons_06C,CBre_Comp_06A3,CBre_Comp_06C,bins=20)
 
 ```
 
@@ -4161,8 +3977,8 @@ Vehicle:International is not a VIF risk, but the results are no longer significa
 
 #Create the model
 
-CBre_Cons_06D <- glm (data=smp,
-                      b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_06D <- glm (data=smp,
+                      b_MultiOffr ~cl_def6_HHI_lag1 + 
                         cl_Ceil + cl_Days+ 
                         Veh +
                         PricingFee + b_UCA +
@@ -4178,11 +3994,11 @@ CBre_Cons_06D <- glm (data=smp,
                         
                         # b_Intl:Veh
                       , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_06D)
+glmer_examine(Comp_Cons_06D)
 
 
 CBre_Comp_06D <- glm (data=smp,
-                      b_CBre ~n_Comp + 
+                      b_MultiOffr ~n_Comp + 
                         cl_Ceil + cl_Days+ 
                         Veh  +
                         PricingFee+ b_UCA +
@@ -4205,10 +4021,10 @@ glmer_examine(CBre_Comp_06D)
 
 
 
-  stargazer::stargazer(CBre_Cons_06C,CBre_Cons_06D,CBre_Comp_06C,CBre_Comp_06D,type="text",
+  stargazer::stargazer(Comp_Cons_06C,Comp_Cons_06D,CBre_Comp_06C,CBre_Comp_06D,type="text",
                        digits=2)
   
-summary_residual_compare(CBre_Cons_06C,CBre_Cons_06D,CBre_Comp_06C,CBre_Comp_06D,bins=20)
+summary_residual_compare(Comp_Cons_06C,Comp_Cons_06D,CBre_Comp_06C,CBre_Comp_06D,bins=20)
 
 ```
 Leaving out Veh:Intl increases the deviance by less than 10 points and slightly reduces the residuals. Taking it out.
@@ -4229,8 +4045,8 @@ corrdisp[[1]]
 
 #Sumamry plot
 summary_discrete_plot(smp1m,"NAICS2",rotate_text=TRUE)
-CBre_Cons_07A <- glm (data=smp,
-                      b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_07A <- glm (data=smp,
+                      b_MultiOffr ~cl_def6_HHI_lag1 + 
                         cl_Ceil + cl_Days+ 
                         Veh +
                         PricingFee + b_UCA +
@@ -4248,10 +4064,10 @@ CBre_Cons_07A <- glm (data=smp,
                                                 Agency+
                         NAICS2
                       , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_07A)
+glmer_examine(Comp_Cons_07A)
 
 CBre_Comp_07A <- glm (data=smp,
-                      b_CBre ~n_Comp + 
+                      b_MultiOffr ~n_Comp + 
                         cl_Ceil + cl_Days+ 
                         Veh  +
                         PricingFee+ b_UCA +
@@ -4273,10 +4089,10 @@ CBre_Comp_07A <- glm (data=smp,
 glmer_examine(CBre_Comp_07A)
 
 
-  stargazer::stargazer(CBre_Cons_06D,CBre_Cons_07A,CBre_Comp_06D,CBre_Comp_07A,type="text",
+  stargazer::stargazer(Comp_Cons_06D,Comp_Cons_07A,CBre_Comp_06D,CBre_Comp_07A,type="text",
                        digits=2)
   
-summary_residual_compare(CBre_Cons_06D,CBre_Cons_07A,CBre_Comp_06D,CBre_Comp_07A,bins=20)
+summary_residual_compare(Comp_Cons_06D,Comp_Cons_07A,CBre_Comp_06D,CBre_Comp_07A,bins=20)
 
 
 ```
@@ -4295,8 +4111,8 @@ The next step is to reincorporate the economic sector variables first considered
 
 
 
-CBre_Cons_07B <- glm (data=smp,
-                      b_CBre ~cl_def6_HHI_lag1 +cl_def6_ratio_lag1+cl_def6_obl_lag1+
+Comp_Cons_07B <- glm (data=smp,
+                      b_MultiOffr ~cl_def6_HHI_lag1 +cl_def6_ratio_lag1+cl_def6_obl_lag1+
                   cl_US6_avg_sal_lag1
                         cl_Ceil + cl_Days+ 
                         Veh +
@@ -4312,10 +4128,10 @@ CBre_Cons_07B <- glm (data=smp,
                         Agency+
                         NAICS2
                       , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_07B)
+glmer_examine(Comp_Cons_07B)
 
 CBre_Comp_07B <- glm (data=smp,
-                      b_CBre ~n_Comp +
+                      b_MultiOffr ~n_Comp +
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+ 
                         cl_Ceil + cl_Days+ 
                         Veh  +
@@ -4333,10 +4149,10 @@ glmer_examine(CBre_Comp_07B)
 
 
 
-  stargazer::stargazer(CBre_Cons_07A,CBre_Cons_07B,CBre_Comp_07A,CBre_Comp_07B,type="text",
+  stargazer::stargazer(Comp_Cons_07A,Comp_Cons_07B,CBre_Comp_07A,CBre_Comp_07B,type="text",
                        digits=2)
   
-summary_residual_compare(CBre_Cons_07A,CBre_Cons_07B,CBre_Comp_07A,CBre_Comp_07B,bins=20)
+summary_residual_compare(Comp_Cons_07A,Comp_Cons_07B,CBre_Comp_07A,CBre_Comp_07B,bins=20)
 
 
 ```
@@ -4351,14 +4167,14 @@ This model includes economic sector at the NAICS3 and NAICS 6 levels.
 
 #Taking out average salary 3 to keep the models snced up.
 CBre_Comp_NCS3G3 <- glm (data=smp,
-                 b_CBre ~n_Comp+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                 b_MultiOffr ~n_Comp+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                    n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(CBre_Comp_NCS3G3)
 vif(CBre_Comp_NCS3G3)
 
-CBre_Cons_07C <- glm (data=smp,
-                      b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+Comp_Cons_07C <- glm (data=smp,
+                      b_MultiOffr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                         #cl_US3_avg_sal_lag1+
                         cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
                         cl_US6_avg_sal_lag1+     
@@ -4376,11 +4192,11 @@ CBre_Cons_07C <- glm (data=smp,
                         Agency+
                         NAICS2
                       , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_07C)
+glmer_examine(Comp_Cons_07C)
 
 
 CBre_Comp_07C < glm (data=smp,
-                      b_CBre~n_Comp+
+                      b_MultiOffr~n_Comp+
                         cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         
@@ -4398,11 +4214,11 @@ CBre_Comp_07C < glm (data=smp,
 glmer_examine(CBre_Comp_07C)
 
 
-stargazer::stargazer(CBre_Cons_07A,CBre_Cons_07B,CBre_Cons_07C,CBre_Cons_07C,CBre_Comp_07A,CBre_Comp_07B,CBre_Comp_07C,CBre_Comp_07C,type="text",
+stargazer::stargazer(Comp_Cons_07A,Comp_Cons_07B,Comp_Cons_07C,Comp_Cons_07C,CBre_Comp_07A,CBre_Comp_07B,CBre_Comp_07C,CBre_Comp_07C,type="text",
                        digits=2)
 
-summary_residual_compare(CBre_Cons_07A,CBre_Cons_07C,CBre_Comp_07A,CBre_Comp_07C,bins=20)
-summary_residual_compare(CBre_Cons_07C,CBre_Cons_07C,CBre_Comp_07C,CBre_Comp_07C,bins=20)
+summary_residual_compare(Comp_Cons_07A,Comp_Cons_07C,CBre_Comp_07A,CBre_Comp_07C,bins=20)
+summary_residual_compare(Comp_Cons_07C,Comp_Cons_07C,CBre_Comp_07C,CBre_Comp_07C,bins=20)
 
 ```
 
@@ -4424,8 +4240,8 @@ corrdisp[[1]]
 #Sumamry plot
 summary_discrete_plot(smp1m,"NAICS2",rotate_text=TRUE)
 
-CBre_Cons_10A <- glm (data=smp,
-                      b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+Comp_Cons_10A <- glm (data=smp,
+                      b_MultiOffr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                         #cl_US3_avg_sal_lag1+
                         cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
                         cl_US6_avg_sal_lag1+     
@@ -4443,11 +4259,11 @@ CBre_Cons_10A <- glm (data=smp,
                         Agency+
                         NAICS2
                       , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_10A)
+glmer_examine(Comp_Cons_10A)
 
 
 CBre_Comp_10A < glm (data=smp,
-                      b_CBre~n_Comp+
+                      b_MultiOffr~n_Comp+
                         cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         
@@ -4464,10 +4280,10 @@ CBre_Comp_10A < glm (data=smp,
                       , family=binomial(link="logit"))
 glmer_examine(CBre_Comp_10A)
 
-  stargazer::stargazer(CBre_Cons_10A,CBre_Comp_10A,type="text",
+  stargazer::stargazer(Comp_Cons_10A,CBre_Comp_10A,type="text",
                        digits=2)
   
-summary_residual_compare(CBre_Comp_07A,CBre_Comp_10A,CBre_Cons_07A,CBre_Cons_10A,bins=20)
+summary_residual_compare(CBre_Comp_07A,CBre_Comp_10A,Comp_Cons_07A,Comp_Cons_10A,bins=20)
 
 
 ```
@@ -4482,8 +4298,8 @@ summary_discrete_plot(smp1m,"EffComp","UCA")
 
 
 #Create the model
-CBre_Cons_10B <- glm (data=smp,
-                      b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+Comp_Cons_10B <- glm (data=smp,
+                      b_MultiOffr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                         #cl_US3_avg_sal_lag1+
                         cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
                         cl_US6_avg_sal_lag1+     
@@ -4501,11 +4317,11 @@ CBre_Cons_10B <- glm (data=smp,
                         Agency+
                         NAICS2
                       , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_10B)
+glmer_examine(Comp_Cons_10B)
 
 
 CBre_Comp_10B < glm (data=smp,
-                      b_CBre~n_Comp+
+                      b_MultiOffr~n_Comp+
                         cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         
@@ -4522,12 +4338,12 @@ CBre_Comp_10B < glm (data=smp,
                       , family=binomial(link="logit"))
 glmer_examine(CBre_Comp_10B)
 
-  stargazer::stargazer(CBre_Comp_10A,CBre_Comp_10B,CBre_Cons_10A,CBre_Cons_10B,type="text",
+  stargazer::stargazer(CBre_Comp_10A,CBre_Comp_10B,Comp_Cons_10A,Comp_Cons_10B,type="text",
                        digits=2)
   
   
 
-summary_residual_compare(CBre_Comp_10A,CBre_Comp_10B,CBre_Cons_10A,CBre_Cons_10B,bins=20)
+summary_residual_compare(CBre_Comp_10A,CBre_Comp_10B,Comp_Cons_10A,Comp_Cons_10B,bins=20)
 
 
 ```
@@ -4544,8 +4360,8 @@ summary_continuous_plot(smp1m,"cl_Days","cl_def6_HHI_lag1")
 summary_continuous_plot(smp1m,"cl_Days","EffComp")
 
 #Create the model
-CBre_Cons_10C <- glm (data=smp,
-                      b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+Comp_Cons_10C <- glm (data=smp,
+                      b_MultiOffr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                         #cl_US3_avg_sal_lag1+
                         cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
                         cl_US6_avg_sal_lag1+     
@@ -4563,11 +4379,11 @@ CBre_Cons_10C <- glm (data=smp,
                         Agency+
                         NAICS2
                       , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_10C)
+glmer_examine(Comp_Cons_10C)
 
 
 CBre_Comp_10C < glm (data=smp,
-                      b_CBre~n_Comp+
+                      b_MultiOffr~n_Comp+
                         cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         
@@ -4586,12 +4402,12 @@ CBre_Comp_10C < glm (data=smp,
 glmer_examine(CBre_Comp_10C)
 
 
-  stargazer::stargazer(CBre_Cons_10B,CBre_Cons_10C,CBre_Comp_10B,CBre_Comp_10C,type="text",
+  stargazer::stargazer(Comp_Cons_10B,Comp_Cons_10C,CBre_Comp_10B,CBre_Comp_10C,type="text",
                        digits=2)
   
   
 
-summary_residual_compare(CBre_Cons_10B,CBre_Cons_10C,CBre_Comp_10B,CBre_Comp_10C,bins=20)
+summary_residual_compare(Comp_Cons_10B,Comp_Cons_10C,CBre_Comp_10B,CBre_Comp_10C,bins=20)
 
 
 ```
@@ -4609,8 +4425,8 @@ summary_continuous_plot(smp1m,"cl_Ceil","cl_def6_HHI_lag1")
 summary_continuous_plot(smp1m,"cl_Ceil","n_Comp")
 
 #Create the model
-CBre_Cons_10D <- glm(data=smp,
-                       b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_10D <- glm(data=smp,
+                       b_MultiOffr ~cl_def6_HHI_lag1 + 
                          cl_Ceil + cl_Days+
                          Veh+
                          cl_def6_HHI_lag1:cl_Ceil  +
@@ -4621,11 +4437,11 @@ CBre_Cons_10D <- glm(data=smp,
                          b_UCA:cl_def6_HHI_lag1+
                          NAICS2
                        , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_10D)
-glmer_examine(CBre_Cons_10D)
+glmer_examine(Comp_Cons_10D)
+glmer_examine(Comp_Cons_10D)
   
 CBre_Comp_10D<- glm(data=smp,
-                       b_CBre ~n_Comp + 
+                       b_MultiOffr ~n_Comp + 
                          cl_Ceil + cl_Days+
                          Veh+
                           n_Comp:cl_Ceil  +
@@ -4639,12 +4455,12 @@ CBre_Comp_10D<- glm(data=smp,
 glmer_examine(CBre_Comp_10D)
 glmer_examine(CBre_Comp_10D)
 
-  stargazer::stargazer(CBre_Cons_10B,CBre_Cons_10D,CBre_Comp_10B,CBre_Comp_10D,type="text",
+  stargazer::stargazer(Comp_Cons_10B,Comp_Cons_10D,CBre_Comp_10B,CBre_Comp_10D,type="text",
                        digits=2)
   
   
 
-summary_residual_compare(CBre_Cons_10B,CBre_Cons_10D,CBre_Comp_10B,CBre_Comp_10D,bins=20)
+summary_residual_compare(Comp_Cons_10B,Comp_Cons_10D,CBre_Comp_10B,CBre_Comp_10D,bins=20)
 
 
 ```
@@ -4663,8 +4479,8 @@ summary_discrete_plot(smp1m,"Veh","cl_def6_HHI_lag1")
 summary_discrete_plot(smp1m,"Veh","n_Comp")
 
 #Create the model
-CBre_Cons_10E <- glm(data=smp,
-                       b_CBre ~cl_def6_HHI_lag1 + 
+Comp_Cons_10E <- glm(data=smp,
+                       b_MultiOffr ~cl_def6_HHI_lag1 + 
                          cl_Ceil + cl_Days+
                        cl_def6_HHI_lag1:cl_Ceil+
                                                 Veh:cl_def6_HHI_lag1+
@@ -4676,11 +4492,11 @@ CBre_Cons_10E <- glm(data=smp,
                          # Veh:cl_Days +
                          NAICS2
                        , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_10E)
-glmer_examine(CBre_Cons_10E)
+glmer_examine(Comp_Cons_10E)
+glmer_examine(Comp_Cons_10E)
   
 CBre_Comp_10E<- glm(data=smp,
-                       b_CBre ~n_Comp + 
+                       b_MultiOffr ~n_Comp + 
                          cl_Ceil + cl_Days+
                          Veh+
                                                Veh:n_Comp+
@@ -4696,12 +4512,12 @@ CBre_Comp_10E<- glm(data=smp,
 glmer_examine(CBre_Comp_10E)
 glmer_examine(CBre_Comp_10E)
 
-  stargazer::stargazer(CBre_Cons_10D,CBre_Cons_10E,CBre_Comp_10B,CBre_Comp_10E,type="text",
+  stargazer::stargazer(Comp_Cons_10D,Comp_Cons_10E,CBre_Comp_10B,CBre_Comp_10E,type="text",
                        digits=2)
   
   
 
-summary_residual_compare(CBre_Cons_10D,CBre_Cons_10E,CBre_Comp_10B,CBre_Comp_10E,bins=20)
+summary_residual_compare(Comp_Cons_10D,Comp_Cons_10E,CBre_Comp_10B,CBre_Comp_10E,bins=20)
 
 
 ```
@@ -4722,8 +4538,8 @@ summary_discrete_plot(smp,"NAICS2")
 
 #This is currently running at home
 
-CBre_Cons_11A <- glmer (data=smp,
-                        b_CBre ~cl_def6_HHI_lag1 +cl_def6_ratio_lag1+cl_def6_obl_lag1+
+Comp_Cons_11A <- glmer (data=smp,
+                        b_MultiOffr ~cl_def6_HHI_lag1 +cl_def6_ratio_lag1+cl_def6_obl_lag1+
                           cl_US6_avg_sal_lag1+
                           cl_Ceil + cl_Days+ 
                           Veh +
@@ -4741,10 +4557,10 @@ CBre_Cons_11A <- glmer (data=smp,
                         , family=binomial(link="logit"),
                         verbose=1)
 
-glmer_examine(CBre_Cons_11A)
+glmer_examine(Comp_Cons_11A)
 
 CBre_Comp_11A <- glmer (data=smp,
-                      b_CBre ~n_Comp +
+                      b_MultiOffr ~n_Comp +
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         cl_Ceil + cl_Days+
                         Veh  +
@@ -4788,84 +4604,22 @@ glmer_examine(CBre_Comp_11A.restart)
 
 
 
-stargazer::stargazer(CBre_Cons_11A,CBre_Comp_11A.restart,CBre_Comp_11A.restart
+stargazer::stargazer(Comp_Cons_11A,CBre_Comp_11A.restart,CBre_Comp_11A.restart
                      ,type="text",
                        digits=2)
 
-summary_residual_compare(CBre_Cons_07B2,CBre_Cons_11A,CBre_Comp_07B2,CBre_Comp_07C3,bins=20)
-CBre_Cons_11A<-CBre_Cons_14A
+summary_residual_compare(Comp_Cons_07B2,Comp_Cons_11A,CBre_Comp_07B2,CBre_Comp_07C3,bins=20)
+Comp_Cons_11A<-Comp_Cons_14A
 CBre_Comp_11A<-CBre_Comp_14A
 CBre_Comp_11A.restart<-CBre_Comp_14A.restart
 CBre_Comp_11A.devfun<-CBre_Comp_14A.devfun
-summary_residual_compare(CBre_Cons_11A,CBre_Cons_11A,CBre_Comp_11A,CBre_Comp_11A.restart,bins=20)
-save(CBre_Cons_11A,CBre_Comp_11A.restart,CBre_Comp_11A.devfun,CBre_Comp_11A.restart,file="output/CBre_11.rdata")
+summary_residual_compare(Comp_Cons_11A,Comp_Cons_11A,CBre_Comp_11A,CBre_Comp_11A.restart,bins=20)
+save(Comp_Cons_11A,CBre_Comp_11A.restart,CBre_Comp_11A.devfun,CBre_Comp_11A.restart,file="output/CBre_11.rdata")
 
 ```
 
 
 ## Agency/Office & NAICS6
-###Model 12A: Too many Interactions
-This initial run proved a bit premature, as incorporation of Agency as a dummy variable showed that many of the interactions included 
-```{r Model12A}
-load(file="Output//CBre_Cons_12A.rdata")
-
-if(!exists("CBre_Cons_12A"))
-  CBre_Cons_12A <- glmer (data=smp,
-                          b_CBre ~cl_def6_HHI_lag1 +cl_def6_ratio_lag1+cl_def6_obl_lag1+
-                            cl_US6_avg_sal_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1+ 
-                            cl_Ceil + cl_Days+ 
-                            Veh +
-                            PricingFee + b_UCA +
-                            b_Intl+
-                            # Who+ Who is missing
-                            # cl_def6_HHI_lag1:cl_Ceil  +
-                            Veh:cl_Days+
-                            # Veh:cl_def6_HHI_lag1  +
-                            
-                            cl_Ceil:PricingFee+
-                            
-                            b_UCA:cl_def6_HHI_lag1 + 
-                            b_UCA:cl_Ceil+
-                            # 6
-                            
-                            # Who:b_Intl+
-                            (1 | NAICS) + (1 | Agency/Office)
-                          , family=binomial(link="logit"),
-                          verbose=1)
-glmer_examine(CBre_Cons_12A)
-glmer_examine(CBre_Cons_12A)
-get_icc(CBre_Cons_12A)
-
-# CBre_Comp_12A <- glmer (data=smp,
-#                       b_CBre ~n_Comp +
-#                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+ 
-#                         cl_Ceil + cl_Days+ 
-#                         Veh  +
-#                         PricingFee+ b_UCA +
-#                         b_Intl+
-                        # Who+ Who is missing
-                        # cl_def6_HHI_lag1:cl_Ceil  +
-                        # Veh:cl_Days+
-                        # Veh:cl_def6_HHI_lag1  +
-                        # 
-                        # cl_Ceil:PricingFee+
-                        # 
-                        # b_UCA:cl_def6_HHI_lag1 + 
-                        # b_UCA:cl_Ceil+
-                        # 6
-                        
-                       # Who:b_Intl+
-#                    (1 | NAICS) + (1 | Agency/Office)
-#                       , family=binomial(link="logit"),
-                  # verbose=1)
-# glmer_examine(CBre_Comp_12A)
-# glmer_examine(CBre_Comp_12A)
-# failure to converge in 10000 evaluation
-summary_residual_compare(CBre_Cons_07B2,CBre_Cons_12A,CBre_Comp_07B2,CBre_Comp_07C3,bins=20)
-save(CBre_Cons_12A,file="Output//CBre_Cons_12A.rdata")
-```
-
-The initial attempt to include the pre-existing intercepts and all inputs resulted in a model that initially failed to converge. Conservatively the intercepts have been temporarily removed to be added back in a subsequent step.
 
 ### Model 12B: Trimmed 
 ```{r Model12B}
@@ -4874,8 +4628,8 @@ summary_discrete_plot(smp,"NAICS")
 
 #This is currently running at home
 
-CBre_Cons_12B <- glmer (data=smp,
-                        b_CBre ~cl_def6_HHI_lag1 +cl_def6_ratio_lag1+cl_def6_obl_lag1+
+Comp_Cons_12B <- glmer (data=smp,
+                        b_MultiOffr ~cl_def6_HHI_lag1 +cl_def6_ratio_lag1+cl_def6_obl_lag1+
                           cl_US6_avg_sal_lag1+
                           cl_Ceil + cl_Days+ 
                           Veh +
@@ -4893,10 +4647,10 @@ CBre_Cons_12B <- glmer (data=smp,
                         , family=binomial(link="logit"),
                         verbose=1)
 
-glmer_examine(CBre_Cons_12B)
+glmer_examine(Comp_Cons_12B)
 
 CBre_Comp_12B <- glmer (data=smp,
-                      b_CBre ~n_Comp +
+                      b_MultiOffr ~n_Comp +
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         cl_Ceil + cl_Days+
                         Veh  +
@@ -4913,54 +4667,16 @@ CBre_Comp_12B <- glmer (data=smp,
 
 glmer_examine(CBre_Comp_12B)
 
-summary_residual_compare(CBre_Cons_07B2,CBre_Cons_12B,CBre_Comp_07B2,CBre_Comp_07C3,bins=20)
+summary_residual_compare(Comp_Cons_07B2,Comp_Cons_12B,CBre_Comp_07B2,CBre_Comp_07C3,bins=20)
 ```
 
 ## Agency/Office & NAICS3/6
-###Model 13A: Agency/Office+NAICS6/NAICS3
-The North American Industrial Classification system captures the sector of each contract, which are each given a seperate intercept in the model.
-```{r Model13A}
-load(file="Output//CBre_Cons_13A.rdata")
-
-if(!exists("CBre_Cons_13A"))
-  CBre_Cons_13A <- glmer (data=smp,
-                          b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
-                            #cl_US3_avg_sal_lag1+
-                            cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
-                            cl_US6_avg_sal_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1+
-                            cl_Ceil + cl_Days+ 
-                            Veh +
-                            PricingFee + b_UCA +
-                            b_Intl+
-                            # Who+
-                            # cl_def6_HHI_lag1:cl_Ceil  +
-                            Veh:cl_Days+
-                            # Veh:cl_def6_HHI_lag1  +
-                            Veh:cl_Ceil+
-                            cl_Ceil:PricingFee+
-                            
-                            b_UCA:cl_def6_HHI_lag1 + 
-                            b_UCA:cl_Ceil+
-                            # 6
-                            b_Intl:Veh+ 
-                            (1 | NAICS3/NAICS) + 
-                            (1 | Agency/Office) 
-                          # Who:b_Intl+
-                          # NAICS2
-                          , family=binomial(link="logit"),
-                          verbose=1)
-
-
-glmer_examine(CBre_Cons_13A)
-
-save(CBre_Cons_13A,file="Output//CBre_Cons_13A.rdata")
-```
 
 ###Model 13B: Agency/Office+NAICS6/NAICS3 trimmed
 ```{r Model13B}
 
-CBre_Cons_13B <- glmer (data=smp,
-                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+Comp_Cons_13B <- glmer (data=smp,
+                 b_MultiOffr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                   #cl_US3_avg_sal_lag1+
                    cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
                   cl_US6_avg_sal_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1+
@@ -4983,11 +4699,11 @@ CBre_Cons_13B <- glmer (data=smp,
                         verbose=1)
 
 
-glmer_examine(CBre_Cons_13B)
+glmer_examine(Comp_Cons_13B)
 
-save(CBre_Cons_13B,file="Output//CBre_Cons_13B.rdata")
+save(Comp_Cons_13B,file="Output//Comp_Cons_13B.rdata")
 CBre_Comp_13B <- glmer (data=smp,
-                        b_CBre ~n_Comp+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                        b_MultiOffr ~n_Comp+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                    n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         cl_Ceil + cl_Days+
                         Veh  +
@@ -5000,790 +4716,12 @@ CBre_Comp_13B <- glmer (data=smp,
                         b_UCA:n_Comp +
                         b_UCA:cl_Ceil+
                         
-                        (1 | NAICS3/NAICS) + (1 | Agency/Office)
+                        (1 | NAICS) + (1 | Agency/Office)
                    # Who+
                    # NAICS2
                       , family=binomial(link="logit"),
                         verbose=1)
 glmer_examine(CBre_Comp_13B)
-save(CBre_Comp_13B,file="Output//CBre_Comp_13B.rdata")
+save(Comp_Cons_13B,CBre_Comp_13B,file="Output//Comp_Cons_13B.rdata")
 ```
 
-
-
-
-
-
-
-## Agency/Office & NAICS2
-The North American Industrial Classification system captures the sector of each contract, which are each given a seperate intercept in the model.
-
-### Model 13A
-
-```{r Model13A}
-
-#Frequency Plot
-summary_discrete_plot(smp,"NAICS2")
-
-
-CBre_Cons_13A <- glmer (data=smp,
-                        b_CBre ~cl_def6_HHI_lag1 +cl_def6_ratio_lag1+cl_def6_obl_lag1+
-                          cl_US6_avg_sal_lag1+
-                          cl_Ceil + cl_Days+ 
-                          Veh +
-                          PricingFee + b_UCA +
-                          b_Intl+
-                          
-                          # cl_def6_HHI_lag1:cl_Ceil  +
-                          # Veh:cl_def6_HHI_lag1  +
-                          cl_def6_HHI_lag1:cl_def6_obl_lag1+ 
-                          b_UCA:cl_def6_HHI_lag1 + 
-                          b_UCA:cl_Ceil+
-
-                          (1 | NAICS2) + (1 | Agency/Office)
-                        
-                        , family=binomial(link="logit"),
-                        verbose=1)
-
-glmer_examine(CBre_Cons_13A)
-
-CBre_Comp_13A <- glmer (data=smp,
-                      b_CBre ~n_Comp +
-                        cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
-                        cl_Ceil + cl_Days+
-                        Veh  +
-                        PricingFee+ b_UCA +
-                        b_Intl+
-                    
-                        b_UCA:n_Comp +
-                        b_UCA:cl_Ceil+
-
-                   (1 | NAICS2) + (1 | Agency/Office)
-
-                   , family=binomial(link="logit"),
-                  verbose=1)
-
-# glmer_examine(CBre_Comp_13A)
-#Ran for two hours Model failed to converge with max|grad| = 0.186396 (tol = 0.001, component 1)
-# Plot the model and Vehicle 
-# CBre_Comp_13A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
-#   cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
-#         Comp*Ceil,Days*Ceil,Days*Comp,
-#         Fixed,UCA,x,
-#         Days*x,Days*MIDV,Days*OIDV,
-#         UCA*Comp) %*%  coef(CBre_Comp_13A))}
-# 
-# #Days curves
-# fitted_cbre_model(smp,"SIDV") +
-#   stat_function(fun = CBre_Comp_13A_curve,
-#                              args=list(Comp=0,Ceil=0,Days=0,
-#                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
-#                                        Fixed=1,UCA=0),color="blue")+
-#   stat_function(fun = CBre_Comp_13A_curve,
-#                              args=list(Comp=2,Ceil=0,Days=1,
-#                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
-#                                        Fixed=1,UCA=0),color="blue")
-
-
-```
-
-The initial attempt to include the pre-existing intercepts and all inputs resulted in a model that initially failed to converge. Conservatively the intercepts have been temporarily removed to be added back in a subsequent step.
-
-
-
-Unfortunately, after including Start Fiscal Year, the model again failed to converge. The standard deviation of Who is 0 while it is notably higher for determining the slope of competition via PSR and for Start Fiscal Year. This suggests that who is adding little to the model and that it is time to go back to model 6C as a starter.
-
-
-
-After the incorporation of NAICS intercepts, ceiling related interactions had strange consequences (left out for speed of running RMD reasons). The interaction of Competition and Ceiling, even when introduced alone  had a positive coefficient and removed the effect of Ceiling by itself. When all three interactions were included,  Ceiling and Duration similarly had a notable negative coefficient, which seemed contrary to past literature that suggests greater risks when trying to do a large contract too fast. The interaction of competition and days had a positive coefficient, but was not significant. Single Award IDV does have a significant negative coefficient in interaction with Competition, but the other two types do not and the model fails to converge (with the 250k or 1m sample) and exhibit a peak at the lower end of the residuals.
-
-
-
-
-
-# Appendix
-## No longer Relevant Code
-
-###Examine Minimium Size
-```{r MinimumSize}
-# path<-"https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/"
-#   directory="economic/"
-#   deflator_file <- "Lookup_Deflators.csv"
-#   
-#  deflators_retrieved <- readr::read_csv(paste0(path, directory,deflator_file))
-# deflators_retrieved$cutoff_3500<-3500*deflators_retrieved$Deflator.2016
-# deflators_retrieved<-subset(deflators_retrieved,select=c(Fiscal.Year,cutoff_3500))
-# colnames(deflators_retrieved)[1]<-"StartFY"
-# def<-plyr::join(def,deflators_retrieved)
-# #Frequency Plot for logged ceiling
-# def$UnmodifiedContractBaseAndAllOptionsValue
-# smp<-def[
-#   !is.na(def$b_Term)&
-#     !is.na(def$Comp)&
-#     def$UnmodifiedContractBaseAndAllOptionsValue>=
-#     def$cutoff_3500,]
-# 
-# smp<-smp[sample(nrow(smp),250000),]
-# 
-# 
-# freq_continuous_term_plot(smp,"l_Ceil")
-# exp(mean(smp$l_Ceil,na.rm=TRUE))
-# 
-# smp$StartFY
-# 
-# cutoff<-quantile(smp$l_Ceil,0.05,na.rm=TRUE)
-# exp(cutoff)
-# cutoff<-log(3500)
-# 
-# nrow(subset(smp,l_Ceil<cutoff,na.rm=TRUE))/nrow(smp)
-# sum(subset(smp,l_Ceil<cutoff)$b_Term)/sum(smp$b_Term)
-# 
-# 
-# sum(subset(smp,l_Ceil<cutoff,na.rm=TRUE)$Action.Obligation)/sum(smp$Action.Obligation)
-# sum(subset(smp,l_Ceil>=cutoff,na.rm=TRUE)$Action.Obligation)/sum(smp$Action.Obligation)
-# 
-# sum(subset(smp,l_Ceil<cutoff)$b_Term)/nrow(subset(smp,l_Ceil<cutoff,na.rm=TRUE))
-# 
-# sum(subset(smp,l_Ceil>=cutoff)$b_Term)/nrow(subset(smp,l_Ceil<cutoff,na.rm=TRUE))
-# 
-# 
-# exp(2)
-```
-
-## Who
-This approach was initially used before the empty model analysis revealed that the entire agency structure would need to be included.
-
-### Model Old 06A: Sub Customer 
-Other DoD stands out for its sheer quantity of contracts and task orders and also its lower termination rate. It includes the DLA which specializes in logistic delivery, and may thus estimate a lower rate of ceiling breahces.
-```{r ModelOld06A}
-    #Frequency Plot
-  summary_discrete_plot(def,"Agency",rotate_text=TRUE)
-    summary_discrete_plot(def,rotate_text=TRUE)
-    summary_discrete_plot(def,"b_ODoD",rotate_text=TRUE)
-
-
-#Create the model
-CBre_Cons_06A <- glm (data=smp,
-                      b_CBre ~cl_def6_HHI_lag1 + 
-                        cl_Ceil + cl_Days+ 
-                        Veh +
-                        PricingFee + b_UCA +
-                        b_Intl+
-                        Who+
-                        # cl_def6_HHI_lag1:cl_Ceil  +
-                        Veh:cl_Days+
-                        # Veh:cl_def6_HHI_lag1  +
-                        Veh:cl_Ceil+
-                        cl_Ceil:PricingFee+
-                        
-                        b_UCA:cl_def6_HHI_lag1 + 
-                        b_UCA:cl_Ceil+
-                        
-                        b_Intl:Veh
-                      , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_06A)
-
-CBre_Comp_06A <- glm (data=smp,
-                      b_CBre ~n_Comp + 
-                        cl_Ceil + cl_Days+ 
-                        Veh  +
-                        PricingFee+ b_UCA +
-                        b_Intl+
-                        Who+
-                        Veh:cl_Days+
-                        
-                        Veh:cl_Ceil+
-                        cl_Ceil:PricingFee+
-                        
-                        
-                        b_UCA:n_Comp + 
-                        b_UCA:cl_Ceil+
-                        
-                        b_Intl:Veh 
-                      , family=binomial(link="logit"))
-glmer_examine(CBre_Comp_06A)
-
-# # Plot the model and Vehicle 
-# Term_Comp_06A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA,Intl){invlogit(
-#   cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
-#         Comp*Ceil,Days*Ceil,Days*Comp,
-#         Fixed,UCA,Intl,x,
-#         Days*x,Days*MIDV,Days*OIDV,
-#         Comp*x,Comp*MIDV,Comp*OIDV,
-#         UCA*Comp) %*%  coef(Term_Comp_06A))}
-# 
-# #Days curves
-# discrete_fitted_term_model(smp,"b_ODoD") +
-#   stat_function(fun = Term_Comp_06A_curve,
-#                              args=list(Comp=0,Ceil=0,Days=0,
-#                                        MIDV=0,SIDV=0,OIDV=0,
-#                                        Fixed=1,UCA=0,Intl=0),color="blue")+
-#   stat_function(fun = Term_Comp_06A_curve,
-#                              args=list(Comp=2,Ceil=0,Days=1,
-#                                        MIDV=0,SIDV=0,OIDV=0,
-#                                        Fixed=1,UCA=0,Intl=0),color="blue")
-# 
-# 
-
-
-
-  stargazer::stargazer(CBre_Cons_05C,CBre_Cons_06A,CBre_Comp_05C,CBre_Comp_06A,type="text",
-                       digits=2)
-  
-summary_residual_compare(CBre_Cons_05C,CBre_Cons_06A,CBre_Comp_04I,CBre_Comp_06A,bins=20)
-
-
-
-```
-
-###Model Old 06B: SubCustomer and International
-Army international spending is particularly in this period, is tied to crisis contracting and U.S. occupations. This high risk connection may mean that Army international contracting predicts a higher rate of ceiling breaches
-```{r Model06B}
-
-#Frequency Plot
-summary_discrete_plot(smp,"Who","Intl",rotate_text=TRUE)
-
-
-
-#Create the model
-CBre_Cons_06B <- glm (data=smp,
-                      b_CBre ~cl_def6_HHI_lag1 + 
-                        cl_Ceil + cl_Days+ 
-                        Veh +
-                        PricingFee + b_UCA +
-                        b_Intl+
-                        Who+
-                        # cl_def6_HHI_lag1:cl_Ceil  +
-                        Veh:cl_Days+
-                        # Veh:cl_def6_HHI_lag1  +
-                        Veh:cl_Ceil+
-                        cl_Ceil:PricingFee+
-                        
-                        b_UCA:cl_def6_HHI_lag1 + 
-                        b_UCA:cl_Ceil+
-                        
-                        b_Intl:Veh+
-                        Who:b_Intl
-                      , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_06B)
-
-CBre_Comp_06B <- glm (data=smp,
-                      b_CBre ~n_Comp + 
-                        cl_Ceil + cl_Days+ 
-                        Veh  +
-                        PricingFee+ b_UCA +
-                        b_Intl+
-                        Who+
-                        Veh:cl_Days+
-                        
-                        Veh:cl_Ceil+
-                        cl_Ceil:PricingFee+
-                        
-                        
-                        b_UCA:n_Comp + 
-                        b_UCA:cl_Ceil+
-                        
-                        b_Intl:Veh+
-                        Who:b_Intl 
-                      , family=binomial(link="logit"))
-glmer_examine(CBre_Comp_06B)
-
-
-CBre_Cons_06B2 <- glm (data=smp,
-                      b_CBre ~cl_def6_HHI_lag1 + 
-                        cl_Ceil + cl_Days+ 
-                        Veh +
-                        PricingFee + b_UCA +
-                        b_Intl+
-                        Who+
-                        # cl_def6_HHI_lag1:cl_Ceil  +
-                        Veh:cl_Days+
-                        # Veh:cl_def6_HHI_lag1  +
-                        Veh:cl_Ceil+
-                        cl_Ceil:PricingFee+
-                        
-                        b_UCA:cl_def6_HHI_lag1 + 
-                        b_UCA:cl_Ceil+
-                        
-                        
-                        Who:b_Intl
-                      , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_06B2)
-
-CBre_Comp_06B2 <- glm (data=smp,
-                      b_CBre ~n_Comp + 
-                        cl_Ceil + cl_Days+ 
-                        Veh  +
-                        PricingFee+ b_UCA +
-                        b_Intl+
-                        Who+
-                        Veh:cl_Days+
-                        
-                        Veh:cl_Ceil+
-                        cl_Ceil:PricingFee+
-                        
-                        
-                        b_UCA:n_Comp + 
-                        b_UCA:cl_Ceil+
-                        
-                        
-                        Who:b_Intl 
-                      , family=binomial(link="logit"))
-glmer_examine(CBre_Comp_06B2)
-
-# # Plot the model and Vehicle 
-# Term_Comp_06B_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA,Intl){invlogit(
-#   cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
-#         Comp*Ceil,Days*Ceil,Days*Comp,
-#         Fixed,UCA,Intl,x,
-#         Days*x,Days*MIDV,Days*OIDV,
-#         Comp*x,Comp*MIDV,Comp*OIDV,
-#         UCA*Comp) %*%  coef(Term_Comp_06B))}
-# 
-# #Days curves
-# discrete_fitted_term_model(smp,"b_ODoD") +
-#   stat_function(fun = Term_Comp_06B_curve,
-#                              args=list(Comp=0,Ceil=0,Days=0,
-#                                        MIDV=0,SIDV=0,OIDV=0,
-#                                        Fixed=1,UCA=0,Intl=0),color="blue")+
-#   stat_function(fun = Term_Comp_06B_curve,
-#                              args=list(Comp=2,Ceil=0,Days=1,
-#                                        MIDV=0,SIDV=0,OIDV=0,
-#                                        Fixed=1,UCA=0,Intl=0),color="blue")
-# 
-# 
-
-
-
-  stargazer::stargazer(CBre_Cons_06A,CBre_Cons_06B,CBre_Comp_06A,CBre_Comp_06B,type="text",
-                       digits=2)
-  
-summary_residual_compare(CBre_Cons_06A,CBre_Cons_06B,CBre_Comp_06A,CBre_Comp_06B,bins=20)
-
-
-
-```
-The results are interesting and run contrary to expectations. Army does have a higher number of international contracts, but this does not account for the Army's higher breach rate. Instead, Navy and Other DoD, which are less frequently international, are more likely to have challenges.
-###Model Old 06C: Other DoD
-```{r Model06A}
-
-
-summary_discrete_plot(smp,"ODoD",rotate_text=TRUE)
-
-
-# Plot the model and Vehicle 
-# Term_Comp_06A_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA,Intl){invlogit(
-#   cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
-#         Comp*Ceil,Days*Ceil,Days*Comp,
-#         Fixed,UCA,Intl,x,
-#         Days*x,Days*MIDV,Days*OIDV,
-#         Comp*x,Comp*MIDV,Comp*OIDV,
-#         UCA*Comp) %*%  coef(Term_Comp_06A))}
-# 
-# #Days curves
-# discrete_fitted_term_model(smp,"b_ODoD") +
-#   stat_function(fun = Term_Comp_06A_curve,
-#                              args=list(Comp=0,Ceil=0,Days=0,
-#                                        MIDV=0,SIDV=0,OIDV=0,
-#                                        Fixed=1,UCA=0,Intl=0),color="blue")+
-#   stat_function(fun = Term_Comp_06A_curve,
-#                              args=list(Comp=2,Ceil=0,Days=1,
-#                                        MIDV=0,SIDV=0,OIDV=0,
-#                                        Fixed=1,UCA=0,Intl=0),color="blue")
-
-
-CBre_Cons_06C <- glm (data=smp,
-                      b_CBre ~cl_def6_HHI_lag1 + 
-                        cl_Ceil + cl_Days+ 
-                        Veh +
-                        PricingFee + b_UCA +
-                        b_Intl+
-                        ODoD+
-                        # cl_def6_HHI_lag1:cl_Ceil  +
-                        Veh:cl_Days+
-                        # Veh:cl_def6_HHI_lag1  +
-                        Veh:cl_Ceil+
-                        cl_Ceil:PricingFee+
-                        
-                        b_UCA:cl_def6_HHI_lag1 + 
-                        b_UCA:cl_Ceil+
-                        
-                        b_Intl:Veh
-                      , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_06C)
-
-CBre_Comp_06C <- glm (data=smp,
-                      b_CBre ~n_Comp + 
-                        cl_Ceil + cl_Days+ 
-                        Veh  +
-                        PricingFee+ b_UCA +
-                        b_Intl+
-                        ODoD+
-                        Veh:cl_Days+
-                        
-                        Veh:cl_Ceil+
-                        cl_Ceil:PricingFee+
-                        
-                        
-                        b_UCA:n_Comp + 
-                        b_UCA:cl_Ceil+
-                        
-                        b_Intl:Veh 
-                      , family=binomial(link="logit"))
-glmer_examine(CBre_Comp_06C)
-glmer_examine(CBre_Cons_06C)
-
-
-
-  stargazer::stargazer(CBre_Cons_06A,CBre_Cons_06C,CBre_Comp_06A,CBre_Comp_06C,type="text",
-                       digits=2)
-  
-summary_residual_compare(CBre_Cons_06A,CBre_Cons_06C,CBre_Comp_06A,CBre_Comp_06C,bins=20)
-
-
-
-```
-
-After inclusion of Other DoD, the Competition correlates significantly predicts a greater risk of termination. Studying that interaction will be our next step.
-
-### Model Old 06D: Other DoD & Competition
-DLA primarily deals with commodities and parts and thus the breadth of the vendor pool can be a key determiner while for the other branches, complexity of the contract may prove more important. Thus OtherDoD and concentration estimate higher probablity of  ceiling breaches. Competition may matter more for the military services, as the difference between 1 and 2 contractors is more likely to come up.
-
-```{r Model06D}
-
-#Frequency Plot
-summary_discrete_plot(smp,"EffComp","ODoD",rotate_text=TRUE)
-summary_continuous_plot(smp,"cl_def6_HHI_lag1","ODoD",rotate_text=TRUE)
-
-
-
-CBre_Cons_06D <- glm (data=smp,
-                      b_CBre ~cl_def6_HHI_lag1 + 
-                        cl_Ceil + cl_Days+ 
-                        Veh +
-                        PricingFee + b_UCA +
-                        b_Intl+
-                        ODoD+
-                        # cl_def6_HHI_lag1:cl_Ceil  +
-                        Veh:cl_Days+
-                        # Veh:cl_def6_HHI_lag1  +
-                        Veh:cl_Ceil+
-                        cl_Ceil:PricingFee+
-                        
-                        b_UCA:cl_def6_HHI_lag1 + 
-                        b_UCA:cl_Ceil+
-                        
-                        b_Intl:Veh+ 
-                        ODoD:cl_def6_HHI_lag1
-                      , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_06D)
-
-CBre_Comp_06D <- glm (data=smp,
-                      b_CBre ~n_Comp + 
-                        cl_Ceil + cl_Days+ 
-                        Veh  +
-                        PricingFee+ b_UCA +
-                        b_Intl+
-                        ODoD+
-                        Veh:cl_Days+
-                        
-                        Veh:cl_Ceil+
-                        cl_Ceil:PricingFee+
-                        
-                        
-                        b_UCA:n_Comp + 
-                        b_UCA:cl_Ceil+
-                        
-                        b_Intl:Veh +
-                   ODoD + ODoD:n_Comp
-                      , family=binomial(link="logit"))
-glmer_examine(CBre_Comp_06D)
-glmer_examine(CBre_Cons_06D)
-
-
-
-  stargazer::stargazer(CBre_Cons_06A,CBre_Cons_06C,CBre_Cons_06D,CBre_Comp_06A,CBre_Comp_06C,CBre_Comp_06D,type="text",
-                       digits=2)
-  
-summary_residual_compare(CBre_Cons_06C,CBre_Cons_06D,CBre_Comp_06C,CBre_Comp_06D,bins=20)
-summary_residual_compare(CBre_Cons_06A,CBre_Cons_06D,CBre_Comp_06A,CBre_Comp_06D,bins=20)
-```
-VIF is exceeded for competition but not consolidation. Keeping it for consolidation.
-### Model Old 06E: Other DoD & Vehicle
-A significant portion of DLA contracting is done through IDIQ contracts. Because of this, the previously found low estimates  for single-award IDV contracts and other forms might be influenced by the specific high volume vehicles used by DLA rather than the general traits of  tehse vehicles. Thus the interaction of DLA and non-definitive contracts may estimate lower  rates of breaches. This may not apply to BPA/BOA, which encompass a wider variety. It may also be a little weaker for FSS/GWAC which can call on vehicles outside of DoD and this may depend less on customers.
-
-```{r Model06E}
-
-#Frequency Plot
-summary_discrete_plot(smp,"EffComp","ODoD",rotate_text=TRUE)
-summary_continuous_plot(smp,"cl_def6_HHI_lag1","ODoD",rotate_text=TRUE)
-
-
-
-CBre_Cons_06E <- glm (data=smp,
-                      b_CBre ~cl_def6_HHI_lag1 + 
-                        cl_Ceil + cl_Days+ 
-                        Veh +
-                        PricingFee + b_UCA +
-                        b_Intl+
-                        ODoD+
-                        # cl_def6_HHI_lag1:cl_Ceil  +
-                        Veh:cl_Days+
-                        # Veh:cl_def6_HHI_lag1  +
-                        Veh:cl_Ceil+
-                        cl_Ceil:PricingFee+
-                        
-                        b_UCA:cl_def6_HHI_lag1 + 
-                        b_UCA:cl_Ceil+
-                        
-                        b_Intl:Veh+ 
-                        ODoD:cl_def6_HHI_lag1+
-                        ODoD:Veh
-                      , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_06E)
-glmer_examine(CBre_Cons_06E)
-
-CBre_Comp_06E <- glm (data=smp,
-                      b_CBre ~n_Comp + 
-                        cl_Ceil + cl_Days+ 
-                        Veh  +
-                        PricingFee+ b_UCA +
-                        b_Intl+
-                        ODoD+
-                        Veh:cl_Days+
-                        
-                        Veh:cl_Ceil+
-                        cl_Ceil:PricingFee+
-                        
-                        
-                        b_UCA:n_Comp + 
-                        b_UCA:cl_Ceil+
-                        
-                        b_Intl:Veh +
-                   ODoD+ #+ ODoD:n_Comp 
-                   ODoD:Veh
-                      , family=binomial(link="logit"))
-glmer_examine(CBre_Comp_06E)
-
-
-
-  stargazer::stargazer(CBre_Cons_06A,CBre_Cons_06D,CBre_Cons_06E,CBre_Comp_06A,CBre_Comp_06C,CBre_Comp_06E,type="text",
-                       digits=2)
-  
-summary_residual_compare(CBre_Cons_06D,CBre_Cons_06E,CBre_Comp_06C,CBre_Comp_06E,bins=20)
-```
-Both exceed VIF limitation.
-
-### Model 07B: Old NAICS and ODoD
-```{r OldModel07B}
-corrdisp<-Hmisc::rcorr(
-  as.matrix(cbind(subset(crisis_smp, select=c(b_UCA,c_OffCri,cl_Ceil,
-                                              cl_Days,n_Fixed,b_Intl)),
-                  dummies::dummy(crisis_smp$Crisis),
-                  dummies::dummy(crisis_smp$NoComp),
-                  dummies::dummy(crisis_smp$Reach),
-                  dummies::dummy(crisis_smp$Veh),
-                  dummies::dummy(crisis_smp$Is.Defense),
-                  dummies::dummy(crisis_smp$Simple))))
-corrdisp[[1]]
-
-#Sumamry plot
-summary_discrete_plot(smp1m,"NAICS2",rotate_text=TRUE)
-CBre_Cons_07B <- glm (data=smp,
-                      b_CBre ~cl_def6_HHI_lag1 + 
-                        cl_Ceil + cl_Days+ 
-                        Veh +
-                        PricingFee + b_UCA +
-                        b_Intl+
-                        ODoD+
-                        # cl_def6_HHI_lag1:cl_Ceil  +
-                        
-                        # Veh:cl_def6_HHI_lag1  +
-                        
-                        
-                        
-                        b_UCA:cl_def6_HHI_lag1 + 
-                        b_UCA:cl_Ceil+
-                        
-                        
-                        ODoD:b_Intl+
-                        NAICS2
-                      , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_07B)
-glmer_examine(CBre_Cons_07B)
-
-CBre_Comp_07B <- glm (data=smp,
-                      b_CBre ~n_Comp + 
-                        cl_Ceil + cl_Days+ 
-                        Veh  +
-                        PricingFee+ b_UCA +
-                        b_Intl+
-                        
-                        
-                        
-                        
-                        
-                        
-                        b_UCA:n_Comp + 
-                        b_UCA:cl_Ceil+
-                        
-                        b_Intl:Veh +
-                   ODoD+ ODoD:b_Intl+
-                   NAICS2
-                      , family=binomial(link="logit"))
-glmer_examine(CBre_Comp_07B)
-glmer_examine(CBre_Comp_07B)
-
-CBre_Cons_07B2 <- glm (data=smp,
-                      b_CBre ~cl_def6_HHI_lag1 + 
-                        cl_Ceil + cl_Days+ 
-                        Veh +
-                        PricingFee + b_UCA +
-                        b_Intl+
-                        # ODoD+ Agency is missing
-                        # cl_def6_HHI_lag1:cl_Ceil  +
-                        
-                        # Veh:cl_def6_HHI_lag1  +
-                        
-                        
-                        
-                        b_UCA:cl_def6_HHI_lag1 + 
-                        b_UCA:cl_Ceil+
-                        
-                        
-                       # ODoD:b_Intl+
-                        NAICS2
-                      , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_07B2)
-glmer_examine(CBre_Cons_07B2)
-
-CBre_Comp_07B2 <- glm (data=smp,
-                      b_CBre ~n_Comp + 
-                        cl_Ceil + cl_Days+ 
-                        Veh  +
-                        PricingFee+ b_UCA +
-                        b_Intl+
-                        
-                        
-                        
-                        
-                        
-                        
-                        b_UCA:n_Comp + 
-                        b_UCA:cl_Ceil+
-                        
-                        b_Intl:Veh +
-                   # ODoD+
-                   NAICS2
-                      , family=binomial(link="logit"))
-glmer_examine(CBre_Comp_07B2)
-glmer_examine(CBre_Comp_07B2)
-
-
-  stargazer::stargazer(CBre_Cons_07A,CBre_Cons_07B2,CBre_Comp_07A,CBre_Comp_07B2,type="text",
-                       digits=2)
-  
-summary_residual_compare(CBre_Cons_07A,CBre_Cons_07B2,CBre_Comp_07A,CBre_Comp_07B2,bins=20)
-
-
-```
-
-### Model 10F: Veh:Days
-IDVs lower the transaction costs of contracting.  This may lead to a diminishment of their  effects as their  duration grows.
-
-```{r Model10F}
-
-
-#Sumamry plot
-summary_continuous_plot(smp1m,"l_Days","Veh")
-
-#Create the model
-CBre_Cons_10F <- glm(data=smp,
-                       b_CBre ~cl_def6_HHI_lag1 + 
-                         cl_Ceil + cl_Days+
-                       cl_def6_HHI_lag1:cl_Ceil+
-                                                # Veh:cl_def6_HHI_lag1+
-                         Veh+
-                          #cl_Ceil:cl_Days  +
-                         n_Fixed + b_UCA +
-                                                b_UCA:cl_def6_HHI_lag1+
-                         b_Intl +
-                         Veh:cl_Days +
-                         NAICS2
-                       , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_10F)
-glmer_examine(CBre_Cons_10F)
-  
-CBre_Comp_10F<- glm(data=smp,
-                       b_CBre ~n_Comp + 
-                         cl_Ceil + cl_Days+
-                         Veh+
-                         # cl_Ceil:cl_Days  +
-                         n_Fixed + b_UCA +
-                                               b_UCA:n_Comp+
-                         b_Intl +
-                         Veh:cl_Days +
-                         NAICS2
-                       , family=binomial(link="logit"))
-glmer_examine(CBre_Comp_10F)
-glmer_examine(CBre_Comp_10F)
-
-  stargazer::stargazer(CBre_Cons_10D,CBre_Cons_10F,CBre_Comp_10B,CBre_Comp_10F,type="text",
-                       digits=2)
-  
-  
-
-summary_residual_compare(CBre_Cons_10D,CBre_Cons_10F,CBre_Comp_10B,CBre_Comp_10F,bins=20)
-
-
-```
-The interaction adds fairly little to the model and makes residuals worse, leaving it out.
-
-### Model 10F: Ceil:Days
-
-There are two competing explainations. First, high base duration and ceiling contracts might estimate lower risks, because they give enouogh time to complete the contract. 
-```{r Model10F}
-
-
-#Sumamry plot
-summary_continuous_plot(smp1m,"l_Days","l_Ceil")
-
-#Create the model
-CBre_Cons_10F <- glm(data=smp,
-                       b_CBre ~cl_def6_HHI_lag1 + 
-                         cl_Ceil + cl_Days+
-                       cl_def6_HHI_lag1:cl_Ceil+
-                       cl_Ceil:cl_Days  +
-                         Veh+
-                          
-                         n_Fixed + b_UCA +
-                        b_UCA:cl_def6_HHI_lag1+
-                         b_Intl +
-                         NAICS2
-                       , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_10F)
-glmer_examine(CBre_Cons_10F)
-  
-CBre_Comp_10F<- glm(data=smp,
-                       b_CBre ~n_Comp + 
-                         cl_Ceil + cl_Days+
-                         Veh+
-                         cl_Ceil:cl_Days  +
-                         n_Fixed + b_UCA +
-                        b_UCA:n_Comp+
-                         b_Intl +
-                         NAICS2
-                       , family=binomial(link="logit"))
-glmer_examine(CBre_Comp_10F)
-glmer_examine(CBre_Comp_10F)
-
-  stargazer::stargazer(CBre_Cons_10D,CBre_Cons_10F,CBre_Comp_10B,CBre_Comp_10F,type="text",
-                       digits=2)
-  
-  
-
-summary_residual_compare(CBre_Cons_10D,CBre_Cons_10F,CBre_Comp_10B,CBre_Comp_10F,bins=20)
-
-
-```
-The results were significant though contrary to expectation. The reduction  in deviance is fairly minor and for consolidations makes the residuals worse. Perhaps this results happens because  contracts with a longer duration and higher base might indicate less complexity and more the delivery of something expensive.
