@@ -125,6 +125,15 @@ summary(smp$b_MultiOffr)
 summary(smp$EffComp)
 smp$b_MultiOffr<-as.numeric(as.character(smp$b_MultiOffr))
 
+levels(smp1m$EffComp)
+smp1m$b_MultiOffr<-smp1m$EffComp
+levels(smp1m$b_MultiOffr)<-list("0"=c("No Comp.","1 Offer"),
+                           "1"="2+ Offers")
+summary(smp1m$b_MultiOffr)
+summary(smp1m$EffComp)
+smp1m$b_MultiOffr<-as.numeric(as.character(smp1m$b_MultiOffr))
+
+
 # save(smp,smp1m,file="data//def_sample.Rdata")
 #Code to update sample w/o recreating.
 # smp<-smp["CSIScontractID"]
@@ -175,15 +184,15 @@ The expectation of the hypotheses is that a lower rate of consolidation will est
 
 ```{r ModelNCS6A_Comp}
 #Frequency Plot for unlogged ceiling
-summary_continuous_plot(smp,"def6_HHI_lag1")
-summary_continuous_plot(smp,"def5_HHI_lag1")
-summary_continuous_plot(smp,"def4_HHI_lag1")
-summary_continuous_plot(smp,"def3_HHI_lag1")
-summary_continuous_plot(smp,"def2_HHI_lag1")
+summary_continuous_plot(output="comp",smp,"def6_HHI_lag1")
+summary_continuous_plot(output="comp",smp,"def5_HHI_lag1")
+summary_continuous_plot(output="comp",smp,"def4_HHI_lag1")
+summary_continuous_plot(output="comp",smp,"def3_HHI_lag1")
+summary_continuous_plot(output="comp",smp,"def2_HHI_lag1")
 
 #Model
 Comp_Cons_NCS6A <- glm (data=smp,
-                 b_MultiOffr ~c_def6_HHI_lag1, family=binomial(link="logit"))
+                 cl_Offr ~c_def6_HHI_lag1, family=binomial(link="logit"))
 glmer_examine(Comp_Cons_NCS6A,suppress_vif=TRUE)
 
 
@@ -214,11 +223,11 @@ Both the summary statistics and the results are surprising. More consolidated se
 Expectations are  unchanged.
 ```{r ModelNCS6A_Comp}
 #Frequency Plot for unlogged ceiling
-summary_continuous_plot(smp,"l_def6_HHI_lag1")
-summary_continuous_plot(smp,"l_def5_HHI_lag1")
-summary_continuous_plot(smp,"l_def4_HHI_lag1")
-summary_continuous_plot(smp,"l_def3_HHI_lag1")
-summary_continuous_plot(smp,"l_def2_HHI_lag1")
+summary_continuous_plot(output="comp",smp,"l_def6_HHI_lag1")
+summary_continuous_plot(output="comp",smp,"l_def5_HHI_lag1")
+summary_continuous_plot(output="comp",smp,"l_def4_HHI_lag1")
+summary_continuous_plot(output="comp",smp,"l_def3_HHI_lag1")
+summary_continuous_plot(output="comp",smp,"l_def2_HHI_lag1")
 
 
 #Model
@@ -254,17 +263,17 @@ The use of log doesn't change the direction of finding, but it does reduce the m
 The lower the ratio of defense obligations to reciepts in the overall economy, the more potential competitors, but also the less developed industrial base. Given the difficulties the DoD has access many more traditional firms, a very low ratio may estimate a lower rate of competition. Interestingly both contradictory expectations find some support in the exploratory statistics, which show a sweet spot well below 5% where competition seems to peak.
 ```{r ModelNCS6C_Comp}
 #Frequency Plot for unlogged ceiling
-summary_continuous_plot(smp,"capped_def6_ratio_lag1")
-      summary_continuous_plot(smp,"l_def6_ratio_lag1")
-      summary_continuous_plot(smp,"capped_def5_ratio_lag1")
-      summary_continuous_plot(smp,"l_def5_ratio_lag1")
+summary_continuous_plot(output="comp",smp,"capped_def6_ratio_lag1")
+      summary_continuous_plot(output="comp",smp,"l_def6_ratio_lag1")
+      summary_continuous_plot(output="comp",smp,"capped_def5_ratio_lag1")
+      summary_continuous_plot(output="comp",smp,"l_def5_ratio_lag1")
       
-      summary_continuous_plot(smp,"capped_def4_ratio_lag1")
-      summary_continuous_plot(smp,"l_def4_ratio_lag1")
-      summary_continuous_plot(smp,"capped_def3_ratio_lag1")
-      summary_continuous_plot(smp,"l_def3_ratio_lag1")
-      summary_continuous_plot(smp,"capped_def2_ratio_lag1")
-      summary_continuous_plot(smp,"l_def2_ratio_lag1")
+      summary_continuous_plot(output="comp",smp,"capped_def4_ratio_lag1")
+      summary_continuous_plot(output="comp",smp,"l_def4_ratio_lag1")
+      summary_continuous_plot(output="comp",smp,"capped_def3_ratio_lag1")
+      summary_continuous_plot(output="comp",smp,"l_def3_ratio_lag1")
+      summary_continuous_plot(output="comp",smp,"capped_def2_ratio_lag1")
+      summary_continuous_plot(output="comp",smp,"l_def2_ratio_lag1")
       
 
 
@@ -274,10 +283,6 @@ Comp_Cons_NCS6C <- glm (data=smp,
                  family=binomial(link="logit"))
 glmer_examine(Comp_Cons_NCS6C)
 
-CBre_Comp_NCS6C <- glm (data=smp,
-                 b_MultiOffr ~n_Comp+cl_def6_ratio_lag1, 
-                 family=binomial(link="logit"))
-glmer_examine(CBre_Comp_NCS6C)
 # 
 # #Plot the fitted model plot
 # CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
@@ -293,22 +298,22 @@ glmer_examine(CBre_Comp_NCS6C)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Comp_Cons_NCS6B,Comp_Cons_NCS6C,
-                       CBre_Comp_01B,CBre_Comp_NCS6C,type="text",
+                       type="text",
                        digits=2)
 
 
 summary_residual_compare(Comp_Cons_NCS6B,Comp_Cons_NCS6C,bins=20)
-summary_residual_compare(CBre_Comp_01B,CBre_Comp_NCS6C,bins=2)
+summary_residual_compare(bins=2)
 
 
 ```
 The results align with the hypothesis and are significant, although the magnitude is minimal.
 
 
-#### Model NCS6D: Defense to Overall ratio
+#### Model NCS6D: Interaction Defense to Overall ratio
 When there is a larger market available, consolidation may matter less, for better or wrose. Thus interaction of consolidation and ratio will estimate greater magnitude than HHI index on its own. Per the hypothesis, this does not necessarily. 
-
-For competition, the effects may be greatest outside of a monospy context, thus the competition will estimate a lower occurance of ceiling breaches but the interaction of competition and ratio will estimate a higher rate.
+  
+  For competition, the effects may be greatest outside of a monospy context, thus the competition will estimate a lower occurance of ceiling breaches but the interaction of competition and ratio will estimate a higher rate.
 
 ```{r ModelNCS6D_Comp}
 #Frequency Plot for unlogged ceiling
@@ -320,71 +325,44 @@ Comp_Cons_NCS6D <- glm (data=smp,
                  family=binomial(link="logit"))
 glmer_examine(Comp_Cons_NCS6D)
 
-CBre_Comp_NCS6D <- glm (data=smp,
-                 b_MultiOffr ~n_Comp+cl_def6_ratio_lag1+n_Comp:cl_def6_ratio_lag1, 
-                 family=binomial(link="logit"))
-glmer_examine(CBre_Comp_NCS6D)
-# 
-# #Plot the fitted model plot
-# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
-# 
-# #Competition curves
-# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
-#                              args=list(Comp=0),color="blue")+
-#   stat_function(fun = CBre_Comp_02A_curve, 
-#                              args=list(Comp=2),color="blue")
-
-
-
-
-#Plot residuals versus fitted
-  stargazer::stargazer(Comp_Cons_NCS6B,Comp_Cons_NCS6C,Comp_Cons_NCS6D,
-                       CBre_Comp_01B,CBre_Comp_NCS6C,CBre_Comp_NCS6D,type="text",
-                       digits=2)
-
-
-summary_residual_compare(Comp_Cons_NCS6C,Comp_Cons_NCS6D,bins=20)
-summary_residual_compare(CBre_Comp_NCS6C,CBre_Comp_NCS6D,bins=2)
-
 
 ```
-Adding the interaction for consolidation does has minimal effect, contrary to expectation, although the results are significant. For competition, the results violate VIF and will not be included. The interaction will not be added.
-
+This violates the VIF threshold of 2 and will not be added.
 
 #### Model NCS6E: cl_def6_obl_lag1
-Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
+Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, the industrial base is likely more diverse when markets are larger. Thus greater defense in a given sector are expected to estimate a greater likelihood over multi-offer competition. The descriptive statistics tell a somewhat different story with a rise from tiny to small sectors, but lower competition rates in the largest.
 Expectations are  unchanged.
 ```{r ModelNCS6E_Comp}
 #Frequency Plot for unlogged ceiling
-summary_continuous_plot(smp,"def6_obl_lag1")
+summary_continuous_plot(output="comp",smp,"def6_obl_lag1")
 
 
-summary_continuous_plot(smp,"l_def6_obl_lag1")
-summary_continuous_plot(smp,"def5_obl_lag1")
+summary_continuous_plot(output="comp",smp,"l_def6_obl_lag1")
+summary_continuous_plot(output="comp",smp,"def5_obl_lag1")
 
-summary_continuous_plot(smp,"l_def5_obl_lag1")
-summary_continuous_plot(smp,"def4_obl_lag1")
+summary_continuous_plot(output="comp",smp,"l_def5_obl_lag1")
+summary_continuous_plot(output="comp",smp,"def4_obl_lag1")
 
-summary_continuous_plot(smp,"l_def4_obl_lag1")
-summary_continuous_plot(smp,"def3_obl_lag1")
+summary_continuous_plot(output="comp",smp,"l_def4_obl_lag1")
+summary_continuous_plot(output="comp",smp,"def3_obl_lag1")
 
-summary_continuous_plot(smp,"l_def4_obl_lag1")
-summary_continuous_plot(smp,"def2_obl_lag1")
+summary_continuous_plot(output="comp",smp,"l_def4_obl_lag1")
+summary_continuous_plot(output="comp",smp,"def2_obl_lag1")
 
-summary_continuous_plot(smp,"l_def2_obl_lag1")
+summary_continuous_plot(output="comp",smp,"l_def2_obl_lag1")
 
 #Model
 Comp_Cons_NCS6E <- glm (data=smp,
                  b_MultiOffr ~cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1, family=binomial(link="logit"))
 glmer_examine(Comp_Cons_NCS6E)
 
+Comp_Cons_NCS6E2 <- glm (data=smp1m,
+                 b_MultiOffr ~cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1, family=binomial(link="logit"))
+glmer_examine(Comp_Cons_NCS6E2)
 
-CBre_Comp_NCS6E <- glm (data=smp,
-                 b_MultiOffr ~n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1, 
-                 family=binomial(link="logit"))
-glmer_examine(CBre_Comp_NCS6E)
-
-# 
+ Comp_Cons_NCS6E3 <- glm (data=smp,
+                 b_MultiOffr ~cl_def6_HHI_lag1+cl_def6_obl_lag1, family=binomial(link="logit"))
+glmer_examine(Comp_Cons_NCS6E3)
 # #Plot the fitted model plot
 # CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
 # 
@@ -398,13 +376,13 @@ glmer_examine(CBre_Comp_NCS6E)
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(Comp_Cons_NCS6C,Comp_Cons_NCS6E,
-                       CBre_Comp_NCS6C,CBre_Comp_NCS6E,
+  stargazer::stargazer(Comp_Cons_NCS6C,Comp_Cons_NCS6E,Comp_Cons_NCS6E2,Comp_Cons_NCS6E3,
+                       
                        type="text",digits=2)
 
 
 summary_residual_compare(Comp_Cons_NCS6C,Comp_Cons_NCS6E,bins=20)
-summary_residual_compare(CBre_Comp_NCS6C,CBre_Comp_NCS6E,bins=20)
+summary_residual_compare(bins=20)
 
 
 ```
@@ -438,7 +416,7 @@ glmer_examine(Comp_Cons_NCS6F)
 #Plot residuals versus fitted
 
   stargazer::stargazer(Comp_Cons_NCS6C,Comp_Cons_NCS6E,Comp_Cons_NCS6F,
-                       CBre_Comp_NCS6C,CBre_Comp_NCS6E,
+                       
                        type="text",digits=2)
 
 
@@ -455,14 +433,14 @@ Average salary can be an proxy for unobserved skill requirements. We expect that
 #Frequency Plot for unlogged ceiling
 
 
-summary_continuous_plot(smp,"US6_avg_sal_lag1")
+summary_continuous_plot(output="comp",smp,"US6_avg_sal_lag1")
 
-summary_continuous_plot(smp,"l_US6_avg_sal_lag1")
+summary_continuous_plot(output="comp",smp,"l_US6_avg_sal_lag1")
 
-summary_continuous_plot(smp,"US5_avg_sal_lag1")
-summary_continuous_plot(smp,"US4_avg_sal_lag1")
-summary_continuous_plot(smp,"US3_avg_sal_lag1")
-summary_continuous_plot(smp,"US2_avg_sal_lag1")
+summary_continuous_plot(output="comp",smp,"US5_avg_sal_lag1")
+summary_continuous_plot(output="comp",smp,"US4_avg_sal_lag1")
+summary_continuous_plot(output="comp",smp,"US3_avg_sal_lag1")
+summary_continuous_plot(output="comp",smp,"US2_avg_sal_lag1")
 
 #Model
 #cl_def6_obl_lag1
@@ -494,13 +472,13 @@ glmer_examine(CBre_Comp_NCS6G)
 
 #Plot residuals versus fitted
  stargazer::stargazer(Comp_Cons_NCS6C,Comp_Cons_NCS6E,Comp_Cons_NCS6F,Comp_Cons_NCS6G,
-                       CBre_Comp_NCS6C,CBre_Comp_NCS6E,CBre_Comp_NCS6G,
+                       CBre_Comp_NCS6G,
                        type="text",digits=2)
 
 
 
 summary_residual_compare(Comp_Cons_NCS6F,Comp_Cons_NCS6G,bins=20)
-summary_residual_compare(CBre_Comp_NCS6E,CBre_Comp_NCS6G,bins=20)
+summary_residual_compare(CBre_Comp_NCS6G,bins=20)
 
 
 
@@ -512,11 +490,11 @@ The results were significant but in the opposite direction expected. This also r
 #### Model NCS5A: cl_def5_HHI
 ```{r ModelNCS5A_Comp}
 #Frequency Plot for unlogged ceiling
-summary_continuous_plot(smp,"l_def6_HHI_lag1")
-summary_continuous_plot(smp,"l_def5_HHI_lag1")
-summary_continuous_plot(smp,"l_def4_HHI_lag1")
-summary_continuous_plot(smp,"l_def3_HHI_lag1")
-summary_continuous_plot(smp,"l_def2_HHI_lag1")
+summary_continuous_plot(output="comp",smp,"l_def6_HHI_lag1")
+summary_continuous_plot(output="comp",smp,"l_def5_HHI_lag1")
+summary_continuous_plot(output="comp",smp,"l_def4_HHI_lag1")
+summary_continuous_plot(output="comp",smp,"l_def3_HHI_lag1")
+summary_continuous_plot(output="comp",smp,"l_def2_HHI_lag1")
 
 
 #Model
@@ -554,8 +532,8 @@ The higher the ratio of defense obligations to reciepts in the overall economy, 
 
 
 
-summary_continuous_plot(smp,"capped_def5_ratio_lag1")
-summary_continuous_plot(smp,"l_def5_ratio_lag1")
+summary_continuous_plot(output="comp",smp,"capped_def5_ratio_lag1")
+summary_continuous_plot(output="comp",smp,"l_def5_ratio_lag1")
 
 #Model
 Comp_Cons_NCS5B <- glm (data=smp,
@@ -582,13 +560,13 @@ glmer_examine(CBre_Comp_NCS5B)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Comp_Cons_NCS6D,Comp_Cons_NCS5A,Comp_Cons_NCS5B,
-                       CBre_Comp_01B,CBre_Comp_NCS6D,CBre_Comp_NCS5B,type="text",
+                       CBre_Comp_NCS6D,CBre_Comp_NCS5B,type="text",
                        digits=2)
 
 
 summary_residual_compare(Comp_Cons_NCS5A,Comp_Cons_NCS5B,bins=20)
 summary_residual_compare(Comp_Cons_NCS6D,Comp_Cons_NCS5B,bins=20)
-summary_residual_compare(CBre_Comp_01B,CBre_Comp_NCS5B,bins=2)
+summary_residual_compare(CBre_Comp_NCS5B,bins=2)
 summary_residual_compare(CBre_Comp_NCS6D,CBre_Comp_NCS5B,bins=2)
 
 
@@ -629,7 +607,7 @@ glmer_examine(CBre_Comp_NCS5C)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Comp_Cons_NCS5A,Comp_Cons_NCS5B,Comp_Cons_NCS5C,
-                       CBre_Comp_01B,CBre_Comp_NCS5B,CBre_Comp_NCS5C,type="text",
+                       CBre_Comp_NCS5B,CBre_Comp_NCS5C,type="text",
                        digits=2)
 
 
@@ -670,7 +648,7 @@ glmer_examine(CBre_Comp_NCS5D)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Comp_Cons_NCS5A,Comp_Cons_NCS5B,Comp_Cons_NCS5D,
-                       CBre_Comp_01B,CBre_Comp_NCS5B,CBre_Comp_NCS5D,type="text",
+                       CBre_Comp_NCS5B,CBre_Comp_NCS5D,type="text",
                        digits=2)
 
 
@@ -707,7 +685,7 @@ glmer_examine(Comp_Cons_NCS5E)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Comp_Cons_NCS5D,Comp_Cons_NCS5E,Comp_Cons_NCS6F,
-                       CBre_Comp_NCS5D,CBre_Comp_NCS6E,type="text",
+                       CBre_Comp_NCS5D,type="text",
                        digits=2)
 
   #Compare to prior at same level
@@ -722,7 +700,7 @@ Expectations were not uphelped. The interaction appears to badly misjudge some c
 #### Model NCS4A: cl_def4_HHI
 ```{r ModelNCS4A_Comp}
 #Frequency Plot for unlogged ceiling
-summary_continuous_plot(smp,"l_def4_HHI_lag1")
+summary_continuous_plot(output="comp",smp,"l_def4_HHI_lag1")
 
 
 #Model
@@ -764,8 +742,8 @@ The higher the ratio of defense obligations to reciepts in the overall economy, 
 
 
 
-summary_continuous_plot(smp,"capped_def4_ratio_lag1")
-summary_continuous_plot(smp,"l_def4_ratio_lag1")
+summary_continuous_plot(output="comp",smp,"capped_def4_ratio_lag1")
+summary_continuous_plot(output="comp",smp,"l_def4_ratio_lag1")
 
 #Model
 Comp_Cons_NCS4B <- glm (data=smp,
@@ -792,13 +770,13 @@ glmer_examine(CBre_Comp_NCS4B)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Comp_Cons_NCS5B,Comp_Cons_NCS4A,Comp_Cons_NCS4B,
-                       CBre_Comp_01B,CBre_Comp_NCS5B,CBre_Comp_NCS4B,type="text",
+                       CBre_Comp_NCS5B,CBre_Comp_NCS4B,type="text",
                        digits=2)
 
 
 summary_residual_compare(Comp_Cons_NCS4A,Comp_Cons_NCS4B,bins=20)
 summary_residual_compare(Comp_Cons_NCS5B,Comp_Cons_NCS4B,bins=20)
-summary_residual_compare(CBre_Comp_01B,CBre_Comp_NCS4B,bins=2)
+summary_residual_compare(CBre_Comp_NCS4B,bins=2)
 summary_residual_compare(CBre_Comp_NCS5B,CBre_Comp_NCS4B,bins=2)
 
 
@@ -839,7 +817,7 @@ glmer_examine(CBre_Comp_NCS4C)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Comp_Cons_NCS4A,Comp_Cons_NCS4B,Comp_Cons_NCS4C,
-                       CBre_Comp_01B,CBre_Comp_NCS4B,CBre_Comp_NCS4C,type="text",
+                       CBre_Comp_NCS4B,CBre_Comp_NCS4C,type="text",
                        digits=2)
 
 
@@ -882,7 +860,7 @@ glmer_examine(CBre_Comp_NCS4D)
 
 #Plot residuals versus fitted
 stargazer::stargazer(Comp_Cons_NCS4B,Comp_Cons_NCS4D,Comp_Cons_NCS6E,
-                       CBre_Comp_NCS4B,CBre_Comp_NCS4D,CBre_Comp_NCS6E,type="text",
+                       CBre_Comp_NCS4B,CBre_Comp_NCS4D,type="text",
                        digits=2)
 
 
@@ -925,7 +903,7 @@ glmer_examine(Comp_Cons_NCS4E)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Comp_Cons_NCS4D,Comp_Cons_NCS4E,Comp_Cons_NCS6F,
-                       CBre_Comp_NCS4D,CBre_Comp_NCS6E,type="text",
+                       CBre_Comp_NCS4D,type="text",
                        digits=2)
 
   #Compare to prior at same level
@@ -939,7 +917,7 @@ Expectations were not uphelped. Level 4 doesn't seem to be quite as effective as
 #### Model NCS3A: cl_def3_HHI
 ```{r ModelNCS3A_Comp}
 #Frequency Plot for unlogged ceiling
-summary_continuous_plot(smp,"l_def3_HHI_lag1")
+summary_continuous_plot(output="comp",smp,"l_def3_HHI_lag1")
 
 
 #Model
@@ -980,8 +958,8 @@ The higher the ratio of defense obligations to reciepts in the overall economy, 
 
 
 
-summary_continuous_plot(smp,"capped_def3_ratio_lag1")
-summary_continuous_plot(smp,"l_def3_ratio_lag1")
+summary_continuous_plot(output="comp",smp,"capped_def3_ratio_lag1")
+summary_continuous_plot(output="comp",smp,"l_def3_ratio_lag1")
 
 #Model
 Comp_Cons_NCS3B <- glm (data=smp,
@@ -1008,13 +986,13 @@ glmer_examine(CBre_Comp_NCS3B)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Comp_Cons_NCS4B,Comp_Cons_NCS3A,Comp_Cons_NCS3B,
-                       CBre_Comp_01B,CBre_Comp_NCS4B,CBre_Comp_NCS3B,type="text",
+                       CBre_Comp_NCS4B,CBre_Comp_NCS3B,type="text",
                        digits=2)
 
 
 summary_residual_compare(Comp_Cons_NCS3A,Comp_Cons_NCS3B,bins=20)
 summary_residual_compare(Comp_Cons_NCS4B,Comp_Cons_NCS3B,bins=20)
-summary_residual_compare(CBre_Comp_01B,CBre_Comp_NCS3B,bins=2)
+summary_residual_compare(CBre_Comp_NCS3B,bins=2)
 summary_residual_compare(CBre_Comp_NCS4B,CBre_Comp_NCS3B,bins=2)
 
 
@@ -1055,7 +1033,7 @@ glmer_examine(CBre_Comp_NCS3C)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Comp_Cons_NCS3A,Comp_Cons_NCS3B,Comp_Cons_NCS3C,
-                       CBre_Comp_01B,CBre_Comp_NCS3B,CBre_Comp_NCS3C,type="text",
+                       CBre_Comp_NCS3B,CBre_Comp_NCS3C,type="text",
                        digits=2)
 
 
@@ -1139,7 +1117,7 @@ glmer_examine(Comp_Cons_NCS3E)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Comp_Cons_NCS3D,Comp_Cons_NCS3E,Comp_Cons_NCS6F,
-                       CBre_Comp_NCS3D,CBre_Comp_NCS6E,type="text",
+                       CBre_Comp_NCS3D,type="text",
                        digits=2)
 
   #Compare to prior at same level
@@ -1156,13 +1134,13 @@ Average salary can be an proxy for unobserved skill requirements. We expect that
 #Frequency Plot for unlogged ceiling
 
 
-summary_continuous_plot(smp,"US3_avg_sal_lag1")
-summary_continuous_plot(smp,"l_US3_avg_sal_lag1")
+summary_continuous_plot(output="comp",smp,"US3_avg_sal_lag1")
+summary_continuous_plot(output="comp",smp,"l_US3_avg_sal_lag1")
 
-summary_continuous_plot(smp,"US5_avg_sal_lag1")
-summary_continuous_plot(smp,"US4_avg_sal_lag1")
-summary_continuous_plot(smp,"US3_avg_sal_lag1")
-summary_continuous_plot(smp,"US2_avg_sal_lag1")
+summary_continuous_plot(output="comp",smp,"US5_avg_sal_lag1")
+summary_continuous_plot(output="comp",smp,"US4_avg_sal_lag1")
+summary_continuous_plot(output="comp",smp,"US3_avg_sal_lag1")
+summary_continuous_plot(output="comp",smp,"US2_avg_sal_lag1")
 
 #Model
 
@@ -1337,7 +1315,7 @@ The hypothesis is upheld. Deviance is a little lower and residuals a little high
 #### Model NCS2A: cl_def2_HHI
 ```{r ModelNCS2A_Comp}
 #Frequency Plot for unlogged ceiling
-summary_continuous_plot(smp,"l_def2_HHI_lag1")
+summary_continuous_plot(output="comp",smp,"l_def2_HHI_lag1")
 
 
 #Model
@@ -1377,8 +1355,8 @@ The higher the ratio of defense obligations to reciepts in the overall economy, 
 
 
 
-summary_continuous_plot(smp,"capped_def2_ratio_lag1")
-summary_continuous_plot(smp,"l_def2_ratio_lag1")
+summary_continuous_plot(output="comp",smp,"capped_def2_ratio_lag1")
+summary_continuous_plot(output="comp",smp,"l_def2_ratio_lag1")
 
 #Model
 Comp_Cons_NCS2B <- glm (data=smp,
@@ -1405,13 +1383,13 @@ glmer_examine(CBre_Comp_NCS2B)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Comp_Cons_NCS3B,Comp_Cons_NCS2A,Comp_Cons_NCS2B,
-                       CBre_Comp_01B,CBre_Comp_NCS3B,CBre_Comp_NCS2B,type="text",
+                       CBre_Comp_NCS3B,CBre_Comp_NCS2B,type="text",
                        digits=2)
 
 
 summary_residual_compare(Comp_Cons_NCS2A,Comp_Cons_NCS2B,bins=10)
 summary_residual_compare(Comp_Cons_NCS3B,Comp_Cons_NCS2B,bins=20)
-summary_residual_compare(CBre_Comp_01B,CBre_Comp_NCS2B,bins=2)
+summary_residual_compare(CBre_Comp_NCS2B,bins=2)
 summary_residual_compare(CBre_Comp_NCS3B,CBre_Comp_NCS2B,bins=2)
 
 
@@ -1453,7 +1431,7 @@ glmer_examine(CBre_Comp_NCS2C)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Comp_Cons_NCS2A,Comp_Cons_NCS2B,Comp_Cons_NCS2C,
-                       CBre_Comp_01B,CBre_Comp_NCS2B,CBre_Comp_NCS2C,type="text",
+                       CBre_Comp_NCS2B,CBre_Comp_NCS2C,type="text",
                        digits=2)
 
 
@@ -1540,7 +1518,7 @@ glmer_examine(Comp_Cons_NCS2E)
 
 #Plot residuals versus fitted
 stargazer::stargazer(Comp_Cons_NCS6B,Comp_Cons_NCS6D,Comp_Cons_NCS6E,
-                       CBre_Comp_NCS2B,CBre_Comp_NCS2D,CBre_Comp_NCS6E,type="text",
+                       CBre_Comp_NCS2B,CBre_Comp_NCS2D,type="text",
                        digits=2)
 
 
@@ -1561,13 +1539,13 @@ Average salary can be an proxy for unobserved skill requirements. We expect that
 #Frequency Plot for unlogged ceiling
 
 
-summary_continuous_plot(smp,"US2_avg_sal_lag1")
-summary_continuous_plot(smp,"l_US2_avg_sal_lag1")
+summary_continuous_plot(output="comp",smp,"US2_avg_sal_lag1")
+summary_continuous_plot(output="comp",smp,"l_US2_avg_sal_lag1")
 
-summary_continuous_plot(smp,"US5_avg_sal_lag1")
-summary_continuous_plot(smp,"US4_avg_sal_lag1")
-summary_continuous_plot(smp,"US2_avg_sal_lag1")
-summary_continuous_plot(smp,"US2_avg_sal_lag1")
+summary_continuous_plot(output="comp",smp,"US5_avg_sal_lag1")
+summary_continuous_plot(output="comp",smp,"US4_avg_sal_lag1")
+summary_continuous_plot(output="comp",smp,"US2_avg_sal_lag1")
+summary_continuous_plot(output="comp",smp,"US2_avg_sal_lag1")
 
 #Model
 
@@ -1747,14 +1725,14 @@ The hypothesis is upheld. Deviance is a little lower and residuals a little high
 
 ```{r Model02A_Comp}
 #Frequency Plot for unlogged ceiling
-summary_continuous_plot(smp,"UnmodifiedContractBaseAndAllOptionsValue",
+summary_continuous_plot(output="comp",smp,"UnmodifiedContractBaseAndAllOptionsValue",
                bins=1000)
 summary_continuous_plot(subset(smp,UnmodifiedContractBaseAndAllOptionsValue<100000000),
                "UnmodifiedContractBaseAndAllOptionsValue",
                bins=1000)
 
 #Frequency Plot for logged ceiling
-summary_continuous_plot(smp,"l_Ceil")
+summary_continuous_plot(output="comp",smp,"l_Ceil")
 
 #Model
 Comp_Cons_02A <- glm (data=smp,
@@ -1782,11 +1760,11 @@ fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve,
 binned_fitted_versus_cbre_residuals(CBre_Comp_02A)
 
 #Plot residuals versus fitted
-  stargazer::stargazer(Comp_Cons_01F, Comp_Cons_02A,CBre_Comp_01B,CBre_Comp_02A,type="text",
+  stargazer::stargazer(Comp_Cons_01F, Comp_Cons_02A,CBre_Comp_02A,type="text",
                        digits=2)
 
 
-summary_residual_compare(Comp_Cons_01F,Comp_Cons_02A,CBre_Comp_01B,CBre_Comp_02A,bins=2)
+summary_residual_compare(Comp_Cons_01F,Comp_Cons_02A,CBre_Comp_02A,bins=2)
 
 
 ```
@@ -1803,7 +1781,7 @@ Larger contracts may encourage bid to win strategies  that could raise ceiling b
 ```{r Model02C_Comp}
 
 #Frequency Plot
-summary_continuous_plot(smp,"l_Ceil","EffComp")
+summary_continuous_plot(output="comp",smp,"l_Ceil","EffComp")
 
 
 #Create the model
@@ -1846,11 +1824,11 @@ The weaker expectation was not upheld with consolidation but is significant. Lea
 
 ```{r Model02D_Comp}
 #Frequency Plot for max duration
-summary_continuous_plot(smp,"UnmodifiedDays",
+summary_continuous_plot(output="comp",smp,"UnmodifiedDays",
                bins=1000)
 
 #Frequency Plot for logged max duration
-summary_continuous_plot(smp,"l_Days")
+summary_continuous_plot(output="comp",smp,"l_Days")
 
 
 
@@ -1965,7 +1943,7 @@ Greater duration may limit the influence of competition, at least under the poli
 ```{r Mode02H_Comp}
 
 #Frequency Plot
-summary_continuous_plot(smp,"l_Days","EffComp")
+summary_continuous_plot(output="comp",smp,"l_Days","EffComp")
 
 #Create the model
 Comp_Cons_02H <- glm (data=smp,
@@ -2107,7 +2085,7 @@ Expectation, those vehicles that are prone towards particularly short task order
 ```{r Model03b_MultiOffr}
 
 #Frequency Plot
-summary_continuous_plot(smp,"l_Days","Veh")
+summary_continuous_plot(output="comp",smp,"l_Days","Veh")
 
 
 
@@ -2218,7 +2196,7 @@ Competition occurs more regularly with definitive contracts, multiple award IDCs
 
 #Frequency Plot
 summary_discrete_plot(smp,"EffComp","Veh")
-summary_continuous_plot(smp,"HHI_lag1","Veh")
+summary_continuous_plot(output="comp",smp,"HHI_lag1","Veh")
 
 #Create the model
 Comp_Cons_03C <- glm (data=smp,
@@ -2313,7 +2291,7 @@ Based on a the descriptive statistics, it appears that the definitive vehicles, 
 ```{r Model03D_Comp}
 
 #Frequency Plot
-summary_continuous_plot(smp,"l_Ceil","Veh")
+summary_continuous_plot(output="comp",smp,"l_Ceil","Veh")
 
 
 #Create the model
@@ -2717,7 +2695,7 @@ Time&Materials/Labor Hours/Fixed-Price Level of Effort are typically used for sm
 ```{r Model04E_Comp}
 
 #Frequency Plot
-summary_continuous_plot(smp,"l_Days","PricingFee")
+summary_continuous_plot(output="comp",smp,"l_Days","PricingFee")
 
 #Create the model
 Comp_Cons_04E <- glm (data=smp,
@@ -2893,7 +2871,7 @@ Incentive fees, in theory, should do a estimate lower ceiling breaches as they i
 ```{r Model04G_Comp}
 
 #Frequency Plot
-summary_continuous_plot(smp,"l_Ceil","PricingFee")
+summary_continuous_plot(output="comp",smp,"l_Ceil","PricingFee")
 
 #Create the model
 Comp_Cons_04G <- glm (data=smp,
@@ -3041,7 +3019,7 @@ Based on GAO research, uncompeted UCA are high risk and  thus should estimate a 
 
 #Frequency Plot
 summary_discrete_plot(smp,"UCA","n_Comp")
-summary_continuous_plot(smp,"cl_def6_HHI_lag1","UCA")
+summary_continuous_plot(output="comp",smp,"cl_def6_HHI_lag1","UCA")
 
 #Create the model
 
@@ -3117,7 +3095,7 @@ While duration tracks the base duration and not the length spent in UCA, nonethe
 
 
 #Frequency Plot
-summary_continuous_plot(smp,"l_Days","UCA")
+summary_continuous_plot(output="comp",smp,"l_Days","UCA")
 
 Comp_Cons_04J <- glm (data=smp,
 b_MultiOffr ~cl_def6_HHI_lag1 + 
@@ -3226,7 +3204,7 @@ Here the possible risk is similar to days, that larger, and thus possibly more c
 
 
 #Frequency Plot
-summary_continuous_plot(smp,"l_Ceil","UCA")
+summary_continuous_plot(output="comp",smp,"l_Ceil","UCA")
 
 Comp_Cons_04K <- glm (data=smp,
 b_MultiOffr ~cl_def6_HHI_lag1 + 
@@ -3334,7 +3312,7 @@ Fixed Price is less  appropriate as an approach when there is greater uncertaint
 
 
 #Frequency Plot
-summary_continuous_plot(smp,"l_Ceil","UCA")
+summary_continuous_plot(output="comp",smp,"l_Ceil","UCA")
 
 Comp_Cons_04L <- glm (data=smp,
 b_MultiOffr ~cl_def6_HHI_lag1 + 
