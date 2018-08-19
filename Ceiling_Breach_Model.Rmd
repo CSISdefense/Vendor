@@ -132,10 +132,10 @@ Next, we eliminate missing data entries and then draw a sample. The final comput
  load(file="data//def_sample.Rdata")
 # save(smp,smp1m,file="data//def_sample.Rdata")
 #Code to update sample w/o recreating.
-# smp<-smp["CSIScontractID"]
-# smp<-left_join(smp,def)
-# smp1m<-smp1m["CSIScontractID"]
-# smp1m<-left_join(smp1m,def)
+smp<-smp["CSIScontractID"]
+smp<-left_join(smp,def)
+smp1m<-smp1m["CSIScontractID"]
+smp1m<-left_join(smp1m,def)
 
   
   #Customer
@@ -4449,16 +4449,18 @@ summary_residual_compare(CBre_Cons_07A,CBre_Cons_07C,CBre_Comp_07A,CBre_Comp_07C
 ```
 
 ## Cluster Analysis
-### Model 08: Office Clustered Ceiling
+### Model 08A: Office Clustered Ceiling
 This approach explores an alternate means of considering ceiling, using cluster averaging by office rather than grand mean averaging. This means that we'd be considering the initial size of each contract or task order relative to others released by the same office rather than the average of all contracts. In this case, the averaging is done after logging the ceiling.
-```{r Model07C}
+```{r Model08A}
 def<-def %>% group_by(Agency,Office) %>%
   dplyr::mutate(office_l_Ceil_mean=mean(l_Ceil,na.rm=TRUE),
                   office_l_Ceil_sd=sd(l_Ceil,na.rm=TRUE)
                   )
 
-def$c_office_l_Ceil_mean<-(def$l_Ceil-def$office_l_Ceil_mean)/def$office_l_Ceil_sd
-summary_continuous_plot(def,"c_office_l_Ceil_mean")
+def$c_office_l_Ceil<-(def$l_Ceil-def$office_l_Ceil_mean)/(def$office_l_Ceil_sd*2)
+def$c_office_l_Ceil_mean<-arm::rescale(def$office_l_Ceil_mean)
+summary_continuous_plot(smp,"c_office_l_Ceil")
+summary_continuous_plot(smp,"cl_Ceil")
 
 #Taking out average salary 3 to keep the models snced up.
 CBre_Comp_NCS3G3 <- glm (data=smp,
@@ -4468,12 +4470,12 @@ CBre_Comp_NCS3G3 <- glm (data=smp,
 glmer_examine(CBre_Comp_NCS3G3)
 vif(CBre_Comp_NCS3G3)
 
-CBre_Cons_07C <- glm (data=smp,
+CBre_Cons_08A <- glm (data=smp,
                       b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                         #cl_US3_avg_sal_lag1+
                         cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
                         cl_US6_avg_sal_lag1+     
-                        cl_Ceil + cl_Days+ 
+                        c_office_l_Ceil + cl_Days+ 
                         Veh +
                         PricingFee + b_UCA +
                         b_Intl+
@@ -4482,39 +4484,103 @@ CBre_Cons_07C <- glm (data=smp,
                         cl_def6_HHI_lag1:cl_def6_obl_lag1  +
                         # Veh:cl_def6_HHI_lag1  +
                         b_UCA:cl_def6_HHI_lag1 + 
-                        b_UCA:cl_Ceil+
+                        b_UCA:c_office_l_Ceil+
                         
                         Agency+
                         NAICS2
                       , family=binomial(link="logit"))
-glmer_examine(CBre_Cons_07C)
+glmer_examine(CBre_Cons_08A)
 
 
-CBre_Comp_07C <- glm (data=smp,
+CBre_Comp_08A <- glm (data=smp,
                       b_CBre~n_Comp+
                         cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         
-                        cl_Ceil + cl_Days+ 
+                        c_office_l_Ceil + cl_Days+ 
                         Veh  +
                         PricingFee+ b_UCA +
                         b_Intl+
                         
                         b_UCA:n_Comp + 
-                        b_UCA:cl_Ceil+
+                        b_UCA:c_office_l_Ceil+
                         
                         Agency+
                         NAICS2
                       , family=binomial(link="logit"))
-glmer_examine(CBre_Comp_07C)
+glmer_examine(CBre_Comp_08A)
 
 
-stargazer::stargazer(CBre_Cons_07A,CBre_Cons_07B,CBre_Cons_07C,CBre_Cons_07C,CBre_Comp_07A,CBre_Comp_07B,CBre_Comp_07C,CBre_Comp_07C,type="text",
+stargazer::stargazer(CBre_Cons_07C,CBre_Cons_08A,CBre_Comp_07C,CBre_Comp_08A,type="text",
                        digits=2)
 
-summary_residual_compare(CBre_Cons_07A,CBre_Cons_07C,CBre_Comp_07A,CBre_Comp_07C,bins=20)
+summary_residual_compare(CBre_Cons_07C,CBre_Cons_08A,CBre_Comp_07C,CBre_Comp_08A,bins=20)
 
 ```
+### Model 08B: Office Clustered Days
+
+```{r Model08B}
+def<-def %>% group_by(Agency,Office) %>%
+  dplyr::mutate(office_l_Days_mean=mean(l_Days,na.rm=TRUE),
+                  office_l_Days_sd=sd(l_Days,na.rm=TRUE)
+                  )
+
+def$c_office_l_Days<-(def$l_Days-def$office_l_Days_mean)/(def$office_l_Days_sd*2)
+def$c_office_l_Days_mean<-arm::rescale(def$office_l_Days_mean)
+summary_continuous_plot(smp,"c_office_l_Days")
+summary_continuous_plot(smp,"cl_Days")
+
+
+CBre_Cons_08B <- glm (data=smp,
+                      b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                        #cl_US3_avg_sal_lag1+
+                        cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                        cl_US6_avg_sal_lag1+     
+                        c_office_l_Ceil + c_office_l_Days+ 
+                        Veh +
+                        PricingFee + b_UCA +
+                        b_Intl+
+                        
+                       
+                        cl_def6_HHI_lag1:cl_def6_obl_lag1  +
+                        # Veh:cl_def6_HHI_lag1  +
+                        b_UCA:cl_def6_HHI_lag1 + 
+                        b_UCA:c_office_l_Ceil+
+                        
+                        Agency+
+                        NAICS2
+                      , family=binomial(link="logit"))
+glmer_examine(CBre_Cons_08B)
+
+
+CBre_Comp_08B <- glm (data=smp,
+                      b_CBre~n_Comp+
+                        cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                        cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                        
+                        c_office_l_Ceil + c_office_l_Days+ 
+                        Veh  +
+                        PricingFee+ b_UCA +
+                        b_Intl+
+                        
+                        b_UCA:n_Comp + 
+                        b_UCA:c_office_l_Ceil+
+                        
+                        Agency+
+                        NAICS2
+                      , family=binomial(link="logit"))
+glmer_examine(CBre_Comp_08B)
+
+
+stargazer::stargazer(CBre_Cons_07C,CBre_Cons_08B,CBre_Comp_07C,CBre_Comp_08B,type="text",
+                       digits=2)
+
+summary_residual_compare(CBre_Cons_07C,CBre_Cons_08B,CBre_Comp_07C,CBre_Comp_08B,bins=20)
+
+```
+
+
+
 
 # Interactions
 ### Model 10A: No Interactions
@@ -5609,8 +5675,139 @@ save(CBre_Cons_13C,CBre_Comp_13C,file="Output//CBre_Cons_13C.rdata")
 ```
 
 
+###Model 13D: Agency/Office+NAICS6/NAICS3 trimmed
+```{r Model13D}
+load("Output//CBre_Cons_11D.rdata")
+glmer_examine(CBre_Cons_11D)
+
+load("Output//CBre_Cons_13D.rdata")
+
+CBre_Cons_13D <- glmer (data=smp,
+                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                  #cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                  cl_US6_avg_sal_lag1+
+                                                c_office_l_Ceil + c_office_l_Days+ 
+                        Veh +
+                        PricingFee + b_UCA +
+                        b_Intl+
+                   
+                       
+                        
+                        
+                        b_UCA:cl_def6_HHI_lag1 + 
+                        b_UCA:c_office_l_Ceil+
+                        cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                         
+                        (1 | NAICS3/NAICS) + 
+                        (1 | Agency/Office) 
+
+                      , family=binomial(link="logit"),
+                        verbose=1)
 
 
+glmer_examine(CBre_Cons_13D,display=TRUE)
+
+save(CBre_Cons_13D,file="Output//CBre_Cons_13D.rdata")
+CBre_Comp_13D <- glmer (data=smp,
+                        b_CBre ~n_Comp+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                   n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                        c_office_l_Ceil + c_office_l_Days+
+                        Veh  +
+                        PricingFee+
+                        b_UCA +
+                        b_Intl+
+                        
+                        
+                        
+                        b_UCA:n_Comp +
+                        b_UCA:c_office_l_Ceil+
+                        
+                        (1 | NAICS3/NAICS) + (1 | Agency/Office)
+                      , family=binomial(link="logit"),
+                        verbose=1)
+glmer_examine(CBre_Comp_13D)
+save(CBre_Comp_13D,file="Output//CBre_Comp_13D.rdata")
+
+
+  stargazer::stargazer(CBre_Cons_14A,CBre_Cons_13D,CBre_Comp_14A.restart,CBre_Comp_13D,type="text",
+                       digits=2)
+  
+  
+
+summary_residual_compare(CBre_Cons_14A,CBre_Cons_13D,CBre_Comp_14A.restart,CBre_Comp_13D,bins=20)
+
+
+
+any(diag.vals<1e-6)
+
+if(!exists("CBre_Cons_13D.devfun"))
+  CBre_Cons_13D.devfun <- update(CBre_Cons_13D, devFunOnly=TRUE)
+
+if (isLMM(CBre_Cons_13D)) {
+  pars <- getME(CBre_Cons_13D,"theta")
+} else {
+  ## GLMM: requires both random and fixed parameters
+  pars <- getME(CBre_Cons_13D, c("theta","fixef"))
+}
+if (require("numDeriv")) {
+  cat("hess:\n"); print(hess <- hessian(CBre_Cons_13D.devfun, unlist(pars)))
+  cat("grad:\n"); print(grad <- grad(CBre_Cons_13D.devfun, unlist(pars)))
+  cat("scaled gradient:\n")
+  print(scgrad <- solve(chol(hess), grad))
+}
+## compare with internal calculations:
+CBre_Cons_13D@optinfo$derivs
+
+if(!exists("CBre_Cons_13D.restart"))
+  CBre_Cons_13D.restart <- update(CBre_Cons_13D, start=pars)
+glmer_examine(CBre_Cons_13D.restart)
+
+
+
+
+#CBre Comp
+if(!exists("CBre_Comp_13D.devfun"))
+  CBre_Comp_13D.devfun <- update(CBre_Comp_13D, devFunOnly=TRUE)
+
+if (isLMM(CBre_Comp_13D)) {
+  pars <- getME(CBre_Comp_13D,"theta")
+} else {
+  ## GLMM: requires both random and fixed parameters
+  pars <- getME(CBre_Comp_13D, c("theta","fixef"))
+}
+if (require("numDeriv")) {
+  cat("hess:\n"); print(hess <- hessian(CBre_Comp_13D.devfun, unlist(pars)))
+  cat("grad:\n"); print(grad <- grad(CBre_Comp_13D.devfun, unlist(pars)))
+  cat("scaled gradient:\n")
+  print(scgrad <- solve(chol(hess), grad))
+}
+## compare with internal calculations:
+CBre_Comp_13D@optinfo$derivs
+
+if(!exists("CBre_Comp_13D.restart"))
+  CBre_Comp_13D.restart <- update(CBre_Comp_13D, start=pars)
+glmer_examine(CBre_Comp_13D.restart)
+
+
+  save(CBre_Cons_13D,CBre_Comp_13D,CBre_Cons_13D.restart,CBre_Comp_13D.restart,
+       file="Output//CBre_Cons_13D.rdata")
+  
+stargazer::stargazer(CBre_Cons_14A,CBre_Cons_13D,CBre_Cons_13D.restart,CBre_Comp_14A.restart,CBre_Comp_13D,type="text",
+                       digits=2)
+
+
+
+
+
+  save(CBre_Cons_13D,CBre_Comp_13D,CBre_Cons_13D.restart,
+       file="Output//CBre_Cons_13D.rdata")
+load("Output//CBre_Comp_13D.rdata")
+
+  summary_residual_compare(CBre_Cons_13D,CBre_Cons_13D.restart,CBre_Comp_14A.restart,CBre_Comp_13D,bins=20)
+
+
+```
 
 
 
