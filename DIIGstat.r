@@ -413,9 +413,9 @@ freq_discrete_plot<-function(data,x_col,
 }
 
 
-summary_continuous_plot<-function(data,x_col,group_col=NA,bins=20){
+summary_continuous_plot<-function(data,x_col,group_col=NA,bins=20,output="perform"){
   gridExtra::grid.arrange(freq_continuous_plot(data,x_col,group_col,bins=bins,caption=FALSE),
-                          binned_percent_plot(data,x_col,group_col,caption=TRUE))
+                          binned_percent_plot(data,x_col,group_col,caption=TRUE,output=output))
   
 }
 
@@ -551,46 +551,65 @@ freq_continuous_cbre_plot<-function(data,x_col,group_col=NA,bins=20,
 }
 
 
-binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE){
+binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,output="perform"){
   data<-data[!is.na(data[,x_col]),]
   if(is.na(group_col)){
     data$bin_x<-bin_df(data,x_col,bins=bins)
     data<-data %>% group_by(bin_x)
 
     
-    comp<-data %>% summarise_ (   mean_y = "mean(b_MultiOffr)"   
-                                  , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
-    cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   
-                                  , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
-        term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   
-                                  , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+    if(output=="perform"){
+      cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   
+                                    , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+      term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   
+                                    , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+      term$output<-"Terminations"
+      cbre$output<-"Ceiling Breaches"
+      data<-rbind(cbre,term)
+      data$output<-factor(data$output,c("Ceiling Breaches","Terminations"))  
+    }
+    else if (output=="comp"){
+      comp<-data %>% summarise_ (   mean_y = "mean(b_Comp)"   
+                                    , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+      offer<-data %>% summarise_ (   mean_y = "mean(l_Offr)"   
+                                     , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+      comp$output<-"Competed"
+      offer$output<-"Offers (logged)"
+      data<-rbind(comp,offer)
+      data$output<-factor(data$output,c("Competed","Offers (logged)"))  
+    }
     
-    term$output<-"Terminations"
-    cbre$output<-"Ceiling Breaches"
-    comp$output<-"Multiple Offers"
-    data<-rbind(comp,cbre,term)
-    data$output<-factor(data$output,c("Multiple Offers","Ceiling Breaches","Terminations"))
     plot<-ggplot(data=data,
-                 aes(y=mean_y,x=mean_x))+facet_wrap(~output)
+                 aes(y=mean_y,x=mean_x))+facet_wrap(~output,scales="free_y")
   }
   else{
     data<-data[!is.na(data[,group_col]),]
     data$bin_x<-bin_df(data,rank_col=x_col,group_col=group_col,bins=bins)
     data<-data %>%
       group_by_("bin_x",group_col)
+
     
-    cbre<-data %>% summarise_ (   mean_y = "mean(b_MultiOffr)"   
-                                  , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
-    cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   
-                                  , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
-    term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   
-                                  , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
-    term$output<-"Term."
-    cbre$output<-"C. Bre."
-    comp$output<-"Multi"
+    if(output=="perform"){
+      cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   
+                                    , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+      term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   
+                                    , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+      term$output<-"Term."
+      cbre$output<-"C. Bre."
+      data<-rbind(cbre,term)
+      data$output<-factor(data$output,c("C. Bre.","Term."))  
+    }
+    else if (output=="comp"){
+      comp<-data %>% summarise_ (   mean_y = "mean(b_Comp)"   
+                                    , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+      offer<-data %>% summarise_ (   mean_y = "mean(l_Offr)"   
+                                     , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+      comp$output<-"Comp."
+      offer$output<-"Offers (logged)"
+      data<-rbind(comp,offer)
+      data$output<-factor(data$output,c("Comp.","Offers (logged)"))  
+    }
     
-    data<-rbind(comp,cbre,term)
-    data$output<-factor(data$output,c("Multi.","C. Bre.","Term."))
     plot<-ggplot(data=data,
                  aes(y=mean_y,x=mean_x))+
       facet_grid(as.formula(paste("output~",group_col)),scales="free_y")
