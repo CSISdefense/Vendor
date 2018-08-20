@@ -122,14 +122,36 @@ binned_fitted_versus_term_residuals<-function(model){
     labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 }
 
+resid_plot<-function(model,sample=NA){
+#Source https://rpubs.com/therimalaya/43190
+# Raju Rimal
+  results<-data.frame(
+    fitted=fitted(model),
+    resid=residuals(model)
+  )
+  #For reasons of speed, I give the option to only partially show the results. 250k or 1m takes a while to plot.
+  if(!is.na(sample)){
+    results<-results[sample(nrow(results),sample),]
+    
+  }
+  
+  p1<-ggplot(results, aes(x=fitted, y=resid))+geom_point()
+  p1<-p1+stat_smooth(method="loess")+geom_hline(yintercept=0, col="red", linetype="dashed")
+  p1<-p1+xlab("Fitted values")+ylab("Residuals")
+  p1<-p1+ggtitle("Residual vs Fitted Plot")+theme_bw()
+  p1
+}
+
 binned_fitted_versus_residuals<-function(model){
   if(class(model)[1]=="glmerMod")
   {
     if(!is.null(model@frame$b_CBre)){
       graph<-binned_fitted_versus_cbre_residuals(model)
-    } else if(!is.null(model@frame$b_CBre)){
+    } else if(!is.null(model@frame$b_Term)){
       graph<-binned_fitted_versus_term_residuals(model)
-    } 
+    } else if(!is.null(model@frame$cl_Offr)){
+      graph<-resid_plot(model,sample=25000)
+    }
     else{stop("Outcome variable not recognized.")}
   }
   else
@@ -138,7 +160,9 @@ binned_fitted_versus_residuals<-function(model){
       graph<-binned_fitted_versus_cbre_residuals(model)
     } else if(!is.null(model$model$b_Term)){
       graph<-binned_fitted_versus_term_residuals(model)
-    } 
+    } else if(!is.null(model$model$cl_Offr)){
+      graph<-resid_plot(model,sample=25000)
+    }
     else{stop("Outcome variable not recognized.")}
   }
   graph
@@ -191,6 +215,9 @@ residuals_plot<-function(model,col="fitted",bins=40){
       graph<-residuals_cbre_plot(model,col,bins=bins)
     } else if(!is.null(model@frame$b_CBre)){
       graph<-residuals_term_plot(model,col,bins=bins)
+    } else if(!is.null(model@frame$cl_Offr)){
+      warning("write this")#graph<-residuals_plot(model,col,bins=bins)
+      graph<-resid_plot(model,sample=25000)
     } 
     else{stop("Outcome variable not recognized.")}
   }
@@ -200,6 +227,9 @@ residuals_plot<-function(model,col="fitted",bins=40){
       graph<-residuals_cbre_plot(model,col,bins=bins)
     } else if(!is.null(model$model$b_Term)){
       graph<-residuals_term_plot(model,col,bins=bins)
+    } else if(!is.null(model$model$cl_Offr)){
+      warning("write this")#graph<-residuals_plot(model,col,bins=bins)
+      graph<-resid_plot(model,sample=25000)
     } 
     else{stop("Outcome variable not recognized.")}
   }
@@ -414,9 +444,9 @@ freq_discrete_plot<-function(data,x_col,
 }
 
 
-summary_continuous_plot<-function(data,x_col,group_col=NA,bins=20){
+summary_continuous_plot<-function(data,x_col,group_col=NA,bins=20,output="perform"){
   gridExtra::grid.arrange(freq_continuous_plot(data,x_col,group_col,bins=bins,caption=FALSE),
-                          binned_percent_plot(data,x_col,group_col,caption=TRUE))
+                          binned_percent_plot(data,x_col,group_col,caption=TRUE,output=output))
   
 }
 
@@ -552,34 +582,65 @@ freq_continuous_cbre_plot<-function(data,x_col,group_col=NA,bins=20,
 }
 
 
-binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE){
+binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,output="perform"){
   data<-data[!is.na(data[,x_col]),]
   if(is.na(group_col)){
     data$bin_x<-bin_df(data,x_col,bins=bins)
     data<-data %>% group_by(bin_x)
-    term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   
-                                  , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
-    cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   
-                                  , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
-    term$output<-"Terminations"
-    cbre$output<-"Ceiling Breaches"
-    data<-rbind(term,cbre)
+
+    
+    if(output=="perform"){
+      cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   
+                                    , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+      term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   
+                                    , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+      term$output<-"Terminations"
+      cbre$output<-"Ceiling Breaches"
+      data<-rbind(cbre,term)
+      data$output<-factor(data$output,c("Ceiling Breaches","Terminations"))  
+    }
+    else if (output=="comp"){
+      comp<-data %>% summarise_ (   mean_y = "mean(b_Comp)"   
+                                    , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+      offer<-data %>% summarise_ (   mean_y = "mean(l_Offr)"   
+                                     , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+      comp$output<-"Competed"
+      offer$output<-"Offers (logged)"
+      data<-rbind(comp,offer)
+      data$output<-factor(data$output,c("Competed","Offers (logged)"))  
+    }
+    
     plot<-ggplot(data=data,
-                 aes(y=mean_y,x=mean_x))+facet_wrap(~output)
+                 aes(y=mean_y,x=mean_x))+facet_wrap(~output,scales="free_y")
   }
   else{
     data<-data[!is.na(data[,group_col]),]
     data$bin_x<-bin_df(data,rank_col=x_col,group_col=group_col,bins=bins)
     data<-data %>%
       group_by_("bin_x",group_col)
+
     
-    term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   
-                                  , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
-    cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   
-                                  , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
-    term$output<-"Term."
-    cbre$output<-"C. Bre."
-    data<-rbind(term,cbre)
+    if(output=="perform"){
+      cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   
+                                    , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+      term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   
+                                    , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+      term$output<-"Term."
+      cbre$output<-"C. Bre."
+      data<-rbind(cbre,term)
+      data$output<-factor(data$output,c("C. Bre.","Term."))  
+    }
+    else if (output=="comp"){
+      comp<-data %>% summarise_ (   mean_y = "mean(b_Comp)"   
+                                    , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+      offer<-data %>% summarise_ (   mean_y = "mean(l_Offr)"   
+                                     , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+      comp$output<-"Comp."
+      offer$output<-"Offers (logged)"
+      data<-rbind(comp,offer)
+      data$output<-factor(data$output,c("Comp.","Offers (logged)"))  
+    }
+    
     plot<-ggplot(data=data,
                  aes(y=mean_y,x=mean_x))+
       facet_grid(as.formula(paste("output~",group_col)),scales="free_y")
@@ -1075,4 +1136,18 @@ get_icc<-function(model,level=1){
     output<-icc(model)
   }
   output
+}
+
+
+summary_regression_compare<-function(model_old,model_new){
+  
+  arm::residual.plot(fitted(model_old),
+                     resid(model_old),
+                     sigma(model_old)
+  )
+  arm::residual.plot(fitted(model_new),
+                     resid(model_new),
+                     sigma(model_new)
+  )
+  
 }
