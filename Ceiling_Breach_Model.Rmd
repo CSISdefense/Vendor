@@ -37,17 +37,6 @@ note.text.size<-1.40
 
 Contracts are classified using a mix of numerical and categorical variables. While the changes in numerical variables are easy to grasp and summarize, a contract may have one line item that is competed and another that is not. As is detailed in the exploration on R&D, we are only considering information available prior to contract start. The percentage of contract obligations that were competed is a valuable benchmark, but is highly influenced by factors that occured after contract start.
 
-## Contract Terminations
-
-Contract terminations and the number of change orders can be calculated for the entire sample.  Contract termination is determined using the *Reason for Modification* field in FPDS.  A contract is considered to be terminated if it has at least one modification with the following values:
-
-* "Terminate for Default (complete or partial)"
-* "Terminate for Convenience (complete or partial)"
-* "Terminate for Cause"
-* "Legal Contract Cancellation"
-
-These four catetegories and the "Close Out" category are used to mark a contract as closed.  Many contracts in FPDS and in the sample are never marked closed.  
-
 
 ## Contract Ceiling Breaches
 
@@ -5475,9 +5464,6 @@ save(CBre_Cons_13A,file="Output//CBre_Cons_13A.rdata")
 
 ###Model 13B: Agency/Office+NAICS6/NAICS3 trimmed
 ```{r Model13B}
-load("Output//CBre_Cons_11D.rdata")
-glmer_examine(CBre_Cons_11D)
-
 load("Output//CBre_Cons_13B.rdata")
 
 CBre_Cons_13B <- glmer (data=smp,
@@ -5604,74 +5590,14 @@ load("Output//CBre_Comp_13B.rdata")
   summary_residual_compare(CBre_Cons_13B,CBre_Cons_13B.restart,CBre_Comp_14A.restart,CBre_Comp_13B,bins=20)
 
 
-```
-
-
-
-
-###Model 13C: Agency/Office+NAICS6/NAICS3 trimmed
-```{r Model13C}
-load(file="Output//CBre_Cons_13C.rdata")
-
-CBre_Cons_13C <- glmer (data=smp,
-                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
-                  #cl_US3_avg_sal_lag1+
-                   cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
-                  cl_US6_avg_sal_lag1+
-                                                cl_Ceil + cl_Days+ 
-                        Veh +
-                        PricingFee + b_UCA +
-                        b_Intl+
-                   
-                       
-                        
-                        
-                        b_UCA:cl_def6_HHI_lag1 + 
-                        b_UCA:cl_Ceil+
-                        cl_def6_HHI_lag1:cl_def6_obl_lag1+
-                         
-                        (1 | NAICS3/NAICS) + 
-                        (1 | Agency/Office) 
-
-                      , family=binomial(link="logit"),
-                        verbose=1)
-
-
-glmer_examine(CBre_Cons_13C,display=TRUE)
-
-CBre_Comp_13C <- glmer (data=smp,
-                        b_CBre ~n_Comp+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
-                   n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
-                        cl_Ceil + cl_Days+
-                        Veh  +
-                        PricingFee+
-                        b_UCA +
-                        b_Intl+
-                        
-                        
-                        
-                        b_UCA:n_Comp +
-                        b_UCA:cl_Ceil+
-                        
-                        (1 | NAICS) + (1 | Agency/Office)
-
-                      , family=binomial(link="logit"),
-                        verbose=1)
-glmer_examine(CBre_Comp_13C)
-
-stargazer::stargazer(CBre_Cons_13C,
-                     type="text",
-                       digits=2)
-
   source(system.file("utils", "allFit.R", package="lme4"))
   CBre_Cons_13C.all <- allFit(CBre_Cons_13C)
   ss_cons <- summary(CBre_Cons_13C.all)
 
   fm1.all <- allFit(CBre_Comp_13C)
   ss_comp <- summary(CBre_Comp_13C.all)
-
-save(CBre_Cons_13C,CBre_Comp_13C,file="Output//CBre_Cons_13C.rdata")
 ```
+
 
 
 ###Model 13D: Cluster Means
@@ -5699,8 +5625,7 @@ CBre_Cons_13D <- glmer (data=smp,
                         , family=binomial(link="logit"),
                         verbose=1)
 
-                      , family=binomial(link="logit"),
-                        verbose=1)
+
 
 glmer_examine(CBre_Cons_13D,display=TRUE)
 
@@ -5733,7 +5658,8 @@ glmer_examine(CBre_Comp_13D)
 summary_residual_compare(CBre_Cons_13B,CBre_Cons_13D,#CBre_Comp_14A.restart,CBre_Comp_13D,
                          bins=20)
 
-
+CBre_Cons_13B@devcomp$cmp[[8]]
+CBre_Cons_13B@devcomp$cmp
 
 any(diag.vals<1e-6)
 
@@ -5811,7 +5737,7 @@ load("Output//CBre_Comp_13D.rdata")
 ###Model 13E: Interlevel Ceiling Slope
 ```{r Model13E}
 
-
+load(file="Output//CBre_Cons_13E.rdata")
 CBre_Cons_13E <- glmer (data=smp,
                         b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                           #cl_US3_avg_sal_lag1+
@@ -5859,13 +5785,14 @@ CBre_Comp_13E <- glmer (data=smp,
 glmer_examine(CBre_Comp_13E,display=TRUE)
 
 save(CBre_Cons_13E,CBre_Comp_13E,file="Output//CBre_13E.rdata")
-  stargazer::stargazer(CBre_Cons_13B, CBre_Cons_13E,CBre_Comp_13B,type="text",
+  stargazer::stargazer(CBre_Cons_13B, CBre_Cons_13D,CBre_Cons_13E,CBre_Comp_13B,type="text",
                        digits=2)
   
   
-
+summary_residual_compare(CBre_Cons_13D,CBre_Cons_13E,#CBre_Comp_14A.restart,CBre_Comp_13E,
+                         bins=100)
 summary_residual_compare(CBre_Cons_13B,CBre_Cons_13E,#CBre_Comp_14A.restart,CBre_Comp_13E,
-                         bins=20)
+                         bins=100)
 
 
 
