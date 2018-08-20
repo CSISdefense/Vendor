@@ -443,9 +443,9 @@ freq_discrete_plot<-function(data,x_col,
 }
 
 
-summary_continuous_plot<-function(data,x_col,group_col=NA,bins=20,output="perform"){
+summary_continuous_plot<-function(data,x_col,group_col=NA,bins=20,metric="perform"){
   gridExtra::grid.arrange(freq_continuous_plot(data,x_col,group_col,bins=bins,caption=FALSE),
-                          binned_percent_plot(data,x_col,group_col,caption=TRUE,output=output))
+                          binned_percent_plot(data,x_col,group_col,caption=TRUE,metric=metric))
   
 }
 
@@ -492,7 +492,7 @@ summary_double_continuous<-function(data,x_col,y_col,bins=20){
   
 }
 
-summary_discrete_plot<-function(data,x_col,group_col=NA,rotate_text=FALSE){
+summary_discrete_plot<-function(data,x_col,group_col=NA,rotate_text=FALSE,metric="perform"){
   if(is.na(group_col)){
     output<-list(table(unlist(data[,x_col])),
     table(unlist(data[,x_col]),data$CBre),
@@ -507,7 +507,7 @@ summary_discrete_plot<-function(data,x_col,group_col=NA,rotate_text=FALSE){
   }
 
   gridExtra::grid.arrange(freq_discrete_plot(data,x_col,group_col,caption=FALSE,rotate_text=rotate_text),
-                          discrete_percent_plot(data,x_col,group_col,caption=TRUE,rotate_text=rotate_text))
+                          discrete_percent_plot(data,x_col,group_col,caption=TRUE,rotate_text=rotate_text,metric=metric))
   
   output
 }
@@ -581,14 +581,14 @@ freq_continuous_cbre_plot<-function(data,x_col,group_col=NA,bins=20,
 }
 
 
-binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,output="perform"){
+binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metric="perform"){
   data<-data[!is.na(data[,x_col]),]
   if(is.na(group_col)){
     data$bin_x<-bin_df(data,x_col,bins=bins)
     data<-data %>% group_by(bin_x)
 
     
-    if(output=="perform"){
+    if(metric=="perform"){
       cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   
                                     , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
       term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   
@@ -598,7 +598,7 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,outpu
       data<-rbind(cbre,term)
       data$output<-factor(data$output,c("Ceiling Breaches","Terminations"))  
     }
-    else if (output=="comp"){
+    else if (metric=="comp"){
       comp<-data %>% summarise_ (   mean_y = "mean(b_Comp)"   
                                     , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
       offer<-data %>% summarise_ (   mean_y = "mean(l_Offr)"   
@@ -619,7 +619,7 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,outpu
       group_by_("bin_x",group_col)
 
     
-    if(output=="perform"){
+    if(metric=="perform"){
       cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   
                                     , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
       term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   
@@ -629,7 +629,7 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,outpu
       data<-rbind(cbre,term)
       data$output<-factor(data$output,c("C. Bre.","Term."))  
     }
-    else if (output=="comp"){
+    else if (metric=="comp"){
       comp<-data %>% summarise_ (   mean_y = "mean(b_Comp)"   
                                     , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
       offer<-data %>% summarise_ (   mean_y = "mean(l_Offr)"   
@@ -795,15 +795,32 @@ discrete_percent_cbre_plot<-function(data,x_col,group_col=NA,caption=TRUE){
   
 }
 
-discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,rotate_text=FALSE){
+discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,rotate_text=FALSE,metric="perform"){
   data<-data[!is.na(data[,x_col]),]
   if(is.na(group_col)){
     data<-data %>% group_by_(x_col)
-    term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   )
-    cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   )
-    term$output<-"Terminations"
-    cbre$output<-"Ceiling Breaches"
-    data<-rbind(term,cbre)
+    
+    
+    
+    
+    if(metric=="perform"){
+      cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   )
+      term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   )
+      term$output<-"Terminations"
+      cbre$output<-"Ceiling Breaches"
+      data<-rbind(cbre,term)
+      data$output<-factor(data$output,c("Ceiling Breaches","Terminations"))  
+    }
+    else if (metric=="comp"){
+      comp<-data %>% summarise_ (   mean_y = "mean(b_Comp)"   )  
+      offer<-data %>% summarise_ (   mean_y = "mean(l_Offr)"   )  
+      comp$output<-"Competed"
+      offer$output<-"Offers (logged)"
+      data<-rbind(comp,offer)
+      data$output<-factor(data$output,c("Competed","Offers (logged)"))  
+    }
+    
+    
     plot<-ggplot(data=data,
                  aes_string(y="mean_y",x=x_col))+facet_wrap(~output)
   }
@@ -812,11 +829,23 @@ discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,rot
     data<-data %>%
       group_by_(x_col,group_col)
     
-    term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   )
-    cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   )
-    term$output<-"Term."
-    cbre$output<-"C. Bre."
-    data<-rbind(term,cbre)
+    if(metric=="perform"){
+      cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   )  
+      term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   )  
+      term$output<-"Term."
+      cbre$output<-"C. Bre."
+      data<-rbind(cbre,term)
+      data$output<-factor(data$output,c("C. Bre.","Term."))  
+    }
+    else if (metric=="comp"){
+      comp<-data %>% summarise_ (   mean_y = "mean(b_Comp)"   )  
+      offer<-data %>% summarise_ (   mean_y = "mean(l_Offr)"  )  
+      comp$output<-"Comp."
+      offer$output<-"Offers (logged)"
+      data<-rbind(comp,offer)
+      data$output<-factor(data$output,c("Comp.","Offers (logged)"))  
+    }
+    
     plot<-ggplot(data=data,
                  aes_string(y="mean_y",x=x_col))+
       facet_grid(as.formula(paste("output~",group_col)),scales="free_y")+
