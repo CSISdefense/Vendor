@@ -121,14 +121,36 @@ binned_fitted_versus_term_residuals<-function(model){
     labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 }
 
+resid_plot<-function(model,sample=NA){
+#Source https://rpubs.com/therimalaya/43190
+# Raju Rimal
+  results<-data.frame(
+    fitted=fitted(model),
+    resid=residuals(model)
+  )
+  #For reasons of speed, I give the option to only partially show the results. 250k or 1m takes a while to plot.
+  if(!is.na(sample)){
+    results<-results[sample(nrow(results),sample),]
+    
+  }
+  
+  p1<-ggplot(results, aes(x=fitted, y=resid))+geom_point()
+  p1<-p1+stat_smooth(method="loess")+geom_hline(yintercept=0, col="red", linetype="dashed")
+  p1<-p1+xlab("Fitted values")+ylab("Residuals")
+  p1<-p1+ggtitle("Residual vs Fitted Plot")+theme_bw()
+  p1
+}
+
 binned_fitted_versus_residuals<-function(model){
   if(class(model)[1]=="glmerMod")
   {
     if(!is.null(model@frame$b_CBre)){
       graph<-binned_fitted_versus_cbre_residuals(model)
-    } else if(!is.null(model@frame$b_CBre)){
+    } else if(!is.null(model@frame$b_Term)){
       graph<-binned_fitted_versus_term_residuals(model)
-    } 
+    } else if(!is.null(model@frame$cl_Offr)){
+      graph<-resid_plot(model,sample=25000)
+    }
     else{stop("Outcome variable not recognized.")}
   }
   else
@@ -137,7 +159,9 @@ binned_fitted_versus_residuals<-function(model){
       graph<-binned_fitted_versus_cbre_residuals(model)
     } else if(!is.null(model$model$b_Term)){
       graph<-binned_fitted_versus_term_residuals(model)
-    } 
+    } else if(!is.null(model$model$cl_Offr)){
+      graph<-resid_plot(model,sample=25000)
+    }
     else{stop("Outcome variable not recognized.")}
   }
   graph
@@ -190,6 +214,9 @@ residuals_plot<-function(model,col="fitted",bins=40){
       graph<-residuals_cbre_plot(model,col,bins=bins)
     } else if(!is.null(model@frame$b_CBre)){
       graph<-residuals_term_plot(model,col,bins=bins)
+    } else if(!is.null(model@frame$cl_Offr)){
+      warning("write this")#graph<-residuals_plot(model,col,bins=bins)
+      graph<-resid_plot(model,sample=25000)
     } 
     else{stop("Outcome variable not recognized.")}
   }
@@ -199,6 +226,9 @@ residuals_plot<-function(model,col="fitted",bins=40){
       graph<-residuals_cbre_plot(model,col,bins=bins)
     } else if(!is.null(model$model$b_Term)){
       graph<-residuals_term_plot(model,col,bins=bins)
+    } else if(!is.null(model$model$cl_Offr)){
+      warning("write this")#graph<-residuals_plot(model,col,bins=bins)
+      graph<-resid_plot(model,sample=25000)
     } 
     else{stop("Outcome variable not recognized.")}
   }
@@ -1105,4 +1135,18 @@ get_icc<-function(model,level=1){
     output<-icc(model)
   }
   output
+}
+
+
+summary_regression_compare<-function(model_old,model_new){
+  
+  arm::residual.plot(fitted(model_old),
+                     resid(model_old),
+                     sigma(model_old)
+  )
+  arm::residual.plot(fitted(model_new),
+                     resid(model_new),
+                     sigma(model_new)
+  )
+  
 }
