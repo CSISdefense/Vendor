@@ -118,7 +118,6 @@ summary(FM)
 
 #Below is the command to calculate the first simple slope
 #namely the effect of "teacher_fan_c" when "gpa_cmc" is low (-1 SD).
-
 sd_gpa_cmc <- sd(d$gpa_cmc)
 d$gpa_m1SD <- d$gpa_cmc + sd_gpa_cmc
 FM_m1SD <- glmer(bieber ~ gpa_m1SD + teacher_fan_c + (1 + gpa_cmc || classes) + gpa_m1SD:teacher_fan_c, data = d, family = "binomial")
