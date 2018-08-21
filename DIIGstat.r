@@ -2,6 +2,7 @@
 library(arm)
 library(dplyr)
 library(ggplot2)
+library(sjstats)
 library(car)
 #This will likely be folded into CSIS360
 #But for now, using it to create and refine functions for regression analysis.
