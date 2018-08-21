@@ -501,6 +501,7 @@ summary_discrete_plot<-function(data,x_col,group_col=NA,rotate_text=FALSE,metric
 
   }
   else{
+    if(is.numeric(data[,x_col])) stop(paste(xcol," is numeric."))
     output<-list(table(unlist(data[,x_col]),unlist(data[,group_col])),
     table(unlist(data[,x_col]),unlist(data[,group_col]),data$CBre),
     table(unlist(data[,x_col]),unlist(data[,group_col]),data$Term))

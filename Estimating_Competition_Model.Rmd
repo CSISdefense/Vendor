@@ -125,21 +125,21 @@ summary(smp$cl_Offr)
 summary(smp$EffComp)
 smp$cl_Offr<-as.numeric(as.character(smp$cl_Offr))
 
-levels(smp1m$EffComp)
-smp1m$cl_Offr<-smp1m$EffComp
-levels(smp1m$cl_Offr)<-list("0"=c("No Comp.","1 Offer"),
+levels(smp$EffComp)
+smp$cl_Offr<-smp$EffComp
+levels(smp$cl_Offr)<-list("0"=c("No Comp.","1 Offer"),
                            "1"="2+ Offers")
-summary(smp1m$cl_Offr)
-summary(smp1m$EffComp)
-smp1m$cl_Offr<-as.numeric(as.character(smp1m$cl_Offr))
+summary(smp$cl_Offr)
+summary(smp$EffComp)
+smp$cl_Offr<-as.numeric(as.character(smp$cl_Offr))
 
 
-# save(smp,smp1m,file="data//def_sample.Rdata")
+# save(smp,smp,file="data//def_sample.Rdata")
 #Code to update sample w/o recreating.
 # smp<-smp["CSIScontractID"]
 # smp<-left_join(smp,def)
-# smp1m<-smp1m["CSIScontractID"]
-# smp1m<-left_join(smp1m,def)
+# smp<-smp["CSIScontractID"]
+# smp<-left_join(smp,def)
 
   
 # complete<-!is.na(def$b_Term)&
@@ -162,13 +162,13 @@ smp1m$cl_Offr<-as.numeric(as.character(smp1m$cl_Offr))
 # nrow(def[!complete,])/nrow(def)
 # sum(def[!complete,]$Action.Obligation,na.rm=TRUE)/sum(def$Action.Obligation,na.rm=TRUE)
 # 
-# smp1m<-smp[sample(nrow(smp),1000000),]
+# smp<-smp[sample(nrow(smp),1000000),]
 # smp<-smp[sample(nrow(smp),250000),]
-# save(file="data//def_sample.Rdata",smp,smp1m)
+# save(file="data//def_sample.Rdata",smp,smp)
 
 # levels(smp$Intl)<- list("Just U.S."=c("Just U.S."), 
 #                                 "Any Intl."=c("Any International"))
-# levels(smp1m$Intl)<- list("Just U.S."=c("Just U.S."), 
+# levels(smp$Intl)<- list("Just U.S."=c("Just U.S."), 
 #                                 "Any Intl."=c("Any International"))
 
 
@@ -1459,7 +1459,7 @@ corrdisp<-Hmisc::rcorr(
 corrdisp[[1]]
 
 #Sumamry plot
-summary_discrete_plot(metric="comp",smp1m,"NAICS2",rotate_text=TRUE)
+summary_discrete_plot(metric="comp",smp,"NAICS2",rotate_text=TRUE)
 
 
 
@@ -1493,12 +1493,12 @@ summary_regression_compare(Comp_Cons_06A,Comp_Cons_07A)
 Unfortunately introduction of the NAICS variables significantly increases the magnitude of outlier residuals.
 
 # Interactions
-## Consolidation
+## Consolidation Level 6
 ### Model 10A: Cons:UCA
 Starting with Consolidation and UCA. Time pressure is often in place for UCAs so in consolidated sectors, offers may be particularly hard to come by. Thus the interaction of consolidation and UCA estimates fewer offers.
 ```{r Model10A}
 #Sumamry plot
-summary_continuous_plot(metric="comp",smp1m,"cl_def6_HHI_lag1","UCA")
+summary_continuous_plot(metric="comp",smp,"cl_def6_HHI_lag1","UCA")
 
 
 
@@ -1532,48 +1532,77 @@ summary_regression_compare(Comp_Cons_07A,Comp_Cons_10A)
 The interaction is significant and UCA / high levels of consolidation estimates fewer offers.
 
 
-### Model 10C: Cons:Days
-The next reintroduction is competition/consolidation and days. The benefits of competition may reduce over time.
-Skipping duration^2 and removal of ceiling ^2
+### Model 10B: Cons:Veh
+In consolidated markets, definitive contracts, single-award IDCs, and multi award IDCs may all prove less likely to receive multiple offers. The descriptive statistics seem to show more that definitive contracts may get fewer offers with size, but for IDCs, the opposite trend may occur, perhaps because they have already been gated to only viable competitors.
 
-Greater duration may limit the influence of competition, at least under the policy guidance that encourages  regular recompeting. In theor this same logic could apply to consolidation as it locks in market conditions at a particular point.
-
-
-
-```{r Model10C}
+```{r Model10B}
 
 
 #Sumamry plot
-summary_continuous_plot(metric="comp",smp1m,"cl_Days","cl_def6_HHI_lag1")
-summary_continuous_plot(metric="comp",smp1m,"cl_Days","EffComp")
+summary_continuous_plot(metric="comp",smp,"cl_def6_HHI_lag1","Veh")
+summary_continuous_plot(metric="comp",smp,"cl_def3_HHI_lag1","Veh")
 
 #Create the model
+Comp_Cons_10B <- glm (data=smp,
+                 cl_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+UCA+
+                   b_Intl+
+                   
+                   b_UCA:cl_def6_HHI_lag1 +
+                   Veh:cl_def6_HHI_lag1 +
+                   Agency+
+                   NAICS2)
+glmer_examine(Comp_Cons_10B)
+
+
+
+
+
+  stargazer::stargazer(Comp_Cons_10A,Comp_Cons_10B,type="text",
+                       digits=2)
+  
+  
+
+summary_regression_compare(Comp_Cons_10A,Comp_Cons_10B)
+
+
+```
+Theory beat out descriptive stats. Single-Award IDCs had significantly fewer offers in consolidated sectors. Multi-award slightly fewer, and FSS-GWAC proved most effective at getting offers in that setting. HHi6 does approach the VIF threshold, so we may not be able to keep this one.
+
+
+### Model 10C: Interaction Defense to Overall ratio
+When there is a larger market available, consolidation may matter less, for better or worse, due to the existance of a larger market. Thus, consolidation and a high defense to overall ratio is expected to negatively estimate number of offers.
+
+```{r Model10C_Comp}
+#Frequency Plot for unlogged ceiling
+
+
+#Model
+#Create the model
 Comp_Cons_10C <- glm (data=smp,
-                      cl_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
-                        #cl_US3_avg_sal_lag1+
-                        cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
-                        cl_US6_avg_sal_lag1+     
-                        cl_Ceil + cl_Days+ 
-                        Veh +
-                        PricingFee + b_UCA +
-                        b_Intl+
-                        
-                       cl_def6_HHI_lag1:cl_Days +
-                        # cl_def6_HHI_lag1:cl_def6_obl_lag1  +
-                        # Veh:cl_def6_HHI_lag1  +
-                        b_UCA:cl_def6_HHI_lag1 +
-                        # b_UCA:cl_Ceil+
-                        
-                        Agency+
-                        NAICS2
-                      )
+                 cl_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+UCA+
+                   b_Intl+
+                   
+                   b_UCA:cl_def6_HHI_lag1 +
+                   Veh:cl_def6_HHI_lag1+
+                   cl_def6_HHI_lag1:cl_def6_ratio_lag1 +
+                   Agency+
+                   NAICS2)
+
 glmer_examine(Comp_Cons_10C)
 
-
-
-
-
-  stargazer::stargazer(Comp_Cons_10B,Comp_Cons_10C,type="text",
+  stargazer::stargazer(Comp_Cons_10A,Comp_Cons_10B,Comp_Cons_10C,type="text",
                        digits=2)
   
   
@@ -1582,604 +1611,148 @@ summary_regression_compare(Comp_Cons_10B,Comp_Cons_10C)
 
 
 ```
-The interaction of competition and duration is significant in itself and also has interesting consequences for other variables, notably boosting the negative cooeficient for competition and reducing the coefficient for duration. However,  VIF excludes this variable.
+Expectations are upheld.
 
-Contrary to expectation, consolidation matters more for greater duration contracts. Unfortunately the residuals still show questionable patterns that merit continued observation. 
 
-This combination has a marginal affect on reducing deviance and encounters VIF problems for competition Leaving it out.
-
-
-### Model 10D: Cons:Ceiling
-The next reintroduction is competition and ceiling. Competition and ceiling might have a negative coefficient, because large contracts might encourage bid to win approaches. 
-```{r Model10D}
-
-
-#Sumamry plot
-summary_continuous_plot(metric="comp",smp1m,"cl_Ceil","cl_def6_HHI_lag1")
-summary_continuous_plot(metric="comp",smp1m,"cl_Ceil","n_Comp")
-
-#Create the model
-Comp_Cons_10D <- glm(data=smp,
-                       cl_Offr ~cl_def6_HHI_lag1 + 
-                         cl_Ceil + cl_Days+
-                         Veh+
-                         cl_def6_HHI_lag1:cl_Ceil  +
-                         n_Fixed + b_UCA +
-                         b_Intl +
-                         # Veh:cl_Days +
-                         # Veh:cl_def6_HHI_lag1+
-                         b_UCA:cl_def6_HHI_lag1+
-                         NAICS2
-                       )
-glmer_examine(Comp_Cons_10D)
-glmer_examine(Comp_Cons_10D)
-  
-CBre_Comp_10D<- glm(data=smp,
-                       cl_Offr ~n_Comp + 
-                         cl_Ceil + cl_Days+
-                         Veh+
-                          n_Comp:cl_Ceil  +
-                         n_Fixed + b_UCA +
-                         b_Intl +
-                         # Veh:cl_Days +
-                         # Veh:n_Comp+
-                         b_UCA:n_Comp+
-                         NAICS2
-                       )
-
-
-
-  stargazer::stargazer(Comp_Cons_10B,Comp_Cons_10D,type="text",
-                       digits=2)
-  
-  
-
-summary_regression_compare(Comp_Cons_10B,Comp_Cons_10D)
-
-
-```
-This interaction runs afowl of the VIF test on the competition side. On the consolidation side, there is a significant reduction in deviance, and a reduction in outliers, though in general there remains a fairly strong pattern in the residuals. Leaving it in for consolidation
-
-The interaction went in the expected direction for competition, but is surprisingly powerful. Competition heightens the importance of contract ceiling, and larger contract ceilings mitigate the importance of competition. The other powerful part of this interaction was the dramatic increase in the coefficient for competition and the comparative reduction in the correlation of ceiling. However, the VIF exceeds 2 by  considerable margin, leaving it out.
-
-The weaker expectation was not upheld with consolidation but is significant. Leaving that in for now. May reflect the efficiencies of more utility like sectors with large contracts.
-
-
-
-### Model 10E: Cons:Veh
-The next reintroduction is competition and vehicle. Multi-award contracts in particular emphasize competition between the awardees which suggests that it may increase the benefits of competition.
-Competition occurs more regularly with definitive contracts, multiple award IDCs, GWACs/FSS, and some BPA/BOA. As a result we expect those vehicles that when interacting with competitive contracts to estiamte lower risk of ceiling breach. For consolidation, we expect single award IDCs and perhaps BPA/BOAs, which  are sometime single award, to be highly influenced by consolidation as competition  doesn't occur after initial selection but the overall market dynamic would instead influence whether contracting officers feel pressured to use that mechanism.
-
-
-
-```{r Model10E}
-
-
-#Sumamry plot
-summary_discrete_plot(metric="comp",smp1m,"Veh","cl_def6_HHI_lag1")
-summary_discrete_plot(metric="comp",smp1m,"Veh","n_Comp")
-
-#Create the model
-Comp_Cons_10E <- glm(data=smp,
-                       cl_Offr ~cl_def6_HHI_lag1 + 
-                         cl_Ceil + cl_Days+
-                       cl_def6_HHI_lag1:cl_Ceil+
-                                                Veh:cl_def6_HHI_lag1+
-                         Veh+
-                          #cl_Ceil:cl_Days  +
-                         n_Fixed + b_UCA +
-                                                b_UCA:cl_def6_HHI_lag1+
-                         b_Intl +
-                         # Veh:cl_Days +
-                         NAICS2
-                       )
-glmer_examine(Comp_Cons_10E)
-glmer_examine(Comp_Cons_10E)
-  
-CBre_Comp_10E<- glm(data=smp,
-                       cl_Offr ~n_Comp + 
-                         cl_Ceil + cl_Days+
-                         Veh+
-                                               Veh:n_Comp+
-
-                         # cl_Ceil:cl_Days  +
-                         n_Fixed + b_UCA +
-                                               b_UCA:n_Comp+
-
-                         b_Intl +
-                         # Veh:cl_Days +
-                         NAICS2
-                       )
-
-
-
-  stargazer::stargazer(Comp_Cons_10D,Comp_Cons_10E,type="text",
-                       digits=2)
-  
-  
-
-summary_regression_compare(Comp_Cons_10D,Comp_Cons_10E)
-
-
-```
-
-
-Competition and vehicle results are interesting, but run afowl of VIF test. Consolidation doesn't add much and makes the residualsworse, leaving it  out.
-
-The average plots did show varying relationships and slopes between different types of vehicles. However, 
-the coeficient for competition itself remains negative, though not significant, despite the baseline vehicle state, definitive/purchase, having higher termination rates among competed contracts. Given the other interactions, this suggests that this phenomenon is already captured by other inputs and interactions in the dataset. 
-
-Interactions
-* For single-award IDVs, competition magnifies the lower termination coeffient. This is somewhat surprising, as competition reflects the competed status of the IDV, not the individual task order. Nonetheless, that rate appears to very much matter, and suggests that uncompeted IDVs lose some of their termination reduction correlation.
-* For multiple-award IDVs, competition also dampens the termination rate. This also magnificies the import of duration for multiple-award IDVs, which now can complete overcome the base termination coefficient of the vehicle.
-* Competition dampens the termination reduction coefficient for other IDVs. It is not significant, I am tempted to leave it out, though it may be appropriate to always leave in the triples.
-
-Unlike the existance of competition, having more offers does not have the same dramatic relationship with multi-award IDVs that it does with competition. This does raise the question as to whether the long tail of high numbers of offers might be undercutting the relationship. However, for now, we will stick with competition. 
-
-VIF concompetition:vehicle exceeds 2, which necessitates removing it. HHI_lag1 results magnify residuals and run contrary to expectations. The deviation reduction at 30 is good, but not amazing. Leaving it out.
-# Econoimc Sector
-###Model 04L: Pricing and Average Wage
-Fixed Price is less  appropriate as an approach when there is greater uncertainty. A phenomenon likely to extend to time and materials / labor hours contracts. By comparison, fixed price incentive and cost based should estimate a lower risk of ceiling breaches and terminations.
-
-```{r Model04L_Wage}
-
-
-#Frequency Plot
-summary_continuous_plot(metric="comp",smp,"l_Ceil","UCA")
-
-Comp_Cons_04L <- glm (data=smp,
-cl_Offr ~cl_def6_HHI_lag1 + 
-                   cl_Ceil + cl_Days+ 
-                   Veh +
-                   PricingFee + b_UCA +
-                   # cl_def6_HHI_lag1:cl_Ceil  +
-                 Veh:cl_Days+
-                   # Veh:cl_def6_HHI_lag1  +
-                   Veh:cl_Ceil+
-  cl_Ceil:PricingFee+
-  cl_US6_avg_sal_lag1+
-  cl_US6_avg_sal_lag1:PricingFee+
-  # b_UCA:cl_Ceil+
-                b_UCA:cl_def6_HHI_lag1 + 
-                  b_UCA:cl_Ceil
-                    )
-glmer_examine(Comp_Cons_04L)
-
-CBre_Comp_04L <- glm (data=smp,
-cl_Offr ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   Veh  +
-  PricingFee+ b_UCA +
-                 Veh:cl_Days+
-                   
-                   Veh:cl_Ceil+
-  cl_Ceil:PricingFee+
-  # b_UCA:cl_Ceil+
-                   
-  cl_US6_avg_sal_lag1+
-  cl_US6_avg_sal_lag1:PricingFee+
-                b_UCA:n_Comp + 
-                  b_UCA:cl_Ceil
-                    )
-
-
-
-#Frequency Plot
-
-
-Comp_Cons_04L2 <- glm (data=smp,
-cl_Offr ~cl_def6_HHI_lag1 + 
-                   cl_Ceil + cl_Days+ 
-                   Veh +
-                   PricingFee + b_UCA +
-                   # cl_def6_HHI_lag1:cl_Ceil  +
-                 Veh:cl_Days+
-                   # Veh:cl_def6_HHI_lag1  +
-                   Veh:cl_Ceil+
-  # cl_Ceil:PricingFee+
-  cl_US6_avg_sal_lag1+
-  cl_US6_avg_sal_lag1:PricingFee+
-  # b_UCA:cl_Ceil+
-                b_UCA:cl_def6_HHI_lag1 + 
-                  b_UCA:cl_Ceil
-                    )
-glmer_examine(Comp_Cons_04L2)
-
-CBre_Comp_04L2 <- glm (data=smp,
-cl_Offr ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   Veh  +
-  PricingFee+ b_UCA +
-                 Veh:cl_Days+
-                   
-                   Veh:cl_Ceil+
-  # cl_Ceil:PricingFee+
-  # b_UCA:cl_Ceil+
-                   
-  cl_US6_avg_sal_lag1+
-  cl_US6_avg_sal_lag1:PricingFee+
-                b_UCA:n_Comp + 
-                  b_UCA:cl_Ceil
-                    )
-
-
-
-
-# Plot the model and Vehicle 
-# Term_Comp_04L_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
-#   cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
-#         Comp*Ceil,Days*Ceil,Days*Comp,
-#         Fixed,x,
-#         Days*x,Days*MIDV,Days*OIDV,
-#         Comp*x,Comp*MIDV,Comp*OIDV,
-#         Comp*x,Days*x) %*%  coef(Term_Comp_04L))}
-# 
-# #Days curves
-# discrete_fitted_term_model(smp,"SIDV") +
-#   stat_function(fun = Term_Comp_04L_curve,
-#                              args=list(Comp=0,Ceil=0,Days=0,
-#                                        MIDV=0,SIDV=0,OIDV=0,
-#                                        Fixed=1),color="blue")+
-#   stat_function(fun = Term_Comp_04L_curve,
-#                              args=list(Comp=2,Ceil=0,Days=1,
-#                                        MIDV=0,SIDV=0,OIDV=0,
-#                                        Fixed=1),color="blue")
-
-
-
-
-stargazer::stargazer(Comp_Cons_04L2,
-                     type="text",
-                       digits=2)
-summary_regression_compare(Comp_Cons_04L2,Comp_Cons_04L2)
-
-
-
-```
-
-
-
-###Model 05B: Fixed Price and Any International
-
-#### Model NCS6D: Interaction Defense to Overall ratio
-When there is a larger market available, consolidation may matter less, for better or wrose. Thus interaction of consolidation and ratio will estimate greater magnitude than HHI index on its own. Per the hypothesis, this does not necessarily. 
-  
-  For competition, the effects may be greatest outside of a monospy context, thus the competition will estimate a lower occurance of ceiling breaches but the interaction of competition and ratio will estimate a higher rate.
-
-```{r ModelNCS6D_Comp}
-#Frequency Plot for unlogged ceiling
-
-
-#Model
-Comp_Cons_NCS6D <- glm (data=smp,
-                 cl_Offr ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_HHI_lag1:cl_def6_ratio_lag1
-                 )
-glmer_examine(Comp_Cons_NCS6D,display=TRUE)
-
-
-```
-This violates the VIF threshold of 2 and will not be added.
-
-
-
-#### Model NCS6F: Interaction of HHI and size
-Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
+### Model 10D: Interaction of HHI and size
+Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. If a sector has substantial dollars and is still consolidated, that should mean that the HHI is given more weight. Thus the interactive of HHI and size should estimate fewer offers.
 ```{r ModelNCS6F_Comp}
 #Frequency Plot for unlogged ceiling
 
 
 #Model
-Comp_Cons_NCS6E <- glm (data=smp,
-                 cl_Offr ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1)
-glmer_examine(Comp_Cons_NCS6E)
+Comp_Cons_10D <- glm (data=smp,
+                 cl_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+UCA+
+                   b_Intl+
+                   
+                   b_UCA:cl_def6_HHI_lag1 +
+                   Veh:cl_def6_HHI_lag1 +
+                   cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   Agency+
+                   NAICS2)
 
 
-# 
-# #Plot the fitted model plot
-# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
-# 
-# #Competition curves
-# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
-#                              args=list(Comp=0),color="blue")+
-#   stat_function(fun = CBre_Comp_02A_curve, 
-#                              args=list(Comp=2),color="blue")
+glmer_examine(Comp_Cons_10D)
+#First checking if removal of UCA resolves the situation, as that reduces th AIC by the least.
 
+Comp_Cons_10D2 <- glm (data=smp,
+                 cl_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+UCA+
+                   b_Intl+
+                   
+                   # b_UCA:cl_def6_HHI_lag1 +
+                   Veh:cl_def6_HHI_lag1 +
+                   cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   Agency+
+                   NAICS2)
+glmer_examine(Comp_Cons_10D2)
 
+# Removing UCA makes almost no difference to the VIF. It's probably Vehicle that has to go  sadly.
 
+Comp_Cons_10D3 <- glm (data=smp,
+                 cl_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+UCA+
+                   b_Intl+
+                   
+                   b_UCA:cl_def6_HHI_lag1 +
+                   # Veh:cl_def6_HHI_lag1 +
+                   cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   Agency+
+                   NAICS2)
+glmer_examine(Comp_Cons_10D3)
 
-#Plot residuals versus fitted
+stargazer::stargazer(Comp_Cons_07A,Comp_Cons_10A,Comp_Cons_10B,Comp_Cons_10C,Comp_Cons_10D3,type="text",
+                       digits=2)
+  
+  
 
-  stargazer::stargazer(Comp_Cons_NCS6C,Comp_Cons_NCS6D,Comp_Cons_NCS6E,
-                       
-                       type="text",digits=2)
-
-
-summary_regression_compare(Comp_Cons_NCS6D,Comp_Cons_NCS6E)
-
-
+summary_regression_compare(Comp_Cons_10C,Comp_Cons_10D3)
 
 ```
-Expectations were not uphelped. That said relaxing the assumption that the interaction will result in a higher risk of breaches and just looking at whether it is an effective predictor of a greater magnitude of change, that holds.
+Expectations were upheld, but Veh:Consolidation had to be removed. Other alternatives may be available, but adding the interaction took the VIF to 1.94 in its own right, so keeping it was always a challenge.
+
+## Consolidation Level 3
 
 
+#### Model 11A: Defense to Overall ratio
+Applying the same logic as in model 10C, a greater ratio of def to civilian combined with consolidation is expected to estimate a lower number of offers.
 
-#### Model NCS3C: Defense to Overall ratio
-When there is a larger market available, consolidation may matter less, for better or wrose. Thus interaction of consolidation and ratio will estimate greater magnitude than HHI index on its own. Per the hypothesis, this does not necessarily. 
-
-For competition, the effects may be greatest outside of a monospy context, thus the competition will estimate a lower occurance of ceiling breaches but the interaction of competition and ratio will estimate a higher rate.
-
-```{r ModelNCS3C_Comp}
+```{r Model11A_Comp}
 #Frequency Plot for unlogged ceiling
 
 
 #Model
-Comp_Cons_NCS3C <- glm (data=smp,
-                 cl_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+cl_def3_HHI_lag1:cl_def3_ratio_lag1, 
-                 )
-glmer_examine(Comp_Cons_NCS3C)
 
-CBre_Comp_NCS3C <- glm (data=smp,
-                 cl_Offr ~n_Comp+cl_def3_ratio_lag1+n_Comp:cl_def3_ratio_lag1
-                 )
-glmer_examine(CBre_Comp_NCS3C)
-# 
-# #Plot the fitted model plot
-# CBre_Comp_03A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_03A))}
-# 
-# #Competition curves
-# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_03A_curve, 
-#                              args=list(Comp=0),color="blue")+
-#   stat_function(fun = CBre_Comp_03A_curve, 
-#                              args=list(Comp=3),color="blue")
+Comp_Cons_11A <- glm (data=smp,
+                 cl_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+UCA+
+                   b_Intl+
+                   
+                   # b_UCA:cl_def6_HHI_lag1 +
+                   Veh:cl_def6_HHI_lag1 +
+                   cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   cl_def3_HHI_lag1:cl_def3_ratio_lag1+
+                   Agency+
+                   NAICS2)
+glmer_examine(Comp_Cons_11A)
 
+Comp_Cons_11A2 <- glm (data=smp,
+                 cl_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+UCA+
+                   b_Intl+
+                   
+                   # b_UCA:cl_def6_HHI_lag1 +
+                   Veh:cl_def6_HHI_lag1 +
+                   # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   cl_def3_HHI_lag1:cl_def3_ratio_lag1+
+                   Agency+
+                   NAICS2)
+glmer_examine(Comp_Cons_11A2)
 
-
-
-#Plot residuals versus fitted
-  stargazer::stargazer(Comp_Cons_NCS3A,Comp_Cons_NCS3B,Comp_Cons_NCS3C,
-                       type="text",
-                       digits=2)
-
-
-summary_regression_compare(Comp_Cons_NCS2B,Comp_Cons_NCS2C)
-summary_regression_compare(CBre_Comp_NCS2C,bins=5)
 
 
 ```
 Both exceed VIF of 2.
 
 
-
-#### Model NCS3E: Interaction of HHI and size
-Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
-```{r ModelNCS3E_Comp}
-#Frequency Plot for unlogged ceiling
-
-
-#Model
-Comp_Cons_NCS3E <- glm (data=smp,
-                 cl_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+cl_def3_obl_lag1+cl_def3_HHI_lag1:cl_def3_obl_lag1)
-glmer_examine(Comp_Cons_NCS3E)
-
-
-# 
-# #Plot the fitted model plot
-# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
-# 
-# #Competition curves
-# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
-#                              args=list(Comp=0),color="blue")+
-#   stat_function(fun = CBre_Comp_02A_curve, 
-#                              args=list(Comp=2),color="blue")
-
-
-
-
-
-#Plot residuals versus fitted
-  stargazer::stargazer(Comp_Cons_NCS3C,Comp_Cons_NCS3E,Comp_Cons_NCS6E,
-                       type="text",
-                       digits=2)
-
-  #Compare to prior at same level
-summary_regression_compare(Comp_Cons_NCS3C,Comp_Cons_NCS3E)
-summary_regression_compare(Comp_Cons_NCS6E,Comp_Cons_NCS3E)
-
-
-```
-Expectations were not uphelped. Level 3 seems to outperform level 6. Which suggests further exploration is worthwhile. That said, sector size just doesn't add that much to this model relative to level 6.
-
-
-
 ## Vehicle
 
+###Model 12A: Vehicle and Any International
+Multi-award IDCs are used in part in cases like crisis situations where a pre-approved group of contractors could make a big difference. Multi-award international task orders are expected to have  more offers relative to definitive.
 
 
-###Model 03D: Vehicle and Contract Ceiling
-Based on a the descriptive statistics, it appears that the definitive vehicles, multi-award, and FSS/GWACs vary most based on  size. This woud be consistent with the idea that regular reward on these mechanisms might be an important  part of managmening them. By comparison breaking single-award IDCs and the sometimes single-award BPA/BOA into smaller chunks may just not matter to the same degree. Thus the expectation is that  M-IDV, FSS/GWAC, and definitive  (the baseline), will estimate higher risk of ceiling breaches for larger contracts.
-```{r Model03D_Comp}
-
-#Frequency Plot
-summary_continuous_plot(metric="comp",smp,"l_Ceil","Veh")
-
-
-#Create the model
-Comp_Cons_03D <- glm (data=smp,
-                 cl_Offr ~cl_def6_HHI_lag1 + 
-                   cl_Ceil + cl_Days+ 
-                   Veh +
-                   cl_def6_HHI_lag1:cl_Ceil  + #cl_def6_HHI_lag1:cl_Days +
-                 Veh:cl_Days+
-                   Veh:cl_Ceil)
-glmer_examine(Comp_Cons_03D)
-glmer_examine(Comp_Cons_03D)
-
-CBre_Comp_03D <- glm (data=smp,
-                 cl_Offr ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   Veh +
-                   #cl_def6_HHI_lag1:cl_Ceil  +
-                   #cl_def6_HHI_lag1:cl_Days +
-                 Veh:cl_Days  + 
-                   Veh:cl_Ceil)
-
-# 
-# # Plot the model and Vehicle for SIDV
-# CBre_Comp_03D_SIDV_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
-#   cbind(1,Comp,Ceil,Days,x,MIDV,OIDV,
-#         Comp*Ceil,Days*Ceil,Days*Comp,
-#         Days*x,Days*MIDV,Days*OIDV,
-#         Comp*x,Comp*MIDV,Comp*OIDV,
-#         Ceil*x,Ceil*MIDV,Ceil*OIDV) %*%  coef(CBre_Comp_03D))}
-# 
-# #Competition curves
-# fitted_cbre_model(smp,"SIDV") +
-#   stat_function(fun = CBre_Comp_03D_SIDV_curve,
-#                              args=list(Comp=0,Ceil=0,Days=0,
-#                                        MIDV=0,FSSGWAC=0,BPABOA=0),color="blue")+
-#   stat_function(fun = CBre_Comp_03D_SIDV_curve,
-#                              args=list(Comp=2,Ceil=0,Days=0,
-#                                        MIDV=0,FSSGWAC=0,BPABOA=0),color="blue")
-# 
-# 
-# CBre_Comp_03D_MIDV_curve<-function(x, Comp,Ceil,Days,SIDV,OIDV){invlogit(
-#   cbind(1,Comp,Ceil,Days,SIDV,x,OIDV,
-#         Comp*Ceil,Days*Ceil,Days*Comp,
-#         Days*SIDV,Days*x,Days*OIDV,
-#         Comp*SIDV,Comp*x,Comp*OIDV,
-#         Ceil*SIDV,Ceil*x,Ceil*OIDV) %*%  coef(CBre_Comp_03D))}
-# 
-# #Plot the model and Vehicle for MIDV
-# #Competition Curves
-# fitted_cbre_model(smp,"MIDV") +
-#   stat_function(fun = CBre_Comp_03D_MIDV_curve,
-#                              args=list(Comp=0,Ceil=0,Days=0,
-#                                        SIDV=0,FSSGWAC=0,BPABOA=0),color="blue")+
-#   stat_function(fun = CBre_Comp_03D_MIDV_curve,
-#                              args=list(Comp=2,Ceil=0,Days=0,
-#                                        SIDV=0,FSSGWAC=0,BPABOA=0),color="blue")
-# 
-# 
-# CBre_Comp_03D_OIDV_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV){invlogit(
-#   cbind(1,Comp,Ceil,Days,SIDV,MIDV,x,
-#         Comp*Ceil,Days*Ceil,Days*Comp,
-#         Days*SIDV,Days*MIDV,Days*x,
-#         Comp*SIDV,Comp*MIDV,Comp*x,
-#         Ceil*SIDV,Ceil*MIDV,Ceil*x) %*%  coef(CBre_Comp_03D))}
-# 
-# #Plot the model and Vehicle for OIDV
-# #Competition curves
-# fitted_cbre_model(smp,"OIDV") +
-#   stat_function(fun = CBre_Comp_03D_OIDV_curve,
-#                              args=list(Comp=0,Ceil=0,Days=0,
-#                                        SIDV=0,MIDV=0),color="blue")+
-#   stat_function(fun = CBre_Comp_03D_OIDV_curve,
-#                              args=list(Comp=2,Ceil=0,Days=0,
-#                                        SIDV=0,MIDV=0),color="blue")
-# 
-
-
-
-
-Comp_Cons_03D2 <- glm (data=smp,
-                 cl_Offr ~cl_def6_HHI_lag1 + 
-                   cl_Ceil + cl_Days+ 
-                   Veh +
-                   # cl_def6_HHI_lag1:cl_Ceil  + #cl_def6_HHI_lag1:cl_Days +
-                 Veh:cl_Days+
-                   Veh:cl_Ceil)
-glmer_examine(Comp_Cons_03D2)
-
-
-stargazer::stargazer(Comp_Cons_03B2,Comp_Cons_03D2,
-                     type="text",
-                       digits=2)
-summary_regression_compare(Comp_Cons_03B2,Comp_Cons_03D2)
-summary_regression_compare(Comp_Cons_03A,Comp_Cons_03D2)
-
-```
-
-The results are interesting, upholding expectations for definitive award contracts and to a lesser degree for FSS/GWACS, but not for multi-award IDCs. The addition Interestingly, risk for indefinite delivery vehicles seems to depend much more on  duration, whille for definitive contracts ceiling matters most.
-
-VIF for ceiling exceeded 2 for consolidated, and we compared a model with  HHI_lag1:ceiling removed. That reduced devinace and had a mixed effect on residuals, decreasing the magnitude of outliers though slighty throwing off the  highest risk predictions.
-
-
-###Model 04F: Fixed-Price and Vehicle
-
-
-```{r Model04F_Comp}
-
-#Frequency Plot
-summary_discrete_plot(metric="comp",smp,"FxCb","Veh")
-
-#Create the model
-
-#Create the model
-Comp_Cons_04F <- glm (data=smp,
-                 cl_Offr ~cl_def6_HHI_lag1 + 
-                   cl_Ceil + cl_Days+ 
-                   Veh +
-                   # cl_def6_HHI_lag1:cl_Ceil  + #cl_def6_HHI_lag1:cl_Days +
-                 Veh:cl_Days+
-                   Veh:cl_Ceil+
-                FxCb+FxCb:Veh)
-glmer_examine(Comp_Cons_04F)
-
-CBre_Comp_04F <- glm (data=smp,
-                 cl_Offr ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   Veh +
-                   FxCb +
-                   #cl_def6_HHI_lag1:cl_Ceil  + 
-                 Veh:cl_Days+
-                   Veh:cl_Ceil+
-                   FxCb:Veh,
-                 )
-
-# Plot the model and Vehicle for SIDV
-# CBre_Comp_04F_curve<-function(x, Comp,Ceil,Days,MIDV,OIDV){invlogit(
-#   cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
-#         n_Fixed,
-#         Comp*Ceil,Days*Ceil,Days*Comp,
-#         Days*SIDV,Days*MIDV,Days*OIDV,
-#         Comp*SIDV,Comp*MIDV,Comp*OIDV,
-#         x*SIDV,x*MIDV,x*OIDV
-#         ) %*%  coef(CBre_Comp_04F))}
-# 
-# #Vehicle curves
-# fitted_cbre_model(smp,"n_Fixed") +
-#   stat_function(fun = CBre_Comp_04F_curve,
-#                              args=list(Comp=0,Ceil=0,Days=0,
-#                                        SIDV=1,MIDV=0,FSSGWAC=0,BPABOA=0),color="blue")+
-#   stat_function(fun = CBre_Comp_04F_curve,
-#                              args=list(Comp=0,Ceil=0,Days=0,
-#                                        SIDV=0,MIDV=1,FSSGWAC=0,BPABOA=0),color="blue")+
-#   stat_function(fun = CBre_Comp_04F_curve,
-#                              args=list(Comp=0,Ceil=0,Days=0,
-#                                        SIDV=0,MIDV=0,OIDV=1),color="blue")
-# 
-# #Plot the fitted values vs actual results
-# binned_fitted_versus_cbre_residuals(CBre_Comp_04F)
-# 
-# #Plot residuals versus fittedO
-# residuals_cbre_plot(CBre_Comp_04F)+
-#   labs(x="Estimated  Pr (Ceiling Breach)")
-
-# residuals_cbre_plot("cl_days")+
-#   labs(x="Centered Log(Days)")
-stargazer::stargazer(Comp_Cons_04C,Comp_Cons_04F,
-                     type="text",
-                       digits=2)
-summary_regression_compare(Comp_Cons_04C,Comp_Cons_04F)
-
-```
-The interactions are not significant and do little to reduce the residual deviance. They will not be added to the model. They exceed VIF of 2 in both cases.
-
-###Model 05C: Vehicle and Any International
-Mechanisms like multi-award IDCs and GWAC/FSS use a known pool of contractors but still incorporate competition. Multi-award was emphasized in part after earlier scandals as preferable to single-award IDCs. Thus multi-award IDCs, and perhaps other vehicles that offer task order competition, is expected to estimate a lower rate of ceiling breaches. 
-
-
-```{r Model05C}
+```{r Model12A}
 
 #Frequency Plot
 summary_discrete_plot(metric="comp",smp,"Intl","Veh")
@@ -2187,566 +1760,199 @@ summary_discrete_plot(metric="comp",smp,"Intl","Veh")
 
 
 #Create the model
-Comp_Cons_05C <- glm (data=smp,
-                      cl_Offr ~cl_def6_HHI_lag1 + 
-                        cl_Ceil + cl_Days+ 
-                        Veh +
-                        PricingFee + b_UCA +
-                        b_Intl+
-                        # cl_def6_HHI_lag1:cl_Ceil  +
-                        Veh:cl_Days+
-                        # Veh:cl_def6_HHI_lag1  +
-                        Veh:cl_Ceil+
-                        cl_Ceil:PricingFee+
-                        # b_UCA:cl_Ceil+
-                        b_UCA:cl_def6_HHI_lag1 + 
-                        b_UCA:cl_Ceil+
-                        
-                        b_Intl:Veh
-                      )
-glmer_examine(Comp_Cons_05C)
+Comp_Cons_12A <- glm (data=smp,
+                 cl_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+UCA+
+                   b_Intl+
+                   b_UCA:cl_def6_HHI_lag1 +
+                   cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   b_Intl:Veh+
+                   Agency+
+                   NAICS2)
+glmer_examine(Comp_Cons_12A)
 
-CBre_Comp_05C <- glm (data=smp,
-                      cl_Offr ~n_Comp + 
-                        cl_Ceil + cl_Days+ 
-                        Veh  +
-                        PricingFee+ b_UCA +
-                        b_Intl+
-                        Veh:cl_Days+
-                        
-                        Veh:cl_Ceil+
-                        cl_Ceil:PricingFee+
-                        # b_UCA:cl_Ceil+
-                        
-                        b_UCA:n_Comp + 
-                        b_UCA:cl_Ceil+
-                        
-                        b_Intl:Veh 
-                      )
-
-
-
-
-# # Plot the model and Vehicle 
-# Term_Comp_05C_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
-#   cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
-#         Comp*Ceil,Days*Ceil,Days*Comp,
-#         Fixed,UCA,x,
-#         Days*x,Days*MIDV,Days*OIDV,
-#         Comp*x,Comp*MIDV,Comp*OIDV,
-#         UCA*Comp) %*%  coef(Term_Comp_05C))}
-# 
-# #Days curves
-# discrete_fitted_term_model(smp,"SIDV") +
-#   stat_function(fun = Term_Comp_05C_curve,
-#                              args=list(Comp=0,Ceil=0,Days=0,
-#                                        MIDV=0,SIDV=0,OIDV=0,
-#                                        Fixed=1,UCA=0),color="blue")+
-#   stat_function(fun = Term_Comp_05C_curve,
-#                              args=list(Comp=2,Ceil=0,Days=1,
-#                                        MIDV=0,SIDV=0,OIDV=0,
-#                                        Fixed=1,UCA=0),color="blue")
-# 
-# 
-# #Plot the fitted values vs actual results
-# binned_fitted_versus_residuals(Term_Comp_05C)
-# 
-# #Plot residuals versus fittedO
-# residuals_term_plot(Term_Comp_05C)+
-#   labs(x="Estimated  Pr (Termination)")
-
-# residuals_term_plot(Term_Comp_02F,"cl_days")+
-#   labs(x="Centered Log(Days)")
-stargazer::stargazer(Comp_Cons_05A,Comp_Cons_05C,
+stargazer::stargazer(Comp_Cons_10D3,Comp_Cons_12A,
                      type="text",
                        digits=2)
-summary_regression_compare(Comp_Cons_05A,Comp_Cons_05C)
+summary_regression_compare(Comp_Cons_10D3,Comp_Cons_12A)
 
 ```
-
+Expectations were upheld for multi-award, and indeed all forms of indefinite delivery vehicles have higher offers for international. This also increased the significe of the base indefinitive delivery vehicles.
 
 
 ## Pricing
+###Model 13A: Pricing and Average Wage
+Firm Fixed Price is less  appropriate as an approach when there is greater uncertainty and thus should estimate fewer offers. A phenomenon likely to extend to time and materials / labor hours contracts. By comparison, fixed price incentive and cost based should estimate more offers.
 
+```{r Model13A_Wage}
 
-
-
-
-###Model 04E: Fixed-Price and Base Duration
-Past CSIS research has found that fixed-price contracts do appear to be at higher risk if they have a longer maximum duration. This may mean they 
-
-Time&Materials/Labor Hours/Fixed-Price Level of Effort are typically used for smaller projects, but may not scale as well for longer lasting projects. 
-```{r Model04E_Comp}
 
 #Frequency Plot
-summary_continuous_plot(metric="comp",smp,"l_Days","PricingFee")
+summary_continuous_plot(metric="comp",smp,"cl_US6_avg_sal_lag1","PricingFee")
+
 
 #Create the model
-Comp_Cons_04E <- glm (data=smp,
-                 cl_Offr ~cl_def6_HHI_lag1 + 
-                   cl_Ceil + cl_Days+ 
-                   Veh +
-                   # cl_def6_HHI_lag1:cl_Ceil  + #cl_def6_HHI_lag1:cl_Days +
-                 Veh:cl_Days+
-                   Veh:cl_Ceil+
-                PricingFee+
-                   cl_Days:PricingFee)
-glmer_examine(Comp_Cons_04E)
-glmer_examine(Comp_Cons_04E)
-
-CBre_Comp_04E <- glm (data=smp,
-                 cl_Offr ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   Veh +
-                   #cl_def6_HHI_lag1:cl_Ceil  + 
-                 Veh:cl_Days+
-                   
-                   Veh:cl_Ceil+
-                                      PricingFee +
-                   cl_Days:PricingFee , 
-                 )
+Comp_Cons_13A <- glm (data=smp,
+                 cl_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+UCA+
+                   b_Intl+
+                   b_UCA:cl_def6_HHI_lag1 +
+                   cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   b_Intl:Veh+
+                   Agency+
+                   cl_US6_avg_sal_lag1:PricingFee+
+                   NAICS2)
+glmer_examine(Comp_Cons_13A)
 
 
-
-# Plot the model and Vehicle 
-# CBre_Comp_04E_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV){invlogit(
-#   cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
-#         Comp*Ceil,Days*Ceil,Days*Comp,
-#         x,
-#         Days*x,Days*MIDV,Days*OIDV,
-#         Comp*x,Comp*MIDV,Comp*OIDV,
-#         Days*x) %*%  coef(CBre_Comp_04E))}
-
-# #Days curves
-# fitted_cbre_model(smp,"SIDV") +
-#   stat_function(fun = CBre_Comp_04E_curve,
-#                              args=list(Comp=0,Ceil=0,Days=0,
-#                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0),color="blue")+
-#   stat_function(fun = CBre_Comp_04E_curve,
-#                              args=list(Comp=2,Ceil=0,Days=1,
-#                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0),color="blue")
-# 
-# 
-# #Plot the fitted values vs actual results
-# binned_fitted_versus_cbre_residuals(CBre_Comp_04E)
-# 
-# #Plot residuals versus fittedO
-# residuals_cbre_plot(CBre_Comp_04E)+
-#   labs(x="Estimated  Pr (Ceiling Breach)")
-
-# residuals_cbre_plot("cl_days")+
-#   labs(x="Centered Log(Days)")
-
-
-Comp_Cons_04E2 <- glm (data=smp,
-                 cl_Offr ~cl_def6_HHI_lag1 + 
-                   cl_Ceil + cl_Days+ 
-                   Veh +
-                   # cl_def6_HHI_lag1:cl_Ceil  + #cl_def6_HHI_lag1:cl_Days +
-                 # Veh:cl_Days+
-                   Veh:cl_Ceil+
-                PricingFee+
-                   cl_Days:PricingFee)
-glmer_examine(Comp_Cons_04E2)
-glmer_examine(Comp_Cons_04E2)
-
-CBre_Comp_04E2 <- glm (data=smp,
-                 cl_Offr ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   Veh +
-                   #cl_def6_HHI_lag1:cl_Ceil  + 
-                 # Veh:cl_Days+
-                   
-                   Veh:cl_Ceil+
-                                      PricingFee +
-                   cl_Days:PricingFee , 
-                 )
-
-
-stargazer::stargazer(Comp_Cons_04C,Comp_Cons_04E2,
+stargazer::stargazer(Comp_Cons_12A,Comp_Cons_13A,
                      type="text",
                        digits=2)
-summary_regression_compare(Comp_Cons_04C,Comp_Cons_04E2)
+summary_regression_compare(Comp_Cons_12A,Comp_Cons_13A)
+
+
 
 ```
-The probability of termination by duration chart is more clearcut with fixed price than with cost-based contracts. However, the variable does not appreciably decrease the deviation, is not significant, and undercuts the significance of other variables. It will not be added tto the model.
 
 
+Results old for fixed-price incentive and t&mlh/fploe, but not for cost-based. The reduction in AIC is considerable, over 30k.
 
 
-###Model 04G: Fixed-Price and Ceiling
-Past CSIS research has found that fixed-price contracts do appear to be at higher risk if they have a longer maximum duration. Fixed-price contracting does require upfront estimation of likely costs, and thus a higher ceiling does often mean higher risk.
-
-Time&Materials/Labor Hours/Fixed-Price Level of Effort are typically used for smaller projects, but may not scale as well for large contracts.
-
-Incentive fees, in theory, should do a estimate lower ceiling breaches as they incentive cost savings and are more oriented towards large projects.
-
-```{r Model04G_Comp}
+###Model 13B: Fixed-Price and Ceiling
+Using size as  an alternate measure for complexity, firm fixed price and T&M/LH/FP:LoE contracts may be at greater risk for large contracts and thus attract fewer offers. Conversely, Cost-based and fixed-price level of effort may receive more.
+```{r Model13B_Comp}
 
 #Frequency Plot
 summary_continuous_plot(metric="comp",smp,"l_Ceil","PricingFee")
 
 #Create the model
-Comp_Cons_04G <- glm (data=smp,
-                 cl_Offr ~cl_def6_HHI_lag1 + 
-                   cl_Ceil + cl_Days+ 
-                   Veh +
-                   # cl_def6_HHI_lag1:cl_Ceil  + #cl_def6_HHI_lag1:cl_Days +
-                 Veh:cl_Days+
-                   Veh:cl_Ceil+
-                PricingFee+
-                   cl_Ceil:PricingFee)
-glmer_examine(Comp_Cons_04G)
-glmer_examine(Comp_Cons_04G)
-
-CBre_Comp_04G <- glm (data=smp,
-                 cl_Offr ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   Veh +
-                   #cl_def6_HHI_lag1:cl_Ceil  + 
-                 Veh:cl_Days+
-                   Veh:cl_Ceil+
-                                      PricingFee +
-                   cl_Ceil:PricingFee , 
-                 )
+Comp_Cons_13B <- glm (data=smp,
+                 cl_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+UCA+
+                   b_Intl+
+                   b_UCA:cl_def6_HHI_lag1 +
+                   cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   b_Intl:Veh+
+                   cl_Ceil:PricingFee+
+                   cl_US6_avg_sal_lag1:PricingFee+
+                   Agency+
+                   NAICS2)
+glmer_examine(Comp_Cons_13B)
 
 
 
-# Plot the model and Vehicle 
-# CBre_Comp_04G_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV){invlogit(
-#   cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
-#         Comp*Ceil,Days*Ceil,Days*Comp,
-#         x,
-#         Days*x,Days*MIDV,Days*OIDV,
-#         Comp*x,Comp*MIDV,Comp*OIDV,
-#         Days*x) %*%  coef(CBre_Comp_04G))}
 
-# #Days curves
-# fitted_cbre_model(smp,"SIDV") +
-#   stat_function(fun = CBre_Comp_04G_curve,
-#                              args=list(Comp=0,Ceil=0,Days=0,
-#                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0),color="blue")+
-#   stat_function(fun = CBre_Comp_04G_curve,
-#                              args=list(Comp=2,Ceil=0,Days=1,
-#                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0),color="blue")
-# 
-# 
-# #Plot the fitted values vs actual results
-# binned_fitted_versus_cbre_residuals(CBre_Comp_04G)
-# 
-# #Plot residuals versus fittedO
-# residuals_cbre_plot(CBre_Comp_04G)+
-#   labs(x="Estimated  Pr (Ceiling Breach)")
-
-# residuals_cbre_plot("cl_days")+
-#   labs(x="Centered Log(Days)")
-
-
-stargazer::stargazer(Comp_Cons_04C,Comp_Cons_04G,
+stargazer::stargazer(Comp_Cons_12A,Comp_Cons_13A,Comp_Cons_13B,
                      type="text",
                        digits=2)
-summary_regression_compare(Comp_Cons_04C,Comp_Cons_04G)
+summary_regression_compare(Comp_Cons_13C,Comp_Cons_13B)
 
 ```
+While the AIC reduction is considerable, the results are entirely contrary to expectations, leaving it out.
+
+###Model 13C: UCA and Duration
+Longer direction UCAs may reflect an environment in which fewer options are available. Thus UCAs with long directions are expected to estimate fewer offers.
 
 
-
-###Model 04J: UCA and Duration
-
-While duration tracks the base duration and not the length spent in UCA, nonetheless longer length should estimate a higher probability of breach.
-```{r Model04K_Term}
+```{r Model13C_Term}
 
 
 #Frequency Plot
 summary_continuous_plot(metric="comp",smp,"l_Days","UCA")
 
-Comp_Cons_04J <- glm (data=smp,
-cl_Offr ~cl_def6_HHI_lag1 + 
-                   cl_Ceil + cl_Days+ 
-                   Veh +
-                   PricingFee + b_UCA +
-                   # cl_def6_HHI_lag1:cl_Ceil  +
-                 Veh:cl_Days+
-                   # Veh:cl_def6_HHI_lag1  +
-                   Veh:cl_Ceil+
-  cl_Ceil:PricingFee+
-  # b_UCA:cl_Ceil+
-                b_UCA:cl_def6_HHI_lag1 + 
-                  b_UCA:l_Days
-                    )
-glmer_examine(Comp_Cons_04J)
-
-CBre_Comp_04J <- glm (data=smp,
-cl_Offr ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   Veh  +
-  PricingFee+ b_UCA +
-                 Veh:cl_Days+
+Comp_Cons_13C <- glm (data=smp,
+                 cl_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+UCA+
+                   b_Intl+
+                   b_UCA:cl_def6_HHI_lag1 +
+                   cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   b_Intl:Veh+
+                   # cl_Ceil:PricingFee+
+                   cl_US6_avg_sal_lag1:PricingFee+
+                   b_UCA:cl_Days+
+                   Agency+
                    
-                   Veh:cl_Ceil+
-  cl_Ceil:PricingFee+
-  # b_UCA:cl_Ceil+
-                   
-                b_UCA:n_Comp + 
-                  b_UCA:l_Days
-                    )
-
-
-
-
-
-# Plot the model and Vehicle 
-# Term_Comp_04J_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
-#   cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
-#         Comp*Ceil,Days*Ceil,Days*Comp,
-#         Fixed,x,
-#         Days*x,Days*MIDV,Days*OIDV,
-#         Comp*x,Comp*MIDV,Comp*OIDV,
-#         Comp*x,Days*x) %*%  coef(Term_Comp_04J))}
-# 
-# #Days curves
-# discrete_fitted_term_model(smp,"SIDV") +
-#   stat_function(fun = Term_Comp_04J_curve,
-#                              args=list(Comp=0,Ceil=0,Days=0,
-#                                        MIDV=0,SIDV=0,OIDV=0,
-#                                        Fixed=1),color="blue")+
-#   stat_function(fun = Term_Comp_04J_curve,
-#                              args=list(Comp=2,Ceil=0,Days=1,
-#                                        MIDV=0,SIDV=0,OIDV=0,
-#                                        Fixed=1),color="blue")
-
-Comp_Cons_04J2 <- glm (data=smp,
-cl_Offr ~cl_def6_HHI_lag1 + 
-                   cl_Ceil + cl_Days+ 
-                   Veh +
-                   PricingFee + b_UCA +
-                   # cl_def6_HHI_lag1:cl_Ceil  +
-                 # Veh:cl_Days+
-                   # Veh:cl_def6_HHI_lag1  +
-                   Veh:cl_Ceil+
-  cl_Ceil:PricingFee+
-  # b_UCA:cl_Ceil+
-                b_UCA:cl_def6_HHI_lag1 + 
-                  b_UCA:l_Days
-                    )
-glmer_examine(Comp_Cons_04J2)
-
-CBre_Comp_04J2 <- glm (data=smp,
-cl_Offr ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   Veh  +
-  PricingFee+ b_UCA +
-                 # Veh:cl_Days+
-                   
-                   Veh:cl_Ceil+
-  cl_Ceil:PricingFee+
-  # b_UCA:cl_Ceil+
-                   
-                b_UCA:n_Comp + 
-                  b_UCA:l_Days
-                    )
-
-
-
-
-stargazer::stargazer(Comp_Cons_04I,Comp_Cons_04J2,
+                   NAICS2)
+glmer_examine(Comp_Cons_13C)
+stargazer::stargazer(Comp_Cons_13A,Comp_Cons_13B,Comp_Cons_13C,
                      type="text",
                        digits=2)
-summary_regression_compare(Comp_Cons_04I,Comp_Cons_04J2)
-
+summary_regression_compare(Comp_Cons_13B,Comp_Cons_13C)
 
 
 ```
+The results are in line with expectation, but not significant and barely add anything to the model. Leaving it in, but can drop it if any challenges are encountered.
 
-UCA:l_Days violates VIF even with removal of other da 
-
-###Model 04K: UCA and Ceiling
+###Model 13D: UCA and Ceiling
 
 Here the possible risk is similar to days, that larger, and thus possibly more complex projects, are at greater risk with UCA and that UCA and high ceiling estimate a higher chance of breaches.
-```{r Model04K_Term}
+```{r Model13D_Term}
 
 
 #Frequency Plot
 summary_continuous_plot(metric="comp",smp,"l_Ceil","UCA")
 
-Comp_Cons_04K <- glm (data=smp,
-cl_Offr ~cl_def6_HHI_lag1 + 
-                   cl_Ceil + cl_Days+ 
-                   Veh +
-                   PricingFee + b_UCA +
-                   # cl_def6_HHI_lag1:cl_Ceil  +
-                 Veh:cl_Days+
-                   # Veh:cl_def6_HHI_lag1  +
-                   Veh:cl_Ceil+
-  cl_Ceil:PricingFee+
-  # b_UCA:cl_Ceil+
-                b_UCA:cl_def6_HHI_lag1 + 
-                  b_UCA:cl_Ceil
-                    )
-glmer_examine(Comp_Cons_04K)
 
-CBre_Comp_04K <- glm (data=smp,
-cl_Offr ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   Veh  +
-  PricingFee+ b_UCA +
-                 Veh:cl_Days+
+Comp_Cons_13D <- glm (data=smp,
+                 cl_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+UCA+
+                   b_Intl+
+                   b_UCA:cl_def6_HHI_lag1 +
+                   cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   b_Intl:Veh+
+                   # cl_Ceil:PricingFee+
+                   cl_US6_avg_sal_lag1:PricingFee+
+                   b_UCA:cl_Days+
+                   b_UCA:cl_Ceil+
+                   Agency+
                    
-                   Veh:cl_Ceil+
-  cl_Ceil:PricingFee+
-  # b_UCA:cl_Ceil+
-                   
-                b_UCA:n_Comp + 
-                  b_UCA:cl_Ceil
-                    )
+                   NAICS2)
 
 
 
+glmer_examine(Comp_Cons_13D)
 
 
-# Plot the model and Vehicle 
-# Term_Comp_04K_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed){invlogit(
-#   cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
-#         Comp*Ceil,Days*Ceil,Days*Comp,
-#         Fixed,x,
-#         Days*x,Days*MIDV,Days*OIDV,
-#         Comp*x,Comp*MIDV,Comp*OIDV,
-#         Comp*x,Days*x) %*%  coef(Term_Comp_04K))}
-# 
-# #Days curves
-# discrete_fitted_term_model(smp,"SIDV") +
-#   stat_function(fun = Term_Comp_04K_curve,
-#                              args=list(Comp=0,Ceil=0,Days=0,
-#                                        MIDV=0,SIDV=0,OIDV=0,
-#                                        Fixed=1),color="blue")+
-#   stat_function(fun = Term_Comp_04K_curve,
-#                              args=list(Comp=2,Ceil=0,Days=1,
-#                                        MIDV=0,SIDV=0,OIDV=0,
-#                                        Fixed=1),color="blue")
-
-Comp_Cons_04K2 <- glm (data=smp,
-cl_Offr ~cl_def6_HHI_lag1 + 
-                   cl_Ceil + cl_Days+ 
-                   Veh +
-                   PricingFee + b_UCA +
-                   # cl_def6_HHI_lag1:cl_Ceil  +
-                 # Veh:cl_Days+
-                   # Veh:cl_def6_HHI_lag1  +
-                   Veh:cl_Ceil+
-  cl_Ceil:PricingFee+
-  # b_UCA:cl_Ceil+
-                b_UCA:cl_def6_HHI_lag1 + 
-                  b_UCA:l_Days
-                    )
-glmer_examine(Comp_Cons_04K2)
-
-CBre_Comp_04K2 <- glm (data=smp,
-cl_Offr ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   Veh  +
-  PricingFee+ b_UCA +
-                 # Veh:cl_Days+
-                   
-                   Veh:cl_Ceil+
-  cl_Ceil:PricingFee+
-  # b_UCA:cl_Ceil+
-                   
-                b_UCA:n_Comp + 
-                  b_UCA:l_Days
-                    )
-
-
-
-
-stargazer::stargazer(Comp_Cons_04I,Comp_Cons_04K,
+stargazer::stargazer(Comp_Cons_13A,Comp_Cons_13B,Comp_Cons_13C,Comp_Cons_13D,
                      type="text",
                        digits=2)
-summary_regression_compare(Comp_Cons_04I,Comp_Cons_04K)
+summary_regression_compare(Comp_Cons_13C,Comp_Cons_13D)
+
 
 
 
 ```
-The results are counter-intuitive but strong. Based on the descriptive statistics it appears that  mid-range, not the largest UCAs, have the great risk of breaches.
-
-
-
-Firm fixed price contracts and to a less degree other fixed-price contracts and time and materials/labor hours/fixed price level of effort contracts may be more vulnerable to changing conditions internationally. Thus they may estimate a higher rate of ceiling breaches.
-```{r Model05cl_Offr}
-
-#Frequency Plot
-summary_discrete_plot(metric="comp",smp,"Intl","PricingFee")
-
-
-
-#Create the model
-Comp_Cons_05B <- glm (data=smp,
-cl_Offr ~cl_def6_HHI_lag1 + 
-                   cl_Ceil + cl_Days+ 
-                   Veh +
-                   PricingFee + b_UCA +
-  b_Intl+
-                   # cl_def6_HHI_lag1:cl_Ceil  +
-                 Veh:cl_Days+
-                   # Veh:cl_def6_HHI_lag1  +
-                   Veh:cl_Ceil+
-  cl_Ceil:PricingFee+
-  # b_UCA:cl_Ceil+
-                b_UCA:cl_def6_HHI_lag1 + 
-                  b_UCA:cl_Ceil+
-  
-  b_Intl:PricingFee
-                    )
-glmer_examine(Comp_Cons_05B)
-
-CBre_Comp_05B <- glm (data=smp,
-cl_Offr ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   Veh  +
-  PricingFee+ b_UCA +
-  b_Intl+
-                 Veh:cl_Days+
-                   
-                   Veh:cl_Ceil+
-  cl_Ceil:PricingFee+
-  # b_UCA:cl_Ceil+
-                   
-                b_UCA:n_Comp + 
-                  b_UCA:cl_Ceil+
-  
-  b_Intl:PricingFee
-                    )
-
-
-# Plot the model and Vehicle 
-# CBre_Comp_05B_curve<-function(x, Comp,Ceil,Days,SIDV,MIDV,OIDV,Fixed,UCA){invlogit(
-#   cbind(1,Comp,Ceil,Days,SIDV,MIDV,OIDV,
-#         Comp*Ceil,Days*Ceil,Days*Comp,
-#         Fixed,UCA,x,
-#         Days*x,Days*MIDV,Days*OIDV,
-#         Comp*x,Comp*MIDV,Comp*OIDV,
-#         UCA*Comp) %*%  coef(CBre_Comp_05B))}
-# 
-# #Days curves
-# fitted_cbre_model(smp,"SIDV") +
-#   stat_function(fun = CBre_Comp_05B_curve,
-#                              args=list(Comp=0,Ceil=0,Days=0,
-#                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
-#                                        Fixed=1,UCA=0),color="blue")+
-#   stat_function(fun = CBre_Comp_05B_curve,
-#                              args=list(Comp=2,Ceil=0,Days=1,
-#                                        MIDV=0,SIDV=0,FSSGWAC=0,BPABOA=0,
-#                                        Fixed=1,UCA=0),color="blue")
-
-
-stargazer::stargazer(Comp_Cons_05A,Comp_Cons_05B,
-                     type="text",
-                       digits=2)
-summary_regression_compare(Comp_Cons_05A,Comp_Cons_05B)
-
-
-
-```
-Due in part to small sample sizes, the results were fairly extreme, including a coefficient of -11 for other fixed price. They also did not reduce model deviance by much and ran contrary to hypotheses. Leaving this out.
+Ceiling is contrary to expectation and has a minimal coefficient. Leaving  it out.
 
 
 
@@ -2844,7 +2050,7 @@ save(Comp_Cons_11A,CBre_Comp_11A.restart,CBre_Comp_11A.devfun,CBre_Comp_11A.rest
 ```
 
 
-#### Model NCS5E: Interaction of HHI and size
+#### Model 11B: Interaction of HHI and size
 Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
 ```{r ModelNCS5E_Comp}
 #Frequency Plot for unlogged ceiling
