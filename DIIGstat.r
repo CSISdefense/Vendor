@@ -1151,13 +1151,13 @@ glmer_examine<-function(model,display=FALSE){
   output
 }
 
-get_icc<-function(model,level=1){
+get_icc<-function(model,display=FALSE){
 ############################################################################################################################
 #Keep Calm and Learn Multilevel Logistic Modeling: A Simplified Three-Step Procedure for Beginners Using SPSS, Stata, and R#
 ############################################################################################################################
   # icc <- model@theta^2/ (model@theta^2 + (3.14159^2/3))
   # icc
-  
+  if(display==TRUE) display(model)
   if(!is.null(model@optinfo$conv$lme4$messages)){
     output<-list(icc(model),
                  model@optinfo$conv$lme4$messages)
