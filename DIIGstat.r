@@ -989,7 +989,9 @@ model_colnames<-function(model){
 
 
 
-summary_residual_compare<-function(model1_old,model1_new,model2_old=NULL,model2_new=NULL,bins=5){
+summary_residual_compare<-function(model1_old,model1_new,
+                                   model2_old=NULL,model2_new=NULL,
+                                   skip_vif=FALSE,bins=5){
   #Plot the fitted values vs actual results
   
   if(!is.null(model2_new)){
@@ -1027,7 +1029,7 @@ summary_residual_compare<-function(model1_old,model1_new,model2_old=NULL,model2_
       residual_compare(model1_old,model1_new,model2_old,model2_new,"cl_Days","Centered Log(Days)",10)
     }
     output<-NULL
-    if(class(model1_new)=="glmerMod" & class(model2_new)=="glmerMod") 
+    if(class(model1_new)=="glmerMod" & class(model2_new)=="glmerMod" & skip_vif==FALSE) 
     { 
       # If the fit is singular or near-singular, there might be a higher chance of a false positive (we’re not necessarily screening out gradient and Hessian checking on singular directions properly); a higher chance that the model has actually misconverged (because the optimization problem is difficult on the boundary); and a reasonable argument that the random effects model should be simplified.
       # https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html
@@ -1047,7 +1049,8 @@ summary_residual_compare<-function(model1_old,model1_new,model2_old=NULL,model2_
       )
     } 
     else if ((class(model1_new)!="glmerMod" & class(model2_new)!="glmerMod") &
-             (class(model1_old)!="glmerMod" & class(model2_old)!="glmerMod")){
+             (class(model1_old)!="glmerMod" & class(model2_old)!="glmerMod") & 
+             skip_vif==FALSE){
       output<-list(rbind(deviance_stats(model1_old,"model1_old"),
                          deviance_stats(model1_new,"model1_new"),
                          deviance_stats(model2_old,"model2_old"),
@@ -1105,7 +1108,8 @@ summary_residual_compare<-function(model1_old,model1_new,model2_old=NULL,model2_
                    model1_new@optinfo$conv$lme4$messages
       )
     } 
-    else if (class(model1_new)!="glmerMod" & class(model1_old)!="glmerMod"){
+    else if (class(model1_new)!="glmerMod" & class(model1_old)!="glmerMod" &
+              skip_vif==FALSE){
       output<-list(rbind(deviance_stats(model1_old,"model1_old"),
                          deviance_stats(model1_new,"model1_new")),
                    car::vif(model1_new)

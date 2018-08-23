@@ -211,13 +211,20 @@ summary_discrete_plot(smp,"Comp")
 
 #Model
 Term_Comp_01A <- glm (data=smp,
-                 b_Term ~ cb_Comp, family=binomial(link="logit"))
-glmer_examine(Term_Comp_01A)
+                 b_Term ~ b_Comp, family=binomial(link="logit"))
+display(Term_Comp_01A)
 
 #Plot the new variable and coefficients
 # Add the fitted regression line
-fitted_Term_model(smp,"cb_Comp") +
-  stat_function(fun = fit_curve, args=list(a=coef(Term_Comp_01A)[1],                                                        b=coef(Term_Comp_01A)[2]),color="blue")
+# fitted_Term_model(smp,"cb_Comp") +
+#   stat_function(fun = fit_curve, args=list(a=coef(Term_Comp_01A)[1],                                                        b=coef(Term_Comp_01A)[2]),color="blue")
+
+  stargazer::stargazer(Term_Comp_01A,type="text",
+                       digits=2)
+  
+  
+
+
 
 
 
@@ -226,7 +233,7 @@ Competition alone has a very slight, but significant, negative correlation with 
 
 
 
-###Model 01B: Effective Competition
+###Model 01B: Numerical Effective Competition
 
 ```{r Model01b_Term}
 
@@ -237,14 +244,22 @@ summary_discrete_plot(smp,"EffComp")
 #Model
 Term_Comp_01B <- glm (data=smp,
                  b_Term ~ n_Comp, family=binomial(link="logit"))
-glmer_examine(Term_Comp_01B)
+display(Term_Comp_01B)
 
 #Plot the Fitted
-#Add the fitted regression line
-fitted_Term_model(smp,"n_Comp") +
-  stat_function(fun = fit_curve, args=list(a=coef(Term_Comp_01B)[1],
-                                           b=coef(Term_Comp_01B)[2]),
-                color="blue")
+# Add the fitted regression line
+# fitted_Term_model(smp,"n_Comp") +
+  # stat_function(fun = fit_curve, args=list(a=coef(Term_Comp_01B)[1],
+                                           # b=coef(Term_Comp_01B)[2]),
+                # color="blue")
+ stargazer::stargazer(Term_Comp_01A,Term_Comp_01B,type="text",
+                       digits=2)
+  
+  
+
+
+
+summary_residual_compare(Term_Comp_01A,Term_Comp_01B,bins=2,skip_vif=TRUE)
 
 
 
@@ -252,41 +267,107 @@ fitted_Term_model(smp,"n_Comp") +
 ```
 
 
-The correltion between the three categories of competition has a smaller coefficent, but is still signficant. In the next step, the multiple award competition is broken down in greater detail.
+The correltion between the three categories of competition has a smaller coefficent, but is still signficant and the AIC is better. In the next step, the multiple award competition is broken down in greater detail.
 
-
-
-###Model 01C: No Competition / Number of Offer Categories 
+###Model 01C: Numerical Effective Competition
 
 ```{r Model01C_Term}
+
+#Frequency Plot
+summary_discrete_plot(smp,"EffComp")
+
+
+#Model
+Term_Comp_01C <- glm (data=smp,
+                 b_Term ~ EffComp, family=binomial(link="logit"))
+display(Term_Comp_01C)
+
+#Plot the Fitted
+# Add the fitted regression line
+# fitted_Term_model(smp,"n_Comp") +
+  # stat_function(fun = fit_curve, args=list(a=coef(Term_Comp_01C)[1],
+                                           # b=coef(Term_Comp_01C)[2]),
+                # color="blue")
+ stargazer::stargazer(Term_Comp_01A,Term_Comp_01B,Term_Comp_01C,type="text",
+                       digits=2)
+  
+  
+
+
+
+summary_residual_compare(Term_Comp_01A,Term_Comp_01C,bins=2,skip_vif=TRUE)
+
+summary_residual_compare(Term_Comp_01B,Term_Comp_01C,bins=2,skip_vif=TRUE)
+
+
+```
+
+###Model 01D: Ordinal No Competition / Number of Offer  
+
+```{r Model01D_Term}
 
 #Frequency Plot
 summary_discrete_plot(smp,"CompOffr")
 
 #Model
-Term_Comp_01C <- glm (data=smp,
+Term_Comp_01D <- glm (data=smp,
                  b_Term ~ cn_Offr, family=binomial(link="logit"))
-glmer_examine(Term_Comp_01C)
+display(Term_Comp_01D)
 
 #Plot the Fitted
 #Add the fitted regression line
-fitted_Term_model(smp,"n_Comp") +
-  stat_function(fun = fit_curve, args=list(a=coef(Term_Comp_01C)[1],
-                                           b=coef(Term_Comp_01C)[2]),
-                color="blue")
+# fitted_Term_model(smp,"n_Comp") +
+#   stat_function(fun = fit_curve, args=list(a=coef(Term_Comp_01D)[1],
+#                                            b=coef(Term_Comp_01D)[2]),
+#                 color="blue")
 
 
+ stargazer::stargazer(Term_Comp_01A,Term_Comp_01B,Term_Comp_01C,
+                      Term_Comp_01D,type="text",
+                       digits=2)
+  
+  
 
 ```
 
-As measured by residual deviance, this variable has slightly less predictive power than random noise. That can likely be attributed to the fact that 5+ offers category has a higher termination rate than 2 and 3-4. In theory, this could be because of non-liner relationship, for example higher number of offers competition may be more vulnerable to aggressive bidding beavior. However, this explaination would likely be better captured by other hidden variables such as competition methods rather than having a direct relationship with an increased number of offers. As a result, we are not testing offers as a categorical variable with dummies. 
+
+As measured by residual deviance, this variable has slightly less predictive power than random noise. That can likely be attributed to the fact that 5+ offers category has a higher termination rate than 2 and 3-4. In theory, this could be because of non-liner relationship, for example higher number of offers competition may be more vulnerable to aggressive bidding beavior. 
+
+Th estudy team then tested offers as a categorical variable with dummies. This does risk capture a hidden variable, such as competition methods. However, Within the limits of the dataset prepared for this study, binning number of offers may be the best way to examine this question.
+
+
+###Model 01E: Ordinal No Competition / Number of Offer  
+
+```{r Model01E_Term}
+
+#Frequency Plot
+summary_discrete_plot(smp,"CompOffr")
+
+#Model
+Term_Comp_01E <- glm (data=smp,
+                 b_Term ~ CompOffr, family=binomial(link="logit"))
+display(Term_Comp_01E)
+
+#Plot the Fitted
+#Add the fitted regression line
+# fitted_Term_model(smp,"n_Comp") +
+#   stat_function(fun = fit_curve, args=list(a=coef(Term_Comp_01E)[1],
+#                                            b=coef(Term_Comp_01E)[2]),
+#                 color="blue")
+
+
+ stargazer::stargazer(Term_Comp_01A,Term_Comp_01B,Term_Comp_01C,
+                      Term_Comp_01D,Term_Comp_01E,type="text",
+                       digits=2)
+  
+  
+
+```
 
 Instead, the last variant to be checked is the number of offers directly. This is handled logarithmicly because the differences between number of offers at the bottom end of the scale mtters much more than at the high end of the scale. In this method, contracts that were not open to competition are grouped with contracts that received only a single offer.
+###Model 01F: Number of Offer Categories 
 
-
-###Model 01D: Number of Offer Categories 
-
-```{r Model01D_Term}
+```{r Model01F_Term}
 
 #Frequency Plot
 summary_continuous_plot(smp,"l_Offr")
@@ -302,39 +383,45 @@ summary_continuous_plot(smp,"l_Offr","Veh")
 
 
 #Model
-Term_Comp_01D <- glm (data=smp,
+Term_Comp_01F <- glm (data=smp,
                  b_Term ~ cl_Offr, family=binomial(link="logit"))
-glmer_examine(Term_Comp_01D)
+display(Term_Comp_01F)
 
 #Variant Model
 smp$clsqr_Offer<-smp$cl_Offr^2
-Term_Comp_01E <- glm (data=smp,
+Term_Comp_01G <- glm (data=smp,
                  b_Term ~ cl_Offr +clsqr_Offer, family=binomial(link="logit"))
-glmer_examine(Term_Comp_01E)
+display(Term_Comp_01G)
 
-#Plot the data and fitted curve
-Term_Comp_01D_plot<-ggplot(data=smp,
-       aes(y=j_Term,x=cl_Offr))+geom_jitter(alpha=0.01,height=0)+scale_y_sqrt() +
-  labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
+# #Plot the data and fitted curve
+# Term_Comp_01F_plot<-ggplot(data=smp,
+#        aes(y=j_Term,x=cl_Offr))+geom_jitter(alpha=0.01,height=0)+scale_y_sqrt() +
+#   labs(title="Fitted Linear Model", caption="Source: FPDS, CSIS Analysis")
 
 #Plot the Fitted
 #Add the fitted regression line
-fitted_Term_model(smp,"cl_Offr") +
-  stat_function(fun = fit_curve, args=list(a=coef(Term_Comp_01D)[1],
-                                           b=coef(Term_Comp_01D)[2]),
-                             color="blue")
+# fitted_Term_model(smp,"cl_Offr") +
+#   stat_function(fun = fit_curve, args=list(a=coef(Term_Comp_01F)[1],
+#                                            b=coef(Term_Comp_01F)[2]),
+#                              color="blue")
+# 
+# #Plot the fitted values vs actual results
+# binned_fitted_versus_Term_residuals(Term_Comp_01F)
+# 
+# 
+# 
+# #Plot residuals versus fitted
+# residuals_Term_plot(Term_Comp_01F,bins=3)+
+#   labs(x="Estimated  Pr (Ceiling Breach)")
 
-#Plot the fitted values vs actual results
-binned_fitted_versus_Term_residuals(Term_Comp_01D)
 
 
 
-#Plot residuals versus fitted
-residuals_Term_plot(Term_Comp_01D,bins=3)+
-  labs(x="Estimated  Pr (Ceiling Breach)")
-
-
-
+ stargazer::stargazer(Term_Comp_01A,Term_Comp_01B,Term_Comp_01C,
+                      Term_Comp_01D,Term_Comp_01E,Term_Comp_01F,
+                      Term_Comp_01G,type="text",
+                       digits=2)
+  
 
 ```
 
@@ -342,10 +429,9 @@ Closer examination further undercuts the idea that more offers is associated wit
 
 A variety of binned percent terminated graphs found that in the middle range of the number of offers, there is often an increase in the percent terminated. The study team had expected that this phenomenon may prove isolated to a certain type of contracting mechanism or product/service, but that did not prove to be the case.
 
-The difference between single-offer and effective competition is worth exploring, even if it lowers the significance of the starting model. Happily, this decision is supported by the fact that this three category variable offers the greatest reduction in residual deviance. However, lacking a specific theoretical argument for the importance of a greater number of offers, and given the results, the more detailed competition breakdowns will not be used. This may be an issue worth exploring more in a future work.
+The difference between single-offer and effective competition is worth exploring, even if it lowers the significance of the starting model. Happily, this decision is supported by the fact that this five category variable offers the greatest reduction in residual deviance. 
 
-The greatest distinctiveness can be found in types of indefinite delivery vehicles. Definitive contracts and purchase orders show a higher termination rate as the number of offers increase. However, for single and multiple award IDVs, there's a decline in terminations rates correlated with low levels of competition, that often fades and even reverses as the number of offers increases. However, the results do not seem consistent with am exponential relationship.
-
+The greatest distinctiveness can be found in types of indefinite delivery vehicles. Definitive contracts and purchase orders show a higher termination rate as the number of offers increase. However, for single and multiple award IDVs, there's a decline in terminations rates correlated with low levels of competition, that often fades and even reverses as the number of offers increases. However, the results do not seem consistent with am exponential relationship. Instead, the study team will used binned competition/number of offers going forward. A decision reached in part because of the analysis of models with only the study variable but incorporating agency/office and NAICS categories.
 ## Study Variable Consolidation
 
 ### Level 6
@@ -456,7 +542,7 @@ Term_Cons_NCS6C <- glm (data=smp,
 glmer_examine(Term_Cons_NCS6C)
 
 Term_Comp_NCS6C <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def6_ratio_lag1, 
+                 b_Term ~CompOffr+cl_def6_ratio_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS6C)
 # 
@@ -474,12 +560,12 @@ glmer_examine(Term_Comp_NCS6C)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Term_Cons_NCS6B,Term_Cons_NCS6C,
-                       Term_Comp_01B,Term_Comp_NCS6C,type="text",
+                       Term_Comp_01C,Term_Comp_NCS6C,type="text",
                        digits=2)
 
 
 summary_residual_compare(Term_Cons_NCS6B,Term_Cons_NCS6C,bins=20)
-summary_residual_compare(Term_Comp_01B,Term_Comp_NCS6C,bins=2)
+summary_residual_compare(Term_Comp_01C,Term_Comp_NCS6C,bins=2)
 
 
 ```
@@ -517,7 +603,7 @@ glmer_examine(Term_Cons_NCS6E)
 
 
 Term_Comp_NCS6E <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1, 
+                 b_Term ~CompOffr+cl_def6_ratio_lag1+cl_def6_obl_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS6E)
 
@@ -573,7 +659,7 @@ glmer_examine(Term_Cons_NCS6H)
 
 
 Term_Comp_NCS6H <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
+                 b_Term ~CompOffr+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS6H)
 
@@ -665,7 +751,7 @@ Term_Cons_NCS5B <- glm (data=smp,
 glmer_examine(Term_Cons_NCS5B)
 
 Term_Comp_NCS5B <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def5_ratio_lag1, 
+                 b_Term ~CompOffr+cl_def5_ratio_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS5B)
 # 
@@ -683,13 +769,13 @@ glmer_examine(Term_Comp_NCS5B)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Term_Cons_NCS6D,Term_Cons_NCS5A,Term_Cons_NCS5B,
-                       Term_Comp_01B,Term_Comp_NCS6D,Term_Comp_NCS5B,type="text",
+                       Term_Comp_01C,Term_Comp_NCS6D,Term_Comp_NCS5B,type="text",
                        digits=2)
 
 
 summary_residual_compare(Term_Cons_NCS5A,Term_Cons_NCS5B,bins=20)
 summary_residual_compare(Term_Cons_NCS6D,Term_Cons_NCS5B,bins=20)
-summary_residual_compare(Term_Comp_01B,Term_Comp_NCS5B,bins=2)
+summary_residual_compare(Term_Comp_01C,Term_Comp_NCS5B,bins=2)
 summary_residual_compare(Term_Comp_NCS6D,Term_Comp_NCS5B,bins=2)
 
 
@@ -710,7 +796,7 @@ glmer_examine(Term_Cons_NCS5D)
 
 
 Term_Comp_NCS5D <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def5_ratio_lag1+cl_def5_obl_lag1, 
+                 b_Term ~CompOffr+cl_def5_ratio_lag1+cl_def5_obl_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS5D)
 # 
@@ -728,7 +814,7 @@ glmer_examine(Term_Comp_NCS5D)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Term_Cons_NCS5A,Term_Cons_NCS5B,Term_Cons_NCS5D,
-                       Term_Comp_01B,Term_Comp_NCS5B,Term_Comp_NCS5D,type="text",
+                       Term_Comp_01C,Term_Comp_NCS5B,Term_Comp_NCS5D,type="text",
                        digits=2)
 
 
@@ -795,7 +881,7 @@ Term_Cons_NCS4B <- glm (data=smp,
 glmer_examine(Term_Cons_NCS4B)
 
 Term_Comp_NCS4B <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def4_ratio_lag1, 
+                 b_Term ~CompOffr+cl_def4_ratio_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS4B)
 # 
@@ -813,13 +899,13 @@ glmer_examine(Term_Comp_NCS4B)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Term_Cons_NCS5B,Term_Cons_NCS4A,Term_Cons_NCS4B,
-                       Term_Comp_01B,Term_Comp_NCS5B,Term_Comp_NCS4B,type="text",
+                       Term_Comp_01C,Term_Comp_NCS5B,Term_Comp_NCS4B,type="text",
                        digits=2)
 
 
 summary_residual_compare(Term_Cons_NCS4A,Term_Cons_NCS4B,bins=20)
 summary_residual_compare(Term_Cons_NCS5B,Term_Cons_NCS4B,bins=20)
-summary_residual_compare(Term_Comp_01B,Term_Comp_NCS4B,bins=2)
+summary_residual_compare(Term_Comp_01C,Term_Comp_NCS4B,bins=2)
 summary_residual_compare(Term_Comp_NCS5B,Term_Comp_NCS4B,bins=2)
 
 
@@ -842,7 +928,7 @@ glmer_examine(Term_Cons_NCS4D)
 
 
 Term_Comp_NCS4D <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def4_ratio_lag1+ cl_def4_obl_lag1,
+                 b_Term ~CompOffr+cl_def4_ratio_lag1+ cl_def4_obl_lag1,
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS4D)
 # 
@@ -929,7 +1015,7 @@ Term_Cons_NCS3B <- glm (data=smp,
 glmer_examine(Term_Cons_NCS3B)
 
 Term_Comp_NCS3B <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def3_ratio_lag1, 
+                 b_Term ~CompOffr+cl_def3_ratio_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS3B)
 # 
@@ -947,13 +1033,13 @@ glmer_examine(Term_Comp_NCS3B)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Term_Cons_NCS4B,Term_Cons_NCS3A,Term_Cons_NCS3B,
-                       Term_Comp_01B,Term_Comp_NCS4B,Term_Comp_NCS3B,type="text",
+                       Term_Comp_01C,Term_Comp_NCS4B,Term_Comp_NCS3B,type="text",
                        digits=2)
 
 
 summary_residual_compare(Term_Cons_NCS3A,Term_Cons_NCS3B,bins=20)
 summary_residual_compare(Term_Cons_NCS4B,Term_Cons_NCS3B,bins=20)
-summary_residual_compare(Term_Comp_01B,Term_Comp_NCS3B,bins=2)
+summary_residual_compare(Term_Comp_01C,Term_Comp_NCS3B,bins=2)
 summary_residual_compare(Term_Comp_NCS4B,Term_Comp_NCS3B,bins=2)
 
 
@@ -977,7 +1063,7 @@ glmer_examine(Term_Cons_NCS3D)
 
 
 Term_Comp_NCS3D <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def3_ratio_lag1+ cl_def3_obl_lag1,
+                 b_Term ~CompOffr+cl_def3_ratio_lag1+ cl_def3_obl_lag1,
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS3D)
 # 
@@ -1031,7 +1117,7 @@ glmer_examine(Term_Cons_NCS3F)
 
 
 Term_Comp_NCS3F <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def3_ratio_lag1+cl_def3_obl_lag1+cl_US3_avg_sal_lag1, 
+                 b_Term ~CompOffr+cl_def3_ratio_lag1+cl_def3_obl_lag1+cl_US3_avg_sal_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS3F)
 
@@ -1048,7 +1134,7 @@ glmer_examine(Term_Cons_NCS3F2)
 
 
 Term_Comp_NCS3F2 <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def3_ratio_lag1+cl_US3_avg_sal_lag1, #cl_def3_obl_lag1+
+                 b_Term ~CompOffr+cl_def3_ratio_lag1+cl_US3_avg_sal_lag1, #cl_def3_obl_lag1+
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS3F2)
 
@@ -1066,7 +1152,7 @@ glmer_examine(Term_Cons_NCS3F4)
 glmer_examine(Term_Cons_NCS3F4)
 
 Term_Comp_NCS3F3 <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def3_obl_lag1+cl_US3_avg_sal_lag1, #cl_def3_ratio_lag1
+                 b_Term ~CompOffr+cl_def3_obl_lag1+cl_US3_avg_sal_lag1, #cl_def3_ratio_lag1
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS3F3)
 
@@ -1137,22 +1223,22 @@ vif(Term_Cons_NCS3G3)
 
 
 Term_Comp_NCS3G <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def3_ratio_lag1+cl_def3_obl_lag1+cl_US3_avg_sal_lag1+
-                   n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
+                 b_Term ~CompOffr+cl_def3_ratio_lag1+cl_def3_obl_lag1+cl_US3_avg_sal_lag1+
+                   CompOffr+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS3G)
 vif(Term_Comp_NCS3G)
 #Defense obl 3 have the highest VIF and no coefficient to speak of, dropping it
 Term_Comp_NCS3G2 <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def3_ratio_lag1+cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
-                   n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
+                 b_Term ~CompOffr+cl_def3_ratio_lag1+cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                   CompOffr+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS3G2)
 vif(Term_Comp_NCS3G2)
 #Taking out average salary 3 to keep the models snced up.
 Term_Comp_NCS3G3 <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
-                   n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
+                 b_Term ~CompOffr+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                   CompOffr+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS3G3)
 vif(Term_Comp_NCS3G3)
@@ -1245,7 +1331,7 @@ Term_Cons_NCS2B <- glm (data=smp,
 glmer_examine(Term_Cons_NCS2B)
 
 Term_Comp_NCS2B <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def2_ratio_lag1, 
+                 b_Term ~CompOffr+cl_def2_ratio_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS2B)
 # 
@@ -1263,13 +1349,13 @@ glmer_examine(Term_Comp_NCS2B)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Term_Cons_NCS3B,Term_Cons_NCS2A,Term_Cons_NCS2B,
-                       Term_Comp_01B,Term_Comp_NCS3B,Term_Comp_NCS2B,type="text",
+                       Term_Comp_01C,Term_Comp_NCS3B,Term_Comp_NCS2B,type="text",
                        digits=2)
 
 
 summary_residual_compare(Term_Cons_NCS2A,Term_Cons_NCS2B,bins=10)
 summary_residual_compare(Term_Cons_NCS3B,Term_Cons_NCS2B,bins=20)
-summary_residual_compare(Term_Comp_01B,Term_Comp_NCS2B,bins=2)
+summary_residual_compare(Term_Comp_01C,Term_Comp_NCS2B,bins=2)
 summary_residual_compare(Term_Comp_NCS3B,Term_Comp_NCS2B,bins=2)
 
 
@@ -1293,7 +1379,7 @@ glmer_examine(Term_Cons_NCS2D)
 
 
 Term_Comp_NCS2D <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def2_ratio_lag1+cl_def2_obl_lag1, 
+                 b_Term ~CompOffr+cl_def2_ratio_lag1+cl_def2_obl_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS2D)
 # 
@@ -1349,7 +1435,7 @@ glmer_examine(Term_Cons_NCS2F)
 
 
 Term_Comp_NCS2F <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def2_ratio_lag1+cl_def2_obl_lag1+cl_US2_avg_sal_lag1, 
+                 b_Term ~CompOffr+cl_def2_ratio_lag1+cl_def2_obl_lag1+cl_US2_avg_sal_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS2F)
 
@@ -1366,7 +1452,7 @@ glmer_examine(Term_Cons_NCS2F2)
 
 
 Term_Comp_NCS2F2 <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def2_ratio_lag1+cl_US2_avg_sal_lag1, #cl_def2_obl_lag1+
+                 b_Term ~CompOffr+cl_def2_ratio_lag1+cl_US2_avg_sal_lag1, #cl_def2_obl_lag1+
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS2F2)
 
@@ -1380,7 +1466,7 @@ Term_Cons_NCS2F3 <- glm (data=smp,
 
 
 Term_Comp_NCS2F3 <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def2_obl_lag1+cl_US2_avg_sal_lag1, #cl_def2_ratio_lag1
+                 b_Term ~CompOffr+cl_def2_obl_lag1+cl_US2_avg_sal_lag1, #cl_def2_ratio_lag1
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS2F2)
 
@@ -1461,13 +1547,13 @@ glmer_examine(Term_Cons_NCS2G3)
 
 
 Term_Comp_NCS2G <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def2_ratio_lag1+cl_US2_avg_sal_lag1+
+                 b_Term ~CompOffr+cl_def2_ratio_lag1+cl_US2_avg_sal_lag1+
                    cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS2G)
 #Average salary 6 has the highest VIF though but both average salaries are over 2.0 and 2 is more contrary to expectations. Taking it out.
 Term_Comp_NCS2G2 <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def2_ratio_lag1+#cl_US2_avg_sal_lag1+
+                 b_Term ~CompOffr+cl_def2_ratio_lag1+#cl_US2_avg_sal_lag1+
                    cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS2G2)
@@ -1535,7 +1621,7 @@ Term_Cons_02A <- glm (data=smp,
 glmer_examine(Term_Cons_02C)
 
 Term_Comp_02A <- glm (data=smp,
-                 b_Term ~n_Comp + cl_Ceil, family=binomial(link="logit"))
+                 b_Term ~CompOffr + cl_Ceil, family=binomial(link="logit"))
 glmer_examine(Term_Comp_02A)
 
 
@@ -1554,11 +1640,11 @@ fitted_Term_model(smp,"cl_Ceil") + stat_function(fun = Term_Comp_02A_curve,
 binned_fitted_versus_Term_residuals(Term_Comp_02A)
 
 #Plot residuals versus fitted
-  stargazer::stargazer(Term_Cons_01F, Term_Cons_02A,Term_Comp_01B,Term_Comp_02A,type="text",
+  stargazer::stargazer(Term_Cons_01F, Term_Cons_02A,Term_Comp_01C,Term_Comp_02A,type="text",
                        digits=2)
 
 
-summary_residual_compare(Term_Cons_01F,Term_Cons_02A,Term_Comp_01B,Term_Comp_02A,bins=2)
+summary_residual_compare(Term_Cons_01F,Term_Cons_02A,Term_Comp_01C,Term_Comp_02A,bins=2)
 
 
 ```
@@ -1578,7 +1664,7 @@ Larger contracts may encourage bid to win strategies  that could raise ceiling b
 ```{r Model02C_Term}
 
 #Frequency Plot
-summary_continuous_plot(smp,"l_Ceil","EffComp")
+summary_continuous_plot(smp,"l_Ceil","CompOffr")
 
 
 #Create the model
@@ -1589,9 +1675,9 @@ Term_Cons_02C <- glm (data=smp,
 glmer_examine(Term_Cons_02C)
 
 Term_Comp_02C <- glm (data=smp,
-                 b_Term ~n_Comp + 
+                 b_Term ~CompOffr + 
                    cl_Ceil + 
-                   n_Comp:cl_Ceil, family=binomial(link="logit"))
+                   CompOffr:cl_Ceil, family=binomial(link="logit"))
 glmer_examine(Term_Comp_02C)
 
 
@@ -1640,7 +1726,7 @@ Term_Cons_02D <- glm (data=smp,
 glmer_examine(Term_Cons_02D)
 
 Term_Comp_02D <- glm (data=smp,
-                 b_Term ~n_Comp + 
+                 b_Term ~CompOffr + 
                    cl_Ceil + cl_Days , family=binomial(link="logit"))
 glmer_examine(Term_Comp_02D)
 
@@ -1683,10 +1769,10 @@ The initial model results are surprising as ceiling change direction, reducing a
 ```{r Mode02H}
 
 #Frequency Plot
-freq_continuous_term_plot(smp,"l_Days","EffComp")
+freq_continuous_term_plot(smp,"l_Days","CompOffr")
 
 #Plot the percent terminated across cost ceiling and competition
-binned_percent_term_plot(smp,"l_Days","EffComp")
+binned_percent_term_plot(smp,"l_Days","CompOffr")
 
 #Create the model
 Term_Cons_02H <- glm (data=smp,
@@ -1729,7 +1815,7 @@ Greater duration may limit the influence of competition, at least under the poli
 ```{r Mode02H_Term}
 
 #Frequency Plot
-summary_continuous_plot(smp,"l_Days","EffComp")
+summary_continuous_plot(smp,"l_Days","CompOffr")
 
 #Create the model
 Term_Cons_02H <- glm (data=smp,
@@ -1740,9 +1826,9 @@ Term_Cons_02H <- glm (data=smp,
 glmer_examine(Term_Cons_02H)
 
 Term_Comp_02H <- glm (data=smp,
-                 b_Term ~n_Comp + 
+                 b_Term ~CompOffr + 
                    cl_Ceil + cl_Days+ 
-                   n_Comp:cl_Days, family=binomial(link="logit"))
+                   CompOffr:cl_Days, family=binomial(link="logit"))
 glmer_examine(Term_Comp_02H)
 # 
 # Term_Comp_02H_curve<-function(x, Comp,Ceil){invlogit(
@@ -1803,7 +1889,7 @@ glmer_examine(Term_Cons_03A)
 
 
 Term_Comp_03A <- glm (data=smp,
-                 b_Term ~n_Comp + 
+                 b_Term ~CompOffr + 
                    cl_Ceil + cl_Days+ 
                    Veh
                   
@@ -1892,7 +1978,7 @@ glmer_examine(Term_Cons_03B)
 glmer_examine(Term_Cons_03B)
 
 Term_Comp_03B <- glm (data=smp,
-                 b_Term ~n_Comp + 
+                 b_Term ~CompOffr + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    #cl_def6_HHI_lag1:cl_Ceil  + 
@@ -1985,7 +2071,7 @@ Competition occurs more regularly with definitive contracts, multiple award IDCs
 ```{r Model03C_Term}
 
 #Frequency Plot
-summary_discrete_plot(smp,"EffComp","Veh")
+summary_discrete_plot(smp,"CompOffr","Veh")
 summary_continuous_plot(smp,"HHI_lag1","Veh")
 
 #Create the model
@@ -1999,11 +2085,11 @@ Term_Cons_03C <- glm (data=smp,
 glmer_examine(Term_Cons_03C)
 
 Term_Comp_03C <- glm (data=smp,
-                 b_Term ~n_Comp + 
+                 b_Term ~CompOffr + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                  Veh:cl_Days+
-                   Veh:n_Comp, family=binomial(link="logit"))
+                   Veh:CompOffr, family=binomial(link="logit"))
 glmer_examine(Term_Comp_03C)
 # 
 # # Plot the model and Vehicle for SIDV
@@ -2097,7 +2183,7 @@ glmer_examine(Term_Cons_03D)
 glmer_examine(Term_Cons_03D)
 
 Term_Comp_03D <- glm (data=smp,
-                 b_Term ~n_Comp + 
+                 b_Term ~CompOffr + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    #cl_def6_HHI_lag1:cl_Ceil  +
@@ -2214,7 +2300,7 @@ Term_Cons_04A <- glm (data=smp,
 glmer_examine(Term_Cons_04A)
 
 Term_Comp_04A <- glm (data=smp,
-                 b_Term ~n_Comp + 
+                 b_Term ~CompOffr + 
                    cl_Ceil + cl_Days+ 
                    Veh   + 
                  Veh:cl_Days+
@@ -2281,7 +2367,7 @@ Term_Cons_04B <- glm (data=smp,
 glmer_examine(Term_Cons_04B)
 
 Term_Comp_04B <- glm (data=smp,
-                 b_Term ~n_Comp + 
+                 b_Term ~CompOffr + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    FxCb +
@@ -2355,7 +2441,7 @@ Term_Cons_04C <- glm (data=smp,
 glmer_examine(Term_Cons_04C)
 
 Term_Comp_04C <- glm (data=smp,
-                 b_Term ~n_Comp + 
+                 b_Term ~CompOffr + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    Pricing +
@@ -2427,7 +2513,7 @@ Term_Cons_04D <- glm (data=smp,
 glmer_examine(Term_Cons_04D)
 
 Term_Comp_04D <- glm (data=smp,
-                 b_Term ~n_Comp + 
+                 b_Term ~CompOffr + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    #cl_def6_HHI_lag1:cl_Ceil  + 
@@ -2517,7 +2603,7 @@ glmer_examine(Term_Cons_04E2)
 
 
 Term_Comp_04E <- glm (data=smp,
-                 b_Term ~n_Comp + 
+                 b_Term ~CompOffr + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    #cl_def6_HHI_lag1:cl_Ceil  + 
@@ -2532,7 +2618,7 @@ glmer_examine(Term_Comp_04E)
 
 
 Term_Comp_04E2 <- glm (data=smp,
-                 b_Term ~n_Comp + 
+                 b_Term ~CompOffr + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    #cl_def6_HHI_lag1:cl_Ceil  + 
@@ -2606,7 +2692,7 @@ Term_Cons_04F <- glm (data=smp,
 glmer_examine(Term_Cons_04F)
 
 Term_Comp_04F <- glm (data=smp,
-                 b_Term ~n_Comp + 
+                 b_Term ~CompOffr + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    FxCb +
@@ -2683,7 +2769,7 @@ glmer_examine(Term_Cons_04G)
 glmer_examine(Term_Cons_04G)
 
 Term_Comp_04G <- glm (data=smp,
-                 b_Term ~n_Comp + 
+                 b_Term ~CompOffr + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                    #cl_def6_HHI_lag1:cl_Ceil  + 
@@ -2759,7 +2845,7 @@ glmer_examine(Term_Cons_04H)
 
 #Create the model
 Term_Comp_04H <- glm (data=smp,
-b_Term ~n_Comp + 
+b_Term ~CompOffr + 
                    cl_Ceil + cl_Days+ 
                    Veh +
                     b_UCA +
@@ -2814,7 +2900,7 @@ Based on GAO research, uncompeted UCA are high risk and  thus should estimate a 
 ```{r Model04I_Comp}
 
 #Frequency Plot
-summary_discrete_plot(smp,"UCA","n_Comp")
+summary_discrete_plot(smp,"UCA","CompOffr")
 summary_continuous_plot(smp,"cl_def6_HHI_lag1","UCA")
 
 #Create the model
@@ -2835,7 +2921,7 @@ b_Term ~cl_def6_HHI_lag1 +
 glmer_examine(Term_Cons_04I)
 
 Term_Comp_04I <- glm (data=smp,
-b_Term ~n_Comp + 
+b_Term ~CompOffr + 
                    cl_Ceil + cl_Days+ 
                    Veh  +
   PricingFee+ b_UCA +
@@ -2845,7 +2931,7 @@ b_Term ~n_Comp +
   cl_Ceil:PricingFee+
   # b_UCA:cl_Ceil+
                    
-                b_UCA:n_Comp
+                b_UCA:CompOffr
                     , family=binomial(link="logit"))
 glmer_examine(Term_Comp_04I)
 
@@ -2910,7 +2996,7 @@ b_Term ~cl_def6_HHI_lag1 +
 glmer_examine(Term_Cons_04J)
 
 Term_Comp_04J <- glm (data=smp,
-b_Term ~n_Comp + 
+b_Term ~CompOffr + 
                    cl_Ceil + cl_Days+ 
                    Veh  +
   PricingFee+ b_UCA +
@@ -2920,7 +3006,7 @@ b_Term ~n_Comp +
   cl_Ceil:PricingFee+
   # b_UCA:cl_Ceil+
                    
-                b_UCA:n_Comp + 
+                b_UCA:CompOffr + 
                   b_UCA:l_Days
                     , family=binomial(link="logit"))
 glmer_examine(Term_Comp_04J)
@@ -2965,7 +3051,7 @@ b_Term ~cl_def6_HHI_lag1 +
 glmer_examine(Term_Cons_04J2)
 
 Term_Comp_04J2 <- glm (data=smp,
-b_Term ~n_Comp + 
+b_Term ~CompOffr + 
                    cl_Ceil + cl_Days+ 
                    Veh  +
   PricingFee+ b_UCA +
@@ -2975,7 +3061,7 @@ b_Term ~n_Comp +
   cl_Ceil:PricingFee+
   # b_UCA:cl_Ceil+
                    
-                b_UCA:n_Comp + 
+                b_UCA:CompOffr + 
                   b_UCA:l_Days
                     , family=binomial(link="logit"))
 glmer_examine(Term_Comp_04J2)
@@ -3027,7 +3113,7 @@ b_Term ~cl_def6_HHI_lag1 +
 glmer_examine(Term_Cons_05A)
 
 Term_Comp_05A <- glm (data=smp,
-b_Term ~n_Comp + 
+b_Term ~CompOffr + 
                    cl_Ceil + cl_Days+ 
                    Veh  +
   PricingFee+ b_UCA +
@@ -3038,7 +3124,7 @@ b_Term ~n_Comp +
   cl_Ceil:PricingFee+
   # b_UCA:cl_Ceil+
                    
-                b_UCA:n_Comp + 
+                b_UCA:CompOffr + 
                   b_UCA:cl_Ceil
                     , family=binomial(link="logit"))
 glmer_examine(Term_Comp_05A)
@@ -3108,7 +3194,7 @@ b_Term ~cl_def6_HHI_lag1 +
 glmer_examine(Term_Cons_05B)
 
 Term_Comp_05B <- glm (data=smp,
-b_Term ~n_Comp + 
+b_Term ~CompOffr + 
                    cl_Ceil + cl_Days+ 
                    Veh  +
   PricingFee+ b_UCA +
@@ -3119,7 +3205,7 @@ b_Term ~n_Comp +
   cl_Ceil:PricingFee+
   # b_UCA:cl_Ceil+
                    
-                b_UCA:n_Comp + 
+                b_UCA:CompOffr + 
                   b_UCA:cl_Ceil+
   
   b_Intl:PricingFee
@@ -3188,7 +3274,7 @@ Term_Cons_05C <- glm (data=smp,
 glmer_examine(Term_Cons_05C)
 
 Term_Comp_05C <- glm (data=smp,
-                      b_Term ~n_Comp + 
+                      b_Term ~CompOffr + 
                         cl_Ceil + cl_Days+ 
                         Veh  +
                         PricingFee+ b_UCA +
@@ -3199,7 +3285,7 @@ Term_Comp_05C <- glm (data=smp,
                         cl_Ceil:PricingFee+
                         # b_UCA:cl_Ceil+
                         
-                        b_UCA:n_Comp + 
+                        b_UCA:CompOffr + 
                         b_UCA:cl_Ceil+
                         
                         b_Intl:Veh 
@@ -3323,7 +3409,7 @@ glmer_examine(Term_Cons_06A3)
 
 
 Term_Comp_06A <- glm (data=smp,
-                      b_Term ~n_Comp + 
+                      b_Term ~CompOffr + 
                         cl_Ceil + cl_Days+ 
                         Veh  +
                         PricingFee+ b_UCA +
@@ -3335,7 +3421,7 @@ Term_Comp_06A <- glm (data=smp,
                         cl_Ceil:PricingFee+
                         # b_UCA:cl_Ceil+
                         
-                        b_UCA:n_Comp + 
+                        b_UCA:CompOffr + 
                         b_UCA:cl_Ceil+
                         
                         b_Intl:Veh 
@@ -3343,7 +3429,7 @@ Term_Comp_06A <- glm (data=smp,
 glmer_examine(Term_Comp_06A)
 
 Term_Comp_06A2 <- glm (data=smp,
-                      b_Term ~n_Comp + 
+                      b_Term ~CompOffr + 
                         cl_Ceil + cl_Days+ 
                         Veh  +
                         PricingFee+ b_UCA +
@@ -3355,7 +3441,7 @@ Term_Comp_06A2 <- glm (data=smp,
                         # cl_Ceil:PricingFee+
                         # b_UCA:cl_Ceil+
                         
-                        b_UCA:n_Comp + 
+                        b_UCA:CompOffr + 
                         b_UCA:cl_Ceil+
                         
                         b_Intl:Veh 
@@ -3364,7 +3450,7 @@ glmer_examine(Term_Comp_06A2)
 
 
 Term_Comp_06A3 <- glm (data=smp,
-                      b_Term ~n_Comp + 
+                      b_Term ~CompOffr + 
                         cl_Ceil + cl_Days+ 
                         Veh  +
                         PricingFee+ b_UCA +
@@ -3376,7 +3462,7 @@ Term_Comp_06A3 <- glm (data=smp,
                         # cl_Ceil:PricingFee+
                         # b_UCA:cl_Ceil+
                         
-                        b_UCA:n_Comp + 
+                        b_UCA:CompOffr + 
                         b_UCA:cl_Ceil+
                         
                         b_Intl:Veh 
@@ -3431,7 +3517,7 @@ glmer_examine(Term_Cons_06B)
 
 
 Term_Comp_06B <- glm (data=smp,
-                      b_Term ~n_Comp + 
+                      b_Term ~CompOffr + 
                         cl_Ceil + cl_Days+ 
                         Veh  +
                         Pricing+ b_UCA +
@@ -3443,7 +3529,7 @@ Term_Comp_06B <- glm (data=smp,
                         cl_Ceil:Pricing+
                         # b_UCA:cl_Ceil+
                         
-                        b_UCA:n_Comp + 
+                        b_UCA:CompOffr + 
                         b_UCA:cl_Ceil+
                         
                         b_Intl:Veh 
@@ -3493,7 +3579,7 @@ glmer_examine(Term_Cons_06C)
 
 
 Term_Comp_06C <- glm (data=smp,
-                      b_Term ~n_Comp + 
+                      b_Term ~CompOffr + 
                         cl_Ceil + cl_Days+ 
                         Veh  +
                         PricingFee+ b_UCA +
@@ -3504,7 +3590,7 @@ Term_Comp_06C <- glm (data=smp,
                         
                         
                         
-                        b_UCA:n_Comp + 
+                        b_UCA:CompOffr + 
                         b_UCA:cl_Ceil+
                         
                         b_Intl:Veh 
@@ -3551,7 +3637,7 @@ glmer_examine(Term_Cons_06D)
 
 
 Term_Comp_06D <- glm (data=smp,
-                      b_Term ~n_Comp + 
+                      b_Term ~CompOffr + 
                         cl_Ceil + cl_Days+ 
                         Veh  +
                         PricingFee+ b_UCA +
@@ -3563,7 +3649,7 @@ Term_Comp_06D <- glm (data=smp,
                         
                         # b_UCA:cl_Ceil+
                         
-                        b_UCA:n_Comp + 
+                        b_UCA:CompOffr + 
                         b_UCA:cl_Ceil
                         
                         # b_Intl:Veh 
@@ -3620,7 +3706,7 @@ Term_Cons_07A <- glm (data=smp,
 glmer_examine(Term_Cons_07A)
 
 Term_Comp_07A <- glm (data=smp,
-                      b_Term ~n_Comp + 
+                      b_Term ~CompOffr + 
                         cl_Ceil + cl_Days+ 
                         Veh  +
                         PricingFee+ b_UCA +
@@ -3632,7 +3718,7 @@ Term_Comp_07A <- glm (data=smp,
                         
                         
                         
-                        b_UCA:n_Comp + 
+                        b_UCA:CompOffr + 
                         b_UCA:cl_Ceil+
                         
                         
@@ -3684,14 +3770,14 @@ Term_Cons_07B <- glm (data=smp,
 glmer_examine(Term_Cons_07B)
 
 Term_Comp_07B <- glm (data=smp,
-                      b_Term ~n_Comp +
+                      b_Term ~CompOffr +
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+ 
                         cl_Ceil + cl_Days+ 
                         Veh  +
                         PricingFee+ b_UCA +
                         b_Intl+
                         
-                        b_UCA:n_Comp + 
+                        b_UCA:CompOffr + 
                         b_UCA:cl_Ceil+
                         
                    Agency+
@@ -3720,8 +3806,8 @@ This model includes economic sector at the NAICS3 and NAICS 6 levels.
 
 #Taking out average salary 3 to keep the models snced up.
 Term_Comp_NCS3G3 <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
-                   n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
+                 b_Term ~CompOffr+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                   CompOffr+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS3G3)
 vif(Term_Comp_NCS3G3)
@@ -3749,7 +3835,7 @@ glmer_examine(Term_Cons_07C)
 
 
 Term_Comp_07C <- glm (data=smp,
-                      b_Term~n_Comp+
+                      b_Term~CompOffr+
                         cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         
@@ -3758,7 +3844,7 @@ Term_Comp_07C <- glm (data=smp,
                         PricingFee+ b_UCA +
                         b_Intl+
                         
-                        b_UCA:n_Comp + 
+                        b_UCA:CompOffr + 
                         b_UCA:cl_Ceil+
                         
                         Agency+
@@ -3790,8 +3876,8 @@ summary_continuous_plot(smp,"cl_Ceil")
 
 #Taking out average salary 3 to keep the models snced up.
 Term_Comp_NCS3G3 <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
-                   n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
+                 b_Term ~CompOffr+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                   CompOffr+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS3G3)
 vif(Term_Comp_NCS3G3)
@@ -3819,7 +3905,7 @@ glmer_examine(Term_Cons_08A)
 
 
 Term_Comp_08A <- glm (data=smp,
-                      b_Term~n_Comp+
+                      b_Term~CompOffr+
                         cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         
@@ -3828,7 +3914,7 @@ Term_Comp_08A <- glm (data=smp,
                         PricingFee+ b_UCA +
                         b_Intl+
                         
-                        b_UCA:n_Comp + 
+                        b_UCA:CompOffr + 
                         b_UCA:c_office_l_Ceil+
                         
                         Agency+
@@ -3880,7 +3966,7 @@ glmer_examine(Term_Cons_08B)
 
 
 Term_Comp_08B <- glm (data=smp,
-                      b_Term~n_Comp+
+                      b_Term~CompOffr+
                         cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         
@@ -3889,7 +3975,7 @@ Term_Comp_08B <- glm (data=smp,
                         PricingFee+ b_UCA +
                         b_Intl+
                         
-                        b_UCA:n_Comp + 
+                        b_UCA:CompOffr + 
                         b_UCA:c_office_l_Ceil+
                         
                         Agency+
@@ -3948,7 +4034,7 @@ glmer_examine(Term_Cons_10A)
 
 
 Term_Comp_10A <- glm (data=smp,
-                      b_Term~n_Comp+
+                      b_Term~CompOffr+
                         cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         
@@ -3957,7 +4043,7 @@ Term_Comp_10A <- glm (data=smp,
                         PricingFee+ b_UCA +
                         b_Intl+
                         
-                        # b_UCA:n_Comp + 
+                        # b_UCA:CompOffr + 
                         # b_UCA:cl_Ceil+
                         
                         Agency+
@@ -3979,7 +4065,7 @@ Starting with Competition and UCA. It's strong in both models and thus a natural
 ```{r Model10B}
 #Sumamry plot
 summary_continuous_plot(smp1m,"cl_def6_HHI_lag1","UCA")
-summary_discrete_plot(smp1m,"EffComp","UCA")
+summary_discrete_plot(smp1m,"CompOffr","UCA")
 
 
 #Create the model
@@ -4006,7 +4092,7 @@ glmer_examine(Term_Cons_10B)
 
 
 Term_Comp_10B <- glm (data=smp,
-                      b_Term~n_Comp+
+                      b_Term~CompOffr+
                         cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         
@@ -4015,7 +4101,7 @@ Term_Comp_10B <- glm (data=smp,
                         PricingFee+ b_UCA +
                         b_Intl+
                         
-                        b_UCA:n_Comp +
+                        b_UCA:CompOffr +
                         # b_UCA:cl_Ceil+
                         
                         Agency+
@@ -4044,12 +4130,12 @@ The next reintroduction is competition and days. The benefits of competition may
 
 
 #Sumamry plot
-summary_continuous_plot(smp1m,"cl_Days","EffComp")
+summary_continuous_plot(smp1m,"cl_Days","CompOffr")
 
 
 
 Term_Comp_10C <- glm (data=smp,
-                      b_Term~n_Comp+
+                      b_Term~CompOffr+
                         cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         
@@ -4058,9 +4144,9 @@ Term_Comp_10C <- glm (data=smp,
                         PricingFee+ b_UCA +
                         b_Intl+
                         
-                        b_UCA:n_Comp +
+                        b_UCA:CompOffr +
                         # b_UCA:cl_Ceil+
-                        n_Comp:cl_Days +
+                        CompOffr:cl_Days +
                        
                         Agency+
                         NAICS2
@@ -4079,12 +4165,12 @@ The next reintroduction is competition and ceiling. Competition and ceiling migh
 
 
 #Sumamry plot
-summary_continuous_plot(smp1m,"cl_Ceil","n_Comp")
+summary_continuous_plot(smp1m,"cl_Ceil","CompOffr")
 
 
 
 Term_Comp_10D <- glm (data=smp,
-                      b_Term~n_Comp+
+                      b_Term~CompOffr+
                         cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         
@@ -4093,9 +4179,9 @@ Term_Comp_10D <- glm (data=smp,
                         PricingFee+ b_UCA +
                         b_Intl+
                         
-                        b_UCA:n_Comp +
+                        b_UCA:CompOffr +
                         # b_UCA:cl_Ceil+
-                        n_Comp:cl_Ceil +
+                        CompOffr:cl_Ceil +
                        
                         Agency+
                         NAICS2
@@ -4116,7 +4202,7 @@ The next reintroduction is competition and vehicle. Multi-award contracts in par
 
 #Sumamry plot
 summary_discrete_plot(smp1m,"Veh","cl_def6_HHI_lag1")
-summary_discrete_plot(smp1m,"Veh","n_Comp")
+summary_discrete_plot(smp1m,"Veh","CompOffr")
 
 #Create the model
 
@@ -4145,7 +4231,7 @@ glmer_examine(Term_Cons_10E)
 
 
 Term_Comp_10E <- glm (data=smp,
-                      b_Term~n_Comp+
+                      b_Term~CompOffr+
                         cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         
@@ -4154,9 +4240,9 @@ Term_Comp_10E <- glm (data=smp,
                         PricingFee+ b_UCA +
                         b_Intl+
                         
-                        b_UCA:n_Comp +
+                        b_UCA:CompOffr +
                         # b_UCA:cl_Ceil+
-                       Veh:n_Comp+
+                       Veh:CompOffr+
                        
                         Agency+
                         NAICS2
@@ -4190,7 +4276,7 @@ Larger ceiling UCAs may run into bigger problems. The interaction of UCA and cei
 
 #Sumamry plot
 summary_discrete_plot(smp1m,"Veh","cl_def6_HHI_lag1")
-summary_discrete_plot(smp1m,"Veh","n_Comp")
+summary_discrete_plot(smp1m,"Veh","CompOffr")
 
 #Create the model
 
@@ -4219,7 +4305,7 @@ glmer_examine(Term_Cons_10F)
 
 
 Term_Comp_10F <- glm (data=smp,
-                      b_Term~n_Comp+
+                      b_Term~CompOffr+
                         cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         
@@ -4228,9 +4314,9 @@ Term_Comp_10F <- glm (data=smp,
                         PricingFee+ b_UCA +
                         b_Intl+
                         
-                        b_UCA:n_Comp +
+                        b_UCA:CompOffr +
                         b_UCA:cl_Ceil+
-                       # Veh:n_Comp+
+                       # Veh:CompOffr+
                        
                         Agency+
                         NAICS2
@@ -4292,7 +4378,7 @@ glmer_examine(Term_Cons_10G)
 
 
 Term_Comp_10G <- glm (data=smp,
-                      b_Term~n_Comp+
+                      b_Term~CompOffr+
                         cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         
@@ -4301,7 +4387,7 @@ Term_Comp_10G <- glm (data=smp,
                         PricingFee+ b_UCA +
                         b_Intl+
                         
-                        b_UCA:n_Comp +
+                        b_UCA:CompOffr +
                         b_UCA:cl_Ceil+
                        PricingFee:cl_US6_avg_sal_lag1+
                        
@@ -4455,7 +4541,7 @@ glmer_examine(Term_Cons_10J)
 
 
 Term_Comp_10J<- glm (data=smp,
-                      b_Term~n_Comp+
+                      b_Term~CompOffr+
                         #cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         
@@ -4464,7 +4550,7 @@ Term_Comp_10J<- glm (data=smp,
                         PricingFee+ b_UCA +
                         b_Intl+
                         
-                        b_UCA:n_Comp +
+                        b_UCA:CompOffr +
                         b_UCA:cl_Ceil+
                
                        
@@ -4502,7 +4588,7 @@ Term_Cons_NCS6D <- glm (data=smp,
 glmer_examine(Term_Cons_NCS6D)
 
 Term_Comp_NCS6D <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def6_ratio_lag1+n_Comp:cl_def6_ratio_lag1, 
+                 b_Term ~CompOffr+cl_def6_ratio_lag1+CompOffr:cl_def6_ratio_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS6D)
 # 
@@ -4520,7 +4606,7 @@ glmer_examine(Term_Comp_NCS6D)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Term_Cons_NCS6B,Term_Cons_NCS6C,Term_Cons_NCS6D,
-                       Term_Comp_01B,Term_Comp_NCS6C,Term_Comp_NCS6D,type="text",
+                       Term_Comp_01C,Term_Comp_NCS6C,Term_Comp_NCS6D,type="text",
                        digits=2)
 
 
@@ -4626,7 +4712,7 @@ Term_Cons_NCS5C <- glm (data=smp,
 glmer_examine(Term_Cons_NCS5C)
 
 Term_Comp_NCS5C <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def5_ratio_lag1+n_Comp:cl_def5_ratio_lag1, 
+                 b_Term ~CompOffr+cl_def5_ratio_lag1+CompOffr:cl_def5_ratio_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS5C)
 # 
@@ -4644,7 +4730,7 @@ glmer_examine(Term_Comp_NCS5C)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Term_Cons_NCS5A,Term_Cons_NCS5B,Term_Cons_NCS5C,
-                       Term_Comp_01B,Term_Comp_NCS5B,Term_Comp_NCS5C,type="text",
+                       Term_Comp_01C,Term_Comp_NCS5B,Term_Comp_NCS5C,type="text",
                        digits=2)
 
 
@@ -4709,7 +4795,7 @@ Term_Cons_NCS4C <- glm (data=smp,
 glmer_examine(Term_Cons_NCS4C)
 
 Term_Comp_NCS4C <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def4_ratio_lag1+n_Comp:cl_def4_ratio_lag1, 
+                 b_Term ~CompOffr+cl_def4_ratio_lag1+CompOffr:cl_def4_ratio_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS4C)
 # 
@@ -4727,7 +4813,7 @@ glmer_examine(Term_Comp_NCS4C)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Term_Cons_NCS4A,Term_Cons_NCS4B,Term_Cons_NCS4C,
-                       Term_Comp_01B,Term_Comp_NCS4B,Term_Comp_NCS4C,type="text",
+                       Term_Comp_01C,Term_Comp_NCS4B,Term_Comp_NCS4C,type="text",
                        digits=2)
 
 
@@ -4794,7 +4880,7 @@ Term_Cons_NCS3C <- glm (data=smp,
 glmer_examine(Term_Cons_NCS3C)
 
 Term_Comp_NCS3C <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def3_ratio_lag1+n_Comp:cl_def3_ratio_lag1, 
+                 b_Term ~CompOffr+cl_def3_ratio_lag1+CompOffr:cl_def3_ratio_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS3C)
 # 
@@ -4812,7 +4898,7 @@ glmer_examine(Term_Comp_NCS3C)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Term_Cons_NCS3A,Term_Cons_NCS3B,Term_Cons_NCS3C,
-                       Term_Comp_01B,Term_Comp_NCS3B,Term_Comp_NCS3C,type="text",
+                       Term_Comp_01C,Term_Comp_NCS3B,Term_Comp_NCS3C,type="text",
                        digits=2)
 
 
@@ -4877,7 +4963,7 @@ Term_Cons_NCS2C <- glm (data=smp,
 glmer_examine(Term_Cons_NCS2C)
 
 Term_Comp_NCS2C <- glm (data=smp,
-                 b_Term ~n_Comp+cl_def2_ratio_lag1+n_Comp:cl_def2_ratio_lag1, 
+                 b_Term ~CompOffr+cl_def2_ratio_lag1+CompOffr:cl_def2_ratio_lag1, 
                  family=binomial(link="logit"))
 glmer_examine(Term_Comp_NCS2C)
 # 
@@ -4895,7 +4981,7 @@ glmer_examine(Term_Comp_NCS2C)
 
 #Plot residuals versus fitted
   stargazer::stargazer(Term_Cons_NCS2A,Term_Cons_NCS2B,Term_Cons_NCS2C,
-                       Term_Comp_01B,Term_Comp_NCS2B,Term_Comp_NCS2C,type="text",
+                       Term_Comp_01C,Term_Comp_NCS2B,Term_Comp_NCS2C,type="text",
                        digits=2)
 
 
@@ -5325,9 +5411,9 @@ Term_Comp_13B <- glmer (data=smp,
                       , family=binomial(link="logit"),
                         verbose=1)
 glmer_examine(Term_Comp_13B)
+save(Term_Cons_13B,Term_Comp_13B,file="Output//Term_Cons_13B.rdata")
 
-
-  stargazer::stargazer(Term_Cons_14A,Term_Cons_13B,Term_Comp_14A.restart,Term_Comp_13B,type="text",
+  stargazer::stargazer(Term_Cons_13B,Term_Comp_13B,type="text",
                        digits=2)
   
   
