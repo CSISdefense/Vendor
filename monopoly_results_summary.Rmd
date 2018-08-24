@@ -328,715 +328,299 @@ write.foreign(df=smp1m,
 
 
 ```
-# Models
+# Loading Models
+## Output: Offers
 
-## Consolidation and Termination
-```{r Term-Cons}
-load("Output//Term_Cons.RData")
+### Consolidation and Number of Offers
 
-#A - No interactions
-Term_Cons_07A <- glm(data=smp,
-                       b_Term ~cl_HHI_lag1 +
-                         cl_Ceil + cl_Days+
+```{r Comp-Cons}
+load("Output//Comp_Cons_15A.rdata")
+
+
+if(!exists("Comp_Cons_15B")){
+  Comp_Cons_15B <- lmer (data=smp,
+                         cl_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                         # cl_US3_avg_sal_lag1+
+                         cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                         cl_US6_avg_sal_lag1 + 
+                         cl_Ceil+cl_Days+
                          Veh+
-                         # c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +
-                       # c_HHI_lag1:cl_Days +
-                         n_Fixed + b_UCA +
-                         b_Intl +
-                         # Veh:cl_Days +
-                         # Veh:c_HHI_lag1+
-                         # b_UCA:c_HHI_lag1+
-                         NAICS2
-                       , family=binomial(link="logit"))
-display(Term_Cons_07A)
-glmer_examine(Term_Cons_07A)
+                         PricingFee+UCA+
+                         b_Intl+
+                         b_UCA:cl_def6_HHI_lag1 +
+                         # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                         # cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                         b_Intl:Veh+
+                         # cl_Ceil:PricingFee+
+                         cl_US6_avg_sal_lag1:PricingFee+
+                         # b_UCA:cl_Days+
+                         # b_UCA:cl_Ceil+
+                         (1 | NAICS3/NAICS) + (1 | Agency/Office),
+                         verbose=1)
+  save(Comp_Cons_15A,file="Output//Comp_Cons_15A.rdata")
+}
 
+glmer_examine(Comp_Cons_15B,display=TRUE)
 
-#B - Veh:c_HHI_lag1
-Term_Cons_07B <- glm(data=smp,
-                       b_Term ~cl_HHI_lag1 +
-                         cl_Ceil + cl_Days+
-                         Veh+
-                         # c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +
-                       # c_HHI_lag1:cl_Days +
-                         n_Fixed + b_UCA +
-                         b_Intl +
-                         # Veh:cl_Days +
-                         Veh:c_HHI_lag1+
-                         # b_UCA:c_HHI_lag1+
-                         NAICS2
-                       , family=binomial(link="logit"))
-display(Term_Cons_07B)
-glmer_examine(Term_Cons_07B)
-
-
-# summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A,Term_Cons_07A,Term_Cons_07B)
-
-# summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A,Term_Cons_07A,Term_Cons_07B)
-
-#C - Veh:c_HHI_lag1 + b_UCA:c_HHI_lag1
-
-Term_Cons_07C <- glm(data=smp,
-                       b_Term ~cl_HHI_lag1 +
-                         cl_Ceil + cl_Days+
-                         Veh+
-                         # c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +
-                       # c_HHI_lag1:cl_Days +
-                         n_Fixed + b_UCA +
-                         b_Intl +
-                         # Veh:cl_Days +
-                         Veh:c_HHI_lag1+
-                         b_UCA:c_HHI_lag1+
-                         NAICS2
-                       , family=binomial(link="logit"))
-display(Term_Cons_07C)
-glmer_examine(Term_Cons_07C)
-
-# debug(summary_residual_compare)
-# summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A,Term_Cons_07B,Term_Cons_07C)
-
-# Term_Cons_08A<-glmer(data=smp1m,
-#                      formula = b_Term ~ c_HHI_lag1 +
-#                        cl_Ceil + cl_Days +
-#                        SIDV + MIDV + FSSGWAC + BPABOA +
-#       n_Fixed +
-#       b_UCA +
-#       SIDV:c_HHI_lag1 +
-#     MIDV:c_HHI_lag1 +
-#       FSSGWAC:c_HHI_lag1 +
-#       BPABOA:c_HHI_lag1 +
-#     b_UCA:c_HHI_lag1 +
-#       (1 | NAICS2), data = smp, family = binomial(link = "logit"))
-display(Term_Cons_08A) # Does not converge
-glmer_examine(Term_Cons_08A)
-
-
-# summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A,Term_Cons_07B,Term_Cons_08A)
-
-
-
-
-
-Term_Cons_07G <- glm(data=smp,
-                       b_Term ~cl_HHI_lag1 +
-                         cl_Ceil + cl_Days+
-                         Veh+
-                         c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +
-                       c_HHI_lag1:cl_Days +
-                         n_Fixed + b_UCA +
-                         b_Intl +
-                         Veh:cl_Days +
-                         Veh:c_HHI_lag1+
-                         b_UCA:c_HHI_lag1+
-                         NAICS2
-                       , family=binomial(link="logit"))
-display(Term_Cons_07G)
-glmer_examine(Term_Cons_07G)
-
-# summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A,Term_Cons_07A,Term_Cons_07B)
-
-
-
-Term_Cons_08C <- glm(data=smp1m,
-                       b_Term ~cl_HHI_lag1 + 
-                         cl_Ceil + cl_Days+ 
-                         Veh+
-                         c_HHI_lag1:cl_Ceil  +
-                         cl_Ceil:cl_Days  +
-                         c_HHI_lag1:cl_Days +
-                         n_Fixed + b_UCA +
-                         b_Intl +
-                         Veh:cl_Days+
-                         Veh:c_HHI_lag1+
-                         b_UCA:c_HHI_lag1 +
-                         NAICS2
-                       , family=binomial(link="logit"))
-display(Term_Cons_08C)
-glmer_examine(Term_Cons_08C)
-
-# summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A,Term_Cons_07A,Term_Cons_08C)
-# summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A,Term_Cons_08A,Term_Cons_08C)
-
-#Swap Veh:c_HHI_lag1 for Veh:UCA
-# Term_Cons_08A2<-glmer(formula = b_Term ~ c_HHI_lag1 + 
-#                         cl_Ceil + cl_Days + 
-#                         SIDV + MIDV + FSSGWAC + BPABOA + 
-#                         n_Fixed + 
-#                         b_UCA + 
-#                         b_UCA:c_HHI_lag1 + 
-#                         (1 | NAICS2), data = smp1m, family = binomial(link = "logit"))
-display(Term_Cons_08A2)
-glmer_examine(Term_Cons_08A2)
-
-
-# Term_Cons_08A3 <- glmer(data=smp1m,
-#                         b_Term ~c_HHI_lag1 +
-#                           cl_Ceil + cl_Days+
-#                           Veh+
-#                           # c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +
-#                           # c_HHI_lag1:cl_Days +
-#                           n_Fixed + b_UCA +
-#                           # b_Intl +
-#                           # Veh:cl_Days
-#                           Veh:c_HHI_lag1+
-#                           b_UCA:c_HHI_lag1 +
-#                           (1 | NAICS2)
-#                         , family=binomial(link="logit"))
-display(Term_Cons_08A3)
-glmer_examine(Term_Cons_08A3)
-
-
-# Term_Cons_08B <- glmer(data=smp1m,
-#                        b_Term ~cl_HHI_lag1 +
-#                          cl_Ceil + cl_Days+
-#                          Veh+
-#                          c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +# c_HHI_lag1:cl_Days +
-#                          n_Fixed + b_UCA +
-#                          b_Intl +
-#                          Veh:cl_Days+
-#                          Veh:c_HHI_lag1+
-#                          b_UCA:c_HHI_lag1 +
-#                          (1 | NAICS2)
-#                        , family=binomial(link="logit"))
-display(Term_Cons_08B)
-glmer_examine(Term_Cons_08B)
-
-
-
-# Term_Cons_08B2 <- glmer(data=smp1m,
-#                        b_Term ~cl_HHI_lag1 +
-#                          cl_Ceil + cl_Days+
-#                          Veh+
-#                          c_HHI_lag1:cl_Ceil  + 
-#                          # cl_Ceil:cl_Days  +# c_HHI_lag1:cl_Days +
-#                          n_Fixed + b_UCA +
-#                          b_Intl +
-#                          Veh:cl_Days+
-#                          Veh:c_HHI_lag1+
-#                          b_UCA:c_HHI_lag1 +
-#                          (1 | NAICS2)
-#                        , family=binomial(link="logit"))
-# Missing
-# display(Term_Cons_08B2)
-# glmer_examine(Term_Cons_08B2)
-
-
-# save(file="Output//Term_Cons.RData",Term_Cons_08A,Term_Cons_08A2,Term_Cons_08A3,
-#      Term_Cons_08B,Term_Cons_08B2,Term_Cons_08C)
-
-# Term_Cons_08D <- glmer(data=smp1m,
-#                        b_Term ~cl_HHI_lag1 + 
-#                          cl_Ceil + cl_Days+ 
-#                          Veh+
-#                          c_HHI_lag1:cl_Ceil  +
-#                          # cl_Ceil:cl_Days  +
-#                          # c_HHI_lag1:cl_Days +
-#                          n_Fixed + b_UCA +
-#                          b_Intl +
-#                          Veh:cl_Days+
-#                          Veh:c_HHI_lag1+
-#                          b_UCA:c_HHI_lag1 +
-#                          (1 | NAICS2/ NAICS)
-#                        , family=binomial(link="logit"))
-# Missing! display(Term_Cons_08D)
-# glmer_examine(Term_Cons_08D)
-
-# save(file="Output//Term_Cons.RData",Term_Cons_08A,Term_Cons_08A2,Term_Cons_08A3,Term_Cons_08B)#,Term_Cons_08B2
-
-# 05A summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A2,Term_Cons_08A3,Term_Cons_08C)
-# 05A summary_residual_compare(CBre_Cons_05A,CBre_Cons_05A2,Term_Cons_08A3,Term_Cons_08B2)
 ```
 
+## Output: Ceiling Breach
+### Consolidation and Ceiling Breaches
+
+```{r CBre-Cons}
+load("Output//CBre_Cons_13B.rdata")
 
 
+if(!exists("CBre_Cons_13B")){
+  CBre_Cons_13B <- glmer (data=smp,
+                          b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                            #cl_US3_avg_sal_lag1+
+                            cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                            cl_US6_avg_sal_lag1+
+                            cl_Ceil + cl_Days+ 
+                            Veh +
+                            PricingFee + b_UCA +
+                            b_Intl+
+                            
+                            b_UCA:cl_def6_HHI_lag1 + 
+                            b_UCA:cl_Ceil+
+                            cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                            
+                            (1 | NAICS3/NAICS) + 
+                            (1 | Agency/Office), 
+                          
+                          family=binomial(link="logit"),
+                          verbose=1)
+  save(Comp_Cons_15A,file="Output//Comp_Cons_15A.rdata")
+}
+
+glmer_examine(CBre_Cons_13B,display=TRUE)
+
+```
+
+### Competition and Ceiling Breach
+```{r CBre-Comp}
+load(file="Output//CBre_Comp_13C.rdata")
+
+glmer_examine(CBre_Comp_13C)
 
 
-## Consolidation and Ceiling Breach
-```{r CONS-CBre}
-load("Output//CBre_Cons.RData")
+## Not Done
+if(!exists("Comp_Cons_15B")){
+  CBre_Comp_13C <- glmer (data=smp,
+                          b_CBre ~CompOffr+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                            cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                            cl_Ceil + cl_Days+
+                            Veh  +
+                            PricingFee+
+                            b_UCA +
+                            b_Intl+
+                            
+                            b_UCA:CompOffr +
+                            b_UCA:cl_Ceil+
+                            
+                            (1 | NAICS3/NAICS) + (1 | Agency/Office),
+                          family=binomial(link="logit"),
+                          verbose=1)
+  save(CBre_Comp_13C,file="Output//CBre_Comp_13C.rdata")
+}
 
-#A - No interactions
-CBre_Cons_07A <- glm(data=smp,
-                       b_CBre ~ c_HHI_lag1 +
-                         cl_Ceil + cl_Days+
-                         Veh+
-                         # c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +
-                       # c_HHI_lag1:cl_Days +
-                         n_Fixed + b_UCA +
-                         b_Intl +
-                         # Veh:cl_Days +
-                         # Veh:c_HHI_lag1+
-                         # b_UCA:c_HHI_lag1+
-                         NAICS2
-                       , family=binomial(link="logit"))
-display(CBre_Cons_07A)
-glmer_examine(CBre_Cons_07A)
-
-
-CBre_Cons_05A <- glm(data=smp,
-                       b_CBre ~ c_HHI_lag1 + 
-                      cl_Ceil + cl_Days+ 
-                      Veh+
-                      n_Fixed + b_UCA +
-                      c_HHI_lag1:cl_Ceil  + 
-                      b_Intl +
-                      Veh:cl_Ceil+
-                      b_UCA:cl_Ceil+
-                      b_UCA:c_HHI_lag1
-                       , family=binomial(link="logit"))
-display(CBre_Cons_05A)
-glmer_examine(CBre_Cons_05A)
-
-CBre_Cons_05A2 <- glm(data=smp,
-                       b_CBre ~ c_HHI_lag1 + 
-                      cl_Ceil + cl_Days+ 
-                      Veh+
-                      n_Fixed + b_UCA +
-                      # c_HHI_lag1:cl_Ceil  + 
-                      b_Intl +
-                      Veh:cl_Ceil+
-                      b_UCA:cl_Ceil+
-                      b_UCA:c_HHI_lag1
-                       , family=binomial(link="logit"))
-display(CBre_Cons_05A2)
-glmer_examine(CBre_Cons_05A2)
-
-
-
-# CBre_Cons_08A <- glmer(data=smp1m,
-#                        b_CBre ~ c_HHI_lag1 +
-#                       cl_Ceil + cl_Days+
-#                       Veh+
-#                       n_Fixed + b_UCA +
-#                       c_HHI_lag1:cl_Ceil  +
-#                       b_Intl +
-#                       Veh:cl_Ceil+
-#                       b_UCA:cl_Ceil+
-#                       b_UCA:c_HHI_lag1+
-#                          (1 | NAICS2)
-#                        , family=binomial(link="logit"))
-
-display(CBre_Cons_08A)
-glmer_examine(CBre_Cons_08A)
-
-CBre_Cons_08B <- glm(data=smp1m,
-                       b_CBre ~ cl_HHI_lag1 +
-                      cl_Ceil + cl_Days+
-                      Veh+
-                      n_Fixed + b_UCA +
-                      c_HHI_lag1:cl_Ceil  +
-                      b_Intl +
-                      Veh:cl_Ceil+
-                      b_UCA:cl_Ceil+
-                      b_UCA:c_HHI_lag1+
-                         NAICS2
-                       , family=binomial(link="logit"))
-display(CBre_Cons_08B)
-glmer_examine(CBre_Cons_08B)
-
- 
-
-
-# CBre_Cons_08C <- glmer(data=smp1m,
-#                        b_CBre ~ c_HHI_lag1 +
-#                       cl_Ceil + cl_Days+
-#                       Veh+
-#                       n_Fixed + b_UCA +
-#                       c_HHI_lag1:cl_Ceil  +
-#                       b_Intl +
-#                       Veh:cl_Ceil+
-#                       b_UCA:cl_Ceil+
-#                       b_UCA:c_HHI_lag1+
-#                          (1 | NAICS2/ NAICS3)
-#                        , family=binomial(link="logit"))
-
-# Missing display(CBre_Cons_08C)
-# glmer_examine(CBre_Cons_08C)
-
-# CBre_Cons_08D <- glmer(data=smp1m,
-#                        b_CBre ~ c_HHI_lag1 +
-#                       cl_Ceil + cl_Days+
-#                       Veh+
-#                       n_Fixed + b_UCA +
-#                       c_HHI_lag1:cl_Ceil  +
-#                       b_Intl +
-#                       Veh:cl_Ceil+
-#                       b_UCA:cl_Ceil+
-#                       b_UCA:c_HHI_lag1+
-#                          (1 | NAICS2/ NAICS4)
-#                        , family=binomial(link="logit"))
-
-# Missing display(CBre_Cons_08D)
-# glmer_examine(CBre_Cons_08D)
-
-
-# summary_residual_compare(CBre_Cons_08A,CBre_Cons_08A2,Term_Cons_08B,Term_Cons_08B2)
-# summary_residual_compare(CBre_Cons_05A,CBre_Cons_08A,Term_Cons_08B,Term_Cons_08B2)
-# summary_residual_compare(CBre_Cons_05A,CBre_Cons_08A,Term_Cons_08B,Term_Cons_08A7)
-
-
-# summary_residual_compare(CBre_Cons_08A,CBre_Cons_08B2,Term_Cons_08B,Term_Cons_08B)
-# summary_residual_compare(CBre_Cons_08A,CBre_Cons_08C,Term_Cons_08B,Term_Cons_08B)
-
-# summary_residual_compare(CBre_Cons_08C,CBre_Cons_08D,Term_Cons_08B,Term_Cons_08B)
-
-# save(file="Output//CBre_Cons.RData",CBre_Cons_08A,CBre_Cons_08B,CBre_Cons_08B)#,
+glmer_examine(CBre_Comp_13C,display=TRUE)
 
 
 ```
 VIF for cl_ceil:Veh is over 2, and for cl_Ceil is over 8, necessitating removal of a ceiling interaction.
 
-## Competition and Terminations
+### Both and Ceiling Breach
+```{r CBre-Both}
+load("Output//CBre_Cons_Comp_14B.rdata")
 
-```{r Comp_Term}
+## Missing File
+if(!exists("Comp_Cons_15B")){
+  CBre_Cons_Comp_14B <- glmer (data=smp,
+                               b_CBre ~cl_def6_HHI_lag1 +cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                                 cl_US6_avg_sal_lag1+
+                                 CompOffr+
+                                 cl_Ceil + cl_Days+ 
+                                 Veh +
+                                 PricingFee + b_UCA +
+                                 b_Intl+
+                               
+                                 +cl_def6_HHI_lag1:cl_def6_obl_lag1+ 
+                                 # Veh:cl_def6_HHI_lag1  +
+                                 b_UCA:cl_def6_HHI_lag1 + 
+                                 b_UCA:CompOffr + 
+                                 b_UCA:cl_Ceil+
+                                 
+                                 (1 | NAICS) + 
+                                 (1 | Agency/Office) ,
+                               family=binomial(link="logit"))
+  save(CBre_Cons_Comp_14B,file="Output//CBre_Cons_Comp_14B.rdata")
+}
 
-load(file="Output//Term_Comp.Rdata")
-#A - No interactions
-Term_Comp_07A <- glm(data=smp,
-                       b_Term ~n_Comp + 
-                         cl_Ceil + cl_Days+
-                         Veh+
-                         # c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +
-                       # c_HHI_lag1:cl_Days +
-                         n_Fixed + b_UCA +
-                         b_Intl +
-                         # Veh:cl_Days +
-                         # Veh:c_HHI_lag1+
-                         # b_UCA:c_HHI_lag1+
-                         NAICS2
-                       , family=binomial(link="logit"))
-display(Term_Comp_07A)
-glmer_examine(Term_Comp_07A)
-
-
-Term_Comp_05A2 <- glm (data=smp1m,
-                 b_Term ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   Veh+
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  + n_Comp:cl_Days +
-                   n_Fixed + b_UCA +
-                   b_Intl +
-                   Veh:cl_Days+
-                   Veh:n_Comp+
-                   b_UCA:n_Comp+
-                     NAICS2, family=binomial(link="logit"))
-display(Term_Comp_05A2)
-glmer_examine(Term_Comp_05A2)
-
-Term_Comp_05A3 <- glm (data=smp1m,
-                 b_Term ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   Veh+
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  +# n_Comp:cl_Days + 
-                   n_Fixed + b_UCA +
-                   b_Intl +
-                   Veh:cl_Days+
-                   Veh:n_Comp+
-                   b_UCA:n_Comp+
-                     NAICS2, family=binomial(link="logit"))
-display(Term_Comp_05A3)
-glmer_examine(Term_Comp_05A3)
-
-Term_Comp_05A4 <- glm (data=smp1m,
-                 b_Term ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   Veh+
-                   n_Comp:cl_Ceil  + cl_Ceil:cl_Days  +# n_Comp:cl_Days + 
-                   n_Fixed + b_UCA +
-                   b_Intl +
-                   Veh:cl_Days+
-                   #Veh:n_Comp+ 2.5 glmer_examine
-                   b_UCA:n_Comp+
-                     NAICS2, family=binomial(link="logit"))
-display(Term_Comp_05A4)
-
-glmer_examine(Term_Comp_05A4)
+glmer_examine(Comp_Cons_15B,display=TRUE)
 
 
-Term_Comp_05A5 <- glm (data=smp1m,
-                 b_Term ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   Veh+
-                   # n_Comp:cl_Ceil  + 
-                   cl_Ceil:cl_Days  +# n_Comp:cl_Days + 
-                   n_Fixed + b_UCA +
-                   b_Intl +
-                   Veh:cl_Days+#2.3 glmer_examine
-                   #Veh:n_Comp+ 2.5 glmer_examine
-                   b_UCA:n_Comp+
-                     NAICS2, family=binomial(link="logit"))
-display(Term_Comp_05A5)
-glmer_examine(Term_Comp_05A5)
-
-
-Term_Comp_05A6 <- glm (data=smp1m,
-                 b_Term ~n_Comp + 
-                   cl_Ceil + cl_Days+ 
-                   Veh+
-                   n_Comp:cl_Ceil  + #cl_Ceil:cl_Days  +# n_Comp:cl_Days + 
-                   n_Fixed + b_UCA +
-                   b_Intl +
-                   # Veh:cl_Days+ 2.3 glmer_examine
-                   #Veh:n_Comp+ 2.5 glmer_examine
-                   b_UCA:n_Comp+
-                     NAICS2, family=binomial(link="logit"))
-display(Term_Comp_05A6)
-
-glmer_examine(Term_Comp_05A6)
+```
+VIF for cl_ceil:Veh is over 2, and for cl_Ceil is over 8, necessitating removal of a ceiling interaction.
 
 
 
+## Output: Termination
 
-#Plot the fitted values vs actual results
-# binned_fitted_versus_residuals(Term_Comp_05A)
+### Consolidation and Termination
 
-#Plot residuals versus fittedO
-# residuals_term_plot(Term_Comp_05A)+
-#   labs(x="Estimated  Pr (Termination)")
+```{r Term-Cons}
 
-
-
-glmer_examine(Term_Comp_08B)
+load("Output//Term_Cons_13B.rdata")
 
 
-glmer_examine(Term_Comp_08C)
+if(!exists("Term_Cons_13B")){
+  
+  Term_Cons_13B <- glmer (data=smp,
+                          b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                            #cl_US3_avg_sal_lag1+
+                            cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                            cl_US6_avg_sal_lag1+
+                            cl_Ceil + cl_Days+ 
+                            Veh +
+                            PricingFee + b_UCA +
+                            b_Intl+
+                            
+                            b_UCA:cl_def6_HHI_lag1 + 
+                            b_UCA:cl_Ceil+
+                            cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                            
+                            (1 | NAICS3/NAICS) + 
+                            (1 | Agency/Office), 
+                          family=binomial(link="logit"),
+                          verbose=1)
+  
+  
+  save(Term_Cons_13B,file="Output//Term_Cons_13B.rdata")
+  
+}
+
+glmer_examine(Term_Cons_13B,display=TRUE)
+
+```
 
 
-glmer_examine(Term_Comp_08D)
 
+### Competition and Terminations
 
-glmer_examine(Term_Comp_08E)
+```{r Term-Comp}
+load(file="Output//Term_Comp_13C.rdata")
 
-glmer_examine(Term_Comp_08F)
+if(!exists("Term_Comp_13C")){
+  Term_Comp_13C <- glmer (data=smp,
+                          b_Term ~CompOffr+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                            cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                            cl_Ceil + cl_Days+
+                            Veh  +
+                            PricingFee+
+                            b_UCA +
+                            b_Intl+
+                            
+                            b_UCA:CompOffr +
+                            b_UCA:cl_Ceil+
+                            
+                            (1 | NAICS3/NAICS) + (1 | Agency/Office),
+                          family=binomial(link="logit"),
+                          verbose=1)
+  
+  
+  save(Term_Comp_13C,file="Output//Term_Comp_13C.rdata")
+}
 
+glmer_examine(Term_Comp_13C,display=TRUE)
 
-glmer_examine(Term_Comp_08F)
+```
 
+### Both and Terminations
 
-glmer_examine(Term_Comp_08G)
+```{r Both-Term}
+# load("Output//Comp_Cons_15A.rdata")
 # 
-# Term_Comp_08H <- glmer(data=smp1m,
-#                        b_Term ~n_Comp +
-#                          cl_Ceil + cl_Days+
+# 
+# #Not DOne
+# if(!exists("Comp_Cons_15B")){
+#   Comp_Cons_15B <- lmer (data=smp,
+#                          cl_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+#                          # cl_US3_avg_sal_lag1+
+#                          cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+#                          cl_US6_avg_sal_lag1 + 
+#                          cl_Ceil+cl_Days+
 #                          Veh+
-#                          # n_Comp:cl_Ceil  + cl_Ceil:cl_Days  +# n_Comp:cl_Days +
-#                          n_Fixed + b_UCA +
-#                          # b_Intl +
-#                          # Veh:cl_Days +
-#                          Veh:n_Comp
-#                          b_UCA:n_Comp +
-#                          (1 | NAICS2)
-#                        , family=binomial(link="logit"))
-
-glmer_examine(Term_Comp_08H)
-
-
-Term_Comp_08H2 <- glm(data=smp1m,
-                       b_Term ~n_Comp +
-                         cl_Ceil + cl_Days+
-                         Veh+
-                         # n_Comp:cl_Ceil  + cl_Ceil:cl_Days  +# n_Comp:cl_Days +
-                         n_Fixed + b_UCA +
-                         # b_Intl +
-                         # Veh:cl_Days +
-                         Veh:n_Comp+
-                         b_UCA:n_Comp +
-                         NAICS2, family=binomial(link="logit"))
-
-glmer_examine(Term_Comp_08H2)
-
-Term_Comp_08H3 <- glm(data=smp1m,
-                       b_Term ~n_Comp +
-                         cl_Ceil + cl_Days+
-                         Veh+
-                         n_Comp:cl_Ceil  + #cl_Ceil:cl_Days  +# n_Comp:cl_Days +
-                         n_Fixed + b_UCA +
-                         b_Intl +
-                         # Veh:cl_Days+
-                         # Veh:n_Comp+
-                         b_UCA:n_Comp +
-                         NAICS2, family=binomial(link="logit"))
-
-glmer_examine(Term_Comp_08H3)
-
-Term_Comp_08H3_25k <- glm(data=smp,
-                       b_Term ~n_Comp +
-                         cl_Ceil + cl_Days+
-                         Veh+
-                         n_Comp:cl_Ceil  + #cl_Ceil:cl_Days  +# n_Comp:cl_Days +
-                         n_Fixed + b_UCA +
-                         b_Intl +
-                         # Veh:cl_Days+
-                         # Veh:n_Comp+
-                         b_UCA:n_Comp +
-                         NAICS2, family=binomial(link="logit"))
-
-glmer_examine(Term_Comp_08H3_25k)
-
-# Term_Comp_08I <- glmer(data=smp1m,
-#                        b_Term ~n_Comp +
-#                          cl_Ceil + cl_Days+
-#                          Veh+
-#                          n_Comp:cl_Ceil  + cl_Ceil:cl_Days  +# n_Comp:cl_Days +
-#                          n_Fixed + b_UCA +
-#                          b_Intl +
-#                          Veh:cl_Days +
-#                          Veh:n_Comp +
-#                          b_UCA:n_Comp +
-#                          (1 | NAICS2)
-#                        , family=binomial(link="logit"))
-
-# Missing glmer_examine(Term_Comp_08I)
-
-
-#Plot the fitted values vs actual results
-# binned_fitted_versus_residuals(Term_Comp_08H)
-
-#Plot residuals versus fittedO
-# residuals_term_plot(Term_Comp_08H)+
-#   labs(x="Estimated  Pr (Termination)")
-
-# save(file="Output//Term_Comp.rdata",Term_Comp_08B,Term_Comp_08C,Term_Comp_08D,Term_Comp_08E,Term_Comp_08F,Term_Comp_08G,Term_Comp_08H)#Term_Comp_08H,
+#                          PricingFee+UCA+
+#                          b_Intl+
+#                          b_UCA:cl_def6_HHI_lag1 +
+#                          # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+#                          # cl_def6_HHI_lag1:cl_def6_obl_lag1+
+#                          b_Intl:Veh+
+#                          # cl_Ceil:PricingFee+
+#                          cl_US6_avg_sal_lag1:PricingFee+
+#                          # b_UCA:cl_Days+
+#                          # b_UCA:cl_Ceil+
+#                          (1 | NAICS3/NAICS) + (1 | Agency/Office),
+#                          verbose=1)
+#   save(Comp_Cons_15A,file="Output//Comp_Cons_15A.rdata")
+# }
+# 
+# glmer_examine(Comp_Cons_15B,display=TRUE)
 
 
 ```
 
-## Competition and Ceiling Breaches
-
-```{r CompCBre}
-#Create the model
-  load("Output//CBre_Comp.Rdata")
-#A - No interactions
-CBre_Comp_07A <- glm(data=smp,
-                       b_Term ~n_Comp + 
-                         cl_Ceil + cl_Days+
-                         Veh+
-                         # c_HHI_lag1:cl_Ceil  + cl_Ceil:cl_Days  +
-                       # c_HHI_lag1:cl_Days +
-                         n_Fixed + b_UCA +
-                         b_Intl +
-                         # Veh:cl_Days +
-                         # Veh:c_HHI_lag1+
-                         # b_UCA:c_HHI_lag1+
-                         NAICS2
-                       , family=binomial(link="logit"))
-
-glmer_examine(CBre_Comp_07A)
-
-CBre_Comp_05A <- glm (data=smp,
-                   b_CBre ~n_Comp + 
-                     cl_Ceil + cl_Days+ 
-                     Veh+
-                     n_Fixed + b_UCA +
-                     n_Comp:cl_Ceil  + 
-                     b_Intl+
-                     # Veh:cl_Days+
-                     # Veh:n_Comp+
-                     Veh:cl_Ceil+
-                     b_UCA:cl_Ceil+
-                     b_UCA:n_Comp
-                   , family=binomial(link="logit"))
-
-glmer_examine(CBre_Comp_05A)
+# Tables for Paper
+## Competition Model
 
 
-CBre_Comp_05A2 <- glm (data=smp,
-                   b_CBre ~n_Comp + 
-                     cl_Ceil + cl_Days+ 
-                     Veh+
-                     n_Fixed + b_UCA +
-                     # n_Comp:cl_Ceil  + 
-                     b_Intl+
-                     # Veh:cl_Days+
-                     # Veh:n_Comp
-                     Veh:cl_Ceil+
-                     b_UCA:cl_Ceil+
-                     b_UCA:n_Comp
-                   , family=binomial(link="logit"))
+## Ceiling Breach Model
+```{r Output-CBre}
 
-glmer_examine(CBre_Comp_05A2)
-
-# CBre_Comp_08B<- glmer(data=smp1m,
-#                     b_CBre ~n_Comp + 
-#                       cl_Ceil + cl_Days+ 
-#                       Veh+
-#                       n_Fixed + b_UCA +
-#                       n_Comp:cl_Ceil  + 
-#                       b_Intl +
-#                       Veh:cl_Ceil+
-#                       b_UCA:cl_Ceil+
-#                       b_UCA:n_Comp+
-#                       (1 | NAICS2)
-#                     , family=binomial(link="logit"))
-
-glmer_examine(CBre_Comp_08B)
+# texreg::htmlreg(list(Term_Cons_08A3,
+#                   CBre_Cons_08C),#CBre_Cons_08B2
+#                 file="Output//ConsModel.html",single.row = TRUE,
+#                 custom.model.name=c("Termination",
+#                                     "Ceiling Breach"),
+#                         stars=c(0.05))
 
 
-CBre_Comp_08B2<- glm(data=smp1m,
-                    b_CBre ~n_Comp + 
-                      cl_Ceil + cl_Days+ 
-                      Veh+
-                      n_Fixed + b_UCA +
-                      # n_Comp:cl_Ceil  + 
-                      b_Intl +
-                      Veh:cl_Ceil+
-                      b_UCA:cl_Ceil+
-                      b_UCA:n_Comp+
-                    NAICS2, family=binomial(link="logit"))
+texreg::htmlreg(list(Term_Comp_08G,
+                     CBre_Comp_08B2),file="Output//CompModel.html",single.row = TRUE,
+                custom.model.name=c("Termination",
+                                    "Ceiling Breach"),
+                        stars=c(0.05))
 
-glmer_examine(CBre_Comp_08B2)
+texreg::htmlreg(list(CBre_Comp_08B,Term_Cons_08A),file="Output//Hypothesis1.html")
 
 
+# htmlreg(list(EuropeModel$fixed[[1]],EuropeModel$fixed[[2]],EuropeModel$fixed[[3]]),
+#         file="Output\\Hypothesis1.html",
+#         custom.model.name=c(as.character(EuropeModel$name[1:3])),
+#         digits=3,
+#         stars=c(0.001,0.01,0.05,0.1),
+#         custom.coef.names = c("More Def. Spending",#Dlog(NGDPPC_eu2014)
+#                               "Log(GDP), (2014 Euros)", #log(NGDP_eu2014)
+#                               "EU27-wide Debt, (Percent of EU 27 GDP)",# EUdebt_NGDP
+#                               "Deficit, (Percent of GDP)",# Dfc_NGDP
+#                               "International Terrorism, (Number of Incidents)", #IntAt
+#                               "Log(Global Civil War Battle-Related Deaths)", # log(GCivilWarBRD)
+#                               "Cabinet Liberty/Authority, (GAL=0, TAN=10)", #Cab_liberty_authority
+#                               "Liberty/Authority Polarization", #liberty_authority_ls_spread
+#                               "Cabinet Anti/Pro EU, (Anti=0, Pro=10)"), #Cab_liberty_authority)
+#         groups = list("Public Net Support for (year T-2)" = 1,"Macroeconomics (year T-1)" = 2:4,"Security (year T-1)" = 5:6,"Parliamentary (year T-1)" = 7:9),
+#         custom.note="%stars.",
+#             bold=0.05
+# )
 
-
-
-glmer_examine(CBre_Comp_08B2)
-summary_residual_compare(CBre_Comp_08A,CBre_Comp_08B2,Term_Comp_08G,Term_Comp_08H3)
-
-stargazer(CBre_Comp_05A,Term_Cons_08A,type="html",out="Output//Term_2.html")
-
-
-
-# save(file="Output//CBre_Comp.rdata",CBre_Comp_08A,CBre_Comp_08B)
-```
-
-## Everything
-
-```{r Everything}
-
-CBre_Cons_Comp_07A <- glm(data=smp1m,
-                       b_CBre ~ c_HHI_lag1 + n_Comp+
-                      cl_Ceil + cl_Days+
-                      Veh+
-                      n_Fixed + b_UCA +
-                      c_HHI_lag1:cl_Ceil  +
-                      b_Intl +
-                      Veh:cl_Ceil+
-                      b_UCA:cl_Ceil+
-                      b_UCA:c_HHI_lag1+
-                         NAICS2
-                       , family=binomial(link="logit"))
-display(CBre_Cons_Comp_07A)
-
-Term_Cons_Comp_07A <- glm(data=smp1m,
-                       b_Term ~ c_HHI_lag1 + n_Comp+
-                      cl_Ceil + cl_Days+
-                      Veh+
-                      n_Fixed + b_UCA +
-                      c_HHI_lag1:cl_Ceil  +
-                      b_Intl +
-                      Veh:cl_Ceil+
-                      b_UCA:cl_Ceil+
-                      b_UCA:c_HHI_lag1+
-                         NAICS2
-                       , family=binomial(link="logit"))
-display(Term_Cons_Comp_07A)
 
 ```
 
 
-# Output 
-```{r Output}
+## Terminations Model
+```{r Output-CBre}
 
 # texreg::htmlreg(list(Term_Cons_08A3,
 #                   CBre_Cons_08C),#CBre_Cons_08B2
