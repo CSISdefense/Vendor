@@ -140,13 +140,16 @@ summary(GLM)
 #Calculate Odds-Ratios
 
 OR <- exp(fixef(FM))
-CI <- exp(confint(FM,parm="beta_")) # it can be slow (~ a few minutes). As alternative, the much faster but less precise Wald's method can be used: CI <- exp(confint(FM,parm="beta_",method="Wald")) 
+# CI <- exp(confint(FM,parm="beta_")) # it can be slow (~ a few minutes). As alternative, the much faster but less precise Wald's method can be used: CI <- exp(confint(FM,parm="beta_",method="Wald")) 
+CI <- exp(confint(FM,parm="beta_",method="Wald"))
 
-OR_m1SD <- exp(fixef(FM_m1SD))
-CI_m1SD <- exp(confint(FM_m1SD,parm="beta_")) 
+          OR_m1SD <- exp(fixef(FM_m1SD))
+# CI_m1SD <- exp(confint(FM_m1SD,parm="beta_")) 
+CI_m1SD <- exp(confint(FM_m1SD,parm="beta_",method="Wald"))
 
 OR_p1SD <- exp(fixef(FM_p1SD))
-CI_p1SD <- exp(confint(FM_p1SD,parm="beta_")) 
+# CI_p1SD <- exp(confint(FM_p1SD,parm="beta_")) 
+CI_p1SD <- exp(confint(FM_p1SD,parm="beta_",method="Wald"))
 
 OR.CI<-rbind(cbind(OR,CI), cbind(OR_m1SD,CI_m1SD)[3,], cbind(OR_p1SD,CI_p1SD)[3,])
 rownames(OR.CI)<-c(rownames(cbind(OR,CI)), "teacher_fan_c_m1SD", "teacher_fan_c_p1SD")
