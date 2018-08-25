@@ -4243,17 +4243,18 @@ glmer_examine(Term_Comp_10H)
 
 
 
-  stargazer::stargazer(Term_Cons_10G,Term_Cons_10H,Term_Comp_10G,Term_Comp_10H,type="text",
+  stargazer::stargazer(Term_Cons_10G,Term_Cons_10H,type="text",
                        digits=2)
   
   
 
-summary_residual_compare(Term_Cons_10G,Term_Cons_10H,Term_Comp_10G,Term_Comp_10H,bins=20)
+summary_residual_compare(Term_Cons_10G,Term_Cons_10H,bins=20)
 
 
 ```
 Results are partially significant and somewhat in line with  expectations. Leaving it in for now.
 
+Competition violates VIF.
 
 ### Model 10I: Ratio6:HHI
 Because HHI in smaller sectors tends to be larger, high readings from large sectors may deserve more weight. This interaction is expected to amplify HHI magnitudes.
@@ -4521,7 +4522,6 @@ Term_Comp_10K <- glm (data=smp,
                    # Veh:cl_Ceil+
                    PricingFee:cl_Ceil    +
                        PricingFee:cl_US6_avg_sal_lag1+
-                        CompOffr:cl_def6_obl_lag1  +
                        
                         Agency+
                         NAICS2
@@ -4530,15 +4530,17 @@ glmer_examine(Term_Comp_10K)
 
 
 
-  stargazer::stargazer(Term_Cons_10H,Term_Cons_10K,Term_Comp_10J2,Term_Comp_10K,type="text",
+  stargazer::stargazer(Term_Cons_10H,Term_Cons_10K,Term_Comp_10G,Term_Comp_10K,type="text",
                        digits=2)
   
   
 
-summary_residual_compare(Term_Cons_10G,Term_Cons_10K,Term_Comp_10G,Term_Comp_10K,bins=20)
+summary_residual_compare(Term_Cons_10H,Term_Cons_10K,Term_Comp_10G,Term_Comp_10K,bins=20)
   
 
 ```
+
+Benefits are fairly small and not in line with expectations.
 #Multi-Level Model
 
 
@@ -5111,9 +5113,35 @@ load("Output//Term_Comp_13B.rdata")
 ```
 
 
+```{r 13D_Interactions}
 
 
+Term_Cons_13D <- glmer (data=smp,
+                      b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                        #cl_US3_avg_sal_lag1+
+                        cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                        cl_US6_avg_sal_lag1+     
+                        cl_Ceil + cl_Days+ 
+                        Veh +
+                        PricingFee + b_UCA +
+                        b_Intl+
+                        
+ 
+                                     
+                        cl_def6_HHI_lag1:cl_Days+
+                        b_UCA:cl_Ceil+
+                        b_UCA:cl_def6_HHI_lag1 +
+                       PricingFee:cl_US6_avg_sal_lag1+
+                        cl_def6_HHI_lag1:cl_def6_obl_lag1  +
 
+                      cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                        
+                                                (1 | NAICS3/NAICS) + (1 | Agency/Office)
+                      , family=binomial(link="logit"))
+glmer_examine(Term_Cons_13D)
+save(Term_Cons_13D,file="Output//Term_Cons_13D")
+
+```
 # Appendix
 ## No longer Relevant Code
 
