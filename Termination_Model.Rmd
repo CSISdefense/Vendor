@@ -3792,7 +3792,7 @@ Term_Comp_10A <- glm (data=smp,
                    # b_UCA:CompOffr+
                    Agency + NAICS2,
                  family=binomial(link="logit"))
-glmer_examine(Term_Cons_10A)
+glmer_examine(Term_Comp_10A)
   stargazer::stargazer(Term_Cons_07A2,Term_Cons_10A,Term_Comp_07A2,Term_Comp_10A,type="text",
                        digits=2)
 
@@ -3987,8 +3987,7 @@ Larger ceiling UCAs may run into bigger problems. The interaction of UCA and cei
 
 
 #Sumamry plot
-summary_discrete_plot(smp1m,"Veh","cl_def6_HHI_lag1")
-summary_discrete_plot(smp1m,"Veh","CompOffr")
+summary_continuous_plot(smp1m,"l_Ceil","UCA")
 
 #Create the model
 
@@ -4003,10 +4002,8 @@ Term_Cons_10E <- glm (data=smp,
                         PricingFee + b_UCA +
                         b_Intl+
                         
-                       
+                        cl_def6_HHI_lag1:cl_Days+
                         # cl_def6_HHI_lag1:cl_def6_obl_lag1  +
-               
-                        b_UCA:cl_def6_HHI_lag1 +
                         b_UCA:cl_Ceil+
                         # Veh:cl_def6_HHI_lag1+
                         
@@ -4025,8 +4022,7 @@ Term_Comp_10E <- glm (data=smp,
                         Veh  +
                         PricingFee+ b_UCA +
                         b_Intl+
-                        
-                        b_UCA:CompOffr +
+  
                         b_UCA:cl_Ceil+
                        # Veh:CompOffr+
                        
@@ -4037,12 +4033,12 @@ glmer_examine(Term_Comp_10E)
 
 
 
-  stargazer::stargazer(Term_Cons_10D,Term_Cons_10E,Term_Comp_10B,Term_Comp_10E,type="text",
+  stargazer::stargazer(Term_Cons_10B,Term_Cons_10E,Term_Comp_10A,Term_Comp_10E,type="text",
                        digits=2)
   
   
 
-summary_residual_compare(Term_Cons_10D,Term_Cons_10E,Term_Comp_10B,Term_Comp_10E,bins=20)
+summary_residual_compare(Term_Cons_10B,Term_Cons_10E,Term_Comp_10A,Term_Comp_10E,bins=20)
 
 
 ```
@@ -4050,6 +4046,68 @@ The result runs contrary to expectation, but notably reduces by over 10 points i
 
 The results are counter-intuitive but strong. Based on the descriptive statistics it appears that  mid-range, not the largest UCAs, have the great risk of breaches.
 
+### Model 10F: Comp/Cons:UCA
+Starting with Competition and UCA. It's strong in both models and thus a natural starting point.
+```{r Model10F}
+#Sumamry plot
+summary_continuous_plot(smp1m,"cl_def6_HHI_lag1","UCA")
+summary_discrete_plot(smp1m,"CompOffr","UCA")
+
+
+#Create the model
+Term_Cons_10F <- glm (data=smp,
+                      b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                        #cl_US3_avg_sal_lag1+
+                        cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                        cl_US6_avg_sal_lag1+     
+                        cl_Ceil + cl_Days+ 
+                        Veh +
+                        PricingFee + b_UCA +
+                        b_Intl+
+                        
+                        cl_def6_HHI_lag1:cl_Days+
+                        # cl_def6_HHI_lag1:cl_def6_obl_lag1  +
+                        b_UCA:cl_Ceil+
+                        # Veh:cl_def6_HHI_lag1+
+                        b_UCA:cl_def6_HHI_lag1 +
+                        
+                        Agency+
+                        NAICS2
+                      , family=binomial(link="logit"))
+glmer_examine(Term_Cons_10F)
+
+
+Term_Comp_10F <- glm (data=smp,
+                      b_Term~CompOffr+
+                        cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                        cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                        
+                        cl_Ceil + cl_Days+ 
+                        Veh  +
+                        PricingFee+ b_UCA +
+                        b_Intl+
+                        
+                        b_UCA:CompOffr +
+                        b_UCA:cl_Ceil+
+                        
+                        Agency+
+                        NAICS2
+                      , family=binomial(link="logit"))
+glmer_examine(Term_Comp_10F)
+
+  stargazer::stargazer(Term_Cons_10E,Term_Cons_10F,Term_Comp_10E,Term_Comp_10F,type="text",
+                       digits=2)
+  
+  
+
+summary_residual_compare(Term_Comp_10E,Term_Comp_10F,Term_Cons_10E,Term_Cons_10F,bins=20)
+
+
+```
+The interaction is significant and competion has a powerful affect on reducing the risks of UCA. In diagnostic terms, the residuals for ceiling breaches get a little worse, but the change is marginal.
+
+
+The interaction is significant and competion / low levels of consolidation estimates lower risks associated with UCAs. 
 
 ### Model 10G: Pricing and Average Wage
 Fixed Price is less  appropriate as an approach when there is greater uncertainty. A phenomenon likely to extend to time and materials / labor hours contracts. By comparison, fixed price incentive and cost based should estimate a lower risk of ceiling breaches and terminations.
@@ -4077,11 +4135,11 @@ Term_Cons_10G <- glm (data=smp,
                         b_Intl+
                         
                        
-                        # cl_def6_HHI_lag1:cl_def6_obl_lag1  +
-               
-                        b_UCA:cl_def6_HHI_lag1 +
+             
+                        cl_def6_HHI_lag1:cl_Days+
                         b_UCA:cl_Ceil+
-                        PricingFee:cl_US6_avg_sal_lag1+
+                        b_UCA:cl_def6_HHI_lag1 +
+                       PricingFee:cl_US6_avg_sal_lag1+
                         
                         Agency+
                         NAICS2
@@ -4099,8 +4157,9 @@ Term_Comp_10G <- glm (data=smp,
                         PricingFee+ b_UCA +
                         b_Intl+
                         
-                        b_UCA:CompOffr +
+               b_UCA:CompOffr +
                         b_UCA:cl_Ceil+
+           
                        PricingFee:cl_US6_avg_sal_lag1+
                        
                         Agency+
@@ -4114,7 +4173,7 @@ glmer_examine(Term_Comp_10G)
   
   
 
-summary_residual_compare(Term_Cons_10D,Term_Cons_10G,Term_Comp_10B,Term_Comp_10G,bins=20)
+summary_residual_compare(Term_Cons_10F,Term_Cons_10G,Term_Comp_10F,Term_Comp_10G,bins=20)
 
 
 ```
@@ -4122,6 +4181,11 @@ The results run contrary to expectation and are only barely significant for othe
 
 ### Model 10H: Def Sec Obl:HHI
 Because HHI in smaller sectors tends to be larger, high readings from large sectors may deserve more weight. This interaction is expected to amplify HHI magnitudes.
+
+Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
+
+For competition, a larger base of traditional suppliers may ease selection.
+
 ```{r Model10H}
 
 
@@ -4143,32 +4207,63 @@ Term_Cons_10H <- glm (data=smp,
                         b_Intl+
                         
                        
-                        cl_def6_HHI_lag1:cl_def6_obl_lag1  +
-               
-                        b_UCA:cl_def6_HHI_lag1 +
+                                     
+                        cl_def6_HHI_lag1:cl_Days+
                         b_UCA:cl_Ceil+
-                        # PricingFee:cl_US6_avg_sal_lag1+
-                        
+                        b_UCA:cl_def6_HHI_lag1 +
+                       PricingFee:cl_US6_avg_sal_lag1+
+                        cl_def6_HHI_lag1:cl_def6_obl_lag1  +
+
                         Agency+
                         NAICS2
                       , family=binomial(link="logit"))
 glmer_examine(Term_Cons_10H)
 
 
-  stargazer::stargazer(Term_Cons_10F,Term_Cons_10H,type="text",
+Term_Comp_10H <- glm (data=smp,
+                      b_Term~CompOffr+
+                        cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                        cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                        
+                        cl_Ceil + cl_Days+ 
+                        Veh  +
+                        PricingFee+ b_UCA +
+                        b_Intl+
+                        
+               b_UCA:CompOffr +
+                        b_UCA:cl_Ceil+
+           
+                       PricingFee:cl_US6_avg_sal_lag1+
+                        CompOffr:cl_def6_obl_lag1  +
+                       
+                        Agency+
+                        NAICS2
+                      , family=binomial(link="logit"))
+glmer_examine(Term_Comp_10H)
+
+
+
+  stargazer::stargazer(Term_Cons_10G,Term_Cons_10H,Term_Comp_10G,Term_Comp_10H,type="text",
                        digits=2)
   
   
 
-summary_residual_compare(Term_Cons_10D,Term_Cons_10H,bins=20)
+summary_residual_compare(Term_Cons_10G,Term_Cons_10H,Term_Comp_10G,Term_Comp_10H,bins=20)
 
 
 ```
-Results are not significant and are contrary to expectations, though the deviance reduction is fairly large. Leaving it in for now.
+Results are partially significant and somewhat in line with  expectations. Leaving it in for now.
 
 
-### Model 10I: Def Sec Obl:HHI
+### Model 10I: Ratio6:HHI
 Because HHI in smaller sectors tends to be larger, high readings from large sectors may deserve more weight. This interaction is expected to amplify HHI magnitudes.
+
+
+
+When there is a larger market available, consolidation may matter less, for better or wrose. Thus interaction of consolidation and ratio will estimate greater magnitude than HHI index on its own. Per the hypothesis, this does not necessarily. 
+
+For competition, the effects may be greatest outside of a monospy context, thus the competition will estimate a lower occurance of ceiling breaches but the interaction of competition and ratio will estimate a higher rate.
+
 ```{r Model10I}
 
 
@@ -4189,12 +4284,15 @@ Term_Cons_10I <- glm (data=smp,
                         PricingFee + b_UCA +
                         b_Intl+
                         
-                       cl_def6_HHI_lag1:cl_def6_obl_lag1  +
-                        cl_def6_HHI_lag1:cl_def6_ratio_lag1  +
-               
-                        b_UCA:cl_def6_HHI_lag1 +
+ 
+                                     
+                        cl_def6_HHI_lag1:cl_Days+
                         b_UCA:cl_Ceil+
-                        
+                        b_UCA:cl_def6_HHI_lag1 +
+                       PricingFee:cl_US6_avg_sal_lag1+
+                        cl_def6_HHI_lag1:cl_def6_obl_lag1  +
+
+                      cl_def6_HHI_lag1:cl_def6_ratio_lag1+
                         
                         Agency+
                         NAICS2
@@ -4202,7 +4300,58 @@ Term_Cons_10I <- glm (data=smp,
 glmer_examine(Term_Cons_10I)
 
 
-  stargazer::stargazer(Term_Cons_10F,Term_Cons_10H,Term_Cons_10I,type="text",
+
+Term_Comp_10I <- glm (data=smp,
+                      b_Term~CompOffr+
+                        cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                        cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                        
+                        cl_Ceil + cl_Days+ 
+                        Veh  +
+                        PricingFee+ b_UCA +
+                        b_Intl+
+                        
+               b_UCA:CompOffr +
+                        b_UCA:cl_Ceil+
+           
+                       PricingFee:cl_US6_avg_sal_lag1+
+                        CompOffr:cl_def6_obl_lag1  +
+                       
+                        CompOffr:cl_def6_ratio_lag1  +
+                 
+                        Agency+
+                        NAICS2
+                      , family=binomial(link="logit"))
+glmer_examine(Term_Comp_10I)
+
+
+
+Term_Comp_10I2 <- glm (data=smp,
+                      b_Term~CompOffr+
+                        cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                        cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                        
+                        cl_Ceil + cl_Days+ 
+                        Veh  +
+                        PricingFee+ b_UCA +
+                        b_Intl+
+                        
+               b_UCA:CompOffr +
+                        b_UCA:cl_Ceil+
+           
+                       PricingFee:cl_US6_avg_sal_lag1+
+                        # CompOffr:cl_def6_obl_lag1  +
+                       
+                        CompOffr:cl_def6_ratio_lag1  +
+                 
+                        Agency+
+                        NAICS2
+                      , family=binomial(link="logit"))
+glmer_examine(Term_Comp_10I2)
+
+
+
+  stargazer::stargazer(Term_Cons_10H,Term_Cons_10I,Term_Comp_10H,Term_Comp_10I2,type="text",
                        digits=2)
   
   
@@ -4212,13 +4361,119 @@ summary_residual_compare(Term_Cons_10H,Term_Cons_10I,bins=20)
 
 
 ```
-Having both in does not encoutner VIF problems, but adds little to the model. Only ratio is significant, so leaving out def_obl interaction. The next step is to check for the removal of ratio for def3.
+VIF problems for comp. For Cons, it's not sigificant or in line with expectations leavening out.
 
 
 
-### Model 10J: Def Sec Obl:HHI
+
+### Model 10J: Ratio3:HHI
 Because HHI in smaller sectors tends to be larger, high readings from large sectors may deserve more weight. This interaction is expected to amplify HHI magnitudes.
+
+
+
+When there is a larger market available, consolidation may matter less, for better or wrose. Thus interaction of consolidation and ratio will estimate greater magnitude than HHI index on its own. Per the hypothesis, this does not necessarily. 
+
+For competition, the effects may be greatest outside of a monospy context, thus the competition will estimate a lower occurance of ceiling breaches but the interaction of competition and ratio will estimate a higher rate.
+
 ```{r Model10J}
+
+
+#Sumamry plot
+summary_continuous_plot(smp1m,"cl_US3_avg_sal_lag1","PricingFee")
+
+
+#Create the model
+
+
+Term_Cons_10J <- glm (data=smp,
+                      b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                        #cl_US3_avg_sal_lag1+
+                        cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                        cl_US6_avg_sal_lag1+     
+                        cl_Ceil + cl_Days+ 
+                        Veh +
+                        PricingFee + b_UCA +
+                        b_Intl+
+                        
+ 
+                                     
+                        cl_def6_HHI_lag1:cl_Days+
+                        b_UCA:cl_Ceil+
+                        b_UCA:cl_def6_HHI_lag1 +
+                       PricingFee:cl_US6_avg_sal_lag1+
+                        cl_def6_HHI_lag1:cl_def6_obl_lag1  +
+# cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                      cl_def3_HHI_lag1:cl_def3_ratio_lag1+
+                        
+                        Agency+
+                        NAICS2
+                      , family=binomial(link="logit"))
+glmer_examine(Term_Cons_10J)
+
+
+
+Term_Comp_10J <- glm (data=smp,
+                      b_Term~CompOffr+
+                        cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                        cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                        
+                        cl_Ceil + cl_Days+ 
+                        Veh  +
+                        PricingFee+ b_UCA +
+                        b_Intl+
+                        
+               b_UCA:CompOffr +
+                        b_UCA:cl_Ceil+
+           
+                       PricingFee:cl_US6_avg_sal_lag1+
+                        CompOffr:cl_def6_obl_lag1  +
+                       
+                        CompOffr:cl_def3_ratio_lag1  +
+                 
+                        Agency+
+                        NAICS2
+                      , family=binomial(link="logit"))
+glmer_examine(Term_Comp_10J)
+
+
+
+Term_Comp_10J2 <- glm (data=smp,
+                      b_Term~CompOffr+
+                        cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                        cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                        
+                        cl_Ceil + cl_Days+ 
+                        Veh  +
+                        PricingFee+ b_UCA +
+                        b_Intl+
+                        
+               b_UCA:CompOffr +
+                        b_UCA:cl_Ceil+
+           
+                       PricingFee:cl_US6_avg_sal_lag1+
+                        # CompOffr:cl_def6_obl_lag1  +
+                       
+                        CompOffr:cl_def3_ratio_lag1  +
+                 
+                        Agency+
+                        NAICS2
+                      , family=binomial(link="logit"))
+glmer_examine(Term_Comp_10J2)
+
+
+  stargazer::stargazer(Term_Cons_10H,Term_Cons_10I,Term_Cons_10J,type="text",
+                       digits=2)
+  
+  
+summary_residual_compare(Term_Cons_10I,Term_Cons_10J,bins=20)
+summary_residual_compare(Term_Cons_10H,Term_Cons_10J,bins=20)
+
+
+```
+Comp excluded by VIF. Keeping for Cons.
+
+### Model 10K: Ratio3:HHI
+```{r Model10H}
 
 
 #Sumamry plot
@@ -4228,8 +4483,8 @@ summary_continuous_plot(smp1m,"cl_US6_avg_sal_lag1","PricingFee")
 #Create the model
 
 
-Term_Cons_10J <- glm (data=smp,
-                      b_Term ~cl_def3_HHI_lag1+#cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+Term_Cons_10K <- glm (data=smp,
+                      b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                         #cl_US3_avg_sal_lag1+
                         cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
                         cl_US6_avg_sal_lag1+     
@@ -4238,23 +4493,22 @@ Term_Cons_10J <- glm (data=smp,
                         PricingFee + b_UCA +
                         b_Intl+
                         
-                       cl_def6_HHI_lag1:cl_def6_obl_lag1  +
-                        cl_def6_HHI_lag1:cl_def6_ratio_lag1  +
-               
-                        b_UCA:cl_def6_HHI_lag1 +
+                     
+                        cl_def6_HHI_lag1:cl_Days+
                         b_UCA:cl_Ceil+
-                        
-                        
-                        Agency+
-                        NAICS2
-                      , family=binomial(link="logit"))
-glmer_examine(Term_Cons_10J)
+                        b_UCA:cl_def6_HHI_lag1 +
+                       PricingFee:cl_US6_avg_sal_lag1+
+                        cl_def6_HHI_lag1:cl_def6_obl_lag1  +  
+                     # Veh:cl_Ceil+               
+                   PricingFee:cl_Ceil+
+                   Agency + NAICS2, family=binomial(link="logit"))
+glmer_examine(Term_Cons_10K)
 
 
 
-Term_Comp_10J<- glm (data=smp,
+Term_Comp_10K <- glm (data=smp,
                       b_Term~CompOffr+
-                        #cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                        cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                         cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                         
                         cl_Ceil + cl_Days+ 
@@ -4262,199 +4516,29 @@ Term_Comp_10J<- glm (data=smp,
                         PricingFee+ b_UCA +
                         b_Intl+
                         
-                        b_UCA:CompOffr +
+               b_UCA:CompOffr +
                         b_UCA:cl_Ceil+
-               
+                   # Veh:cl_Ceil+
+                   PricingFee:cl_Ceil    +
+                       PricingFee:cl_US6_avg_sal_lag1+
+                        CompOffr:cl_def6_obl_lag1  +
                        
                         Agency+
                         NAICS2
                       , family=binomial(link="logit"))
-glmer_examine(Term_Comp_10J)
+glmer_examine(Term_Comp_10K)
 
-  stargazer::stargazer(Term_Cons_10H,Term_Cons_10J,
-                       Term_Comp_10F,Term_Comp_10J,type="text",
+
+
+  stargazer::stargazer(Term_Cons_10H,Term_Cons_10K,Term_Comp_10J2,Term_Comp_10K,type="text",
                        digits=2)
   
   
 
-summary_residual_compare(Term_Cons_10H,Term_Cons_10J,Term_Comp_10F,Term_Comp_10J,bins=20)
-
-
-
-```
-
-Removing it doesn't appear to do any good. Leaving it in.
-#### Model NCS6D: Defense to Overall ratio
-When there is a larger market available, consolidation may matter less, for better or wrose. Thus interaction of consolidation and ratio will estimate greater magnitude than HHI index on its own. Per the hypothesis, this does not necessarily. 
-
-For competition, the effects may be greatest outside of a monospy context, thus the competition will estimate a lower occurance of ceiling breaches but the interaction of competition and ratio will estimate a higher rate.
-
-```{r ModelNCS6D_Term}
-#Frequency Plot for unlogged ceiling
-
-
-#Model
-Term_Cons_NCS6D <- glm (data=smp,
-                 b_Term ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_HHI_lag1:cl_def6_ratio_lag1, 
-                 family=binomial(link="logit"))
-glmer_examine(Term_Cons_NCS6D)
-
-Term_Comp_NCS6D <- glm (data=smp,
-                 b_Term ~CompOffr+cl_def6_ratio_lag1+CompOffr:cl_def6_ratio_lag1, 
-                 family=binomial(link="logit"))
-glmer_examine(Term_Comp_NCS6D)
-# 
-# #Plot the fitted model plot
-# Term_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(Term_Comp_02A))}
-# 
-# #Competition curves
-# fitted_Term_model(smp,"cl_Ceil") + stat_function(fun = Term_Comp_02A_curve, 
-#                              args=list(Comp=0),color="blue")+
-#   stat_function(fun = Term_Comp_02A_curve, 
-#                              args=list(Comp=2),color="blue")
-
-
-
-
-#Plot residuals versus fitted
-  stargazer::stargazer(Term_Cons_NCS6B,Term_Cons_NCS6C,Term_Cons_NCS6D,
-                       Term_Comp_01E,Term_Comp_NCS6C,Term_Comp_NCS6D,type="text",
-                       digits=2)
-
-
-summary_residual_compare(Term_Cons_NCS6C,Term_Cons_NCS6D,bins=20)
-summary_residual_compare(Term_Comp_NCS6C,Term_Comp_NCS6D,bins=2)
-
+summary_residual_compare(Term_Cons_10G,Term_Cons_10K,Term_Comp_10G,Term_Comp_10K,bins=20)
+  
 
 ```
-Adding the interaction for consolidation does has minimal effect, contrary to expectation, although the results are significant. For competition, the results violate VIF and will not be included. The interaction will not be added.
-
-#### Model NCS6E: Interaction of HHI and size
-Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. The interaction should estimate a significant change in the likelihood of breaches. While the hypothesis allows for both efficiencies and the downsides of monopoly to arrive from consolidation, the study team expects that the interaction with sector size will positively estimate ceiling breaches, as the efficiency may apply just as well in small sectors.
-```{r ModelNCS6E_Term}
-#Frequency Plot for unlogged ceiling
-
-
-#Model
-Term_Cons_NCS6E <- glm (data=smp,
-                 b_Term ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1, family=binomial(link="logit"))
-glmer_examine(Term_Cons_NCS6E)
-
-
-# 
-# #Plot the fitted model plot
-# Term_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(Term_Comp_02A))}
-# 
-# #Competition curves
-# fitted_Term_model(smp,"cl_Ceil") + stat_function(fun = Term_Comp_02A_curve, 
-#                              args=list(Comp=0),color="blue")+
-#   stat_function(fun = Term_Comp_02A_curve, 
-#                              args=list(Comp=2),color="blue")
-
-
-
-
-#Plot residuals versus fitted
-
-  stargazer::stargazer(Term_Cons_NCS6C,Term_Cons_NCS6D,Term_Cons_NCS6E,
-                       Term_Comp_NCS6C,Term_Comp_NCS6D,
-                       type="text",digits=2)
-
-
-summary_residual_compare(Term_Cons_NCS6D,Term_Cons_NCS6E,bins=20)
-
-
-
-```
-Expectations were not uphelped. That said relaxing the assumption that the interaction will result in a higher risk of breaches and just looking at whether it is an effective predictor of a greater magnitude of change, that holds.
-
-
-#### Model NCS6G: Interaction of HHI and size
-Similar to the interaction of spend and size, the interaction of ratio and size adjusts looks at whether the HHI measure is more meaningful in those instances where the sector is primarily defense-oriented, as it is more representative of the total universe of vendors. Greater HHI and ratio is expected to estimate a greater likelihood of ceiling breaches.
-
-```{r ModelNCS6G_Term}
-#Frequency Plot for unlogged ceiling
-
-
-#Model
-Term_Cons_NCS6E <- glm (data=smp,
-                 b_Term ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_def6_HHI_lag1:cl_def6_obl_lag1+cl_def6_HHI_lag1:cl_def6_ratio_lag1, family=binomial(link="logit"))
-glmer_examine(Term_Cons_NCS6E,display=TRUE)
-
-# 
-# #Plot the fitted model plot
-# Term_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(Term_Comp_02A))}
-# 
-# #Competition curves
-# fitted_Term_model(smp,"cl_Ceil") + stat_function(fun = Term_Comp_02A_curve, 
-#                              args=list(Comp=0),color="blue")+
-#   stat_function(fun = Term_Comp_02A_curve, 
-#                              args=list(Comp=2),color="blue")
-
-
-
-
-#Plot residuals versus fitted
-
-  stargazer::stargazer(Term_Cons_NCS6C,Term_Cons_NCS6E,Term_Cons_NCS6E,
-                       Term_Comp_NCS6C,Term_Comp_NCS6D,
-                       type="text",digits=2)
-
-
-summary_residual_compare(Term_Cons_NCS6E,Term_Cons_NCS6E,bins=20)
-
-
-
-```
-This interaction adds little to the model and runs contrary to expectations. Leaving it out.
-
-
-#### Model NCS3C: Defense to Overall ratio
-When there is a larger market available, consolidation may matter less, for better or wrose. Thus interaction of consolidation and ratio will estimate greater magnitude than HHI index on its own. Per the hypothesis, this does not necessarily. 
-
-For competition, the effects may be greatest outside of a monospy context, thus the competition will estimate a lower occurance of ceiling breaches but the interaction of competition and ratio will estimate a higher rate.
-
-```{r ModelNCS3C_Term}
-#Frequency Plot for unlogged ceiling
-
-
-#Model
-Term_Cons_NCS3C <- glm (data=smp,
-                 b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+cl_def3_HHI_lag1:cl_def3_ratio_lag1, 
-                 family=binomial(link="logit"))
-glmer_examine(Term_Cons_NCS3C)
-
-Term_Comp_NCS3C <- glm (data=smp,
-                 b_Term ~CompOffr+cl_def3_ratio_lag1+CompOffr:cl_def3_ratio_lag1, 
-                 family=binomial(link="logit"))
-glmer_examine(Term_Comp_NCS3C)
-# 
-# #Plot the fitted model plot
-# Term_Comp_03A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(Term_Comp_03A))}
-# 
-# #Competition curves
-# fitted_Term_model(smp,"cl_Ceil") + stat_function(fun = Term_Comp_03A_curve, 
-#                              args=list(Comp=0),color="blue")+
-#   stat_function(fun = Term_Comp_03A_curve, 
-#                              args=list(Comp=3),color="blue")
-
-
-
-
-#Plot residuals versus fitted
-  stargazer::stargazer(Term_Cons_NCS3A,Term_Cons_NCS3B,Term_Cons_NCS3C,
-                       Term_Comp_01E,Term_Comp_NCS3B,Term_Comp_NCS3C,type="text",
-                       digits=2)
-
-
-summary_residual_compare(Term_Cons_NCS2B,Term_Cons_NCS2C,bins=10)
-summary_residual_compare(Term_Comp_NCS2B,Term_Comp_NCS2C,bins=5)
-
-
-```
-Both exceed VIF of 2.
-
-
 #Multi-Level Model
 
 
@@ -6013,68 +6097,6 @@ summary_residual_compare(Term_Cons_07A,Term_Cons_07B2,Term_Comp_07A,Term_Comp_07
 
 ```
 
-### Model 10B: Comp/Cons:UCA
-Starting with Competition and UCA. It's strong in both models and thus a natural starting point.
-```{r Model10B}
-#Sumamry plot
-summary_continuous_plot(smp1m,"cl_def6_HHI_lag1","UCA")
-summary_discrete_plot(smp1m,"CompOffr","UCA")
-
-
-#Create the model
-Term_Cons_10B <- glm (data=smp,
-                      b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
-                        #cl_US3_avg_sal_lag1+
-                        cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
-                        cl_US6_avg_sal_lag1+     
-                        cl_Ceil + cl_Days+ 
-                        Veh +
-                        PricingFee + b_UCA +
-                        b_Intl+
-                        
-                       
-                        # cl_def6_HHI_lag1:cl_def6_obl_lag1  +
-                        # Veh:cl_def6_HHI_lag1  +
-                        b_UCA:cl_def6_HHI_lag1 +
-                        # b_UCA:cl_Ceil+
-                        
-                        Agency+
-                        NAICS2
-                      , family=binomial(link="logit"))
-glmer_examine(Term_Cons_10B)
-
-
-Term_Comp_10B <- glm (data=smp,
-                      b_Term~CompOffr+
-                        cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
-                        cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
-                        
-                        cl_Ceil + cl_Days+ 
-                        Veh  +
-                        PricingFee+ b_UCA +
-                        b_Intl+
-                        
-                        b_UCA:CompOffr +
-                        # b_UCA:cl_Ceil+
-                        
-                        Agency+
-                        NAICS2
-                      , family=binomial(link="logit"))
-glmer_examine(Term_Comp_10B)
-
-  stargazer::stargazer(Term_Comp_10A,Term_Comp_10B,Term_Cons_10A,Term_Cons_10B,type="text",
-                       digits=2)
-  
-  
-
-summary_residual_compare(Term_Comp_10A,Term_Comp_10B,Term_Cons_10A,Term_Cons_10B,bins=20)
-
-
-```
-The interaction is significant and competion has a powerful affect on reducing the risks of UCA. In diagnostic terms, the residuals for ceiling breaches get a little worse, but the change is marginal.
-
-
-The interaction is significant and competion / low levels of consolidation estimates lower risks associated withUCAs. In diagnostic terms, the residuals for ceiling breaches get a little worse, but the change is marginal and the interaction is relevant to study questions. Keeping it.
 
 
 
