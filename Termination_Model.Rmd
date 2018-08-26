@@ -4093,7 +4093,7 @@ Term_Comp_10F <- glm (data=smp,
                         Agency+
                         NAICS2
                       , family=binomial(link="logit"))
-glmer_examine(Term_Comp_10F)
+glmer_examine(Term_Comp_10F,display=TRUE)
 
   stargazer::stargazer(Term_Cons_10E,Term_Cons_10F,Term_Comp_10E,Term_Comp_10F,type="text",
                        digits=2)
@@ -4409,7 +4409,7 @@ Term_Cons_10J <- glm (data=smp,
                         Agency+
                         NAICS2
                       , family=binomial(link="logit"))
-glmer_examine(Term_Cons_10J)
+glmer_examine(Term_Cons_10J,display=TRUE)
 
 
 
@@ -4473,7 +4473,7 @@ summary_residual_compare(Term_Cons_10H,Term_Cons_10J,bins=20)
 ```
 Comp excluded by VIF. Keeping for Cons.
 
-### Model 10K: Ratio3:HHI
+### Model 10K: Pricing and Ceilng
 ```{r Model10H}
 
 
@@ -5112,9 +5112,9 @@ load("Output//Term_Comp_13B.rdata")
   ss_comp <- summary(Term_Comp_13C.all)
 ```
 
-## 13 D
+### Model 13D: Integrating interactions from 10. (Except 10J, oops!)
 ```{r 13D_Interactions}
-
+load(file="Output//Term_Cons_13D.rdata")
 
 Term_Cons_13D <- glmer (data=smp,
                       b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
@@ -5141,7 +5141,7 @@ Term_Cons_13D <- glmer (data=smp,
 glmer_examine(Term_Cons_13D)
 save(Term_Cons_13D,file="Output//Term_Cons_13D.rdata")
 
-
+load(file="Output//Term_Comp_13D.rdata")
 Term_Comp_13D <- glmer (data=smp,
                       b_Term~CompOffr+
                         cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
@@ -5162,7 +5162,74 @@ Term_Comp_13D <- glmer (data=smp,
 glmer_examine(Term_Comp_13D)
 save(Term_Comp_13D,file="Output//Term_Cons_13D.rdata")
 
+stargazer::stargazer(Term_Cons_13B,
+                     Term_Comp_13C,Term_Comp_13D,type="text",
+                       digits=2)
+  
+  
+
 ```
+
+### Model 13E: Trimming back those that weren't high value added in  13D
+Dropping a few from 13E and adding back in cl_def3_HHI_lag1:cl_def3_ratio_lag1 which was accidentally dropped. 
+
+* b_UCA:cl_Ceil: Is not significant and is not in line with expectations.
+* PricingFee:cl_US6_avg_sal_lag1: Only partially in line with expectations, and leaves most of the base inputs insignificant.
+
+```{r 13E_Interactions}
+load(file="Output//Term_Cons_13E.rdata")
+
+Term_Cons_13E <- glmer (data=smp,
+                        b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                          #cl_US3_avg_sal_lag1+
+                          cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                          cl_US6_avg_sal_lag1+     
+                          cl_Ceil + cl_Days+ 
+                          Veh +
+                          PricingFee + b_UCA +
+                          b_Intl+
+                          
+                          cl_def6_HHI_lag1:cl_Days+
+                          # b_UCA:cl_Ceil+
+                          b_UCA:cl_def6_HHI_lag1 +
+                          PricingFee:cl_US6_avg_sal_lag1+
+                          cl_def6_HHI_lag1:cl_def6_obl_lag1  +
+                          cl_def3_HHI_lag1:cl_def3_ratio_lag1+
+                          cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                          
+                          (1 | NAICS3/NAICS) + (1 | Agency/Office),
+                        family=binomial(link="logit"))
+glmer_examine(Term_Cons_13E)
+save(Term_Cons_13E,file="Output//Term_Cons_13E.rdata")
+
+load(file="Output//Term_Comp_13E.rdata")
+Term_Comp_13E <- glmer (data=smp,
+                      b_Term~CompOffr+
+                        cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                        cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                        
+                        cl_Ceil + cl_Days+ 
+                        Veh  +
+                        PricingFee+ b_UCA +
+                        b_Intl+
+                        
+               b_UCA:CompOffr
+                        # b_UCA:cl_Ceil+
+                       # PricingFee:cl_US6_avg_sal_lag1+
+                       
+                          (1 | NAICS3/NAICS) + (1 | Agency/Office),
+               family=binomial(link="logit"))
+glmer_examine(Term_Comp_13E)
+save(Term_Comp_13E,file="Output//Term_Cons_13E.rdata")
+
+stargazer::stargazer(Term_Cons_13B,
+                     Term_Comp_13C,Term_Comp_13E,type="text",
+                       digits=2)
+  
+  
+
+```
+
 # Appendix
 ## No longer Relevant Code
 

@@ -386,3 +386,12 @@ get_unstable_list<-function(){
   "New in 2012: Missing from Economy Stats",
   "Reassigned in 2007")
 }
+
+
+odds_ratio<-function(FM,name){
+  OR <- exp(fixef(FM))
+  # CI <- exp(confint(FM,parm="beta_")) # it can be slow (~ a few minutes). As alternative, the much faster but less precise Wald's method can be used: CI <- exp(confint(FM,parm="beta_",method="Wald"))
+  CI <- exp(confint(FM,parm="beta_",method="Wald"))
+  write.csv(cbind(OR,CI),file=paste("output//",name,"_odds_ratio.csv",sep=""))
+
+}
