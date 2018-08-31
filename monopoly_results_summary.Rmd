@@ -396,6 +396,8 @@ if(!exists("CBre_Cons_13B")){
 }
 
 glmer_examine(CBre_Cons_13B,display=TRUE)
+odds_ratio(CBre_Cons_13B,"CBre_Cons_13B")
+
 ```
 
 ### Competition and Ceiling Breach
@@ -546,37 +548,36 @@ odds_ratio(Term_Comp_13E2,"Term_Comp_13E2")
 ### Both and Terminations
 
 ```{r Both-Term}
-load(file="Output//Term_Cons_13D.rdata")
-
+load(file="Output//Term_Cons_Comp_14B.rdata")
 
 if(!exists("Term_Cons_Comp_14A")){
-  Term_Cons_Comp_14A <- glmer (data=smp,
-                               b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
-                                 #cl_US3_avg_sal_lag1+
-                                 cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
-                                 cl_US6_avg_sal_lag1+
-                                 CompOffr+
-                                 cl_Ceil + cl_Days+ 
-                                 Veh +
-                                 PricingFee + b_UCA +
-                                 b_Intl+
-                                 
-                                 
-                                 
-                                 cl_def6_HHI_lag1:cl_Days+
-                                 b_UCA:cl_Ceil+
-                                 b_UCA:cl_def6_HHI_lag1 +
-                                 PricingFee:cl_US6_avg_sal_lag1+
-                                 cl_def6_HHI_lag1:cl_def6_obl_lag1  +
-                                 
-                                 cl_def6_HHI_lag1:cl_def6_ratio_lag1+
-                                 
-                                 (1 | NAICS3/NAICS) + (1 | Agency/Office),
-                               family=binomial(link="logit"),verbose=1)
+Term_Cons_Comp_14B <- glmer (data=smp,
+                             b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                               #cl_US3_avg_sal_lag1+
+                               cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                               cl_US6_avg_sal_lag1+
+                               CompOffr+
+                               cl_Ceil + cl_Days+ 
+                               Veh +
+                               PricingFee + b_UCA +
+                               b_Intl+
+                               
+                               cl_def6_HHI_lag1:cl_Days+
+                               # b_UCA:cl_Ceil+
+                               # b_UCA:cl_def6_HHI_lag1 +
+                               # PricingFee:cl_US6_avg_sal_lag1+
+                               cl_def6_HHI_lag1:cl_def6_obl_lag1  +
+                               # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                               cl_def3_HHI_lag1:cl_def3_ratio_lag1+  
+                               
+                               (1 | NAICS3/NAICS) + (1 | Agency/Office)
+                             , family=binomial(link="logit"),verbose=1)
+
   save(Term_Cons_Comp_14A,file="Output//Term_Cons_Comp_14A")
   
 }
-glmer_examine(Term_Cons_Comp_14A,dislay=TRUE)
+glmer_examine(Term_Cons_Comp_14B,dislay=TRUE)
+odds_ratio(Term_Cons_Comp_14B,"Term_Cons_Comp_14A")
 
 
 ```
@@ -665,6 +666,8 @@ caption.above=TRUE)
   # OR.CI
 
 
+gridExtra::grid.arrange(dotplot(ranef(Comp_Cons_15C, condVar = T), strip = T, scales=list(relation='free'))$Agency,
+             nrow=1)
 
 ```
 
@@ -736,7 +739,21 @@ caption="Table 2: Logit Model Results for Ceiling Breaches",
 caption.above=TRUE)
 
 
+or1<-odds_ratio(CBre_Cons_13B,"CBre_Cons_13B","Concentration","Ceiling Breaches")
+or2<-odds_ratio(CBre_Comp_13C,"CBre_Comp_13C","Competition","Ceiling Breaches")
+or3<-odds_ratio(CBre_Cons_Comp_15A,"CBre_Cons_Comp_15A","Both","Ceiling Breaches")
+comp.or<-rbind(or1,or2,or3)
+comp.or<-comp.or[comp.or$variable %in% c("cl_def3_HHI_lag1"    ,"cl_def6_HHI_lag1" ,"CompOffr1 offer" ,                 
+"CompOffr2 offers",                  "CompOffr3-4 offers",                "CompOffr5+ offers",                 "CompOffr1 offer:b_UCA",            
+ "CompOffr2 offers:b_UCA"   ,         "CompOffr3-4 offers:b_UCA",          "CompOffr5+ offers:b_UCA"),]
+comp.or<-comp.or[c(c("output" ,  "input"  ,  "variable",   "2.5 %"  , "OR"  , "97.5 %" ))]
 
+CBre_Cons_13B,CBre_Comp_13C,CBre_Cons_Comp_15A
+#https://www.lcampanelli.org/mixed-effects-modeling-lme4/
+gridExtra::grid.arrange(dotplot(ranef(CBre_Cons_13B, condVar = T), strip = T, scales=list(relation='free'))$Agency,
+             dotplot(ranef(CBre_Comp_13C, condVar = T), strip = T, scales=list(relation='free'))$Agency,
+             dotplot(ranef(CBre_Cons_Comp_15A, condVar = T), strip = T, scales=list(relation='free'))$Agency,
+             nrow=1)
 
 
 ```
@@ -798,7 +815,12 @@ texreg::htmlreg(list(Term_Cons_13E,Term_Comp_13E2,Term_Cons_Comp_14A),file="Outp
 "cl_def6_HHI_lag1:cl_Days"="Log(Det. Ind. HHI):Log(Init. Days)",
 "cl_def6_HHI_lag1:cl_def6_obl_lag1"="Log(Det. Ind. HHI):Log(Det. Ind. DoD Obl.)",
 "cl_def3_HHI_lag1:cl_def3_ratio_lag1"="Log(Subsector HHI):Log(Subsector Ratio)",
-"cl_def6_HHI_lag1:cl_def6_ratio_lag1"="Log(Det. Ind. HHI):Log(Det. Ind. Ratio)"
+"cl_def6_HHI_lag1:cl_def6_ratio_lag1"="Log(Det. Ind. HHI):Log(Det. Ind. Ratio)",
+"cl_US6_avg_sal_lag1:PricingFeeOther FP"="Pricing=Other FP:Log(Det. Ind. U.S. Avg. Salary)",
+"cl_US6_avg_sal_lag1:PricingFeeIncentive"="Pricing=Incentive Fee:Log(Det. Ind. U.S. Avg. Salary)",
+"cl_US6_avg_sal_lag1:PricingFeeCombination or Other"="Pricing=Comb./or Other:Log(Det. Ind. U.S. Avg. Salary)",
+"cl_US6_avg_sal_lag1:PricingFeeOther CB"="Pricing=Other CB:Log(Det. Ind. U.S. Avg. Salary)",
+"cl_US6_avg_sal_lag1:PricingFeeT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE:Log(Det. Ind. U.S. Avg. Salary)"
 
 ),
 
@@ -807,11 +829,20 @@ custom.note="%stars. Logged inputs are rescaled.",
 caption="Table 3: Logit Model Results for Terminations",
 caption.above=TRUE)
 
-                        b_UCA:cl_Ceil+
-                        b_UCA:cl_def6_HHI_lag1 +
-                       PricingFee:cl_US6_avg_sal_lag1+
+                       #  b_UCA:cl_Ceil+
+                       #  b_UCA:cl_def6_HHI_lag1 +
+                       # PricingFee:cl_US6_avg_sal_lag1+
+
+gridExtra::grid.arrange(dotplot(ranef(Term_Cons_13E, condVar = T), strip = T, scales=list(relation='free'))$Agency,
+             dotplot(ranef(Term_Comp_13E2, condVar = T), strip = T, scales=list(relation='free'))$Agency,
+             dotplot(ranef(Term_Cons_Comp_14A, condVar = T), strip = T, scales=list(relation='free'))$Agency,
+             nrow=1)
+dotplot(ranef(Term_Cons_13E, condVar = T), strip = T, scales=list(relation='free'))$NAICS3
+
+```
 
 
+```{r Subsector, fig.width=7.5 , fig.height=9}
 
-
+dotplot(ranef(Term_Cons_13E, condVar = T), strip = T, scales=list(relation='free'))$NAICS3
 ```

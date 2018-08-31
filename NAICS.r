@@ -388,10 +388,14 @@ get_unstable_list<-function(){
 }
 
 
-odds_ratio<-function(FM,name){
+odds_ratio<-function(FM,name,input=NA,output=NA){
   OR <- exp(fixef(FM))
   # CI <- exp(confint(FM,parm="beta_")) # it can be slow (~ a few minutes). As alternative, the much faster but less precise Wald's method can be used: CI <- exp(confint(FM,parm="beta_",method="Wald"))
   CI <- exp(confint(FM,parm="beta_",method="Wald"))
   write.csv(cbind(OR,CI),file=paste("output//",name,"_odds_ratio.csv",sep=""))
-
+  OR<-as.data.frame(cbind(OR,CI))
+  if(!is.na(output)) OR$output<-output
+  if(!is.na(input)) OR$input<-input
+  OR$variable<-rownames(OR)
+  OR
 }

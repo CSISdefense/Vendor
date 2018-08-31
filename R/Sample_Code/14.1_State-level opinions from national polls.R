@@ -19,7 +19,7 @@ region <- c(3,4,4,3,4,4,1,1,5,3,3,4,4,2,2,2,2,3,3,1,1,1,2,2,3,2,4,2,4,1,1,4,1,3,
 # Load in data from the CBS polls in 1988
 # Data are at http://www.stat.columbia.edu/~gelman/arm/examples/election88
 library (foreign)
-polls <- read.dta ("polls.dta")
+polls <- read.dta ("R\\Sample_Code\\polls.dta")
 attach.all (polls)
 
 # Select just the data from the last survey (#9158)
@@ -27,7 +27,7 @@ table (survey)                # look at the survey id's
 ok <- survey==9158            # define the condition
 polls.subset <- polls[ok,]    # select the subset of interest
 attach.all (polls.subset)     # attach the subset
-write.table (polls.subset, "polls.subset.dat")
+write.table (polls.subset, "R\\Sample_Code\\polls.subset.dat")
 
 print (polls.subset[1:5,])
 
@@ -54,18 +54,18 @@ for (i in 1:n.state){
 }
 
 # load in 1988 election data as a validation check
-election88 <- read.dta ("election88.dta")
+election88 <- read.dta ("R\\Sample_Code\\election88.dta")
 outcome <- election88$electionresult
 
 # load in 1988 census data
-census <- read.dta ("census88.dta")
+census <- read.dta ("R\\Sample_Code\\census88.dta")
 
 # also include a measure of previous vote as a state-level predictor
-presvote <- read.dta ("presvote.dta")
+presvote <- read.dta ("R\\Sample_Code\\presvote.dta")
 attach (presvote)
 v.prev <- presvote$g76_84pr
 not.dc <- c(1:8,10:51)
-candidate.effects <- read.table ("candidate_effects.dat", header=T)
+candidate.effects <- read.table ("R\\Sample_Code\\candidate_effects.dat", header=T)
 v.prev[not.dc] <- v.prev[not.dc] +
  (candidate.effects$X76 + candidate.effects$X80 + candidate.effects$X84)/3
 # Data are at http://www.stat.columbia.edu/~gelman/arm/examples/election88
