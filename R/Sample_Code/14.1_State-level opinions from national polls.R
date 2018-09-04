@@ -102,7 +102,7 @@ params <- c ("b.0", "b.female", "b.black", "b.female.black",
    "a.age", "a.edu", "a.age.edu", "a.state", "a.region",
    "sigma.age", "sigma.edu", "sigma.age.edu", "sigma.state", "sigma.region")
  
-M2.bugs <- bugs (data, inits, params, "election88.M2.bug", n.chains=3, n.iter=1000,
+M2.bugs <- bugs (data, inits, params, "R\\Sample_Code\\election88.M2.bug", n.chains=3, n.iter=1000,
         bugs.directory="c:/.../", working.directory=NULL, clearWD=TRUE, debug=TRUE )
 
 ## Plot Figure 14.1 

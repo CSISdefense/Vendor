@@ -83,7 +83,7 @@ binned.resids <- function (x, y, nclass=sqrt(length(x))){
   return (list (binned=output, xbreaks=xbreaks))
 }
 
-binned_fitted_versus_term_residuals<-function(model){
+binned_fitted_versus_term_residuals<-function(model,bins=20){
   
   #Save this for a future GLM
   # Term_data_01A<-data.frame(fitted=fitted(Term_01A),
@@ -110,7 +110,7 @@ binned_fitted_versus_term_residuals<-function(model){
   )
   }
 
-  data$bin_fitted<-bin_df(data,rank_col="fitted")
+  data$bin_fitted<-bin_df(data,rank_col="fitted",bins=bins)
   
   data<-subset(data,!is.na(fitted) & !is.na(residuals) )
   
@@ -142,13 +142,13 @@ resid_plot<-function(model,sample=NA){
   p1
 }
 
-binned_fitted_versus_residuals<-function(model){
+binned_fitted_versus_residuals<-function(model,bins=20){
   if(class(model)[1]=="glmerMod")
   {
     if(!is.null(model@frame$b_CBre)){
-      graph<-binned_fitted_versus_cbre_residuals(model)
+      graph<-binned_fitted_versus_cbre_residuals(model,bins)
     } else if(!is.null(model@frame$b_Term)){
-      graph<-binned_fitted_versus_term_residuals(model)
+      graph<-binned_fitted_versus_term_residuals(model,bins)
     } else if(!is.null(model@frame$cl_Offr)){
       graph<-resid_plot(model,sample=25000)
     }
@@ -157,9 +157,9 @@ binned_fitted_versus_residuals<-function(model){
   else
   {
     if(!is.null(model$model$b_CBre)){
-      graph<-binned_fitted_versus_cbre_residuals(model)
+      graph<-binned_fitted_versus_cbre_residuals(model,binx)
     } else if(!is.null(model$model$b_Term)){
-      graph<-binned_fitted_versus_term_residuals(model)
+      graph<-binned_fitted_versus_term_residuals(model,bins)
     } else if(!is.null(model$model$cl_Offr)){
       graph<-resid_plot(model,sample=25000)
     }
@@ -169,7 +169,7 @@ binned_fitted_versus_residuals<-function(model){
 }
 
 
-binned_fitted_versus_cbre_residuals<-function(model){
+binned_fitted_versus_cbre_residuals<-function(model,bins=20){
   
   #Save this for a future GLM
   # CBre_data_01A<-data.frame(fitted=fitted(CBre_01A),
@@ -196,7 +196,7 @@ binned_fitted_versus_cbre_residuals<-function(model){
     )
   }
   
-  data$bin_fitted<-bin_df(data,rank_col="fitted")
+  data$bin_fitted<-bin_df(data,rank_col="fitted",bins=bins)
   
   data<-subset(data,!is.na(fitted) & !is.na(residuals) )
   
@@ -213,7 +213,7 @@ residuals_plot<-function(model,col="fitted",bins=40){
   {
     if(!is.null(model@frame$b_CBre)){
       graph<-residuals_cbre_plot(model,col,bins=bins)
-    } else if(!is.null(model@frame$b_CBre)){
+    } else if(!is.null(model@frame$b_Term)){
       graph<-residuals_term_plot(model,col,bins=bins)
     } else if(!is.null(model@frame$cl_Offr)){
       warning("write this")#graph<-residuals_plot(model,col,bins=bins)
@@ -285,7 +285,7 @@ residuals_term_plot<-function(model,x_col="fitted",bins=40){
          y="Average residual")
 
    if (x_col=="fitted"){
-     br<-br+labs(x="Estimated  Pr (Termination)")
+     br<-br+labs(x="Estimated Pr(Termination)")
    }
   br
 }
@@ -335,7 +335,7 @@ residuals_cbre_plot<-function(model,x_col="fitted",bins=40){
          y="Average residual")
   
   if (x_col=="fitted"){
-    br<-br+labs(x="Estimated  Pr (Ceiling Breach)")
+    br<-br+labs(x="Estimated Pr(Ceiling Breach)")
   }
   br
 }
@@ -460,7 +460,7 @@ summary_double_continuous<-function(data,x_col,y_col,bins=20){
   
   #First a quick scatter plot for terminations by duration and ceiling
     gridExtra::grid.arrange(
-      ggplot(data=crisis_smp,
+      ggplot(data=data,
          aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+
     labs(title="Distribution",
          caption="Source: FPDS, CSIS Analysis"),
@@ -469,14 +469,14 @@ summary_double_continuous<-function(data,x_col,y_col,bins=20){
   
   
   #First a quick scatter plot for terminations by duration and ceiling
-  gridExtra::grid.arrange(ggplot(data=crisis_smp,
+  gridExtra::grid.arrange(ggplot(data=data,
          aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(CBre~.)+
     labs(title="Distribution by Breach",
          caption="Source: FPDS, CSIS Analysis"),
   
   
   #First a quick scatter plot for terminations by duration and ceiling
-  ggplot(data=crisis_smp,
+  ggplot(data=data,
                      aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(Term~.)+
                 labs(title="Distribution by Termination"),
   
@@ -883,14 +883,20 @@ discrete_fitted_term_model<-function(data,x_col){
 }
 
 
+test<-c(1,2,3,4,5)
+sd(test)
+mean(test)
+arm::rescale(test)
+
 centered_log_description<-function(x,units=NA){
   xbar<-mean(x,na.rm=TRUE)
     xsd<-sd(x,na.rm=TRUE)
-  paste("The variable is centered, by subtracting its mean (",
+  paste("The variable is rescaled, by subtracting its mean (",
         format(xbar,digits=3,big.mark=","),
-        ") and dividing by its standard deviation (",
-        format(xsd,digits=3,big.mark=","),
-        "). Values of -1, 0, 1, and 2 correspond to ",
+        ") and dividing by its standard deviation doubled (",
+        format(2*xsd,digits=3,big.mark=","),
+        "). Values of -1, -0.5, 0, 0.5, and 1 correspond to ",
+        format(exp(xbar-2*xsd),digits=2,big.mark=","), ", ",
         format(exp(xbar-xsd),digits=2,big.mark=","), ", ",
         format(exp(xbar),digits=2,big.mark=","),", ",
         format(exp(xbar+xsd),digits=2,big.mark=","),", and ",
@@ -904,11 +910,12 @@ centered_log_description<-function(x,units=NA){
 centered_description<-function(x,units=NA){
   xbar<-mean(x,na.rm=TRUE)
   xsd<-sd(x,na.rm=TRUE)
-  paste("The variable is centered, by subtracting its mean (",
+  paste("The variable is rescaled, by subtracting its mean (",
         format(xbar,digits=3,big.mark=","),
-        ") and dividing by its standard deviation (",
-        format(xsd,digits=3,big.mark=","),
-        "). Values of -1, 0, 1, and 2 correspond to ",
+        ") and dividing by its standard deviation doubled(",
+        format(2*xsd,digits=3,big.mark=","),
+        "). Values of -1, -0.5, 0, 0.5, and 1 correspond to ",
+        format(xbar-2*xsd,digits=2,big.mark=","), ", ",
         format(xbar-xsd,digits=2,big.mark=","), ", ",
         format(xbar,digits=2,big.mark=","),", ",
         format(xbar+xsd,digits=2,big.mark=","),", and ",
@@ -918,12 +925,13 @@ centered_description<-function(x,units=NA){
 }
 
 
-NA_stats<-function(data,col){
+NA_stats<-function(data,col,exclude_before_2008=TRUE){
+  if(exclude_before_2008==TRUE) before2008<-data$StartCY<2008
   paste("Data is missing for ",
-        format(sum(is.na(data[,col]))/nrow(data),digits=3),
+        format(sum(is.na(data[!before2008,col]))/nrow(data[!before2008,col]),digits=3),
         " of records and ",
-        format(sum(data$Action.Obligation[is.na(data[,col])],na.rm=TRUE)/
-                 sum(data$Action.Obligation,na.rm=TRUE),digits=3),
+        format(sum(data$Action.Obligation[is.na(data[!before2008,col])],na.rm=TRUE)/
+                 sum(data$Action.Obligation[!before2008],na.rm=TRUE),digits=3),
         " of obligated dollars."
               ,sep="")
 
@@ -995,12 +1003,6 @@ summary_residual_compare<-function(model1_old,model1_new,
   #Plot the fitted values vs actual results
   
   if(!is.null(model2_new)){
-    gridExtra::grid.arrange(binned_fitted_versus_residuals(model1_old),
-                            binned_fitted_versus_residuals(model1_new),
-                            binned_fitted_versus_residuals(model2_old),
-                            binned_fitted_versus_residuals(model2_new),
-                            ncol=2)
-    #This only works once you have some continuous variables o
     
     if(!is.na(bins)){
       #Plot residuals versus fitted
@@ -1009,6 +1011,15 @@ summary_residual_compare<-function(model1_old,model1_new,
       if("cl_Days" %in% model_colnames(model1_old)) bins<-bins+5
       
     }      
+    
+    gridExtra::grid.arrange(binned_fitted_versus_residuals(model1_old,bins=bins),
+                            binned_fitted_versus_residuals(model1_new,bins=bins),
+                            binned_fitted_versus_residuals(model2_old,bins=bins),
+                            binned_fitted_versus_residuals(model2_new,bins=bins),
+                            ncol=2)
+    #This only works once you have some continuous variables o
+    
+    
       gridExtra::grid.arrange(residuals_plot(model1_old,bins=bins),
                               residuals_plot(model1_new,bins=bins),
                               residuals_plot(model2_old,bins=bins),
@@ -1060,8 +1071,8 @@ summary_residual_compare<-function(model1_old,model1_new,
     }
     
   } else{
-    gridExtra::grid.arrange(binned_fitted_versus_residuals(model1_old),
-                            binned_fitted_versus_residuals(model1_new),
+    gridExtra::grid.arrange(binned_fitted_versus_residuals(model1_old,bins=bins),
+                            binned_fitted_versus_residuals(model1_new,bins=bins),
                             ncol=2)
     
     
