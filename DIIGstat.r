@@ -1196,3 +1196,14 @@ summary_regression_compare<-function(model_old,model_new){
   )
   
 }
+
+
+get_pars<-function(model){
+  if (isLMM(model)) {
+    pars <- getME(model,"theta")
+  } else {
+    ## GLMM: requires both random and fixed parameters
+    pars <- getME(model, c("theta","fixef"))
+  }
+  pars
+}
