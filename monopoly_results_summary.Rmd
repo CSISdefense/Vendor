@@ -456,7 +456,7 @@ No failure to converge.
 load("Output//CBre_Cons_13B.rdata")
 
 
-if(!exists("CBre_Cons_13B")){
+if(!exists("CBre_Cons_13B_1m")){
   CBre_Cons_13B_1m <- glmer (data=smp1m,
                           b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                             #cl_US3_avg_sal_lag1+
@@ -476,8 +476,43 @@ if(!exists("CBre_Cons_13B")){
                           
                           family=binomial(link="logit"),
                           verbose=1)
-  save(CBre_Cons_13B,CBre_Cons_13B.restart,CBre_Cons_13B_1m,file="Output//CBre_Cons_13B.rdata")
+  save(CBre_Cons_13B,CBre_Cons_13B.restart,CBre_Cons_13B_1m,
+       file="Output//CBre_Cons_13B.rdata")
 }
+
+if(!exists("CBre_Cons_13B_1m_restart")){
+  pars<-get_pars(CBre_Cons_13B_1m)
+  CBre_Cons_13B_1m_restart <- update(CBre_Cons_13B_1m, 
+                                     start=pars,
+                                     verbose=1)
+  save(CBre_Cons_13B,
+       CBre_Cons_13B.restart,
+       CBre_Cons_13B_1m,
+       CBre_Cons_13B_1m_restart,
+       file="Output//CBre_Cons_13B.rdata")
+}
+glmer_examine(CBre_Cons_13B_1m_restart)
+
+
+
+
+save(CBre_Cons_13B,
+     CBre_Cons_13B.devfun,
+     CBre_Cons_13_scgrad,
+     CBre_Cons_13B.restart,
+     CBre_Comp_13B,
+     CBre_Comp_13B.devfun,
+     CBre_Comp_13B.restart,
+     file="Output//CBre_Cons_13B.rdata")
+
+source(system.file("utils", "allFit.R", package="lme4"))
+CBre_Cons_13B.all <- allFit(CBre_Cons_13B)
+CBre_Cons_13B_ss_cons <- summary(CBre_Cons_13B.all)
+
+
+
+
+
 vif(CBre_Cons_13B_1m)
 stargazer::stargazer(CBre_Cons_13B,CBre_Cons_13B_1m,type="text",
                        digits=2)
