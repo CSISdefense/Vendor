@@ -5803,56 +5803,80 @@ save(CBre_Cons_13A,file="Output//CBre_Cons_13A.rdata")
 load("Output//CBre_Cons_13B.rdata")
 
 CBre_Cons_13B <- glmer (data=smp,
-                 b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
-                  #cl_US3_avg_sal_lag1+
-                   cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
-                  cl_US6_avg_sal_lag1+
-                                                cl_Ceil + cl_Days+ 
-                        Veh +
-                        PricingFee + b_UCA +
-                        b_Intl+
-                   
-                       
+                        b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                          #cl_US3_avg_sal_lag1+
+                          cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                          cl_US6_avg_sal_lag1+
+                          cl_Ceil + cl_Days+ 
+                          Veh +
+                          PricingFee + b_UCA +
+                          b_Intl+
+                          
+                          
+                          
+                          
+                          b_UCA:cl_def6_HHI_lag1 + 
+                          b_UCA:cl_Ceil+
+                          cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                          
+                          (1 | NAICS3/NAICS) + 
+                          (1 | Agency/Office) 
                         
-                        
-                        b_UCA:cl_def6_HHI_lag1 + 
-                        b_UCA:cl_Ceil+
-                        cl_def6_HHI_lag1:cl_def6_obl_lag1+
-                         
-                        (1 | NAICS3/NAICS) + 
-                        (1 | Agency/Office) 
-
-                      , family=binomial(link="logit"),
+                        , family=binomial(link="logit"),
                         verbose=1)
-
 
 glmer_examine(CBre_Cons_13B,display=TRUE)
 
+
+  CBre_Cons_13B_1m <- glmer (data=smp1m,
+                          b_CBre ~cl_def3_HHI_lag1+
+                            cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                            #cl_US3_avg_sal_lag1+
+                            cl_def6_HHI_lag1+
+                            cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                            cl_US6_avg_sal_lag1+
+                            cl_Ceil + cl_Days+ 
+                            Veh +
+                            PricingFee + b_UCA +
+                            b_Intl+
+                            
+                            b_UCA:cl_def6_HHI_lag1 + 
+                            b_UCA:cl_Ceil+
+                            cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                            
+                            (1 | NAICS3/NAICS) + 
+                            (1 | Agency/Office), 
+                          
+                          family=binomial(link="logit"),
+                          verbose=1)
+glmer_examine(CBre_Cons_13B_1m,display=TRUE)
+
 save(CBre_Cons_13B,file="Output//CBre_Cons_13B.rdata")
 CBre_Comp_13B <- glmer (data=smp,
-                        b_CBre ~n_Comp+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
-                   n_Comp+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
-                        cl_Ceil + cl_Days+
-                        Veh  +
-                        PricingFee+
-                        b_UCA +
-                        b_Intl+
-                        
-                        
-                        
-                        b_UCA:n_Comp +
-                        b_UCA:cl_Ceil+
-                        
-                        (1 | NAICS3/NAICS) + (1 | Agency/Office)
-                      , family=binomial(link="logit"),
+                        b_CBre~n_Comp+
+                          cl_def3_ratio_lag1+
+                          #cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                          n_Comp+
+                          cl_def6_ratio_lag1+
+                          cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                          cl_Ceil + cl_Days+
+                          Veh  +
+                          PricingFee+
+                          b_UCA +
+                          b_Intl+
+                          
+                          b_UCA:n_Comp +
+                          b_UCA:cl_Ceil+
+                          
+                          (1 | NAICS3/NAICS) + (1 | Agency/Office)
+                        , family=binomial(link="logit"),
                         verbose=1)
 glmer_examine(CBre_Comp_13B)
 
+stargazer::stargazer(CBre_Cons_14A,CBre_Cons_13B,CBre_Comp_14A.restart,CBre_Comp_13B,type="text",
+                     digits=2)
 
-  stargazer::stargazer(CBre_Cons_14A,CBre_Cons_13B,CBre_Comp_14A.restart,CBre_Comp_13B,type="text",
-                       digits=2)
-  
-  
+
 
 summary_residual_compare(CBre_Cons_14A,CBre_Cons_13B,CBre_Comp_14A.restart,CBre_Comp_13B,bins=20)
 
@@ -5863,12 +5887,10 @@ any(diag.vals<1e-6)
 if(!exists("CBre_Cons_13B.devfun"))
   CBre_Cons_13B.devfun <- update(CBre_Cons_13B, devFunOnly=TRUE)
 
-if (isLMM(CBre_Cons_13B)) {
-  pars <- getME(CBre_Cons_13B,"theta")
-} else {
-  ## GLMM: requires both random and fixed parameters
-  pars <- getME(CBre_Cons_13B, c("theta","fixef"))
-}
+
+pars<-get_pars(CBre_Cons_13B)
+
+
 if (require("numDeriv")) {
   cat("hess:\n"); print(hess <- hessian(CBre_Cons_13B.devfun, unlist(pars)))
   cat("grad:\n"); print(grad <- grad(CBre_Cons_13B.devfun, unlist(pars)))
@@ -5882,33 +5904,29 @@ if(!exists("CBre_Cons_13B.restart"))
   CBre_Cons_13B.restart <- update(CBre_Cons_13B, start=pars)
 glmer_examine(CBre_Cons_13B.restart)
 
-  save(CBre_Cons_13B,
-       CBre_Cons_13B.devfun,
-       CBre_Cons_13_scgrad,
-       CBre_Cons_13B.restart,
-       CBre_Comp_13B,
-       CBre_Comp_13B.devfun,
-       CBre_Comp_13B.restart,
-       file="Output//CBre_Cons_13B.rdata")
+save(CBre_Cons_13B,
+     CBre_Cons_13B.devfun,
+     CBre_Cons_13_scgrad,
+     CBre_Cons_13B.restart,
+     CBre_Comp_13B,
+     CBre_Comp_13B.devfun,
+     CBre_Comp_13B.restart,
+     file="Output//CBre_Cons_13B.rdata")
 
 source(system.file("utils", "allFit.R", package="lme4"))
-  CBre_Cons_13B.all <- allFit(CBre_Cons_13B)
-  CBre_Cons_13B_ss_cons <- summary(CBre_Cons_13B.all)
+CBre_Cons_13B.all <- allFit(CBre_Cons_13B)
+CBre_Cons_13B_ss_cons <- summary(CBre_Cons_13B.all)
 
-  CBre_Comp_13C.all <- allFit(CBre_Comp_13C)
-  CBre_Comp_13C_ss_cons <- summary(CBre_Cons_13C.all)
+CBre_Comp_13C.all <- allFit(CBre_Comp_13C)
+CBre_Comp_13C_ss_cons <- summary(CBre_Cons_13C.all)
 
-  
+
 #CBre Comp
 if(!exists("CBre_Comp_13B.devfun"))
   CBre_Comp_13B.devfun <- update(CBre_Comp_13B, devFunOnly=TRUE)
 
-if (isLMM(CBre_Comp_13B)) {
-  pars <- getME(CBre_Comp_13B,"theta")
-} else {
-  ## GLMM: requires both random and fixed parameters
-  pars <- getME(CBre_Comp_13B, c("theta","fixef"))
-}
+pars<-get_pars(CBre_Comp_13B)
+
 if (require("numDeriv")) {
   cat("hess:\n"); print(hess <- hessian(CBre_Comp_13B.devfun, unlist(pars)))
   cat("grad:\n"); print(grad <- grad(CBre_Comp_13B.devfun, unlist(pars)))
@@ -5923,26 +5941,52 @@ if(!exists("CBre_Comp_13B.restart"))
 glmer_examine(CBre_Comp_13B.restart)
 
 
-  save(CBre_Cons_13B,CBre_Comp_13B,CBre_Cons_13B.restart,CBre_Comp_13B.restart,
-       file="Output//CBre_Cons_13B.rdata")
-  
+save(CBre_Cons_13B,CBre_Comp_13B,CBre_Cons_13B.restart,CBre_Comp_13B.restart,
+     file="Output//CBre_Cons_13B.rdata")
+
 stargazer::stargazer(CBre_Cons_14A,CBre_Cons_13B,CBre_Cons_13B.restart,CBre_Comp_14A.restart,CBre_Comp_13B,type="text",
-                       digits=2)
+                     digits=2)
 
 
 
-
-
-  
+if(!exists("CBre_Cons_13B_1m_restart")){
+   pars<-get_pars(CBre_Cons_13B_1m)
+   CBre_Cons_13B_1m_restart <- update(CBre_Cons_13B_1m, 
+                                      start=pars,
+                                      verbose=1)
+   save(CBre_Cons_13B,
+        CBre_Cons_13B.restart,
+        CBre_Cons_13B_1m,
+        CBre_Cons_13B_1m_restart,
+        file="Output//CBre_Cons_13B.rdata")
+ }
+stargazer::stargazer(CBre_Cons_13B,CBre_Cons_13B.restart,
+                     CBre_Cons_13B_1m_restart,
+                     CBre_Cons_13B_1m,type="text",
+                     digits=2)
+summary_residual_compare(CBre_Cons_13B,CBre_Cons_13B.restart,CBre_Cons_13B_1m,CBre_Cons_13B_1m_restart,bins=50)
+glmer_examine(CBre_Cons_13B_1m)
+glmer_examine(CBre_Cons_13B_1m_restart)
 load("Output//CBre_Comp_13B.rdata")
 
-  summary_residual_compare(CBre_Cons_13B,CBre_Cons_13B.restart,CBre_Comp_14A.restart,CBre_Comp_13B,bins=20)
+summary(CBre_Cons_13B_1m_restart)
+source(system.file("utils", "allFit.R", package="lme4"))
+CBre_Cons_13B_1m_all <- allFit(CBre_Cons_13B_1m_restart)
+ss_cons <- summary(CBre_Cons_13B_1m_all)
+   save(CBre_Cons_13B,
+        CBre_Cons_13B.restart,
+        CBre_Cons_13B_1m,
+        CBre_Cons_13B_1m_restart,
+        CBre_Cons_13B_1m_all,
+        file="Output//CBre_Cons_13B.rdata")
+
+summary_residual_compare(CBre_Cons_13B,CBre_Cons_13B.restart,CBre_Comp_14A.restart,CBre_Comp_13B,bins=20)
 
 summary(CBre_Cons_13B.restart)
-  source(system.file("utils", "allFit.R", package="lme4"))
-  CBre_Cons_13C.all <- allFit(CBre_Cons_13B.restart)
-  ss_cons <- summary(CBre_Cons_13C.all)
-  
+source(system.file("utils", "allFit.R", package="lme4"))
+CBre_Cons_13C.all <- allFit(CBre_Cons_13B.restart)
+ss_cons <- summary(CBre_Cons_13C.all)
+
 # str(CBre_Cons_13C.all[[1]])
 # stargazer::stargazer(CBre_Cons_13C.all[[1]],
 #                 CBre_Cons_13C.all[[2]],
@@ -5954,13 +5998,13 @@ summary(CBre_Cons_13B.restart)
 #                        digits=2)
 # 
 #               
-  
-  save(CBre_Cons_13B,CBre_Comp_13B,CBre_Cons_13B.restart,CBre_Cons_13C.all,
-       CBre_Comp_13B.restart,
-       file="Output//CBre_Cons_13B.rdata")
-  
-  # fm1.all <- allFit(CBre_Comp_13C)
-  # ss_comp <- summary(CBre_Comp_13C.all)
+
+save(CBre_Cons_13B,CBre_Comp_13B,CBre_Cons_13B.restart,CBre_Cons_13C.all,
+     CBre_Comp_13B.restart,
+     file="Output//CBre_Cons_13B.rdata")
+
+# fm1.all <- allFit(CBre_Comp_13C)
+# ss_comp <- summary(CBre_Comp_13C.all)
 ```
 
 
@@ -5999,12 +6043,8 @@ any(diag.vals<1e-6)
 if(!exists("CBre_Cons_13C.devfun"))
   CBre_Cons_13C.devfun <- update(CBre_Cons_13C, devFunOnly=TRUE)
 
-if (isLMM(CBre_Cons_13C)) {
-  pars <- getME(CBre_Cons_13C,"theta")
-} else {
-  ## GLMM: requires both random and fixed parameters
-  pars <- getME(CBre_Cons_13C, c("theta","fixef"))
-}
+
+pars<-get_pars(CBre_Cons_13C)
 if (require("numDeriv")) {
   cat("hess:\n"); print(hess <- hessian(CBre_Cons_13C.devfun, unlist(pars)))
   cat("grad:\n"); print(grad <- grad(CBre_Cons_13C.devfun, unlist(pars)))
@@ -6025,12 +6065,7 @@ glmer_examine(CBre_Cons_13C.restart)
 if(!exists("CBre_Comp_13C.devfun"))
   CBre_Comp_13C.devfun <- update(CBre_Comp_13C, devFunOnly=TRUE)
 
-if (isLMM(CBre_Comp_13C)) {
-  pars <- getME(CBre_Comp_13C,"theta")
-} else {
-  ## GLMM: requires both random and fixed parameters
-  pars <- getME(CBre_Comp_13C, c("theta","fixef"))
-}
+pars<-get_pars(CBre_Comp_13C)
 if (require("numDeriv")) {
   cat("hess:\n"); print(hess <- hessian(CBre_Comp_13C.devfun, unlist(pars)))
   cat("grad:\n"); print(grad <- grad(CBre_Comp_13C.devfun, unlist(pars)))
@@ -6138,12 +6173,10 @@ any(diag.vals<1e-6)
 if(!exists("CBre_Cons_13D.devfun"))
   CBre_Cons_13D.devfun <- update(CBre_Cons_13D, devFunOnly=TRUE)
 
-if (isLMM(CBre_Cons_13D)) {
-  pars <- getME(CBre_Cons_13D,"theta")
-} else {
-  ## GLMM: requires both random and fixed parameters
-  pars <- getME(CBre_Cons_13D, c("theta","fixef"))
-}
+
+pars<-get_pars(CBre_Cons_13D)
+
+
 if (require("numDeriv")) {
   cat("hess:\n"); print(hess <- hessian(CBre_Cons_13D.devfun, unlist(pars)))
   cat("grad:\n"); print(grad <- grad(CBre_Cons_13D.devfun, unlist(pars)))
@@ -6164,12 +6197,11 @@ glmer_examine(CBre_Cons_13D.restart)
 if(!exists("CBre_Comp_13D.devfun"))
   CBre_Comp_13D.devfun <- update(CBre_Comp_13D, devFunOnly=TRUE)
 
-if (isLMM(CBre_Comp_13D)) {
-  pars <- getME(CBre_Comp_13D,"theta")
-} else {
-  ## GLMM: requires both random and fixed parameters
-  pars <- getME(CBre_Comp_13D, c("theta","fixef"))
-}
+
+pars<-get_pars(CBre_Comp_13D)
+
+
+
 if (require("numDeriv")) {
   cat("hess:\n"); print(hess <- hessian(CBre_Comp_13D.devfun, unlist(pars)))
   cat("grad:\n"); print(grad <- grad(CBre_Comp_13D.devfun, unlist(pars)))
@@ -6273,12 +6305,9 @@ any(diag.vals<1e-6)
 if(!exists("CBre_Cons_13E.devfun"))
   CBre_Cons_13E.devfun <- update(CBre_Cons_13E, devFunOnly=TRUE)
 
-if (isLMM(CBre_Cons_13D)) {
-  pars <- getME(CBre_Cons_13D,"theta")
-} else {
-  ## GLMM: requires both random and fixed parameters
-  pars <- getME(CBre_Cons_13D, c("theta","fixef"))
-}
+
+pars<-get_pars(CBre_Cons_13D)
+
 if (require("numDeriv")) {
   cat("hess:\n"); print(hess <- hessian(CBre_Cons_13D.devfun, unlist(pars)))
   cat("grad:\n"); print(grad <- grad(CBre_Cons_13D.devfun, unlist(pars)))
@@ -6288,23 +6317,19 @@ if (require("numDeriv")) {
 ## compare with internal calculations:
 CBre_Cons_13D@optinfo$derivs
 
+
+
 if(!exists("CBre_Cons_13D.restart"))
   CBre_Cons_13D.restart <- update(CBre_Cons_13D, start=pars)
 glmer_examine(CBre_Cons_13D.restart)
-
-
 
 
 #CBre Comp
 if(!exists("CBre_Comp_13D.devfun"))
   CBre_Comp_13D.devfun <- update(CBre_Comp_13D, devFunOnly=TRUE)
 
-if (isLMM(CBre_Comp_13D)) {
-  pars <- getME(CBre_Comp_13D,"theta")
-} else {
-  ## GLMM: requires both random and fixed parameters
-  pars <- getME(CBre_Comp_13D, c("theta","fixef"))
-}
+
+
 if (require("numDeriv")) {
   cat("hess:\n"); print(hess <- hessian(CBre_Comp_13D.devfun, unlist(pars)))
   cat("grad:\n"); print(grad <- grad(CBre_Comp_13D.devfun, unlist(pars)))
@@ -6364,13 +6389,8 @@ any(diag.vals<1e-6)
 
 if(!exists("CBre_Cons_13C.devfun"))
   CBre_Cons_13C.devfun <- update(CBre_Cons_13C, devFunOnly=TRUE)
+pars<-get_pars(CBre_Cons_13C)
 
-if (isLMM(CBre_Cons_13C)) {
-  pars <- getME(CBre_Cons_13C,"theta")
-} else {
-  ## GLMM: requires both random and fixed parameters
-  pars <- getME(CBre_Cons_13C, c("theta","fixef"))
-}
 if (require("numDeriv")) {
   cat("hess:\n"); print(hess <- hessian(CBre_Cons_13C.devfun, unlist(pars)))
   cat("grad:\n"); print(grad <- grad(CBre_Cons_13C.devfun, unlist(pars)))
@@ -6436,13 +6456,8 @@ any(diag.vals<1e-6)
 
 if(!exists("CBre_Cons_13B.devfun"))
   CBre_Cons_13B.devfun <- update(CBre_Cons_13B, devFunOnly=TRUE)
+pars<-get_pars(CBre_Cons_13B)
 
-if (isLMM(CBre_Cons_13B)) {
-  pars <- getME(CBre_Cons_13B,"theta")
-} else {
-  ## GLMM: requires both random and fixed parameters
-  pars <- getME(CBre_Cons_13B, c("theta","fixef"))
-}
 if (require("numDeriv")) {
   cat("hess:\n"); print(hess <- hessian(CBre_Cons_13B.devfun, unlist(pars)))
   cat("grad:\n"); print(grad <- grad(CBre_Cons_13B.devfun, unlist(pars)))
@@ -6462,13 +6477,8 @@ glmer_examine(CBre_Cons_13B.restart)
 #CBre Comp
 if(!exists("CBre_Comp_13B.devfun"))
   CBre_Comp_13B.devfun <- update(CBre_Comp_13B, devFunOnly=TRUE)
+pars<-get_pars(CBre_Comp_13B)
 
-if (isLMM(CBre_Comp_13B)) {
-  pars <- getME(CBre_Comp_13B,"theta")
-} else {
-  ## GLMM: requires both random and fixed parameters
-  pars <- getME(CBre_Comp_13B, c("theta","fixef"))
-}
 if (require("numDeriv")) {
   cat("hess:\n"); print(hess <- hessian(CBre_Comp_13B.devfun, unlist(pars)))
   cat("grad:\n"); print(grad <- grad(CBre_Comp_13B.devfun, unlist(pars)))
@@ -6554,12 +6564,7 @@ any(diag.vals<1e-6)
 if(!exists("CBre_Cons_13B.devfun"))
   CBre_Cons_13B.devfun <- update(CBre_Cons_13B, devFunOnly=TRUE)
 
-if (isLMM(CBre_Cons_13B)) {
-  pars <- getME(CBre_Cons_13B,"theta")
-} else {
-  ## GLMM: requires both random and fixed parameters
-  pars <- getME(CBre_Cons_13B, c("theta","fixef"))
-}
+pars<-get_pars(CBre_Cons_13B)
 if (require("numDeriv")) {
   cat("hess:\n"); print(hess <- hessian(CBre_Cons_13B.devfun, unlist(pars)))
   cat("grad:\n"); print(grad <- grad(CBre_Cons_13B.devfun, unlist(pars)))
@@ -6580,12 +6585,7 @@ glmer_examine(CBre_Cons_13B.restart)
 if(!exists("CBre_Comp_13B.devfun"))
   CBre_Comp_13B.devfun <- update(CBre_Comp_13B, devFunOnly=TRUE)
 
-if (isLMM(CBre_Comp_13B)) {
-  pars <- getME(CBre_Comp_13B,"theta")
-} else {
-  ## GLMM: requires both random and fixed parameters
-  pars <- getME(CBre_Comp_13B, c("theta","fixef"))
-}
+pars<-get_pars(CBre_Comp_13B)
 if (require("numDeriv")) {
   cat("hess:\n"); print(hess <- hessian(CBre_Comp_13B.devfun, unlist(pars)))
   cat("grad:\n"); print(grad <- grad(CBre_Comp_13B.devfun, unlist(pars)))
@@ -7474,12 +7474,8 @@ CBre_Comp_11A.devfun<-devfun
 if(!exists("CBre_Comp_11A.devfun"))
   CBre_Comp_11A.devfun <- update(CBre_Comp_11A, devFunOnly=TRUE)
 
-if (isLMM(CBre_Comp_11A)) {
-  pars <- getME(CBre_Comp_11A,"theta")
-} else {
-  ## GLMM: requires both random and fixed parameters
-  pars <- getME(CBre_Comp_11A, c("theta","fixef"))
-}
+
+pars<-get_pars(CBre_Comp_11A)
 if (require("numDeriv")) {
   cat("hess:\n"); print(hess <- hessian(CBre_Comp_11A.devfun, unlist(pars)))
   cat("grad:\n"); print(grad <- grad(CBre_Comp_11A.devfun, unlist(pars)))
