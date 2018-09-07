@@ -888,7 +888,13 @@ sd(test)
 mean(test)
 arm::rescale(test)
 
+na_non_positive_log<-function(x){
+  x[x<=0]<-NA
+  log(x)
+}
+
 centered_log_description<-function(x,units=NA){
+  x<-na_non_positive_log(x)
   xbar<-mean(x,na.rm=TRUE)
     xsd<-sd(x,na.rm=TRUE)
   paste("The variable is rescaled, by subtracting its mean (",
