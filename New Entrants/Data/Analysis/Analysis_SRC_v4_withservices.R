@@ -835,7 +835,7 @@ grid.arrange(plot_2001_SMALL, plot_2001_DoD_SMALL, plot_2001_ALL, plot_2001_DoD_
 
 #create necessary variables to do this#
 
-#subset the 2001 data
+#subset the 2002 data
 data_2002 <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear!="2002"), ]
 
 ##create variable describing whether a firm survived 3 years
@@ -5144,13 +5144,5 @@ graduated_v_nongrad_DoD <- ggplot(FPDS_obligationscount_grad_DOD, aes(x = regist
 graduated_v_nongrad_DoD
 
 grid.arrange(graduated_v_nongrad_allfed, graduated_v_nongrad_DoD)
-
-
-
-
-
-
-
-
 
 
