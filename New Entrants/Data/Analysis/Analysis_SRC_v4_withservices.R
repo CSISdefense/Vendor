@@ -835,7 +835,7 @@ grid.arrange(plot_2001_SMALL, plot_2001_DoD_SMALL, plot_2001_ALL, plot_2001_DoD_
 
 #create necessary variables to do this#
 
-#subset the 2001 data
+#subset the 2002 data
 data_2002 <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear!="2002"), ]
 
 ##create variable describing whether a firm survived 3 years
@@ -4356,8 +4356,8 @@ FPDS_data<-FPDS_data %>%
 fed_duns_fyear<-FPDS_data %>%
   group_by(Dunsnumber,fiscal_year,entrant,first_year) %>%
   #dplyr::summarize(obligatedAmount.2017=sum(obligatedAmount.Deflator.2017,na.rm=TRUE),
-  dplyr::summarize(obligatedAmount.Deflator.2016=sum(obligatedAmount.Deflator.2016,na.rm=TRUE),
-                   present=max(obligatedAmount.Deflator.2016,na.rm=TRUE))
+  dplyr::summarize(obligatedAmount.Deflator.2017=sum(obligatedAmount.Deflator.2017,na.rm=TRUE),
+                   present=max(obligatedAmount.Deflator.2017,na.rm=TRUE))
 fed_duns_fyear$present<-ifelse(fed_duns_fyear$present>0,1,0)
 summary(fed_duns_fyear$present)
 
@@ -4366,8 +4366,8 @@ summary(fed_duns_fyear$present)
 dod_duns_fyear<-subset(FPDS_data,customer=="Defense") %>%
   group_by(Dunsnumber,fiscal_year,entrant,first_year) %>%
   #dplyr::summarize(obligatedAmount.2017=sum(obligatedAmount.Deflator.2017,na.rm=TRUE),
-  dplyr::summarize(obligatedAmount.Deflator.2016=sum(obligatedAmount.Deflator.2016,na.rm=TRUE),
-                   present=max(obligatedAmount.Deflator.2016,na.rm=TRUE))
+  dplyr::summarize(obligatedAmount.Deflator.2017=sum(obligatedAmount.Deflator.2017,na.rm=TRUE),
+                   present=max(obligatedAmount.Deflator.2017,na.rm=TRUE))
 dod_duns_fyear$present<-ifelse(dod_duns_fyear$present>0,1,0)
 summary(dod_duns_fyear$present)
 
@@ -5144,13 +5144,5 @@ graduated_v_nongrad_DoD <- ggplot(FPDS_obligationscount_grad_DOD, aes(x = regist
 graduated_v_nongrad_DoD
 
 grid.arrange(graduated_v_nongrad_allfed, graduated_v_nongrad_DoD)
-
-
-
-
-
-
-
-
 
 
