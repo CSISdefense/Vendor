@@ -23,7 +23,14 @@ library(csis360)
 #!!!!!import from raw data folder not copied into cleaning data folder
 setwd("K:/2018-01 NPS New Entrants/Data/Data/Raw Data/FPDS")
 
+##without services
 FPDS_data <- read.delim("Vendor.SP_DunsnumberNewEntrants_all.txt", fill = TRUE, header=TRUE,  na.strings = c("", "NULL"))
+
+
+##with services 
+
+FPDS_data <- read.delim("Vendor.SP_DunsnumberNewEntrants_all_withservices.txt", fill = TRUE, header=TRUE,  na.strings = c("", "NULL"))
+
 
 # ###set up
 # 
@@ -95,7 +102,6 @@ FPDS_data <- deflate(FPDS_data, money_var = "obligatedAmount", fy_var = "FYear")
 
 names(FPDS_data)[names(FPDS_data) == "obligatedAmount"] <- "obligatedAmount_nominal"
 names(FPDS_data)[names(FPDS_data) == "obligatedAmount.Deflator.2016"] <- "obligatedAmount"
-
 
 
 
@@ -200,7 +206,7 @@ sum(is.na(FPDS_data_w_topNAICS$topNAICS)) ##57420
 ##count number of NAs in biz_size
 sum(is.na(FPDS_data_w_topNAICS$biz_size)) ##523 --> .00 percent of the observations
 
-##create subsetted data with only FY, duns, obligated amount, and naics
+##create subsetted data with only FY, duns, obligated amount, and biz_size
 names(FPDS_data)
 Duns_smallbiz <- data.frame( FPDS_data$FYear, FPDS_data$Dunsnumber, FPDS_data$obligatedAmount, FPDS_data$biz_size)
 
@@ -743,9 +749,19 @@ duns_and_minsigndate%>% group_by(CYear)%>%
 
 #FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_maxSD_minSD <- join(FPDS_data_w_topNAICS_topSB_totalobl_FYobl_totact_FYact_maxSD, duns_and_minsigndate, by = c("Dunsnumber"), type = "left", match = "all")
 
+#***************************************************************************
+# #BELOW (SAVE SAVE AND LOAD LOAD) ONLY NECESSARY IF YOU RUN OUT OF SPACE AND GET AN ERROR BC OF THAT
+# #!!!!!!!!!!!!!!!!!!clear global environment
+# save(FPDS_data_w_topNAICS_topSB_totalobl_FYobl_maxSD, file="intermediary_leftof_join.Rda")
+# 
+# save(duns_and_minsigndate, file="intermediary_rightof_join.Rda")
+# 
+# load(file = "intermediary_leftof_join.Rda")
+# load(file = "intermediary_rightof_join.Rda")
+# ##******************************************************
+
 
 FPDS_data_w_topNAICS_topSB_totalobl_FYobl_maxSD_minSD <- join(FPDS_data_w_topNAICS_topSB_totalobl_FYobl_maxSD, duns_and_minsigndate, by = c("Dunsnumber"), type = "left", match = "all")
-
 
 
 
@@ -760,12 +776,55 @@ FPDS_data_w_topNAICS_topSB_totalobl_FYobl_maxSD_minSD%>% group_by(CYear)%>%
 
 FPDS_data_cleaned <- FPDS_data_w_topNAICS_topSB_totalobl_FYobl_maxSD_minSD
 
+##*****************************************##
+############Choose navy category depending#################
+#on whether it has a navy account
+#*******************************************#
+
+
+##create subsetted data with only duns, and subcustomer
+
+FPDS_data_subcust <- data.frame(FPDS_data_cleaned$Dunsnumber, FPDS_data_cleaned$subcustomer)
+
+##step 1: use dplyr to create a new data frame grouped by
+#DUNS and subcustomer from FPDS_data_cleaned
+
+names(FPDS_data_subcust)
+
+FPDS_data_subcust_navy <- FPDS_data_subcust %>% group_by(FPDS_data_cleaned.Dunsnumber) %>%
+  dplyr::mutate(navy_count = ifelse(FPDS_data_cleaned.subcustomer=="Navy", "1", "0"))
+
+##sortby duns
+
+FPDS_data_subcust_navy <- FPDS_data_subcust_navy[order(FPDS_data_subcust_navy$FPDS_data_cleaned.Dunsnumber), ]
+
+
+str(FPDS_data_subcust_navy$navy_count)
+
+FPDS_data_subcust_navy$navy_count<-as.numeric(as.character(FPDS_data_subcust_navy$navy_count))
+
+
+##step 2: create a variable navy_cust that equals the max of navy_count for each unique dunsnumber
+
+FPDS_data_subcust_navy_count <- FPDS_data_subcust_navy %>% group_by(FPDS_data_cleaned.Dunsnumber) %>%
+  dplyr::summarize(navy_cust=max(navy_count, na.rm = TRUE))
+
+str(FPDS_data_subcust_navy_count$navy_cust)
+
+names(FPDS_data_subcust_navy_count)[names(FPDS_data_subcust_navy_count) == "FPDS_data_cleaned.Dunsnumber"] <- "Dunsnumber"
+
+
+FPDS_data_cleaned_ <- join(FPDS_data_cleaned, FPDS_data_subcust_navy_count, by = c("Dunsnumber"), type = "left", match = "all")
+
+
+
 #*********************************************************************
 ####To calculate the number of new entrants that entered each year####
 #*********************************************************************
 
+#!!!!!!!!!!!!!!remove duplicate duns numbers here!
 ##collapse by duns number so only have unique duns numbers
-FPDS_cleaned_unique <- FPDS_data_cleaned[!duplicated(FPDS_data_cleaned$Dunsnumber), ]
+FPDS_cleaned_unique <- FPDS_data_cleaned_[!duplicated(FPDS_data_cleaned$Dunsnumber), ]
 ##664767
 
 #GSS: Let's do a annual count of dunsnumbers based on the min of calendar year derived from signed date here and now
