@@ -41,18 +41,16 @@ library(ggplot2)
 #*********#
 
 ####1.1 src####
+
 setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
 
 load(file = "FPDS_datapull_all_v3.Rda")
-length(unique(FPDS_cleaned_unique$Dunsnumber)) == nrow(FPDS_cleaned_unique)
 
-##count number of new entrants entered each year; drop observations that aren't with the navy
-FPDS_cleaned_unique <- FPDS_cleaned_unique[(FPDS_cleaned_unique$subcustomer=="Navy"), ]
+##count number of new entrants entered each year; only navy, between 2001-2016
+FPDS_cleaned_unique <- FPDS_cleaned_unique %>% 
+  filter(navy_cust==1) %>% 
+  filter(registrationYear %in% c(2001:2016)) #mw syntax
 
-##drop observations with Registration Year before 2001
-FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear<2001), ]
-FPDS_cleaned_unique <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear>2016), ]
-length(unique(FPDS_cleaned_unique$Dunsnumber)) == nrow(FPDS_cleaned_unique)
 
 ####1.2 gs####
 ##load in data
@@ -312,10 +310,14 @@ navy_dunsnumber <- FPDS_cleaned_unique %>%
   select(Dunsnumber) %>%
   distinct(Dunsnumber)
 
-##filter for just navy
-fed_duns_fyear_samples_op_navy <- fed_duns_fyear_samples_op %>% 
-  semi_join(navy_dunsnumber)
+##filter all for just navy, between years 2001-2016
+fed_duns_fyear_op_navy <- fed_duns_fyear %>% 
+  filter(fiscal_year %in% c(2001:2016)) %>% 
+  semi_join(navy_dunsnumber, by = c("Dunsnumber"))
 
+##filter sample for just navy, already filtered years 2001-2016 in src code for graph
+fed_duns_fyear_samples_op_navy <- fed_duns_fyear_samples_op %>% 
+  semi_join(navy_dunsnumber, by = c("Dunsnumber"))
 
 #******************************************************************************************************
 #*******************#
@@ -329,7 +331,7 @@ fed_duns_fyear_samples_op_navy <- fed_duns_fyear_samples_op %>%
 #*******************#
 
 #**********#
-####1. Number of newe Entrants per year 2001-2016####
+####1. Number of new Entrants per year 2001-2016####
 #*********#
 
 ##creates a dataframe that counts how many new entrants enter in each year
@@ -370,10 +372,6 @@ NE_count_navy
 #####2. Number of New Entrants in each sample and over time####
 #*********#
 
-##filter for just navy
-fed_duns_fyear_samples_op_navy <- fed_duns_fyear_samples_op %>% 
-  semi_join(navy_dunsnumber)
-
 ##faceted graph
 NE_eachsample_overtime_navy <- ggplot(fed_duns_fyear_samples_op_navy, aes(x = fiscal_year, fill = factor(sample_year))) +
   geom_histogram(binwidth = .5) +
@@ -392,16 +390,8 @@ NE_eachsample_overtime_navy
 #####3. Number of New Entrants vs. Incumbents in each year####
 #*********#
 
-##limit to 2001 to 2016
-fed_duns_fyear_op <- fed_duns_fyear %>% 
-  filter(fiscal_year %in% c(2001:2016))
-
-##filter for just navy
-fed_duns_fyear_op_navy <- fed_duns_fyear_op %>% 
-  semi_join(navy_dunsnumber)
-
 ##stacked graph
-NE_v_incumbent_count_navy <- ggplot(fed_duns_fyear_op, aes(x = fiscal_year, fill = factor(entrant))) +
+NE_v_incumbent_count_navy <- ggplot(fed_duns_fyear_op_navy, aes(x = fiscal_year, fill = factor(entrant))) +
   geom_histogram(position = "stack", binwidth = .5) +
   scale_x_continuous(breaks = c(2001:2016)) +
   xlab("Fiscal Year") +
@@ -421,12 +411,9 @@ NE_v_incumbent_count_navy
 #####1. Percent of Obligations for small and non-small new entrants all fed and DoD faceted####
 #*********#
 
-FPDS_cleaned_unique_graphs <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear<2001), ]
-FPDS_cleaned_unique_graphs <- FPDS_cleaned_unique_graphs[!(FPDS_cleaned_unique_graphs$registrationYear>2016), ]
-
 ##creates a dataframe that counts the total number of obligations for each class of new entrants
 #over the entire time period 
-count_total_obligations <- FPDS_cleaned_unique_graphs %>% 
+count_total_obligations <- FPDS_cleaned_unique %>% 
   filter(top_smallbiz_bin == 1 | top_smallbiz_bin == 0) %>% 
   group_by(registrationYear) %>% 
   dplyr::summarise(sum_obligations = sum(total_obligations)) 
@@ -435,7 +422,7 @@ count_total_obligations <- FPDS_cleaned_unique_graphs %>%
 #year and then number of obligations that go to non-small vendors in each year and joins it 
 #with the counts of total number of obligations in each year and then calculate the percent
 #of obligations that go to each group in each year
-FPDS_obligationscount <- FPDS_cleaned_unique_graphs %>%
+FPDS_obligationscount <- FPDS_cleaned_unique %>%
   filter(top_smallbiz_bin == 1 | top_smallbiz_bin == 0) %>%
   group_by(registrationYear, top_smallbiz_bin) %>%
   dplyr::summarise(sum_obligations = sum(total_obligations)) %>%
@@ -457,8 +444,8 @@ obligations_small_v_nsmall_navy_facet <- ggplot(FPDS_obligationscount, aes(x = r
   xlab("Entry Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
   scale_fill_manual(name = "New Entrants Types", values = c("#66CCCC", "#336666"), labels = c("non-small", "small")) +
-  ggtitle("Obligations for Small and Non-Small New Entrants (2001-2016) - All Federal Agencies")+
-  geom_text(data = subset(FPDS_obligationscount, registrationYear <= 2016), aes(label = scales::percent(percent_obl_dec)), size = 3, position = position_dodge(width = 1), vjust = -0.5) +
+  ggtitle("Obligations for Small and Non-Small New Entrants (2001-2016) - Navy")+
+  geom_text(data = FPDS_obligationscount, aes(label = scales::percent(percent_obl_dec)), size = 3, position = position_dodge(width = 1), vjust = -0.5) +
   facet_wrap(~top_smallbiz_bin, scales="fixed", ncol=1) + ##ncol=1 stack them above eachother (in 1 column)
   ylim(0, 2.7e+11) +
   scale_y_continuous(label=unit_format(unit = "m", scale=1e-6)) +
@@ -685,7 +672,7 @@ survivalrate_2016_NS_2001
 ####Graduation rates####
 ##for small firms that survived the ten years
 numerator_gradALL_2001_10yr <- length(which(data_2001$graduated==1 & data_2001$survive_10yr==1))
-denominator_gradALL_2001_10yr <- length(data_2001$graduated)
+denominator_gradALL_2001_10yr <- length(which(data_2001$top_smallbiz_bin==1))
 
 graduatedALL_2001_10yr <- numerator_gradALL_2001_10yr/denominator_gradALL_2001_10yr
 graduatedALL_2001_10yr
@@ -819,7 +806,7 @@ survivalrate_2016_NS_2002
 ####Graduation rates####
 ##for small firms that survived the ten years
 numerator_gradALL_2002_10yr <- length(which(data_2002$graduated==1 & data_2002$survive_10yr==1))
-denominator_gradALL_2002_10yr <- length(data_2002$graduated)
+denominator_gradALL_2002_10yr <- length(which(data_2002$top_smallbiz_bin==1))
 
 graduatedALL_2002_10yr <- numerator_gradALL_2002_10yr/denominator_gradALL_2002_10yr
 graduatedALL_2002_10yr
@@ -953,7 +940,7 @@ survivalrate_2016_NS_2003
 ####Graduation rates####
 ##for small firms that survived the ten years
 numerator_gradALL_2003_10yr <- length(which(data_2003$graduated==1 & data_2003$survive_10yr==1))
-denominator_gradALL_2003_10yr <- length(data_2003$graduated)
+denominator_gradALL_2003_10yr <- length(which(data_2003$top_smallbiz_bin==1))
 
 graduatedALL_2003_10yr <- numerator_gradALL_2003_10yr/denominator_gradALL_2003_10yr
 graduatedALL_2003_10yr
@@ -1087,7 +1074,7 @@ survivalrate_2016_NS_2004
 ####Graduation rates####
 ##for small firms that survived the ten years
 numerator_gradALL_2004_10yr <- length(which(data_2004$graduated==1 & data_2004$survive_10yr==1))
-denominator_gradALL_2004_10yr <- length(data_2004$graduated)
+denominator_gradALL_2004_10yr <- length(which(data_2004$top_smallbiz_bin==1))
 
 graduatedALL_2004_10yr <- numerator_gradALL_2004_10yr/denominator_gradALL_2004_10yr
 graduatedALL_2004_10yr
@@ -1221,7 +1208,7 @@ survivalrate_2016_NS_2005
 ####Graduation rates####
 ##for small firms that survived the ten years
 numerator_gradALL_2005_10yr <- length(which(data_2005$graduated==1 & data_2005$survive_10yr==1))
-denominator_gradALL_2005_10yr <- length(data_2005$graduated)
+denominator_gradALL_2005_10yr <- length(which(data_2005$top_smallbiz_bin==1))
 
 graduatedALL_2005_10yr <- numerator_gradALL_2005_10yr/denominator_gradALL_2005_10yr
 graduatedALL_2005_10yr
@@ -1355,7 +1342,7 @@ survivalrate_2016_NS_2006
 ####Graduation rates####
 ##for small firms that survived the ten years
 numerator_gradALL_2006_10yr <- length(which(data_2006$graduated==1 & data_2006$survive_10yr==1))
-denominator_gradALL_2006_10yr <- length(data_2006$graduated)
+denominator_gradALL_2006_10yr <- length(which(data_2006$top_smallbiz_bin==1))
 
 graduatedALL_2006_10yr <- numerator_gradALL_2006_10yr/denominator_gradALL_2006_10yr
 graduatedALL_2006_10yr
