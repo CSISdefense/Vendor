@@ -49,7 +49,7 @@ load(file = "FPDS_datapull_all_v3.Rda")
 ##count number of new entrants entered each year; only navy, between 2001-2016
 FPDS_cleaned_unique <- FPDS_cleaned_unique %>% 
   filter(navy_cust==1) %>% 
-  filter(registrationYear %in% c(2001:2016)) #mw syntax
+  filter(registrationYear %in% c(2001:2016))
 
 
 ####1.2 gs####
