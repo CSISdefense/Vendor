@@ -4,6 +4,7 @@ library(dplyr)
 library(ggplot2)
 library(sjstats)
 library(car)
+library(scales)
 #This will likely be folded into CSIS360
 #But for now, using it to create and refine functions for regression analysis.
 
@@ -1213,3 +1214,36 @@ get_pars<-function(model){
   }
   pars
 }
+ 
+    
+ #Extract statistic information of discrete variables and generate dataframe    
+ name_categorical <- c("CompOffr","Veh","PricingFee","UCA","Intl","Term",
+                      "Dur","Ceil","CBre","PSR","Urg","FxCb","Fee","CRai",
+                      "NoComp")   #list of all categorial and binary variables
+    
+ memory.limit(56000)
+ statsummary_discrete <- function(x){
+  unique_value_list <- levels(def[[x]])
+  categories <- c(unique_value_list,"NA")
+  Percent_Actions <- c()
+  Percent_Records <- c()
+  for (i in 1:length(unique_value_list)){
+    Percent_Records <- c(Percent_Records, percent(round(sum(def[[x]] == unique_value_list[i],na.rm = TRUE)/nrow(def),5),accuracy = .01))
+    Percent_Actions <- c(Percent_Actions, percent(round(sum(def$Action.Obligation[def[[x]] == unique_value_list[i]],na.rm = TRUE)/sum(def$Action.Obligation,na.rm = TRUE),5),accuracy = .01))    
+  }
+  Percent_Records <- c(Percent_Records, percent(round(sum(is.na(def[[x]]))/nrow(def),5),accuracy = .01))
+  Percent_Actions <- c(Percent_Actions, percent(round(sum(def$Action.Obligation[is.na(def[[x]])],na.rm = TRUE)/sum(def$Action.Obligation,na.rm = TRUE),5),accuracy = .01))
+  name_categorical <- c(x,"%of records","% of $s")
+  
+  categorical_Info <- as.data.frame(cbind(categories,Percent_Records,Percent_Actions))
+  colnames(categorical_Info) <- name_categorical
+  return(categorical_Info)
+}
+  
+    
+    
+    
+    
+    
+    
+    
