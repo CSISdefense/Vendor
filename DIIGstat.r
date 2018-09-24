@@ -1213,3 +1213,20 @@ get_pars<-function(model){
   }
   pars
 }
+
+
+update_sample_col_CSIScontractID<-function(sample,full,col){
+#   fed_full<-fed_full[,colnames(fed_full) %in% c("CSIScontractID","VendorCountryISO3",
+#                                                 "PlaceCountryISO3","OriginCountryISO3")]
+#   
+# crisis_with_na<-crisis_with_na[,!colnames(crisis_with_na) %in% c("VendorCountryISO3",
+#                                       "PlaceCountryISO3","OriginCountryISO3")]
+# 
+# 
+# large_crisis_with_na<-large_crisis_with_na[,!colnames(large_crisis_with_na) %in% c("VendorCountryISO3",
+#                                       "PlaceCountryISO3","OriginCountryISO3")]
+# 
+# 
+# crisis_with_na<-left_join(crisis_with_na,fed_full)
+# large_crisis_with_na<-left_join(large_crisis_with_na,fed_full)
+}
