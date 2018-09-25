@@ -47,10 +47,17 @@ setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
 load(file = "FPDS_datapull_all_v3.Rda")
 
 ##count number of new entrants entered each year; only navy, between 2001-2016
-FPDS_cleaned_unique <- FPDS_cleaned_unique %>% 
-  filter(navy_cust==1) %>% 
-  filter(registrationYear %in% c(2001:2016))
+#FPDS_cleaned_unique <- FPDS_cleaned_unique %>% 
+#  filter(navy_cust==1) %>% 
+#  filter(registrationYear %in% c(2001:2016))
 
+FPDS_cleaned_unique_navyvar <- FPDS_cleaned_unique %>% 
+  select(Dunsnumber, navy_cust)
+
+##parse navy dunsnumber
+#navy_dunsnumber <- FPDS_cleaned_unique %>% 
+#  select(Dunsnumber) %>%
+#  distinct(Dunsnumber)
 
 ####1.2 gs####
 ##load in data
@@ -64,15 +71,32 @@ FPDS_data<-subset(FPDS_data,fiscal_year>=2000)
 
 FPDS_data<-csis360::deflate(FPDS_data,money_var="obligatedAmount",
                             fy_var="fiscal_year")
-#Calculate first_year
+
+##test run for navy graphs
+FPDS_data <- FPDS_data %>% 
+  left_join(FPDS_cleaned_unique_navyvar, by = "Dunsnumber")
+
+##Calculate first_year
 FPDS_data<-FPDS_data %>%
   group_by(Dunsnumber) %>%
   dplyr::mutate(first_year=min(fiscal_year),
                 entrant=ifelse(min(fiscal_year)==fiscal_year,TRUE,FALSE))
 
+#filter for navy early on -- test run for navy graph
+FPDS_data <- FPDS_data %>% 
+  semi_join(navy_dunsnumber, by = "Dunsnumber")
+
+
+##test code to see whether preserving the customer variable is possible
+##added in customer in grouping to try different approach to graph, but doesn't work
+##fed_duns_fyear_test<-FPDS_data %>%
+ ## group_by(Dunsnumber,fiscal_year,customer,entrant,first_year) %>% 
+ ## dplyr::summarize(obligatedAmount.Deflator.2017=sum(obligatedAmount.Deflator.2017,na.rm=TRUE),
+  ##                present=max(obligatedAmount.Deflator.2017,na.rm=TRUE))
+
 ##Calculate annual spend and presence.
 fed_duns_fyear<-FPDS_data %>%
-  group_by(Dunsnumber,fiscal_year,entrant,first_year) %>%
+  group_by(Dunsnumber,fiscal_year,entrant,first_year) %>% 
   dplyr::summarize(obligatedAmount.Deflator.2017=sum(obligatedAmount.Deflator.2017,na.rm=TRUE),
                    present=max(obligatedAmount.Deflator.2017,na.rm=TRUE))
 fed_duns_fyear$present<-ifelse(fed_duns_fyear$present>0,1,0)
@@ -129,6 +153,9 @@ fed_duns_fyear_samples <- fed_duns_fyear[!(fed_duns_fyear$sample_year_bin<1), ]
 fed_duns_fyear_samples_op <- fed_duns_fyear_samples[!(fed_duns_fyear_samples$fiscal_year<2001), ]
 fed_duns_fyear_samples_op <- fed_duns_fyear_samples_op[!(fed_duns_fyear_samples_op$fiscal_year>2016), ]
 
+
+fed_duns_fyear_op_navy <- fed_duns_fyear %>% 
+  filter(fiscal_year %in% c(2001:2016))
 
 #**********#
 ####2. subset by year####
@@ -300,24 +327,45 @@ data_2006$survive_2016<-as.numeric(as.character(data_2006$survive_2016))
 
 
 #**********#
+####CODE TO TEST NAVY GRAPHS####
+#*********#
+
+##fed_duns_fyear_op <- fed_duns_fyear %>% 
+##  filter(fiscal_year %in% c(2001:2016))
+
+##create binary variable to distinguish DoD from non
+##fed_duns_fyear_op <- fed_duns_fyear_op %>% 
+##  mutate(DoD = if_else(customer=="Defense", 1, 0))
+
+##fed_duns_fyear_op <- fed_duns_fyear_op %>% 
+##  filter(!is.na(DoD))
+
+##navy_cust_by_duns <- FPDS_cleaned_unique %>% 
+##  select(Dunsnumber, navy_cust)
+
+##fed_duns_fyear_op_w_navy_cust <- fed_duns_fyear_op %>% 
+##  left_join(navy_cust_by_duns, by = "Dunsnumber") ##should left_join be used?
+
+
+#**********#
 ####3. navy specific####
 #*********#
 
 ##mw code
 
 ##parse navy dunsnumber
-navy_dunsnumber <- FPDS_cleaned_unique %>% 
-  select(Dunsnumber) %>%
-  distinct(Dunsnumber)
+##navy_dunsnumber <- FPDS_cleaned_unique %>% 
+##  select(Dunsnumber) %>%
+##  distinct(Dunsnumber)
 
 ##filter all for just navy, between years 2001-2016
-fed_duns_fyear_op_navy <- fed_duns_fyear %>% 
-  filter(fiscal_year %in% c(2001:2016)) %>% 
-  semi_join(navy_dunsnumber, by = c("Dunsnumber"))
+##fed_duns_fyear_op_navy <- fed_duns_fyear %>% 
+##  filter(fiscal_year %in% c(2001:2016)) %>% 
+##  semi_join(navy_dunsnumber, by = c("Dunsnumber"))
 
 ##filter sample for just navy, already filtered years 2001-2016 in src code for graph
-fed_duns_fyear_samples_op_navy <- fed_duns_fyear_samples_op %>% 
-  semi_join(navy_dunsnumber, by = c("Dunsnumber"))
+##fed_duns_fyear_samples_op_navy <- fed_duns_fyear_samples_op %>% 
+##  semi_join(navy_dunsnumber, by = c("Dunsnumber"))
 
 #******************************************************************************************************
 #*******************#
@@ -397,7 +445,7 @@ NE_v_incumbent_count_navy <- ggplot(fed_duns_fyear_op_navy, aes(x = fiscal_year,
   xlab("Fiscal Year") +
   ylab("Number of Vendors") +
   scale_fill_manual(name = "Vendor Type", values = c("#66CCCC", "#336666"), labels = c("Incumbent", "New Entrant")) +
-  ggtitle("Number of New Entrants vs. Number of Incumbent Firms Over Time - Navy") +
+  ggtitle("Number of New Entrants vs. Number of Incumbent Firms Over Time - All Fed vs. DoD") +
   scale_y_continuous(label=comma)
 
 NE_v_incumbent_count_navy
