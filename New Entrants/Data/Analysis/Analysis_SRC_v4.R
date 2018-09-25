@@ -32,13 +32,13 @@ setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
 ##sam laptop
 #setwd("/Users/samanthacohen/Desktop/Diig backup/New Entrants/R Data")
 
-load(file = "FPDS_datapull_all_v3.Rda")
+load(file = "FPDS_datapull_all_v3_allfed.Rda")
 length(unique(FPDS_cleaned_unique$Dunsnumber)) == nrow(FPDS_cleaned_unique)
 
 #******************************************************************
 ####Count number of new entrants in each year! ####
 #******************************************************************
-
+table(FPDS_cleaned_unique$customer)
 
 ##fpds data
 registrationyear_count <- table(SAM_and_FPDS_uniqueDuns$registrationYear)
@@ -1866,6 +1866,15 @@ graduated_2003_DOD <- numerator_grad_2003_DOD/denominator_grad_2003_DOD
 graduated_2003_DOD
 
 ##graduation for those who survived 10 years
+table(data_2003$graduated)
+table(data_2003$survive_10yr)
+table(data_2003$top_smallbiz_bin)
+
+table(data_2003_DOD$graduated)
+table(data_2003_DOD$survive_10yr)
+table(data_2003_DOD$top_smallbiz_bin)
+
+
 numerator_grad_2003_DOD_10yr <- length(which(data_2003_DOD$graduated==1 & data_2003_DOD$survive_10yr==1))
 
 #denominator_grad_2003_DOD_10yr <- length(data_2003_DOD$graduated)

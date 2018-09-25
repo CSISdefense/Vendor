@@ -4,6 +4,7 @@ library(dplyr)
 library(ggplot2)
 library(sjstats)
 library(car)
+library(scales)
 #This will likely be folded into CSIS360
 #But for now, using it to create and refine functions for regression analysis.
 
@@ -1212,4 +1213,104 @@ get_pars<-function(model){
     pars <- getME(model, c("theta","fixef"))
   }
   pars
+}
+ 
+    
+ #Extract statistic information of the 15 discrete variables and generate dataframe    
+ name_categorical <- c("CompOffr","Veh","PricingFee","UCA","Intl","Term",
+                      "Dur","Ceil","CBre","PSR","Urg","FxCb","Fee","CRai",
+                      "NoComp")   #list of all categorial and binary variables
+ 
+ def$Intl <- factor(def$Intl, c("Just U.S.", "Any International"))   #Manually remove "NA" from levels of variable Intl
+ memory.limit(56000)
+    
+ statsummary_discrete <- function(x){      #input: name of the discrete variable
+  unique_value_list <- levels(def[[x]])
+  categories <- c(unique_value_list,"NA")
+  Percent_Actions <- c()
+  Percent_Records <- c()
+  for (i in 1:length(unique_value_list)){
+    Percent_Records <- c(Percent_Records, percent(round(sum(def[[x]] == unique_value_list[i],na.rm = TRUE)/nrow(def),5),accuracy = .01))
+    Percent_Actions <- c(Percent_Actions, percent(round(sum(def$Action.Obligation[def[[x]] == unique_value_list[i]],na.rm = TRUE)/sum(def$Action.Obligation,na.rm = TRUE),5),accuracy = .01))    
+  }
+  Percent_Records <- c(Percent_Records, percent(round(sum(is.na(def[[x]]))/nrow(def),5),accuracy = .01))
+  Percent_Actions <- c(Percent_Actions, percent(round(sum(def$Action.Obligation[is.na(def[[x]])],na.rm = TRUE)/sum(def$Action.Obligation,na.rm = TRUE),5),accuracy = .01))
+  name_categorical <- c(x,"%of records","% of $s")
+  
+  categorical_Info <- as.data.frame(cbind(categories,Percent_Records,Percent_Actions))
+  colnames(categorical_Info) <- name_categorical
+  return(categorical_Info)
+}
+  
+ #Extract statistic information of the 26 continuous variables and generate dataframe      
+ name_Continuous <- c("Action.Obligation","UnmodifiedContractBaseAndAllOptionsValue",
+                     "ChangeOrderBaseAndAllOptionsValue","UnmodifiedDays",
+                     "UnmodifiedNumberOfOffersReceived",
+                     "capped_def6_ratio_lag1","capped_def5_ratio_lag1","capped_def4_ratio_lag1","capped_def3_ratio_lag1","capped_def2_ratio_lag1",
+                     "def6_HHI_lag1","def5_HHI_lag1","def4_HHI_lag1","def3_HHI_lag1","def2_HHI_lag1",
+                     "def6_obl_lag1","def5_obl_lag1","def4_obl_lag1","def3_obl_lag1","def2_obl_lag1",
+                     "US6_avg_sal_lag1","US5_avg_sal_lag1","US4_avg_sal_lag1","US3_avg_sal_lag1","US2_avg_sal_lag1"
+)
+
+statsummary_continuous <- function(x){       #input: namelist of all continuous variables
+  continuous_Info <- data.frame(matrix(ncol = 9,nrow = 0))
+  continuous_col <- c("Variable_Name","Min","Max","Median","Logarithmic Mean",
+                      "1 unit below","1 unit above","% of records NA", 
+                      "% of Obligation to NA records")
+  colnames(continuous_Info) <- continuous_col
+  for (i in x){
+    def[[i]][def[[i]]<=0] <- NA
+    transformed_i <- log(def[[i]])
+    maxlog <- round(max(def[[i]],na.rm = TRUE), 3)
+    medianlog <- round(median(def[[i]],na.rm = TRUE), 3)
+    minlog <- round(min(def[[i]],na.rm = TRUE), 3)
+    meanlog <- round(exp(mean(transformed_i,na.rm = TRUE)), 3)
+    sdlog <- sd(transformed_i,na.rm = TRUE)
+    unitabove <- round(exp(mean(transformed_i,na.rm = TRUE)+2*sdlog),3)
+    unitbelow <- round(exp(mean(transformed_i,na.rm = TRUE)-2*sdlog),3)
+    Percent_NA <- round(sum(is.na(def[[i]]))/nrow(def),5)
+    Percent_Ob <- round(sum(def$Action.Obligation[is.na(def[[i]])],na.rm = TRUE)/sum(def$Action.Obligation,na.rm = TRUE),5)
+    newrow <- c(i, minlog, maxlog, medianlog, meanlog, unitbelow, unitabove,
+                Percent_NA, Percent_Ob)
+    continuous_Info[nrow(continuous_Info)+1,] <- newrow
+  }
+  # formating
+  continuous_Info[,-1] <- lapply(continuous_Info[,-1], function(x) as.numeric(x))
+  continuous_Info$aboveMax[continuous_Info$Max < continuous_Info$`1 unit above`] <- " * "
+  continuous_Info$belowMin[continuous_Info$Min > continuous_Info$`1 unit below`] <- " * "
+  # editing percentage values
+  continuous_Info[,8:9] <- lapply(continuous_Info[,8:9], function(x) percent(x, accuracy = .01))
+  continuous_Info[,2:7] <- lapply(continuous_Info[,2:7], function(x) comma_format(big.mark = ',',accuracy = .001)(x))
+  continuous_Info$`% of Obligation to NA records`[continuous_Info$`% of Obligation to NA records`=="NA%"] <- NA
+  
+  continuous_Info$`1 unit below` <- paste(continuous_Info$`1 unit below`,continuous_Info$belowMin)
+  continuous_Info$`1 unit below` <- gsub("NA","",continuous_Info$`1 unit below`)
+  continuous_Info$`1 unit above` <- paste(continuous_Info$`1 unit above`,continuous_Info$aboveMax)
+  continuous_Info$`1 unit above` <- gsub("NA","",continuous_Info$`1 unit above`)
+  continuous_Info[,c("belowMin","aboveMax")] <- NULL
+  return(continuous_Info)
+}
+   
+    
+    
+    
+    
+    
+
+
+
+update_sample_col_CSIScontractID<-function(sample,full,col){
+#   fed_full<-fed_full[,colnames(fed_full) %in% c("CSIScontractID","VendorCountryISO3",
+#                                                 "PlaceCountryISO3","OriginCountryISO3")]
+#   
+# crisis_with_na<-crisis_with_na[,!colnames(crisis_with_na) %in% c("VendorCountryISO3",
+#                                       "PlaceCountryISO3","OriginCountryISO3")]
+# 
+# 
+# large_crisis_with_na<-large_crisis_with_na[,!colnames(large_crisis_with_na) %in% c("VendorCountryISO3",
+#                                       "PlaceCountryISO3","OriginCountryISO3")]
+# 
+# 
+# crisis_with_na<-left_join(crisis_with_na,fed_full)
+# large_crisis_with_na<-left_join(large_crisis_with_na,fed_full)
 }
