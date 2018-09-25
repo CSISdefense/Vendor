@@ -5,6 +5,7 @@ library(ggplot2)
 library(sjstats)
 library(car)
 library(scales)
+library(grid)
 #This will likely be folded into CSIS360
 #But for now, using it to create and refine functions for regression analysis.
 
@@ -1314,3 +1315,55 @@ update_sample_col_CSIScontractID<-function(sample,full,col){
 # crisis_with_na<-left_join(crisis_with_na,fed_full)
 # large_crisis_with_na<-left_join(large_crisis_with_na,fed_full)
 }
+                                  
+                                  
+
+                                  
+                                  
+                                  
+#function for making grouped bar plot for each categorical variable, data set used in function "Data/transformed_def.Rdata"
+name_categorical <- c("CompOffr","Veh","PricingFee","UCA","Intl","Term",
+                      "Dur","Ceil","CBre","PSR","Urg","FxCb","Fee","CRai",
+                      "NoComp")
+
+#Input: name of the categorical variable needs plot;
+#Output: grouped bar plot for the selected variable;
+grouped_barplot <- function(x) {
+  memory.limit(56000)
+  #perparing data for ploting
+  name_Info <- statsummary_discrete(x)
+  name_Info_noNAN <- subset(name_Info, name_Info[, 1] != "NA")
+  name_Info_noNAN[, 1] <- factor(name_Info_noNAN[, 1], droplevels(name_Info_noNAN[, 1]))
+  
+  name_Info[, -1] <- lapply(name_Info[, -1], function(x) as.numeric(gsub("%","",x)))
+  name_Info <- melt(name_Info, id = x)
+  levels(name_Info$variable)[levels(name_Info$variable)=="%of records"] = "% of records"
+  levels(name_Info$variable)[levels(name_Info$variable)=="% of $s"] = "% of obligation"
+  name_Info$variable <- factor(name_Info$variable, rev(levels(name_Info$variable)))
+  
+  basicplot <- ggplot(data = name_Info, 
+                      aes(x = name_Info[, 1], 
+                          y = name_Info[, 3], 
+                          fill = factor(variable))) +
+               geom_bar(stat = "identity", position = "dodge", width = 0.8) + 
+               xlab("Category") + 
+               ylab("") + 
+               coord_flip() + 
+               guides(fill = guide_legend(reverse = TRUE)) +   #reverse the order of legend
+               theme_grey() + 
+               scale_fill_grey() + 
+               theme(legend.title = element_blank(), 
+                     legend.position = "bottom", 
+                     legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit="cm"),
+                     legend.text = element_text(margin = margin(r = 0.5, unit = "cm")),    #increase the distances between two legends
+                     plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm")) + 
+               ggtitle(paste("Statistic summary of categorical variable: ", x)) +
+               scale_x_discrete(limits = rev(c(levels(name_Info_noNAN[ ,1]),"NA")))    #keep the order of category the same
+    return(basicplot)
+}
+
+                                  
+                                  
+                                  
+                                  
+                                 
