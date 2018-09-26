@@ -1225,17 +1225,17 @@ get_pars<-function(model){
  def$Intl <- factor(def$Intl, c("Just U.S.", "Any International"))   #Manually remove "NA" from levels of variable Intl
  memory.limit(56000)
     
- statsummary_discrete <- function(x, table_name){      #input(x: name of the discrete variable, table_name：name of the dataframe)
-  unique_value_list <- levels(table_name[[x]])
+ statsummary_discrete <- function(x, contract){      #input(x: name of the discrete variable, contract：name of the dataframe)
+  unique_value_list <- levels(contract[[x]])
   categories <- c(unique_value_list,"NA")
   Percent_Actions <- c()
   Percent_Records <- c()
   for (i in 1:length(unique_value_list)){
-    Percent_Records <- c(Percent_Records, percent(round(sum(table_name[[x]] == unique_value_list[i],na.rm = TRUE)/nrow(table_name),5),accuracy = .01))
-    Percent_Actions <- c(Percent_Actions, percent(round(sum(table_name$Action.Obligation[table_name[[x]] == unique_value_list[i]],na.rm = TRUE)/sum(table_name$Action.Obligation,na.rm = TRUE),5),accuracy = .01))    
+    Percent_Records <- c(Percent_Records, percent(round(sum(contract[[x]] == unique_value_list[i],na.rm = TRUE)/nrow(contract),5),accuracy = .01))
+    Percent_Actions <- c(Percent_Actions, percent(round(sum(contract$Action.Obligation[contract[[x]] == unique_value_list[i]],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5),accuracy = .01))    
   }
-  Percent_Records <- c(Percent_Records, percent(round(sum(is.na(table_name[[x]]))/nrow(table_name),5),accuracy = .01))
-  Percent_Actions <- c(Percent_Actions, percent(round(sum(table_name$Action.Obligation[is.na(table_name[[x]])],na.rm = TRUE)/sum(table_name$Action.Obligation,na.rm = TRUE),5),accuracy = .01))
+  Percent_Records <- c(Percent_Records, percent(round(sum(is.na(contract[[x]]))/nrow(contract),5),accuracy = .01))
+  Percent_Actions <- c(Percent_Actions, percent(round(sum(contract$Action.Obligation[is.na(contract[[x]])],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5),accuracy = .01))
   name_categorical <- c(x,"%of records","% of $s")
   
   categorical_Info <- as.data.frame(cbind(categories,Percent_Records,Percent_Actions))
@@ -1253,24 +1253,24 @@ get_pars<-function(model){
                      "US6_avg_sal_lag1","US5_avg_sal_lag1","US4_avg_sal_lag1","US3_avg_sal_lag1","US2_avg_sal_lag1"
 )
 
-statsummary_continuous <- function(x, table_name){       #input(x: namelist of all continuous variables table_name: name of the data frame)
+statsummary_continuous <- function(x, contract){       #input(x: namelist of all continuous variables contract: name of the data frame)
   continuous_Info <- data.frame(matrix(ncol = 9,nrow = 0))
   continuous_col <- c("Variable_Name","Min","Max","Median","Logarithmic Mean",
                       "1 unit below","1 unit above","% of records NA", 
                       "% of Obligation to NA records")
   colnames(continuous_Info) <- continuous_col
   for (i in x){
-    table_name[[i]][table_name[[i]]<=0] <- NA
-    transformed_i <- log(table_name[[i]])
-    maxlog <- round(max(table_name[[i]],na.rm = TRUE), 3)
-    medianlog <- round(median(table_name[[i]],na.rm = TRUE), 3)
-    minlog <- round(min(table_name[[i]],na.rm = TRUE), 3)
+    contract[[i]][contract[[i]]<=0] <- NA
+    transformed_i <- log(contract[[i]])
+    maxlog <- round(max(contract[[i]],na.rm = TRUE), 3)
+    medianlog <- round(median(contract[[i]],na.rm = TRUE), 3)
+    minlog <- round(min(contract[[i]],na.rm = TRUE), 3)
     meanlog <- round(exp(mean(transformed_i,na.rm = TRUE)), 3)
     sdlog <- sd(transformed_i,na.rm = TRUE)
     unitabove <- round(exp(mean(transformed_i,na.rm = TRUE)+2*sdlog),3)
     unitbelow <- round(exp(mean(transformed_i,na.rm = TRUE)-2*sdlog),3)
-    Percent_NA <- round(sum(is.na(table_name[[i]]))/nrow(def),5)
-    Percent_Ob <- round(sum(table_name$Action.Obligation[is.na(table_name[[i]])],na.rm = TRUE)/sum(table_name$Action.Obligation,na.rm = TRUE),5)
+    Percent_NA <- round(sum(is.na(contract[[i]]))/nrow(def),5)
+    Percent_Ob <- round(sum(contract$Action.Obligation[is.na(contract[[i]])],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5)
     newrow <- c(i, minlog, maxlog, medianlog, meanlog, unitbelow, unitabove,
                 Percent_NA, Percent_Ob)
     continuous_Info[nrow(continuous_Info)+1,] <- newrow
@@ -1326,12 +1326,12 @@ name_categorical <- c("CompOffr","Veh","PricingFee","UCA","Intl","Term",
                       "Dur","Ceil","CBre","PSR","Urg","FxCb","Fee","CRai",
                       "NoComp")
 
-#Input(x: name of the categorical variable needs plot; table_name: name of the dataframe)
+#Input(x: name of the categorical variable needs plot; contract: name of the dataframe)
 #Output: grouped bar plot for the selected variable;
-grouped_barplot <- function(x, table_name) {
+grouped_barplot <- function(x, contract) {
   memory.limit(56000)
   #perparing data for ploting
-  name_Info <- statsummary_discrete(x, table_name)
+  name_Info <- statsummary_discrete(x, contract)
   name_Info_noNAN <- subset(name_Info, name_Info[, 1] != "NA")
   name_Info_noNAN[, 1] <- factor(name_Info_noNAN[, 1], droplevels(name_Info_noNAN[, 1]))
   
