@@ -68,21 +68,21 @@ def<-def[def$MinOfSignedDate>=as.Date("2008-01-01") & def$MinOfSignedDate<=as.Da
 # 
 # save(file="Data/transformed_def.Rdata", def)
 #Xinyi, run this line to get the raw data.
- load(file="Data/transformed_def.Rdata")
+#load(file="Data/transformed_def.Rdata")
 start2008<-def$StartCY>=2008
 
 #Removing l_s just to reduce size. They can be derived easily.
 def<-def[!colnames(def) %in% colnames(def)[grep("^l_",colnames(def))]]
 
-def<-def[!colnames(def) %in% c("def2_HHI_lag1","def2_obl_lag1","def2_ratio_lag1",
-                          "c_def2_HHI_lag1","c_def2_obl_lag1","c_def2_ratio_lag1",
-                          "cl_def2_HHI_lag1","cl_def2_obl_lag1","cl_def2_ratio_lag1")]
-def<-def[!colnames(def) %in% c("def4_HHI_lag1","def4_obl_lag1","def4_ratio_lag1",
-                          "c_def4_HHI_lag1","c_def4_obl_lag1","c_def4_ratio_lag1",
-                          "cl_def4_HHI_lag1","cl_def4_obl_lag1","cl_def4_ratio_lag1")]
-def<-def[!colnames(def) %in% c("def5_HHI_lag1","def5_obl_lag1","def5_ratio_lag1",
-                          "c_def5_HHI_lag1","c_def5_obl_lag1","c_def5_ratio_lag1",
-                          "cl_def5_HHI_lag1","cl_def5_obl_lag1","cl_def5_ratio_lag1")]
+# def<-def[!colnames(def) %in% c("def2_HHI_lag1","def2_obl_lag1","def2_ratio_lag1",
+#                           "c_def2_HHI_lag1","c_def2_obl_lag1","c_def2_ratio_lag1",
+#                           "cl_def2_HHI_lag1","cl_def2_obl_lag1","cl_def2_ratio_lag1")]
+# def<-def[!colnames(def) %in% c("def4_HHI_lag1","def4_obl_lag1","def4_ratio_lag1",
+#                           "c_def4_HHI_lag1","c_def4_obl_lag1","c_def4_ratio_lag1",
+#                           "cl_def4_HHI_lag1","cl_def4_obl_lag1","cl_def4_ratio_lag1")]
+# def<-def[!colnames(def) %in% c("def5_HHI_lag1","def5_obl_lag1","def5_ratio_lag1",
+#                           "c_def5_HHI_lag1","c_def5_obl_lag1","c_def5_ratio_lag1",
+#                           "cl_def5_HHI_lag1","cl_def5_obl_lag1","cl_def5_ratio_lag1")]
 def<-def[start2008,]
 
 load("output//naics_join.Rdata")
@@ -101,12 +101,10 @@ sum(def$Action.Obligation[def$b_CBre==1],na.rm=TRUE)/sum(def$Action.Obligation,n
 NA_stats(def,"b_CBre")`)
 
 ```{r vargraphs: b_Term, b_CBre}
-#some problems here: b_Term and b_CBre are double type variables
+#The original variables for b_Term and b_CBre are Term and CBre
 source("DIIGstat.r")
-def$b_Term <- factor(def$b_Term, c(0,1))
-def$b_CBre <- factor(def$b_CBre, c(0,1))
-grouped_barplot("b_Term")
-grouped_barplot("b_CBre")
+grouped_barplot("Term")
+grouped_barplot("CBre")
 ```
 
 
@@ -181,14 +179,16 @@ centered_log_description(def$l_US6_avg_sal_lag1,"dollars")
 NA_stats(def,"cl_US6_avg_sal_lag1")
 NA_stats(def,"cl_def3_HHI_lag1")
 `
-```{r statistic summary table for continuous variables: cl_def3_HHI_lag1, cl_def6_HHI_lag1,     cl_def3_ratio_lag1, cl_def6_ratio_lag1, cl_US6_avg_sal_lag1}
-HHI_category <- c("cl_def3_HHI_lag1", "cl_def6_HHI_lag1")
-ratio_category <- c("cl_def3_ratio_lag1", "cl_def6_ratio_lag1")
-avg_category <- c("cl_US6_avg_sal_lag1")
+```{r statistic summary table for continuous variables: cl_def_HHI_lag1, cl_def_ratio_lag1, cl_US_avg_sal_lag1, cl_def_obl_lag1, all use original variables instead}
+HHI_category <- c("def6_HHI_lag1", "def5_HHI_lag1", "def4_HHI_lag1","def3_HHI_lag1", "def2_HHI_lag1")
+ratio_category <- c("def6_ratio_lag1", "def5_ratio_lag1", "def4_ratio_lag1", "def3_ratio_lag1", "def2_ratio_lag1")
+avg_category <- c("US6_avg_sal_lag1", "US5_avg_sal_lag1", "US4_avg_sal_lag1", "US3_avg_sal_lag1", "US2_avg_sal_lag1")
+obl_category <- c("def6_obl_lag1", "def5_obl_lag1", "def4_obl_lag1", "def3_obl_lag1", "def2_obl_lag1" )
 
 statsummary_continuous(HHI_category)
 statsummary_continuous(ratio_category)
 statsummary_continuous(avg_category)
+statsummary_continuous(obl_category)
 ```
 
 
@@ -200,11 +200,11 @@ statsummary_continuous(avg_category)
 # Comp
 # EffComp
 # CompOffr
-# offr: some problem related to this variable
-def$b_Comp <- factor(def$b_Comp,c(0,1))
+# offr:
+
 def$n_Comp <- factor(def$n_Comp,c(0,1))
-grouped_barplot("b_Comp")
-grouped_barplot("n_Comp")
+grouped_barplot("Comp")
+#grouped_barplot("n_Comp")
 grouped_barplot("Comp")
 grouped_barplot("EffComp")
 grouped_barplot("CompOffr")
@@ -222,10 +222,11 @@ NA_stats(def,"l_Days")`
 
 
 ```{r statistic summary table for continuous variables: cl_Ceil, cl_Days}
-#cl_Ceil and cl_Days are already log-transformed variables, any sense to calculate the logarithmic mean again?
+#original variable for cl_Ceil: UnmodifiedContractBaseAndAllOptionsValue
+#original variable for cl_Days: UnmodifiedDays
 
-statsummary_continuous(("cl_Ceil"))
-statsummary_continuous(("cl_Days"))
+statsummary_continuous(("UnmodifiedContractBaseAndAllOptionsValue"))
+statsummary_continuous(("UnmodifiedDays"))
 
 
 ```
@@ -290,13 +291,17 @@ NA_stats(def,"Office")`
 
 ```{r PricingFeeGraphs}
 #n_Fixed(0,1), PricingFee, n_Incent, b_UCA(0,1), b_Intl
+#original variable for b_UCA: UCA
+#original variable for n_Fixed: FxCb
+#original variable for n_Incent: Fee
+
 def$n_Fixed <- factor(def$n_Fixed, c(0,0.5,1))
 def$n_Incent <- factor(def$n_Incent, c(0,0.5,1))
 def$b_UCA <- factor(def$b_UCA, c(0,1))
-grouped_barplot("n_Fixed")
-grouped_barplot("n_Incent")
+grouped_barplot("FxCb")
+grouped_barplot("Fee")
 grouped_barplot("PricingFee")
-grouped_barplot("b_UCA")
+grouped_barplot("UCA")
 grouped_barplot("Intl")
 ```
 
