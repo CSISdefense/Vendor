@@ -1217,13 +1217,13 @@ get_pars<-function(model){
 }
  
     
- #Extract statistic information of the 15 discrete variables and generate dataframe    
- name_categorical <- c("CompOffr","Veh","PricingFee","UCA","Intl","Term",
-                      "Dur","Ceil","CBre","PSR","Urg","FxCb","Fee","CRai",
-                      "NoComp")   #list of all categorial and binary variables
- 
- def$Intl <- factor(def$Intl, c("Just U.S.", "Any International"))   #Manually remove "NA" from levels of variable Intl
- memory.limit(56000)
+ # #Extract statistic information of the 15 discrete variables and generate dataframe    
+ # name_categorical <- c("CompOffr","Veh","PricingFee","UCA","Intl","Term",
+ #                      "Dur","Ceil","CBre","PSR","Urg","FxCb","Fee","CRai",
+ #                      "NoComp")   #list of all categorial and binary variables
+ # 
+ # def$Intl <- factor(def$Intl, c("Just U.S.", "Any International"))   #Manually remove "NA" from levels of variable Intl
+ # memory.limit(56000)
     
  statsummary_discrete <- function(x, contract){      #input(x: name of the discrete variable, contract：name of the dataframe)
   unique_value_list <- levels(contract[[x]])
