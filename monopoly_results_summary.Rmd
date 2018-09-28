@@ -59,7 +59,7 @@ First we load the data. The dataset used is a U.S. Defense Contracting dataset d
 
 
 ```{r ReadInData, echo = TRUE}
-  load(file="Data/defense_contract_complete.RData")
+load(file="Data/defense_contract_complete.RData")
 save(file="Data/defense_contract_complete.RData",def)
 # def<-def[def$MinOfSignedDate>=as.Date("2008-01-01") & def$MinOfSignedDate<=as.Date("2015-12-31"),]
 # # head(def)
@@ -107,8 +107,8 @@ NA_stats(def,"b_CBre")`)
 ```{r vargraphs: b_Term, b_CBre}
 #The original variables for b_Term and b_CBre are Term and CBre
 source("DIIGstat.r")
-grouped_barplot("Term")
-grouped_barplot("CBre")
+grouped_barplot("Term", def)
+grouped_barplot("CBre", def)
 ```
 
 
@@ -189,10 +189,10 @@ ratio_category <- c("capped_def6_ratio_lag1", "capped_def5_ratio_lag1", "capped_
 avg_category <- c("US6_avg_sal_lag1", "US5_avg_sal_lag1", "US4_avg_sal_lag1", "US3_avg_sal_lag1", "US2_avg_sal_lag1")
 obl_category <- c("def6_obl_lag1", "def5_obl_lag1", "def4_obl_lag1", "def3_obl_lag1", "def2_obl_lag1" )
 
-statsummary_continuous(HHI_category)
-statsummary_continuous(ratio_category)
-statsummary_continuous(avg_category)
-statsummary_continuous(obl_category)
+statsummary_continuous(HHI_category, def)
+statsummary_continuous(ratio_category, def)
+statsummary_continuous(avg_category, def)
+statsummary_continuous(obl_category, def)
 ```
 
 
@@ -206,10 +206,20 @@ statsummary_continuous(obl_category)
 # CompOffr
 # offr:
 
-grouped_barplot("Comp")
-grouped_barplot("EffComp")
-grouped_barplot("CompOffr")
-grouped_barplot("Offr")
+#<<<<<<< Updated upstream
+grouped_barplot("Comp",def)
+grouped_barplot("EffComp",def)
+grouped_barplot("CompOffr", def)
+grouped_barplot("Offr", def)
+#=======
+# def$n_Comp <- factor(def$n_Comp,c(0,1))
+# grouped_barplot("Comp", def)
+# #grouped_barplot("n_Comp")
+# grouped_barplot("Comp", def)
+# grouped_barplot("EffComp", def)
+# grouped_barplot("CompOffr", def)
+# grouped_barplot("Offr", def)
+#>>>>>>> Stashed changes
 ```
 
 
@@ -226,8 +236,8 @@ NA_stats(def,"l_Days")`
 #original variable for cl_Ceil: UnmodifiedContractBaseAndAllOptionsValue
 #original variable for cl_Days: UnmodifiedDays
 
-statsummary_continuous(("UnmodifiedContractBaseAndAllOptionsValue"))
-statsummary_continuous(("UnmodifiedDays"))
+statsummary_continuous(("UnmodifiedContractBaseAndAllOptionsValue"), def)
+statsummary_continuous(("UnmodifiedDays"), def)
 
 
 ```
@@ -245,7 +255,7 @@ length(def$Veh[def$Veh =="BPA/BOA"& !is.na(def$Veh)])/nrow(def)
 NA_stats(def,"Veh")`
 
 ```{r VehGraph}
-grouped_barplot("Veh")
+grouped_barplot("Veh", def)
 ```
 
 
@@ -296,12 +306,23 @@ NA_stats(def,"Office")`
 #original variable for n_Fixed: FxCb
 #original variable for n_Incent: Fee
 
-
-grouped_barplot("FxCb")
-grouped_barplot("Fee")
-grouped_barplot("PricingFee")
-grouped_barplot("UCA")
-grouped_barplot("Intl")
+# <<<<<<< Updated upstream
+# 
+# grouped_barplot("FxCb")
+# grouped_barplot("Fee")
+# grouped_barplot("PricingFee")
+# grouped_barplot("UCA")
+# grouped_barplot("Intl")
+# =======
+def$n_Fixed <- factor(def$n_Fixed, c(0,0.5,1))
+def$n_Incent <- factor(def$n_Incent, c(0,0.5,1))
+def$b_UCA <- factor(def$b_UCA, c(0,1))
+grouped_barplot("FxCb", def)
+grouped_barplot("Fee", def)
+grouped_barplot("PricingFee", def)
+grouped_barplot("UCA", def)
+grouped_barplot("Intl", def)
+#>>>>>>> Stashed changes
 ```
 
 
@@ -313,13 +334,13 @@ grouped_barplot("Intl")
 
 
 
-def$NAICS_Code<-create_naics2(def$NAICS)
+#def$NAICS_Code<-create_naics2(def$NAICS)
 
 def<-csis360::read_and_join(def,
                             lookup_file = "Lookup_NAICS_code.csv",
                             path="",
                             dir="Lookup\\",
-                            by="NAICS_Code",
+                            by="NAICS",
                             skip_check_var="NAICS_DESCRIPTION"
 )
 
@@ -408,6 +429,65 @@ summary(NAICS_summary$naics_count_rank)
 
 
 ```
+
+```{r barplot for top 20 most frequently appeared NAICS}
+#Prepare dateframe for plot
+NAICS_Freq <- as.data.frame(table(def$NAICS))
+NAICS_Freq <- NAICS_Freq[order(-NAICS_Freq$Freq),]
+NAICS_Freq_TOP20 <- NAICS_Freq[1:20,]   #Get top 20 NAICS has largest frequency count
+NAICS_Freq_TOP20$Percent_Freq <- round(NAICS_Freq_TOP20$Freq/sum(NAICS_Freq$Freq),4)*100
+colnames(NAICS_Freq_TOP20) <- c("NAICS_Code", "Count_Freq", "Percent_Freq")
+
+#Get detail description for each NAICS code
+NAICS_Lookup <- read.csv(file = "Lookup/Lookup_NAICS_code.csv")
+colnames(NAICS_Lookup) <- c("NAICS_Code", "NAICS_DESCRIPTION")
+NAICS_Freq_TOP20 <- left_join(NAICS_Freq_TOP20, NAICS_Lookup, by = "NAICS_Code")
+NAICS_Freq_TOP20 <- NAICS_Freq_TOP20[order(-NAICS_Freq_TOP20$Percent_Freq),]
+NAICS_Freq_TOP20$NAICS_DESCRIPTION <- factor(NAICS_Freq_TOP20$NAICS_DESCRIPTION, levels = rev(NAICS_Freq_TOP20$NAICS_DESCRIPTION))
+
+
+Frequency_Plot <- ggplot(data = NAICS_Freq_TOP20, 
+                         aes(x = NAICS_Freq_TOP20$NAICS_DESCRIPTION, 
+                             y = NAICS_Freq_TOP20$Percent_Freq)) +
+                  geom_bar(stat = "identity", position = "dodge", width = 0.8) + 
+                  coord_flip() +
+                  xlab("") + 
+                  ylab("Percent of Frequency") + 
+                  theme_grey() + 
+                  scale_fill_grey() + 
+                  ggtitle("Top 20 of the most frequently appeared NAICS") +
+                  theme(text = element_text(size = 10))
+Frequency_Plot
+```
+
+
+```{r barplot for all NAICS2, 21 in total}
+#Prepare data for plot
+NAICS2_Freq <- as.data.frame(table(def$NAICS2))
+NAICS2_Freq$Percent_Freq <- round(NAICS2_Freq$Freq/sum(NAICS2_Freq$Freq),4)*100
+colnames(NAICS2_Freq) <- c("NAICS_Code", "Count_Freq", "Percent_Freq")
+
+#Get detail description for NAICS2 code
+NAICS_Lookup <- read.csv(file = "Lookup/Lookup_NAICS_code.csv")
+colnames(NAICS_Lookup) <- c("NAICS_Code", "NAICS_DESCRIPTION")
+NAICS2_Freq <- left_join(NAICS2_Freq, NAICS_Lookup, by = "NAICS_Code")
+NAICS2_Freq <- NAICS2_Freq[order(-NAICS2_Freq$Percent_Freq),]
+NAICS2_Freq$NAICS_DESCRIPTION <- factor(NAICS2_Freq$NAICS_DESCRIPTION, levels = rev(NAICS2_Freq$NAICS_DESCRIPTION))
+
+Frequency_Plot2 <- ggplot(data = NAICS2_Freq,
+                          aes(x = NAICS2_Freq$NAICS_DESCRIPTION, 
+                              y = NAICS2_Freq$Percent_Freq)) +
+                   geom_bar(stat = "identity", position = "dodge", width = 0.8) + 
+                   coord_flip() +
+                   xlab("") + 
+                   ylab("Percent of Frequency") + 
+                   theme_grey() + 
+                   scale_fill_grey() + 
+                   ggtitle("Percent of Frequency for NAICS2 and Descriptions") +
+                   theme(text = element_text(size = 10))
+Frequency_Plot2
+```
+
 
 
 
