@@ -326,14 +326,25 @@ grouped_barplot("Intl", def)
 ```
 
 ```{r frequancy bar plot for agency}
+#Prepare the dataframe for plot
 Agency_Freq <- as.data.frame(table(def$Agency))
 Agency_Freq$Percent_Freq <- round(Agency_Freq$Freq/sum(Agency_Freq$Freq),4)*100
 colnames(Agency_Freq) <- c("Agency","Count_Freq","Percent_Freq")
 Agency_Freq <- Agency_Freq[order(-Agency_Freq$Count_Freq),]
 Agency_Freq <- Agency_Freq[1:10,]
-Agency_Freq$Agency <- factor(Agency_Freq$Agency, levels = rev(Agency_Freq$Agency))
 
-Frequency_Plot3 <- ggplot(data = Agency_Freq, aes(x=Agency, y=Percent_Freq)) +
+#Add detail description to Agency code
+Agency_Lookup <- read.csv("https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/Agency_AgencyID.csv")
+Agency_Lookup <- Agency_Lookup[,1:2]
+colnames(Agency_Lookup) <- c("Agency","Agency_Description")
+Agency_Freq <- left_join(Agency_Freq, Agency_Lookup, by = "Agency")
+Agency_Freq$Agency <- factor(Agency_Freq$Agency, levels = rev(Agency_Freq$Agency))
+Agency_Freq <- Agency_Freq[order(-Agency_Freq$Percent_Freq),]
+Agency_Freq$Agency_Description <- factor(Agency_Freq$Agency_Description, 
+                                         levels=rev(Agency_Freq$Agency_Description))
+
+#build the frequency bar plot
+Frequency_Plot3 <- ggplot(data = Agency_Freq, aes(x=Agency_Description,        y=Percent_Freq)) +
                    geom_bar(stat = "identity", position = "dodge", width = 0.8) +
                    coord_flip() +
                    xlab("Agency") +
@@ -509,7 +520,6 @@ Frequency_Plot2
 
 
 
-
 ### Variable examination
 ```{r VarGraph}
 
@@ -529,7 +539,6 @@ sum(def$Action.Obligation[is.na(def$EffComp)],na.rm=TRUE)/sum(def$Action.Obligat
 
 # Effplot<-freq_discrete_plot(subset(def,"EffComp"))
 # Effplot<-Effplot+labs(x="Effective Competition",y="Contract or Task Order Count")
-
 # ggsave(Effplot,file="Output//EffFreq.png",width=5.5,height=5.5,dpi=600)
 
 ```
