@@ -1222,7 +1222,7 @@ get_pars<-function(model){
  #                      "Dur","Ceil","CBre","PSR","Urg","FxCb","Fee","CRai",
  #                      "NoComp")   #list of all categorial and binary variables
  # 
- # def$Intl <- factor(def$Intl, c("Just U.S.", "Any International"))   #Manually remove "NA" from levels of variable Intl
+ 
  # memory.limit(56000)
     
  statsummary_discrete <- function(x, contract){      #input(x: name of the discrete variable, contract：name of the dataframe)

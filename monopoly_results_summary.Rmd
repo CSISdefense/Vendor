@@ -60,6 +60,7 @@ First we load the data. The dataset used is a U.S. Defense Contracting dataset d
 
 ```{r ReadInData, echo = TRUE}
   load(file="Data/defense_contract_complete.RData")
+save(file="Data/defense_contract_complete.RData",def)
 # def<-def[def$MinOfSignedDate>=as.Date("2008-01-01") & def$MinOfSignedDate<=as.Date("2015-12-31"),]
 # # head(def)
 # debug(transform_contract)
@@ -68,10 +69,10 @@ First we load the data. The dataset used is a U.S. Defense Contracting dataset d
 # 
 #
 summary(def$Intl)
-def$Intl <- factor(def$Intl, c("Just U.S.", "Any International"))   #Manually remove "NA" from levels of variable Intl
+
 #Xinyi, run this line to get the raw data.
 load(file="Data/transformed_def.Rdata")
-save(file="Data/transformed_def.Rdata", def)
+# save(file="Data/transformed_def.Rdata", def)
 # start2008<-def$StartCY>=2008
 
 #Removing l_s just to reduce size. They can be derived easily.
@@ -345,7 +346,7 @@ NAICS2digit<-ggplot(def,
 NAICS2digit
 ggsave(NAICS2digit,file="Output\\NAICS2digitCount.png",width=10,height=6,dpi=600)
 
-NAICS_summary<-def %>% group_by(NAICS,StartFY,HHI_lag1) %>%
+NAICS_summary<-def %>% group_by(NAICS,StartFY,def6_HHI_lag1) %>%
   dplyr::summarise(annual_action_obligation=sum(Action.Obligation),
                    annual_count=length(StartFY)) 
 
@@ -388,7 +389,7 @@ NAICS_summary$NAICS_shorthand<-swr(NAICS_summary$NAICS_shorthand,nwrap = 25)
 NAICS_summary$FY<-NAICS_summary$StartFY-1
 NAICStop<-ggplot(subset(NAICS_summary,naics_dollar_rank<=4 |
                           naics_count_rank<=4),
-       aes(x=FY,y=HHI_lag1))+#color=NAICS_Code
+       aes(x=FY,y=def6_HHI_lag1))+#color=NAICS_Code
   geom_line()+
   scale_y_continuous(label=scales::comma)+ 
   scale_x_continuous(breaks=c(2006,2009,2011,2014))+
@@ -414,7 +415,7 @@ summary(NAICS_summary$naics_count_rank)
 ```{r VarGraph}
 
 
-HH1plot<-freq_continuous_plot(def,"HHI_lag1",bins=50)
+HH1plot<-freq_continuous_plot(def,"def6_HHI_lag1",bins=50)
 HH1plot<-HH1plot+geom_vline(xintercept=c(1500,2500))+labs(x="Annual Herfindahl-Hirschman Index (HHI) for NAICS-6 Sector",y="Contract or Task Order Count")
 HH1plot
 ggsave(HH1plot,file="Output//HH1freq.png",width=5.5,height=5.5,dpi=600)
