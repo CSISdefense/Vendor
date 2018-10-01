@@ -356,6 +356,58 @@ Frequency_Plot3 <- ggplot(data = Agency_Freq, aes(x=Agency_Description,        y
 Frequency_Plot3
 ```
 
+```{r frequancy and obligation percent grouped bar plot for agency}
+
+#Build a grouped bar plot for Agency
+#Generate new data frame containing frequency information
+Agency_Freq <- as.data.frame(table(def$Agency))
+Agency_Freq$Percent_Freq <- round(Agency_Freq$Freq/sum(Agency_Freq$Freq),4)*100
+colnames(Agency_Freq) <- c("Agency","Count_Freq","Percent_Freq")
+
+#Add detail Agency description according to agency code
+Agency_Lookup <- read.csv("https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/Agency_AgencyID.csv")
+Agency_Lookup <- Agency_Lookup[,1:2]
+colnames(Agency_Lookup) <- c("Agency","Agency_Description")
+Agency_Freq <- left_join(Agency_Freq, Agency_Lookup, by = "Agency")
+
+#Add obligation percent information to data frame
+Percent_Obli <- c()
+for (i in Agency_Freq$Agency) {
+  Percent_Obligation <- round(sum(def$Action.Obligation[def$Agency == i], na.rm = TRUE)/sum(def$Action.Obligation, na.rm = TRUE),5)
+  Percent_Obli <- c(Percent_Obli, Percent_Obligation)
+}
+Agency_Freq$Percent_Obli <- Percent_Obli*100
+
+#Get top 10 Agency that take largest percent obligation
+Agency_Freq <- Agency_Freq[order(-Percent_Obli),]
+Agency_Freq <- Agency_Freq[1:10,]
+Agency_Freq$Agency_Description <- factor(Agency_Freq$Agency_Description, levels = rev(Agency_Freq$Agency_Description))
+Agency_Freq <- melt(Agency_Freq, id = c("Agency","Count_Freq", "Agency_Description"))
+
+#Build grouped bar plot
+Agency_barplot <- ggplot(data = Agency_Freq, 
+                         aes(x = Agency_Description, 
+                             y=value, 
+                             fill=factor(variable))) + 
+                  geom_bar(stat = "identity", 
+                           position= "dodge", 
+                           width = 0.8) + 
+                  xlab("") + 
+                  ylab("") + 
+                  coord_flip() + 
+                  theme_grey() +
+                  scale_fill_grey() +
+                  guides(fill = guide_legend(reverse = TRUE)) + 
+                  theme(legend.title = element_blank(),
+                        legend.position = "bottom",
+                        legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit = "cm"),
+                        legend.text = element_text(margin = margin(r=0.5, unit = "cm")),
+                        plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm")) +
+                 ggtitle("Top 10 of the most frequently appeared Agency") 
+                  
+Agency_barplot
+
+```
 
 ### NAICS examination
 ```{r Summary, fig.width=7.5 , fig.height=3}
@@ -457,7 +509,6 @@ ggsave(NAICStop_pp,file="Output\\NAICStop_pp.png",width=10.5,height=5.5,dpi=600)
 summary(NAICS_summary$naics_count_rank)
 
 
-
 ```
 
 ```{r barplot for top 20 most frequently appeared NAICS}
@@ -518,6 +569,51 @@ Frequency_Plot2 <- ggplot(data = NAICS2_Freq,
 Frequency_Plot2
 ```
 
+```{r grouped percent frequency/obligation barplot for all NAICS2, 21 in total}
+#Prepare data for plot
+NAICS2_Freq <- as.data.frame(table(def$NAICS2))
+NAICS2_Freq$Percent_Freq <- round(NAICS2_Freq$Freq/sum(NAICS2_Freq$Freq),4)*100
+colnames(NAICS2_Freq) <- c("NAICS_Code", "Count_Freq", "Percent_Freq")
+
+#Get detail description for NAICS2 code
+NAICS_Lookup <- read.csv(file = "Lookup/Lookup_NAICS_code.csv")
+colnames(NAICS_Lookup) <- c("NAICS_Code", "NAICS_DESCRIPTION")
+NAICS2_Freq <- left_join(NAICS2_Freq, NAICS_Lookup, by = "NAICS_Code")
+
+Percent_Obli <- c()
+Total_Obli <- sum(def$Action.Obligation, na.rm = TRUE)
+for (i in NAICS2_Freq$NAICS_Code) {
+  Percent_Obligation <- round(sum(def$Action.Obligation[def$NAICS2 == i], na.rm = TRUE)/Total_Obli,5)
+  Percent_Obli <- c(Percent_Obli, Percent_Obligation)
+}
+
+NAICS2_Freq$Percent_Obli <- Percent_Obli * 100
+NAICS2_Freq <- NAICS2_Freq[order(-NAICS2_Freq$Percent_Obli),]
+NAICS2_Freq$NAICS_DESCRIPTION <- factor(NAICS2_Freq$NAICS_DESCRIPTION, levels = rev(NAICS2_Freq$NAICS_DESCRIPTION))
+NAICS2_Freq <- melt(NAICS2_Freq, id = c("NAICS_Code", "Count_Freq","NAICS_DESCRIPTION"))
+
+NAICS2_barplot <- ggplot(data = NAICS2_Freq,
+                          aes(x = NAICS_DESCRIPTION, 
+                              y = value,
+                              fill = factor(variable))) +
+                   geom_bar(stat = "identity", 
+                            position = "dodge", 
+                            width = 0.8) + 
+                   coord_flip() +
+                   xlab("") + 
+                   ylab("") + 
+                   theme_grey() + 
+                   scale_fill_grey() + 
+                   guides(fill = guide_legend(reverse = TRUE)) + 
+                   ggtitle("Percent of Frequency and obligation for NAICS2") +
+                   theme(text = element_text(size = 10), 
+                         legend.title = element_blank(),
+                         legend.position = "bottom",
+                         legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit = "cm"),
+                         legend.text = element_text(margin = margin(r=0.5, unit = "cm")),
+                         plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm"))
+NAICS2_barplot
+```
 
 
 ### Variable examination
