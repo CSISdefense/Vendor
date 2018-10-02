@@ -541,6 +541,71 @@ Frequency_Plot <- ggplot(data = NAICS_Freq_TOP20,
 Frequency_Plot
 ```
 
+```{r grouped barplot for NAICS most frequency appeared/has the largest percent obligation }
+# #Percent frequency/obligation grouped bar plot for variable NAICS
+# #Prepare dateframe for plot
+# NAICS_Freq <- as.data.frame(table(def$NAICS))
+# # NAICS_Freq <- NAICS_Freq[order(-NAICS_Freq$Freq),]
+# # NAICS_Freq_TOP20 <- NAICS_Freq[1:20,]   #Get top 20 NAICS has largest frequency count
+# NAICS_Freq$Percent_Freq <- round(NAICS_Freq$Freq/sum(NAICS_Freq$Freq),4)*100
+# colnames(NAICS_Freq) <- c("NAICS_Code", "Count_Freq", "Percent_Freq")
+# 
+# #Get detail description for each NAICS code
+# NAICS_Lookup <- read.csv(file = "Lookup/Lookup_NAICS_code.csv")
+# colnames(NAICS_Lookup) <- c("NAICS_Code", "NAICS_DESCRIPTION")
+# NAICS_Freq <- left_join(NAICS_Freq, NAICS_Lookup, by = "NAICS_Code")
+# NAICS_Freq <- NAICS_Freq[order(-NAICS_Freq$Percent_Freq),]
+# NAICS_Freq$NAICS_DESCRIPTION <- factor(NAICS_Freq$NAICS_DESCRIPTION, levels = rev(NAICS_Freq$NAICS_DESCRIPTION))
+# 
+# Percent_Obli <- c()
+# Total_Obli <- sum(def$Action.Obligation, na.rm = TRUE)
+# memory.limit(56000)
+# for (i in NAICS_Freq$NAICS_Code) {
+#   Percent_Obligation <- round(sum(def$Action.Obligation[def$NAICS == i], na.rm = TRUE)/Total_Obli,5)
+#   Percent_Obli <- c(Percent_Obli, Percent_Obligation)
+#   print(i)
+# }
+# NAICS_Freq$Percent_Obli <- Percent_Obli*100
+
+#The above code need more than 30 mins to run, so just load RData in practice
+load(file = "Data/NAICS_Freq_all.RData")
+
+NAICS_Freq_top10Freq <- NAICS_Freq[order(-NAICS_Freq$Percent_Freq),]
+NAICS_Freq_top10Freq <- NAICS_Freq_top10Freq[1:10, ]
+NAICS_Freq_top10Obli <- NAICS_Freq[order(-NAICS_Freq$Percent_Obli),]
+NAICS_Freq_top10Obli <- NAICS_Freq_top10Obli[1:10, ]
+
+NAICS_Freq_TOP <- rbind( NAICS_Freq_top10Obli, NAICS_Freq_top10Freq)
+NAICS_Freq_TOP <- unique(NAICS_Freq_TOP)  #18 records in total
+NAICS_Freq_TOP$NAICS_DESCRIPTION <- factor(NAICS_Freq_TOP$NAICS_DESCRIPTION, levels = rev(NAICS_Freq_TOP$NAICS_DESCRIPTION))
+NAICS_Freq_TOP <- melt(NAICS_Freq_TOP, id = c("NAICS_Code","Count_Freq","NAICS_DESCRIPTION"))
+#NAICS_Freq_TOP <- merge(NAICS_Freq_top20Freq, NAICS_Freq_top20Obli, by= "NAICS_Code", all=TRUE)
+
+NAICS_barPlot <- ggplot(data = NAICS_Freq_TOP, 
+                         aes(x = NAICS_DESCRIPTION, 
+                             y = value,
+                             fill = factor(variable))) +
+                  geom_bar(stat = "identity", position = "dodge", width = 0.8) + 
+                  coord_flip() +
+                  xlab("") + 
+                  ylab("") + 
+                  guides(fill = guide_legend(reverse = TRUE)) +
+                  theme_grey() + 
+                  scale_fill_grey() + 
+                  ggtitle("Top 18 of the most frequently appeared NAICS") +
+                  theme(text = element_text(size = 10),
+                        legend.title = element_blank(),
+                        legend.position = "bottom",
+                        legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit = "cm"),
+                        legend.text = element_text(margin = margin(r=0.5, unit = "cm")),
+                        plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm"))
+
+NAICS_barPlot
+```
+
+
+
+
 
 ```{r barplot for all NAICS2, 21 in total}
 #Prepare data for plot
