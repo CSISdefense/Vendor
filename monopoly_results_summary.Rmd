@@ -358,7 +358,7 @@ Frequency_Plot3
 
 ```{r frequancy and obligation percent grouped bar plot for agency}
 
-#Build a grouped bar plot for Agency
+#Percent grouped bar plot for variable Agency
 #Generate new data frame containing frequency information
 Agency_Freq <- as.data.frame(table(def$Agency))
 Agency_Freq$Percent_Freq <- round(Agency_Freq$Freq/sum(Agency_Freq$Freq),4)*100
@@ -370,18 +370,24 @@ Agency_Lookup <- Agency_Lookup[,1:2]
 colnames(Agency_Lookup) <- c("Agency","Agency_Description")
 Agency_Freq <- left_join(Agency_Freq, Agency_Lookup, by = "Agency")
 
-#Add obligation percent information to data frame
+#Add obligation percent information to data frame, may cause a few mins to run
 Percent_Obli <- c()
 for (i in Agency_Freq$Agency) {
   Percent_Obligation <- round(sum(def$Action.Obligation[def$Agency == i], na.rm = TRUE)/sum(def$Action.Obligation, na.rm = TRUE),5)
   Percent_Obli <- c(Percent_Obli, Percent_Obligation)
 }
+Agency_Freq$Agency_Description <- as.character(Agency_Freq$Agency_Description)
 Agency_Freq$Percent_Obli <- Percent_Obli*100
 
 #Get top 10 Agency that take largest percent obligation
 Agency_Freq <- Agency_Freq[order(-Percent_Obli),]
 Agency_Freq <- Agency_Freq[1:10,]
+percent_freq_rest <- 100 - sum(Agency_Freq$Percent_Freq, na.rm = TRUE)
+percent_obli_rest <- 100 - sum(Agency_Freq$Percent_Obli, na.rm = TRUE)
+
+Agency_Freq[11,] <- c("All Other", "NA", percent_freq_rest, "All Other", percent_obli_rest)
 Agency_Freq$Agency_Description <- factor(Agency_Freq$Agency_Description, levels = rev(Agency_Freq$Agency_Description))
+Agency_Freq[,c(3,5)] <- lapply(Agency_Freq[,c(3,5)], function(x) as.numeric(x))
 Agency_Freq <- melt(Agency_Freq, id = c("Agency","Count_Freq", "Agency_Description"))
 
 #Build grouped bar plot
@@ -404,8 +410,7 @@ Agency_barplot <- ggplot(data = Agency_Freq,
                         legend.text = element_text(margin = margin(r=0.5, unit = "cm")),
                         plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm")) +
                  ggtitle("Top 10 of the most frequently appeared Agency") 
-                  
-Agency_barplot
+Agency_barplot  
 
 ```
 
@@ -602,8 +607,6 @@ NAICS_barPlot <- ggplot(data = NAICS_Freq_TOP,
 
 NAICS_barPlot
 ```
-
-
 
 
 
