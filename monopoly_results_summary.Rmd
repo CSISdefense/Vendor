@@ -58,18 +58,21 @@ First we load the data. The dataset used is a U.S. Defense Contracting dataset d
 
 
 ```{r ReadInData, echo = TRUE}
-#   load(file="Data/defense_contract_complete.RData")
-def<-def[def$MinOfSignedDate>=as.Date("2008-01-01") & def$MinOfSignedDate<=as.Date("2015-12-31"),]
+load(file="Data/defense_contract_complete.RData")
+save(file="Data/defense_contract_complete.RData",def)
+# def<-def[def$MinOfSignedDate>=as.Date("2008-01-01") & def$MinOfSignedDate<=as.Date("2015-12-31"),]
 # # head(def)
 # debug(transform_contract)
 # def<-transform_contract(def)
 # 
 # 
-# 
-# save(file="Data/transformed_def.Rdata", def)
+#
+summary(def$Intl)
+
 #Xinyi, run this line to get the raw data.
- load(file="Data/transformed_def.Rdata")
-start2008<-def$StartCY>=2008
+load(file="Data/transformed_def.Rdata")
+# save(file="Data/transformed_def.Rdata", def)
+# start2008<-def$StartCY>=2008
 
 #Removing l_s just to reduce size. They can be derived easily.
 def<-def[!colnames(def) %in% colnames(def)[grep("^l_",colnames(def))]]
@@ -99,6 +102,14 @@ sum(def$Action.Obligation[def$b_Term==1],na.rm=TRUE)/sum(def$Action.Obligation,n
 * b_CBre is a binary variable that has a value of 1 for any contracts that have experienced a partial or complete termination, 0 otherwise. (`r summary(def$b_CBre);
 sum(def$Action.Obligation[def$b_CBre==1],na.rm=TRUE)/sum(def$Action.Obligation,na.rm=TRUE)
 NA_stats(def,"b_CBre")`)
+
+```{r vargraphs: b_Term, b_CBre}
+#The original variables for b_Term and b_CBre are Term and CBre
+source("DIIGstat.r")
+grouped_barplot("Term", def)
+grouped_barplot("CBre", def)
+```
+
 
 ## Independent Variables
 ### Study Variables
@@ -172,11 +183,59 @@ NA_stats(def,"cl_US6_avg_sal_lag1")
 NA_stats(def,"cl_def3_HHI_lag1")
 `
 
+statsummary_continuous(HHI_category, def)
+statsummary_continuous(ratio_category, def)
+statsummary_continuous(avg_category, def)
+statsummary_continuous(obl_category, def)
+```
+
+
+
+
+```{r varGraphs: b_Comp, n_Comp, Comp, CompOffr, EffComp, offr}
+# b_Comp
+# n_Comp
+# Comp
+# EffComp
+# CompOffr
+# offr:
+
+#<<<<<<< Updated upstream
+grouped_barplot("Comp",def)
+grouped_barplot("EffComp",def)
+grouped_barplot("CompOffr", def)
+grouped_barplot("Offr", def)
+#=======
+# def$n_Comp <- factor(def$n_Comp,c(0,1))
+# grouped_barplot("Comp", def)
+# #grouped_barplot("n_Comp")
+# grouped_barplot("Comp", def)
+# grouped_barplot("EffComp", def)
+# grouped_barplot("CompOffr", def)
+# grouped_barplot("Offr", def)
+#>>>>>>> Stashed changes
+```
+
+
+
+
 ### Initial Contract Scope
 * cl_Ceil is the natural log of the initial contract cost ceiling, in then-year dollars. `r centered_log_description(def$l_Ceil,"dollars");
 NA_stats(def,"l_Ceil")`
 * cl_Days is the natural log of the initial maximum duration of the contract, in days. The variable is centered, by subtracting its mean (`r centered_log_description(def$l_Days,"days");
 NA_stats(def,"l_Days")` 
+
+
+```{r statistic summary table for continuous variables: cl_Ceil, cl_Days}
+#original variable for cl_Ceil: UnmodifiedContractBaseAndAllOptionsValue
+#original variable for cl_Days: UnmodifiedDays
+
+statsummary_continuous(("UnmodifiedContractBaseAndAllOptionsValue"), def)
+statsummary_continuous(("UnmodifiedDays"), def)
+
+
+```
+
 
 ### Contract Vehicle
 * SIDV, MIDV, and FSS/GWAC, BPA/BOA are dummy variables based on the contract vehicle. They correspond to Single-Award IDVs, Multi-Award IDVs, and Other IDVs, respectively, having a value of 1 when the task order has that vehicle type, and having a 0 other. The remaining types, definitive contracts and purchase orders, are intentionally left out. (`r 
@@ -189,6 +248,9 @@ length(def$Veh[def$Veh =="FSS/GWAC"& !is.na(def$Veh)])/nrow(def)
 length(def$Veh[def$Veh =="BPA/BOA"& !is.na(def$Veh)])/nrow(def)
 NA_stats(def,"Veh")`
 
+```{r VehGraph}
+grouped_barplot("Veh", def)
+```
 
 ### Pricing Fee
 * n_Fixed is a numeric variable based on contract pricing. It has a value of 0 for cost-based, 0.5 or "combination or other", 1 for any fixed price (excluding fixed-price level of effort which is classified as cost-based). (`r summary(def$n_Fixed);
@@ -230,6 +292,121 @@ NA_stats(def,"Agency")`
 `r summary(def$Office);
 NA_stats(def,"Office")`
 
+
+```{r PricingFeeGraphs}
+#n_Fixed(0,1), PricingFee, n_Incent, b_UCA(0,1), b_Intl
+#original variable for b_UCA: UCA
+#original variable for n_Fixed: FxCb
+#original variable for n_Incent: Fee
+
+# <<<<<<< Updated upstream
+# 
+# grouped_barplot("FxCb")
+# grouped_barplot("Fee")
+# grouped_barplot("PricingFee")
+# grouped_barplot("UCA")
+# grouped_barplot("Intl")
+# =======
+def$n_Fixed <- factor(def$n_Fixed, c(0,0.5,1))
+def$n_Incent <- factor(def$n_Incent, c(0,0.5,1))
+def$b_UCA <- factor(def$b_UCA, c(0,1))
+grouped_barplot("FxCb", def)
+grouped_barplot("Fee", def)
+grouped_barplot("PricingFee", def)
+grouped_barplot("UCA", def)
+grouped_barplot("Intl", def)
+#>>>>>>> Stashed changes
+```
+
+```{r frequancy bar plot for agency}
+#Prepare the dataframe for plot
+Agency_Freq <- as.data.frame(table(def$Agency))
+Agency_Freq$Percent_Freq <- round(Agency_Freq$Freq/sum(Agency_Freq$Freq),4)*100
+colnames(Agency_Freq) <- c("Agency","Count_Freq","Percent_Freq")
+Agency_Freq <- Agency_Freq[order(-Agency_Freq$Count_Freq),]
+Agency_Freq <- Agency_Freq[1:10,]
+
+#Add detail description to Agency code
+Agency_Lookup <- read.csv("https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/Agency_AgencyID.csv")
+Agency_Lookup <- Agency_Lookup[,1:2]
+colnames(Agency_Lookup) <- c("Agency","Agency_Description")
+Agency_Freq <- left_join(Agency_Freq, Agency_Lookup, by = "Agency")
+Agency_Freq$Agency <- factor(Agency_Freq$Agency, levels = rev(Agency_Freq$Agency))
+Agency_Freq <- Agency_Freq[order(-Agency_Freq$Percent_Freq),]
+Agency_Freq$Agency_Description <- factor(Agency_Freq$Agency_Description, 
+                                         levels=rev(Agency_Freq$Agency_Description))
+
+#build the frequency bar plot
+Frequency_Plot3 <- ggplot(data = Agency_Freq, aes(x=Agency_Description,        y=Percent_Freq)) +
+                   geom_bar(stat = "identity", position = "dodge", width = 0.8) +
+                   coord_flip() +
+                   xlab("Agency") +
+                   ylab("Percent of Frequency") +
+                   theme_grey() +
+                   scale_fill_grey() +
+                   ggtitle("Top 10 of the most frequently appeared Agency") +
+                   theme(text = element_text(size = 10))
+Frequency_Plot3
+```
+
+```{r frequancy and obligation percent grouped bar plot for agency}
+
+#Percent grouped bar plot for variable Agency
+#Generate new data frame containing frequency information
+Agency_Freq <- as.data.frame(table(def$Agency))
+Agency_Freq$Percent_Freq <- round(Agency_Freq$Freq/sum(Agency_Freq$Freq),4)*100
+colnames(Agency_Freq) <- c("Agency","Count_Freq","Percent_Freq")
+
+#Add detail Agency description according to agency code
+Agency_Lookup <- read.csv("https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/Agency_AgencyID.csv")
+Agency_Lookup <- Agency_Lookup[,1:2]
+colnames(Agency_Lookup) <- c("Agency","Agency_Description")
+Agency_Freq <- left_join(Agency_Freq, Agency_Lookup, by = "Agency")
+
+#Add obligation percent information to data frame, may cause a few mins to run
+Percent_Obli <- c()
+for (i in Agency_Freq$Agency) {
+  Percent_Obligation <- round(sum(def$Action.Obligation[def$Agency == i], na.rm = TRUE)/sum(def$Action.Obligation, na.rm = TRUE),5)
+  Percent_Obli <- c(Percent_Obli, Percent_Obligation)
+}
+Agency_Freq$Agency_Description <- as.character(Agency_Freq$Agency_Description)
+Agency_Freq$Percent_Obli <- Percent_Obli*100
+
+#Get top 10 Agency that take largest percent obligation
+Agency_Freq <- Agency_Freq[order(-Percent_Obli),]
+Agency_Freq <- Agency_Freq[1:10,]
+percent_freq_rest <- 100 - sum(Agency_Freq$Percent_Freq, na.rm = TRUE)
+percent_obli_rest <- 100 - sum(Agency_Freq$Percent_Obli, na.rm = TRUE)
+
+Agency_Freq[11,] <- c("All Other", "NA", percent_freq_rest, "All Other", percent_obli_rest)
+Agency_Freq$Agency_Description <- factor(Agency_Freq$Agency_Description, levels = rev(Agency_Freq$Agency_Description))
+Agency_Freq[,c(3,5)] <- lapply(Agency_Freq[,c(3,5)], function(x) as.numeric(x))
+Agency_Freq <- melt(Agency_Freq, id = c("Agency","Count_Freq", "Agency_Description"))
+
+#Build grouped bar plot
+Agency_barplot <- ggplot(data = Agency_Freq, 
+                         aes(x = Agency_Description, 
+                             y=value, 
+                             fill=factor(variable))) + 
+                  geom_bar(stat = "identity", 
+                           position= "dodge", 
+                           width = 0.8) + 
+                  xlab("") + 
+                  ylab("") + 
+                  coord_flip() + 
+                  theme_grey() +
+                  scale_fill_grey() +
+                  guides(fill = guide_legend(reverse = TRUE)) + 
+                  theme(legend.title = element_blank(),
+                        legend.position = "bottom",
+                        legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit = "cm"),
+                        legend.text = element_text(margin = margin(r=0.5, unit = "cm")),
+                        plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm")) +
+                 ggtitle("Top 10 of the most frequently appeared Agency") 
+Agency_barplot  
+
+```
+
 ### NAICS examination
 ```{r Summary, fig.width=7.5 , fig.height=3}
 
@@ -237,15 +414,15 @@ NA_stats(def,"Office")`
 
 
 
-def$NAICS_Code<-create_naics2(def$NAICS)
+#def$NAICS_Code<-create_naics2(def$NAICS)
 
- def<-csis360::read_and_join(def,
-                        lookup_file = "Lookup_NAICS_code.csv",
-                        path="",
-                        dir="Lookup\\",
-                        by="NAICS_Code",
-                        skip_check_var="NAICS_DESCRIPTION"
-               )
+def<-csis360::read_and_join(def,
+                            lookup_file = "Lookup_NAICS_code.csv",
+                            path="",
+                            dir="Lookup\\",
+                            by="NAICS",
+                            skip_check_var="NAICS_DESCRIPTION"
+)
 
 def$NAICS_label<-paste(def$NAICS_Code,
                              def$NAICS_DESCRIPTION)
@@ -270,7 +447,7 @@ NAICS2digit<-ggplot(def,
 NAICS2digit
 ggsave(NAICS2digit,file="Output\\NAICS2digitCount.png",width=10,height=6,dpi=600)
 
-NAICS_summary<-def %>% group_by(NAICS,StartFY,HHI_lag1) %>%
+NAICS_summary<-def %>% group_by(NAICS,StartFY,def6_HHI_lag1) %>%
   dplyr::summarise(annual_action_obligation=sum(Action.Obligation),
                    annual_count=length(StartFY)) 
 
@@ -313,7 +490,7 @@ NAICS_summary$NAICS_shorthand<-swr(NAICS_summary$NAICS_shorthand,nwrap = 25)
 NAICS_summary$FY<-NAICS_summary$StartFY-1
 NAICStop<-ggplot(subset(NAICS_summary,naics_dollar_rank<=4 |
                           naics_count_rank<=4),
-       aes(x=FY,y=HHI_lag1))+#color=NAICS_Code
+       aes(x=FY,y=def6_HHI_lag1))+#color=NAICS_Code
   geom_line()+
   scale_y_continuous(label=scales::comma)+ 
   scale_x_continuous(breaks=c(2006,2009,2011,2014))+
@@ -330,14 +507,236 @@ ggsave(NAICStop_pp,file="Output\\NAICStop_pp.png",width=10.5,height=5.5,dpi=600)
 summary(NAICS_summary$naics_count_rank)
 
 
-
 ```
+
+```{r barplot for top 20 most frequently appeared NAICS}
+#Prepare dateframe for plot
+NAICS_Freq <- as.data.frame(table(def$NAICS))
+NAICS_Freq <- NAICS_Freq[order(-NAICS_Freq$Freq),]
+NAICS_Freq_TOP20 <- NAICS_Freq[1:20,]   #Get top 20 NAICS has largest frequency count
+NAICS_Freq_TOP20$Percent_Freq <- round(NAICS_Freq_TOP20$Freq/sum(NAICS_Freq$Freq),4)*100
+colnames(NAICS_Freq_TOP20) <- c("NAICS_Code", "Count_Freq", "Percent_Freq")
+
+#Get detail description for each NAICS code
+NAICS_Lookup <- read.csv(file = "Lookup/Lookup_NAICS_code.csv")
+colnames(NAICS_Lookup) <- c("NAICS_Code", "NAICS_DESCRIPTION")
+NAICS_Freq_TOP20 <- left_join(NAICS_Freq_TOP20, NAICS_Lookup, by = "NAICS_Code")
+NAICS_Freq_TOP20 <- NAICS_Freq_TOP20[order(-NAICS_Freq_TOP20$Percent_Freq),]
+NAICS_Freq_TOP20$NAICS_DESCRIPTION <- factor(NAICS_Freq_TOP20$NAICS_DESCRIPTION, levels = rev(NAICS_Freq_TOP20$NAICS_DESCRIPTION))
+
+
+Frequency_Plot <- ggplot(data = NAICS_Freq_TOP20, 
+                         aes(x = NAICS_Freq_TOP20$NAICS_DESCRIPTION, 
+                             y = NAICS_Freq_TOP20$Percent_Freq)) +
+                  geom_bar(stat = "identity", position = "dodge", width = 0.8) + 
+                  coord_flip() +
+                  xlab("") + 
+                  ylab("Percent of Frequency") + 
+                  theme_grey() + 
+                  scale_fill_grey() + 
+                  ggtitle("Top 20 of the most frequently appeared NAICS") +
+                  theme(text = element_text(size = 10))
+Frequency_Plot
+```
+
+```{r grouped barplot for NAICS most frequency appeared/has the largest percent obligation }
+# #Percent frequency/obligation grouped bar plot for variable NAICS
+# #Prepare dateframe for plot
+# NAICS_Freq <- as.data.frame(table(def$NAICS))
+# # NAICS_Freq <- NAICS_Freq[order(-NAICS_Freq$Freq),]
+# # NAICS_Freq_TOP20 <- NAICS_Freq[1:20,]   #Get top 20 NAICS has largest frequency count
+# NAICS_Freq$Percent_Freq <- round(NAICS_Freq$Freq/sum(NAICS_Freq$Freq),4)*100
+# colnames(NAICS_Freq) <- c("NAICS_Code", "Count_Freq", "Percent_Freq")
+# 
+# #Get detail description for each NAICS code
+# NAICS_Lookup <- read.csv(file = "Lookup/Lookup_NAICS_code.csv")
+# colnames(NAICS_Lookup) <- c("NAICS_Code", "NAICS_DESCRIPTION")
+# NAICS_Freq <- left_join(NAICS_Freq, NAICS_Lookup, by = "NAICS_Code")
+# NAICS_Freq <- NAICS_Freq[order(-NAICS_Freq$Percent_Freq),]
+# NAICS_Freq$NAICS_DESCRIPTION <- factor(NAICS_Freq$NAICS_DESCRIPTION, levels = rev(NAICS_Freq$NAICS_DESCRIPTION))
+# 
+# Percent_Obli <- c()
+# Total_Obli <- sum(def$Action.Obligation, na.rm = TRUE)
+# memory.limit(56000)
+# for (i in NAICS_Freq$NAICS_Code) {
+#   Percent_Obligation <- round(sum(def$Action.Obligation[def$NAICS == i], na.rm = TRUE)/Total_Obli,5)
+#   Percent_Obli <- c(Percent_Obli, Percent_Obligation)
+#   print(i)
+# }
+# NAICS_Freq$Percent_Obli <- Percent_Obli*100
+
+#The above code need more than 30 mins to run, so just load RData in practice
+load(file = "Data/NAICS_Freq_all.RData")
+
+NAICS_Freq_top10Freq <- NAICS_Freq[order(-NAICS_Freq$Percent_Freq),]
+NAICS_Freq_top10Freq <- NAICS_Freq_top10Freq[1:10, ]
+NAICS_Freq_top10Obli <- NAICS_Freq[order(-NAICS_Freq$Percent_Obli),]
+NAICS_Freq_top10Obli <- NAICS_Freq_top10Obli[1:10, ]
+
+NAICS_Freq_TOP <- rbind( NAICS_Freq_top10Obli, NAICS_Freq_top10Freq)
+NAICS_Freq_TOP <- unique(NAICS_Freq_TOP)  #18 records in total
+NAICS_Freq_TOP$NAICS_DESCRIPTION <- factor(NAICS_Freq_TOP$NAICS_DESCRIPTION, levels = rev(NAICS_Freq_TOP$NAICS_DESCRIPTION))
+NAICS_Freq_TOP <- melt(NAICS_Freq_TOP, id = c("NAICS_Code","Count_Freq","NAICS_DESCRIPTION"))
+#NAICS_Freq_TOP <- merge(NAICS_Freq_top20Freq, NAICS_Freq_top20Obli, by= "NAICS_Code", all=TRUE)
+
+NAICS_barPlot <- ggplot(data = NAICS_Freq_TOP, 
+                         aes(x = NAICS_DESCRIPTION, 
+                             y = value,
+                             fill = factor(variable))) +
+                  geom_bar(stat = "identity", position = "dodge", width = 0.8) + 
+                  coord_flip() +
+                  xlab("") + 
+                  ylab("") + 
+                  guides(fill = guide_legend(reverse = TRUE)) +
+                  theme_grey() + 
+                  scale_fill_grey() + 
+                  ggtitle("Top 18 of the most frequently appeared NAICS") +
+                  theme(text = element_text(size = 10),
+                        legend.title = element_blank(),
+                        legend.position = "bottom",
+                        legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit = "cm"),
+                        legend.text = element_text(margin = margin(r=0.5, unit = "cm")),
+                        plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm"))
+
+NAICS_barPlot
+```
+
+
+
+```{r barplot for all NAICS2, 21 in total}
+#Prepare data for plot
+NAICS2_Freq <- as.data.frame(table(def$NAICS2))
+NAICS2_Freq$Percent_Freq <- round(NAICS2_Freq$Freq/sum(NAICS2_Freq$Freq),4)*100
+colnames(NAICS2_Freq) <- c("NAICS_Code", "Count_Freq", "Percent_Freq")
+
+#Get detail description for NAICS2 code
+NAICS_Lookup <- read.csv(file = "Lookup/Lookup_NAICS_code.csv")
+colnames(NAICS_Lookup) <- c("NAICS_Code", "NAICS_DESCRIPTION")
+NAICS2_Freq <- left_join(NAICS2_Freq, NAICS_Lookup, by = "NAICS_Code")
+NAICS2_Freq <- NAICS2_Freq[order(-NAICS2_Freq$Percent_Freq),]
+NAICS2_Freq$NAICS_DESCRIPTION <- factor(NAICS2_Freq$NAICS_DESCRIPTION, levels = rev(NAICS2_Freq$NAICS_DESCRIPTION))
+
+Frequency_Plot2 <- ggplot(data = NAICS2_Freq,
+                          aes(x = NAICS2_Freq$NAICS_DESCRIPTION, 
+                              y = NAICS2_Freq$Percent_Freq)) +
+                   geom_bar(stat = "identity", position = "dodge", width = 0.8) + 
+                   coord_flip() +
+                   xlab("") + 
+                   ylab("Percent of Frequency") + 
+                   theme_grey() + 
+                   scale_fill_grey() + 
+                   ggtitle("Percent of Frequency for NAICS2") +
+                   theme(text = element_text(size = 10))
+Frequency_Plot2
+```
+
+```{r grouped percent frequency/obligation barplot for all NAICS2, 21 in total}
+#Prepare data for plot
+NAICS2_Freq <- as.data.frame(table(def$NAICS2))
+NAICS2_Freq$Percent_Freq <- round(NAICS2_Freq$Freq/sum(NAICS2_Freq$Freq),4)*100
+colnames(NAICS2_Freq) <- c("NAICS_Code", "Count_Freq", "Percent_Freq")
+
+#Get detail description for NAICS2 code
+NAICS_Lookup <- read.csv(file = "Lookup/Lookup_NAICS_code.csv")
+colnames(NAICS_Lookup) <- c("NAICS_Code", "NAICS_DESCRIPTION")
+NAICS2_Freq <- left_join(NAICS2_Freq, NAICS_Lookup, by = "NAICS_Code")
+
+Percent_Obli <- c()
+Total_Obli <- sum(def$Action.Obligation, na.rm = TRUE)
+for (i in NAICS2_Freq$NAICS_Code) {
+  Percent_Obligation <- round(sum(def$Action.Obligation[def$NAICS2 == i], na.rm = TRUE)/Total_Obli,5)
+  Percent_Obli <- c(Percent_Obli, Percent_Obligation)
+}
+
+NAICS2_Freq$Percent_Obli <- Percent_Obli * 100
+NAICS2_Freq <- NAICS2_Freq[order(-NAICS2_Freq$Percent_Obli),]
+NAICS2_Freq$NAICS_DESCRIPTION <- factor(NAICS2_Freq$NAICS_DESCRIPTION, levels = rev(NAICS2_Freq$NAICS_DESCRIPTION))
+NAICS2_Freq <- melt(NAICS2_Freq, id = c("NAICS_Code", "Count_Freq","NAICS_DESCRIPTION"))
+
+NAICS2_barplot <- ggplot(data = NAICS2_Freq,
+                          aes(x = NAICS_DESCRIPTION, 
+                              y = value,
+                              fill = factor(variable))) +
+                   geom_bar(stat = "identity", 
+                            position = "dodge", 
+                            width = 0.8) + 
+                   coord_flip() +
+                   xlab("") + 
+                   ylab("") + 
+                   theme_grey() + 
+                   scale_fill_grey() + 
+                   guides(fill = guide_legend(reverse = TRUE)) + 
+                   ggtitle("Percent of Frequency and obligation for NAICS2") +
+                   theme(text = element_text(size = 10), 
+                         legend.title = element_blank(),
+                         legend.position = "bottom",
+                         legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit = "cm"),
+                         legend.text = element_text(margin = margin(r=0.5, unit = "cm")),
+                         plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm"))
+NAICS2_barplot
+```
+
+
+```{r grouped percent frequency/obligation barplot for all NAICS2, 21 in total }
+#grouped bar plot for variable Office
+#Perpare data for plot
+Office_Freq <- as.data.frame(table(def$Office))
+Office_Freq$Percent_Freq <- round(Office_Freq$Freq/sum(Office_Freq$Freq),4)*100
+colnames(Office_Freq) <- c("Office", "Count_Freq", "Percent_Freq")
+Office_Freq <- subset(Office_Freq, (Office_Freq$Count_Freq != 0)&(Office_Freq$Percent_Freq!=0))
+
+Percent_Obli <- c()
+Total_Obli <- sum(def$Action.Obligation, na.rm = TRUE)
+for (i in Office_Freq$Office) {
+  Percent_Obligation <- round(sum(def$Action.Obligation[def$Office == i], na.rm = TRUE)/Total_Obli,5)
+  Percent_Obli <- c(Percent_Obli, Percent_Obligation)
+  print(i)
+}
+
+Office_Freq$Percent_Obli <- Percent_Obli * 100
+Office_Freq_top10Freq <- Office_Freq[order(-Office_Freq$Percent_Freq),]
+Office_Freq_top10Freq <- Office_Freq_top10Freq[1:10, ]
+Office_Freq_top10Obli <- Office_Freq[order(-Office_Freq$Percent_Obli),]
+Office_Freq_top10Obli <- Office_Freq_top10Obli[1:10, ]
+
+Office_Freq_TOP <- rbind(Office_Freq_top10Obli, Office_Freq_top10Freq)
+Office_Freq_TOP <- unique(Office_Freq_TOP)  #20 records in total
+
+
+Office_Freq_TOP$Office <- factor(Office_Freq_TOP$Office, levels = rev(Office_Freq_TOP$Office))
+Office_Freq_TOP <- melt(Office_Freq_TOP, id = c("Office", "Count_Freq"))
+
+Office_barplot <- ggplot(data = Office_Freq_TOP,
+                         aes(x = Office, 
+                             y = value,
+                             fill = factor(variable))) +
+                  geom_bar(stat = "identity", 
+                  position = "dodge", 
+                  width = 0.8) + 
+                  coord_flip() +
+                  xlab("") + 
+                  ylab("") + 
+                  theme_grey() + 
+                  scale_fill_grey() + 
+                  guides(fill = guide_legend(reverse = TRUE)) + 
+                  ggtitle("Percent of Frequency and obligation for Office") +
+                  theme(text = element_text(size = 10), 
+                        legend.title = element_blank(),
+                        legend.position = "bottom",
+                        legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit = "cm"),
+                        legend.text = element_text(margin = margin(r=0.5, unit = "cm")),
+                        plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm"))
+Office_barplot
+```
+
+
+
 
 ### Variable examination
 ```{r VarGraph}
 
 
-HH1plot<-freq_continuous_plot(def,"HHI_lag1",bins=50)
+HH1plot<-freq_continuous_plot(def,"def6_HHI_lag1",bins=50)
 HH1plot<-HH1plot+geom_vline(xintercept=c(1500,2500))+labs(x="Annual Herfindahl-Hirschman Index (HHI) for NAICS-6 Sector",y="Contract or Task Order Count")
 HH1plot
 ggsave(HH1plot,file="Output//HH1freq.png",width=5.5,height=5.5,dpi=600)
@@ -352,7 +751,6 @@ sum(def$Action.Obligation[is.na(def$EffComp)],na.rm=TRUE)/sum(def$Action.Obligat
 
 # Effplot<-freq_discrete_plot(subset(def,"EffComp"))
 # Effplot<-Effplot+labs(x="Effective Competition",y="Contract or Task Order Count")
-
 # ggsave(Effplot,file="Output//EffFreq.png",width=5.5,height=5.5,dpi=600)
 
 ```
