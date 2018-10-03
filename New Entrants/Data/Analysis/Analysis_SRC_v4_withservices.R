@@ -32,13 +32,17 @@ setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
 ##sam laptop
 #setwd("/Users/samanthacohen/Desktop/Diig backup/New Entrants/R Data")
 
-load(file = "FPDS_datapull_all_v3_allfed.Rda")
+load(file = "FPDS_datapull_all_v3.Rda")
 length(unique(FPDS_cleaned_unique$Dunsnumber)) == nrow(FPDS_cleaned_unique)
 
 #******************************************************************
 ####Count number of new entrants in each year! ####
 #******************************************************************
-table(FPDS_cleaned_unique$customer)
+##drop observations that aren't with the navy
+
+str(FPDS_cleaned_unique$subcustomer)
+FPDS_cleaned_unique <- FPDS_cleaned_unique[(FPDS_cleaned_unique$subcustomer=="Navy"), ]
+
 
 ##fpds data
 registrationyear_count <- table(SAM_and_FPDS_uniqueDuns$registrationYear)
@@ -120,7 +124,7 @@ NE_count_DoD <- ggplot(FPDS_bargraphCount, aes(x = registrationYear, y = regpers
   scale_fill_manual(name = "New Entrants Types", values = c("darkslategray1", "cadetblue4"), labels = c("non-small", "small")) +
   ggtitle("Number of New Entrants Per Year (2001-2016) - DoD")+
   ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
-                  ##angle = 45) +
+  ##angle = 45) +
   ##geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
   geom_text(data = subset(FPDS_bargraphCount, registrationYear <= 2016), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
 
@@ -150,7 +154,7 @@ data_2001 <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear!="2001")
 
 data_2001 <- data_2001 %>%
   dplyr::mutate(survive_3yr = ifelse(exitYear < 2003, "0", "1")) 
-           
+
 ##create variable describing whether a firm survived 5 years
 data_2001 <- data_2001 %>%
   dplyr::mutate(survive_5yr = ifelse(exitYear < 2005, "0", "1")) 
@@ -248,8 +252,6 @@ survival_10yrALL_2001
 #**********#
 
 table(data_2001$graduated)
-table(data_2001$top_smallbiz_bin)
-table(data_2001$survive_10yr)
 
 ##for all firms, whether or not they survived after 10 years
 
@@ -263,22 +265,12 @@ graduatedALL_2001
 ##for only firms that survived the ten years
 numerator_gradALL_2001_10yr <- length(which(data_2001$graduated==1 & data_2001$survive_10yr==1))
 
-#denominator_gradALL_2001_10yr <- length(data_2001$graduated)
-wrong <- length(data_2001$graduated)
-
-denominator_gradALL_2001_10yr <- length(which(data_2001$top_smallbiz_bin==1))
-
-denominator_gradALL_2001_10yr_v2 <- length(data_2001_smallbiz$graduated)
-
+denominator_gradALL_2001_10yr <- length(data_2001$graduated)
 
 graduatedALL_2001_10yr <- numerator_gradALL_2001_10yr/denominator_gradALL_2001_10yr
 graduatedALL_2001_10yr
 
-graduated_ALL_2001_10yr_v2 <- numerator_gradALL_2001_10yr/denominator_gradALL_2001_10yr_v2
-graduated_ALL_2001_10yr_v2
 
-graduation_wrong <- numerator_gradALL_2001_10yr/wrong
-graduation_wrong
 #**************************
 #**********#
 #***SMALL**#
@@ -348,7 +340,7 @@ denominator_10yrNSM_2001 <- length(which(data_2001$top_smallbiz_bin==0))
 
 survival_10yrNSM_2001 <- numerator_10yrNSM_2001/denominator_10yrNSM_2001
 survival_10yrNSM_2001
- 
+
 ##t-test for the differences between small and non-small survivors
 t.test(survive_10yr ~ top_smallbiz_bin, data = data_2001)
 
@@ -416,7 +408,7 @@ pie_2001_ALL_df <- pie_2001_ALL_df %>%
   dplyr::mutate(perc_value = round(perc_value, 0))
 
 head(pie_2001_ALL_df)
-  
+
 plot_2001_ALL <- ggplot(pie_2001_ALL_df, aes(x=group, y=perc_value, fill=group)) +
   scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#999999" )) +
   geom_bar(stat = "identity", width=0.4) +
@@ -425,8 +417,8 @@ plot_2001_ALL <- ggplot(pie_2001_ALL_df, aes(x=group, y=perc_value, fill=group))
   geom_text(aes(label=percent(value)), size=3, vjust=-.25) +
   labs(title = "-All New Entrants All Fed", y = "Survival Rates (percentages)", x = "") + 
   guides(fill=FALSE)
-  
-  
+
+
 ##******##
 ##SMALL NE##
 ##******##
@@ -525,7 +517,7 @@ pie_bar_2001 + coord_polar(theta = "y", start = 0, direction = 1) #+
 #geom_text(aes(y = dec, label = percent(dec)), vjust=0, size=5) 
 
 #*************************************************************************************
-  
+
 #****************#
 ####2001 DOD only#####
 #****************#
@@ -633,9 +625,7 @@ graduatedALL_2001_DoD
 ##for firms that only survived to the end of the study period
 numerator_gradALL_2001_DoD_10yr <- length(which(data_DOD_2001$graduated==1 & data_DOD_2001$survive_10yr==1))
 
-#denominator_gradALL_2001_DoD_10yr <- length(data_DOD_2001$graduated)
-
-denominator_gradALL_2001_DoD_10yr <- length(which(data_DOD_2001$top_smallbiz_bin==1))
+denominator_gradALL_2001_DoD_10yr <- length(data_DOD_2001$graduated)
 
 graduatedALL_2001_DoD_10yr <- numerator_gradALL_2001_DoD_10yr/denominator_gradALL_2001_DoD_10yr
 graduatedALL_2001_DoD_10yr
@@ -845,7 +835,7 @@ grid.arrange(plot_2001_SMALL, plot_2001_DoD_SMALL, plot_2001_ALL, plot_2001_DoD_
 
 #create necessary variables to do this#
 
-#subset the 2001 data
+#subset the 2002 data
 data_2002 <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear!="2002"), ]
 
 ##create variable describing whether a firm survived 3 years
@@ -945,9 +935,7 @@ graduated_2002
 ##graduation for only those who survived after 10 years
 numerator_grad_2002_10yr <- length(which(data_2002$graduated==1 & data_2002$survive_10yr==1))
 
-#denominator_grad_2002_10yr <- length(data_2002$graduated)
-
-denominator_grad_2002_10yr <- length(which(data_2002$top_smallbiz_bin==1))
+denominator_grad_2002_10yr <- length(data_2002$graduated)
 
 graduated_2002_10yr <- numerator_grad_2002_10yr/denominator_grad_2002_10yr
 graduated_2002_10yr
@@ -1251,9 +1239,7 @@ graduated2002_DOD
 ##for those that survived 10 years
 numerator_grad2002_DOD_10yr <- length(which(data_2002_DOD$graduated==1 & data_2002_DOD$survive_10yr==0))
 
-#denominator_grad2002_DOD_10yr <- length(data_2002_DOD$graduated)
-
-denominator_grad2002_DOD_10yr <- length(which(data_2002_DOD$top_smallbiz_bin==1))
+denominator_grad2002_DOD_10yr <- length(data_2002_DOD$graduated)
 
 graduated_2002_DOD_10yr <- numerator_grad2002_DOD_10yr/denominator_grad2002_DOD_10yr
 graduated_2002_DOD_10yr
@@ -1558,9 +1544,7 @@ graduated_2003
 ##only for those that survived 10 years
 numerator_grad_2003_10yr <- length(which(data_2003$graduated==1 & data_2003$survive_10yr==1))
 
-#denominator_grad_2003_10yr <- length(data_2003$graduated)
-
-denominator_grad_2003_10yr <- length(which(data_2003$top_smallbiz_bin==1))
+denominator_grad_2003_10yr <- length(data_2003$graduated)
 
 graduated_2003_10yr <- numerator_grad_2003_10yr/denominator_grad_2003_10yr
 graduated_2003_10yr
@@ -1866,20 +1850,9 @@ graduated_2003_DOD <- numerator_grad_2003_DOD/denominator_grad_2003_DOD
 graduated_2003_DOD
 
 ##graduation for those who survived 10 years
-table(data_2003$graduated)
-table(data_2003$survive_10yr)
-table(data_2003$top_smallbiz_bin)
-
-table(data_2003_DOD$graduated)
-table(data_2003_DOD$survive_10yr)
-table(data_2003_DOD$top_smallbiz_bin)
-
-
 numerator_grad_2003_DOD_10yr <- length(which(data_2003_DOD$graduated==1 & data_2003_DOD$survive_10yr==1))
 
-#denominator_grad_2003_DOD_10yr <- length(data_2003_DOD$graduated)
-
-denominator_grad_2003_DOD_10yr <- length(which(data_2003_DOD$top_smallbiz_bin==1))
+denominator_grad_2003_DOD_10yr <- length(data_2003_DOD$graduated)
 
 graduated_2003_DOD_10yr <- numerator_grad_2003_DOD_10yr/denominator_grad_2003_DOD_10yr
 graduated_2003_DOD_10yr
@@ -2187,9 +2160,7 @@ graduated_2004
 ##graduation 10 year survivors only
 numerator_grad_2004_10yr <- length(which(data_2004$graduated==1 & data_2004$survive_10yr==1))
 
-#denominator_grad_2004_10yr <- length(data_2004$graduated)
-
-denominator_grad_2004_10yr <- length(which(data_2004$top_smallbiz_bin==1))
+denominator_grad_2004_10yr <- length(data_2004$graduated)
 
 graduated_2004_10yr <- numerator_grad_2004_10yr/denominator_grad_2004_10yr
 graduated_2004_10yr 
@@ -2496,9 +2467,7 @@ graduated_2004_DOD
 ##those who survived 10 years only
 numerator_grad_2004_DOD_10yr <- length(which(data_2004_DOD$graduated==1 & data_2004_DOD$survive_10yr==1))
 
-#denominator_grad_2004_DOD_10yr <- length(data_2004_DOD$graduated)
-
-denominator_grad_2004_DOD_10yr <- length(which(data_2004_DOD$top_smallbiz_bin==1))
+denominator_grad_2004_DOD_10yr <- length(data_2004_DOD$graduated)
 
 graduated_2004_DOD_10yr <- numerator_grad_2004_DOD_10yr/denominator_grad_2004_DOD_10yr
 graduated_2004_DOD_10yr 
@@ -2805,9 +2774,7 @@ graduated_2005
 ##for those that survived 10 years only
 numerator_grad_2005_10yr <- length(which(data_2005$graduated==1 & data_2005$survive_10yr==1))
 
-#denominator_grad_2005_10yr <- length(data_2005$graduated)
-
-denominator_grad_2005_10yr <- length(which(data_2005$top_smallbiz_bin==1))
+denominator_grad_2005_10yr <- length(data_2005$graduated)
 
 graduated_2005_10yr <- numerator_grad_2005_10yr/denominator_grad_2005_10yr
 graduated_2005_10yr
@@ -3109,9 +3076,7 @@ graduated_2005_DOD
 ##survived 10 years only
 numerator_grad_2005_DOD_10yr <- length(which(data_2005_DOD$graduated==1 & data_2005_DOD$survive_10yr==1))
 
-#denominator_grad_2005_DOD_10yr <- length(data_2005_DOD$graduated)
-
-denominator_grad_2005_DOD_10yr <- length(which(data_2005_DOD$top_smallbiz_bin==1))
+denominator_grad_2005_DOD_10yr <- length(data_2005_DOD$graduated)
 
 graduated_2005_DOD_10yr <- numerator_grad_2005_DOD_10yr/denominator_grad_2005_DOD_10yr
 graduated_2005_DOD_10yr
@@ -3418,9 +3383,7 @@ graduated_2006
 ##for only those who survived 10 years
 numerator_grad_2006_10yr <- length(which(data_2006$graduated==1 & data_2006$survive_10yr==1))
 
-#denominator_grad_2006_10yr <- length(data_2006$graduated)
-
-denominator_grad_2006_10yr <- length(which(data_2006$top_smallbiz_bin==1))
+denominator_grad_2006_10yr <- length(data_2006$graduated)
 
 graduated_2006_10yr <- numerator_grad_2006_10yr/denominator_grad_2006_10yr
 graduated_2006_10yr
@@ -3728,9 +3691,7 @@ graduated_2006_DOD
 ##graduation for those who survived after 10 years only
 numerator_grad_2006_DOD_10yr <- length(which(data_2006_DOD$graduated==1 & data_2006_DOD$survive_10yr==1))
 
-#denominator_grad_2006_DOD_10yr <- length(data_2006_DOD$graduated)
-
-denominator_grad_2006_DOD_10yr <- length(which(data_2006_DOD$top_smallbiz_bin==1))
+denominator_grad_2006_DOD_10yr <- length(data_2006_DOD$graduated)
 
 graduated_2006_DOD_10yr <- numerator_grad_2006_DOD_10yr/denominator_grad_2006_DOD_10yr
 graduated_2006_DOD_10yr
@@ -3986,7 +3947,7 @@ survive_2016_data <- rbind(survive_2016_v4, data_2006_survive2016)
 FPDS_cleaned_unique_graphs <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear<2001), ]
 FPDS_cleaned_unique_graphs <- FPDS_cleaned_unique_graphs[!(FPDS_cleaned_unique_graphs$registrationYear>2016), ]
 
- 
+
 #**********
 ####1. %of obligations that go to new entrants as opposed to incumbent firms in each year####
 #**********
@@ -4009,7 +3970,7 @@ newentrants_graphs <- FPDS_cleaned_unique_wtotalobl_graphs %>% group_by(FYear) %
 
 # newentrants_graphs <- newentrants_graphs %>% group_by(FYear) %>%
 #   dplyr::mutate(new_entrant = 1)
-  
+
 
 incumbents_graphs <- FPDS_cleaned_unique_wtotalobl_graphs %>% group_by(FYear) %>%
   dplyr::summarise(obligations_incumbents = min(sum_obligations_incumbents)) 
@@ -4111,10 +4072,10 @@ ggplot(newentrants_v_incumbent_graphs, aes(x = FYear, y = total_obligations_allv
 
 ##creates a dataframe that counts the total number of obligations for each class of new entrants
 #over the entire time period count_total_obligations <- FPDS_cleaned_unique_graphs %>% 
-  filter(top_smallbiz_bin == 1 | top_smallbiz_bin == 0) %>% 
+filter(top_smallbiz_bin == 1 | top_smallbiz_bin == 0) %>% 
   group_by(registrationYear) %>% 
   dplyr::summarise(sum_obligations = sum(total_obligations)) 
-  
+
 
 
 ##create a dataframe that calculates the number of obligations that go to small vendors in each
@@ -4176,7 +4137,7 @@ FPDS_obligationscount_DOD <- FPDS_cleaned_unique_graphs_DOD %>%
   dplyr::mutate(percent_obl = percent_obl_dec * 100) %>%
   dplyr::mutate(percent_obl = round(percent_obl, 0)) %>%
   dplyr::mutate(total_percent = 100)
- 
+
 
 ggplot(FPDS_obligationscount_DOD, aes(x = registrationYear, y = tot_obl_bysize, fill = factor(top_smallbiz_bin), label = percent_obl)) +
   geom_bar(stat = 'identity', position = 'stack') +
@@ -4226,7 +4187,7 @@ FPDS_all_yrs5 <- rbind(FPDS_all_yrs4, data_2006)
 #step two, create a variable that describes whether a firm graduated and survived 10 yrs
 FPDS_all_yrs <- FPDS_all_yrs5 %>% group_by(Dunsnumber) %>% 
   dplyr::mutate(graduated_10yr = ifelse(graduated==1 & survive_10yr==1, 1, 0))
-  
+
 
 ##creates a dataframe that counts the total number of obligations in each year
 count_total_obligations_grad <- FPDS_all_yrs %>% 
@@ -4252,6 +4213,8 @@ FPDS_obligationscount_grad <- FPDS_all_yrs %>%
   dplyr::mutate(percent_obl = round(percent_obl, 0)) %>%
   dplyr::mutate(total_percent = 100)
 
+##make it so not labelled 0 and 1
+levels(FPDS_obligationscount_grad$graduated_10yr) <- list("Non-Graduated"=c(0), "Graduated"=c(1))
 
 graduated_v_nongrad_allfed <- ggplot(FPDS_obligationscount_grad, aes(x = registrationYear, y = tot_obl_bygrad, fill = factor(graduated_10yr), label = percent_obl)) +
   geom_bar(stat = 'identity', position = 'stack') +
@@ -4313,6 +4276,9 @@ FPDS_obligationscount_grad_DOD <- FPDS_all_yrs_DOD %>%
   dplyr::mutate(percent_obl = percent_obl_dec * 100) %>%
   dplyr::mutate(percent_obl = round(percent_obl, 0)) %>%
   dplyr::mutate(total_percent = 100)
+
+
+levels(FPDS_obligationscount_grad_DOD$graduated_10yr) <- list("Non-Graduated"=c(0), "Graduated"=c(1))
 
 
 graduated_v_nongrad_DoD <- ggplot(FPDS_obligationscount_grad_DOD, aes(x = registrationYear, y = tot_obl_bygrad, fill = factor(graduated_10yr), label = percent_obl)) +
@@ -4390,8 +4356,8 @@ FPDS_data<-FPDS_data %>%
 fed_duns_fyear<-FPDS_data %>%
   group_by(Dunsnumber,fiscal_year,entrant,first_year) %>%
   #dplyr::summarize(obligatedAmount.2017=sum(obligatedAmount.Deflator.2017,na.rm=TRUE),
-  dplyr::summarize(obligatedAmount.Deflator.2016=sum(obligatedAmount.Deflator.2016,na.rm=TRUE),
-                   present=max(obligatedAmount.Deflator.2016,na.rm=TRUE))
+  dplyr::summarize(obligatedAmount.Deflator.2017=sum(obligatedAmount.Deflator.2017,na.rm=TRUE),
+                   present=max(obligatedAmount.Deflator.2017,na.rm=TRUE))
 fed_duns_fyear$present<-ifelse(fed_duns_fyear$present>0,1,0)
 summary(fed_duns_fyear$present)
 
@@ -4400,8 +4366,8 @@ summary(fed_duns_fyear$present)
 dod_duns_fyear<-subset(FPDS_data,customer=="Defense") %>%
   group_by(Dunsnumber,fiscal_year,entrant,first_year) %>%
   #dplyr::summarize(obligatedAmount.2017=sum(obligatedAmount.Deflator.2017,na.rm=TRUE),
-  dplyr::summarize(obligatedAmount.Deflator.2016=sum(obligatedAmount.Deflator.2016,na.rm=TRUE),
-                   present=max(obligatedAmount.Deflator.2016,na.rm=TRUE))
+  dplyr::summarize(obligatedAmount.Deflator.2017=sum(obligatedAmount.Deflator.2017,na.rm=TRUE),
+                   present=max(obligatedAmount.Deflator.2017,na.rm=TRUE))
 dod_duns_fyear$present<-ifelse(dod_duns_fyear$present>0,1,0)
 summary(dod_duns_fyear$present)
 
@@ -4682,7 +4648,8 @@ NE_eachsample_overtime_dod <- ggplot(dod_duns_fyear_samples_op, aes(x = fiscal_y
   scale_fill_manual(name = "Sample", values = c("#33CCCC", "#000066","#3399CC", "#66FFFF", "#336666", "#999999"), labels = c("2001", "2002", "2003", "2004", "2005", "2006")) +
   scale_x_continuous(breaks = c(2001:2016)) +
   facet_wrap(~sample_year, scales="fixed", ncol=1) +
-  scale_y_continuous(label=comma)
+  scale_y_continuous(label=comma) +
+  guides(fill=FALSE)
 
 ##combine all fed agencies with dod
 grid.arrange(NE_eachsample_overtime_allfed, NE_eachsample_overtime_dod, ncol=2)
@@ -4782,6 +4749,8 @@ FPDS_obligationscount <- FPDS_cleaned_unique_graphs %>%
   dplyr::mutate(total_percent = 100)
 
 
+
+
 obligations_small_v_nsmall_allfed <- ggplot(FPDS_obligationscount, aes(x = registrationYear, y = tot_obl_bysize, fill = factor(top_smallbiz_bin), label = percent_obl)) +
   geom_bar(stat = 'identity', position = 'stack') +
   ylab("Total Obligations") +
@@ -4845,6 +4814,9 @@ grid.arrange(obligations_small_v_nsmall_allfed, obligations_small_v_nsmall_DoD)
 
 
 ##faceted
+##change so 0=non-small and 1=small
+levels(FPDS_obligationscount$top_smallbiz_bin) <- list("Non-Small"=c("0"), "Small"=c("1"))
+
 obligations_small_v_nsmall_allfed_facet <- ggplot(FPDS_obligationscount, aes(x = registrationYear, y = tot_obl_bysize, fill = factor(top_smallbiz_bin), label = percent_obl)) +
   geom_bar(stat = 'identity', position = 'stack') +
   ylab("Total Obligations") +
@@ -4860,9 +4832,13 @@ obligations_small_v_nsmall_allfed_facet <- ggplot(FPDS_obligationscount, aes(x =
   geom_text(data = subset(FPDS_obligationscount, registrationYear <= 2016), aes(label = scales::percent(percent_obl_dec)), size = 3, position = position_dodge(width = 1), vjust = -0.5) +
   facet_wrap(~top_smallbiz_bin, scales="fixed", ncol=1) + ##ncol=1 stack them above eachother (in 1 column)
   ylim(0, 2.7e+11) +
-  scale_y_continuous(label=unit_format(unit = "m", scale=1e-6))
+  scale_y_continuous(label=unit_format(unit = "m", scale=1e-6)) +
+  guides(fill=FALSE)
+
 
 obligations_small_v_nsmall_allfed_facet
+
+levels(FPDS_obligationscount_DOD$top_smallbiz_bin) <- list("Non-Small"=c("0"), "Small"=c("1"))
 
 
 obligations_small_v_nsmall_DoD_facet <- ggplot(FPDS_obligationscount_DOD, aes(x = registrationYear, y = tot_obl_bysize, fill = factor(top_smallbiz_bin), label = percent_obl)) +
@@ -4880,7 +4856,8 @@ obligations_small_v_nsmall_DoD_facet <- ggplot(FPDS_obligationscount_DOD, aes(x 
   geom_text(data = subset(FPDS_obligationscount_DOD, registrationYear <= 2016), aes(label = scales::percent(percent_obl_dec)), size = 3, position = position_dodge(width = 1), vjust = -0.5) +
   facet_wrap(~top_smallbiz_bin, scales="fixed", ncol=1) + ##ncol=1 stack them above eachother (in 1 column) 
   ylim(0, 2.55e+11) +
-  scale_y_continuous(label=unit_format(unit = "m", scale=1e-6))
+  scale_y_continuous(label=unit_format(unit = "m", scale=1e-6)) +
+  guides(fill=FALSE)
 
 
 obligations_small_v_nsmall_DoD_facet
@@ -4915,8 +4892,17 @@ ggplot(fed_duns_fyear_op, aes(x = fiscal_year, y = obligatedAmount.Deflator.2016
 ##should we remove the negative values?
 
 
+##clean data to remove negative values
+fed_duns_fyear_op_summarized<-fed_duns_fyear_op %>% group_by(fiscal_year,entrant) %>%
+  dplyr::summarize(obligatedAmount.Deflator.2016=sum(obligatedAmount.Deflator.2016,na.rm=TRUE))
+
+##clean data to code true and false to incumbent (false) and new entrant (true)
+names(fed_duns_fyear_op_summarized)
+fed_duns_fyear_op_summarized$entrant<-factor(fed_duns_fyear_op_summarized$entrant)
+levels(fed_duns_fyear_op_summarized$entrant) <- list("Incumbent Firm"=c("FALSE"), "New Entrant"=c("TRUE"))
+
 ###B. Faceted 
-obl_NE_v_incumbents_allfed <- ggplot(fed_duns_fyear_op, aes(x = fiscal_year, y = obligatedAmount.Deflator.2016, fill = factor(entrant))) +
+obl_NE_v_incumbents_allfed <- ggplot(fed_duns_fyear_op_summarized, aes(x = fiscal_year, y = obligatedAmount.Deflator.2016, fill = entrant)) +
   geom_bar(stat = 'identity', position = 'stack') + 
   ylab("Total Obligations") +
   xlab("Fiscal Year") +
@@ -4924,10 +4910,10 @@ obl_NE_v_incumbents_allfed <- ggplot(fed_duns_fyear_op, aes(x = fiscal_year, y =
   scale_fill_manual(name = "Vendor Type", values = c("#66CCCC", "#336666"), labels = c("Incumbent Firms", "New Entrant")) +
   ggtitle("Obligations for New Entrants vs. Incumbents (2001-2016) - All Federal Agencies") +
   facet_wrap(~entrant, scales="free", ncol=1) +
-  scale_y_continuous(label=unit_format(unit = "m", scale=1e-6)) ##ncol=1 stack them above eachother (in 1 column) 
+  scale_y_continuous(label=unit_format(unit = "m", scale=1e-6)) +##ncol=1 stack them above eachother (in 1 column) 
+  guides(fill=FALSE)
 
-
-
+obl_NE_v_incumbents_allfed
 
 
 ##************##
@@ -4938,16 +4924,27 @@ obl_NE_v_incumbents_allfed <- ggplot(fed_duns_fyear_op, aes(x = fiscal_year, y =
 
 
 ###B. Faceted
-obl_NE_v_incumbents_dod <- ggplot(dod_duns_fyear_op, aes(x = fiscal_year, y = obligatedAmount.Deflator.2016, fill = factor(entrant))) +
+##remove negative values
+dod_duns_fyear_op_summarized<-dod_duns_fyear_op %>% group_by(fiscal_year,entrant) %>%
+  dplyr::summarize(obligatedAmount.Deflator.2016=sum(obligatedAmount.Deflator.2016,na.rm=TRUE))
+
+
+##clean data to code true and false to incumbent (false) and new entrant (true)
+names(dod_duns_fyear_op_summarized)
+dod_duns_fyear_op_summarized$entrant<-factor(dod_duns_fyear_op_summarized$entrant)
+levels(dod_duns_fyear_op_summarized$entrant) <- list("Incumbent Firm"=c("FALSE"), "New Entrant"=c("TRUE"))
+
+
+obl_NE_v_incumbents_dod <- ggplot(dod_duns_fyear_op_summarized, aes(x = fiscal_year, y = obligatedAmount.Deflator.2016, fill = factor(entrant))) +
   geom_bar(stat = 'identity', position = 'stack') + 
   ylab("Total Obligations") +
   xlab("Fiscal Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
   scale_fill_manual(name = "Vendor Type", values = c("#66CCCC", "#336666"), labels = c("Incumbent Firms", "New Entrant")) +
-  ggtitle("DoD") +
+  ggtitle("Obligations for New Entrants vs. Incumbents (2001-2016) - DoD") +
   facet_wrap(~entrant, scales="free", ncol=1) +
-  scale_y_continuous(label=unit_format(unit = "m", scale=1e-6))##ncol=1 stack them above eachother (in 1 column)
-
+  scale_y_continuous(label=unit_format(unit = "m", scale=1e-6)) +##ncol=1 stack them above eachother (in 1 column)
+  guides(fill=FALSE)
 
 grid.arrange(obl_NE_v_incumbents_allfed, obl_NE_v_incumbents_dod)
 
@@ -4970,7 +4967,7 @@ ggplot(fed_duns_fyear_samples_op, aes(x = fiscal_year, y = obligatedAmount.Defla
   scale_x_continuous(breaks = c(2001:2016)) +
   scale_fill_manual(name = "Sample", values = c("#33CCCC", "#000066","#3399CC", "#66FFFF", "#336666", "#999999"), labels = c("2001", "2002", "2003", "2004", "2005", "2006")) +
   ggtitle("Obligations to Each Sample Over Time - All Federal Agencies") 
-  
+
 
 
 ###B. Faceted
@@ -4997,8 +4994,9 @@ obl_eachsample_dod <- ggplot(dod_duns_fyear_samples_op, aes(x = fiscal_year, y =
   scale_fill_manual(name = "Sample", values = c("#33CCCC", "#000066","#3399CC", "#66FFFF", "#336666", "#999999"), labels = c("2001", "2002", "2003", "2004", "2005", "2006")) +
   ggtitle("DoD") +
   facet_wrap(~sample_year, scales="fixed", ncol=1) +
-  scale_y_continuous(label=unit_format(unit = "m", scale = 1e-6))
-  #scale_y_continuous(label=dollar_format())
+  scale_y_continuous(label=unit_format(unit = "m", scale = 1e-6)) +
+  guides(fill=FALSE)
+#scale_y_continuous(label=dollar_format())
 
 grid.arrange(obl_eachsample_allfed, obl_eachsample_dod, ncol=2)
 
@@ -5050,6 +5048,10 @@ FPDS_obligationscount_grad <- FPDS_all_yrs %>%
   dplyr::mutate(percent_obl = round(percent_obl, 0)) %>%
   dplyr::mutate(total_percent = 100)
 
+str(FPDS_obligationscount_grad)
+FPDS_obligationscount_grad$graduated_10yr<-factor(FPDS_obligationscount_grad$graduated_10yr)
+str(FPDS_obligationscount_grad$graduated_10yr)
+levels(FPDS_obligationscount_grad$graduated_10yr) <- list("Non-Graduated"=c("0"), "Graduated"=c("1"))
 
 graduated_v_nongrad_allfed <- ggplot(FPDS_obligationscount_grad, aes(x = registrationYear, y = tot_obl_bygrad, fill = factor(graduated_10yr), label = percent_obl)) +
   geom_bar(stat = 'identity', position = 'stack') +
@@ -5059,15 +5061,15 @@ graduated_v_nongrad_allfed <- ggplot(FPDS_obligationscount_grad, aes(x = registr
   scale_y_continuous(label=unit_format(unit = "m", scale=1e-6), breaks = c(0, 5e+10, 1e+11, 1.5e+11, 2e+11, 2.5e+11, 3.0e+11, 3.5e+11, 4e+11)) +
   ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
   scale_fill_manual(name = "New Entrant Type", values = c("#66CCCC", "#336666"), labels = c("Non-Graduated", "Graduated")) +
-  ggtitle("Percent of Obligations for Graduated and Non-Graduated New Entrants")+
+  ggtitle("Percent of Obligations for Graduated and Non-Graduated New Entrants - All Federal Agencies")+
   ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
   ###    angle = 45) +
   ##geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
   #geom_text_repel(data = subset(FPDS_obligationscount_grad, registrationYear <= 2016), aes(label = scales::percent(percent_obl_dec)), size = 4, position = position_stack(vjust = .3), angle = 90) +
   geom_text(data = subset(FPDS_obligationscount_grad, registrationYear <= 2016), aes(label = scales::percent(percent_obl_dec)), size = 3, position = position_dodge(width = 1), vjust = -0.5) +
-  facet_wrap(~graduated_10yr, ncol=1) ##ncol=1 stack them above eachother (in 1 column)
+  facet_wrap(~graduated_10yr, ncol=1) + ##ncol=1 stack them above eachother (in 1 column)
   #ylim(0, 3e+11) +
-  
+  guides(fill=FALSE)
 
 graduated_v_nongrad_allfed
 
@@ -5114,6 +5116,11 @@ FPDS_obligationscount_grad_DOD <- FPDS_all_yrs_DOD %>%
   dplyr::mutate(percent_obl = round(percent_obl, 0)) %>%
   dplyr::mutate(total_percent = 100)
 
+str(FPDS_obligationscount_grad_DOD$graduated_10yr)
+FPDS_obligationscount_grad_DOD$graduated_10yr<-factor(FPDS_obligationscount_grad_DOD$graduated_10yr)
+str(FPDS_obligationscount_grad_DOD$graduated_10yr)
+levels(FPDS_obligationscount_grad_DOD$graduated_10yr) <- list("Non-Graduated"=c("0"), "Graduated"=c("1"))
+
 
 graduated_v_nongrad_DoD <- ggplot(FPDS_obligationscount_grad_DOD, aes(x = registrationYear, y = tot_obl_bygrad, fill = factor(graduated_10yr), label = percent_obl)) +
   geom_bar(stat = 'identity', position = 'stack') +
@@ -5129,20 +5136,13 @@ graduated_v_nongrad_DoD <- ggplot(FPDS_obligationscount_grad_DOD, aes(x = regist
   ##geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
   #geom_text_repel(data = subset(FPDS_obligationscount_grad_DOD, registrationYear <= 2016), aes(label = scales::percent(percent_obl_dec)), size = 4, position = position_stack(vjust = .3), angle = 90) +
   geom_text(data = subset(FPDS_obligationscount_grad_DOD, registrationYear <= 2016), aes(label = scales::percent(percent_obl_dec)), size = 3, position = position_dodge(width = 1), vjust = -0.5) +
-  facet_wrap(~graduated_10yr, ncol=1) #+ ##ncol=1 stack them above eachother (in 1 column)
+  facet_wrap(~graduated_10yr, ncol=1) + #+ ##ncol=1 stack them above eachother (in 1 column)
   #ylim(0, 2.1e+11) +
   #scale_y_continuous(label=unit_format(unit = "m", scale=1e-6), breaks = c(0, 5e+10, 1e+11, 1.5e+11, 2.0e+11, 2.5e+11, 3.0e+11))
+  guides(fill=FALSE)
 
 graduated_v_nongrad_DoD
 
 grid.arrange(graduated_v_nongrad_allfed, graduated_v_nongrad_DoD)
-
-
-
-
-
-
-
-
 
 
