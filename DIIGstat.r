@@ -1359,3 +1359,21 @@ grouped_barplot <- function(x, contract) {
                                   
                                   
                                  
+
+update_sample_col_CSIScontractID<-function(sample,full,col){
+  full<-full[,colnames(full) %in% c("CSIScontractID",col)]
+
+sample<-sample[,!colnames(sample) %in% col]
+
+sample<-left_join(sample,full)
+sample
+}
+get_pars<-function(model){
+  if (isLMM(model)) {
+  } else {
+    pars <- getME(model,"theta")
+    ## GLMM: requires both random and fixed parameters
+    pars <- getME(model, c("theta","fixef"))
+  }
+  pars
+}
