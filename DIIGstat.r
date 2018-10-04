@@ -1269,7 +1269,7 @@ statsummary_continuous <- function(x, contract){       #input(x: namelist of all
     sdlog <- sd(transformed_i,na.rm = TRUE)
     unitabove <- round(exp(mean(transformed_i,na.rm = TRUE)+2*sdlog),3)
     unitbelow <- round(exp(mean(transformed_i,na.rm = TRUE)-2*sdlog),3)
-    Percent_NA <- round(sum(is.na(contract[[i]]))/nrow(def),5)
+    Percent_NA <- round(sum(is.na(contract[[i]]))/nrow(contract),5)
     Percent_Ob <- round(sum(contract$Action.Obligation[is.na(contract[[i]])],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5)
     newrow <- c(i, minlog, maxlog, medianlog, meanlog, unitbelow, unitabove,
                 Percent_NA, Percent_Ob)
