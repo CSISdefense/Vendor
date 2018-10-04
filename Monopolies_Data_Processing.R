@@ -29,8 +29,8 @@ defense_naics_vendor <- read_delim("Data\\Defense_Vendor.SP_EntityIDhistoryNAICS
 problems(defense_naics_vendor)
 
 #Import Defense Vendor list.
-file<-unz("Data\\Defense_Vendor_EntityIDhistoryCalendar.zip",
-          filename="Defense_Vendor_EntityIDhistoryCalendar.txt")
+file<-unz("Data\\Defense_Vendor.SP_EntityIDhistoryCalendar.zip",
+          filename="Defense_Vendor.SP_EntityIDhistoryCalendar.txt")
 
 defense_vendor <- read.table(file,
                                    header = TRUE,
@@ -44,7 +44,8 @@ defense_vendor<-clean_entity(defense_vendor)
 
 defense_naics_vendor<-label_naics_mismatch(defense_naics_vendor)
 defense_naics_vendor$exclude<-FALSE
-defense_naics_vendor$exclude[data$Mismatch %in% get_exclude_list() | is.na(data$NAICS_Code)]<-TRUE
+defense_naics_vendor$exclude[defense_naics_vendor$mismatch %in% get_exclude_list() |
+                               is.na(defense_naics_vendor$NAICS_Code)]<-TRUE
 
 
 #******************Calculate Defense Wide Values****************
@@ -52,7 +53,7 @@ defense_vendor<-defense_vendor %>% group_by(CalendarYear)
 
 defense_vendor<-defense_vendor %>%
   dplyr::mutate(
-    pos = rank(-Action.Obligation.2016,
+    pos = rank(-Action.Obligation,
                ties.method ="min"),
     pct = ifelse(Action.Obligation>0,
                  Action.Obligation / sum(Action.Obligation[Action.Obligation>0]),
@@ -76,7 +77,7 @@ annual_summary<-defense_vendor %>%
 
 
 #*****************NAICS 6****************************
-load(     file="data//defense_naics_vendor.Rdata")
+# load(     file="data//defense_naics_vendor.Rdata")
 defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54171"]<-"54171"
 
 
