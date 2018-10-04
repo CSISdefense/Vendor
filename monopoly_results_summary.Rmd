@@ -401,8 +401,8 @@ Agency_barplot <- ggplot(data = Agency_Freq,
                   ylab("") + 
                   coord_flip() + 
                   theme_grey() +
-                  scale_fill_grey() +
-                  guides(fill = guide_legend(reverse = TRUE)) + 
+                  scale_fill_grey(labels = c("% of records", "% of obligation"),
+                                  guide = guide_legend(reverse = TRUE)) +
                   theme(legend.title = element_blank(),
                         legend.position = "bottom",
                         legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit = "cm"),
@@ -593,9 +593,9 @@ NAICS_barPlot <- ggplot(data = NAICS_Freq_TOP,
                   coord_flip() +
                   xlab("") + 
                   ylab("") + 
-                  guides(fill = guide_legend(reverse = TRUE)) +
                   theme_grey() + 
-                  scale_fill_grey() + 
+                  scale_fill_grey(labels = c("% records", "% obligation"),
+                                  guide = guide_legend(reverse = TRUE)) + 
                   ggtitle("Top 18 of the most frequently appeared NAICS") +
                   theme(text = element_text(size = 10),
                         legend.title = element_blank(),
@@ -670,8 +670,8 @@ NAICS2_barplot <- ggplot(data = NAICS2_Freq,
                    xlab("") + 
                    ylab("") + 
                    theme_grey() + 
-                   scale_fill_grey() + 
-                   guides(fill = guide_legend(reverse = TRUE)) + 
+                   scale_fill_grey(labels = c("% records", "% obligation"),
+                                  guide = guide_legend(reverse = TRUE)) + 
                    ggtitle("Percent of Frequency and obligation for NAICS2") +
                    theme(text = element_text(size = 10), 
                          legend.title = element_blank(),
@@ -686,34 +686,49 @@ NAICS2_barplot
 ```{r grouped percent frequency/obligation barplot for all NAICS2, 21 in total }
 #grouped bar plot for variable Office
 #Perpare data for plot
-Office_Freq <- as.data.frame(table(def$Office))
-Office_Freq$Percent_Freq <- round(Office_Freq$Freq/sum(Office_Freq$Freq),4)*100
-colnames(Office_Freq) <- c("Office", "Count_Freq", "Percent_Freq")
+#get the detailed desceription for Office by AgencyID and OfficeID
+Office_Lookup <- read.delim("https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/office/Office.ContractingOfficeCode.txt")
+def_dup <- def
+memory.limit(56000)
+def_dup <- left_join(def_dup, Office_Lookup, by = c("Agency" = "AgencyID", "Office" = "ContractingOfficeCode"))
+Office_Freq <- as.data.frame(table(def_dup$Office, def_dup$ContractingOfficeName))
+colnames(Office_Freq) <- c("OfficeID", "OfficeName","Count_Freq")
+Office_Freq$Percent_Freq <- round(Office_Freq$Count_Freq/sum(Office_Freq$Count_Freq),4)*100
 Office_Freq <- subset(Office_Freq, (Office_Freq$Count_Freq != 0)&(Office_Freq$Percent_Freq!=0))
+Office_Freq[,1:2] <- lapply(Office_Freq[,1:2], function(x) as.character(x))
+Office_Freq$Office_Full <- ifelse(Office_Freq$OfficeName == "NULL", Office_Freq$OfficeID, Office_Freq$OfficeName)
+
 
 Percent_Obli <- c()
-Total_Obli <- sum(def$Action.Obligation, na.rm = TRUE)
-for (i in Office_Freq$Office) {
-  Percent_Obligation <- round(sum(def$Action.Obligation[def$Office == i], na.rm = TRUE)/Total_Obli,5)
+Total_Obli <- sum(def_dup$Action.Obligation, na.rm = TRUE)
+for (i in Office_Freq$OfficeID) {
+  Percent_Obligation <- round(sum(def_dup$Action.Obligation[def_dup$Office == i], na.rm = TRUE)/Total_Obli,5)
   Percent_Obli <- c(Percent_Obli, Percent_Obligation)
-  print(i)
 }
-
 Office_Freq$Percent_Obli <- Percent_Obli * 100
+
 Office_Freq_top10Freq <- Office_Freq[order(-Office_Freq$Percent_Freq),]
-Office_Freq_top10Freq <- Office_Freq_top10Freq[1:10, ]
+Office_Freq_top10Freq <- Office_Freq_top10Freq[1:10, ]  #including NULL category
 Office_Freq_top10Obli <- Office_Freq[order(-Office_Freq$Percent_Obli),]
-Office_Freq_top10Obli <- Office_Freq_top10Obli[1:10, ]
+Office_Freq_top10Obli <- Office_Freq_top10Obli[1:10, ]  #including NULL category
 
 Office_Freq_TOP <- rbind(Office_Freq_top10Obli, Office_Freq_top10Freq)
-Office_Freq_TOP <- unique(Office_Freq_TOP)  #20 records in total
+Office_Freq_TOP <- unique(Office_Freq_TOP)  #17 records in total
 
+#Generate a new name column by Combining officeID and officeName
+Office_Freq_TOP$Office_Full <- ifelse(Office_Freq_TOP$Office_Full == Office_Freq_TOP$OfficeID, 
+                                      Office_Freq_TOP$OfficeID, 
+                                      paste(Office_Freq_TOP$OfficeID, 
+                                            " - ", 
+                                            Office_Freq_TOP$OfficeName))
 
-Office_Freq_TOP$Office <- factor(Office_Freq_TOP$Office, levels = rev(Office_Freq_TOP$Office))
-Office_Freq_TOP <- melt(Office_Freq_TOP, id = c("Office", "Count_Freq"))
+Office_Freq_TOP$Office_Full <- factor(Office_Freq_TOP$Office_Full, 
+                                      levels = rev(Office_Freq_TOP$Office_Full))
+Office_Freq_TOP <- melt(Office_Freq_TOP, 
+                        id = c("OfficeID", "OfficeName", "Count_Freq", "Office_Full"))
 
 Office_barplot <- ggplot(data = Office_Freq_TOP,
-                         aes(x = Office, 
+                         aes(x = Office_Full, 
                              y = value,
                              fill = factor(variable))) +
                   geom_bar(stat = "identity", 
@@ -723,14 +738,14 @@ Office_barplot <- ggplot(data = Office_Freq_TOP,
                   xlab("") + 
                   ylab("") + 
                   theme_grey() + 
-                  scale_fill_grey() + 
-                  guides(fill = guide_legend(reverse = TRUE)) + 
+                  scale_fill_grey(labels = c("% of records", "% of obligation"),
+                                  guide = guide_legend(reverse = TRUE)) + 
                   ggtitle("Percent of Frequency and obligation for Office") +
                   theme(text = element_text(size = 10), 
                         legend.title = element_blank(),
                         legend.position = "bottom",
                         legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit = "cm"),
-                        legend.text = element_text(margin = margin(r=0.5, unit = "cm")),
+                        legend.text = element_text(margin = margin(r=0.5, unit = "cm")), 
                         plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm"))
 Office_barplot
 ```
