@@ -78,8 +78,9 @@ annual_summary<-defense_vendor %>%
 
 #*****************NAICS 6****************************
 # load(     file="data//defense_naics_vendor.Rdata")
-defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54171" & !is.na()]<-"54171"
-View(defense_naics_vendor[substr(defense_naics_vendor$NAICS_Code,1,5)=="54171" ,])
+defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54171" & 
+         !is.na(defense_naics_vendor$NAICS_Code)]<-"54171"
+
 
   annual_naics6_summary<-summarize_annual_naics(defense_naics_vendor)
   annual_naics5_summary<-summarize_annual_naics(defense_naics_vendor,5)

@@ -17,8 +17,8 @@ library(hexbin)
 library(ggplot2)
 
 load("data//defense_naics_vendor.Rdata")
-# annual_naics6_summary<-subset(annual_naics6_summary,Fiscal.Year>=2007)
-# annual_naics2_summary<-subset(annual_naics2_summary,Fiscal.Year>=2007)
+# annual_naics6_summary<-subset(annual_naics6_summary,CalendarYear>=2007)
+# annual_naics2_summary<-subset(annual_naics2_summary,CalendarYear>=2007)
 
 #Converting Obligation.2016 back to actual dollars rather than millions
 # annual_naics6_summary$Obligation.2016<-annual_naics6_summary$Obligation.2016*1e9
@@ -94,7 +94,7 @@ dollar_vendor_scat<-ggplot(annual_naics6_summary,
 #                    ties.method ="min")
 # View(subset(annual_naics6_summary,rank<=10))
 # ggplot(subset(annual_naics6_summary,rank <=10),
-#               aes(x=Fiscal.Year,y=def6_hh_index))+geom_line()+facet_wrap(~NAICS_Code )
+#               aes(x=CalendarYear,y=def6_hh_index))+geom_line()+facet_wrap(~NAICS_Code )
 # 
 # annual_naics6_summary
 # 
@@ -227,7 +227,7 @@ dollar_vendor_scat<-ggplot(annual_naics4_summary,
   
 max(annual_naics4_summary$def4_obl,na.rm=TRUE)
 
-filter(annual_naics5_summary,def4_obl==max(annual_naics5_summary$def4_obl))
+filter(annual_naics4_summary,def4_obl==max(annual_naics5_summary$def4_obl))
 
  lay <- rbind(c(1,2),
              c(3,4),
@@ -290,7 +290,7 @@ dollar_vendor_scat<-ggplot(annual_naics3_summary,
   
 max(annual_naics3_summary$def3_obl,na.rm=TRUE)
 
-filter(annual_naics5_summary,def3_obl==max(annual_naics5_summary$def3_obl))
+filter(annual_naics3_summary,def3_obl==max(annual_naics5_summary$def3_obl))
 
  lay <- rbind(c(1,2),
              c(3,4),
@@ -351,9 +351,9 @@ dollar_vendor_scat<-ggplot(annual_naics2_summary,
     theme(axis.text.x = element_text(angle = 45,hjust=1))
 
   
-max(annual_naics3_summary$def2_obl,na.rm=TRUE)
+max(annual_naics2_summary$def2_obl,na.rm=TRUE)
 
-filter(annual_naics5_summary,def2_obl==max(annual_naics5_summary$def2_obl))
+filter(annual_naics2_summary,def2_obl==max(annual_naics5_summary$def2_obl))
 
  lay <- rbind(c(1,2),
              c(3,4),
@@ -378,12 +378,10 @@ max(subset(annual_naics2_summary,!is.na(NAICS_Code))$def2_obl,na.rm=TRUE)
                         skip_check_var="NAICS_DESCRIPTION"
                )
 
-ggplot(annual_naics2_summary,aes(x=Fiscal.Year,weight=def2_obl))+
+ggplot(annual_naics2_summary,aes(x=CalendarYear,weight=def2_obl))+
   geom_bar()+facet_wrap(~NAICS_Code)
 
 
-ggplot(annual_naics6_summary,aes(x=Fiscal.Year,weight=def2_obl))+
-  geom_bar()+facet_wrap(~NAICS2)
 
 annual_naics6_summary$NAICS2<-substring(annual_naics6_summary$NAICS_Code,1,2)
 
@@ -400,7 +398,7 @@ annual_naics2_summary$NAICS_label[annual_naics2_summary$NAICS_label==
 annual_naics2_summary$NAICS_label<-factor(annual_naics2_summary$NAICS_label)
 order<-  rev(levels(annual_naics2_summary$NAICS_label))
 
-NAICS2digit<-ggplot(subset(annual_naics2_summary,Fiscal.Year>=2007 & Fiscal.Year<=2015),
+NAICS2digit<-ggplot(subset(annual_naics2_summary,CalendarYear>=2007 & CalendarYear<=2015),
        aes(x=NAICS_label,weight=def2_obl))+
   geom_bar()+coord_flip()+
   scale_y_continuous(label=scales::comma)+scale_x_discrete(limits=order)+
@@ -414,7 +412,7 @@ The study team has replicated a ranged of measures used by the U.S. census depar
 
 ```{r consolidation_measures, echo=FALSE, fig.width=6.5, fig.height=9}
 
-top_scale<-nrow(filter(annual_naics6_summary,top50>=0.995))
+top_scale<-nrow(filter(annual_naics6_summary,def6_top50>=0.995))
 
 hh_hist<-ggplot(annual_naics6_summary,
        aes(x=def6_hh_index))+geom_histogram(binwidth=100)+
@@ -430,32 +428,32 @@ hh_scat<-ggplot(annual_naics6_summary,
 
 
 top4_hist<-ggplot(annual_naics6_summary,
-       aes(x=top4))+geom_histogram(binwidth=0.01)+
+       aes(x=def6_top4))+geom_histogram(binwidth=0.01)+
   scale_y_continuous(labels=scales::comma_format(),limits=c(0,top_scale))+
   scale_x_continuous(labels=scales::percent_format())
 
 top4_scat<-ggplot(annual_naics6_summary,
        aes(x=def6_obl,
-           y=top4))+geom_point(alpha=0.01)+
+           y=def6_top4))+geom_point(alpha=0.01)+
   scale_x_continuous(trans="log10")+
   scale_y_continuous(labels=scales::percent_format())
 
 
 top8_hist<-ggplot(annual_naics6_summary,
-       aes(x=top8))+geom_histogram(binwidth=0.01)+
+       aes(x=def6_top8))+geom_histogram(binwidth=0.01)+
   scale_y_continuous(labels=scales::comma_format(),limits=c(0,top_scale))+
   scale_x_continuous(labels=scales::percent_format())
 
 
 top8_scat<-ggplot(annual_naics6_summary,
        aes(x=def6_obl,
-           y=top8))+geom_point(alpha=0.01)+
+           y=def6_top8))+geom_point(alpha=0.01)+
   scale_x_continuous(trans="log10")+
   scale_y_continuous(labels=scales::percent_format())
 
 
 top12_hist<-ggplot(annual_naics6_summary,
-       aes(x=top12))+geom_histogram(binwidth=0.01)+
+       aes(x=def6_top12))+geom_histogram(binwidth=0.01)+
   scale_y_continuous(labels=scales::comma_format(),limits=c(0,top_scale))+
   scale_x_continuous(labels=scales::percent_format())
 
@@ -463,21 +461,21 @@ top12_hist<-ggplot(annual_naics6_summary,
 
 top12_scat<-ggplot(annual_naics6_summary,
        aes(x=def6_obl,
-           y=top12))+geom_point(alpha=0.01)+
+           y=def6_top12))+geom_point(alpha=0.01)+
   scale_x_continuous(trans="log10")+
   scale_y_continuous(labels=scales::percent_format())
 
 
 
 top20_hist<-ggplot(annual_naics6_summary,
-       aes(x=top20))+geom_histogram(binwidth=0.01)+
+       aes(x=def6_top20))+geom_histogram(binwidth=0.01)+
   scale_y_continuous(labels=scales::comma_format(),limits=c(0,top_scale))+
   scale_x_continuous(labels=scales::percent_format())
 
 
 top20_scat<-ggplot(annual_naics6_summary,
        aes(x=def6_obl,
-           y=top20))+geom_point(alpha=0.01)+
+           y=def6_top20))+geom_point(alpha=0.01)+
   scale_x_continuous(trans="log10")+
   scale_y_continuous(labels=scales::percent_format())
 
@@ -485,14 +483,14 @@ top20_scat<-ggplot(annual_naics6_summary,
 
 
 top50_hist<-ggplot(annual_naics6_summary,
-       aes(x=top50))+geom_histogram(binwidth=0.01)+
+       aes(x=def6_top50))+geom_histogram(binwidth=0.01)+
   scale_y_continuous(labels=scales::comma_format(),limits=c(0,top_scale))+
   scale_x_continuous(labels=scales::percent_format())
 
 
 top50_scat<-ggplot(annual_naics6_summary,
        aes(x=def6_obl,
-           y=top50))+geom_point(alpha=0.01)+
+           y=def6_top50))+geom_point(alpha=0.01)+
   scale_x_continuous(trans="log10")+
   scale_y_continuous(labels=scales::percent_format())
 
@@ -532,21 +530,21 @@ Upon examination, the consolidation ratio for the top 4 firms appears to offer t
 
 top4_hh_scat<-ggplot(annual_naics6_summary,
        aes(x=def6_hh_index,
-           y=top4))+geom_point(alpha=0.01)+
+           y=def6_top4))+geom_point(alpha=0.01)+
   scale_x_continuous(labels=scales::comma_format())+
   scale_y_continuous(labels=scales::percent_format())
 
 
 top8_hh_scat<-ggplot(annual_naics6_summary,
        aes(x=def6_hh_index,
-           y=top8))+geom_point(alpha=0.01)+
+           y=def6_top8))+geom_point(alpha=0.01)+
   scale_x_continuous(labels=scales::comma_format())+
   scale_y_continuous(labels=scales::percent_format())
 
 
 top12_hh_scat<-ggplot(annual_naics6_summary,
        aes(x=def6_hh_index,
-           y=top12))+geom_point(alpha=0.01)+
+           y=def6_top12))+geom_point(alpha=0.01)+
   scale_x_continuous(labels=scales::comma_format())+
   scale_y_continuous(labels=scales::percent_format())
 
@@ -554,7 +552,7 @@ top12_hh_scat<-ggplot(annual_naics6_summary,
 
 top20_hh_scat<-ggplot(annual_naics6_summary,
        aes(x=def6_hh_index,
-           y=top20))+geom_point(alpha=0.01)+
+           y=def6_top20))+geom_point(alpha=0.01)+
   scale_x_continuous(labels=scales::comma_format())+
   scale_y_continuous(labels=scales::percent_format())
 
@@ -562,7 +560,7 @@ top20_hh_scat<-ggplot(annual_naics6_summary,
 
 top50_hh_scat<-ggplot(annual_naics6_summary,
        aes(x=def6_hh_index,
-           y=top50))+geom_point(alpha=0.01)+
+           y=def6_top50))+geom_point(alpha=0.01)+
   scale_x_continuous(labels=scales::comma_format())+
   scale_y_continuous(labels=scales::percent_format())
 
