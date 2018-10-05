@@ -29,8 +29,8 @@ defense_naics_vendor <- read_delim("Data\\Defense_Vendor.SP_EntityIDhistoryNAICS
 problems(defense_naics_vendor)
 
 #Import Defense Vendor list.
-file<-unz("Data\\Defense_Vendor_EntityIDhistory.zip",
-          filename="Defense_Vendor_EntityIDhistory.txt")
+file<-unz("Data\\Defense_Vendor.SP_EntityIDhistoryCalendar.zip",
+          filename="Defense_Vendor.SP_EntityIDhistoryCalendar.txt")
 
 defense_vendor <- read.table(file,
                                    header = TRUE,
@@ -44,7 +44,8 @@ defense_vendor<-clean_entity(defense_vendor)
 
 defense_naics_vendor<-label_naics_mismatch(defense_naics_vendor)
 defense_naics_vendor$exclude<-FALSE
-defense_naics_vendor$exclude[data$Mismatch %in% get_exclude_list() | is.na(data$NAICS_Code)]<-TRUE
+defense_naics_vendor$exclude[defense_naics_vendor$mismatch %in% get_exclude_list() |
+                               is.na(defense_naics_vendor$NAICS_Code)]<-TRUE
 
 
 #******************Calculate Defense Wide Values****************
@@ -52,7 +53,7 @@ defense_vendor<-defense_vendor %>% group_by(CalendarYear)
 
 defense_vendor<-defense_vendor %>%
   dplyr::mutate(
-    pos = rank(-Action.Obligation.2016,
+    pos = rank(-Action.Obligation,
                ties.method ="min"),
     pct = ifelse(Action.Obligation>0,
                  Action.Obligation / sum(Action.Obligation[Action.Obligation>0]),
@@ -76,8 +77,9 @@ annual_summary<-defense_vendor %>%
 
 
 #*****************NAICS 6****************************
-load(     file="data//defense_naics_vendor.Rdata")
-defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54171"]<-"54171"
+# load(     file="data//defense_naics_vendor.Rdata")
+defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54171" & 
+         !is.na(defense_naics_vendor$NAICS_Code)]<-"54171"
 
 
   annual_naics6_summary<-summarize_annual_naics(defense_naics_vendor)
@@ -125,7 +127,7 @@ defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54
   core$PAYANN[revised_list]
   core$mismatch[revised_list]<-paste(ifelse(is.na(core$mismatch[revised_list]),"",core$mismatch[revised_list])
                                                   ,"Removed revised footnote from PAYANN")
-  core$pay[revised_list]<-as.numeric(substr(core$PAYANN[revised_list],1,nchar(core$PAYANN[revised_list])-3))
+  core$pay[revised_list]<-as.numeric(substr(core$PAYANN[revised_list],1,nchar(core$PAYANN[revised_list])-3))*1000
   
   #Reciepts
   revised_list<-is.na(core$rcp) & !is.na(core$RCPTOT) &
@@ -133,7 +135,7 @@ defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54
   core$RCPTOT[revised_list]
   core$mismatch[revised_list]<-paste(ifelse(is.na(core$mismatch[revised_list]),"",core$mismatch[revised_list])
                                                   ,"Removed revised footnote from RCPTOT")
-  core$rcp[revised_list]<-as.numeric(substr(core$RCPTOT[revised_list],1,nchar(core$RCPTOT[revised_list])-3))
+  core$rcp[revised_list]<-as.numeric(substr(core$RCPTOT[revised_list],1,nchar(core$RCPTOT[revised_list])-3))*1000
   
   #Employees
   revised_list<-is.na(as.numeric(core$EMP)) & !is.na(core$EMP) &

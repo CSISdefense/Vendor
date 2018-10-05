@@ -52,10 +52,10 @@ First we load the data. The dataset used is a U.S. Defense Contracting dataset d
 
 
 ```{r ReadInData, echo = TRUE}
- # load(file="Data/defense_contract_complete.Rdata")
+ load(file="Data/defense_contract_complete.Rdata")
 # head(def)
-# debug(transform_contract)
-# def<-transform_contract(def)  
+debug(transform_contract)
+def<-transform_contract(def)
  # save(file="Data/transformed_def.Rdata",def)
 load(file="Data/transformed_def.Rdata")
 def$NAICS2<-factor(def$NAICS2)
@@ -118,8 +118,8 @@ Next, we eliminate missing data entries and then draw a sample. The final comput
 
 ###Computational Sample Creation
 ```{r Sample}
- load(file="data//def_sample.Rdata")
-# save(smp,smp1m,file="data//def_sample.Rdata")
+load(file="data//def_sample.Rdata")
+save(smp,smp1m,file="data//def_sample.Rdata")
 #Code to update sample w/o recreating.
 smp<-smp["CSIScontractID"]
 smp<-left_join(smp,def)
@@ -155,7 +155,7 @@ smp1m<-left_join(smp1m,def)
     
   }
   contract
-}
+#}
 debug(add_who)
 smp<-add_who(smp)
 smp1m<-add_who(smp1m)
@@ -6015,7 +6015,8 @@ save(CBre_Cons_13B,CBre_Comp_13B,CBre_Cons_13B.restart,CBre_Cons_13C.all,
 ```{r Model13C}
 
 CBre_Comp_13C <- glmer (data=smp,
-                        b_CBre ~CompOffr+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                        b_CBre ~CompOffr+cl_def3_ratio_lag1+
+                          #cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                           cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                           cl_Ceil + cl_Days+
                           Veh  +
@@ -6030,6 +6031,25 @@ CBre_Comp_13C <- glmer (data=smp,
                         , family=binomial(link="logit"),
                         verbose=1)
 glmer_examine(CBre_Comp_13C)
+
+CBre_Comp_13C_1m <- glmer (data=smp1m,
+                        b_CBre ~CompOffr+cl_def3_ratio_lag1+
+                          #cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                          cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                          cl_Ceil + cl_Days+
+                          Veh  +
+                          PricingFee+
+                          b_UCA +
+                          b_Intl+
+                          
+                          b_UCA:CompOffr +
+                          b_UCA:cl_Ceil+
+                          
+                          (1 | NAICS3/NAICS) + (1 | Agency/Office)
+                        , family=binomial(link="logit"),
+                        verbose=1)
+glmer_examine(CBre_Comp_13C_1m)
+
 save(CBre_Comp_13C,file="Output//CBre_Comp_13C.rdata")
 
   stargazer::stargazer(CBre_Comp_13B,CBre_Comp_13C,type="text",

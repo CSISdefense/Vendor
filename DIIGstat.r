@@ -5,6 +5,7 @@ library(ggplot2)
 library(sjstats)
 library(car)
 library(scales)
+library(grid)
 #This will likely be folded into CSIS360
 #But for now, using it to create and refine functions for regression analysis.
 
@@ -1216,25 +1217,25 @@ get_pars<-function(model){
 }
  
     
- #Extract statistic information of the 15 discrete variables and generate dataframe    
- name_categorical <- c("CompOffr","Veh","PricingFee","UCA","Intl","Term",
-                      "Dur","Ceil","CBre","PSR","Urg","FxCb","Fee","CRai",
-                      "NoComp")   #list of all categorial and binary variables
+ # #Extract statistic information of the 15 discrete variables and generate dataframe    
+ # name_categorical <- c("CompOffr","Veh","PricingFee","UCA","Intl","Term",
+ #                      "Dur","Ceil","CBre","PSR","Urg","FxCb","Fee","CRai",
+ #                      "NoComp")   #list of all categorial and binary variables
+ # 
  
- def$Intl <- factor(def$Intl, c("Just U.S.", "Any International"))   #Manually remove "NA" from levels of variable Intl
- memory.limit(56000)
+ # memory.limit(56000)
     
- statsummary_discrete <- function(x){      #input: name of the discrete variable
-  unique_value_list <- levels(def[[x]])
+ statsummary_discrete <- function(x, contract){      #input(x: name of the discrete variable, contract：name of the dataframe)
+  unique_value_list <- levels(contract[[x]])
   categories <- c(unique_value_list,"NA")
   Percent_Actions <- c()
   Percent_Records <- c()
   for (i in 1:length(unique_value_list)){
-    Percent_Records <- c(Percent_Records, percent(round(sum(def[[x]] == unique_value_list[i],na.rm = TRUE)/nrow(def),5),accuracy = .01))
-    Percent_Actions <- c(Percent_Actions, percent(round(sum(def$Action.Obligation[def[[x]] == unique_value_list[i]],na.rm = TRUE)/sum(def$Action.Obligation,na.rm = TRUE),5),accuracy = .01))    
+    Percent_Records <- c(Percent_Records, percent(round(sum(contract[[x]] == unique_value_list[i],na.rm = TRUE)/nrow(contract),5),accuracy = .01))
+    Percent_Actions <- c(Percent_Actions, percent(round(sum(contract$Action.Obligation[contract[[x]] == unique_value_list[i]],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5),accuracy = .01))    
   }
-  Percent_Records <- c(Percent_Records, percent(round(sum(is.na(def[[x]]))/nrow(def),5),accuracy = .01))
-  Percent_Actions <- c(Percent_Actions, percent(round(sum(def$Action.Obligation[is.na(def[[x]])],na.rm = TRUE)/sum(def$Action.Obligation,na.rm = TRUE),5),accuracy = .01))
+  Percent_Records <- c(Percent_Records, percent(round(sum(is.na(contract[[x]]))/nrow(contract),5),accuracy = .01))
+  Percent_Actions <- c(Percent_Actions, percent(round(sum(contract$Action.Obligation[is.na(contract[[x]])],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5),accuracy = .01))
   name_categorical <- c(x,"%of records","% of $s")
   
   categorical_Info <- as.data.frame(cbind(categories,Percent_Records,Percent_Actions))
@@ -1252,24 +1253,24 @@ get_pars<-function(model){
                      "US6_avg_sal_lag1","US5_avg_sal_lag1","US4_avg_sal_lag1","US3_avg_sal_lag1","US2_avg_sal_lag1"
 )
 
-statsummary_continuous <- function(x){       #input: namelist of all continuous variables
+statsummary_continuous <- function(x, contract){       #input(x: namelist of all continuous variables contract: name of the data frame)
   continuous_Info <- data.frame(matrix(ncol = 9,nrow = 0))
   continuous_col <- c("Variable_Name","Min","Max","Median","Logarithmic Mean",
                       "1 unit below","1 unit above","% of records NA", 
                       "% of Obligation to NA records")
   colnames(continuous_Info) <- continuous_col
   for (i in x){
-    def[[i]][def[[i]]<=0] <- NA
-    transformed_i <- log(def[[i]])
-    maxlog <- round(max(def[[i]],na.rm = TRUE), 3)
-    medianlog <- round(median(def[[i]],na.rm = TRUE), 3)
-    minlog <- round(min(def[[i]],na.rm = TRUE), 3)
+    contract[[i]][contract[[i]]<=0] <- NA
+    transformed_i <- log(contract[[i]])
+    maxlog <- round(max(contract[[i]],na.rm = TRUE), 3)
+    medianlog <- round(median(contract[[i]],na.rm = TRUE), 3)
+    minlog <- round(min(contract[[i]],na.rm = TRUE), 3)
     meanlog <- round(exp(mean(transformed_i,na.rm = TRUE)), 3)
     sdlog <- sd(transformed_i,na.rm = TRUE)
     unitabove <- round(exp(mean(transformed_i,na.rm = TRUE)+2*sdlog),3)
     unitbelow <- round(exp(mean(transformed_i,na.rm = TRUE)-2*sdlog),3)
-    Percent_NA <- round(sum(is.na(def[[i]]))/nrow(def),5)
-    Percent_Ob <- round(sum(def$Action.Obligation[is.na(def[[i]])],na.rm = TRUE)/sum(def$Action.Obligation,na.rm = TRUE),5)
+    Percent_NA <- round(sum(is.na(contract[[i]]))/nrow(contract),5)
+    Percent_Ob <- round(sum(contract$Action.Obligation[is.na(contract[[i]])],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5)
     newrow <- c(i, minlog, maxlog, medianlog, meanlog, unitbelow, unitabove,
                 Percent_NA, Percent_Ob)
     continuous_Info[nrow(continuous_Info)+1,] <- newrow
@@ -1295,22 +1296,84 @@ statsummary_continuous <- function(x){       #input: namelist of all continuous 
     
     
     
-    
 
 
 
 update_sample_col_CSIScontractID<-function(sample,full,col){
-#   fed_full<-fed_full[,colnames(fed_full) %in% c("CSIScontractID","VendorCountryISO3",
-#                                                 "PlaceCountryISO3","OriginCountryISO3")]
-#   
-# crisis_with_na<-crisis_with_na[,!colnames(crisis_with_na) %in% c("VendorCountryISO3",
-#                                       "PlaceCountryISO3","OriginCountryISO3")]
-# 
-# 
-# large_crisis_with_na<-large_crisis_with_na[,!colnames(large_crisis_with_na) %in% c("VendorCountryISO3",
-#                                       "PlaceCountryISO3","OriginCountryISO3")]
-# 
-# 
-# crisis_with_na<-left_join(crisis_with_na,fed_full)
-# large_crisis_with_na<-left_join(large_crisis_with_na,fed_full)
+  full<-full[,colnames(full) %in% c("CSIScontractID",col)]
+
+sample<-sample[,!colnames(sample) %in% col]
+
+sample<-left_join(sample,full)
+sample
+}
+                                  
+                                  
+
+                                  
+                                  
+                                  
+#function for making grouped bar plot for each categorical variable, data set used in function "Data/transformed_def.Rdata"
+name_categorical <- c("CompOffr","Veh","PricingFee","UCA","Intl","Term",
+                      "Dur","Ceil","CBre","PSR","Urg","FxCb","Fee","CRai",
+                      "NoComp")
+
+#Input(x: name of the categorical variable needs plot; contract: name of the dataframe)
+#Output: grouped bar plot for the selected variable;
+grouped_barplot <- function(x, contract) {
+  memory.limit(56000)
+  #perparing data for ploting
+  name_Info <- statsummary_discrete(x, contract)
+  name_Info_noNAN <- subset(name_Info, name_Info[, 1] != "NA")
+  name_Info_noNAN[, 1] <- factor(name_Info_noNAN[, 1], droplevels(name_Info_noNAN[, 1]))
+  
+  name_Info[, -1] <- lapply(name_Info[, -1], function(x) as.numeric(gsub("%","",x)))
+  name_Info <- melt(name_Info, id = x)
+  levels(name_Info$variable)[levels(name_Info$variable)=="%of records"] = "% of records"
+  levels(name_Info$variable)[levels(name_Info$variable)=="% of $s"] = "% of obligation"
+  name_Info$variable <- factor(name_Info$variable, rev(levels(name_Info$variable)))
+  
+  basicplot <- ggplot(data = name_Info, 
+                      aes(x = name_Info[, 1], 
+                          y = name_Info[, 3], 
+                          fill = factor(variable))) +
+               geom_bar(stat = "identity", position = "dodge", width = 0.8) + 
+               xlab("Category") + 
+               ylab("") + 
+               coord_flip() + 
+               guides(fill = guide_legend(reverse = TRUE)) +   #reverse the order of legend
+               theme_grey() + 
+               scale_fill_grey() + 
+               theme(legend.title = element_blank(), 
+                     legend.position = "bottom", 
+                     legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit="cm"),
+                     legend.text = element_text(margin = margin(r = 0.5, unit = "cm")),    #increase the distances between two legends
+                     plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm")) + 
+               ggtitle(paste("Statistic summary of categorical variable: ", x)) +
+               scale_x_discrete(limits = rev(c(levels(name_Info_noNAN[ ,1]),"NA")))    #keep the order of category the same
+    return(basicplot)
+}
+
+                                  
+                                  
+                                  
+                                  
+                                 
+
+update_sample_col_CSIScontractID<-function(sample,full,col){
+  full<-full[,colnames(full) %in% c("CSIScontractID",col)]
+
+sample<-sample[,!colnames(sample) %in% col]
+
+sample<-left_join(sample,full)
+sample
+}
+get_pars<-function(model){
+  if (isLMM(model)) {
+  } else {
+    pars <- getME(model,"theta")
+    ## GLMM: requires both random and fixed parameters
+    pars <- getME(model, c("theta","fixef"))
+  }
+  pars
 }
