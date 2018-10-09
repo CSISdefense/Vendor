@@ -911,8 +911,8 @@ No failure to converge.
 
 ```{r CBre-Cons}
 
-load("Output//CBre_Cons_13B.rdata")
-load("Output//CBre_Cons_13B_1m.rdata")
+# load("Output//CBre_Cons_13B.rdata") Missing
+# load("Output//CBre_Cons_13B_1m.rdata") Missing
 CBre_Cons_13B_1m.rdata
 
 if(!exists("CBre_Cons_13B_1m")){
@@ -935,8 +935,8 @@ if(!exists("CBre_Cons_13B_1m")){
                           
                           family=binomial(link="logit"),
                           verbose=1)
-  save(CBre_Cons_13B,CBre_Cons_13B.restart,CBre_Cons_13B_1m,
-       file="Output//CBre_Cons_13B.rdata")
+  save(CBre_Cons_13B_1m,#CBre_Cons_13B,CBre_Cons_13B.restart,
+       file="Output//CBre_Cons_13B_1m.rdata")
 }
 
 if(!exists("CBre_Cons_13B_1m_restart")){
@@ -1007,10 +1007,30 @@ if(!exists("CBre_Comp_13C")){
                             (1 | NAICS3/NAICS) + (1 | Agency/Office),
                           family=binomial(link="logit"),
                           verbose=1)
-  save(CBre_Comp_13C,file="Output//CBre_Comp_13C.rdata")
+  
+   CBre_Comp_13C_1m <- glmer (data=smp1m,
+                          b_CBre ~CompOffr+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                            cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                            cl_Ceil + cl_Days+
+                            Veh  +
+                            PricingFee+
+                            b_UCA +
+                            b_Intl+
+                            
+                            b_UCA:CompOffr +
+                            b_UCA:cl_Ceil+
+                            
+                            (1 | NAICS3/NAICS) + (1 | Agency/Office),
+                          family=binomial(link="logit"),
+                          verbose=1)
+  
+  save(CBre_Comp_13C,CBre_Comp_13C_1m,file="Output//CBre_Comp_13C.rdata")
+  stargazer::stargazer(CBre_Comp_13C,CBre_Comp_13C_1m,type="text",
+                       digits=2)
 }
 
 glmer_examine(CBre_Comp_13C,display=TRUE)
+glmer_examine(CBre_Comp_13C_1m,display=TRUE)
 odds_ratio(CBre_Comp_13C,"CBre_Comp_13C")
 
 ```
@@ -1019,7 +1039,7 @@ No restart yet.
 ### Both and Ceiling Breach
 ```{r CBre-Both}
 load("Output//CBre_Cons_Comp_15A.rdata")
-CBre_Cons_Comp_15A
+
 stargazer::stargazer(CBre_Cons_Comp_15A,type="text",
                        digits=2)
 if(!exists("CBre_Cons_Comp_15A")){
@@ -1029,7 +1049,7 @@ if(!exists("CBre_Cons_Comp_15A")){
                                  cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
                                  cl_US6_avg_sal_lag1+
                                  CompOffr+
-                                 cl_Ceil + cl_Days+ 
+                                   cl_Ceil + cl_Days+ 
                                  Veh +
                                  PricingFee + b_UCA +
                                  b_Intl+
@@ -1069,9 +1089,14 @@ if(!exists("CBre_Cons_Comp_15A")){
                                family=binomial(link="logit"),
                                verbose=1)
   
-  
-  save(CBre_Cons_Comp_15A,file="Output//CBre_Cons_Comp_15A.rdata")
+  save(CBre_Cons_Comp_15A,CBre_Cons_Comp_15A_1m,file="Output//CBre_Cons_Comp_15A.rdata")
 }
+
+
+source(system.file("utils", "allFit.R", package="lme4"))
+CBre_Cons_Comp_15A_1m.all <- allFit(CBre_Cons_Comp_15A_1m)
+CBre_Cons_Comp_15A_1m_ss_cons <- summary(CBre_Cons_Comp_15A_1m.all)
+
 
 glmer_examine(CBre_Cons_Comp_15A,display=TRUE)
 odds_ratio(CBre_Cons_Comp_15A,"CBre_Cons_Comp_15A")
@@ -1079,7 +1104,7 @@ get_icc(CBre_Cons_Comp_15A)
 ```
 [1] "Model failed to converge with max|grad| = 0.0395392 (tol = 0.001, component 1)"
 
-
+failure to converge in 10000 evaluationsModel failed to converge with max|grad| = 0.00901903 (tol = 0.001, component 1)
 
 ## Output: Termination
 
@@ -1179,7 +1204,7 @@ odds_ratio(Term_Comp_13E2,"Term_Comp_13E2")
 ### Both and Terminations
 
 ```{r Both-Term}
-load(file="Output//Term_Cons_Comp_14B.rdata")
+#load(file="Output//Term_Cons_Comp_14B.rdata") Missing
 stargazer::stargazer(Term_Cons_Comp_14B.rdata,type="text",digits=2)
 
 if(!exists("Term_Cons_Comp_14A")){
@@ -1336,7 +1361,8 @@ gridExtra::grid.arrange(dotplot(ranef(Comp_Cons_15C, condVar = T), strip = T, sc
 
 ## Ceiling Breach Model
 ```{r Output-CBre}
-
+stargazer::stargazer(CBre_Cons_13B_1m,CBre_Comp_13C_1m,CBre_Cons_Comp_15A_1m,type="text",
+                       digits=2)
 # texreg::htmlreg(list(Term_Cons_08A3,
 #                   CBre_Cons_08C),#CBre_Cons_08B2
 #                 file="Output//ConsModel.html",single.row = TRUE,
