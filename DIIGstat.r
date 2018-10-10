@@ -1338,7 +1338,7 @@ grouped_barplot <- function(x, contract) {
                           y = name_Info[, 3], 
                           fill = factor(variable))) +
                geom_bar(stat = "identity", position = "dodge", width = 0.8) + 
-               xlab("Category") + 
+               xlab("") + 
                ylab("") + 
                coord_flip() + 
                guides(fill = guide_legend(reverse = TRUE)) +   #reverse the order of legend
