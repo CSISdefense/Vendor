@@ -912,7 +912,22 @@ centered_log_description<-function(x,units=NA){
         ifelse(is.na(units),"",paste("",units)),
         " respectively.",sep="")
 }
-
+# Old eversion
+# centered_log_description<-function(x,units=NA){
+#   xbar<-mean(x,na.rm=TRUE)
+#   xsd<-sd(x,na.rm=TRUE)
+#   paste("The variable is centered, by subtracting its mean (",
+#         format(xbar,digits=3,big.mark=","),
+#         ") and dividing by its standard deviation (",
+#         format(xsd,digits=3,big.mark=","),
+#         "). Values of -1, 0, 1, and 2 correspond to ",
+#         format(exp(xbar-xsd),digits=2,big.mark=","), ", ",
+#         format(exp(xbar),digits=2,big.mark=","),", ",
+#         format(exp(xbar+xsd),digits=2,big.mark=","),", and ",
+#         format(exp(xbar+2*xsd),digits=2,big.mark=","),
+#         ifelse(is.na(units),"",paste("",units)),
+#         " respectively.",sep="")
+# }
 
 
 centered_description<-function(x,units=NA){
