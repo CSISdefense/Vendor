@@ -1130,7 +1130,7 @@ if(!exists("Term_Cons_13F")){
                             b_Intl+
                             
                             # b_UCA:cl_def6_HHI_lag1 + 
-                            # b_UCA:cl_Ceil+
+                            b_UCA:cl_Ceil+
                             cl_def6_HHI_lag1:cl_def6_obl_lag1+
                             
                                cl_def3_HHI_lag1:cl_def3_ratio_lag1+  
@@ -1191,7 +1191,7 @@ if(!exists("Term_Comp_13F")){
                             b_Intl+
                             
                             # b_UCA:CompOffr +
-                            # b_UCA:cl_Ceil+
+                            b_UCA:cl_Ceil+
                             
                             (1 | NAICS3/NAICS) + (1 | Agency/Office),
                           family=binomial(link="logit"),
@@ -1211,7 +1211,7 @@ summary(Term_Comp_13E_1m)
                             b_Intl+
                             
                             # b_UCA:CompOffr +
-                            # b_UCA:cl_Ceil+
+                            b_UCA:cl_Ceil+
                             
                             (1 | NAICS3/NAICS) + (1 | Agency/Office),
                           family=binomial(link="logit"),
@@ -1247,8 +1247,8 @@ Term_Cons_Comp_14B <- glmer (data=smp,
                                PricingFee + b_UCA +
                                b_Intl+
                                
-                               cl_def6_HHI_lag1:cl_Days+
-                               # b_UCA:cl_Ceil+
+                               # cl_def6_HHI_lag1:cl_Days+
+                               b_UCA:cl_Ceil+
                                # b_UCA:cl_def6_HHI_lag1 +
                                # PricingFee:cl_US6_avg_sal_lag1+
                                cl_def6_HHI_lag1:cl_def6_obl_lag1  +
@@ -1573,43 +1573,6 @@ caption.above=TRUE)
 
 
 
-get_study_variables_odds_ratio<-function(or.df){
-  or.df<-or.df[or.df$variable %in% c("cl_def3_HHI_lag1"    ,
-                                     "cl_def6_HHI_lag1" ,
-                                     "CompOffr1 offer" ,
-                                     "CompOffr2 offers",
-                                     "CompOffr3-4 offers",
-                                     "CompOffr5+ offers"
-                                     # "CompOffr1 offer:b_UCA",
-                                     # "CompOffr2 offers:b_UCA"   ,         
-                                     # "CompOffr3-4 offers:b_UCA",
-                                     # "CompOffr5+ offers:b_UCA",
-                                     # "cl_def6_HHI_lag1:b_UCA",
-                                     # "cl_def6_HHI_lag1:cl_def6_obl_lag1"
-  ),]
-  or.df$variable<-factor(or.df$variable)
-  
-  or.df<-or.df[,c("output" ,  "input"  ,  "variable",   "OR"  ,"2.5 %"  ,  "97.5 %" )]
-  or.df$OR<-round(or.df$OR,digits=2)
-  or.df[["2.5 %"]]<-round(or.df[["2.5 %"]],digits=2)
-  or.df[["97.5 %"]]<-round(or.df[["97.5 %"]],digits=2)
-  colnames(or.df)[colnames(or.df)=="output"]<-"Output"
-  colnames(or.df)[colnames(or.df)=="input"]<-"Model"
-  colnames(or.df)[colnames(or.df)=="OR"]<-"Odds Ratio"
-  colnames(or.df)[colnames(or.df)=="2.5 %"]<-"Lower Bound"
-  colnames(or.df)[colnames(or.df)=="97.5 %"]<-"Upper Bound"
-  colnames(or.df)[colnames(or.df)=="variable"]<-"Variable"
-  
-  levels(or.df$Variable)<- list("Log(Subsector HHI)"=c("cl_def3_HHI_lag1"),
-                                "Log(Det. Ind. HHI)"=c("cl_def6_HHI_lag1"),
-                                "Comp=1 offer"=c("CompOffr1 offer"),
-                                "Comp=2 offers"=c("CompOffr2 offers"),
-                                "Comp=3-4 offers"=c("CompOffr3-4 offers"),
-                                "Comp=5+ offers"=c("CompOffr5+ offers")
-  )
-  or.df
-}
-
 
 or1<-odds_ratio(CBre_Cons_13B.restart,"CBre_Cons_13B","Concentration","Ceiling Breaches")
 or2<-odds_ratio(CBre_Comp_13C,"CBre_Comp_13C","Competition","Ceiling Breaches")
@@ -1620,6 +1583,12 @@ write.csv(get_study_variables_odds_ratio(comp.or),file="Output//ceiling_breach_s
 
 
 
+or1<-odds_ratio(CBre_Cons_13B_1m,"CBre_Cons_13B_1m","Concentration","Ceiling Breaches")
+or2<-odds_ratio(CBre_Comp_13C_1m,"CBre_Comp_13C_1m","Competition","Ceiling Breaches")
+or3<-odds_ratio(CBre_Cons_Comp_15A_1m,"CBre_Cons_Comp_15A_1m","Both","Ceiling Breaches")
+comp.or<-rbind(or1,or2,or3)
+
+write.csv(get_study_variables_odds_ratio(comp.or),file="Output//ceiling_breach_study_odds_ratio_1m.csv",row.names=FALSE)
 
 
 #https://www.lcampanelli.org/mixed-effects-modeling-lme4/
@@ -1731,7 +1700,7 @@ texreg::htmlreg(list(Term_Cons_13E_1m,Term_Comp_13E2,Term_Cons_Comp_14B_1m),file
                               # "Contract Vehicle (Baseline=Def. Award" = 14:18,
                               # "Contract Pricing (Baseline=FFP)" = 19:24,
                               # "Place of Performance" = 25,
-                              "Interactions" = 25:29),
+                              "Interactions" = 25:28),
                 custom.coef.map=list(
                   "(Intercept)"="(Intercept)",
                   
@@ -1798,11 +1767,21 @@ term.or<-rbind(or1,or2,or3)
 
 write.csv(get_study_variables_odds_ratio(term.or),file="Output//termination_study_odds_ratio.csv",row.names=FALSE)
 
+or1<-odds_ratio(Term_Cons_13E_1m,"Term_Cons_13E_1m","Concentration","Ceiling Breaches")
+or2<-odds_ratio(Term_Comp_13E2,"Term_Comp_13E2","Competition","Ceiling Breaches")
+or3<-odds_ratio(Term_Cons_Comp_14B_1m,"Term_Cons_Comp_14B_1m","Both","Ceiling Breaches")
+term.or<-rbind(or1,or2,or3)
+
+write.csv(get_study_variables_odds_ratio(term.or),file="Output//termination_study_odds_ratio_1m.csv",row.names=FALSE)
+
+
 ```
+
+## Consolidation Odds Ratios
 
 ```{r Consolidation}
 or_ceil<-odds_ratio(CBre_Cons_Comp_15A,"CBre_Cons_Comp_15A","Both","Ceiling Breaches")
-or_term<-odds_ratio(Term_Cons_Comp_14B,"CBre_Cons_Comp_15A","Both","Terminations")
+or_term<-odds_ratio(Term_Cons_Comp_14B,"Term_Cons_Comp_14B","Both","Terminations")
 
 cons.or<-rbind(or_ceil,or_term)
 
@@ -1810,41 +1789,30 @@ write.csv(get_study_variables_odds_ratio(subset(cons.or,variable %in% c("cl_def3
           file="Output//consolidation_odds_ratio.csv",row.names=FALSE)
 
 
-centered_description(smp1m$def6_HHI_lag1,"subsector HHI score")
-centered_log_description(smp1m$l_def6_HHI_lag1,"detailed industrial HHI score")
+or_ceil<-odds_ratio(CBre_Cons_Comp_15A_1m,"CBre_Cons_Comp_15A_1m","Both","Ceiling Breaches")
+or_term<-odds_ratio(Term_Cons_Comp_14B_1m,"Term_Cons_Comp_14B_1m","Both","Terminations")
+
+cons.or<-rbind(or_ceil,or_term)
+
+write.csv(get_study_variables_odds_ratio(subset(cons.or,variable %in% c("cl_def3_HHI_lag1","cl_def6_HHI_lag1"))),
+          file="Output//consolidation_odds_ratio_1m.csv",row.names=FALSE)
 
 
-centered_description(smp1m$def3_HHI_lag1,"subsector HHI score")
-centered_log_description(smp1m$l_def3_HHI_lag1,"detailed industrial HHI score")
+# centered_description(smp1m$def6_HHI_lag1,"subsector HHI score")
+# centered_log_description(smp1m$l_def6_HHI_lag1,"detailed industrial HHI score")
+# 
+# 
+# centered_description(smp1m$def3_HHI_lag1,"subsector HHI score")
+# centered_log_description(smp1m$l_def3_HHI_lag1,"detailed industrial HHI score")
 
 
 
 
-centered_log_description<-function(x,units=NA){
-  xbar<-mean(x,na.rm=TRUE)
-    xsd<-sd(x,na.rm=TRUE)
-  paste("The variable is centered, by subtracting its mean (",
-        format(xbar,digits=3,big.mark=","),
-        ") and dividing by its standard deviation (",
-        format(xsd,digits=3,big.mark=","),
-        "). Values of -1, 0, 1, and 2 correspond to ",
-        format(exp(xbar-xsd),digits=2,big.mark=","), ", ",
-        format(exp(xbar),digits=2,big.mark=","),", ",
-        format(exp(xbar+xsd),digits=2,big.mark=","),", and ",
-        format(exp(xbar+2*xsd),digits=2,big.mark=","),
-        ifelse(is.na(units),"",paste("",units)),
-        " respectively.",sep="")
-}
 
 ```
 
-
+## Competition Odds Ratios
 ```{r Competition}
-
-
-```
-
-```{r Subsector, fig.width=7.5 , fig.height=9}
 
 or_ceil<-odds_ratio(CBre_Cons_Comp_15A,"CBre_Cons_Comp_15A","Both","Ceiling Breaches")
 or_term<-odds_ratio(Term_Cons_Comp_14B,"CBre_Cons_Comp_15A","Both","Terminations")
@@ -1856,7 +1824,17 @@ write.csv(get_study_variables_odds_ratio(subset(comp.or,!variable %in% c("cl_def
 
 
 
-dotplot(ranef(Term_Cons_13E, condVar = T), strip = T, scales=list(relation='free'))$NAICS3
+or_ceil<-odds_ratio(CBre_Cons_Comp_15A_1m,"CBre_Cons_Comp_15A_1m","Both","Ceiling Breaches")
+or_term<-odds_ratio(Term_Cons_Comp_14B_1m,"CBre_Cons_Comp_15A_1m","Both","Terminations")
+
+comp.or<-rbind(or_ceil,or_term)
+
+write.csv(get_study_variables_odds_ratio(subset(comp.or,!variable %in% c("cl_def3_HHI_lag1","cl_def6_HHI_lag1"))),
+          file="Output//competition_odds_ratio_1m.csv",row.names=FALSE)
+
+
+
+# dotplot(ranef(Term_Cons_13E, condVar = T), strip = T, scales=list(relation='free'))$NAICS3
 ```
 
 ## Residuals Plot
@@ -1903,7 +1881,7 @@ ggsave(residual_term,file="Output//residual_term.png",width=7.5, height=8.5)
 
 
 
-debug(residuals_plot)
+# debug(residuals_plot)
 gridExtra::grid.arrange(residuals_plot(Term_Cons_13E, bins=50)+labs(title="Concentration Binned Residuals Plot"),
 residuals_plot(Term_Comp_13E2, bins=50)+labs(title="Competition Binned Residuals Plot"),
 residuals_plot(Term_Cons_Comp_14B, bins=50)+labs(title="Both Binned Residuals Plot"),ncol=1)
