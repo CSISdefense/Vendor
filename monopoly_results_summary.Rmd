@@ -135,7 +135,7 @@ length(def$CompOffr[def$CompOffr=="5+ offers"& !is.na(def$CompOffr)])/nrow(def)
 summary(def$offer)
 centered_description(def$UnmodifiedNumberOfOffersReceived,"number of offers")
 centered_log_description(def$UnmodifiedNumberOfOffersReceived,"number of offers")
-NA_stats(def,"l_Offr")
+NA_stats(def,"cl_Offr")
 <!-- cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+ -->
                             <!-- #cl_US3_avg_sal_lag1+ -->
                             <!-- cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+ -->
@@ -777,7 +777,12 @@ sum(def$Action.Obligation[is.na(def$EffComp)],na.rm=TRUE)/sum(def$Action.Obligat
 
 ### Computational Sample Creation
 ```{r Sample}
+
  load(file="data//def_sample.Rdata")
+smp$l_Offr<-na_non_positive_log(smp$UnmodifiedNumberOfOffersReceived)
+smp1m$l_Offr<-na_non_positive_log(smp1m$UnmodifiedNumberOfOffersReceived)
+
+
 
 complete<-
   !is.na(def$b_Term)&
@@ -854,7 +859,7 @@ load("Output//Comp_Cons_15D.rdata")
 if(!exists("Comp_Cons_15D"))
    
      Comp_Cons_15D <- lmer (data=smp,
-                         cl_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                         l_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
                          # cl_US3_avg_sal_lag1+
                          cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
                          cl_US6_avg_sal_lag1 + 
@@ -877,7 +882,7 @@ if(!exists("Comp_Cons_15D"))
   # save(Comp_Cons_15D,file="Output//Comp_Cons_15D.rdata")
   
    Comp_Cons_15D_1m <- lmer (data=smp1m,
-                         cl_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                         l_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
                          # cl_US3_avg_sal_lag1+
                          cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
                          cl_US6_avg_sal_lag1 + 
@@ -1102,7 +1107,7 @@ CBre_Cons_Comp_15A_1m_ss_cons <- summary(CBre_Cons_Comp_15A_1m.all)
 
 
 glmer_examine(CBre_Cons_Comp_15A,display=TRUE)
-odds_ratio(CBre_Cons_Comp_15A,"CBre_Cons_Comp_15A")
+CBre_Cons_Comp_15A_odds_ratio<-odds_ratio(CBre_Cons_Comp_15A,"CBre_Cons_Comp_15A")
 get_icc(CBre_Cons_Comp_15A)
 ```
 [1] "Model failed to converge with max|grad| = 0.0395392 (tol = 0.001, component 1)"
@@ -1178,7 +1183,7 @@ odds_ratio(Term_Cons_13E,"Term_Cons_13E")
 ### Competition and Terminations
 
 ```{r Term-Comp}
-load(file="Output//Term_Comp_13E.rdata")
+load(file="Output//Term_Comp_13F.rdata")
 
 if(!exists("Term_Comp_13F")){
   Term_Comp_13F <- glmer (data=smp,
@@ -1217,7 +1222,7 @@ summary(Term_Comp_13E_1m)
                           family=binomial(link="logit"),
                           verbose=1)
   
-  
+  Term_Comp_13F<-Term_Comp_13E2
   save(Term_Comp_13F,Term_Comp_13F_1m,file="Output//Term_Comp_13F.rdata")
 }
 stargazer::stargazer(Term_Comp_13E,Term_Comp_13F,type="text",
@@ -1232,11 +1237,11 @@ odds_ratio(Term_Comp_13E2,"Term_Comp_13E2")
 ### Both and Terminations
 
 ```{r Both-Term}
-load(file="Output//Term_Cons_Comp_14B_1m.rdata") 
-stargazer::stargazer(Term_Cons_Comp_14B.rdata,type="text",digits=2)
+load(file="Output//Term_Cons_Comp_14C_1m.rdata") 
+
 
 if(!exists("Term_Cons_Comp_14A")){
-Term_Cons_Comp_14B <- glmer (data=smp,
+Term_Cons_Comp_14C <- glmer (data=smp,
                              b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                                #cl_US3_avg_sal_lag1+
                                cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
@@ -1259,7 +1264,7 @@ Term_Cons_Comp_14B <- glmer (data=smp,
                              , family=binomial(link="logit"),verbose=1)
 
 
-Term_Cons_Comp_14B_1m <- glmer (data=smp1m,
+Term_Cons_Comp_14C_1m <- glmer (data=smp1m,
                              b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                                #cl_US3_avg_sal_lag1+
                                cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
@@ -1288,18 +1293,44 @@ Term_Cons_Comp_14B_1m <- glmer (data=smp1m,
 Term_Cons_Comp_14B_1m.all <- allFit(Term_Cons_Comp_14B_1m)
 Term_Cons_Comp_14B_1m_ss_cons <- summary(Term_Cons_Comp_14B_1m.all)
 
+Term_Cons_Comp_14C_1m <- glmer (data=smp1m,
+                             b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                               #cl_US3_avg_sal_lag1+
+                               cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                               cl_US6_avg_sal_lag1+
+                               CompOffr+
+                               cl_Ceil + cl_Days+ 
+                               Veh +
+                               PricingFee + b_UCA +
+                               b_Intl+
+                               
+                               # cl_def6_HHI_lag1:cl_Days+
+                               b_UCA:cl_Ceil+
+                               # b_UCA:cl_def6_HHI_lag1 +
+                               # PricingFee:cl_US6_avg_sal_lag1+
+                               cl_def6_HHI_lag1:cl_def6_obl_lag1  +
+                               # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                               cl_def3_HHI_lag1:cl_def3_ratio_lag1+  
+                               
+                               (1 | NAICS3/NAICS) + (1 | Agency/Office)
+                             , family=binomial(link="logit"),verbose=1)
+
   
   
 stargazer::stargazer(Term_Cons_Comp_14B_1m,type="text",
                        digits=2)
 
+# Term_Cons_Comp_14B_1m <- update(Term_Cons_Comp_14B_1m, . ~ . + b_UCA:cl_Ceil - cl_def6_HHI_lag1:cl_Days)
 
-  save(Term_Cons_Comp_14B,Term_Cons_Comp_14B_1m,file="Output//Term_Cons_Comp_14B.rdata")
+  # save(Term_Cons_Comp_14B_1m,Term_Cons_Comp_14B2_1m,file="Output//Term_Cons_Comp_14B_1m.rdata")
+
+
+  save(Term_Cons_Comp_14C_1m,file="Output//Term_Cons_Comp_14C.rdata")
   
 }
-glmer_examine(Term_Cons_Comp_14B)
-odds_ratio(Term_Cons_Comp_14B,"Term_Cons_Comp_14B")
-get_icc(Term_Cons_Comp_14B)
+glmer_examine(Term_Cons_Comp_14C)
+odds_ratio(Term_Cons_Comp_14C,"Term_Cons_Comp_14C")
+get_icc(Term_Cons_Comp_14C)
 
 ```
 [1] "Model failed to converge with max|grad| = 0.0782055 (tol = 0.001, component 1)"
@@ -1382,8 +1413,8 @@ texreg::htmlreg(list(Comp_Cons_15D_1m),file="Output//Offr_Model_1m.html",
                         stars=c(0.1,0.05,0.01,0.001),
                 groups = list("Study Variables" = 2:3,
                               "NAICS Characteristics" =4:7,
-                              "Contract Characteristics"=8:19,
-"Interactions" = 20:24),
+                              "Contract Characteristics"=8:20,
+"Interactions" = 21:25),
                 custom.coef.map=list("(Intercept)"="(Intercept)",
                 "cl_def3_HHI_lag1"="Log(Subsector HHI)",
 "cl_def6_HHI_lag1"="Log(Det. Ind. HHI)",
@@ -1407,6 +1438,7 @@ texreg::htmlreg(list(Comp_Cons_15D_1m),file="Output//Offr_Model_1m.html",
 "PricingFeeOther CB"="Pricing=Other CB",
 "PricingFeeT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
 "b_UCA"="UCA",
+"UCAUCA"="UCA",
 "b_Intl"="Performed Abroad",
 # # "cl_def6_HHI_lag1:cl_Days"="Log(Det. Ind. HHI):Log(Init. Days)",
 # "cl_def6_HHI_lag1:cl_def6_obl_lag1"="Log(Det. Ind. HHI):Log(Det. Ind. DoD Obl.)",
@@ -1433,7 +1465,7 @@ custom.note="%stars. Logged inputs are rescaled. For this model, sole source con
 caption="Table 1: Regression Model of Log(Number of Offfers)",
 caption.above=TRUE)
 
-
+get_icc(Comp_Cons_15D_1m)
 
 
   # OR_m1SD <- exp(fixef(FM_m1SD))
@@ -1589,7 +1621,7 @@ or3<-odds_ratio(CBre_Cons_Comp_15A_1m,"CBre_Cons_Comp_15A_1m","Both","Ceiling Br
 comp.or<-rbind(or1,or2,or3)
 
 write.csv(get_study_variables_odds_ratio(comp.or),file="Output//ceiling_breach_study_odds_ratio_1m.csv",row.names=FALSE)
-
+get_icc(CBre_Cons_Comp_15A_1m)
 
 #https://www.lcampanelli.org/mixed-effects-modeling-lme4/
 gridExtra::grid.arrange(dotplot(ranef(CBre_Cons_13B.restart, condVar = T), strip = T, scales=list(relation='free'))$Agency,
@@ -1613,7 +1645,7 @@ gridExtra::grid.arrange(dotplot(ranef(CBre_Cons_13B.restart, condVar = T), strip
 
 
 
-texreg::htmlreg(list(Term_Cons_13E,Term_Comp_13E2,Term_Cons_Comp_14B),file="Output//Term_Model.html",
+texreg::htmlreg(list(Term_Cons_13E,Term_Comp_13F,Term_Cons_Comp_14C),file="Output//Term_Model.html",
                 single.row = TRUE,
                 custom.model.name=c("Concentration",
                                     "Competition",
@@ -1680,13 +1712,13 @@ texreg::htmlreg(list(Term_Cons_13E,Term_Comp_13E2,Term_Cons_Comp_14B),file="Outp
                        # PricingFee:cl_US6_avg_sal_lag1+
 
 
-# texreg::htmlreg(list(Term_Cons_13E,Term_Comp_13E2,Term_Cons_Comp_14B,Term_Cons_Comp_14B_1m),file="Output//Term_Model_1m.html",
+# texreg::htmlreg(list(Term_Cons_13E,Term_Comp_13E2,Term_Cons_Comp_14C,Term_Cons_Comp_14C_1m),file="Output//Term_Model_1m.html",
 #                 single.row = TRUE,
 #                 custom.model.name=c("Concentration",
 #                                     "Competition",
 #                                     "Both",
 #                                     "Both 1m"
-texreg::htmlreg(list(Term_Cons_13E_1m,Term_Comp_13E2,Term_Cons_Comp_14B_1m),file="Output//Term_Model_1m.html",
+texreg::htmlreg(list(Term_Cons_13E_1m,Term_Comp_13F_1m,Term_Cons_Comp_14C_1m),file="Output//Term_Model_1m.html",
                 single.row = TRUE,
                 custom.model.name=c("Concentration",
                                     "Competition",
@@ -1700,7 +1732,7 @@ texreg::htmlreg(list(Term_Cons_13E_1m,Term_Comp_13E2,Term_Cons_Comp_14B_1m),file
                               # "Contract Vehicle (Baseline=Def. Award" = 14:18,
                               # "Contract Pricing (Baseline=FFP)" = 19:24,
                               # "Place of Performance" = 25,
-                              "Interactions" = 25:28),
+                              "Interactions" = 25:27),
                 custom.coef.map=list(
                   "(Intercept)"="(Intercept)",
                   
@@ -1762,14 +1794,14 @@ dotplot(ranef(Term_Cons_13E, condVar = T), strip = T, scales=list(relation='free
 
 or1<-odds_ratio(Term_Cons_13E,"Term_Cons_13E","Concentration","Ceiling Breaches")
 or2<-odds_ratio(Term_Comp_13E2,"Term_Comp_13E2","Competition","Ceiling Breaches")
-or3<-odds_ratio(Term_Cons_Comp_14B,"Term_Cons_Comp_14B","Both","Ceiling Breaches")
+or3<-odds_ratio(Term_Cons_Comp_14C,"Term_Cons_Comp_14C","Both","Ceiling Breaches")
 term.or<-rbind(or1,or2,or3)
 
 write.csv(get_study_variables_odds_ratio(term.or),file="Output//termination_study_odds_ratio.csv",row.names=FALSE)
 
 or1<-odds_ratio(Term_Cons_13E_1m,"Term_Cons_13E_1m","Concentration","Ceiling Breaches")
-or2<-odds_ratio(Term_Comp_13E2,"Term_Comp_13E2","Competition","Ceiling Breaches")
-or3<-odds_ratio(Term_Cons_Comp_14B_1m,"Term_Cons_Comp_14B_1m","Both","Ceiling Breaches")
+  or2<-odds_ratio(Term_Comp_13E2,"Term_Comp_13F_1m","Competition","Ceiling Breaches")
+or3<-odds_ratio(Term_Cons_Comp_14C_1m,"Term_Cons_Comp_14C_1m","Both","Ceiling Breaches")
 term.or<-rbind(or1,or2,or3)
 
 write.csv(get_study_variables_odds_ratio(term.or),file="Output//termination_study_odds_ratio_1m.csv",row.names=FALSE)
@@ -1790,7 +1822,7 @@ write.csv(get_study_variables_odds_ratio(subset(cons.or,variable %in% c("cl_def3
 
 
 or_ceil<-odds_ratio(CBre_Cons_Comp_15A_1m,"CBre_Cons_Comp_15A_1m","Both","Ceiling Breaches")
-or_term<-odds_ratio(Term_Cons_Comp_14B_1m,"Term_Cons_Comp_14B_1m","Both","Terminations")
+or_term<-odds_ratio(Term_Cons_Comp_14C_1m,"Term_Cons_Comp_14C_1m","Both","Terminations")
 
 cons.or<-rbind(or_ceil,or_term)
 
@@ -1825,7 +1857,7 @@ write.csv(get_study_variables_odds_ratio(subset(comp.or,!variable %in% c("cl_def
 
 
 or_ceil<-odds_ratio(CBre_Cons_Comp_15A_1m,"CBre_Cons_Comp_15A_1m","Both","Ceiling Breaches")
-or_term<-odds_ratio(Term_Cons_Comp_14B_1m,"CBre_Cons_Comp_15A_1m","Both","Terminations")
+or_term<-odds_ratio(Term_Cons_Comp_14C_1m,"CBre_Cons_Comp_15A_1m","Both","Terminations")
 
 comp.or<-rbind(or_ceil,or_term)
 
