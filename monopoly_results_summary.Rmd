@@ -681,8 +681,44 @@ NAICS2_barplot <- ggplot(data = NAICS2_Freq,
 NAICS2_barplot
 ```
 
+```{r grouped barplot for variable NAICS3}
+Frequency <- as.data.frame(table(def$NAICS3))
+Frequency[["Percent_Freq"]] <- round(Frequency[["Freq"]]/sum(Frequency[["Freq"]]),4)*100
+colnames(Frequency) <- c("NAICS3", "Count_Freq", "Percent_Freq")
+Percent_Obli <- c()
+for (i in Frequency[["NAICS3"]]) {
+  Percent_Obligation <- round(sum(def[["Action.Obligation"]][def$NAICS3 == i], na.rm = TRUE)/sum(def[["Action.Obligation"]], na.rm = TRUE),5)
+    Percent_Obli <- c(Percent_Obli, Percent_Obligation)
+  }
+Frequency[["Percent_Obli"]] <- Percent_Obli*100
+NAICS3_Freq <- Frequency
 
-```{r grouped percent frequency/obligation barplot for all NAICS2, 21 in total }
+#Add detail description to unique NAICS3 code
+NAICS_Lookup <- read.csv(file = "https://raw.githubusercontent.com/CSISdefense/Vendor/master/Lookup/Lookup_NAICS_code.csv")
+colnames(NAICS_Lookup) <- c("NAICS3", "Description")
+NAICS3_Freq <- left_join(NAICS3_Freq, NAICS_Lookup, by = "NAICS3")
+NAICS3_Freq$Description <- as.character(NAICS3_Freq$Description)
+NAICS3_Freq$Description <- paste(NAICS3_Freq$NAICS, " - ", NAICS3_Freq$Description)
+
+#Get the top 15 most frequently appeared NAICS3
+NAICS3_Freq_top10Freq <- NAICS3_Freq[order(-NAICS3_Freq$Percent_Freq),]
+NAICS3_Freq_top10Freq <- NAICS3_Freq_top10Freq[1:10, ]   
+NAICS3_Freq_top10Obli <- NAICS3_Freq[order(-NAICS3_Freq$Percent_Obli),]
+NAICS3_Freq_top10Obli <- NAICS3_Freq_top10Obli[1:10, ]
+NAICS3_Freq_TOP <- rbind(NAICS3_Freq_top10Obli, NAICS3_Freq_top10Freq)
+NAICS3_Freq_TOP <- unique(NAICS3_Freq_TOP)  #15 records in total
+NAICS3_Freq_TOP <- NAICS3_Freq_TOP[order(-NAICS3_Freq_TOP$Percent_Obli),]
+NAICS3_Freq_TOP$Description <- factor(NAICS3_Freq_TOP$Description, rev(NAICS3_Freq_TOP$Description))
+
+#Reshape the dataframe to long format for plot
+NAICS3_Freq_TOP <- melt(NAICS3_Freq_TOP, id = c("NAICS3", "Count_Freq", "Description"))
+
+#Generate the plot and add title manually
+part_grouped_barplot("NAICS3", NAICS3_Freq_TOP) + ggtitle("Top 15 of the most frequently appeared NAICS3")
+```
+
+
+```{r grouped percent frequency/obligation barplot for all Office}
 #grouped bar plot for variable Office
 #Perpare data for plot
 #get the detailed desceription for Office by AgencyID and OfficeID
