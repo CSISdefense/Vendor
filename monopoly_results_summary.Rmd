@@ -681,8 +681,44 @@ NAICS2_barplot <- ggplot(data = NAICS2_Freq,
 NAICS2_barplot
 ```
 
+```{r grouped barplot for variable NAICS3}
+Frequency <- as.data.frame(table(def$NAICS3))
+Frequency[["Percent_Freq"]] <- round(Frequency[["Freq"]]/sum(Frequency[["Freq"]]),4)*100
+colnames(Frequency) <- c("NAICS3", "Count_Freq", "Percent_Freq")
+Percent_Obli <- c()
+for (i in Frequency[["NAICS3"]]) {
+  Percent_Obligation <- round(sum(def[["Action.Obligation"]][def$NAICS3 == i], na.rm = TRUE)/sum(def[["Action.Obligation"]], na.rm = TRUE),5)
+    Percent_Obli <- c(Percent_Obli, Percent_Obligation)
+  }
+Frequency[["Percent_Obli"]] <- Percent_Obli*100
+NAICS3_Freq <- Frequency
 
-```{r grouped percent frequency/obligation barplot for all NAICS2, 21 in total }
+#Add detail description to unique NAICS3 code
+NAICS_Lookup <- read.csv(file = "https://raw.githubusercontent.com/CSISdefense/Vendor/master/Lookup/Lookup_NAICS_code.csv")
+colnames(NAICS_Lookup) <- c("NAICS3", "Description")
+NAICS3_Freq <- left_join(NAICS3_Freq, NAICS_Lookup, by = "NAICS3")
+NAICS3_Freq$Description <- as.character(NAICS3_Freq$Description)
+NAICS3_Freq$Description <- paste(NAICS3_Freq$NAICS, " - ", NAICS3_Freq$Description)
+
+#Get the top 15 most frequently appeared NAICS3
+NAICS3_Freq_top10Freq <- NAICS3_Freq[order(-NAICS3_Freq$Percent_Freq),]
+NAICS3_Freq_top10Freq <- NAICS3_Freq_top10Freq[1:10, ]   
+NAICS3_Freq_top10Obli <- NAICS3_Freq[order(-NAICS3_Freq$Percent_Obli),]
+NAICS3_Freq_top10Obli <- NAICS3_Freq_top10Obli[1:10, ]
+NAICS3_Freq_TOP <- rbind(NAICS3_Freq_top10Obli, NAICS3_Freq_top10Freq)
+NAICS3_Freq_TOP <- unique(NAICS3_Freq_TOP)  #15 records in total
+NAICS3_Freq_TOP <- NAICS3_Freq_TOP[order(-NAICS3_Freq_TOP$Percent_Obli),]
+NAICS3_Freq_TOP$Description <- factor(NAICS3_Freq_TOP$Description, rev(NAICS3_Freq_TOP$Description))
+
+#Reshape the dataframe to long format for plot
+NAICS3_Freq_TOP <- melt(NAICS3_Freq_TOP, id = c("NAICS3", "Count_Freq", "Description"))
+
+#Generate the plot and add title manually
+part_grouped_barplot("NAICS3", NAICS3_Freq_TOP) + ggtitle("Top 15 of the most frequently appeared NAICS3")
+```
+
+
+```{r grouped percent frequency/obligation barplot for all Office}
 #grouped bar plot for variable Office
 #Perpare data for plot
 #get the detailed desceription for Office by AgencyID and OfficeID
@@ -1107,7 +1143,7 @@ CBre_Cons_Comp_15A_1m_ss_cons <- summary(CBre_Cons_Comp_15A_1m.all)
 
 
 glmer_examine(CBre_Cons_Comp_15A,display=TRUE)
-odds_ratio(CBre_Cons_Comp_15A,"CBre_Cons_Comp_15A")
+CBre_Cons_Comp_15A_odds_ratio<-odds_ratio(CBre_Cons_Comp_15A,"CBre_Cons_Comp_15A")
 get_icc(CBre_Cons_Comp_15A)
 ```
 [1] "Model failed to converge with max|grad| = 0.0395392 (tol = 0.001, component 1)"
@@ -1288,6 +1324,10 @@ Term_Cons_Comp_14C_1m <- glmer (data=smp1m,
 
 
 
+  save(Term_Cons_Comp_14B_1m,file="Output//Term_Cons_Comp_14B2_1m.rdata")
+  source(system.file("utils", "allFit.R", package="lme4"))
+Term_Cons_Comp_14B_1m.all <- allFit(Term_Cons_Comp_14B_1m)
+Term_Cons_Comp_14B_1m_ss_cons <- summary(Term_Cons_Comp_14B_1m.all)
 
 Term_Cons_Comp_14C_1m <- glmer (data=smp1m,
                              b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
@@ -1311,6 +1351,10 @@ Term_Cons_Comp_14C_1m <- glmer (data=smp1m,
                                (1 | NAICS3/NAICS) + (1 | Agency/Office)
                              , family=binomial(link="logit"),verbose=1)
 
+  
+  
+stargazer::stargazer(Term_Cons_Comp_14B_1m,type="text",
+                       digits=2)
 
 # Term_Cons_Comp_14B_1m <- update(Term_Cons_Comp_14B_1m, . ~ . + b_UCA:cl_Ceil - cl_def6_HHI_lag1:cl_Days)
 
@@ -1724,7 +1768,7 @@ texreg::htmlreg(list(Term_Cons_13E_1m,Term_Comp_13F_1m,Term_Cons_Comp_14C_1m),fi
                               # "Contract Vehicle (Baseline=Def. Award" = 14:18,
                               # "Contract Pricing (Baseline=FFP)" = 19:24,
                               # "Place of Performance" = 25,
-                              "Interactions" = 25:28),
+                              "Interactions" = 25:27),
                 custom.coef.map=list(
                   "(Intercept)"="(Intercept)",
                   
@@ -1792,7 +1836,7 @@ term.or<-rbind(or1,or2,or3)
 write.csv(get_study_variables_odds_ratio(term.or),file="Output//termination_study_odds_ratio.csv",row.names=FALSE)
 
 or1<-odds_ratio(Term_Cons_13E_1m,"Term_Cons_13E_1m","Concentration","Ceiling Breaches")
-or2<-odds_ratio(Term_Comp_13E2,"Term_Comp_13F_1m","Competition","Ceiling Breaches")
+  or2<-odds_ratio(Term_Comp_13E2,"Term_Comp_13F_1m","Competition","Ceiling Breaches")
 or3<-odds_ratio(Term_Cons_Comp_14C_1m,"Term_Cons_Comp_14C_1m","Both","Ceiling Breaches")
 term.or<-rbind(or1,or2,or3)
 
