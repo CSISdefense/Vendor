@@ -1275,6 +1275,8 @@ statsummary_continuous <- function(x, contract){       #input(x: namelist of all
                       "% of Obligation to NA records")
   colnames(continuous_Info) <- continuous_col
   for (i in x){
+    Percent_NA <- round(sum(is.na(contract[[i]]))/nrow(def),5)
+    Percent_Ob <- round(sum(contract$Action.Obligation[is.na(contract[[i]])],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5)
     contract[[i]][contract[[i]]<=0] <- NA
     transformed_i <- log(contract[[i]])
     maxlog <- round(max(contract[[i]],na.rm = TRUE), 3)
@@ -1284,8 +1286,6 @@ statsummary_continuous <- function(x, contract){       #input(x: namelist of all
     sdlog <- sd(transformed_i,na.rm = TRUE)
     unitabove <- round(exp(mean(transformed_i,na.rm = TRUE)+2*sdlog),3)
     unitbelow <- round(exp(mean(transformed_i,na.rm = TRUE)-2*sdlog),3)
-    Percent_NA <- round(sum(is.na(contract[[i]]))/nrow(def),5)
-    Percent_Ob <- round(sum(contract$Action.Obligation[is.na(contract[[i]])],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5)
     newrow <- c(i, minlog, maxlog, medianlog, meanlog, unitbelow, unitabove,
                 Percent_NA, Percent_Ob)
     continuous_Info[nrow(continuous_Info)+1,] <- newrow
@@ -1369,8 +1369,44 @@ grouped_barplot <- function(x, contract) {
     return(basicplot)
 }
 
+
+                     
+#function for generating frequency information table for categorical variables                            
+freq_table <- function(x, contract){
+  Frequency <- as.data.frame(table(contract[[x]]))
+  Frequency[["Percent_Freq"]] <- round(Frequency[["Freq"]]/sum(Frequency[["Freq"]]),4)*100
+  colnames(Frequency) <- c(x, "Count_Freq", "Percent_Freq")
+  Percent_Obli <- c()
+  for (i in Frequency[[x]]) {
+    Percent_Obligation <- round(sum(contract[["Action.Obligation"]][contract[[x]] == i], na.rm = TRUE)/sum(contract[["Action.Obligation"]], na.rm = TRUE),5)
+    Percent_Obli <- c(Percent_Obli, Percent_Obligation)
+  }
+  Frequency[["Percent_Obli"]] <- Percent_Obli*100
+  return(Frequency)
+}
                                   
-                                  
+#generate barplot according to frequency information table for categorical variables                                 
+part_grouped_barplot <- function(name, frequency_Info){
+  part_barplot <- ggplot(data = frequency_Info, 
+                         aes(x = frequency_Info[["Description"]], 
+                             y = frequency_Info[["value"]], 
+                             fill=factor(frequency_Info[["variable"]]))) + 
+    geom_bar(stat = "identity", 
+             position= "dodge", 
+             width = 0.8) + 
+    xlab("") + 
+    ylab("") + 
+    coord_flip() + 
+    theme_grey() +
+    scale_fill_grey(labels = c("% of records", "% of obligation"),
+                    guide = guide_legend(reverse = TRUE)) +
+    theme(legend.title = element_blank(),
+          legend.position = "bottom",
+          legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit = "cm"),
+          legend.text = element_text(margin = margin(r=0.5, unit = "cm")),
+          plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm")) 
+  return(part_barplot)
+}
                                   
                                   
                                  
