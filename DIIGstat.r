@@ -1246,11 +1246,18 @@ get_pars<-function(model){
   Percent_Actions <- c()
   Percent_Records <- c()
   for (i in 1:length(unique_value_list)){
-    Percent_Records <- c(Percent_Records, percent(round(sum(contract[[x]] == unique_value_list[i],na.rm = TRUE)/nrow(contract),5),accuracy = .01))
-    Percent_Actions <- c(Percent_Actions, percent(round(sum(contract$Action.Obligation[contract[[x]] == unique_value_list[i]],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5),accuracy = .01))    
+    Percent_Records <- c(Percent_Records, 
+                         percent(round(sum(contract[[x]] == unique_value_list[i],na.rm = TRUE)/
+                                         nrow(contract),5)))#,accuracy = .01
+    Percent_Actions <- c(Percent_Actions, 
+                         percent(round(sum(contract$Action.Obligation[contract[[x]] == unique_value_list[i]],na.rm = TRUE)/
+                                         sum(contract$Action.Obligation,na.rm = TRUE),5)))    #,accuracy = .01
   }
-  Percent_Records <- c(Percent_Records, percent(round(sum(is.na(contract[[x]]))/nrow(contract),5),accuracy = .01))
-  Percent_Actions <- c(Percent_Actions, percent(round(sum(contract$Action.Obligation[is.na(contract[[x]])],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5),accuracy = .01))
+  Percent_Records <- c(Percent_Records, 
+                       percent(round(sum(is.na(contract[[x]]))/nrow(contract),5)))#,accuracy = .01
+  Percent_Actions <- c(Percent_Actions, 
+                       percent(round(sum(contract$Action.Obligation[is.na(contract[[x]])],na.rm = TRUE)/
+                                       sum(contract$Action.Obligation,na.rm = TRUE),5)))#,accuracy = .01
   name_categorical <- c(x,"%of records","% of $s")
   
   categorical_Info <- as.data.frame(cbind(categories,Percent_Records,Percent_Actions))
@@ -1295,8 +1302,8 @@ statsummary_continuous <- function(x, contract){       #input(x: namelist of all
   continuous_Info$aboveMax[continuous_Info$Max < continuous_Info$`1 unit above`] <- " * "
   continuous_Info$belowMin[continuous_Info$Min > continuous_Info$`1 unit below`] <- " * "
   # editing percentage values
-  continuous_Info[,8:9] <- lapply(continuous_Info[,8:9], function(x) percent(x, accuracy = .01))
-  continuous_Info[,2:7] <- lapply(continuous_Info[,2:7], function(x) comma_format(big.mark = ',',accuracy = .001)(x))
+  continuous_Info[,8:9] <- lapply(continuous_Info[,8:9], function(x) percent(x))#, accuracy = .01))
+  continuous_Info[,2:7] <- lapply(continuous_Info[,2:7], function(x) comma_format(accuracy = .001)(x))#big.mark = ',',
   continuous_Info$`% of Obligation to NA records`[continuous_Info$`% of Obligation to NA records`=="NA%"] <- NA
   
   continuous_Info$`1 unit below` <- paste(continuous_Info$`1 unit below`,continuous_Info$belowMin)
