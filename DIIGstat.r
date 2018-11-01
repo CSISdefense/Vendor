@@ -1295,8 +1295,8 @@ statsummary_continuous <- function(x, contract){       #input(x: namelist of all
   continuous_Info$aboveMax[continuous_Info$Max < continuous_Info$`1 unit above`] <- " * "
   continuous_Info$belowMin[continuous_Info$Min > continuous_Info$`1 unit below`] <- " * "
   # editing percentage values
-  continuous_Info[,9:10] <- lapply(continuous_Info[,8:9], function(x) percent(x, accuracy = .01))
-  continuous_Info[,2:8] <- lapply(continuous_Info[,2:7], function(x) comma_format(big.mark = ',',accuracy = .001)(x))
+  continuous_Info[,9:10] <- lapply(continuous_Info[,9:10], function(x) percent(x, accuracy = .01))
+  continuous_Info[,2:8] <- lapply(continuous_Info[,2:8], function(x) comma_format(big.mark = ',',accuracy = .001)(x))
   continuous_Info$`% of Obligation to NA records`[continuous_Info$`% of Obligation to NA records`=="NA%"] <- NA
   
   continuous_Info$`1 unit below` <- paste(continuous_Info$`1 unit below`,continuous_Info$belowMin)
