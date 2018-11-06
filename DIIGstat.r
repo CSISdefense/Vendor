@@ -1269,8 +1269,8 @@ get_pars<-function(model){
 )
 
 statsummary_continuous <- function(x, contract){       #input(x: namelist of all continuous variables contract: name of the data frame)
-  continuous_Info <- data.frame(matrix(ncol = 10,nrow = 0))
-  continuous_col <- c("Variable Name","Min","Max","Median","Logarithmic Mean","Log. Std. Dev.",
+  continuous_Info <- data.frame(matrix(ncol = 9,nrow = 0))
+  continuous_col <- c("Variable_Name","Min","Max","Median","Logarithmic Mean",
                       "1 unit below","1 unit above","% of records NA", 
                       "% of Obligation to NA records")
   colnames(continuous_Info) <- continuous_col
@@ -1286,7 +1286,9 @@ statsummary_continuous <- function(x, contract){       #input(x: namelist of all
     sdlog <- sd(transformed_i,na.rm = TRUE)
     unitabove <- round(exp(mean(transformed_i,na.rm = TRUE)+2*sdlog),3)
     unitbelow <- round(exp(mean(transformed_i,na.rm = TRUE)-2*sdlog),3)
-    newrow <- c(i, minlog, maxlog, medianlog, meanlog, sdlog,unitbelow, unitabove,
+    Percent_NA <- round(sum(is.na(contract[[i]]))/nrow(def),5)
+    Percent_Ob <- round(sum(contract$Action.Obligation[is.na(contract[[i]])],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5)
+    newrow <- c(i, minlog, maxlog, medianlog, meanlog, unitbelow, unitabove,
                 Percent_NA, Percent_Ob)
     continuous_Info[nrow(continuous_Info)+1,] <- newrow
   }
@@ -1295,8 +1297,8 @@ statsummary_continuous <- function(x, contract){       #input(x: namelist of all
   continuous_Info$aboveMax[continuous_Info$Max < continuous_Info$`1 unit above`] <- " * "
   continuous_Info$belowMin[continuous_Info$Min > continuous_Info$`1 unit below`] <- " * "
   # editing percentage values
-  continuous_Info[,9:10] <- lapply(continuous_Info[,9:10], function(x) percent(x, accuracy = .01))
-  continuous_Info[,2:8] <- lapply(continuous_Info[,2:8], function(x) comma_format(big.mark = ',',accuracy = .001)(x))
+  continuous_Info[,8:9] <- lapply(continuous_Info[,8:9], function(x) percent(x))#, accuracy = .01))
+  continuous_Info[,2:7] <- lapply(continuous_Info[,2:7], function(x) comma_format(accuracy = .001)(x))#big.mark = ',',
   continuous_Info$`% of Obligation to NA records`[continuous_Info$`% of Obligation to NA records`=="NA%"] <- NA
   
   continuous_Info$`1 unit below` <- paste(continuous_Info$`1 unit below`,continuous_Info$belowMin)
