@@ -1240,24 +1240,17 @@ get_pars<-function(model){
  
  # memory.limit(56000)
     
- statsummary_discrete <- function(x, contract){      #input(x: name of the discrete variable, contract：name of the dataframe)
+ statsummary_discrete <- function(x, contract,accuracy=0.01){      #input(x: name of the discrete variable, contract：name of the dataframe)
   unique_value_list <- levels(contract[[x]])
   categories <- c(unique_value_list,"NA")
   Percent_Actions <- c()
   Percent_Records <- c()
   for (i in 1:length(unique_value_list)){
-    Percent_Records <- c(Percent_Records, 
-                         percent(round(sum(contract[[x]] == unique_value_list[i],na.rm = TRUE)/
-                                         nrow(contract),5)))#,accuracy = .01
-    Percent_Actions <- c(Percent_Actions, 
-                         percent(round(sum(contract$Action.Obligation[contract[[x]] == unique_value_list[i]],na.rm = TRUE)/
-                                         sum(contract$Action.Obligation,na.rm = TRUE),5)))    #,accuracy = .01
+    Percent_Records <- c(Percent_Records, percent(round(sum(contract[[x]] == unique_value_list[i],na.rm = TRUE)/nrow(contract),5),accuracy = accuracy))
+    Percent_Actions <- c(Percent_Actions, percent(round(sum(contract$Action.Obligation[contract[[x]] == unique_value_list[i]],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5),accuracy = accuracy))    
   }
-  Percent_Records <- c(Percent_Records, 
-                       percent(round(sum(is.na(contract[[x]]))/nrow(contract),5)))#,accuracy = .01
-  Percent_Actions <- c(Percent_Actions, 
-                       percent(round(sum(contract$Action.Obligation[is.na(contract[[x]])],na.rm = TRUE)/
-                                       sum(contract$Action.Obligation,na.rm = TRUE),5)))#,accuracy = .01
+  Percent_Records <- c(Percent_Records, percent(round(sum(is.na(contract[[x]]))/nrow(contract),5),accuracy = .01))
+  Percent_Actions <- c(Percent_Actions, percent(round(sum(contract$Action.Obligation[is.na(contract[[x]])],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5),accuracy = accuracy))
   name_categorical <- c(x,"%of records","% of $s")
   
   categorical_Info <- as.data.frame(cbind(categories,Percent_Records,Percent_Actions))
