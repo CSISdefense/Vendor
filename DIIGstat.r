@@ -159,7 +159,7 @@ binned_fitted_versus_residuals<-function(model,bins=20){
   else
   {
     if(!is.null(model$model$b_CBre)){
-      graph<-binned_fitted_versus_cbre_residuals(model,binx)
+      graph<-binned_fitted_versus_cbre_residuals(model,bins)
     } else if(!is.null(model$model$b_Term)){
       graph<-binned_fitted_versus_term_residuals(model,bins)
     } else if(!is.null(model$model$cl_Offr)){
