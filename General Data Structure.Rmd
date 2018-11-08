@@ -91,6 +91,7 @@ NAICS_Lookup <- read.csv(file = "Lookup/Lookup_NAICS_code.csv")
 colnames(NAICS_Lookup) <- c("NAICS_Code", "Description")
 NAICS2_Freq <- left_join(NAICS2_Freq, NAICS_Lookup, by = c('NAICS2' = 'NAICS_Code'))
 NAICS2_Freq$Description <- paste(NAICS2_Freq$NAICS2, ' - ', NAICS2_Freq$Description)
+NAICS2_Freq$Description <- factor(NAICS2_Freq$Description, levels = rev(NAICS2_Freq$Description))
 NAICS2_Freq <- melt(NAICS2_Freq, id = c("NAICS2", "Count_Freq", "Description"))
 naics2<-part_grouped_barplot('NAICS2', NAICS2_Freq)
 
@@ -211,7 +212,12 @@ percent_obli_rest <- 100 - sum(Agency_Freq$Percent_Obli, na.rm = TRUE)
 Agency_Freq$Description <- paste(Agency_Freq$Agency, ' - ', Agency_Freq$Description)
 Agency_Freq[6,] <- c("All Other", "NA", percent_freq_rest,  percent_obli_rest, "All Other")
 Agency_Freq$Description <- factor(Agency_Freq$Description, 
-                                  levels = rev(Agency_Freq$Description))
+                                  levels = rev(c("2100  -  DEPT OF THE ARMY",
+                                                 "1700  -  DEPT OF THE NAVY",
+                                                 "5700  -  DEPT OF THE AIR FORCE",
+                                                 "97AS  -  DEFENSE LOGISTICS AGENCY",
+                                                 "9776  -  USTRANSCOM",
+                                                 "All Other")))
 Agency_Freq[,c(3,4)] <- lapply(Agency_Freq[,c(3,4)], function(x) as.numeric(x))
 Agency_Freq <- melt(Agency_Freq, id = c("Agency","Count_Freq", "Description"))
 agency<-part_grouped_barplot('Agency', Agency_Freq)
