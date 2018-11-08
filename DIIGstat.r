@@ -1488,3 +1488,14 @@ odds_ratio<-function(FM,name,input=NA,output=NA,walds=FALSE){
 log_analysis<-function(model){
   exp(cbind(coef(model),confint(model)))-1
 }
+
+
+
+add_col_from_transformed<-function(sample,transformed,col=NULL){
+  if(is.null(col)){
+    col<-colnames(transformed)[!colnames(transformed) %in%
+                                 colnames(sample)]
+  }
+  transformed<-subset(transformed,select = c("CSIScontractID",col))
+  left_join(sample,transformed,by="CSIScontractID")
+}
