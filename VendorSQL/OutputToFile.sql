@@ -30,6 +30,14 @@ EXEC	@return_value = [Vendor].[SP_EntityIDhistoryNAICS]
 		
 --SELECT	'Return Value' = @return_value
 
+DECLARE	@return_value int
+
+--EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
+EXEC	@return_value = [Vendor].[SP_EntityIDhistoryPlatform]
+--EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
+		@Customer = 'Defense'
+		
+--SELECT	'Return Value' = @return_value
 
 
 --SET ANSI_WARNINGS OFF;
@@ -94,6 +102,8 @@ EXEC	@return_value = Vendor.sp_EntityCountHistoryCustomer
 		@Customer = 'Defense'
 		
 --SELECT	'Return Value' = @return_value
+
+
 
 
 SET ANSI_WARNINGS OFF;

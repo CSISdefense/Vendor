@@ -1499,3 +1499,12 @@ add_col_from_transformed<-function(sample,transformed,col=NULL){
   transformed<-subset(transformed,select = c("CSIScontractID",col))
   left_join(sample,transformed,by="CSIScontractID")
 }
+
+# Helper function for string wrapping. 
+# Default 20 character target width.
+swr <- function(string, nwrap=20) {
+  # https://stackoverflow.com/questions/37174316/how-to-fit-long-text-into-ggplot2-facet-titles
+  
+  paste(strwrap(string, width=nwrap), collapse="\n")
+}
+swr <- Vectorize(swr)

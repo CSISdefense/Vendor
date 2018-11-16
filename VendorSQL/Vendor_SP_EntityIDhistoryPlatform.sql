@@ -1,4 +1,4 @@
-USE [DIIG]
+USE CSIS360
 GO
 
 /****** Object:  StoredProcedure [Vendor].[SP_TopVendorHistoryPlatformSubCustomer]    Script Date: 10/5/2017 9:43:57 PM ******/
@@ -9,7 +9,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
-ALTER PROCEDURE [Vendor].[SP_EntityIDhistoryNAICS]
+ALTER PROCEDURE [Vendor].[SP_EntityIDhistoryPlatform]
 
 @Customer VARCHAR(255)
 
@@ -22,15 +22,14 @@ IF (@Customer is not null) --Begin sub path where all product and services but o
 			C.fiscal_year
 				,c.platformPortfolio
 				,C.EntityID
-				,C.parentid
-				,C.ContractorDisplayName
-				,C.jointventure
-				,c.UnknownCompany
-				,C.WarningFlag
+				--,C.parentid
+				--,C.ContractorDisplayName
+				--,C.jointventure
+				--,c.UnknownCompany
+				--,C.WarningFlag
 				,c.Small
 				,Sum(C.obligatedAmount) AS obligatedAmount
 			,Sum(C.numberOfActions) AS numberOfActions
-			,C.WarningFlag
 			FROM [Vendor].[VendorHistoryNaicsPlatformSubCustomer] as C
 		--Here's the where clause for @IsService is null and Customer is not null
 		WHERE C.Customer=@Customer 
@@ -40,16 +39,16 @@ IF (@Customer is not null) --Begin sub path where all product and services but o
 				,c.Customer
 				,c.platformPortfolio
 				,C.EntityID
-				,C.parentid
-				,C.ContractorDisplayName
-				,C.jointventure
-				,c.UnknownCompany
-				,C.WarningFlag
+				--,C.parentid
+				--,C.ContractorDisplayName
+				--,C.jointventure
+				--,c.UnknownCompany
+				--,C.WarningFlag
 				,c.Small
 		order by
 				c.Fiscal_year
 				,C.Customer
-				,c.NAICS_Code
+				,c.platformPortfolio
 				,Sum(C.obligatedAmount) desc
 		--End of your query
 		END
@@ -60,11 +59,11 @@ ELSE --Begin sub path where all products and services amd all Customers will be 
 			C.fiscal_year
 				,c.platformPortfolio
 				,C.EntityID
-				,C.parentid
-				,C.ContractorDisplayName
-				,C.jointventure
-				,c.UnknownCompany
-				,C.WarningFlag
+				--,C.parentid
+				--,C.ContractorDisplayName
+				--,C.jointventure
+				--,c.UnknownCompany
+				--,C.WarningFlag
 				,c.Small
 				,Sum(C.obligatedAmount) AS obligatedAmount
 			,Sum(C.numberOfActions) AS numberOfActions
@@ -76,15 +75,15 @@ ELSE --Begin sub path where all products and services amd all Customers will be 
 			C.fiscal_year
 				,c.platformPortfolio
 				,C.EntityID
-				,C.parentid
-				,C.ContractorDisplayName
-				,C.jointventure
-				,c.UnknownCompany
-				,C.WarningFlag
+				--,C.parentid
+				--,C.ContractorDisplayName
+				--,C.jointventure
+				--,c.UnknownCompany
+				--,C.WarningFlag
 				,c.Small
 		order by
 				c.Fiscal_year
-				,c.NAICS_Code
+				,c.platformPortfolio
 
 				,Sum(C.obligatedAmount) desc
 		--End of your query

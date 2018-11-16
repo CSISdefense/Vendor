@@ -28,6 +28,15 @@ defense_naics_vendor <- read_delim("Data\\Defense_Vendor.SP_EntityIDhistoryNAICS
 
 problems(defense_naics_vendor)
 
+#Import Defense vendor list by platform
+defense_platform_vendor <- read_delim("Data\\Defense_Vendor.SP_EntityIDhistoryPlatform.txt",
+                                   # header = TRUE,
+                                   na = c("","NA","NULL"),
+                                   # quote="\"",#Necessary because there are some 's in the names.
+                                   delim = "\t")
+
+problems(defense_platform_vendor)
+
 #Import Defense Vendor list.
 file<-unz("Data\\Defense_Vendor.SP_EntityIDhistoryCalendar.zip",
           filename="Defense_Vendor.SP_EntityIDhistoryCalendar.txt")
@@ -41,6 +50,8 @@ defense_vendor <- read.table(file,
 
 defense_naics_vendor<-clean_entity(defense_naics_vendor)
 defense_vendor<-clean_entity(defense_vendor)
+defense_platform_vendor<-clean_entity(defense_platform_vendor)
+
 
 defense_naics_vendor<-label_naics_mismatch(defense_naics_vendor)
 defense_naics_vendor$exclude<-FALSE
@@ -74,6 +85,35 @@ annual_summary<-defense_vendor %>%
   top20=sum(ifelse(pos<=20,pct,NA),na.rm=TRUE),
   top50=sum(ifelse(pos<=50,pct,NA),na.rm=TRUE)
 )
+
+
+#******************Calculate Platform Wide Values****************
+defense_platform_vendor<-defense_platform_vendor %>% group_by(platformPortfolio,Fiscal.Year)
+
+defense_platform_vendor<-defense_platform_vendor %>%
+  dplyr::mutate(
+    pos = rank(-Action.Obligation,
+               ties.method ="min"),
+    pct = ifelse(Action.Obligation>0,
+                 Action.Obligation / sum(Action.Obligation[Action.Obligation>0]),
+                 NA
+    )
+  )
+
+
+annual_platform_summary<-defense_platform_vendor %>%
+  dplyr::summarize(
+    Action.Obligation = sum(Action.Obligation),
+    # Obligation.2016 = sum(Action.Obligation.2016),
+    vendor_count=length(Fiscal.Year),
+    hh_index=sum((pct*100)^2,na.rm=TRUE),
+    top4=sum(ifelse(pos<=4,pct,NA),na.rm=TRUE),
+    top8=sum(ifelse(pos<=8,pct,NA),na.rm=TRUE),
+    top12=sum(ifelse(pos<=8,pct,NA),na.rm=TRUE),
+    top20=sum(ifelse(pos<=20,pct,NA),na.rm=TRUE),
+    top50=sum(ifelse(pos<=50,pct,NA),na.rm=TRUE)
+  )
+
 
 
 #*****************NAICS 6****************************
@@ -207,8 +247,10 @@ annual_naics6_summary<-join_economic(annual_naics6_summary,core,6)
 
 #************Saving********************
 save(defense_naics_vendor,
+     defense_platform_vendor,
      defense_vendor,
      annual_summary,
+     annual_platform_summary,
      annual_naics6_summary,
      annual_naics5_summary,
      annual_naics4_summary,
@@ -219,6 +261,7 @@ save(defense_naics_vendor,
 
 write.csv(defense_naics_vendor,"data//defense_naics_vendor.csv")
 write.csv(defense_vendor,"output//defense_vendor.csv")
+write.csv(annual_platform_summary,"output//annual_platform_summary.csv")
 write.csv(annual_naics2_summary,"output//annual_naics2_summary.csv")
 write.csv(annual_naics3_summary,"output//annual_naics3_summary.csv")
 write.csv(annual_naics4_summary,"output//annual_naics4_summary.csv")

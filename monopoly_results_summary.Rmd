@@ -468,6 +468,7 @@ ggsave(NAICS2digit,file="Output\\NAICS2digitCount.png",width=10,height=6,dpi=600
 ggsave(NAICS2digit,file="Output\\NAICS2digitCount.eps",width=10,height=6,dpi=600)
 ```
 
+
 #### NAICS 6
 
 ```{r NAICS6_Summary, fig.width=7.5 , fig.height=3}
@@ -497,16 +498,9 @@ NAICS_summary<-csis360::read_and_join(NAICS_summary,
 "NAICS_shorthand")
                )
 
-# https://stackoverflow.com/questions/37174316/how-to-fit-long-text-into-ggplot2-facet-titles
 
 
 
-# Helper function for string wrapping. 
-# Default 20 character target width.
-swr <- function(string, nwrap=20) {
-  paste(strwrap(string, width=nwrap), collapse="\n")
-}
-swr <- Vectorize(swr)
 summary(NAICS_summary$NAICS_shorthand)
 
 # View(NAICS_summary)
@@ -1009,7 +1003,23 @@ Office_barplot
 ```
 
 
+### Platform Portfolio
+```{r Platform, fig.width=6.5 , fig.height=3.5}
+annual_platform_summary$platformPortfolio
+annual_platform_summary$plat_short <-swr(annual_platform_summary$platformPortfolio,nwrap = 21)
+annual_platform_summary<-subset(annual_platform_summary,Fiscal.Year>=2000 & Fiscal.Year<=2017)
+plat<-ggplot(subset(annual_platform_summary,!is.na(platformPortfolio)),
+       aes(x=Fiscal.Year,y=hh_index))+#color=NAICS_Code
+  geom_line()+
+  scale_y_continuous(label=scales::comma)+ 
+  # scale_x_continuous(breaks=c(2006,2009,2011,2014))+
+  labs(x="Fiscal Year",y="Herfindahl-Herschman Index")+ 
+  geom_hline(yintercept=c(1500,2500),linetype="dotted")+
+  facet_wrap(~plat_short)
+plat
 
+ggsave(plat,filename="Output//platform_hhi.png",height=3, width=6.5)
+```
 
 ### Variable examination
 ```{r VarGraph}
