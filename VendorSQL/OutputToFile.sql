@@ -29,6 +29,8 @@ EXEC	@return_value = [Vendor].[SP_EntityIDhistoryNAICS]
 		@Customer = 'Defense'
 		
 --SELECT	'Return Value' = @return_value
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
 
 DECLARE	@return_value int
 
