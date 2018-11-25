@@ -67,6 +67,8 @@ First we load the data. The dataset used is a U.S. Defense Contracting dataset d
 # 
 # 
 
+
+
 summary(def$UnmodifiedContractBaseAndAllOptionsValue)
 summary(def$Action.Obligation)
 
@@ -82,7 +84,7 @@ load(file="Data/transformed_def.Rdata")
 # 
 
 
-
+load("data//")
 # load("output//naics_join.Rdata")
 
 ```
@@ -1005,20 +1007,60 @@ Office_barplot
 
 ### Platform Portfolio
 ```{r Platform, fig.width=6.5 , fig.height=3.25}
-annual_platform_summary$platformPortfolio
-annual_platform_summary$plat_short <-swr(annual_platform_summary$platformPortfolio,nwrap = 21)
-annual_platform_summary<-subset(annual_platform_summary,Fiscal.Year>=2000 & Fiscal.Year<=2017)
-plat<-ggplot(subset(annual_platform_summary,!is.na(platformPortfolio)),
-       aes(x=Fiscal.Year,y=hh_index))+#color=NAICS_Code
-  geom_line()+
-  scale_y_continuous(label=scales::comma)+ 
-  # scale_x_continuous(breaks=c(2006,2009,2011,2014))+
-  labs(x="Fiscal Year",y="Herfindahl-Herschman Index")+ 
-  geom_hline(yintercept=c(1500,2500),linetype="dotted")+
-  facet_wrap(~plat_short)
-plat
 
-ggsave(plat,filename="Output//platform_hhi.png",height=3.25, width=6.5)
+library(readr)
+annual_platform_summary<-read_csv(file="output//annual_platform_summary.csv")
+colnames(annual_platform_summary)[colnames(annual_platform_summary)=="platformPortfolio"]<-"PlatformPortfolio"
+
+platform_no_na<-subset(annual_platform_summary,!is.na(PlatformPortfolio))
+labels_and_colors<-csis360::prepare_labels_and_colors(platform_no_na,"PlatformPortfolio")
+
+
+
+platform_no_na$plat_short <-swr(platform_no_na$PlatformPortfolio,nwrap = 21)
+platform_no_na<-subset(platform_no_na,Fiscal.Year>=2000 & Fiscal.Year<=2017)
+
+ 
+
+# plat<-ggplot(platform_no_na,
+#        aes(x=Fiscal.Year,y=hh_index))+#color=NAICS_Code
+#   geom_line()+
+#   scale_y_continuous(label=scales::comma)+ 
+#   # scale_x_continuous(breaks=c(2006,2009,2011,2014))+
+#   labs(x="Fiscal Year",y="Herfindahl-Herschman Index")+ 
+#   geom_hline(yintercept=c(1500,2500),linetype="dotted")+
+#   facet_wrap(~plat_short)
+# add_preassigned_scales(plat,labels_and_colors = labels_and_colors)
+
+# str(platform_no_na)
+# summary(platform_no_na$Fiscal.Year)
+#
+# undebug(add_preassigned_scales)
+plat<-build_plot(
+  data=platform_no_na,
+  chart_geom = "Line Chart",
+  share = FALSE,
+  x_var="Fiscal.Year",
+  y_var="hh_index", #Name of variable to plot on y-axis
+  color_var="PlatformPortfolio",       # name of coloration variable, as string
+  facet_var="PlatformPortfolio",        # name of facet variable, as string
+  legend=FALSE, #Include a legend
+  caption=FALSE, #Include a source caption
+  labels_and_colors=labels_and_colors,
+  column_key=NULL
+)
+
+
+# add_preassigned_scales(plat, labels_and_colors,  var="PlatformPortfolio"
+
+plat<-plat+geom_hline(yintercept=c(1500,2500),linetype="dotted")+
+  labs(x="Fiscal Year",y="Herfindahl-Herschman Indetx")
+plat
+ggsave(plat+geom_line(aes(x=Fiscal.Year,y=hh_index,color=PlatformPortfolio),size=1),filename="Output//platform_hhi.png",height=3.25, width=6.5)
+ggsave(plat+geom_line(aes(x=Fiscal.Year,y=hh_index)),filename="Output//platform_hhi_bw.png",height=3.25, width=6.5)
+ggsave(plat+geom_line(aes(x=Fiscal.Year,y=hh_index,color=PlatformPortfolio),size=1),filename="Output//platform_hhi.eps",height=3.25, width=6.5)
+ggsave(plat+geom_line(aes(x=Fiscal.Year,y=hh_index)),filename="Output//platform_hhi_bw.eps",height=3.25, width=6.5)
+
 ```
 
 ### Variable examination
@@ -1166,7 +1208,7 @@ if(!exists("Comp_Cons_15D"))
                          verbose=1)
    save(Comp_Cons_15D,Comp_Cons_15D_1m,file="Output//Comp_Cons_15D.rdata")
 
-}
+
 
 stargazer::stargazer(Comp_Cons_15D,Comp_Cons_15D_1m,type="text",
                        digits=2)
