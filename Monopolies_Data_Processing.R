@@ -268,3 +268,12 @@ write.csv(annual_naics4_summary,"output//annual_naics4_summary.csv")
 write.csv(annual_naics5_summary,"output//annual_naics5_summary.csv")
 write.csv(annual_naics6_summary,"output//annual_naics6_summary.csv")
 # write.csv(annual_summary,"data//annual_summary.csv")
+
+
+load("data//defense_naics_vendor.Rdata")
+
+
+levels(factor(defense_platform_vendor$platformPortfolio))
+
+space_vendor<-subset(defense_platform_vendor,platformPortfolio=="Space Systems")
+write.csv(space_vendor,"spacevendor.csv")
