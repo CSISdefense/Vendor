@@ -42,6 +42,7 @@ SELECT C.Fiscal_year
 , C.contractingofficerbusinesssizedetermination as DirectCOBSD
 , n.principalnaicscodeText
 , c.SignedDate
+, year(c.SignedDate) as CalendarYear
 , c.veteranownedflag
 , c.minorityownedbusinessflag
 , c.womenownedflag
@@ -49,6 +50,7 @@ SELECT C.Fiscal_year
 , c.csistransactionID
 , ctid.csiscontractid
 , c.typeofsetaside
+,psc.IsService
 --Grouping Sub-Query
 , IIf(C.contractingofficerbusinesssizedetermination='S' 
    And Not (parent.largegreaterthan3B=1 Or parent.Largegreaterthan3B=1)

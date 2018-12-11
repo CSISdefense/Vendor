@@ -7,7 +7,7 @@ GO
 
 
 
-ALTER PROCEDURE [Vendor].[sp_EntityIDhistoryNAICS]
+Alter PROCEDURE [Vendor].[sp_EntityIDhistoryNAICSisService]
 
 @Customer VARCHAR(255)
 
@@ -20,6 +20,7 @@ IF (@Customer is not null) --Begin sub path where all product and services but o
 			CalendarYear
 				,c.principalNAICScode
 				,c.principalnaicscodeText
+				,c.IsService
 				,C.EntityID
 				,c.Small
 				,Sum(C.obligatedAmount) AS obligatedAmount
@@ -33,6 +34,7 @@ IF (@Customer is not null) --Begin sub path where all product and services but o
 				,c.Customer
 				,c.principalNAICScode
 				,c.principalnaicscodeText
+								,c.IsService
 				,C.EntityID
 				,c.Small
 		order by
@@ -49,6 +51,7 @@ ELSE --Begin sub path where all products and services amd all Customers will be 
 			 CalendarYear
 				,c.principalNAICScode
 				,c.principalnaicscodeText
+								,c.IsService
 				,C.EntityID
 				,C.parentid
 				,C.ContractorDisplayName
@@ -66,6 +69,7 @@ ELSE --Begin sub path where all products and services amd all Customers will be 
 			CalendarYear 
 				,c.principalNAICScode
 				,c.principalnaicscodeText
+								,c.IsService
 				,C.EntityID
 				,C.parentid
 				,C.ContractorDisplayName
