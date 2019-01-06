@@ -1508,3 +1508,40 @@ swr <- function(string, nwrap=20) {
   paste(strwrap(string, width=nwrap), collapse="\n")
 }
 swr <- Vectorize(swr)
+
+
+
+
+allFit_save <- function(m, meth.tab = meth.tab.0,
+                   data=NULL,
+                   verbose=TRUE,
+                   maxfun=1e5,
+                   filename="output//allFit.rdata")
+{
+  #Should really add a filename check here.
+  stopifnot(length(dm <- dim(meth.tab)) == 2, dm[1] >= 1, dm[2] >= 2,
+            is.character(optimizer <- meth.tab[,"optimizer"]),
+            is.character(method    <- meth.tab[,"method"]))
+  fit.names <- gsub("\\.$","",paste(optimizer, method, sep="."))
+  res <- setNames(as.list(fit.names), fit.names)
+  for (i in seq_along(fit.names)) {
+    if (verbose) cat(fit.names[i],": ")
+    ctrl <- list(optimizer=optimizer[i])
+    ctrl$optCtrl <- switch(optimizer[i],
+                           optimx    = list(method   = method[i]),
+                           nloptWrap = list(algorithm= method[i]),
+                           list(maxfun=maxfun))
+    ctrl <- do.call(if(isGLMM(m)) glmerControl else lmerControl, ctrl)
+    tt <- system.time(rr <- tryCatch(update(m, control = ctrl),
+                                     error = function(e) e))
+    attr(rr, "optCtrl") <- ctrl$optCtrl # contains crucial info here
+    attr(rr, "time") <- tt  # store timing info
+    res[[i]] <- rr
+    save(m,res,file=filename)
+    if (verbose) cat("[OK]\n")
+  }
+  
+  structure(res, class = "allfit", fit = m, sessionInfo =  sessionInfo(),
+            data = data # is dropped if NULL
+  )
+}
