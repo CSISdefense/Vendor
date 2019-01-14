@@ -1268,28 +1268,37 @@ get_pars<-function(model){
                      "US6_avg_sal_lag1","US5_avg_sal_lag1","US4_avg_sal_lag1","US3_avg_sal_lag1","US2_avg_sal_lag1"
 )
 
-statsummary_continuous <- function(x, contract){       #input(x: namelist of all continuous variables contract: name of the data frame)
+statsummary_continuous <- function(x, contract,log=TRUE,digits=3){       #input(x: namelist of all continuous variables contract: name of the data frame)
   continuous_Info <- data.frame(matrix(ncol = 9,nrow = 0))
-  continuous_col <- c("Variable_Name","Min","Max","Median","Logarithmic Mean",
+  colnames(continuous_Info) <- c("Variable_Name","Min","Max","Median","Logarithmic Mean",
                       "1 unit below","1 unit above","% of records NA", 
                       "% of Obligation to NA records")
-  colnames(continuous_Info) <- continuous_col
+  if(log==FALSE)
+    colnames(continuous_Info)[colnames(continuous_Info)=="Logarithmic Mean"]<-"Arithmatic Mean"  
   for (i in x){
-    Percent_NA <- round(sum(is.na(contract[[i]]))/nrow(def),5)
+    Percent_NA <- round(sum(is.na(contract[[i]]))/nrow(contract),5)
     Percent_Ob <- round(sum(contract$Action.Obligation[is.na(contract[[i]])],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5)
     contract[[i]][contract[[i]]<=0] <- NA
     transformed_i <- log(contract[[i]])
-    maxlog <- round(max(contract[[i]],na.rm = TRUE), 3)
-    medianlog <- round(median(contract[[i]],na.rm = TRUE), 3)
-    minlog <- round(min(contract[[i]],na.rm = TRUE), 3)
-    meanlog <- round(exp(mean(transformed_i,na.rm = TRUE)), 3)
+    maxval <- round(max(contract[[i]],na.rm = TRUE), digits)
+    medianval <- round(median(contract[[i]],na.rm = TRUE), digits)
+    minval <- round(min(contract[[i]],na.rm = TRUE), digits)
+    meanval <- round(mean(contract[[i]],na.rm = TRUE), digits)
+    meanlog <- round(exp(mean(transformed_i,na.rm = TRUE)), digits)
+    sdval <- sd(contract[[i]],na.rm = TRUE)
     sdlog <- sd(transformed_i,na.rm = TRUE)
-    unitabove <- round(exp(mean(transformed_i,na.rm = TRUE)+2*sdlog),3)
-    unitbelow <- round(exp(mean(transformed_i,na.rm = TRUE)-2*sdlog),3)
-    Percent_NA <- round(sum(is.na(contract[[i]]))/nrow(def),5)
+    unitaboveval <- round(mean(contract[[i]],na.rm = TRUE)+2*sdval,digits)
+    unitbelowval <- round(mean(contract[[i]],na.rm = TRUE)-2*sdval,digits)
+    unitabovelog <- round(exp(mean(transformed_i,na.rm = TRUE)+2*sdlog),digits)
+    unitbelowlog <- round(exp(mean(transformed_i,na.rm = TRUE)-2*sdlog),digits)
+    Percent_NA <- round(sum(is.na(contract[[i]]))/nrow(contract),5)
     Percent_Ob <- round(sum(contract$Action.Obligation[is.na(contract[[i]])],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5)
-    newrow <- c(i, minlog, maxlog, medianlog, meanlog, unitbelow, unitabove,
+    if(log==TRUE)
+      newrow <- c(i, minval, maxval, medianval, meanlog, unitbelowlog, unitabovelog,
                 Percent_NA, Percent_Ob)
+    else 
+      newrow <- c(i, minval, maxval, medianval, meanval, unitbelowval, unitaboveval,
+                  Percent_NA, Percent_Ob)
     continuous_Info[nrow(continuous_Info)+1,] <- newrow
   }
   # formating
