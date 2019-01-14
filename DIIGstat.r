@@ -1530,6 +1530,7 @@ allFit_save <- function(m, meth.tab = meth.tab.0,
     ctrl$optCtrl <- switch(optimizer[i],
                            optimx    = list(method   = method[i]),
                            nloptWrap = list(algorithm= method[i]),
+                           verbose=TRUE,
                            list(maxfun=maxfun))
     ctrl <- do.call(if(isGLMM(m)) glmerControl else lmerControl, ctrl)
     tt <- system.time(rr <- tryCatch(update(m, control = ctrl),
