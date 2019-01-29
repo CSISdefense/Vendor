@@ -4407,6 +4407,7 @@ dir.exists("Analysis")
 file.exists("New Entrants.Rproj")
 list.files("../")
 
+####feddunsyear####
 setwd("K:/2018-01 NPS New Entrants/Data/Data/Raw Data/FPDS")
 FPDS_data <- read.delim("Vendor.SP_DunsnumberNewEntrants_all.txt", fill = TRUE, header=TRUE,  na.strings = c("", "NULL"))
 
@@ -4522,6 +4523,7 @@ summary(dod_duns_fyear$status)
 
 dod_duns_fyear<-subset(dod_duns_fyear,fiscal_year>=2000)
 
+save(fed_duns_fyear, file = "fed_duns_fyear.rda")
 
 save(file="../Cleaning Data/footing.rda",FPDS_data,fed_duns_fyear)
 # load(file="../Cleaning Data/footing.rda")
@@ -4555,6 +4557,8 @@ table(dod_duns_fyear$sample_year_bin)
 dod_duns_fyear_samples <- dod_duns_fyear[!(dod_duns_fyear$sample_year_bin<1), ]
 dod_duns_fyear_samples_op <- dod_duns_fyear_samples[!(dod_duns_fyear_samples$fiscal_year<2001), ]
 dod_duns_fyear_samples_op <- dod_duns_fyear_samples_op[!(dod_duns_fyear_samples_op$fiscal_year>2016), ]
+
+save(dod_duns_fyear_samples_op, file="dod_duns_fyear_samples_op.rda")
 
 
 #******************************************************************
@@ -4593,15 +4597,16 @@ NE_count_allfed <- ggplot(FPDS_bargraphCount, aes(x = registrationYear, y = regp
   ylab("Number of New Entrants") +
   xlab("Registration Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
-  ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
-  #scale_fill_manual(name = "New Entrants Types", values = c("darkslategray1", "cadetblue4"), labels = c("non-small", "small")) +
   scale_fill_manual(name = "New Entrant Type", values = c("#66CCCC", "#336666"), labels = c("non-small", "small")) +
-  ggtitle("Number of New Entrants Per Year (2001-2016) - All Federal Agencies")+
+  ggtitle("All Federal Agencies")+
+  theme(text=element_text(size=16, family="Comic Sans MS")) +
   ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
   ###    angle = 45) +
   ##geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
   geom_text(data = subset(FPDS_bargraphCount, registrationYear <= 2016), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45) +
   scale_y_continuous(label=comma)
+
+NE_count_allfed
 
 #******************************
 ##chart for DoD
@@ -4628,8 +4633,7 @@ NE_count_DoD <- ggplot(FPDS_bargraphCount, aes(x = registrationYear, y = regpers
   ylab("Number of New Entrants") +
   xlab("Registration Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
-  ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
-  #scale_fill_manual(name = "New Entrants Types", values = c("darkslategray1", "cadetblue4"), labels = c("non-small", "small")) +
+  theme(text=element_text(size=16, family="Comic Sans MS")) +
   scale_fill_manual(name = "New Entrant Type", values = c("#66CCCC", "#336666"), labels = c("non-small", "small")) +
   ggtitle("Number of New Entrants Per Year (2001-2016) - DoD")+
   ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
@@ -4637,10 +4641,12 @@ NE_count_DoD <- ggplot(FPDS_bargraphCount, aes(x = registrationYear, y = regpers
   ##geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
   geom_text(data = subset(FPDS_bargraphCount, registrationYear <= 2016), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45) +
   scale_y_continuous(label=comma)
+NE_count_DoD
 
 ##combine graphs
 
 grid.arrange(NE_count_allfed, NE_count_DoD)
+
 
 
 
@@ -4733,7 +4739,12 @@ grid.arrange(NE_eachsample_overtime_allfed, NE_eachsample_overtime_dod, ncol=2)
 #all fed agencies
 #*****
 ##stacked##
+
+library(extrafont)
+
 #drop years before 2001 and after 2016
+load(file="fed_duns_fyear.rda")
+
 fed_duns_fyear_op <- fed_duns_fyear[!(fed_duns_fyear$fiscal_year<2001), ]
 fed_duns_fyear_op <- fed_duns_fyear_op[!(fed_duns_fyear_op$fiscal_year>2016), ]
 
@@ -4742,21 +4753,12 @@ NE_v_incumbent_count_allfed <- ggplot(fed_duns_fyear_op, aes(x = fiscal_year, fi
   scale_x_continuous(breaks = c(2001:2016)) +
   xlab("Fiscal Year") +
   ylab("Number of Vendors") +
+  theme(text=element_text(size=16, family="Comic Sans MS")) +
   scale_fill_manual(name = "Vendor Type", values = c("#66CCCC", "#336666"), labels = c("Incumbent", "New Entrant")) +
-  ggtitle("Number of New Entrants vs. Number of Incumbent Firms Over Time - All Federal Agencies") +
+  #ggtitle("Number of New Entrants vs. Number of Incumbent Firms Over Time - All Federal Agencies") +
+  ggtitle("All Federal Agencies") +
   scale_y_continuous(label=comma)
 
-##faceted##
-
-
-ggplot(fed_duns_fyear_op, aes(x = fiscal_year, fill = factor(entrant))) +
-  geom_histogram(position = "stack", binwidth = .5) +
-  scale_x_continuous(breaks = c(2001:2016)) +
-  xlab("Fiscal Year") +
-  ylab("Number of Vendors") +
-  scale_fill_manual(name = "New Entrants Types", values = c("#66FFFF", "#336666"), labels = c("Incumbent", "New Entrant")) +
-  ggtitle("Number of New Entrants vs. Number of Incumbent Firms Over Time") +
-  facet_wrap(~entrant, scales="fixed", ncol=1) ##ncol=1 stack them above eachother (in 1 column)
 
 #****
 #DoD
@@ -4770,14 +4772,14 @@ NE_v_incumbent_count_DoD <- ggplot(dod_duns_fyear_op, aes(x = fiscal_year, fill 
   scale_x_continuous(breaks = c(2001:2016)) +
   xlab("Fiscal Year") +
   ylab("Number of Vendors") +
+  theme(text=element_text(size=16, family="Comic Sans MS")) +
   scale_fill_manual(name = "Vendor Type", values = c("#66CCCC", "#336666"), labels = c("Incumbent", "New Entrant")) +
-  ggtitle("DoD") + 
-  #guides(fill=FALSE) +
-  scale_y_continuous(label=comma)
+  ggtitle("DoD") 
+#guides(fill=FALSE) +
+#scale_y_continuous(label=comma)
 
 ##combine all fed and dod
 grid.arrange(NE_v_incumbent_count_allfed, NE_v_incumbent_count_DoD, ncol=1)
-
 
 
 #******************************************************************************************************
@@ -4819,19 +4821,24 @@ FPDS_obligationscount <- FPDS_cleaned_unique_graphs %>%
   dplyr::mutate(total_percent = 100)
 
 
-obligations_small_v_nsmall_allfed <- ggplot(FPDS_obligationscount, aes(x = registrationYear, y = tot_obl_bysize, fill = factor(top_smallbiz_bin), label = percent_obl)) +
+obligations_small_v_nsmall_allfed_facet <- ggplot(FPDS_obligationscount, aes(x = registrationYear, y = tot_obl_bysize, fill = factor(top_smallbiz_bin), label = percent_obl)) +
   geom_bar(stat = 'identity', position = 'stack') +
   ylab("Total Obligations") +
   xlab("Entry Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
   ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
-  scale_fill_manual(name = "New Entrant Type", values = c("#66CCCC", "#336666"), labels = c("non-small", "small")) +
-  ggtitle("Percent of Obligations for Small and Non-Small New Entrants (2001-2016) - All Federal Agencies")+
-  ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
-  ###    angle = 45) +
-  ##geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
-  geom_text_repel(data = subset(FPDS_obligationscount, registrationYear <= 2016), aes(label = scales::percent(percent_obl_dec)), size = 4, position = position_stack(vjust = .3), angle = 90) +
+  scale_fill_manual(name = "New Entrants Types", values = c("#66CCCC", "#336666"), labels = c("non-small", "small")) +
+  ggtitle("All Federal Agencies")+
+  theme(text=element_text(size=16, family="Comic Sans MS")) +
+  geom_text(data = subset(FPDS_obligationscount, registrationYear <= 2016), aes(label = scales::percent(percent_obl_dec)), size = 3, position = position_dodge(width = 1), vjust = -0.5) +
+  facet_wrap(~top_smallbiz_bin, scales="fixed", ncol=1) + ##ncol=1 stack them above eachother (in 1 column)
+  theme(strip.background = element_blank(), strip.text = element_blank()) +
+  theme(strip.background = element_blank(), strip.text = element_blank()) +
+  ylim(0, 2.7e+11) +
   scale_y_continuous(label=unit_format(unit = "m", scale=1e-6))
+
+obligations_small_v_nsmall_allfed_facet
+
 
 
 
@@ -4864,43 +4871,6 @@ FPDS_obligationscount_DOD <- FPDS_cleaned_unique_graphs_DOD %>%
   dplyr::mutate(total_percent = 100)
 
 
-obligations_small_v_nsmall_DoD <- ggplot(FPDS_obligationscount_DOD, aes(x = registrationYear, y = tot_obl_bysize, fill = factor(top_smallbiz_bin), label = percent_obl)) +
-  geom_bar(stat = 'identity', position = 'stack') +
-  ylab("Total Obligations") +
-  xlab("Entry Year") +
-  scale_x_continuous(breaks = c(2001:2016)) +
-  ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
-  scale_fill_manual(name = "New Entrant Type", values = c("#66CCCC", "#336666"), labels = c("non-small", "small")) +
-  ggtitle("Percent of Obligations for Small and Non-Small New Entrants (2001-2016) - DoD")+
-  ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
-  ###    angle = 45) +
-  ##geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
-  geom_text_repel(data = subset(FPDS_obligationscount_DOD, registrationYear <= 2016), aes(label = scales::percent(percent_obl_dec)), size = 4, position = position_stack(vjust = .3), angle = 90) +
-  scale_y_continuous(label=unit_format(unit = "m", scale=1e-6))
-
-grid.arrange(obligations_small_v_nsmall_allfed, obligations_small_v_nsmall_DoD)
-
-
-##faceted
-obligations_small_v_nsmall_allfed_facet <- ggplot(FPDS_obligationscount, aes(x = registrationYear, y = tot_obl_bysize, fill = factor(top_smallbiz_bin), label = percent_obl)) +
-  geom_bar(stat = 'identity', position = 'stack') +
-  ylab("Total Obligations") +
-  xlab("Entry Year") +
-  scale_x_continuous(breaks = c(2001:2016)) +
-  ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
-  scale_fill_manual(name = "New Entrants Types", values = c("#66CCCC", "#336666"), labels = c("non-small", "small")) +
-  ggtitle("Percent of Obligations for Small and Non-Small New Entrants (2001-2016) - All Federal Agencies")+
-  ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
-  ###    angle = 45) +
-  ##geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
-  #geom_text_repel(data = subset(FPDS_obligationscount, registrationYear <= 2016), aes(label = scales::percent(percent_obl_dec)), size = 4, position = position_stack(vjust = .3), angle = 90) +
-  geom_text(data = subset(FPDS_obligationscount, registrationYear <= 2016), aes(label = scales::percent(percent_obl_dec)), size = 3, position = position_dodge(width = 1), vjust = -0.5) +
-  facet_wrap(~top_smallbiz_bin, scales="fixed", ncol=1) + ##ncol=1 stack them above eachother (in 1 column)
-  ylim(0, 2.7e+11) +
-  scale_y_continuous(label=unit_format(unit = "m", scale=1e-6))
-
-obligations_small_v_nsmall_allfed_facet
-
 
 obligations_small_v_nsmall_DoD_facet <- ggplot(FPDS_obligationscount_DOD, aes(x = registrationYear, y = tot_obl_bysize, fill = factor(top_smallbiz_bin), label = percent_obl)) +
   geom_bar(stat = 'identity', position = 'stack') +
@@ -4909,13 +4879,11 @@ obligations_small_v_nsmall_DoD_facet <- ggplot(FPDS_obligationscount_DOD, aes(x 
   scale_x_continuous(breaks = c(2001:2016)) +
   ##scale_fill_manual(name = "New Entrants Types", values = c("deepskyblue", "royalblue1"), labels = c("small", "non-small")) +
   scale_fill_manual(name = "New Entrants Types", values = c("#66CCCC", "#336666"), labels = c("non-small", "small")) +
-  ggtitle("Percent of Obligations for Small and Non-Small New Entrants (2001-2016) - DoD")+
-  ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
-  ###    angle = 45) +
-  ##geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
-  #geom_text_repel(data = subset(FPDS_obligationscount_DOD, registrationYear <= 2016), aes(label = scales::percent(percent_obl_dec)), size = 4, position = position_stack(vjust = .5), angle = 0) +
+  ggtitle("DoD")+
+  theme(text=element_text(size=16, family="Comic Sans MS")) +
   geom_text(data = subset(FPDS_obligationscount_DOD, registrationYear <= 2016), aes(label = scales::percent(percent_obl_dec)), size = 3, position = position_dodge(width = 1), vjust = -0.5) +
   facet_wrap(~top_smallbiz_bin, scales="fixed", ncol=1) + ##ncol=1 stack them above eachother (in 1 column) 
+  theme(strip.background = element_blank(), strip.text = element_blank()) +
   ylim(0, 2.55e+11) +
   scale_y_continuous(label=unit_format(unit = "m", scale=1e-6))
 
@@ -4924,6 +4892,7 @@ obligations_small_v_nsmall_DoD_facet
 
 
 grid.arrange(obligations_small_v_nsmall_allfed_facet, obligations_small_v_nsmall_DoD_facet)
+
 
 
 #**********#
@@ -4935,21 +4904,12 @@ grid.arrange(obligations_small_v_nsmall_allfed_facet, obligations_small_v_nsmall
 ####3. Obligations between incumbents and new entrants in each year####
 #*********#
 
+load(file = "fed_duns_fyear_op.rda")
+
 ##************##
 ##all fed agencies##
 ##************##
-###A. Stacked
-ggplot(fed_duns_fyear_op, aes(x = fiscal_year, y = obligatedAmount.Deflator.2016, fill = factor(entrant))) +
-  geom_bar(stat = 'identity', position = 'stack') + 
-  ylab("Total Obligations") +
-  xlab("Fiscal Year") +
-  scale_x_continuous(breaks = c(2001:2016)) +
-  scale_fill_manual(name = "Vendor Type", values = c("#66FFFF", "#336666"), labels = c("Incumbent Firms", "New Entrant")) +
-  ggtitle("Obligations for New Entrants vs. Incumbents (2001-2016) - All Federal Agencies") +
-  scale_y_continuous(label=unit_format(unit = "m", scale=1e-6))
 
-##is it possible to get percentages on here?
-##should we remove the negative values?
 
 
 ###B. Faceted 
@@ -4958,12 +4918,14 @@ obl_NE_v_incumbents_allfed <- ggplot(fed_duns_fyear_op, aes(x = fiscal_year, y =
   ylab("Total Obligations") +
   xlab("Fiscal Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
+  theme(text=element_text(size=16, family="Comic Sans MS")) +
   scale_fill_manual(name = "Vendor Type", values = c("#66CCCC", "#336666"), labels = c("Incumbent Firms", "New Entrant")) +
-  ggtitle("Obligations for New Entrants vs. Incumbents (2001-2016) - All Federal Agencies") +
+  ggtitle("All Federal Agencies") +
   facet_wrap(~entrant, scales="free", ncol=1) +
+  theme(strip.background = element_blank(), strip.text = element_blank()) +
   scale_y_continuous(label=unit_format(unit = "m", scale=1e-6)) ##ncol=1 stack them above eachother (in 1 column) 
 
-
+obl_NE_v_incumbents_allfed
 
 
 
@@ -4980,11 +4942,13 @@ obl_NE_v_incumbents_dod <- ggplot(dod_duns_fyear_op, aes(x = fiscal_year, y = ob
   ylab("Total Obligations") +
   xlab("Fiscal Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
+  theme(text=element_text(size=16, family="Comic Sans MS")) +
   scale_fill_manual(name = "Vendor Type", values = c("#66CCCC", "#336666"), labels = c("Incumbent Firms", "New Entrant")) +
   ggtitle("DoD") +
   facet_wrap(~entrant, scales="free", ncol=1) +
+  theme(strip.background = element_blank(), strip.text = element_blank()) +
   scale_y_continuous(label=unit_format(unit = "m", scale=1e-6))##ncol=1 stack them above eachother (in 1 column)
-
+obl_NE_v_incumbents_dod
 
 grid.arrange(obl_NE_v_incumbents_allfed, obl_NE_v_incumbents_dod)
 
