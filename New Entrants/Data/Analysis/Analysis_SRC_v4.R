@@ -5139,6 +5139,192 @@ graduated_v_nongrad_DoD
 grid.arrange(graduated_v_nongrad_allfed, graduated_v_nongrad_DoD)
 
 
+####Rollout report survival and graduation presentation graphs####
+
+##Survivval Rates##
+#AVERAGES#
+
+#step 1: create dataframe with averages across the six samples for the varialbes:
+#a. survival_3yrALL
+#b. survival_5yrALL
+#c. survival_10yrALL
+#d. survival_3yrSMALL
+#e. survival_5yrSMALL
+#f. survival_10yrSMALL
+#g. survival_3yrNONSMALL
+#h. survival_5yrNONSMALL
+#i. survival_10yrNONSMALL
+##ALL FED AGENCIES##
+#ALL NE#
+survival_averages_allfed_ALL <- data.frame(
+  group = c("3-yr", "5-yr", "10-yr"),
+  value = c(0.6070481, 0.460507967, 0.2850592)
+)
+
+survival_averages_allfed_ALL
+
+survival_averages_allfed_ALL <- survival_averages_allfed_ALL %>%
+  dplyr::mutate(perc_value = value * 100) %>%
+  dplyr::mutate(perc_value = round(perc_value, 0))
+
+survival_averages_allfed_ALL
+
+display_survival_averages_allfed_ALL <- ggplot(survival_averages_allfed_ALL, aes(x=group, y=perc_value, fill=group)) +
+  scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699" )) +
+  geom_bar(stat = "identity", width=0.4) +
+  scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr")) +
+  ylim(c(0, 70)) +
+  theme(text=element_text(size=18, family="Comic Sans MS")) +
+  geom_text(aes(label=percent(value)), size=6, vjust=-.25) +
+  labs(title = "All Federal Agencies - All New Entrants", y = "", x = "") + 
+  guides(fill=FALSE)
+
+display_survival_averages_allfed_ALL
+
+#SMALL NE#
+
+survival_averages_allfed_SMALL <- data.frame(
+  group = c("3-yr", "5-yr", "10-yr", "Graduated"),
+  value = c(0.614615017, 0.46619465, 0.287530667, 0.11)
+)
+
+head(survival_averages_allfed_SMALL)
+
+survival_averages_allfed_SMALL <- survival_averages_allfed_SMALL %>%
+  dplyr::mutate(perc_value = value * 100) %>%
+  dplyr::mutate(perc_value = round(perc_value, 0))
+
+head(survival_averages_allfed_SMALL)
+
+display_survival_averages_allfed_SMALL <- ggplot(survival_averages_allfed_SMALL, aes(x=group, y=perc_value, fill=group)) +
+  scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#000066")) +
+  geom_bar(stat = "identity", width=0.4) +
+  scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "Graduated")) +
+  ylim(c(0, 70)) +
+  theme(text=element_text(size=18, family="Comic Sans MS")) +
+  geom_text(aes(label=percent(value)), size=6, vjust=-.25) +
+  labs(title = "All Federal Agencies - Small New Entrants", y = "Survival Rates (percentages)", x = "") + 
+  guides(fill=FALSE)
+
+display_survival_averages_allfed_SMALL
+
+#NON-SMALL NE#,  
+
+survival_averages_allfed_NONSMALL <- data.frame(
+  group = c("3-yr", "5-yr", "10-yr"),
+  value = c(0.5883759, 0.448124933, 0.280444467)
+)
+
+
+survival_averages_allfed_NONSMALL
+
+survival_averages_allfed_NONSMALL <- survival_averages_allfed_NONSMALL %>%
+  dplyr::mutate(perc_value = value * 100) %>%
+  dplyr::mutate(perc_value = round(perc_value, 0))
+
+survival_averages_allfed_NONSMALL
+str(survival_averages_allfed_NONSMALL)
+
+display_survival_averages_allfed_NONSMALL <- ggplot(survival_averages_allfed_NONSMALL, aes(x=group, y=perc_value, fill=group)) +
+  scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699" )) +
+  geom_bar(stat = "identity", width=0.4) +
+  scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr")) +
+  ylim(c(0, 70)) +
+  theme(text=element_text(size=18, family="Comic Sans MS")) +
+  geom_text(aes(label=percent(value)), size=6, vjust=-.25) +
+  labs(title = "All Federal Agencies - Non-small New Entrants", y = "", x = "") + 
+  guides(fill=FALSE)
+
+display_survival_averages_allfed_NONSMALL
+
+grid.arrange(display_survival_averages_allfed_ALL, display_survival_averages_allfed_SMALL, display_survival_averages_allfed_NONSMALL)
+
+
+###DOD###
+survival_averages_DOD_ALL <- data.frame(
+  group = c("3-yr", "5-yr", "10-yr"),
+  value = c(0.629233333, 0.482083333, 0.298833333)
+)
+
+survival_averages_DOD_ALL
+
+survival_averages_DOD_ALL <- survival_averages_DOD_ALL %>%
+  dplyr::mutate(perc_value = value * 100) %>%
+  dplyr::mutate(perc_value = round(perc_value, 0))
+
+survival_averages_DOD_ALL
+
+display_survival_averages_DOD_ALL <- ggplot(survival_averages_DOD_ALL, aes(x=group, y=perc_value, fill=group)) +
+  scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699" )) +
+  geom_bar(stat = "identity", width=0.4) +
+  scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr")) +
+  ylim(c(0, 70)) +
+  theme(text=element_text(size=18, family="Comic Sans MS")) +
+  geom_text(aes(label=percent(value)), size=6, vjust=-.25) +
+  labs(title = "DoD - All New Entrants", y = "",  x = "") + 
+  guides(fill=FALSE)
+
+display_survival_averages_DOD_ALL
+
+#SMALL NE#
+
+survival_averages_DOD_SMALL <- data.frame(
+  group = c("3-yr", "5-yr", "10-yr", "Graduated"),
+  value = c(0.628016667, 0.4834, 0.300333333, 0.13)
+)
+
+head(survival_averages_DOD_SMALL)
+
+survival_averages_DOD_SMALL <- survival_averages_DOD_SMALL %>%
+  dplyr::mutate(perc_value = value * 100) %>%
+  dplyr::mutate(perc_value = round(perc_value, 0))
+
+head(survival_averages_DOD_SMALL)
+
+display_survival_averages_DOD_SMALL <- ggplot(survival_averages_DOD_SMALL, aes(x=group, y=perc_value, fill=group)) +
+  scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699", "#000066")) +
+  geom_bar(stat = "identity", width=0.4) +
+  scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr", "Graduated")) +
+  ylim(c(0, 70)) +
+  theme(text=element_text(size=18, family="Comic Sans MS")) +
+  geom_text(aes(label=percent(value)), size=6, vjust=-.25) +
+  labs(title = "DoD - Small New Entrants", y = "Survival Rates (percentages)", x = "") + 
+  guides(fill=FALSE)
+
+display_survival_averages_DOD_SMALL
+
+#NON-SMALL NE#,  
+
+survival_averages_DOD_NONSMALL <- data.frame(
+  group = c("3-yr", "5-yr", "10-yr"),
+  value = c(0.634066667, 0.480816667, 0.295366667)
+)
+
+
+survival_averages_DOD_NONSMALL
+
+survival_averages_DOD_NONSMALL <- survival_averages_DOD_NONSMALL %>%
+  dplyr::mutate(perc_value = value * 100) %>%
+  dplyr::mutate(perc_value = round(perc_value, 0))
+
+survival_averages_DOD_NONSMALL
+str(survival_averages_DOD_NONSMALL)
+
+display_survival_averages_DOD_NONSMALL <- ggplot(survival_averages_DOD_NONSMALL, aes(x=group, y=perc_value, fill=group)) +
+  scale_fill_manual(values=c("#99FFFF", "#0099CC", "#006699" )) +
+  geom_bar(stat = "identity", width=0.4) +
+  scale_x_discrete(limits=c("3-yr", "5-yr", "10-yr")) +
+  ylim(c(0, 70)) +
+  theme(text=element_text(size=18, family="Comic Sans MS")) +
+  geom_text(aes(label=percent(value)), size=6, vjust=-.25) +
+  labs(title = "DoD - Non-small New Entrants", y = "", x = "") + 
+  guides(fill=FALSE)
+
+display_survival_averages_DOD_NONSMALL
+
+grid.arrange(display_survival_averages_DOD_ALL, display_survival_averages_DOD_SMALL, display_survival_averages_DOD_NONSMALL)
+
+
 
 
 
