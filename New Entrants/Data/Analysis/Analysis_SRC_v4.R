@@ -4558,7 +4558,10 @@ dod_duns_fyear_samples <- dod_duns_fyear[!(dod_duns_fyear$sample_year_bin<1), ]
 dod_duns_fyear_samples_op <- dod_duns_fyear_samples[!(dod_duns_fyear_samples$fiscal_year<2001), ]
 dod_duns_fyear_samples_op <- dod_duns_fyear_samples_op[!(dod_duns_fyear_samples_op$fiscal_year>2016), ]
 
-save(dod_duns_fyear_samples_op, file="dod_duns_fyear_samples_op.rda")
+getwd()
+setwd("K:/2018-01 NPS New Entrants/Data/Data/Cleaning data/FPDS")
+save(fed_duns_fyear_samples_op, file="fed_duns_fyear_samples_op.Rda")
+save(dod_duns_fyear_samples_op, file="dod_duns_fyear_samples_op.Rda")
 
 
 #******************************************************************
