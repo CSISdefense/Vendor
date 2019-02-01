@@ -4600,13 +4600,13 @@ NE_count_allfed <- ggplot(FPDS_bargraphCount, aes(x = registrationYear, y = regp
   ylab("Number of New Entrants") +
   xlab("Registration Year") +
   scale_x_continuous(breaks = c(2001:2016)) +
-  scale_fill_manual(name = "New Entrant Type", values = c("#66CCCC", "#336666"), labels = c("non-small", "small")) +
+  scale_fill_manual(name = "New Entrant Type", values = c("#66CCCC", "#336666"), labels = c("Non-Small", "Small")) +
   ggtitle("All Federal Agencies")+
   theme(text=element_text(size=16, family="Comic Sans MS")) +
   ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
   ###    angle = 45) +
   ##geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
-  geom_text(data = subset(FPDS_bargraphCount, registrationYear <= 2016), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45) +
+  geom_text(data = subset(FPDS_bargraphCount, registrationYear <= 2016), aes(label = regpersize), col = "white", size = 4, position = position_stack(vjust = .5), angle = 45) +
   scale_y_continuous(label=comma)
 
 NE_count_allfed
@@ -4642,7 +4642,7 @@ NE_count_DoD <- ggplot(FPDS_bargraphCount, aes(x = registrationYear, y = regpers
   ##geom_text_repel(data = subset(FPDS_bargraphCount, registrationYear >=2014), aes(label = regpersize), size = 4, box.padding = .1, 
   ##angle = 45) +
   ##geom_text(data = subset(FPDS_bargraphCount, registrationYear < 2014), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45)
-  geom_text(data = subset(FPDS_bargraphCount, registrationYear <= 2016), aes(label = regpersize), size = 4, position = position_stack(vjust = .5), angle = 45) +
+  geom_text(data = subset(FPDS_bargraphCount, registrationYear <= 2016), aes(label = regpersize), col = "white", size = 4, position = position_stack(vjust = .5), angle = 45) +
   scale_y_continuous(label=comma)
 NE_count_DoD
 
