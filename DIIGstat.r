@@ -75,11 +75,11 @@ binned.resids <- function (x, y, nclass=sqrt(length(x))){
     n <- length(items)
     sdev <- sd(y[items])
     output <- rbind (output, data.frame(xbar=xbar,
-                                           ybar=ybar,
-                                           n=n, 
-                                           x.lo=x.range[1],
-                                           x.hi=x.range[2],
-                                           se2=2*sdev/sqrt(n)))
+                                        ybar=ybar,
+                                        n=n, 
+                                        x.lo=x.range[1],
+                                        x.hi=x.range[2],
+                                        se2=2*sdev/sqrt(n)))
   }
   # colnames (output) <- c ("xbar", "ybar", "n", "x.lo", "x.hi", "se2")
   return (list (binned=output, xbreaks=xbreaks))
@@ -105,13 +105,13 @@ binned_fitted_versus_term_residuals<-function(model,bins=20){
   }
   else
   {
-  data <-data.frame(
-    fitted=fitted(model),
-    residuals=residuals(model),
-    b_Term=model$model$b_Term
-  )
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_Term=model$model$b_Term
+    )
   }
-
+  
   data$bin_fitted<-bin_df(data,rank_col="fitted",bins=bins)
   
   data<-subset(data,!is.na(fitted) & !is.na(residuals) )
@@ -125,8 +125,8 @@ binned_fitted_versus_term_residuals<-function(model,bins=20){
 }
 
 resid_plot<-function(model,sample=NA){
-#Source https://rpubs.com/therimalaya/43190
-# Raju Rimal
+  #Source https://rpubs.com/therimalaya/43190
+  # Raju Rimal
   results<-data.frame(
     fitted=fitted(model),
     resid=residuals(model)
@@ -237,7 +237,7 @@ residuals_plot<-function(model,col="fitted",bins=40){
   }
   graph
 }
-  
+
 
 
 
@@ -272,23 +272,23 @@ residuals_term_plot<-function(model,x_col="fitted",bins=40){
     }
   }
   
-
+  
   
   
   data<-binned.resids (data[,x_col],
                        data$fitted-data$b_Term, nclass=bins)$binned
-
-   br<-ggplot(data=data,
-         aes(x=xbar,y-ybar))+
+  
+  br<-ggplot(data=data,
+             aes(x=xbar,y-ybar))+
     geom_point(aes(y=ybar))+ #Residuals
     geom_line(aes(y=se2),col="grey")+
     geom_line(aes(y=-se2),col="grey")+
     labs(title="Binned residual plot",
          y="Average residual")
-
-   if (x_col=="fitted"){
-     br<-br+labs(x="Estimated Pr(Termination)")
-   }
+  
+  if (x_col=="fitted"){
+    br<-br+labs(x="Estimated Pr(Termination)")
+  }
   br
 }
 
@@ -329,7 +329,7 @@ residuals_cbre_plot<-function(model,x_col="fitted",bins=40){
                        data$fitted-data$b_CBre, nclass=bins)$binned
   
   br<-ggplot(data=data,
-         aes(x=xbar,y-ybar))+
+             aes(x=xbar,y-ybar))+
     geom_point(aes(y=ybar))+ #Residuals
     geom_line(aes(y=se2),col="grey")+
     geom_line(aes(y=-se2),col="grey")+
@@ -355,23 +355,23 @@ freq_discrete_term_plot<-function(data,x_col,
   
   if(is.na(group_col)){
     plot<-ggplot(data=data,
-           aes_string(x=x_col))+
-    facet_wrap(~Term,ncol=1,scales="free_y")
+                 aes_string(x=x_col))+
+      facet_wrap(~Term,ncol=1,scales="free_y")
   }
   else{
     plot<-ggplot(data=data,
-           aes_string(x=x_col))+
+                 aes_string(x=x_col))+
       facet_grid(as.formula(paste("Term~",group_col)),scales="free_y")
   }
   if(caption==TRUE){
     plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
   }
-
+  
   if(rotate_text==TRUE){
     plot<-plot+theme(axis.text.x=element_text(angle=90,hjust=1))
   }
   
-    plot+labs(title="Frequency by Termination")+
+  plot+labs(title="Frequency by Termination")+
     geom_histogram(stat="count") +
     scale_y_continuous(labels = scales::comma)
 }
@@ -392,13 +392,13 @@ freq_discrete_cbre_plot<-function(data,x_col,
     plot<-ggplot(data=data,
                  aes_string(x=x_col))
     # +
-      # facet_wrap(~b_CBre,ncol=1,scales="free_y")
+    # facet_wrap(~b_CBre,ncol=1,scales="free_y")
   }
   else{
     plot<-ggplot(data=data,
                  aes_string(x=x_col))
     # +
-      # facet_grid(as.formula(paste("b_CBre~",group_col)),scales="free_y")
+    # facet_grid(as.formula(paste("b_CBre~",group_col)),scales="free_y")
   }
   if(caption==TRUE){
     plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
@@ -407,16 +407,16 @@ freq_discrete_cbre_plot<-function(data,x_col,
     plot<-plot+theme(axis.text.x=element_text(angle=90,hjust=1))
   }
   
-    plot+labs(title="Frequency by Ceiling Breach")+
-  geom_histogram(stat="count") +
+  plot+labs(title="Frequency by Ceiling Breach")+
+    geom_histogram(stat="count") +
     scale_y_continuous(labels = scales::comma) 
-    
+  
 }
 
 
 freq_discrete_plot<-function(data,x_col,
-                                  group_col=NA,
-                                  na_remove=FALSE,
+                             group_col=NA,
+                             na_remove=FALSE,
                              caption=TRUE,rotate_text=FALSE){
   
   if(na_remove==TRUE){
@@ -440,7 +440,7 @@ freq_discrete_plot<-function(data,x_col,
     plot<-plot+theme(axis.text.x=element_text(angle=90,hjust=1))
   }
   plot+labs(title="Frequency")+
-     geom_histogram(stat="count") +
+    geom_histogram(stat="count") +
     scale_y_continuous(labels = scales::comma)
   
 }
@@ -454,35 +454,35 @@ summary_continuous_plot<-function(data,x_col,group_col=NA,bins=20,metric="perfor
 
 
 summary_double_continuous<-function(data,x_col,y_col,bins=20){
-    data<-data[!is.na(data[,y_col]),]
-    data<-data[!is.na(data[,x_col]),]
+  data<-data[!is.na(data[,y_col]),]
+  data<-data[!is.na(data[,x_col]),]
   data<-as.data.frame(data)
-    data$interaction<-data[,x_col]*data[,y_col]
-    
+  data$interaction<-data[,x_col]*data[,y_col]
+  
   
   #First a quick scatter plot for terminations by duration and ceiling
-    gridExtra::grid.arrange(
-      ggplot(data=data,
-         aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+
-    labs(title="Distribution",
-         caption="Source: FPDS, CSIS Analysis"),
+  gridExtra::grid.arrange(
+    ggplot(data=data,
+           aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+
+      labs(title="Distribution",
+           caption="Source: FPDS, CSIS Analysis"),
     freq_continuous_plot(data,"interaction",bins=bins,caption=FALSE))
-
+  
   
   
   #First a quick scatter plot for terminations by duration and ceiling
   gridExtra::grid.arrange(ggplot(data=data,
-         aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(CBre~.)+
-    labs(title="Distribution by Breach",
-         caption="Source: FPDS, CSIS Analysis"),
-  
-  
-  #First a quick scatter plot for terminations by duration and ceiling
-  ggplot(data=data,
-                     aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(Term~.)+
-                labs(title="Distribution by Termination"),
-  
-  ncol=2
+                                 aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(CBre~.)+
+                            labs(title="Distribution by Breach",
+                                 caption="Source: FPDS, CSIS Analysis"),
+                          
+                          
+                          #First a quick scatter plot for terminations by duration and ceiling
+                          ggplot(data=data,
+                                 aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(Term~.)+
+                            labs(title="Distribution by Termination"),
+                          
+                          ncol=2
   )
   
   binned_double_percent_plot(data,x_col,y_col,bins)
@@ -498,18 +498,18 @@ summary_double_continuous<-function(data,x_col,y_col,bins=20){
 summary_discrete_plot<-function(data,x_col,group_col=NA,rotate_text=FALSE,metric="perform"){
   if(is.na(group_col)){
     output<-list(table(unlist(data[,x_col])),
-    table(unlist(data[,x_col]),data$CBre),
-    table(unlist(data[,x_col]),data$Term))
-
+                 table(unlist(data[,x_col]),data$CBre),
+                 table(unlist(data[,x_col]),data$Term))
+    
   }
   else{
     if(is.numeric(data[,x_col])) stop(paste(xcol," is numeric."))
     output<-list(table(unlist(data[,x_col]),unlist(data[,group_col])),
-    table(unlist(data[,x_col]),unlist(data[,group_col]),data$CBre),
-    table(unlist(data[,x_col]),unlist(data[,group_col]),data$Term))
+                 table(unlist(data[,x_col]),unlist(data[,group_col]),data$CBre),
+                 table(unlist(data[,x_col]),unlist(data[,group_col]),data$Term))
     
   }
-
+  
   gridExtra::grid.arrange(freq_discrete_plot(data,x_col,group_col,caption=FALSE,rotate_text=rotate_text),
                           discrete_percent_plot(data,x_col,group_col,caption=TRUE,rotate_text=rotate_text,metric=metric))
   
@@ -521,14 +521,14 @@ freq_continuous_term_plot<-function(data,x_col,group_col=NA,bins=20,
                                     caption=TRUE){
   if(is.na(group_col)){
     plot<-ggplot(data=data,
-         aes_string(x=x_col))+
+                 aes_string(x=x_col))+
       facet_wrap(~Term,ncol=1,scales="free_y")
   }
   else{
     plot<-ggplot(data=data,
-           aes_string(x=x_col))+geom_histogram(bins=bins) +
+                 aes_string(x=x_col))+geom_histogram(bins=bins) +
       facet_grid(as.formula(paste("Term~",group_col)),scales="free_y")
-      
+    
   }
   
   if(caption==TRUE){
@@ -548,7 +548,7 @@ freq_continuous_plot<-function(data,x_col,group_col=NA,bins=20,
   else{
     plot<-ggplot(data=data,
                  aes_string(x=x_col))+geom_histogram(bins=bins)+
-  facet_wrap(as.formula(paste("~",group_col)),scales="free_y")
+      facet_wrap(as.formula(paste("~",group_col)),scales="free_y")
     
   }
   
@@ -590,7 +590,7 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
   if(is.na(group_col)){
     data$bin_x<-bin_df(data,x_col,bins=bins)
     data<-data %>% group_by(bin_x)
-
+    
     
     if(metric=="perform"){
       cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   
@@ -621,7 +621,7 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
     data$bin_x<-bin_df(data,rank_col=x_col,group_col=group_col,bins=bins)
     data<-data %>%
       group_by_("bin_x",group_col)
-
+    
     
     if(metric=="perform"){
       cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   
@@ -676,9 +676,9 @@ binned_double_percent_plot<-function(data,x_col,y_col,bins=20,caption=TRUE){
   data<-as.data.frame(data)
   data$interaction<-data[,x_col]*data[,y_col]
   data<-rbind(bin_group(data,x_col,bins),
-               bin_group(data,y_col,bins),
-               bin_group(data,"interaction",bins))
-
+              bin_group(data,y_col,bins),
+              bin_group(data,"interaction",bins))
+  
   data$bin_col<-factor(data$bin_col,c(x_col,y_col,"interaction"))
   plot<-ggplot(data=data,
                aes(y=mean_y,x=mean_x))+
@@ -696,10 +696,10 @@ binned_percent_term_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE)
   if(is.na(group_col)){
     data$bin_x<-bin_df(data,x_col,bins=bins)
     plot<-ggplot(data=data %>%
-           group_by(bin_x) %>%
-           summarise_ (   mean_Term = "mean(b_Term)"   
-                          , mean_x =  paste( "mean(" ,  x_col  ,")"  ))     ,
-         aes(y=mean_Term,x=mean_x))
+                   group_by(bin_x) %>%
+                   summarise_ (   mean_Term = "mean(b_Term)"   
+                                  , mean_x =  paste( "mean(" ,  x_col  ,")"  ))     ,
+                 aes(y=mean_Term,x=mean_x))
   }
   else{
     data<-data[!is.na(data[,group_col]),]
@@ -749,12 +749,12 @@ binned_percent_cbre_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE)
 
 discrete_percent_term_plot<-function(data,x_col,group_col=NA,caption=TRUE){
   data<-data[!is.na(data[,x_col]),]
-    if(is.na(group_col)){
+  if(is.na(group_col)){
     plot<-ggplot(data=data %>%
-             group_by_(x_col) %>%
-             summarise (   mean_Term = mean(b_Term)),
-           aes_string(y="mean_Term",x=x_col))
-      
+                   group_by_(x_col) %>%
+                   summarise (   mean_Term = mean(b_Term)),
+                 aes_string(y="mean_Term",x=x_col))
+    
   }
   else{
     data<-data[!is.na(data[,group_col]),]
@@ -764,12 +764,12 @@ discrete_percent_term_plot<-function(data,x_col,group_col=NA,caption=TRUE){
                  aes_string(y="mean_Term",x=x_col))+
       facet_wrap(as.formula(paste("~",group_col)))
   }    
-    if(caption==TRUE){
-      plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
-    }
-    plot+geom_point()+
-      labs(title="Percent Terminated")
-
+  if(caption==TRUE){
+    plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
+  }
+  plot+geom_point()+
+    labs(title="Percent Terminated")
+  
 }
 
 discrete_percent_cbre_plot<-function(data,x_col,group_col=NA,caption=TRUE){
@@ -898,7 +898,7 @@ na_non_positive_log<-function(x){
 centered_log_description<-function(x,units=NA){
   x<-na_non_positive_log(x)
   xbar<-mean(x,na.rm=TRUE)
-    xsd<-sd(x,na.rm=TRUE)
+  xsd<-sd(x,na.rm=TRUE)
   paste("The variable is rescaled, by subtracting its mean (",
         format(xbar,digits=3,big.mark=","),
         ") and dividing by its standard deviation doubled (",
@@ -956,8 +956,8 @@ NA_stats<-function(data,col,exclude_before_2008=TRUE){
         format(sum(data$Action.Obligation[is.na(data[!before2008,col])],na.rm=TRUE)/
                  sum(data$Action.Obligation[!before2008],na.rm=TRUE),digits=3),
         " of obligated dollars."
-              ,sep="")
-
+        ,sep="")
+  
 }
 
 
@@ -996,10 +996,10 @@ deviance_stats<-function(model,model_name){
   # }
   # else
   # {
-    output<-data.frame(model=model_name,
-               deviance=model$deviance,
-               null.deviance=model$null.deviance,
-               difference=model$null.deviance-model$deviance)
+  output<-data.frame(model=model_name,
+                     deviance=model$deviance,
+                     null.deviance=model$null.deviance,
+                     difference=model$null.deviance-model$deviance)
   # }
   output
   
@@ -1013,7 +1013,7 @@ model_colnames<-function(model){
   }
   else
   {
-      output<-colnames(model$model)
+    output<-colnames(model$model)
   }
   output
 }
@@ -1043,13 +1043,13 @@ summary_residual_compare<-function(model1_old,model1_new,
     #This only works once you have some continuous variables o
     
     
-      gridExtra::grid.arrange(residuals_plot(model1_old,bins=bins),
-                              residuals_plot(model1_new,bins=bins),
-                              residuals_plot(model2_old,bins=bins),
-                              residuals_plot(model2_new,bins=bins),
-                              ncol=2)
-      
-
+    gridExtra::grid.arrange(residuals_plot(model1_old,bins=bins),
+                            residuals_plot(model1_new,bins=bins),
+                            residuals_plot(model2_old,bins=bins),
+                            residuals_plot(model2_new,bins=bins),
+                            ncol=2)
+    
+    
     
     # if("c_OffCri" %in% model_colnames(model1_new) & "c_OffCri" %in% model_colnames(model2_new)){
     # residual_compare(model1_old,model1_new,model2_old,model2_new,"c_OffCri","Office Crisis %",10)
@@ -1110,10 +1110,10 @@ summary_residual_compare<-function(model1_old,model1_new,
       
       
     } 
-      gridExtra::grid.arrange(residuals_plot(model1_old,bins=bins),
-                              residuals_plot(model1_new,bins=bins),
-                              ncol=2)
-     
+    gridExtra::grid.arrange(residuals_plot(model1_old,bins=bins),
+                            residuals_plot(model1_new,bins=bins),
+                            ncol=2)
+    
     
     # if("c_OffCri" %in% model_colnames(model1_new) & "c_OffCri" %in% model_colnames(model2_new)){
     # residual_compare(model1_old,model1_new,model2_old,model2_new,"c_OffCri","Office Crisis %",10)
@@ -1143,18 +1143,18 @@ summary_residual_compare<-function(model1_old,model1_new,
       )
     } 
     else if (class(model1_new)!="glmerMod" & class(model1_old)!="glmerMod" &
-              skip_vif==FALSE){
+             skip_vif==FALSE){
       output<-list(rbind(deviance_stats(model1_old,"model1_old"),
                          deviance_stats(model1_new,"model1_new")),
                    car::vif(model1_new)
       )
     }
   }
-
-
-
-output
-
+  
+  
+  
+  output
+  
 }
 
 
@@ -1177,7 +1177,7 @@ glmer_examine<-function(model,display=FALSE){
       output<-list(car::vif(model),
                    icc(model),
                    model@optinfo$conv$lme4$messages,
-      t[l==0])
+                   t[l==0])
     }
     else{
       output<-list(car::vif(model),
@@ -1190,9 +1190,9 @@ glmer_examine<-function(model,display=FALSE){
 }
 
 get_icc<-function(model,display=FALSE){
-############################################################################################################################
-#Keep Calm and Learn Multilevel Logistic Modeling: A Simplified Three-Step Procedure for Beginners Using SPSS, Stata, and R#
-############################################################################################################################
+  ############################################################################################################################
+  #Keep Calm and Learn Multilevel Logistic Modeling: A Simplified Three-Step Procedure for Beginners Using SPSS, Stata, and R#
+  ############################################################################################################################
   # icc <- model@theta^2/ (model@theta^2 + (3.14159^2/3))
   # icc
   if(display==TRUE) display(model)
@@ -1230,17 +1230,17 @@ get_pars<-function(model){
   }
   pars
 }
- 
-    
- # #Extract statistic information of the 15 discrete variables and generate dataframe    
- # name_categorical <- c("CompOffr","Veh","PricingFee","UCA","Intl","Term",
- #                      "Dur","Ceil","CBre","PSR","Urg","FxCb","Fee","CRai",
- #                      "NoComp")   #list of all categorial and binary variables
- # 
- 
- # memory.limit(56000)
-    
- statsummary_discrete <- function(x, contract,accuracy=0.01){      #input(x: name of the discrete variable, contract：name of the dataframe)
+
+
+# #Extract statistic information of the 15 discrete variables and generate dataframe    
+# name_categorical <- c("CompOffr","Veh","PricingFee","UCA","Intl","Term",
+#                      "Dur","Ceil","CBre","PSR","Urg","FxCb","Fee","CRai",
+#                      "NoComp")   #list of all categorial and binary variables
+# 
+
+# memory.limit(56000)
+
+statsummary_discrete <- function(x, contract,accuracy=0.01){      #input(x: name of the discrete variable, contract：name of the dataframe)
   unique_value_list <- levels(contract[[x]])
   categories <- c(unique_value_list,"NA")
   Percent_Actions <- c()
@@ -1257,9 +1257,9 @@ get_pars<-function(model){
   colnames(categorical_Info) <- name_categorical
   return(categorical_Info)
 }
-  
- #Extract statistic information of the 26 continuous variables and generate dataframe      
- name_Continuous <- c("Action.Obligation","UnmodifiedContractBaseAndAllOptionsValue",
+
+#Extract statistic information of the 26 continuous variables and generate dataframe      
+name_Continuous <- c("Action.Obligation","UnmodifiedContractBaseAndAllOptionsValue",
                      "ChangeOrderBaseAndAllOptionsValue","UnmodifiedDays",
                      "UnmodifiedNumberOfOffersReceived",
                      "capped_def6_ratio_lag1","capped_def5_ratio_lag1","capped_def4_ratio_lag1","capped_def3_ratio_lag1","capped_def2_ratio_lag1",
@@ -1271,8 +1271,8 @@ get_pars<-function(model){
 statsummary_continuous <- function(x, contract,log=TRUE,digits=3){       #input(x: namelist of all continuous variables contract: name of the data frame)
   continuous_Info <- data.frame(matrix(ncol = 9,nrow = 0))
   colnames(continuous_Info) <- c("Variable_Name","Min","Max","Median","Logarithmic Mean",
-                      "1 unit below","1 unit above","% of records NA", 
-                      "% of Obligation to NA records")
+                                 "1 unit below","1 unit above","% of records NA", 
+                                 "% of Obligation to NA records")
   if(log==FALSE)
     colnames(continuous_Info)[colnames(continuous_Info)=="Logarithmic Mean"]<-"Arithmatic Mean"  
   for (i in x){
@@ -1295,7 +1295,7 @@ statsummary_continuous <- function(x, contract,log=TRUE,digits=3){       #input(
     Percent_Ob <- round(sum(contract$Action.Obligation[is.na(contract[[i]])],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5)
     if(log==TRUE)
       newrow <- c(i, minval, maxval, medianval, meanlog, unitbelowlog, unitabovelog,
-                Percent_NA, Percent_Ob)
+                  Percent_NA, Percent_Ob)
     else 
       newrow <- c(i, minval, maxval, medianval, meanval, unitbelowval, unitaboveval,
                   Percent_NA, Percent_Ob)
@@ -1317,28 +1317,28 @@ statsummary_continuous <- function(x, contract,log=TRUE,digits=3){       #input(
   continuous_Info[,c("belowMin","aboveMax")] <- NULL
   return(continuous_Info)
 }
-   
-    
-    
-    
-    
+
+
+
+
+
 
 
 
 update_sample_col_CSIScontractID<-function(sample,full,col){
   full<-full[,colnames(full) %in% c("CSIScontractID",col)]
-
-sample<-sample[,!colnames(sample) %in% col]
-
-sample<-left_join(sample,full)
-sample
+  
+  sample<-sample[,!colnames(sample) %in% col]
+  
+  sample<-left_join(sample,full)
+  sample
 }
-                                  
-                                  
 
-                                  
-                                  
-                                  
+
+
+
+
+
 #function for making grouped bar plot for each categorical variable, data set used in function "Data/transformed_def.Rdata"
 name_categorical <- c("CompOffr","Veh","PricingFee","UCA","Intl","Term",
                       "Dur","Ceil","CBre","PSR","Urg","FxCb","Fee","CRai",
@@ -1363,25 +1363,25 @@ grouped_barplot <- function(x, contract) {
                       aes(x = name_Info[, 1], 
                           y = name_Info[, 3], 
                           fill = factor(variable))) +
-               geom_bar(stat = "identity", position = "dodge", width = 0.8) + 
-               xlab("Category") + 
-               ylab("") + 
-               coord_flip() + 
-               guides(fill = guide_legend(reverse = TRUE)) +   #reverse the order of legend
-               theme_grey() + 
-               scale_fill_grey() + 
-               theme(legend.title = element_blank(), 
-                     legend.position = "bottom", 
-                     legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit="cm"),
-                     legend.text = element_text(margin = margin(r = 0.5, unit = "cm")),    #increase the distances between two legends
-                     plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm")) + 
-               ggtitle(paste("Statistic summary of categorical variable: ", x)) +
-               scale_x_discrete(limits = rev(c(levels(name_Info_noNAN[ ,1]),"NA")))    #keep the order of category the same
-    return(basicplot)
+    geom_bar(stat = "identity", position = "dodge", width = 0.8) + 
+    xlab("Category") + 
+    ylab("") + 
+    coord_flip() + 
+    guides(fill = guide_legend(reverse = TRUE)) +   #reverse the order of legend
+    theme_grey() + 
+    scale_fill_grey() + 
+    theme(legend.title = element_blank(), 
+          legend.position = "bottom", 
+          legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit="cm"),
+          legend.text = element_text(margin = margin(r = 0.5, unit = "cm")),    #increase the distances between two legends
+          plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm")) + 
+    ggtitle(paste("Statistic summary of categorical variable: ", x)) +
+    scale_x_discrete(limits = rev(c(levels(name_Info_noNAN[ ,1]),"NA")))    #keep the order of category the same
+  return(basicplot)
 }
 
 
-                     
+
 #function for generating frequency information table for categorical variables                            
 freq_table <- function(x, contract){
   Frequency <- as.data.frame(table(contract[[x]]))
@@ -1395,7 +1395,7 @@ freq_table <- function(x, contract){
   Frequency[["Percent_Obli"]] <- Percent_Obli*100
   return(Frequency)
 }
-                                  
+
 #generate barplot according to frequency information table for categorical variables                                 
 part_grouped_barplot <- function(name, frequency_Info){
   part_barplot <- ggplot(data = frequency_Info, 
@@ -1418,17 +1418,17 @@ part_grouped_barplot <- function(name, frequency_Info){
           plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm")) 
   return(part_barplot)
 }
-                                  
-                                  
-                                 
+
+
+
 
 update_sample_col_CSIScontractID<-function(sample,full,col){
   full<-full[,colnames(full) %in% c("CSIScontractID",col)]
-
-sample<-sample[,!colnames(sample) %in% col]
-
-sample<-left_join(sample,full)
-sample
+  
+  sample<-sample[,!colnames(sample) %in% col]
+  
+  sample<-left_join(sample,full)
+  sample
 }
 get_pars<-function(model){
   if (isLMM(model)) {
@@ -1521,12 +1521,15 @@ swr <- Vectorize(swr)
 
 
 
-allFit_save <- function(m, meth.tab = meth.tab.0,
-                   data=NULL,
-                   verbose=TRUE,
-                   maxfun=1e5,
-                   filename="output//allFit.rdata")
+allFit_save <- function(m,meth.tab=NULL ,
+                        data=NULL,
+                        verbose=TRUE,
+                        maxfun=1e5,
+                        filename="output//allFit.rdata")
 {
+  source(system.file("utils", "allFit.R", package="lme4"))
+  if (is.null(meth.tab))
+    meth.tab <- meth.tab.0
   stopifnot(length(dm <- dim(meth.tab)) == 2, dm[1] >= 1, dm[2] >= 2,
             is.character(optimizer <- meth.tab[,"optimizer"]),
             is.character(method    <- meth.tab[,"method"]))
@@ -1536,12 +1539,13 @@ allFit_save <- function(m, meth.tab = meth.tab.0,
   else
     res <- setNames(as.list(fit.names), fit.names)
   for (i in seq_along(fit.names)) {
-    if(FALSE){##Add check here to fit rrs that are already done
+    if(typeof(res[[i]])=="character"){
       if (verbose) cat(fit.names[i],": ")
       ctrl <- list(optimizer=optimizer[i])
       ctrl$optCtrl <- switch(optimizer[i],
                              optimx    = list(method   = method[i]),
                              nloptWrap = list(algorithm= method[i]),
+                             verbose=TRUE,
                              list(maxfun=maxfun))
       ctrl <- do.call(if(isGLMM(m)) glmerControl else lmerControl, ctrl)
       tt <- system.time(rr <- tryCatch(update(m, control = ctrl),

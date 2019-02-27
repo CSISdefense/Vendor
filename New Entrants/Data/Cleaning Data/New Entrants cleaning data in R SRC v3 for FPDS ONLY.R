@@ -935,7 +935,521 @@ save(FPDS_cleaned_unique, file="FPDS_datapull_all_v3_allfed.Rda")
 
 #******************************************************
 
+#********************************************#
+####subset data for six analytical samples####
+#********************************************#
 
+
+#****************************2001*****************************#
+
+#****#
+#all fed
+#****#
+
+#subset the 2001 data
+data_2001 <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear!="2001"), ]
+
+##create variable describing whether a firm survived 3 years
+
+data_2001 <- data_2001 %>%
+  dplyr::mutate(survive_3yr = ifelse(exitYear < 2003, "0", "1")) 
+
+##create variable describing whether a firm survived 5 years
+data_2001 <- data_2001 %>%
+  dplyr::mutate(survive_5yr = ifelse(exitYear < 2005, "0", "1")) 
+
+
+##create variable describing whether a firm survived 10 years
+data_2001 <- data_2001 %>%
+  dplyr::mutate(survive_10yr = ifelse(exitYear < 2010, "0", "1")) 
+
+##create variable describing whether a firm survived in 2016
+data_2001 <- data_2001 %>%
+  dplyr::mutate(survive_2016 = ifelse(exitYear < 2016, "0", "1"))
+
+##checking small buinesses
+data_2001_smallbiz <- data_2001[!(data_2001$top_smallbiz_bin!="1"), ]
+min(data_2001_smallbiz$exitYear)
+
+data_2001_nonsmallbiz <- data_2001[!(data_2001$top_smallbiz_bin!="0"), ]
+min(data_2001_nonsmallbiz$exitYear)
+max(data_2001_nonsmallbiz$exitYear)
+
+##make survival vars numeric##
+str(data_2001)
+
+data_2001$survive_3yr<-as.numeric(as.character(data_2001$survive_3yr))
+data_2001$survive_5yr<-as.numeric(as.character(data_2001$survive_5yr))
+data_2001$survive_10yr<-as.numeric(as.character(data_2001$survive_10yr))
+data_2001$survive_2016<-as.numeric(as.character(data_2001$survive_2016))
+
+str(data_2001)
+
+#Save
+save(data_2001, file="data_2001.Rda")
+
+
+#****#
+#DoD
+#****#
+
+#subset the 2001 data
+data_2001_DOD <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear!="2001"), ]
+data_2001_DOD <- data_2001_DOD[!(data_2001_DOD$customer!="Defense"), ]
+
+##create variable describing whether a firm survived 3 years
+
+data_2001_DOD <- data_2001_DOD %>%
+  dplyr::mutate(survive_3yr = ifelse(exitYear < 2003, "0", "1")) 
+
+##create variable describing whether a firm survived 5 years
+data_2001_DOD <- data_2001_DOD %>%
+  dplyr::mutate(survive_5yr = ifelse(exitYear < 2005, "0", "1")) 
+
+
+##create variable describing whether a firm survived 10 years
+data_2001_DOD <- data_2001_DOD %>%
+  dplyr::mutate(survive_10yr = ifelse(exitYear < 2010, "0", "1")) 
+
+##create variable describing whether a firm survived in 2016
+data_2001_DOD <- data_2001_DOD %>%
+  dplyr::mutate(survive_2016 = ifelse(exitYear < 2016, "0", "1"))
+
+
+str(data_2001_DOD)
+
+data_2001_DOD$survive_3yr<-as.numeric(as.character(data_2001_DOD$survive_3yr))
+data_2001_DOD$survive_5yr<-as.numeric(as.character(data_2001_DOD$survive_5yr))
+data_2001_DOD$survive_10yr<-as.numeric(as.character(data_2001_DOD$survive_10yr))
+data_2001_DOD$survive_2016<-as.numeric(as.character(data_2001_DOD$survive_2016))
+
+str(data_2001_DOD)
+
+#Save
+save(data_2001_DOD, file="data_2001_DOD.Rda")
+
+#**************************************************************#
+
+
+#****************************2002*****************************#
+
+#****#
+#all fed
+#****#
+#subset the 2001 data
+data_2002 <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear!="2002"), ]
+
+##create variable describing whether a firm survived 3 years
+
+data_2002 <- data_2002 %>%
+  dplyr::mutate(survive_3yr = ifelse(exitYear < 2004, "0", "1")) 
+
+##create variable describing whether a firm survived 5 years
+data_2002 <- data_2002 %>%
+  dplyr::mutate(survive_5yr = ifelse(exitYear < 2006, "0", "1")) 
+
+
+##create variable describing whether a firm survived 10 years
+data_2002 <- data_2002 %>%
+  dplyr::mutate(survive_10yr = ifelse(exitYear < 2011, "0", "1")) 
+
+##create variable describing whether a firm survived in 2016
+data_2002 <- data_2002 %>%
+  dplyr::mutate(survive_2016 = ifelse(exitYear < 2016, "0", "1"))
+
+
+str(data_2002)
+
+data_2002$survive_3yr<-as.numeric(as.character(data_2002$survive_3yr))
+data_2002$survive_5yr<-as.numeric(as.character(data_2002$survive_5yr))
+data_2002$survive_10yr<-as.numeric(as.character(data_2002$survive_10yr))
+data_2002$survive_2016<-as.numeric(as.character(data_2002$survive_2016))
+
+str(data_2002)
+
+
+#Save
+save(data_2002, file="data_2002.Rda")
+
+
+#****#
+#DoD
+#****#
+
+#subset the 2001 data
+data_2002_DOD <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear!="2002"), ]
+data_2002_DOD <- data_2002_DOD[!(data_2002_DOD$customer!="Defense"), ]
+
+##create variable describing whether a firm survived 3 years
+
+data_2002_DOD <- data_2002_DOD %>%
+  dplyr::mutate(survive_3yr = ifelse(exitYear < 2004, "0", "1")) 
+
+##create variable describing whether a firm survived 5 years
+data_2002_DOD <- data_2002_DOD %>%
+  dplyr::mutate(survive_5yr = ifelse(exitYear < 2006, "0", "1")) 
+
+
+##create variable describing whether a firm survived 10 years
+data_2002_DOD <- data_2002_DOD %>%
+  dplyr::mutate(survive_10yr = ifelse(exitYear < 2011, "0", "1")) 
+
+##create variable describing whether a firm survived in 2016
+data_2002_DOD <- data_2002_DOD %>%
+  dplyr::mutate(survive_2016 = ifelse(exitYear < 2016, "0", "1"))
+
+
+str(data_2002_DOD)
+
+data_2002_DOD$survive_3yr<-as.numeric(as.character(data_2002_DOD$survive_3yr))
+data_2002_DOD$survive_5yr<-as.numeric(as.character(data_2002_DOD$survive_5yr))
+data_2002_DOD$survive_10yr<-as.numeric(as.character(data_2002_DOD$survive_10yr))
+data_2002_DOD$survive_2016<-as.numeric(as.character(data_2002_DOD$survive_2016))
+
+str(data_2002_DOD)
+
+#Save
+save(data_2002_DOD, file="data_2002_DOD.Rda")
+
+
+#**************************************************************#
+
+#****************************2003*****************************#
+
+#****#
+#all fed
+#****#
+
+#subset the 2001 data
+data_2003 <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear!="2003"), ]
+
+##create variable describing whether a firm survived 3 years
+
+data_2003 <- data_2003 %>%
+  dplyr::mutate(survive_3yr = ifelse(exitYear < 2005, "0", "1")) 
+
+##create variable describing whether a firm survived 5 years
+data_2003 <- data_2003 %>%
+  dplyr::mutate(survive_5yr = ifelse(exitYear < 2007, "0", "1")) 
+
+
+##create variable describing whether a firm survived 10 years
+data_2003 <- data_2003 %>%
+  dplyr::mutate(survive_10yr = ifelse(exitYear < 2012, "0", "1"))
+
+##create variable describing whether a firm survived in 2016
+data_2003 <- data_2003 %>%
+  dplyr::mutate(survive_2016 = ifelse(exitYear < 2016, "0", "1"))
+
+
+str(data_2003)
+
+data_2003$survive_3yr<-as.numeric(as.character(data_2003$survive_3yr))
+data_2003$survive_5yr<-as.numeric(as.character(data_2003$survive_5yr))
+data_2003$survive_10yr<-as.numeric(as.character(data_2003$survive_10yr))
+data_2003$survive_2016<-as.numeric(as.character(data_2003$survive_2016))
+
+str(data_2003)
+
+#Save
+save(data_2003, file="data_2003.Rda")
+
+
+#****#
+#DoD
+#****#
+
+#subset the 2001 data
+data_2003_DOD <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear!="2003"), ]
+data_2003_DOD <- data_2003_DOD[!(data_2003_DOD$customer!="Defense"), ]
+
+
+##create variable describing whether a firm survived 3 years
+
+data_2003_DOD <- data_2003_DOD %>%
+  dplyr::mutate(survive_3yr = ifelse(exitYear < 2005, "0", "1")) 
+
+##create variable describing whether a firm survived 5 years
+data_2003_DOD <- data_2003_DOD %>%
+  dplyr::mutate(survive_5yr = ifelse(exitYear < 2007, "0", "1")) 
+
+
+##create variable describing whether a firm survived 10 years
+data_2003_DOD <- data_2003_DOD %>%
+  dplyr::mutate(survive_10yr = ifelse(exitYear < 2012, "0", "1"))
+
+##create variable describing whether a firm survived in 2016
+data_2003_DOD <- data_2003_DOD %>%
+  dplyr::mutate(survive_2016 = ifelse(exitYear < 2016, "0", "1"))
+
+
+str(data_2003_DOD)
+
+data_2003_DOD$survive_3yr<-as.numeric(as.character(data_2003_DOD$survive_3yr))
+data_2003_DOD$survive_5yr<-as.numeric(as.character(data_2003_DOD$survive_5yr))
+data_2003_DOD$survive_10yr<-as.numeric(as.character(data_2003_DOD$survive_10yr))
+data_2003_DOD$survive_2016<-as.numeric(as.character(data_2003_DOD$survive_2016))
+
+str(data_2003_DOD)
+
+#Save
+save(data_2003_DOD, file="data_2003_DOD.Rda")
+
+
+
+#**************************************************************#
+
+
+#**************************************************************#
+
+#****************************2004*****************************#
+
+#****#
+#all fed
+#****#
+
+data_2004 <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear!="2004"), ]
+
+##create variable describing whether a firm survived 3 years
+
+data_2004 <- data_2004 %>%
+  dplyr::mutate(survive_3yr = ifelse(exitYear < 2006, "0", "1")) 
+
+##create variable describing whether a firm survived 5 years
+data_2004 <- data_2004 %>%
+  dplyr::mutate(survive_5yr = ifelse(exitYear < 2009, "0", "1")) 
+
+
+##create variable describing whether a firm survived 10 years
+data_2004 <- data_2004 %>%
+  dplyr::mutate(survive_10yr = ifelse(exitYear < 2013, "0", "1")) 
+
+##create variable describing whether a firm survived in 2016
+data_2004 <- data_2004 %>%
+  dplyr::mutate(survive_2016 = ifelse(exitYear < 2016, "0", "1"))
+
+
+str(data_2004)
+
+data_2004$survive_3yr<-as.numeric(as.character(data_2004$survive_3yr))
+data_2004$survive_5yr<-as.numeric(as.character(data_2004$survive_5yr))
+data_2004$survive_10yr<-as.numeric(as.character(data_2004$survive_10yr))
+data_2004$survive_2016<-as.numeric(as.character(data_2004$survive_2016))
+
+str(data_2004)
+
+#Save
+save(data_2004, file="data_2004.Rda")
+
+
+#****#
+#DoD
+#****#
+data_2004_DOD <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear!="2004"), ]
+data_2004_DOD <- data_2004_DOD[!(data_2004_DOD$customer!="Defense"), ]
+
+##create variable describing whether a firm survived 3 years
+
+data_2004_DOD <- data_2004_DOD %>%
+  dplyr::mutate(survive_3yr = ifelse(exitYear < 2006, "0", "1")) 
+
+##create variable describing whether a firm survived 5 years
+data_2004_DOD <- data_2004_DOD %>%
+  dplyr::mutate(survive_5yr = ifelse(exitYear < 2009, "0", "1")) 
+
+
+##create variable describing whether a firm survived 10 years
+data_2004_DOD <- data_2004_DOD %>%
+  dplyr::mutate(survive_10yr = ifelse(exitYear < 2013, "0", "1")) 
+
+##create variable describing whether a firm survived in 2016
+data_2004_DOD <- data_2004_DOD %>%
+  dplyr::mutate(survive_2016 = ifelse(exitYear < 2016, "0", "1"))
+
+
+str(data_2004)
+
+data_2004_DOD$survive_3yr<-as.numeric(as.character(data_2004_DOD$survive_3yr))
+data_2004_DOD$survive_5yr<-as.numeric(as.character(data_2004_DOD$survive_5yr))
+data_2004_DOD$survive_10yr<-as.numeric(as.character(data_2004_DOD$survive_10yr))
+data_2004_DOD$survive_2016<-as.numeric(as.character(data_2004_DOD$survive_2016))
+
+str(data_2004_DOD)
+
+#Save
+save(data_2004_DOD, file="data_2004_DOD.Rda")
+
+
+#**************************************************************#
+
+
+#**************************************************************#
+
+#****************************2005*****************************#
+
+#****#
+#all fed
+#****#
+
+data_2005 <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear!="2005"), ]
+
+##create variable describing whether a firm survived 3 years
+
+data_2005 <- data_2005 %>%
+  dplyr::mutate(survive_3yr = ifelse(exitYear < 2007, "0", "1")) 
+
+##create variable describing whether a firm survived 5 years
+data_2005 <- data_2005 %>%
+  dplyr::mutate(survive_5yr = ifelse(exitYear < 2010, "0", "1")) 
+
+
+##create variable describing whether a firm survived 10 years
+data_2005 <- data_2005 %>%
+  dplyr::mutate(survive_10yr = ifelse(exitYear < 2014, "0", "1")) 
+
+##create variable describing whether a firm survived in 2016
+data_2005 <- data_2005 %>%
+  dplyr::mutate(survive_2016 = ifelse(exitYear < 2016, "0", "1"))
+
+
+str(data_2005)
+
+data_2005$survive_3yr<-as.numeric(as.character(data_2005$survive_3yr))
+data_2005$survive_5yr<-as.numeric(as.character(data_2005$survive_5yr))
+data_2005$survive_10yr<-as.numeric(as.character(data_2005$survive_10yr))
+data_2005$survive_2016<-as.numeric(as.character(data_2005$survive_2016))
+
+str(data_2005)
+
+#Save
+save(data_2005, file="data_2005.Rda")
+
+
+#****#
+#DoD
+#****#
+
+data_2005_DOD <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear!="2005"), ]
+data_2005_DOD <- data_2005_DOD[!(data_2005_DOD$customer!="Defense"), ]
+
+
+##create variable describing whether a firm survived 3 years
+
+data_2005_DOD <- data_2005_DOD %>%
+  dplyr::mutate(survive_3yr = ifelse(exitYear < 2007, "0", "1")) 
+
+##create variable describing whether a firm survived 5 years
+data_2005_DOD <- data_2005_DOD %>%
+  dplyr::mutate(survive_5yr = ifelse(exitYear < 2010, "0", "1")) 
+
+
+##create variable describing whether a firm survived 10 years
+data_2005_DOD <- data_2005_DOD %>%
+  dplyr::mutate(survive_10yr = ifelse(exitYear < 2014, "0", "1")) 
+
+##create variable describing whether a firm survived in 2016
+data_2005_DOD <- data_2005_DOD %>%
+  dplyr::mutate(survive_2016 = ifelse(exitYear < 2016, "0", "1"))
+
+
+str(data_2005_DOD)
+
+data_2005_DOD$survive_3yr<-as.numeric(as.character(data_2005_DOD$survive_3yr))
+data_2005_DOD$survive_5yr<-as.numeric(as.character(data_2005_DOD$survive_5yr))
+data_2005_DOD$survive_10yr<-as.numeric(as.character(data_2005_DOD$survive_10yr))
+data_2005_DOD$survive_2016<-as.numeric(as.character(data_2005_DOD$survive_2016))
+
+str(data_2005_DOD)
+
+#Save
+save(data_2005_DOD, file="data_2005_DOD.Rda")
+
+
+#**************************************************************#
+
+#**************************************************************#
+
+#****************************2006*****************************#
+
+#****#
+#all fed
+#****#
+
+data_2006 <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear!="2006"), ]
+
+##create variable describing whether a firm survived 3 years
+
+data_2006 <- data_2006 %>%
+  dplyr::mutate(survive_3yr = ifelse(exitYear < 2008, "0", "1")) 
+
+##create variable describing whether a firm survived 5 years
+data_2006 <- data_2006 %>%
+  dplyr::mutate(survive_5yr = ifelse(exitYear < 2011, "0", "1")) 
+
+
+##create variable describing whether a firm survived 10 years
+data_2006 <- data_2006 %>%
+  dplyr::mutate(survive_10yr = ifelse(exitYear < 2015, "0", "1")) 
+
+##create variable describing whether a firm survived in 2016
+data_2006 <- data_2006 %>%
+  dplyr::mutate(survive_2016 = ifelse(exitYear < 2016, "0", "1"))
+
+
+str(data_2006)
+
+data_2006$survive_3yr<-as.numeric(as.character(data_2006$survive_3yr))
+data_2006$survive_5yr<-as.numeric(as.character(data_2006$survive_5yr))
+data_2006$survive_10yr<-as.numeric(as.character(data_2006$survive_10yr))
+data_2006$survive_2016<-as.numeric(as.character(data_2006$survive_2016))
+
+str(data_2006)
+
+#Save
+save(data_2006, file="data_2006.Rda")
+
+
+#****#
+#DoD
+#****#
+
+data_2006_DOD <- FPDS_cleaned_unique[!(FPDS_cleaned_unique$registrationYear!="2006"), ]
+data_2006_DOD <- data_2006_DOD[!(data_2006_DOD$customer!="Defense"), ]
+
+
+##create variable describing whether a firm survived 3 years
+
+data_2006_DOD <- data_2006_DOD %>%
+  dplyr::mutate(survive_3yr = ifelse(exitYear < 2008, "0", "1")) 
+
+##create variable describing whether a firm survived 5 years
+data_2006_DOD <- data_2006_DOD %>%
+  dplyr::mutate(survive_5yr = ifelse(exitYear < 2011, "0", "1")) 
+
+
+##create variable describing whether a firm survived 10 years
+data_2006_DOD <- data_2006_DOD %>%
+  dplyr::mutate(survive_10yr = ifelse(exitYear < 2015, "0", "1")) 
+
+##create variable describing whether a firm survived in 2016
+data_2006_DOD <- data_2006_DOD %>%
+  dplyr::mutate(survive_2016 = ifelse(exitYear < 2016, "0", "1"))
+
+
+str(data_2006_DOD)
+
+data_2006_DOD$survive_3yr<-as.numeric(as.character(data_2006_DOD$survive_3yr))
+data_2006_DOD$survive_5yr<-as.numeric(as.character(data_2006_DOD$survive_5yr))
+data_2006_DOD$survive_10yr<-as.numeric(as.character(data_2006_DOD$survive_10yr))
+data_2006_DOD$survive_2016<-as.numeric(as.character(data_2006_DOD$survive_2016))
+
+str(data_2006_DOD)
+
+#Save
+save(data_2006_DOD, file="data_2006_DOD.Rda")
+
+
+#**************************************************************#
 
 
 
