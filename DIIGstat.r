@@ -1273,12 +1273,14 @@ statsummary_continuous <- function(x, contract,log=TRUE,digits=3){       #input(
   colnames(continuous_Info) <- c("Variable_Name","Min","Max","Median","Logarithmic Mean",
                                  "1 unit below","1 unit above","% of records NA", 
                                  "% of Obligation to NA records")
+  contract<-as.data.frame(contract)
   if(log==FALSE)
     colnames(continuous_Info)[colnames(continuous_Info)=="Logarithmic Mean"]<-"Arithmatic Mean"  
   for (i in x){
     Percent_NA <- round(sum(is.na(contract[[i]]))/nrow(contract),5)
     Percent_Ob <- round(sum(contract$Action.Obligation[is.na(contract[[i]])],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5)
-    contract[[i]][contract[[i]]<=0] <- NA
+    transformed_i<-contract[[i]]
+    transformed_i[transformed_i==0] <- NA
     transformed_i <- log(contract[[i]])
     maxval <- round(max(contract[[i]],na.rm = TRUE), digits)
     medianval <- round(median(contract[[i]],na.rm = TRUE), digits)
