@@ -1,4 +1,4 @@
-/****** Object:  View [Vendor].[VendorHistoryNaicsPlatformSubCustomer]    Script Date: 8/2/2018 4:51:47 PM ******/
+/****** Object:  View [Vendor].[VendorHistoryNaicsPlatformSubCustomer]    Script Date: 4/1/2019 2:24:43 PM ******/
 SET ANSI_NULLS ON
 GO
 
@@ -48,6 +48,7 @@ SELECT C.Fiscal_year
 , c.csistransactionID
 , ctid.csiscontractid
 , c.typeofsetaside
+,psc.IsService
 --Grouping Sub-Query
 , IIf(C.contractingofficerbusinesssizedetermination='S' 
    And Not (parent.largegreaterthan3B=1 Or parent.Largegreaterthan3B=1)
@@ -60,7 +61,6 @@ SELECT C.Fiscal_year
 ,OriginCountryCode.Country3LetterCodeText as OriginCountryText
 ,VendorCountryCode.IsInternational as VendorIsInternational
 ,VendorCountryCode.Country3LetterCodeText as VendorCountryText
-,iif(uduns.dunsnumber is null,0,1) as IsSAMduns
 FROM Contract.FPDS as C
 			left outer join FPDSTypeTable.AgencyID AS Agency
 			ON C.contractingofficeagencyid = Agency.AgencyID 
@@ -100,8 +100,8 @@ FROM Contract.FPDS as C
 	left outer join FPDSTypeTable.principalNAICScode n
 		on c.principalnaicscode=n.principalNAICScode
 	--Vendor specific things
-		left outer join contract.UnlabeledDunsnumberUniqueTransactionIDentityIDhistory u
-		on u.unique_transaction_id=c.unique_transaction_id
+		left outer join contract.UnlabeledDunsnumberCSIStransactionIDentityID u
+		on u.CSIStransactionID=c.CSISCreatedDate
 	
 			LEFT OUTER JOIN Contractor.Dunsnumber as DUNS
 			ON DUNS.Dunsnumber=DtPCH.Dunsnumber
@@ -114,6 +114,7 @@ FROM Contract.FPDS as C
 			ON ParentDUNS.Dunsnumber=ParentDtPCH.Dunsnumber
 		LEFT OUTER JOIN Contractor.ParentContractor as PARENTsquared
 			ON PARENTsquared.ParentID= ParentDtPCH.ParentID 
+--Vendor Country
 
 
 	LEFT JOIN FPDSTypeTable.Country3lettercode as OriginCountryCode
@@ -126,8 +127,12 @@ FROM Contract.FPDS as C
 		ON vendorcountrycode.Country3LetterCode=VendorCountryCodePartial.Country3LetterCode
 	left outer join location.CountryCodes as VendorISO
 		on VendorCountryCode.isoAlpha3=VendorISO.[alpha-3]
-	left outer join dbo.observations_uniqueDUNS uduns
-		on c.dunsnumber = uduns.dunsnumber
+
+
+
+
+
+
 
 
 
