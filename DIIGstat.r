@@ -1327,13 +1327,43 @@ statsummary_continuous <- function(x, contract,log=TRUE,digits=3){       #input(
 
 
 
-update_sample_col_CSIScontractID<-function(sample,full,col){
-  full<-full[,colnames(full) %in% c("CSIScontractID",col)]
+update_sample_col_CSIScontractID<-function(smp,
+                                           full,
+                                           col=NULL, 
+                                           drop_and_replace=FALSE){
+  #If column(s) are specified
+  if(!is.null(col)){
+    toadd<-full[,colnames(full) %in% c("CSIScontractID",col)]
+    smp<-smp[,!colnames(smp) %in% col]
+  } 
+  #If no column(s) specified, add all missing columns.
+  else{
+    full<-full %>% group_by()
+    toadd<-full[,!colnames(full) %in% colnames(smp) | colnames(full)=="CSIScontractID"]
+  }
   
-  sample<-sample[,!colnames(sample) %in% col]
+  if(drop_and_replace==FALSE)
+    smp<-left_join(smp,toadd)
+  else{
+    original_l<-nrow(smp)
+    smp<-inner_join(smp,toadd)
+    rm(toadd)
+    missing_l<-original_l-nrow(smp)
+    if(missing_l>0){
+      full<-full[,colnames(full) %in% colnames(smp)]
+      if(ncol(full)<ncol(smp)){ 
+        print(paste(colnames(smp)[!colnames(smp) %in% colnames(full)]))
+        stop("Full is missing columns present in sample")
+      }
+      full<-full[!full$CSIScontractID %in% smp$CSIScontractID,]
+      smp<-dplyr::bind_rows(smp,full[sample(nrow(full),missing_l),])
+      if(nrow(smp)!=original_l) stop("Mismatched rowcount. Too few in full? This shouldn't happen.")
+      # 
+      warning(paste(missing_l, "rows removed and replaced due to absence from full"))
+    }
+  }
   
-  sample<-left_join(sample,full)
-  sample
+  smp
 }
 
 
@@ -1424,14 +1454,7 @@ part_grouped_barplot <- function(name, frequency_Info){
 
 
 
-update_sample_col_CSIScontractID<-function(sample,full,col){
-  full<-full[,colnames(full) %in% c("CSIScontractID",col)]
-  
-  sample<-sample[,!colnames(sample) %in% col]
-  
-  sample<-left_join(sample,full)
-  sample
-}
+
 get_pars<-function(model){
   if (isLMM(model)) {
   } else {
@@ -1564,3 +1587,13 @@ allFit_save <- function(m,meth.tab=NULL ,
             data = data # is dropped if NULL
   )
 }
+
+
+
+
+# Helper function for string wrapping. 
+# Default 20 character target width.
+swr <- function(string, nwrap=20) {
+  paste(strwrap(string, width=nwrap), collapse="\n")
+}
+swr <- Vectorize(swr)
