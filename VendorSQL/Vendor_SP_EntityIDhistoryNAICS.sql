@@ -13,7 +13,7 @@ ALTER PROCEDURE [Vendor].[sp_EntityIDhistoryNAICS]
 
 AS
 
-IF (@Customer is not null) --Begin sub path where all product and services but only one Customer will be returned
+IF (@Customer is null) --Begin sub path where all product and services but only one Customer will be returned
 	BEGIN
 		--Copy the start of your query here
 		SELECT 
@@ -26,7 +26,6 @@ IF (@Customer is not null) --Begin sub path where all product and services but o
 			,Sum(C.numberOfActions) AS numberOfActions
 			FROM [Vendor].[VendorHistoryNaicsPlatformSubCustomer] as C
 		--Here's the where clause for @IsService is null and Customer is not null
-		WHERE C.Customer=@Customer 
 		--Copy the end of your query here
 		GROUP BY 
 				CalendarYear

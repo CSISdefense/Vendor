@@ -1,7 +1,4 @@
-	USE CSIS360
-GO
-
-/****** Object:  View [Vendor].[VendorFPDShistoryPlatformSubCustomerDirectDiscretization]    Script Date: 10/5/2017 9:47:32 PM ******/
+/****** Object:  View [Vendor].[VendorHistoryNaicsPlatformSubCustomer]    Script Date: 4/26/2019 12:24:46 PM ******/
 SET ANSI_NULLS ON
 GO
 
@@ -11,12 +8,15 @@ GO
 
 
 
-Alter VIEW [Vendor].[VendorHistoryNaicsPlatformSubCustomer]
+
+
+ALTER VIEW [Vendor].[VendorHistoryNaicsPlatformSubCustomer]
 AS
 
 SELECT C.Fiscal_year
 , ISNULL(Agency.Customer, Agency.AGENCYIDText) as Customer
 , Agency.SubCustomer
+, c.contractingofficeid as ContractingOfficeCode
 ,coalesce(proj.PlatformPortfolio, Agency.PlatformPortfolio, cpc.PlatformPortfolio, psc.platformPortfolio) as platformPortfolio
 ,	 CASE
 		WHEN Parent.ParentID is not null and isnull(Parent.UnknownCompany,0)=0 
@@ -102,8 +102,8 @@ FROM Contract.FPDS as C
 	left outer join FPDSTypeTable.principalNAICScode n
 		on c.principalnaicscode=n.principalNAICScode
 	--Vendor specific things
-		left outer join contract.UnlabeledDunsnumberUniqueTransactionIDentityIDhistory u
-		on u.unique_transaction_id=c.unique_transaction_id
+		left outer join contract.UnlabeledDunsnumberCSIStransactionIDentityID u
+		on u.CSIStransactionID=c.CSISCreatedDate
 	
 			LEFT OUTER JOIN Contractor.Dunsnumber as DUNS
 			ON DUNS.Dunsnumber=DtPCH.Dunsnumber
