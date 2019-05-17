@@ -58,7 +58,7 @@ First we load the data. The dataset used is a U.S. Defense Contracting dataset d
 
 
 ```{r ReadInData, echo = TRUE}
-# load(file="Data/defense_contract_complete.RData")
+# load(file="../Data/Clean/defense_contract_complete.RData")
 # save(file="Data/defense_contract_complete.RData",def)
 # def<-def[def$MinOfSignedDate>=as.Date("2008-01-01") & def$MinOfSignedDate<=as.Date("2015-12-31"),]
 # # head(def)
@@ -74,17 +74,13 @@ summary(def$Action.Obligation)
 
 
 
-load(file="Data/transformed_def.Rdata")
+load(file="../Data/Clean/transformed_def.Rdata")
 # def<-def[!colnames(def) %in% colnames(def)[grep("^l_",colnames(def))]]
 # save(file="Data/transformed_def.Rdata", def)
 
 
 #Removing l_s just to reduce size. They can be derived easily.
 
-# 
-
-
-load("data//transformed_def.Rdata")
 # load("output//naics_join.Rdata")
 
 ```
@@ -107,6 +103,24 @@ grouped_barplot("CBre", def)
 statsummary_discrete(c("Term"), def)
 statsummary_discrete(c("CBre"), def)
 statsummary_continuous(c("UnmodifiedNumberOfOffersReceived"), def)
+```
+
+### Termination Examination
+The reason for modification code includes both partial and complete terminations. As a way of differentiating complete from partial terminations, we take a closer look at how much spending happened after a contracts last termination. The last termination was used because a contract with both a partial and a complete termination would still qualify as having been completely terminated.
+
+```{r TermExam}
+term<-def %>% dplyr::filter(Term=="Terminated")
+
+
+term<-csis360::read_and_join_experiment(term,
+                            lookup_file = "Contract.SP_ContractTerminationExamination.txt",
+                            path="..\\",
+                            dir="Data\\semi_clean\\",
+                            by="CSIScontractID",
+                            skip_check_var=c("ObligatedBeforeMaxTerminatedDate",
+                                             "ObligatedOnMaxTerminatedDate",
+                                             "ObligatedAfterMaxTerminatedDate")
+)
 ```
 
 
@@ -1091,7 +1105,7 @@ sum(def$Action.Obligation[is.na(def$EffComp)],na.rm=TRUE)/sum(def$Action.Obligat
 ### Computational Sample Creation
 ```{r Sample}
 
- load(file="data//def_sample.Rdata")
+ load(file="../Data/Clean//def_sample.Rdata")
 smp$l_Offr<-na_non_positive_log(smp$UnmodifiedNumberOfOffersReceived)
 smp1m$l_Offr<-na_non_positive_log(smp1m$UnmodifiedNumberOfOffersReceived)
 
