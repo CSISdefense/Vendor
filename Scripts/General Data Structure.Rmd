@@ -1,0 +1,336 @@
+---
+title: "Data Structure"
+author: "Xinyi Wang"
+date: "November 2, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(reshape2)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load dataset}
+load(file="Data/transformed_def.Rdata")
+source('https://raw.githubusercontent.com/CSISdefense/Vendor/master/DIIGstat.r')
+```
+
+### Data Structure
+This part of the paper introduces the variables used in following regression model. For consistency and ease of data replication, the shortened name of the variable is included in parentheses after the full name. This shorthand name is also used in the definition of the equation. Due to wide variation in values, all of the continuous input variables in this study have been transformed logarithmically and then rescaled such that a value of 0 corresponds to the geometric mean and a one unit change in the transformed variable corresponds to a two standard deviation change in the log of the original input. This approach is used to more easily cross compare the magnitude of the coefficients of variables with different base scales. Gelman and Hill specifically recommend dividing by twice the standard deviation so that the continuous variables may also be more easily compared with dummy variables that have not been re-centered.
+
+
+## Indicators
+#Partial or Complete Terminations (b_Term)
+measures whether contracts experience a partial or complete termination, which yields a value of 1, while contracts with no terminations are given the value 0 for this variable. FPDS does not differentiate between complete and partial terminations, so this can include both a cancelled program and a contract that was completed after being initially protested and reassigned. 0.91 percent of contracts have experienced at least one partial or complete termination, and those records account for about 2.95 percent of obligations in the dataset.
+
+```{r barplot b_Term}
+grouped_barplot('Term', def)
+```
+
+
+# Ceiling Breaches (b_CBre) 
+tracks whether the contract had to be changed in a means that risked significant cost increases. To measure this, the study team observed transactions that are contract change orders and considered a ceiling breach to have occurred (assigning a value of 1) if any of these modifications also increased the contract or task order’s cost ceiling. Otherwise, the team assigned a value of 0. While only 1.04 percent of contracts have experienced a ceiling breach, the total obligations of those entries account for about 18.65 percent of obligations in the dataset. A slim fraction of terminations overlaps with ceiling breaches, despite both accounting for a similar percentage of contracts and task orders. 
+
+
+```{r barplot b_CBre}
+grouped_barplot('CBre', def)
+```
+
+
+# Industry Herfindahl-Hirschman Index (cl_def_HHI_lag1)
+are a measure of industrial concentration in the defense industrial base. HHI is calculated by squaring the market share of each participant in a sector. The study team faced two common challenges in creating this variable: identifying and collecting reliable data on market shares and, more fundamentally, defining the scope of the marketplace in which concentration will be analyzed. The study team began with the HHI by detailed industry NAICS code, and the most granular level available. After adding economic statistics to the model, the study team decided to include the HHI by subsector NAICS code, as well. 
+All else equal, defining a sector more broadly—and thereby including more firms—will tend to reduce concentration levels, whereas a more precise definition will raise them. One downside to this approach is that less-used NAICS codes are reported as highly consolidated because they are used by so few vendors. The advantage of this approach is that evaluating the implications of concentration for competition, consumer welfare, and public policy often requires examining trends at a less aggregated level.  
+For the purposes of this study, market share refers to the percentage of prime obligations within a given fiscal year, which has the notable drawback of not capturing subcontracting activity. In the dataset, this measure is lagged by one year. Both measures are separately logged and rescaled. 
+
+```{r table cl_def_HHI_lag1}
+HHI <- c('cl_def2_HHI_lag1', 'cl_def3_HHI_lag1', 'cl_def4_HHI_lag1', 'cl_def5_HHI_lag1',    
+         'cl_def6_HHI_lag1')
+statsummary_continuous(HHI, def)
+```
+
+
+# Detailed Industry Defense Obligations (cl_def_obl_lag1)
+annually sums total defense obligations by NAICS code. It is included in the model with a lag of one year, so the estimator for any contract will be the total obligations in the prior calendar year. When the total is negative or zero, it is treated as a missing value. These variables are transformed logarithmically and rescaled. 
+
+```{r table cl_def_obl_lag1}
+OBL <- c('cl_def2_obl_lag1', 'cl_def3_obl_lag1', 'cl_def4_obl_lag1', 'cl_def5_obl_lag1', 
+         'cl_def6_obl_lag1')
+statsummary_continuous(OBL, def)
+```
+
+
+# Industry Ratio (cl_def_ratio_lag1)
+compares total defense obligations to revenues in the same NAICS category for the U.S. economy as a whole. The study team learned of this approach and of the necessary sources through the work Nancy Young Moore, Clifford A. Grammich, and Judith D. Mele.42 The revenue data is only available for 2007 and 2012. Contracts starting in calendar years 2008-2012 use the 2007 value, and contracts starting between 2013 and 2015 use the 2012 value. Because obligation and revenue are two different measures, it is possible for the defense obligations to exceed revenue in the U.S. economy as a whole. In that case, the study team capped the variable at 1, which represents complete monopsony by the DoD. 
+However, for most NAICS categories, defense obligations are only a small proportion of the total economy, which can be seen in the logged and rescaled variables.  
+
+```{r table cl_def_ratio_lag1}
+RAT <- c('cl_def2_ratio_lag1', 'cl_def3_ratio_lag1', 'cl_def4_ratio_lag1', 'cl_def5_ratio_lag1',
+         'cl_def6_ratio_lag1')
+statsummary_continuous(RAT, def)
+
+```
+
+
+#U.S. Average Salary by Industry (cl_US_avg_sal_lag1) 
+is a variable calculated by dividing the payroll of the relevant detailed industry by the number of employees. For this dataset it is derived from the economic census, and thus only available in 2007 and 2012 as with the ratio variables. As with the other economic variables, it is logged and rescaled. Rescaling subtracts its mean and divides by its standard deviation doubled. 
+
+```{r table cl_US_avg_sal_lag1}
+SAL <- c('cl_US2_avg_sal_lag1', 'cl_US3_avg_sal_lag1', 'cl_US4_avg_sal_lag1',
+         'cl_US5_avg_sal_lag1','cl_US6_avg_sal_lag1')
+statsummary_continuous(SAL, def)
+```
+
+
+# NAICS(NAICS/NAICS2/NAICS3/NAICS4/NAICS5)
+represents the top North American Industrial Classification Detailed Industry Code of each contract and is measured by obligated amount. 
+As shown in NAICS-2 code, the distribution of DoD contract obligations is focused in a subset of the 21 NAICS sectors (NAICS 2-digit code). Manufacturing (31-33) in particular is the top sector category in dollar and count terms and stands out because that category—like Transportation and Warehousing (48-49) as well as Retail Trade (44-45)—spills over into multiple 2-digit codes. In dollar terms, the second and third most prevalent industrial sectors are Professional, Scientific, and Technical Services (54) and Construction (23); however, they are less significant in terms of the number of contracts because those sectors have higher value contracts. At the other end of the scale, Wholesale Trade (42) has less money obligated than either Construction or Professional, Scientific, and Technical Services but more records than both put together by a significant margin. The concentration of records and obligations in a small number of sectors was one factor prompting the study team to instead rely on subsector codes, which had a greater proportion of buckets that were significant by one or both measures. 
+
+```{r NAICS2/NAICS3}
+#NAICS2
+NAICS2_Freq <- freq_table('NAICS2', def)
+NAICS_Lookup <- read.csv(file = "Lookup/Lookup_NAICS_code.csv")
+colnames(NAICS_Lookup) <- c("NAICS_Code", "Description")
+NAICS2_Freq <- left_join(NAICS2_Freq, NAICS_Lookup, by = c('NAICS2' = 'NAICS_Code'))
+NAICS2_Freq$Description <- paste(NAICS2_Freq$NAICS2, ' - ', NAICS2_Freq$Description)
+NAICS2_Freq$Description <- factor(NAICS2_Freq$Description, levels = rev(NAICS2_Freq$Description))
+NAICS2_Freq <- melt(NAICS2_Freq, id = c("NAICS2", "Count_Freq", "Description"))
+naics2<-part_grouped_barplot('NAICS2', NAICS2_Freq)
+
+naics2
+ggsave(naics2,file="Output\\naics2.png")
+ggsave(naics2,file="Output\\naics2.eps")
+rm(naics2)
+
+#NAICS3
+NAICS3_Freq <- freq_table('NAICS3', def)
+NAICS3_Freq <- left_join(NAICS3_Freq, NAICS_Lookup, by = c('NAICS3' = 'NAICS_Code'))
+NAICS3_Freq$Description <- paste(NAICS3_Freq$NAICS3, ' - ', NAICS3_Freq$Description)
+NAICS3_Freq_top15Freq <- NAICS3_Freq[order(-NAICS3_Freq$Percent_Freq),]
+NAICS3_Freq_top15Freq <- NAICS3_Freq_top15Freq[1:15, ]
+NAICS3_Freq_top15Obli <- NAICS3_Freq[order(-NAICS3_Freq$Percent_Obli),]
+NAICS3_Freq_top15Obli <- NAICS3_Freq_top15Obli[1:15, ]
+NAICS3_Freq_TOP <- rbind( NAICS3_Freq_top15Obli, NAICS3_Freq_top15Freq)
+NAICS3_Freq_TOP <- unique(NAICS3_Freq_TOP)  #19 records in total
+NAICS3_Freq_TOP <- NAICS3_Freq_TOP[order(NAICS3_Freq_TOP$NAICS3),]
+percent_freq_rest <- 100 - sum(NAICS3_Freq_TOP$Percent_Freq, na.rm = TRUE)
+percent_obli_rest <- 100 - sum(NAICS3_Freq_TOP$Percent_Obli, na.rm = TRUE)
+NAICS3_Freq_TOP$Description <- as.character(NAICS3_Freq_TOP$Description)
+NAICS3_Freq_TOP[20, ] <- c('All Others','NA', percent_freq_rest, percent_obli_rest, 
+                           'All Others')
+NAICS3_Freq_TOP$Description <- factor(NAICS3_Freq_TOP$Description, 
+                                      level = rev(NAICS3_Freq_TOP$Description))
+NAICS3_Freq_TOP <- melt(NAICS3_Freq_TOP, id = c("NAICS3", "Count_Freq", "Description"))
+NAICS3_Freq_TOP$value <- as.numeric(NAICS3_Freq_TOP$value)
+naics3top20<-part_grouped_barplot('NAICS3', NAICS3_Freq_TOP)
+naics3top20
+ggsave(naics3top20,file="Output\\naics3top20.png")
+ggsave(naics3top20,file="Output\\naics3top20.eps")
+rm(naics3top20)
+```
+
+
+# Rescaled Logged Number of Offers (cl_Offr)
+is the number of offers each contract received, logged and then rescaled. Sole source awards are treated as receiving a single offer, consistent with how they are classified within FPDS. The study team considered multiple variables to competition: whether or not a contract used competitive procedures, whether or not a contract was competed with multiple offers, and the number of offers received. The study team decided to use number of offers received because it offers the detail of a continuous measure and because it is straightforwardly compatible with regression modeling in a way that binned numbers of offers would not be. The study team took the logarithm of this measure because that transformation puts the same weight on the difference between 1 and 2 offers as the difference between 5 and 10. 
+The log of the number of offers is rescaled by subtracting its mean (1.06) and dividing by its standard deviation doubled (2.08). The standard deviation is larger than expected, with a small number of high offer contracts exerting a big effect. Values of -0.5, 0, 0.5 correspond to 1.02, 2.87, and 8.12, offers respectively. Offers data is missing for about than 1.7 percent of records. 
+
+```{r table cl_Offr}
+statsummary_continuous('UnmodifiedNumberOfOffersReceived', def)
+```
+
+
+# Initial Cost Ceiling (cl_Ceil)
+is the rescaled natural log of the initial contract cost ceiling as reported by the base and all options field in then-year dollars.43 The logarithm of variable is rescaled by subtracting its mean (8.62) and dividing by its standard deviation doubled (5.01). Values of -1, 0, 0.5 and 1 correspond to $37.07, $5,529.50, $67,535.73 and $824,861.7 respectively. Data is missing for just 0.05 percent of contracts and transactions, which accounts for 0.21 percent of obligated dollars in the dataset. 
+ }
+
+```{r table cl_Ceil}
+statsummary_continuous('UnmodifiedContractBaseAndAllOptionsValue', def)
+```
+
+
+# Initial Duration (cl_Days)
+is the rescaled natural log of the initial maximum duration of the contract in days. The maximum duration is determined by comparing the contract’s effective date to the current completion date. The variable is rescaled by subtracting its mean (3.03) and dividing by its standard deviation doubled (3.78). Values of -0.5, 0, 0.5, and 1 correspond to 3.1 days, 20.6 days, 136.6 days, and 904.6 days respectively. Data is missing for under 0.5 percent of contracts and transactions, which represents about 0.87 percent of dataset obligations.
+
+```{r table cl_Days}
+statsummary_continuous('UnmodifiedDays', def)
+```
+
+
+# Contract Vehicle (Veh) 
+Contracts come in a variety of types, some of which are simple purchase orders, others are complex but single use contract awards, and yet others are task orders that are specific instances of an overarching indefinite delivery vehicle. These types are explained below and help define the nature of the contractor/customer relationship.44 The dataset uses dummy variables for four different types of indefinite delivery vehicles: 
+•	SIDC is 1 if the vehicle is a single-award indefinite delivery contract and 0 otherwise. 
+•	MIDC is 1 if the vehicle is a multiple-award indefinite delivery contract and 0 otherwise. These vehicles have a pool of potential vendors that can receive task orders.
+•	FSS/GWAC is 1 if the vehicle is a Federal Supply Schedule or Government-Wide Acquisition Contract and 0 otherwise. 
+•	BPA/BOA is 1 if the vehicle is a Blank Purchase Agreement or Basic Ordering Agreement and 0 otherwise. These indirect vehicles can be either single-award or multi-award.
+The rest of contracts are contract awards and purchase orders with no parent contract. This is the baseline for the regression model, which is true when all four dummy variables are zero. Vehicle classifications are missing for less than 0.1 percent of contracts and for a similarly small percentage of dataset obligations. 
+
+```{r barplot Veh}
+grouped_barplot('Veh', def)
+```
+
+
+# Fixed-Price (PricingFee)
+is a categorical variable based on contract pricing and fee structure. The baseline is firm-fixed price contracts, which account for 86 percent of all contracts. 
+•	Other FP refers to other fixed-price consists of includes fixed-price redetermination, fixed-price award fee, and fixed-price economic price adjustment.
+•	Incentive refers to the incentive fee contracts, including fixed-price incentive fee, cost plus incentive fee, and cost sharing.
+•	Combination or Other covers contracts using multiple pricing mechanisms or unusual and unclassified types.
+•	Other CB refers to all types of cost-based contracting, excluding incentive fee.
+•	T&M/LH/FPLOE refers to time and materials, labor hours, and fixed-price level of effort contracts respectively.
+A miniscule percentage of contracts and obligations are unlabeled. 
+
+```{r barplot PricingFee}
+grouped_barplot('PricingFee', def)
+```
+
+
+# Undefinitized Contract Action (b_UCA) 
+is a binary variable with a value of 1 for contracts that begin as letter contracts or undefinitized contract awards (UCA), they account for a tiny proportion (0.40 percent) of contracts and only 4.1 percent of obligations, but they do significantly correlate with a greater risk of terminations and ceiling breaches. Unfortunately, due to a reporting error in recent years on the now retired version of USAspending.gov, UCA classification is missing for nearly 15 percent of records and 9 percent of obligations in the dataset. Nonetheless, the predictive power of this variable is sufficient and, therefore, still included in the study. 
+
+```{r barplot b_UCA}
+grouped_barplot('UCA', def)
+```
+
+
+# Any International (b_Intl)
+is a binary variable with a value of 1 for contracts with any transactions performed internationally and a value of 0 otherwise. Only a miniscule portion of records were unlabeled.
+
+```{r barplot b_Intl}
+grouped_barplot('Intl', def)
+```
+
+
+# Agency (Agency)
+
+```{r barplot Agency}
+Agency_Freq <- freq_table('Agency', def)
+Agency_Lookup <- read.csv("https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/Agency_AgencyID.csv")
+Agency_Lookup <- Agency_Lookup[,1:2]
+colnames(Agency_Lookup) <- c("Agency","Description")
+Agency_Freq <- left_join(Agency_Freq, Agency_Lookup, by = "Agency")
+Agency_Freq <- Agency_Freq[order(-Agency_Freq$Percent_Obli),]
+Agency_Freq <- Agency_Freq[1:5,]
+percent_freq_rest <- 100 - sum(Agency_Freq$Percent_Freq, na.rm = TRUE)
+percent_obli_rest <- 100 - sum(Agency_Freq$Percent_Obli, na.rm = TRUE)
+Agency_Freq$Description <- paste(Agency_Freq$Agency, ' - ', Agency_Freq$Description)
+Agency_Freq[6,] <- c("All Other", "NA", percent_freq_rest,  percent_obli_rest, "All Other")
+Agency_Freq$Description <- factor(Agency_Freq$Description, 
+                                  levels = rev(c("2100  -  DEPT OF THE ARMY",
+                                                 "1700  -  DEPT OF THE NAVY",
+                                                 "5700  -  DEPT OF THE AIR FORCE",
+                                                 "97AS  -  DEFENSE LOGISTICS AGENCY",
+                                                 "9776  -  USTRANSCOM",
+                                                 "All Other")))
+Agency_Freq[,c(3,4)] <- lapply(Agency_Freq[,c(3,4)], function(x) as.numeric(x))
+Agency_Freq <- melt(Agency_Freq, id = c("Agency","Count_Freq", "Description"))
+agency<-part_grouped_barplot('Agency', Agency_Freq)
+
+
+agency
+ggsave(agency,file="Output\\agency.png")
+ggsave(agency,file="Output\\agency.eps")
+rm(agency)
+
+```
+
+
+# Office (Office)
+
+```{r barplot office}
+
+Office_Lookup <- read.delim("https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/office/Office.ContractingOfficeCode.txt")
+def_dup <- def
+memory.limit(56000)
+def_dup <- left_join(def_dup, Office_Lookup, by = c("Agency" = "AgencyID", "Office" = "ContractingOfficeCode"))
+Office_Freq <- as.data.frame(table(def_dup$Office, def_dup$ContractingOfficeName))
+colnames(Office_Freq) <- c("OfficeID", "OfficeName","Count_Freq")
+Office_Freq$Percent_Freq <- round(Office_Freq$Count_Freq/sum(Office_Freq$Count_Freq),4)*100
+Office_Freq <- subset(Office_Freq, (Office_Freq$Count_Freq != 0)&(Office_Freq$Percent_Freq!=0))
+Office_Freq[,1:2] <- lapply(Office_Freq[,1:2], function(x) as.character(x))
+Office_Freq$Office_Full <- ifelse(Office_Freq$OfficeName == "NULL", Office_Freq$OfficeID, Office_Freq$OfficeName)
+
+
+Percent_Obli <- c()
+Total_Obli <- sum(def_dup$Action.Obligation, na.rm = TRUE)
+for (i in Office_Freq$OfficeID) {
+  Percent_Obligation <- round(sum(def_dup$Action.Obligation[def_dup$Office == i], na.rm = TRUE)/Total_Obli,5)
+  Percent_Obli <- c(Percent_Obli, Percent_Obligation)
+  print(i)
+}
+Office_Freq$Percent_Obli <- Percent_Obli * 100
+
+Office_Freq_top10Freq <- Office_Freq[order(-Office_Freq$Percent_Freq),]
+Office_Freq_top10Freq <- Office_Freq_top10Freq[1:10, ]  #including NULL category
+Office_Freq_top10Obli <- Office_Freq[order(-Office_Freq$Percent_Obli),]
+Office_Freq_top10Obli <- Office_Freq_top10Obli[1:10, ]  #including NULL category
+
+Office_Freq_TOP <- rbind(Office_Freq_top10Obli, Office_Freq_top10Freq)
+Office_Freq_TOP <- unique(Office_Freq_TOP)  #17 records in total
+
+#Generate a new name column by Combining officeID and officeName
+Office_Freq_TOP$Office_Full <- ifelse(Office_Freq_TOP$Office_Full == Office_Freq_TOP$OfficeID, 
+                                      Office_Freq_TOP$OfficeID, 
+                                      paste(Office_Freq_TOP$OfficeID, 
+                                            " - ", 
+                                            Office_Freq_TOP$OfficeName))
+
+Office_Freq_TOP$Office_Full <- factor(Office_Freq_TOP$Office_Full, 
+                                      levels = rev(Office_Freq_TOP$Office_Full))
+Office_Freq_TOP <- melt(Office_Freq_TOP, 
+                        id = c("OfficeID", "OfficeName", "Count_Freq", "Office_Full"))
+
+Office_barplot <- ggplot(data = Office_Freq_TOP,
+                         aes(x = Office_Full, 
+                             y = value,
+                             fill = factor(variable))) +
+                  geom_bar(stat = "identity", 
+                  position = "dodge", 
+                  width = 0.8) + 
+                  coord_flip() +
+                  xlab("") + 
+                  ylab("") + 
+                  theme_grey() + 
+                  scale_fill_grey(labels = c("% of records", "% of obligation"),
+                                  guide = guide_legend(reverse = TRUE)) + 
+                  ggtitle("Percent of Frequency and obligation for Office") +
+                  theme(text = element_text(size = 10), 
+                        legend.title = element_blank(),
+                        legend.position = "bottom",
+                        legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit = "cm"),
+                        legend.text = element_text(margin = margin(r=0.5, unit = "cm")),
+                        plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm"))
+Office_barplot
+
+```
+
+
+# Product Service Code (ProdServ)
+
+```{r barplot ProdServ}
+
+ProdServ_Freq <- freq_table("ProdServ", def)
+
+#Add detail description to unique Agency code
+ProdServ_Lookup <- read.csv("https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/ProductOrServiceCodes.csv")
+ProdServ_Lookup <- ProdServ_Lookup[, 1:2]
+colnames(ProdServ_Lookup) <- c("ProdServ", "Description")
+ProdServ_Freq <- left_join(ProdServ_Freq, ProdServ_Lookup, by = "ProdServ")
+ProdServ_Freq$Description <- as.character(ProdServ_Freq$Description)
+ProdServ_Freq$Description <- paste(ProdServ_Freq$ProdServ, " - ", ProdServ_Freq$Description)
+
+#Get the top 19 most frequently appeared ProdServ
+ProdServ_Freq_top10Freq <- ProdServ_Freq[order(-ProdServ_Freq$Percent_Freq), ]
+ProdServ_Freq_top10Freq <- ProdServ_Freq_top10Freq[1:10, ]
+ProdServ_Freq_top10Obli <- ProdServ_Freq[order(-ProdServ_Freq$Percent_Obli), ]
+ProdServ_Freq_top10Obli <- ProdServ_Freq_top10Obli[1:10, ]
+ProdServ_Freq_TOP <- rbind(ProdServ_Freq_top10Obli, ProdServ_Freq_top10Freq)
+ProdServ_Freq_TOP <- unique(ProdServ_Freq_TOP)
+ProdServ_Freq_TOP <- ProdServ_Freq_TOP[order(-ProdServ_Freq_TOP$Percent_Obli), ]
+ProdServ_Freq_TOP$Description <- factor(ProdServ_Freq_TOP$Description, rev(ProdServ_Freq_TOP$Description))
+
+#Reshape the dataframe to long format for plot
+ProdServ_Freq_TOP <- melt(ProdServ_Freq_TOP, id = c("ProdServ", "Count_Freq", "Description"))
+
+#Generate the plot and add title manually
+part_grouped_barplot("ProdServ", ProdServ_Freq_TOP)
+
+```
+
