@@ -116,11 +116,127 @@ term<-csis360::read_and_join_experiment(term,
                             lookup_file = "Contract.SP_ContractTerminationExamination.txt",
                             path="..\\",
                             dir="Data\\semi_clean\\",
-                            by="CSIScontractID",
-                            skip_check_var=c("ObligatedBeforeMaxTerminatedDate",
-                                             "ObligatedOnMaxTerminatedDate",
-                                             "ObligatedAfterMaxTerminatedDate")
+                            by="CSIScontractID"#,
+                            # skip_check_var=c("ObligatedBeforeMaxTerminatedDate",
+                            #                  "ObligatedOnMaxTerminatedDate",
+                            #                  "ObligatedAfterMaxTerminatedDate")
 )
+
+summary(term)
+summary(term$ObligatedBeforeMaxTerminatedDate)
+summary(term$ObligatedAfterMaxTerminatedDate)
+summary(term$ObligatedOnMaxTerminatedDate)
+summary(term$MaxTerminatedDate)
+sum(term$ObligatedBeforeMaxTerminatedDate)
+sum(term$ObligatedOnMaxTerminatedDate)
+sum(term$ObligatedAfterMaxTerminatedDate)
+term$AfterTermRatio<-
+
+  term$
+  
+#How often there no net pre-termination obligations
+nrow(term %>% filter(ObligatedBeforeMaxTerminatedDate<=0))
+
+#How often are contracts terminated on their first day
+nrow(term %>% filter(MaxTerminatedDate<=MinOfSignedDate) )
+
+term$PreTerm<-NA
+term$PreTerm[term$MaxTerminatedDate<=term$MinOfSignedDate]<-
+  term$ObligatedBeforeMaxTerminatedDate[term$MaxTerminatedDate<=term$MinOfSignedDate]+
+  term$ObligatedOnMaxTerminatedDate[term$MaxTerminatedDate<=term$MinOfSignedDate]
+term$PreTerm[term$MaxTerminatedDate>term$MinOfSignedDate]<-
+  term$ObligatedBeforeMaxTerminatedDate[term$MaxTerminatedDate>term$MinOfSignedDate]
+
+
+
+term$PostTerm<-NA
+term$PostTerm[term$MaxTerminatedDate<=term$MinOfSignedDate]<-
+  term$ObligatedAfterMaxTerminatedDate[term$MaxTerminatedDate<=term$MinOfSignedDate]
+term$PostTerm[term$MaxTerminatedDate>term$MinOfSignedDate]<-
+  term$ObligatedOnMaxTerminatedDate[term$MaxTerminatedDate>term$MinOfSignedDate]+
+  term$ObligatedAfterMaxTerminatedDate[term$MaxTerminatedDate>term$MinOfSignedDate]
+  
+
+nrow(term %>% filter(PreTerm<=0))
+nrow(term %>% filter(PreTerm<=PostTerm))
+nrow(term %>% filter(PreTerm/10<=PostTerm))
+
+
+
+
+
+
+Weird<-(term %>% filter(ObligatedBeforeMaxTerminatedDate<=0))
+summary(Weird$ObligatedAfterMaxTerminatedDate)
+
+term$Count<-1
+
+??font_families
+library(sysfonts)
+
+term$PostTermFloor0<-term$PostTerm
+term$PostTermFloor0[term$PostTermFloor0<0]<-0
+term$PreTermFloor1<-term$PreTerm
+term$PreTermFloor1[term$PreTerm<1]<-1
+term$TermRatio<-term$PostTermFloor0/term$PreTermFloor1
+term$TermRatioCapped[term$Term>1]<-1
+summary(term$TermRatioCapped)
+# g<-build_plot(
+#   data=term, # %>% dplyr::select(PostTermFloor0),
+#   chart_geom = "Histogram",
+#   share = FALSE,
+#   # labels_and_colors=labels_and_colors,
+#   # NA, #VAR.ncol
+#   x_var="PostTermFloor0", #x_var
+#   y_var="Count", #VAR.y.variable
+#   # color_var="DecisionTreeDisplay", #color_var
+#   # facet_var="DecisionTreeDisplay", #facet_var
+#   # column_key=column_key,
+#   format=TRUE
+# )
+
+
+term$NoPreTermObl<-"No"
+term$NoPreTermObl[term$PreTerm<=0]<-"Yes"
+term$NoPreTermObl<-factor(term$NoPreTermObl)
+
+ggplot(term,aes(x=PostTermFloor0+1)) +
+  geom_histogram(bins=100)+scale_x_log10(labels = comma)+scale_y_log10(labels = comma)
+
+ggplot(term,aes(x=TermRatioCapped)) +
+  geom_histogram(bins=100)+scale_y_log10(labels = comma)
+
+
+ggplot(term %>% filter(TermRatioCapped>0),aes(x=TermRatioCapped )) +
+  geom_histogram(bins=100)#+scale_y_log10(labels = comma)
+
+
+ggplot(term %>% filter(TermRatioCapped>0),aes(x=TermRatio )) +
+  geom_histogram(bins=100)+scale_x_log10(labels = comma)
+
+ggplot(term %>% filter(TermRatioCapped>0),aes(x=TermRatio,fill=NoPreTermObl )) +
+  geom_histogram(bins=100)+scale_x_log10(labels = comma)+facet_wrap(~Dur)
+
+ggplot(term %>% filter(TermRatioCapped>0),aes(x=TermRatio,fill=NoPreTermObl )) +
+  geom_histogram(bins=100)+scale_x_log10(breaks=c(0.001,0.01,0.1,0.5,1,10,100,1000))+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  geom_vline(xintercept = 1)+geom_vline(xintercept = 0.1)+geom_vline(xintercept = 2)
+#+facet_wrap(~Dur)
+
+term$TermRatioCat<-Hmisc::cut2(term$TermRatio,c(0,0.10,2))
+term$TermRatioCat<-as.character(term$TermRatioCat)
+term$TermRatioCat[term$TermRatio==0]<-"[0]"
+term$TermRatioCat<-factor(term$TermRatioCat)
+summary(term$TermRatioCat)
+levels(term$TermRatioCat)<-list("[0]"="[0]",
+                                "(0,0.1)"="[0.00e+00,1.00e-01)",
+                                "[0.1,2)"="[1.00e-01,2.00e+00)",
+                                "[2+]"="[2.00e+00,6.96e+06]"
+                                )
+summary(term$TermRatioCat)
+
+
+
 ```
 
 
