@@ -1,0 +1,2367 @@
+---
+title: "Contract Termination"
+author: "Greg Sanders"
+date: "Wednesday, February 8, 2017"
+output:
+  html_document:
+    keep_md: yes
+--- 
+
+Modeling Likelihood of Contract Termination
+============================================================================
+
+#Setup
+```{r Libraries, echo = FALSE}
+library(csis360)
+library(ggplot2)
+library(dplyr)
+library(arm)
+library(R2WinBUGS)
+library(Hmisc)
+library(sjstats)
+source("DIIGstat.r")
+source("NAICS.r")
+
+axis.text.size<-10
+strip.text.size<-10
+legend.text.size<-8
+# table.text.size<-5.75
+title.text.size<-12
+geom.text.size<-12
+
+main.text.size<-1
+note.text.size<-1.40
+
+
+```
+
+Contracts are classified using a mix of numerical and categorical variables. While the changes in numerical variables are easy to grasp and summarize, a contract may have one line item that is competed and another that is not. As is detailed in the exploration on R&D, we are only considering information available prior to contract start. The percentage of contract obligations that were competed is a valuable benchmark, but is highly influenced by factors that occured after contract start.
+
+## Contract Competition
+
+Modeling comepetition with logit model requires limiting to two staes. We limit it to 0 for sole source and 1 for competition, whether there is 1 or more offers.
+
+##Prepare Data
+First we load the data. The dataset used is a U.S. Defense Contracting dataset derived from   FPDS.
+
+
+###Data Transformations and Summary
+
+
+
+```{r ReadInData, echo = TRUE}
+ # load(file="Data/defense_contract_complete.Rdata")
+# head(def)
+# debug(transform_contract)
+# def<-transform_contract(def)  
+ # save(file="Data/transformed_def.Rdata",def)
+load(file="Data/transformed_def.Rdata")
+
+```
+
+
+* b_Crai is a binary variable that has a value of 1 for a ceiling Breach of any size has occured, 0 otherwise. ('r summary(def$b_Crai)
+NA_stats(def,"b_Crai"))
+* b_Term is a binary variable that has a value of 1 for any contracts that have experienced a partial or complete termination, 0 otherwise. ('r summary(def$b_Term)
+NA_stats(def,"b_Term"))
+* log(Offr) is a binary variable based on competition. It has a value of 0 for uncompeted contracts and a value of 1 for competition, regardless of number of offers. 'r  summary(def$log(Offr));
+NA_stats(def,"log(Offr)")'
+* n_Comp is a numeric variable based on competition and number of offers. It has a value of 0 for uncompeted contracts and a value of 1 for single-offer competition, and a value of 2 for multi-offer competition. 'r summary(def$n_Comp);
+NA_stats(def,"n_Comp")'
+* n_Offr is a numeric variable based on competition and with more granularity on number offers. It has a value of 0 for uncompeted contracts and a value of 1 for single-offer competition, and a value of 2 for 2-offers, 3 for 3-4 offers, and 4 for 5+ offers. 'r summary(def$n_Offr);
+NA_stats(def,"n_Offr")'
+* log(Offr) is the natural log of the number of offers received. Uncompeted contracts are classified as having received one offer. 'r summary(def$log(Offr));
+NA_stats(def,"log(Offr)")'
+* cl_Ceil is the natural log of the initial contract cost ceiling, in then-year dollars. 'r centered_log_description(def$l_Ceil,"dollars");
+NA_stats(def,"l_Ceil")'
+* cl_Days is the natural log of the initial maximum duration of the contract, in days. The variable is centered, by subtracting its mean ('r centered_log_description(def$l_Days,"days");
+NA_stats(def,"l_Days")' 
+* SIDV, MIDV, and OIDV are dummy variables based on the contract vehicle. They correspond to Single-Award IDVs, Multi-Award IDVs, and Other IDVs, respectively, having a value of 1 when the task order has that vehicle type, and having a 0 other. The remaining types, definitive contracts and purchase orders, are intentionally left out. ('r summary(def$SIDV);
+summary(def$MIDV);
+summary(def$OIDV);
+NA_stats(def,"Veh")'
+* n_Fixed is a numeric variable based on contract pricing. It has a value of 0 for cost-based, 0.5 or "combination or other", 1 for any fixed price (excluding fixed-price level of effort which is classified as cost-based). ('r summary(def$n_Fixed);
+NA_stats(def,"n_Fixed")')
+* n_Incent is a numeric variable based on fee type. Ig has a value. 1 for incentive fee or cost sharing, 0.5 or "combination or other", 0 for all remaining types. ('r summary(def$n_Incent);
+NA_stats(def,"n_Incent")')
+* b_UCA is a binary variable with a value of 1 for contracts/task orders that begin as letter contracts or undefinitized contract awards (UCA) and a value of 0 otherwise. 'r
+summary(def$b_UCA);
+NA_stats(def,"b_UCA")'
+* b_Intl is a binary variable with a value of 1 for contracts/task orders with any transactions performed internationally and a value of 0 otherwise. 'r
+summary(def$b_Intl);
+NA_stats(def,"b_Intl")'
+* PSR is a factor reporting whether a contract is primarily for products/services/R&D. 'r
+summary(def$PSR);
+NA_stats(def,"PSR")'
+* ProdServ is a factor reporting the top Product or Service Code of each contract. 'r
+summary(def$ProdServ);
+NA_stats(def,"ProdServ")'
+* NAICS is a factor reporting the top North American Industrial Classification Code of each contract. 'r
+summary(def$NAICS);
+NA_stats(def,"NAICS")'
+* Agency is a factor reporting the top Contracting Agency of each contract. 'r
+summary(def$Agency);
+NA_stats(def,"Agency")'
+* Office is a factor reporting the top Contracting office of each contract. 'r
+summary(def$Office);
+NA_stats(def,"Office")'
+
+
+In addition, l_Ceil and l_Days are rescaled to have an average value of 0 and a standard deviation of one. This standardizes interpretation and prevents a "very large eigen value" error later when l_Ceil:lDay is introduced.
+
+
+Next, we eliminate missing data entries and then draw a sample. The final computation uses all of the data, but as a computation shortcut, only a subset of the data is needed to allow for processing of models in minutes rather than hours.
+
+###Computational Sample Creation
+```{r Sample}
+ load(file="data//def_sample.Rdata")
+smp$l_Offr<-na_non_positive_log(smp$UnmodifiedNumberOfOffersReceived)
+smp1m$l_Offr<-na_non_positive_log(smp1m$UnmodifiedNumberOfOffersReceived)
+
+levels(smp$EffComp)
+smp$log(Offr)<-smp$EffComp
+levels(smp$log(Offr))<-list("0"=c("No Comp.","1 Offer"),
+                           "1"="2+ Offers")
+summary(smp$log(Offr))
+summary(smp$EffComp)
+smp$log(Offr)<-as.numeric(as.character(smp$log(Offr)))
+
+levels(smp$EffComp)
+smp$log(Offr)<-smp$EffComp
+levels(smp$log(Offr))<-list("0"=c("No Comp.","1 Offer"),
+                           "1"="2+ Offers")
+summary(smp$log(Offr))
+summary(smp$EffComp)
+smp$log(Offr)<-as.numeric(as.character(smp$log(Offr)))
+
+
+# save(smp,smp,file="data//def_sample.Rdata")
+#Code to update sample w/o recreating.
+# smp<-smp["CSIScontractID"]
+# smp<-left_join(smp,def)
+# smp<-smp["CSIScontractID"]
+# smp<-left_join(smp,def)
+
+  
+# complete<-!is.na(def$b_Term)&
+#   !is.na(def$log(Offr))&
+#   !is.na(def$n_Comp)&
+#   !is.na(def$l_Ceil)&
+#   !is.na(def$l_Days)&
+#   !is.na(def$Veh) &
+#   !is.na(def$n_Fixed)&
+#   !is.na(def$b_Intl)&
+#   !is.na(def$b_UCA)&
+#   !is.na(def$NAICS)&
+#   !is.na(def$NAICS2)&
+#   !is.na(def$cl_def6_HHI_lag1)&
+#   !is.na(def$US6_avg_sal_lag1)
+# # 
+# smp<-def[complete,]
+# #8818392  to 8818392
+# 13057769 to 8335209
+# nrow(def[!complete,])/nrow(def)
+# sum(def[!complete,]$Action.Obligation,na.rm=TRUE)/sum(def$Action.Obligation,na.rm=TRUE)
+# 
+# smp<-smp[sample(nrow(smp),1000000),]
+# smp<-smp[sample(nrow(smp),250000),]
+# save(file="data//def_sample.Rdata",smp,smp)
+
+# levels(smp$Intl)<- list("Just U.S."=c("Just U.S."), 
+#                                 "Any Intl."=c("Any International"))
+# levels(smp$Intl)<- list("Just U.S."=c("Just U.S."), 
+#                                 "Any Intl."=c("Any International"))
+
+
+```
+
+#Initial Logit Model
+
+## Study Variable Consolidation
+
+### Level 6
+#### Model NCS6A: def6_HHI_lag1
+The expectation of the hypotheses is that a lower rate of consolidation will estimate higher levels of competition.
+
+```{r ModelNCS6A_Comp}
+#Frequency Plot for unlogged ceiling
+summary_continuous_plot(metric="comp",smp,"def6_HHI_lag1")
+summary_continuous_plot(metric="comp",smp,"def5_HHI_lag1")
+summary_continuous_plot(metric="comp",smp,"def4_HHI_lag1")
+summary_continuous_plot(metric="comp",smp,"def3_HHI_lag1")
+summary_continuous_plot(metric="comp",smp,"def2_HHI_lag1")
+
+#Model
+Comp_Cons_NCS6A <- glm (data=smp,
+                 log(Offr) ~c_def6_HHI_lag1)
+display(Comp_Cons_NCS6A)
+
+
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(Comp_Cons_NCS6A,type="text",
+                       digits=2)
+
+
+summary_regression_compare(Comp_Cons_NCS6A,Comp_Cons_NCS6A)
+
+```
+Both the summary statistics and the results are surprising. More consolidated sectors are more likely to have competition.
+
+#### Model NCS6B: l_def6_HHI_lag1
+
+Expectations are  unchanged.
+```{r ModelNCS6A_Comp}
+#Frequency Plot for unlogged ceiling
+summary_continuous_plot(metric="comp",smp,"l_def6_HHI_lag1")
+summary_continuous_plot(metric="comp",smp,"l_def5_HHI_lag1")
+summary_continuous_plot(metric="comp",smp,"l_def4_HHI_lag1")
+summary_continuous_plot(metric="comp",smp,"l_def3_HHI_lag1")
+summary_continuous_plot(metric="comp",smp,"l_def2_HHI_lag1")
+
+
+#Model
+Comp_Cons_NCS6B <- glm (data=smp,
+                 log(Offr) ~cl_def6_HHI_lag1)
+display(Comp_Cons_NCS6B)
+
+
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+# 
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(Comp_Cons_NCS6A,Comp_Cons_NCS6B,type="text",
+                       digits=2)
+
+
+summary_regression_compare(Comp_Cons_NCS6A,Comp_Cons_NCS6B)
+ggplot(Comp_Cons_NCS6B)+geom_point(aes(x=.fitted, y=.resid))
+
+
+
+
+```
+Switching to log reomves the uneven distribution with most entries on the lefthand side from the residuals though it doesn't shrink them. 
+
+#### Model NCS6C: Defense to Overall ratio
+The lower the ratio of defense obligations to reciepts in the overall economy, the more potential competitors, but also the less developed industrial base. Given the difficulties the DoD has access many more traditional firms, a very low ratio may estimate a lower rate of competition. Interestingly both contradictory expectations find some support in the exploratory statistics, which show a sweet spot well below 5% where competition seems to peak.
+```{r ModelNCS6C_Comp}
+#Frequency Plot for unlogged ceiling
+summary_continuous_plot(metric="comp",smp,"capped_def6_ratio_lag1")
+      summary_continuous_plot(metric="comp",smp,"l_def6_ratio_lag1")
+      summary_continuous_plot(metric="comp",smp,"capped_def5_ratio_lag1")
+      summary_continuous_plot(metric="comp",smp,"l_def5_ratio_lag1")
+      
+      summary_continuous_plot(metric="comp",smp,"capped_def4_ratio_lag1")
+      summary_continuous_plot(metric="comp",smp,"l_def4_ratio_lag1")
+      summary_continuous_plot(metric="comp",smp,"capped_def3_ratio_lag1")
+      summary_continuous_plot(metric="comp",smp,"l_def3_ratio_lag1")
+      summary_continuous_plot(metric="comp",smp,"capped_def2_ratio_lag1")
+      summary_continuous_plot(metric="comp",smp,"l_def2_ratio_lag1")
+      
+
+
+#Model
+Comp_Cons_NCS6C <- glm (data=smp,
+                 log(Offr) ~cl_def6_HHI_lag1+cl_def6_ratio_lag1
+                 )
+glmer_examine(Comp_Cons_NCS6C,display=TRUE)
+
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(Comp_Cons_NCS6B,Comp_Cons_NCS6C,
+                       type="text",
+                       digits=2)
+
+
+summary_regression_compare(Comp_Cons_NCS6B,Comp_Cons_NCS6C)
+
+
+
+```
+The results align with the hypothesis and are significant, although the magnitude is minimal.
+
+
+#### Model NCS6D: cl_def6_obl_lag1
+Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, the industrial base is likely more diverse when markets are larger. Thus greater defense in a given sector are expected to estimate a greater likelihood over multi-offer competition. The descriptive statistics tell a somewhat different story for the vary largest defense sectors, which have lower numbers of offers.
+Expectations are  unchanged.
+```{r ModelNCS6D_Comp}
+#Frequency Plot for unlogged ceiling
+summary_continuous_plot(metric="comp",smp,"def6_obl_lag1")
+
+
+summary_continuous_plot(metric="comp",smp,"l_def6_obl_lag1")
+summary_continuous_plot(metric="comp",smp,"def5_obl_lag1")
+
+summary_continuous_plot(metric="comp",smp,"l_def5_obl_lag1")
+summary_continuous_plot(metric="comp",smp,"def4_obl_lag1")
+
+summary_continuous_plot(metric="comp",smp,"l_def4_obl_lag1")
+summary_continuous_plot(metric="comp",smp,"def3_obl_lag1")
+
+summary_continuous_plot(metric="comp",smp,"l_def4_obl_lag1")
+summary_continuous_plot(metric="comp",smp,"def2_obl_lag1")
+
+summary_continuous_plot(metric="comp",smp,"l_def2_obl_lag1")
+
+#Model
+Comp_Cons_NCS6D <- glm (data=smp,
+                 log(Offr) ~cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1)
+glmer_examine(Comp_Cons_NCS6D)
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(Comp_Cons_NCS6C,Comp_Cons_NCS6D,
+                       
+                       type="text",digits=2)
+
+
+summary_regression_compare(Comp_Cons_NCS6C,Comp_Cons_NCS6D)
+
+
+
+```
+Estimated results occur. Residuals increase in magnitude for consolidation but reduce for competition.
+
+
+#### Model NCS6E: Average Salary
+Average salary can be an proxy for unobserved skill requirements and thus complexity. We expect that a greater skill requirement will estimate fewer available competitors and thus fewer offers. The descriptive statistics appear to contradict this belief.
+```{r ModelNCS6E_Comp}
+#Frequency Plot for unlogged ceiling
+
+
+summary_continuous_plot(metric="comp",smp,"US6_avg_sal_lag1")
+
+summary_continuous_plot(metric="comp",smp,"l_US6_avg_sal_lag1")
+
+summary_continuous_plot(metric="comp",smp,"US5_avg_sal_lag1")
+summary_continuous_plot(metric="comp",smp,"US4_avg_sal_lag1")
+summary_continuous_plot(metric="comp",smp,"US3_avg_sal_lag1")
+summary_continuous_plot(metric="comp",smp,"US2_avg_sal_lag1")
+
+#Model
+#cl_def6_obl_lag1
+
+Comp_Cons_NCS6E <- glm (data=smp,
+                 log(Offr) ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 )
+glmer_examine(Comp_Cons_NCS6E)
+
+
+
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+ stargazer::stargazer(Comp_Cons_NCS6C,Comp_Cons_NCS6D,Comp_Cons_NCS6E,
+                       
+                       type="text",digits=2)
+
+
+
+summary_regression_compare(Comp_Cons_NCS6D,Comp_Cons_NCS6E)
+
+
+
+
+```
+The results were significant but in the opposite direction expected. This also reverses the sign on ratio, contrary to hypothesis. That said, the reversal of sign for HHI is in keeping with the hypothesis.
+
+
+### Level 5
+#### Model NCS5A: cl_def5_HHI
+```{r ModelNCS5A_Comp}
+#Frequency Plot for unlogged ceiling
+summary_continuous_plot(metric="comp",smp,"l_def6_HHI_lag1")
+summary_continuous_plot(metric="comp",smp,"l_def5_HHI_lag1")
+summary_continuous_plot(metric="comp",smp,"l_def4_HHI_lag1")
+summary_continuous_plot(metric="comp",smp,"l_def3_HHI_lag1")
+summary_continuous_plot(metric="comp",smp,"l_def2_HHI_lag1")
+
+
+#Model
+Comp_Cons_NCS5A <- glm (data=smp,
+                 log(Offr) ~cl_def5_HHI_lag1)
+glmer_examine(Comp_Cons_NCS5A)
+
+
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+# 
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(Comp_Cons_NCS6B,Comp_Cons_NCS6D,Comp_Cons_NCS6E,Comp_Cons_NCS5A,type="text",
+                       digits=2)
+
+
+summary_regression_compare(Comp_Cons_NCS6B,Comp_Cons_NCS5A)
+
+
+```
+More significant HHI to offers than 6, but still the opposite of expecations.
+
+#### Model NCS5B: Defense to Overall ratio
+The higher the ratio of defense obligations to reciepts in the overall economy, the DoD holds a monosopy over a sector. Given the challenges of monosopy, the a higher ratio estimates a greater  risk of ceiling breaches.
+```{r ModelNCS5Blog(Offr)}
+#Frequency Plot for unlogged ceiling
+
+
+
+
+summary_continuous_plot(metric="comp",smp,"capped_def5_ratio_lag1")
+summary_continuous_plot(metric="comp",smp,"l_def5_ratio_lag1")
+
+#Model
+Comp_Cons_NCS5B <- glm (data=smp,
+                 log(Offr) ~cl_def5_HHI_lag1+cl_def5_ratio_lag1 
+                 )
+glmer_examine(Comp_Cons_NCS5B)
+
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(Comp_Cons_NCS6C,Comp_Cons_NCS6E,Comp_Cons_NCS5A,Comp_Cons_NCS5B,
+                       type="text",
+                       digits=2)
+
+
+summary_regression_compare(Comp_Cons_NCS5A,Comp_Cons_NCS5B)
+summary_regression_compare(Comp_Cons_NCS6D,Comp_Cons_NCS5B)
+
+
+
+```
+The results align with the hypothesis, although the magnitude is minimal, if larger in magnitude than the level 6 version.
+
+#### Model NCS5C: cl_def5_obl_lag1
+Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
+Expectations are  unchanged.
+```{r ModelNCSD_Comp}
+
+
+#Model
+Comp_Cons_NCS5C <- glm (data=smp,
+                 log(Offr) ~cl_def5_HHI_lag1+cl_def5_ratio_lag1+cl_def5_obl_lag1)
+glmer_examine(Comp_Cons_NCS5C)
+
+
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(Comp_Cons_NCS6D,Comp_Cons_NCS6E,Comp_Cons_NCS5A,Comp_Cons_NCS5B,Comp_Cons_NCS5C,
+                       type="text",
+                       digits=2)
+
+
+summary_regression_compare(Comp_Cons_NCS5B,Comp_Cons_NCS5C)
+
+
+```
+Size seems to ad less to the model at level 5 than level 6.
+
+#### Model NCS5D: Average Salary
+Average salary can be an proxy for unobserved skill requirements and thus complexity. We expect that a greater skill requirement will estimate fewer available competitors and thus fewer offers. The descriptive statistics appear to contradict this belief.
+```{r ModelNCS5D_Comp}
+#Frequency Plot for unlogged ceiling
+
+
+
+summary_continuous_plot(metric="comp",smp,"US5_avg_sal_lag1")
+
+#Model
+#cl_def5_obl_lag1
+
+Comp_Cons_NCS5D <- glm (data=smp,
+                 log(Offr) ~cl_def5_HHI_lag1+cl_def5_ratio_lag1+cl_def5_obl_lag1+
+                  cl_US5_avg_sal_lag1 )
+glmer_examine(Comp_Cons_NCS5D)
+
+
+
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(Comp_Cons_NCS6E,Comp_Cons_NCS5A,Comp_Cons_NCS5B,Comp_Cons_NCS5C,Comp_Cons_NCS5D,
+                       type="text",
+                       digits=2)
+
+
+
+
+summary_regression_compare(Comp_Cons_NCS5C,Comp_Cons_NCS5D)
+
+
+
+
+```
+The results were significant but in the opposite direction expected. This also reverses the sign on everthing else, contrary to expectations in hte case of ratio and obl. That said, the reversal of sign for HHI is in keeping with the hypothesis.
+
+### Level 4
+#### Model NCS4A: cl_def4_HHI
+```{r ModelNCS4A_Comp}
+#Frequency Plot for unlogged ceiling
+summary_continuous_plot(metric="comp",smp,"l_def4_HHI_lag1")
+
+
+#Model
+Comp_Cons_NCS4A <- glm (data=smp,
+                 log(Offr) ~cl_def4_HHI_lag1)
+display(Comp_Cons_NCS4A)
+
+
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+# 
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(Comp_Cons_NCS6B,Comp_Cons_NCS6D,Comp_Cons_NCS6E,Comp_Cons_NCS5A,Comp_Cons_NCS4A,type="text",
+                       digits=2)
+
+
+summary_regression_compare(Comp_Cons_NCS6B,Comp_Cons_NCS4A)
+
+
+```
+
+Level 4 HHI seems to slightly out perform level 6 and 5. Though is still opposite of expectations.
+
+
+
+#### Model NCS4B: Defense to Overall ratio
+The higher the ratio of defense obligations to reciepts in the overall economy, the DoD holds a monosopy over a sector. Given the challenges of monosopy, the a higher ratio estimates a greater  risk of ceiling breaches.
+```{r ModelNCS4log(Offr)}
+#Frequency Plot for unlogged ceiling
+
+
+summary_continuous_plot(metric="comp",smp,"capped_def4_ratio_lag1")
+summary_continuous_plot(metric="comp",smp,"l_def4_ratio_lag1")
+
+#Model
+Comp_Cons_NCS4B <- glm (data=smp,
+                 log(Offr) ~cl_def4_HHI_lag1+cl_def4_ratio_lag1, 
+                 )
+glmer_examine(Comp_Cons_NCS4B)
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(Comp_Cons_NCS6C,Comp_Cons_NCS5B,Comp_Cons_NCS4A,Comp_Cons_NCS4B,
+                       type="text",
+                       digits=2)
+
+
+summary_regression_compare(Comp_Cons_NCS4A,Comp_Cons_NCS4B)
+summary_regression_compare(Comp_Cons_NCS5B,Comp_Cons_NCS4B)
+
+
+
+
+```
+The results align with the hypothesis, although the magnitude is small, if larger in magnitude than the level 5 or level 6 version.
+
+
+
+#### Model NCS4C: cl_def4_obl_lag1
+Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
+Expectations are  unchanged.
+```{r ModelNCS4C_Comp}
+
+
+#Model
+Comp_Cons_NCS4C <- glm (data=smp,
+                 log(Offr) ~cl_def4_HHI_lag1+cl_def4_ratio_lag1+cl_def4_obl_lag1)
+glmer_examine(Comp_Cons_NCS4C)
+
+
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+stargazer::stargazer(Comp_Cons_NCS6D,Comp_Cons_NCS5C,Comp_Cons_NCS4B,Comp_Cons_NCS4C,
+                       type="text",
+                       digits=2)
+
+
+
+  #Compare to prior at same level
+summary_regression_compare(Comp_Cons_NCS4B,Comp_Cons_NCS4C)
+#Compare to prior at lower level
+summary_regression_compare(Comp_Cons_NCS6D,Comp_Cons_NCS4C)
+```
+Size seems to add only a little less to the model at level 4 than level 6. In  general, magnitudes are  greater, though for HHI in an unexpected direction.
+
+#### Model NCS4D: Average Salary
+Average salary can be an proxy for unobserved skill requirements and thus complexity. We expect that a greater skill requirement will estimate fewer available competitors and thus fewer offers. The descriptive statistics appear to contradict this belief.
+```{r ModelNCS4D_Comp}
+#Frequency Plot for unlogged ceiling
+
+
+
+summary_continuous_plot(metric="comp",smp,"US4_avg_sal_lag1")
+
+#Model
+#cl_def4_obl_lag1
+
+Comp_Cons_NCS4D <- glm (data=smp,
+                 log(Offr) ~cl_def4_HHI_lag1+cl_def4_ratio_lag1+cl_def4_obl_lag1+
+                  cl_US4_avg_sal_lag1 )
+glmer_examine(Comp_Cons_NCS4D)
+
+
+
+# 
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(Comp_Cons_NCS6E,Comp_Cons_NCS5D,Comp_Cons_NCS4A,Comp_Cons_NCS4B,Comp_Cons_NCS4C,Comp_Cons_NCS4D,
+                       type="text",
+                       digits=2)
+
+
+
+
+summary_regression_compare(Comp_Cons_NCS4C,Comp_Cons_NCS4D)
+
+
+
+
+```
+The results were significant but in the opposite direction expected. Nothing flipps signs in this iteration. The AIC however, is notably higher than for level 5 and 6 results.
+### Level 3
+#### Model NCS3A: cl_def3_HHI
+```{r ModelNCS3A_Comp}
+#Frequency Plot for unlogged ceiling
+summary_continuous_plot(metric="comp",smp,"l_def3_HHI_lag1")
+
+
+#Model
+Comp_Cons_NCS3A <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1)
+display(Comp_Cons_NCS3A)
+
+
+# #Plot the fitted model plot
+# CBre_Comp_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(CBre_Comp_02A))}
+# 
+# #Competition curves
+# fitted_cbre_model(smp,"cl_Ceil") + stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = CBre_Comp_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+# 
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(Comp_Cons_NCS6B,Comp_Cons_NCS6E,Comp_Cons_NCS5A,Comp_Cons_NCS4A,Comp_Cons_NCS3A,type="text",
+                       digits=2)
+
+
+summary_regression_compare(Comp_Cons_NCS6B,Comp_Cons_NCS3A)
+
+
+```
+
+HHI becomes a more powerful predictor at each level, but never in the expecteddirection.
+
+
+#### Model NCS3B: Defense to Overall ratio
+The higher the ratio of defense obligations to reciepts in the overall economy, the DoD holds a monosopy over a sector. Given the challenges of monosopy, the a higher ratio estimates a greater  risk of ceiling breaches.
+```{r ModelNCS3log(Offr)}
+#Frequency Plot for unlogged ceiling
+
+
+
+
+summary_continuous_plot(metric="comp",smp,"capped_def3_ratio_lag1")
+summary_continuous_plot(metric="comp",smp,"l_def3_ratio_lag1")
+
+#Model
+Comp_Cons_NCS3B <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1, 
+                 )
+glmer_examine(Comp_Cons_NCS3B)
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(Comp_Cons_NCS6C,Comp_Cons_NCS5B,Comp_Cons_NCS4B,Comp_Cons_NCS3A,Comp_Cons_NCS3B,
+                       type="text",
+                       digits=2)
+
+
+summary_regression_compare(Comp_Cons_NCS3A,Comp_Cons_NCS3B)
+summary_regression_compare(Comp_Cons_NCS4B,Comp_Cons_NCS3B)
+
+
+```
+The results align with the hypothesis, although the magnitude is small, if larger in magnitude than the level 4 version. Although the residuals also notably increase in magnitude with the introduction of this variable.
+
+
+#### Model NCS3C: cl_def3_obl_lag1
+Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
+Expectations are  unchanged.
+```{r ModelNCS3C_Comp}
+
+
+#Model
+Comp_Cons_NCS3C <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+cl_def3_obl_lag1)
+glmer_examine(Comp_Cons_NCS3C)
+
+Comp_Cons_NCS3C2 <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_obl_lag1)
+glmer_examine(Comp_Cons_NCS3C2)
+
+
+#Plot residuals versus fitted
+stargazer::stargazer(Comp_Cons_NCS6D,Comp_Cons_NCS5C,Comp_Cons_NCS4C,
+                       Comp_Cons_NCS3C2,type="text",
+                       digits=2)
+
+
+
+  #Compare to prior at same level
+summary_regression_compare(Comp_Cons_NCS3B,Comp_Cons_NCS3C2)
+#Compare to prior at lower level
+summary_regression_compare(Comp_Cons_NCS6D,Comp_Cons_NCS3C2)
+```
+Size and ratio have a VIF challenge. Keeping ratio as it has more predictive power.
+
+
+#### Model NCS3D: Average Salary
+Average salary can be an proxy for unobserved skill requirements. We expect that a greater skill requirement will estimate a greater risk of ceiling breaches.
+```{r ModelNCS3D_Comp}
+#Frequency Plot for unlogged ceiling
+
+
+summary_continuous_plot(metric="comp",smp,"US3_avg_sal_lag1")
+summary_continuous_plot(metric="comp",smp,"l_US3_avg_sal_lag1")
+
+summary_continuous_plot(metric="comp",smp,"US5_avg_sal_lag1")
+summary_continuous_plot(metric="comp",smp,"US4_avg_sal_lag1")
+summary_continuous_plot(metric="comp",smp,"US3_avg_sal_lag1")
+summary_continuous_plot(metric="comp",smp,"US2_avg_sal_lag1")
+
+#Model
+
+Comp_Cons_NCS3D <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  cl_US3_avg_sal_lag1)
+glmer_examine(Comp_Cons_NCS3D)
+
+
+
+
+
+
+#Plot residuals versus fitted
+ stargazer::stargazer(Comp_Cons_NCS6E,Comp_Cons_NCS5D,Comp_Cons_NCS4D,Comp_Cons_NCS3B,Comp_Cons_NCS3C2,Comp_Cons_NCS3D,
+                       
+                       type="text",digits=2)
+
+
+summary_regression_compare(Comp_Cons_NCS3B,Comp_Cons_NCS3D)
+summary_regression_compare(Comp_Cons_NCS3C2,Comp_Cons_NCS3D)
+
+
+```
+Average salary continues to surprise, but even without defense obligations this model has the lowest AIC.
+
+
+#### Model NCS3E: NAICS 6 and NAICS 3
+Consolidation at lessa nd more granular levels may have different effects. Efficiencies are often used to describe sectors, like utilities, with high barriers to entry. Many of these aspects seem like they would already be captured at less granular NAICS levels, e.g. power plants, rather than more specific NAICS levels, like solar vs. coal. As a result, consolidation for more granular NAICS codes should estimate higher rates of ceiling breaches compared to less granular NAICS code.
+
+We'll start by adding in everything from both models and seeing what violates VIF.
+```{r ModelNCS3E_Comp}
+#Frequency Plot for unlogged ceiling
+
+
+#Model
+Comp_Cons_NCS3E <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1  )
+glmer_examine(Comp_Cons_NCS3E,display=TRUE)
+#Average salary 6 has the highest VIF though but both average salaries are over 2.0 and 3 is more contrary to expectations. Taking it out.
+Comp_Cons_NCS3E2 <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1  )
+glmer_examine(Comp_Cons_NCS3E2,display=TRUE)
+
+
+
+#Plot residuals versus fitted
+#Plot residuals versus fitted
+ stargazer::stargazer(Comp_Cons_NCS6E,Comp_Cons_NCS5D,Comp_Cons_NCS4D,Comp_Cons_NCS3B,Comp_Cons_NCS3C2,Comp_Cons_NCS3D,Comp_Cons_NCS3E2,
+                       
+                       type="text",digits=2)
+
+
+summary_regression_compare(Comp_Cons_NCS3D,Comp_Cons_NCS3E2)
+summary_regression_compare(Comp_Cons_NCS6E,Comp_Cons_NCS3E2)
+
+
+```
+The expectation is upheld. Avereage Salary 3 was removed from the model for VIF reasons and because it is less precise than average salary 3.
+
+
+### Level 2
+#### Model NCS2A: cl_def2_HHI
+```{r ModelNCS2A_Comp}
+#Frequency Plot for unlogged ceiling
+summary_continuous_plot(metric="comp",smp,"l_def2_HHI_lag1")
+
+
+#Model
+Comp_Cons_NCS2A <- glm (data=smp,
+                 log(Offr) ~cl_def2_HHI_lag1)
+display(Comp_Cons_NCS2A)
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(Comp_Cons_NCS6B,Comp_Cons_NCS5A,Comp_Cons_NCS4A,Comp_Cons_NCS3A,Comp_Cons_NCS2A,type="text",
+                       digits=2)
+
+
+summary_regression_compare(Comp_Cons_NCS6B,Comp_Cons_NCS2A)
+
+
+```
+
+Expectations not met. Level 2 HHI seems to slightly out perform level 6, but underperform level 3.
+
+#### Model NCS2B: Defense to Overall ratio
+The higher the ratio of defense obligations to reciepts in the overall economy, the DoD holds a monosopy over a sector. Given the challenges of monosopy, the a higher ratio estimates a greater  risk of ceiling breaches.
+```{r ModelNCS2log(Offr)}
+#Frequency Plot for unlogged ceiling
+
+
+
+
+summary_continuous_plot(metric="comp",smp,"capped_def2_ratio_lag1")
+summary_continuous_plot(metric="comp",smp,"l_def2_ratio_lag1")
+
+#Model
+Comp_Cons_NCS2B <- glm (data=smp,
+                 log(Offr) ~cl_def2_HHI_lag1+cl_def2_ratio_lag1
+                 )
+glmer_examine(Comp_Cons_NCS2B)
+
+
+#Plot residuals versus fitted
+#Plot residuals versus fitted
+  stargazer::stargazer(Comp_Cons_NCS6C,Comp_Cons_NCS5B,Comp_Cons_NCS4B,Comp_Cons_NCS3B,Comp_Cons_NCS2A,Comp_Cons_NCS2B,
+                       type="text",
+                       digits=2)
+
+
+summary_regression_compare(Comp_Cons_NCS2A,Comp_Cons_NCS2B)
+summary_regression_compare(Comp_Cons_NCS3B,Comp_Cons_NCS2B)
+
+```
+The results do align with the expectation, but with a minimal magnitude
+
+
+
+
+#### Model NCS2C: cl_def2_obl_lag1
+Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
+Expectations are  unchanged.
+```{r ModelNCS2C_Comp}
+
+
+#Model
+Comp_Cons_NCS2C <- glm (data=smp,
+                 log(Offr) ~cl_def2_HHI_lag1+cl_def2_ratio_lag1+cl_def2_obl_lag1)
+glmer_examine(Comp_Cons_NCS2C,display=TRUE)
+
+Comp_Cons_NCS2C2 <- glm (data=smp,
+                 log(Offr) ~cl_def2_HHI_lag1+cl_def2_obl_lag1)
+glmer_examine(Comp_Cons_NCS2C,display=TRUE)
+
+
+
+
+#Plot residuals versus fitted
+stargazer::stargazer(Comp_Cons_NCS6D,Comp_Cons_NCS5C,Comp_Cons_NCS4C,
+                       Comp_Cons_NCS3B,Comp_Cons_NCS3C2,Comp_Cons_NCS2B,Comp_Cons_NCS2C2,type="text",
+                       digits=2)
+
+
+
+  #Compare to prior at same level
+summary_regression_compare(Comp_Cons_NCS2B,Comp_Cons_NCS2C2)
+#Compare to prior at lower level
+summary_regression_compare(Comp_Cons_NCS6D,Comp_Cons_NCS2C2)
+
+
+```
+Size seems to add less to the model at level 2 than level 6. That said it still has greater magnitude and lower AIC than the model with ratio, so keeping this one.
+
+
+#### Model NCS2D: Average Salary
+Average salary can be an proxy for unobserved skill requirements. We expect that a greater skill requirement will estimate a greater risk of ceiling breaches.
+```{r ModelNCS2D_Comp}
+#Frequency Plot for unlogged ceiling
+
+
+summary_continuous_plot(metric="comp",smp,"US2_avg_sal_lag1")
+summary_continuous_plot(metric="comp",smp,"l_US2_avg_sal_lag1")
+
+summary_continuous_plot(metric="comp",smp,"US5_avg_sal_lag1")
+summary_continuous_plot(metric="comp",smp,"US4_avg_sal_lag1")
+summary_continuous_plot(metric="comp",smp,"US2_avg_sal_lag1")
+summary_continuous_plot(metric="comp",smp,"US2_avg_sal_lag1")
+
+#Model
+
+Comp_Cons_NCS2D <- glm (data=smp,
+                 log(Offr) ~cl_def2_HHI_lag1+cl_def2_obl_lag1+
+                  cl_US2_avg_sal_lag1 )
+glmer_examine(Comp_Cons_NCS2D)
+
+
+
+
+
+
+#Plot residuals versus fitted
+ stargazer::stargazer(Comp_Cons_NCS6E,Comp_Cons_NCS5D,Comp_Cons_NCS4D,Comp_Cons_NCS3D,
+                      Comp_Cons_NCS2B,Comp_Cons_NCS2C2,Comp_Cons_NCS2D,
+                       
+                       type="text",digits=2)
+
+
+
+summary_regression_compare(Comp_Cons_NCS2C2,Comp_Cons_NCS2D)
+summary_regression_compare(Comp_Cons_NCS6E,Comp_Cons_NCS2D)
+summary_regression_compare(Comp_Cons_NCS3D,Comp_Cons_NCS2D)
+
+
+```
+Contrary to expectation but significant.
+
+#### Model NCS2E: NAICS 6 and NAICS 2
+Consolidation at lessa nd more granular levels may have different effects. Efficiencies are often used to describe sectors, like utilities, with high barriers to entry. Many of these aspects seem like they would already be captured at less granular NAICS levels, e.g. power plants, rather than more specific NAICS levels, like solar vs. coal. As a result, consolidation for more granular NAICS codes should estimate higher rates of ceiling breaches compared to less granular NAICS code.
+
+We'll start by adding in everything from both models and seeing what violates VIF.
+```{r ModelNCS2E_Comp}
+#Frequency Plot for unlogged ceiling
+
+
+#Model
+Comp_Cons_NCS2E <- glm (data=smp,
+                 log(Offr) ~cl_def2_HHI_lag1+cl_def2_obl_lag1+
+                  cl_US2_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1  )
+glmer_examine(Comp_Cons_NCS2E)
+
+#Average salary 6 has the highest VIF though but both average salaries are over 2.0 and 2 is more contrary to expectations and less deatiled. Taking it out.
+Comp_Cons_NCS2E2 <- glm (data=smp,
+                 log(Offr) ~cl_def2_HHI_lag1+cl_def2_obl_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1  )
+glmer_examine(Comp_Cons_NCS2E2)
+
+
+#Plot residuals versus fitted
+ stargazer::stargazer(Comp_Cons_NCS3E2,Comp_Cons_NCS2D,Comp_Cons_NCS2E2,
+                       type="text",digits=2)
+
+
+summary_regression_compare(Comp_Cons_NCS3E2,Comp_Cons_NCS2E2)
+summary_regression_compare(Comp_Cons_NCS2D,Comp_Cons_NCS2E2)
+summary_regression_compare(Comp_Cons_NCS2D,Comp_Cons_NCS2E2)
+
+
+
+```
+The expectations is upheld. AIC is  lower for the level3/level 6 version, so sticking with that.
+
+
+##Scope Variables
+###Model 02A: Cost Ceiling
+Contract size is one proxy for contract complexity, which raises barriers to entry and reduces the number of qualified vendors. Thus contract size is expected to estimate a smaller number of offers.
+
+```{r Model02A_Comp}
+#Frequency Plot for unlogged ceiling
+summary_continuous_plot(metric="comp",smp,"UnmodifiedContractBaseAndAllOptionsValue",
+               bins=1000)
+summary_continuous_plot(subset(smp,UnmodifiedContractBaseAndAllOptionsValue<100000000),
+               "UnmodifiedContractBaseAndAllOptionsValue",
+               metric="comp")
+
+#Frequency Plot for logged ceiling
+summary_continuous_plot(metric="comp",smp,"l_Ceil")
+
+
+#Model
+Comp_Cons_02A <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + cl_Ceil )
+glmer_examine(Comp_Cons_02A,display=TRUE)
+
+#Plot residuals versus fitted
+  stargazer::stargazer(Comp_Cons_NCS3E2, Comp_Cons_02A,type="text",
+                       digits=2)
+
+
+summary_regression_compare(Comp_Cons_NCS3E2,Comp_Cons_02A)
+
+
+```
+
+Contract ceiling has a significant relationship in the expected direction.
+
+
+
+
+
+
+###Model 02B: Maximum Duration
+The study team did not have strong apriori expectation on the effect on contract duration. Past research has found that longer contracts offer stability and are often more appealing to vendors but may also indicate increased complexity. Examining the descriptive stats, the second logic seems to win out. We expect that initial duration contracts will have fewer offers.
+
+```{r Model02B_Comp}
+#Frequency Plot for max duration
+summary_continuous_plot(metric="comp",smp,"UnmodifiedDays",
+               bins=1000)
+
+#Frequency Plot for logged max duration
+summary_continuous_plot(metric="comp",smp,"l_Days")
+
+
+
+#Model
+Comp_Cons_02B <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days )
+glmer_examine(Comp_Cons_02B,display=TRUE)
+
+
+  stargazer::stargazer(Comp_Cons_02A,Comp_Cons_02B,type="text",
+                       digits=2)
+
+summary_regression_compare(Comp_Cons_02A,Comp_Cons_02B)
+
+```
+The descriptive stat based expectation was upheld.
+
+
+
+
+##Contract Vehicle
+### Model 03A: Contract Vehicles
+Our dataset includes both stand alone contract awards and task orders that are under larger indefinite delivery vehilces (IDVs). We do not have clear expectations on single-award IDCs or BPA/BOA. The baseline form of definitive contracts are commonly used in industry and do not have an intrinsic requirement to compete to compete. Multi-award IDCs and FSS/GWACs do have such a requirements, but also have a structure intended to insure competition, so they may estimate a lower rate of offers than definitive contracts but a higher rate than other forms.
+
+
+```{r Model03A_Comp}
+#Frequency Plot
+summary_discrete_plot(metric="comp",smp,"Veh")
+
+
+
+
+
+#Model
+Comp_Cons_03A <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh)
+glmer_examine(Comp_Cons_03A,display=TRUE)
+
+
+#Plot the fitted values vs actual results
+stargazer::stargazer(Comp_Cons_02B,Comp_Cons_03A,type="text",
+                       digits=2)
+
+
+summary_regression_compare(Comp_Cons_02B,Comp_Cons_03A)
+
+```
+
+The greater numbmer of offers for definitive contracts is confirmed. Somewhat surprisingly, single-award IDCs receive a high number of offers, though this reflects competition for tha overall vehicle and not each specific task order like for Multiple Award IDCs.
+
+
+
+
+##Type of Contract
+
+The next step adds a measure for whether the contract was cost-based or fixed-price. Prior CSIS research has found that fixed-price contracts do face a higher risk of termination across the board.
+
+
+
+###Model 04A: Fixed-Price Numerical
+While fixed-price contracts can be higher risk, they are also standard in industry and do not require cost accounting standards. Closer to fixed-price contracts are expected to estimate  higher number of offers.
+```{r Model04A}
+
+#Frequency Plot
+summary_discrete_plot(metric="comp",smp,"FxCb")
+
+
+#Create the model
+Comp_Cons_04A <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   n_Fixed)
+glmer_examine(Comp_Cons_04A,display=TRUE)
+
+
+
+stargazer::stargazer(Comp_Cons_03A,Comp_Cons_04A,type="text",
+                       digits=2)
+summary_regression_compare(Comp_Cons_03A,Comp_Cons_04A)
+
+```
+
+And fixed price contracts do indeed have a significant coefficient that correlates with a greater number of offer.
+
+
+###Model 04B: Fixed-Price Bins
+This appraoch treats combination as a seperate category of contracts rather than a mid point between fixed-price and cost base. The expectation is that it will still fall in the middle between the two when estimating the number of offers, since fixed-price is the base, this means that both it and cost-based would have a negative coefficient. 
+```{r Model04B}
+
+#Frequency Plot
+summary_discrete_plot(metric="comp",smp,"FxCb")
+
+
+#Create the model
+
+Comp_Cons_04B <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   FxCb)
+glmer_examine(Comp_Cons_04B,display=TRUE)
+
+stargazer::stargazer(Comp_Cons_04A,Comp_Cons_04B,
+                     type="text",
+                       digits=2)
+summary_regression_compare(Comp_Cons_04A,Comp_Cons_04B)
+
+```
+
+Combo/Other contracts do not end up in the middle and are instead not significant, otherwise the results are as expcted.
+
+
+###Model 04C: Pricing Detail
+
+
+The more commercial like models, firm-fixed price and time & materials/labor hours/ fixed price;level of effort have fewer requirements for cost accounting and other standards not common in the commercial sector. The baseline condition of firm fixed price wwill estimate greater number of offers aswill T&M/LH/FP:LoE. 
+```{r Model04C}
+
+#Frequency Plot
+summary_discrete_plot(metric="comp",smp,"FxCb")
+summary_discrete_plot(metric="comp",smp,"Fee")
+summary_discrete_plot(metric="comp",smp,"FxCb","Fee")
+
+
+
+summary_discrete_plot(metric="comp",smp,"Pricing",rotate=FALSE)
+
+#Create the model
+Comp_Cons_04C <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   Pricing)
+glmer_examine(Comp_Cons_04C,display=TRUE)
+
+
+stargazer::stargazer(Comp_Cons_04A,Comp_Cons_04B,Comp_Cons_04C,
+                     type="text",
+                       digits=2)
+summary_regression_compare(Comp_Cons_04A,Comp_Cons_04B)
+
+```
+Labor Hours/T&M/FFP:LoE proved associated with even more offers than FFP, but Fixed-PRice other is the clear winner. Oddly including this breakout resulted in larger ceilings now predicting more offers.
+
+###Model 04D: Incentive Fees
+
+In the performance of the defense acquisition system report, the benefits found were reduced cost overruns. Their cost sharing might  be more popular than other forms of cost-based contracts, but the cost-accounting is likely to be a barrier to entry and  the  coefficient for other fixed price is  already quite high. Thus the expectation is that incentive fees will estimate a slightly lower rate of offers than firm fixed price contracts.
+
+```{r Model04D_Comp}
+
+#Frequency Plot
+summary_discrete_plot(metric="comp",smp,"Fee")
+summary_discrete_plot(metric="comp",smp,"PricingFee")
+
+
+summary(factor(smp$PricingFee))
+
+#Create the model
+Comp_Cons_04D <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee)
+glmer_examine(Comp_Cons_04D)
+
+
+stargazer::stargazer(Comp_Cons_04A,Comp_Cons_04B,Comp_Cons_04C,Comp_Cons_04D,
+                     type="text",
+                       digits=2)
+summary_regression_compare(Comp_Cons_04C,Comp_Cons_04D)
+
+```
+
+Oddly the number of offers for incentive fee contracts is notably lower than cost-based contracts.
+
+###Model 04E: Undefinitized Contract Awards
+Undefinitized Contract Awards allow for quick action in situations where there is not time or information to establish all of a contracts properties at the time of signing. These circumstances are often not conducive to competing or receiving multiple offers and thus UCA is expected to estimate fewer offers.
+
+
+```{r Model04E_Comp}
+
+#Frequency Plot
+summary_discrete_plot(metric="comp",smp,"UCA")
+
+
+
+#Create the model
+Comp_Cons_04E <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+UCA)
+
+glmer_examine(Comp_Cons_04E)
+
+
+stargazer::stargazer(Comp_Cons_04D,Comp_Cons_04E,
+                     type="text",
+                       digits=2)
+summary_regression_compare(Comp_Cons_04D,Comp_Cons_04E)
+
+
+```
+Expectations hold.
+
+
+##Place of Performance
+###Model 05A: Any International
+
+International contracts may often offer fewer known options to DoD customer and a more challenging operating environment. And thus international place of performance contracts are expected to estimate fewer offers. Interestingly, in the descriptive stats, they are more competed but still receive fewer offers, which is not inconsistent with this expectation.
+```{r Model05A_Comp}
+
+#Frequency Plot
+summary_discrete_plot(metric="comp",smp,"Intl")
+
+
+
+#Create the model
+Comp_Cons_05A <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl)
+
+glmer_examine(Comp_Cons_05A)
+
+
+stargazer::stargazer(Comp_Cons_04E,Comp_Cons_05A,
+                     type="text",
+                       digits=2)
+summary_regression_compare(Comp_Cons_04E,Comp_Cons_05A)
+
+
+
+```
+
+International performance of contract had a positive  coefficent as expected.
+
+##Who
+Adding agency is a computationally light way of considering the eventual inclusion of agency and office.
+
+
+###Model 06A: Agency
+This inclusion is not intended to study agenc directly, but to see a blunt version of effect inclusion on other variables.
+```{r Model06A}
+    #Frequency Plot
+  summary_discrete_plot(def,"Agency",rotate_text=TRUE)
+
+
+#Create the model
+Comp_Cons_06A <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl+
+                   Agency)
+
+glmer_examine(Comp_Cons_06A)
+
+
+  stargazer::stargazer(Comp_Cons_05A,Comp_Cons_06A,type="text",
+                       digits=2)
+  
+summary_regression_compare(Comp_Cons_05A,Comp_Cons_06A)
+
+rm(Comp_Cons_06A,Comp_Cons_06A2)
+```
+
+
+
+##What
+### Model 07A: NAICS2
+```{r Model07A}
+corrdisp<-Hmisc::rcorr(
+  as.matrix(cbind(subset(crisis_smp, select=c(b_UCA,c_OffCri,cl_Ceil,
+                                              cl_Days,n_Fixed,b_Intl)),
+                  dummies::dummy(crisis_smp$Crisis),
+                  dummies::dummy(crisis_smp$NoComp),
+                  dummies::dummy(crisis_smp$Reach),
+                  dummies::dummy(crisis_smp$Veh),
+                  dummies::dummy(crisis_smp$Is.Defense),
+                  dummies::dummy(crisis_smp$Simple))))
+corrdisp[[1]]
+
+
+
+#Sumamry plot
+summary_discrete_plot(metric="comp",smp,"NAICS2",rotate_text=TRUE)
+
+
+
+
+#Create the model
+Comp_Cons_07A <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl+
+                   Agency+
+                   NAICS2)
+
+glmer_examine(Comp_Cons_07A)
+
+
+
+  stargazer::stargazer(Comp_Cons_06A,Comp_Cons_07A,type="text",
+                       digits=2)
+  
+summary_regression_compare(Comp_Cons_06A,Comp_Cons_07A)
+
+
+```
+
+
+Unfortunately introduction of the NAICS variables significantly increases the magnitude of outlier residuals.
+
+# Interactions
+## Consolidation Level 6
+### Model 10A: Cons:UCA
+Starting with Consolidation and UCA. Time pressure is often in place for UCAs so in consolidated sectors, offers may be particularly hard to come by. Thus the interaction of consolidation and UCA estimates fewer offers.
+```{r Model10A}
+#Sumamry plot
+summary_continuous_plot(metric="comp",smp,"cl_def6_HHI_lag1","UCA")
+
+corrdisp<-Hmisc::rcorr(
+  as.matrix(cbind(subset(smp, select=c(cl_def3_HHI_lag1,
+                                       cl_def3_ratio_lag1,
+                                       cl_def6_HHI_lag1,
+                                       cl_def6_obl_lag1,
+                                       cl_def6_ratio_lag1,
+                                       cl_US6_avg_sal_lag1,
+                                       cl_Ceil,
+                                              cl_Days,b_UCA,
+                                       b_Intl)))))#,
+                  # dummies::dummy(crisis_smp$Crisis),
+                  # dummies::dummy(crisis_smp$NoComp),
+                  # dummies::dummy(crisis_smp$Reach),
+                  # dummies::dummy(crisis_smp$Veh),
+                  # dummies::dummy(crisis_smp$Is.Defense),
+                  # dummies::dummy(crisis_smp$Simple))))
+
+
+#Create the model
+Comp_Cons_10A <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl+
+                   
+                   b_UCA:cl_def6_HHI_lag1 +
+                   
+                   Agency+
+                   NAICS2)
+
+glmer_examine(Comp_Cons_10A)
+
+  stargazer::stargazer(Comp_Cons_07A,Comp_Cons_10A,type="text",
+                       digits=2)
+  
+  
+
+summary_regression_compare(Comp_Cons_07A,Comp_Cons_10A)
+
+
+```
+The interaction is significant and UCA / high levels of consolidation estimates fewer offers.
+
+
+### Model 10B: Cons:Veh
+In consolidated markets, definitive contracts, single-award IDCs, and multi award IDCs may all prove less likely to receive multiple offers. The descriptive statistics seem to show more that definitive contracts may get fewer offers with size, but for IDCs, the opposite trend may occur, perhaps because they have already been gated to only viable competitors.
+
+```{r Model10B}
+
+
+#Sumamry plot
+summary_continuous_plot(metric="comp",smp,"cl_def6_HHI_lag1","Veh")
+summary_continuous_plot(metric="comp",smp,"cl_def3_HHI_lag1","Veh")
+
+#Create the model
+Comp_Cons_10B <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl+
+                   
+                   b_UCA:cl_def6_HHI_lag1 +
+                   Veh:cl_def6_HHI_lag1 +
+                   Agency+
+                   NAICS2)
+glmer_examine(Comp_Cons_10B)
+
+
+
+
+
+  stargazer::stargazer(Comp_Cons_10A,Comp_Cons_10B,type="text",
+                       digits=2)
+  
+  
+
+summary_regression_compare(Comp_Cons_10A,Comp_Cons_10B)
+
+
+```
+Theory beat out descriptive stats. Single-Award IDCs had significantly fewer offers in consolidated sectors. Multi-award slightly fewer, and FSS-GWAC proved most effective at getting offers in that setting. HHi6 does approach the VIF threshold, so we may not be able to keep this one.
+
+
+### Model 10C: Interaction Defense to Overall ratio
+When there is a larger market available, consolidation may matter less, for better or worse, due to the existance of a larger market. Thus, consolidation and a high defense to overall ratio is expected to negatively estimate number of offers.
+
+```{r Model10C_Comp}
+#Frequency Plot for unlogged ceiling
+
+
+#Model
+#Create the model
+Comp_Cons_10C <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl+
+                   
+                   b_UCA:cl_def6_HHI_lag1 +
+                   Veh:cl_def6_HHI_lag1+
+                   cl_def6_HHI_lag1:cl_def6_ratio_lag1 +
+                   Agency+
+                   NAICS2)
+
+glmer_examine(Comp_Cons_10C)
+
+  stargazer::stargazer(Comp_Cons_10A,Comp_Cons_10B,Comp_Cons_10C,type="text",
+                       digits=2)
+  
+  
+
+summary_regression_compare(Comp_Cons_10B,Comp_Cons_10C)
+
+
+```
+Expectations are upheld.
+
+
+### Model 10D: Interaction of HHI and size
+Whether consolidation has positive or negative effets, these should be stronger for larger sectors, as size tends to dilute HHI. If a sector has substantial dollars and is still consolidated, that should mean that the HHI is given more weight. Thus the interactive of HHI and size should estimate fewer offers.
+```{r ModelNCS6F_Comp}
+#Frequency Plot for unlogged ceiling
+
+
+#Model
+Comp_Cons_10D <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl+
+                   
+                   b_UCA:cl_def6_HHI_lag1 +
+                   Veh:cl_def6_HHI_lag1 +
+                   cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   Agency+
+                   NAICS2)
+
+
+glmer_examine(Comp_Cons_10D)
+#First checking if removal of UCA resolves the situation, as that reduces th AIC by the least.
+
+Comp_Cons_10D2 <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl+
+                   
+                   # b_UCA:cl_def6_HHI_lag1 +
+                   Veh:cl_def6_HHI_lag1 +
+                   cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   Agency+
+                   NAICS2)
+glmer_examine(Comp_Cons_10D2)
+
+# Removing UCA makes almost no difference to the VIF. It's probably Vehicle that has to go  sadly.
+
+Comp_Cons_10D3 <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl+
+                   
+                   b_UCA:cl_def6_HHI_lag1 +
+                   # Veh:cl_def6_HHI_lag1 +
+                   cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   Agency+
+                   NAICS2)
+glmer_examine(Comp_Cons_10D3)
+
+stargazer::stargazer(Comp_Cons_07A,Comp_Cons_10A,Comp_Cons_10B,Comp_Cons_10C,Comp_Cons_10D3,type="text",
+                       digits=2)
+  
+  
+
+summary_regression_compare(Comp_Cons_10C,Comp_Cons_10D3)
+
+```
+Expectations were upheld, but Veh:Consolidation had to be removed. Other alternatives may be available, but adding the interaction took the VIF to 1.94 in its own right, so keeping it was always a challenge.
+
+## Consolidation Level 3
+
+
+#### Model 11A: Defense to Overall ratio
+Applying the same logic as in model 10C, a greater ratio of def to civilian combined with consolidation is expected to estimate a lower number of offers.
+
+```{r Model11A_Comp}
+#Frequency Plot for unlogged ceiling
+
+
+#Model
+
+Comp_Cons_11A <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl+
+                   
+                   # b_UCA:cl_def6_HHI_lag1 +
+                   Veh:cl_def6_HHI_lag1 +
+                   cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   cl_def3_HHI_lag1:cl_def3_ratio_lag1+
+                   Agency+
+                   NAICS2)
+glmer_examine(Comp_Cons_11A)
+
+Comp_Cons_11A2 <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl+
+                   
+                   # b_UCA:cl_def6_HHI_lag1 +
+                   Veh:cl_def6_HHI_lag1 +
+                   # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   cl_def3_HHI_lag1:cl_def3_ratio_lag1+
+                   Agency+
+                   NAICS2)
+glmer_examine(Comp_Cons_11A2)
+
+
+
+```
+Both exceed VIF of 2.
+
+
+## Vehicle
+
+###Model 12A: Vehicle and Any International
+Multi-award IDCs are used in part in cases like crisis situations where a pre-approved group of contractors could make a big difference. Multi-award international task orders are expected to have  more offers relative to definitive.
+
+
+```{r Model12A}
+
+#Frequency Plot
+summary_discrete_plot(metric="comp",smp,"Intl","Veh")
+
+
+
+#Create the model
+Comp_Cons_12A <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl+
+                   b_UCA:cl_def6_HHI_lag1 +
+                   cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   b_Intl:Veh+
+                   Agency+
+                   NAICS2)
+glmer_examine(Comp_Cons_12A)
+
+stargazer::stargazer(Comp_Cons_10D3,Comp_Cons_12A,
+                     type="text",
+                       digits=2)
+summary_regression_compare(Comp_Cons_10D3,Comp_Cons_12A)
+
+```
+Expectations were upheld for multi-award, and indeed all forms of indefinite delivery vehicles have higher offers for international. This also increased the significe of the base indefinitive delivery vehicles.
+
+
+## Pricing
+###Model 13A: Pricing and Average Wage
+Firm Fixed Price is less  appropriate as an approach when there is greater uncertainty and thus should estimate fewer offers. A phenomenon likely to extend to time and materials / labor hours contracts. By comparison, fixed price incentive and cost based should estimate more offers.
+
+```{r Model13A_Wage}
+
+
+#Frequency Plot
+summary_continuous_plot(metric="comp",smp,"cl_US6_avg_sal_lag1","PricingFee")
+
+
+#Create the model
+Comp_Cons_13A <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl+
+                   b_UCA:cl_def6_HHI_lag1 +
+                   cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   b_Intl:Veh+
+                   Agency+
+                   cl_US6_avg_sal_lag1:PricingFee+
+                   NAICS2)
+glmer_examine(Comp_Cons_13A)
+
+
+stargazer::stargazer(Comp_Cons_12A,Comp_Cons_13A,
+                     type="text",
+                       digits=2)
+summary_regression_compare(Comp_Cons_12A,Comp_Cons_13A)
+
+
+
+```
+
+
+Results old for fixed-price incentive and t&mlh/fploe, but not for cost-based. The reduction in AIC is considerable, over 30k.
+
+
+###Model 13B: Fixed-Price and Ceiling
+Using size as  an alternate measure for complexity, firm fixed price and T&M/LH/FP:LoE contracts may be at greater risk for large contracts and thus attract fewer offers. Conversely, Cost-based and fixed-price level of effort may receive more.
+```{r Model13B_Comp}
+
+#Frequency Plot
+summary_continuous_plot(metric="comp",smp,"l_Ceil","PricingFee")
+
+#Create the model
+Comp_Cons_13B <- glm (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl+
+                   b_UCA:cl_def6_HHI_lag1 +
+                   cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   b_Intl:Veh+
+                   cl_Ceil:PricingFee+
+                   cl_US6_avg_sal_lag1:PricingFee+
+                   Agency+
+                   NAICS2)
+glmer_examine(Comp_Cons_13B)
+
+
+
+
+stargazer::stargazer(Comp_Cons_12A,Comp_Cons_13A,Comp_Cons_13B,
+                     type="text",
+                       digits=2)
+summary_regression_compare(Comp_Cons_13C,Comp_Cons_13B)
+
+```
+While the AIC reduction is considerable, the results are entirely contrary to expectations, leaving it out.
+
+###Model 13C: UCA and Duration
+Longer direction UCAs may reflect an environment in which fewer options are available. Thus UCAs with long directions are expected to estimate fewer offers.
+
+
+```{r Model13C_Term}
+
+
+#Frequency Plot
+summary_continuous_plot(metric="comp",smp,"l_Days","UCA")
+if(!exists("Comp_Cons_15C")){
+  Comp_Cons_15C <- lmer (data=smp,
+                         log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                         # cl_US3_avg_sal_lag1+
+                         cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                         cl_US6_avg_sal_lag1 + 
+                         cl_Ceil+cl_Days+
+                         Veh+
+                         PricingFee+UCA+
+                         b_Intl+
+                         b_UCA:cl_def6_HHI_lag1 +
+                         # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                         # cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                         b_Intl:Veh+
+                         # cl_Ceil:PricingFee+
+                         cl_US6_avg_sal_lag1:PricingFee+
+                         # b_UCA:cl_Days+
+                         # b_UCA:cl_Ceil+
+                         (1 | NAICS3/NAICS) + (1 | Agency/Office) + (1 | StartCY),
+                         verbose=1)
+  
+  
+  # save(Comp_Cons_15C,file="Output//Comp_Cons_15C.rdata")
+  
+   Comp_Cons_15C_1m <- lmer (data=smp1m,
+                         log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                         # cl_US3_avg_sal_lag1+
+                         cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                         cl_US6_avg_sal_lag1 + 
+                         cl_Ceil+cl_Days+
+                         Veh+
+                         PricingFee+UCA+
+                         b_Intl+
+                         b_UCA:cl_def6_HHI_lag1 +
+                         # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                         # cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                         b_Intl:Veh+
+                         # cl_Ceil:PricingFee+
+                         cl_US6_avg_sal_lag1:PricingFee+
+                         # b_UCA:cl_Days+
+                         # b_UCA:cl_Ceil+
+                         (1 | NAICS3/NAICS) + (1 | Agency/Office) + (1 | StartCY),
+                         verbose=1)
+   
+   save(Comp_Cons_15C,Comp_Cons_15C_1m,file="Output//Comp_Cons_15C.rdata")
+}
+glmer_examine(Comp_Cons_13C)
+stargazer::stargazer(Comp_Cons_13A,Comp_Cons_13B,Comp_Cons_13C,
+                     type="text",
+                       digits=2)
+stargazer::stargazer(Comp_Cons_15C,Comp_Cons_15C_1m,type="text",
+                       digits=2)
+
+
+summary_regression_compare(Comp_Cons_13B,Comp_Cons_13C)
+
+
+```
+The results are in line with expectation, but not significant and barely add anything to the model. Leaving it in, but can drop it if any challenges are encountered.
+
+###Model 13D: UCA and Ceiling
+
+Here the possible risk is similar to days, that larger, and thus possibly more complex projects, are at greater risk with UCA and that UCA and high ceiling estimate a higher chance of breaches.
+```{r Model13D_Term}
+
+
+#Frequency Plot
+summary_continuous_plot(metric="comp",smp,"l_Ceil","UCA")
+
+
+     Comp_Cons_15D <- lmer (data=smp,
+                         log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                         # cl_US3_avg_sal_lag1+
+                         cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                         cl_US6_avg_sal_lag1 + 
+                         cl_Ceil+cl_Days+
+                         Veh+
+                         PricingFee+UCA+
+                         b_Intl+
+                         b_UCA:cl_def6_HHI_lag1 +
+                         # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                         # cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                         b_Intl:Veh+
+                         # cl_Ceil:PricingFee+
+                         # cl_US6_avg_sal_lag1:PricingFee+
+                         # b_UCA:cl_Days+
+                         # b_UCA:cl_Ceil+
+                         (1 | NAICS3/NAICS) + (1 | Agency/Office) + (1 | StartCY),
+                         verbose=1)
+  
+  
+  # save(Comp_Cons_15C,file="Output//Comp_Cons_15C.rdata")
+  
+   Comp_Cons_15D_1m <- lmer (data=smp1m,
+                         log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                         # cl_US3_avg_sal_lag1+
+                         cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                         cl_US6_avg_sal_lag1 + 
+                         cl_Ceil+cl_Days+
+                         Veh+
+                         PricingFee+UCA+
+                         b_Intl+
+                         b_UCA:cl_def6_HHI_lag1 +
+                         # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                         # cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                         b_Intl:Veh+
+                         # cl_Ceil:PricingFee+
+                         # cl_US6_avg_sal_lag1:PricingFee+
+                         # b_UCA:cl_Days+
+                         # b_UCA:cl_Ceil+
+                         (1 | NAICS3/NAICS) + (1 | Agency/Office) + (1 | StartCY),
+                         verbose=1)
+glmer_examine(Comp_Cons_13D)
+
+
+stargazer::stargazer(Comp_Cons_13A,Comp_Cons_13B,Comp_Cons_13C,Comp_Cons_13D,Comp_Cons_13D_1m,
+                     type="text",
+                       digits=2)
+summary_regression_compare(Comp_Cons_13C,Comp_Cons_13D)
+summary_regression_compare(Comp_Cons_13C_1m,Comp_Cons_13D_1m)
+
+
+
+
+```
+Ceiling is contrary to expectation and has a minimal coefficient. Leaving  it out.
+
+
+
+
+
+#Multi-Level Model
+##   NAICS3/6 & Agency/Office
+
+###Model 15A: Agency/Office+NAICS6/NAICS3 
+```{r Model15A}
+
+Comp_Cons_15A <- lmer (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl+
+                   b_UCA:cl_def6_HHI_lag1 +
+                   cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   b_Intl:Veh+
+                   # cl_Ceil:PricingFee+
+                   cl_US6_avg_sal_lag1:PricingFee+
+                   b_UCA:cl_Days+
+                   # b_UCA:cl_Ceil+
+                   (1 | NAICS3/NAICS) + (1 | Agency/Office),
+                        verbose=1)
+
+glmer_examine(Comp_Cons_15A,display=TRUE)
+
+save(Comp_Cons_15A,file="Output//Comp_Cons_15A.rdata")
+
+stargazer::stargazer( Comp_Cons_15A,
+                     type="text",
+                       digits=2)
+
+
+stargazer::stargazer(Comp_Cons_13A,Comp_Cons_13B,Comp_Cons_13C,Comp_Cons_13D,Comp_Cons_15A,
+                     type="text",
+                       digits=2)
+summary_regression_compare(Comp_Cons_13D,Comp_Cons_15A)
+
+
+```
+
+###Model 15B: Agency/Office+NAICS6/NAICS3 trimmed
+
+```{r Model15B}
+
+Comp_Cons_15B <- lmer (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl+
+                   b_UCA:cl_def6_HHI_lag1 +
+                   # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   # cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   b_Intl:Veh+
+                   # cl_Ceil:PricingFee+
+                   cl_US6_avg_sal_lag1:PricingFee+
+                   # b_UCA:cl_Days+
+                   # b_UCA:cl_Ceil+
+                   (1 | NAICS3/NAICS) + (1 | Agency/Office),
+                        verbose=1)
+
+glmer_examine(Comp_Cons_15B,display=TRUE)
+
+save(Comp_Cons_15B,file="Output//Comp_Cons_15B.rdata")
+
+stargazer::stargazer( Comp_Cons_15A,Comp_Cons_15B,
+                     type="text",
+                       digits=2)
+
+
+stargazer::stargazer(Comp_Cons_13A,Comp_Cons_13B,Comp_Cons_13C,Comp_Cons_13D,Comp_Cons_15A,
+                     type="text",
+                       digits=2)
+summary_regression_compare(Comp_Cons_13D,Comp_Cons_15A)
+
+
+```
+
+###Model 15C: Adding Start Calendar Year
+```{r Model15C}
+
+Comp_Cons_15C <- lmer (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl+
+                   b_UCA:cl_def6_HHI_lag1 +
+                   # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   # cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   b_Intl:Veh+
+                   # cl_Ceil:PricingFee+
+                   cl_US6_avg_sal_lag1:PricingFee+
+                   # b_UCA:cl_Days+
+                   # b_UCA:cl_Ceil+
+                   (1 | NAICS3/NAICS) + (1 | Agency/Office)+
+                   (1 | StartCY),
+                        verbose=1)
+
+glmer_examine(Comp_Cons_15C,display=TRUE)
+get_icc(Comp_Cons_15C)
+save(Comp_Cons_15C,file="Output//Comp_Cons_15C.rdata")
+
+stargazer::stargazer( Comp_Cons_15A,Comp_Cons_15B,Comp_Cons_15C,
+                     type="text",
+                       digits=2)
+
+
+stargazer::stargazer(Comp_Cons_13A,Comp_Cons_13B,Comp_Cons_13C,Comp_Cons_13D,Comp_Cons_15A,
+                     type="text",
+                       digits=2)
+summary_regression_compare(Comp_Cons_13D,Comp_Cons_15A)
+
+
+```
+
+
+###Model 15D: Removing salary:pricing
+We don't have a good explaination for the  result, so we're taking out the interaction, even though it's significant.
+```{r Model15D}
+
+Comp_Cons_15D <- lmer (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl+
+                   b_UCA:cl_def6_HHI_lag1 +
+                   # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   # cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   b_Intl:Veh+
+                   # cl_Ceil:PricingFee+
+                   cl_US6_avg_sal_lag1:PricingFee+
+                   # b_UCA:cl_Days+
+                   # b_UCA:cl_Ceil+
+                   (1 | NAICS3/NAICS) + (1 | Agency/Office)+
+                   (1 | StartCY),
+                        verbose=1)
+
+glmer_examine(Comp_Cons_15D,display=TRUE)
+get_icc(Comp_Cons_15D)
+save(Comp_Cons_15D,file="Output//Comp_Cons_15D.rdata")
+
+stargazer::stargazer( Comp_Cons_15A,Comp_Cons_15B,Comp_Cons_15D,
+                     type="text",
+                       digits=2)
+
+
+stargazer::stargazer(Comp_Cons_13A,Comp_Cons_13B,Comp_Cons_13C,Comp_Cons_13D,Comp_Cons_15A,
+                     type="text",
+                       digits=2)
+summary_regression_compare(Comp_Cons_13D,Comp_Cons_15A)
+
+
+```
+
+While the AIC and BIC scores get worse, the resuls make more sense afterwards, notably detailed industry consolidation no longer predicts more offers. Leaving out pricing:salar.
+
+###Model 15E: Ratio:Ceiling
+Both base variables are significant but with an unexpected sign in the case of ratio. The expectation is that in instances with a high contract ceiling and a high ratio, that larger contracts in a defense intensive sector, the number of offers may go up as vendors attempt to capture winner take all contracts and may not have recourse to commercial markets if they lose.
+
+
+
+
+```{r Model15E}
+
+Comp_Cons_15E <- lmer (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl+
+                   b_UCA:cl_def6_HHI_lag1 +
+                   # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   # cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   b_Intl:Veh+
+                   # cl_Ceil:PricingFee+
+                   # cl_US6_avg_sal_lag1:PricingFee+
+                   # b_UCA:cl_Days+
+                   # b_UCA:cl_Ceil+
+                   cl_def6_ratio_lag1:cl_Ceil+
+                   (1 | NAICS3/NAICS) + (1 | Agency/Office)+
+                   (1 | StartCY),
+                        verbose=1)
+
+glmer_examine(Comp_Cons_15E,display=TRUE)
+get_icc(Comp_Cons_15E)
+save(Comp_Cons_15E,file="Output//Comp_Cons_15E.rdata")
+
+stargazer::stargazer(Comp_Cons_15D,Comp_Cons_15E,
+                     type="text",
+                       digits=2)
+
+
+summary_regression_compare(Comp_Cons_13D,Comp_Cons_15E)
+
+
+```
+Contrary to expectation, leaving it out.
+###Model 15G: Defense Obligations:Vehicle
+Detailed industires with more obligations have a larger industrila base that can compete for indefinite delivery vehicles and thus the interaction is expected to estimate more offers.
+```{r Model15G}
+
+Comp_Cons_15G <- lmer (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl+
+                   b_UCA:cl_def6_HHI_lag1 +
+                   # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   # cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   b_Intl:Veh+
+                   # cl_Ceil:PricingFee+
+                   # cl_US6_avg_sal_lag1:PricingFee+
+                   # b_UCA:cl_Days+
+                   # b_UCA:cl_Ceil+
+                   cl_def6_obl_lag1:Veh+
+                   (1 | NAICS3/NAICS) + (1 | Agency/Office)+
+                   (1 | StartCY),
+                        verbose=1)
+
+glmer_examine(Comp_Cons_15G,display=TRUE)
+get_icc(Comp_Cons_15G)
+save(Comp_Cons_15G,file="Output//Comp_Cons_15G.rdata")
+
+stargazer::stargazer(Comp_Cons_15D,Comp_Cons_15G,
+                     type="text",
+                       digits=2)
+
+
+summary_regression_compare(Comp_Cons_13D,Comp_Cons_15G)
+
+
+```
+
+###Model 15H: Defense Ratio:Pricing
+Detailed industries with a larger proportion in the defense sector may also have a larger pool of companies that use government cost accounting standards, and thus that are able to bid on cost-based or incentive fee contracts. 
+
+```{r Model15H}
+
+Comp_Cons_15H <- lmer (data=smp,
+                 log(Offr) ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl+
+                   b_UCA:cl_def6_HHI_lag1 +
+                   # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   # cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   b_Intl:Veh+
+                   # cl_Ceil:PricingFee+
+                   # cl_US6_avg_sal_lag1:PricingFee+
+                   # b_UCA:cl_Days+
+                   # b_UCA:cl_Ceil+
+                   cl_def6_ratio_lag1:PricingFee+
+                   (1 | NAICS3/NAICS) + (1 | Agency/Office)+
+                   (1 | StartCY),
+                        verbose=1)
+
+glmer_examine(Comp_Cons_15H,display=TRUE)
+get_icc(Comp_Cons_15H)
+save(Comp_Cons_15H,file="Output//Comp_Cons_15H.rdata")
+
+stargazer::stargazer(Comp_Cons_15D,Comp_Cons_15H,
+                     type="text",
+                       digits=2)
+
+
+summary_regression_compare(Comp_Cons_13D,Comp_Cons_15H)
+
+
+```
+The expectation does not hold up, the interaction will not be added.
+
+
+###Model 16A: Agency/Office+NAICS6 trimmed
+This is the NAICS6 only version of the model. It uses 15C as a basis and then strips out the NAICS3 references, aside from being used to organize the NAICS6 level (note the : rather than the /)
+```{r Model16A}
+
+Comp_Cons_16A <- lmer (data=smp,
+                 log(Offr) ~#cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                  # cl_US3_avg_sal_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                  cl_US6_avg_sal_lag1 + 
+                   cl_Ceil+cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl+
+                   b_UCA:cl_def6_HHI_lag1 +
+                   # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                   # cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                   b_Intl:Veh+
+                   # cl_Ceil:PricingFee+
+                   cl_US6_avg_sal_lag1:PricingFee+
+                   # b_UCA:cl_Days+
+                   # b_UCA:cl_Ceil+
+                   (1 | NAICS3:NAICS) + (1 | Agency/Office)+
+                   (1 | StartCY),
+                        verbose=1)
+
+glmer_examine(Comp_Cons_16A,display=TRUE)
+
+save(Comp_Cons_16A,file="Output//Comp_Cons_16A.rdata")
+
+stargazer::stargazer(Comp_Cons_15C, Comp_Cons_16A,
+                     type="text",
+                       digits=2)
+
+
+stargazer::stargazer(Comp_Cons_15A,Comp_Cons_16A,
+                     type="text",
+                       digits=2)
+summary_regression_compare(Comp_Cons_15A,Comp_Cons_16A)
+
+
+```

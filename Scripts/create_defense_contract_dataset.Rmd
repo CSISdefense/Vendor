@@ -1,0 +1,909 @@
+---
+title: "Defense Contract Statistics Model Complete"
+author: "Greg Sanders"
+date: "Monday, March 23, 2015"
+output: html_document
+---
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+#*************************************Required Libraries******************************************
+require(dplyr)
+require(grid)
+require(reshape2)
+require(stringr)
+require(ggplot2)
+library(Hmisc)
+library(readr)
+library(csis360)
+#*************************************Options*****************************************************
+options(error=recover)
+options(warn=1)
+
+#*************************************Lookup Files*****************************************************
+
+Path<-"https://github.com/CSISdefense/R-scripts-and-data/blob/master/"
+# Path<-"K:\\2007-01 PROFESSIONAL SERVICES\\R scripts and data\\"
+# Path<-"~\\FPDS\\R scripts and data\\"
+# Path<-"C:\\Users\\Greg Sanders\\SkyDrive\\Documents\\R Scripts and Data SkyDrive\\"
+source("https://raw.githubusercontent.com/CSISdefense/Crisis-Funding/master/ContractCleanup.r")
+source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/lookups.r")
+source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/helper.r")
+
+```
+
+#Combining Source Files
+##Sample Criteria
+```{r DetailCustomer}
+if(!exists("def_all_detail")) def_all_detail<-NULL
+# debug(input_sample_criteria)
+debug(input_sample_criteria)
+def_all_detail<-input_sample_criteria(def_all_detail,                                file="Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
+                      drop_incomplete=FALSE)
+  
+
+# def_detail<-input_sample_criteria(def_detail,                                file="Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
+#                       drop_incomplete=FALSE)
+  
+load(file="Data\\defense_contract_all_detail.Rdata")
+save(file="Data\\defense_contract_all_detail.Rdata",def_all_detail)
+
+```
+
+
+
+## Top PSC Office NAICS
+```{r TopPSCofficeNAICS}
+debug(read_and_join_experiment)
+def_all_detail<-input_contract_psc_office_naics(def_all_detail,                                file="Contract.SP_ContractSampleCriteriaDetailsCustomer.txt")
+
+#This works!  
+test<-readr::read_delim("Data\\Contract.SP_ContractTopPSCofficeNAICS.txt",delim="\t",
+                        na=c("NA","NULL"),
+                        col_types="icdcdcdcd")
+# c(col_integer(),
+#   col_character(),
+#   col_double(),
+#   col_character(),
+#   col_double(),
+#   col_character(),
+#   col_double(),
+#   col_character(),
+#   col_double()))
+
+
+#This has problems. 
+# #lookup<-readr::read_delim(
+#       input,
+#       col_names=TRUE,
+#       delim=ifelse(substring(lookup_file,nchar(lookup_file)-3)==".csv",",","\t"),
+#       na=c("NA","NULL"),
+#       trim_ws=TRUE,
+#       col_types=col_types
+#     )
+
+def_all_detail<-dplyr::left_join(def_all_detail,test,by="CSIScontractID")
+
+def_all_detail$topContractingOfficeAgencyID<-factor(
+  def_all_detail$topContractingOfficeAgencyID
+)
+def_all_detail$topContractingOfficeID<-factor(
+  def_all_detail$topContractingOfficeID
+)
+def_all_detail$topProductOrServiceCode<-factor(
+  def_all_detail$topProductOrServiceCode
+)
+def_all_detail$topPrincipalNAICScode<-factor(
+  def_all_detail$topPrincipalNAICScode
+)
+
+def_all_detail$AgencyID<-def_all_detail$topContractingOfficeAgencyID
+debug(na_check)
+def_all_detail<-read_and_join_experiment(def_all_detail,
+                                         "Agency_AgencyID.csv",
+                                         by="AgencyID",
+                                         # replace_na_var="AgencyID",
+                                         add_var=c("Customer","SubCustomer"),
+                                         path = "https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                         directory = ""
+)
+def_all_detail<- subset(def_all_detail,Customer=="Defense")
+def_all_detail<-def_all_detail[,!colnames(def_all_detail) %in% 
+                                 c(
+                                   # "topContractingOfficeAgencyID",
+                                   "topContractingOfficeAgencyIDamount"      ,
+                                   # "topContractingOfficeID",
+                                   "topContractingOfficeAmount"  ,
+                                   # "topProductOrServiceCode",
+                                   "topProductOrServiceAmount"               ,
+                                   # "topPrincipalNAICScode",
+                                   "topPrincipalNAICSamount",
+                                   "Customer")]
+# load(file="Data\\defense_contract_all_detail.Rdata")
+
+```
+
+
+##Initial Scope
+```{r Scope}
+# load(file="Data\\defense_contract_all_detail.Rdata")
+# undebug(input_initial_scope)
+def_all_detail<-input_initial_scope(def_all_detail,
+                             file="Contract.SP_ContractUnmodifiedAndOutcomeDetailsCustomer.txt")
+
+# debug(input_initial_scope)
+# def_detail<-input_initial_scope(def_detail,
+#                              file="Contract.SP_ContractUnmodifiedAndOutcomeDetailsCustomer.txt")
+save(file="Data\\defense_contract_all_detail.Rdata",def_all_detail)
+```
+
+## Contract Delta
+
+```{r Delta}
+# load(file="Data\\defense_contract_all_detail.Rdata")
+# undebug(input_initial_scope)
+def_all_detail<-input_contract_delta(def_all_detail,
+             file="Defense_Contract_SP_ContractModificationDeltaCustomer.csv")
+
+save(file="Data\\defense_contract_all_detail.Rdata",def_all_detail)
+```
+
+# Split between def_all_detail and def_detail
+
+##Location
+```{r Location}
+
+
+def_detail<-def_all_detail
+rm(def_all_detail)
+#Drop contracts starting before the study period and not clearly end within it
+def_detail<-subset(def_detail, StartFY>=2007   & year(MinOfSignedDate)<2017 & 
+    (LastCurrentCompletionDate<"2017-01-01" | IsClosed==1)
+)
+
+# load(file="Data\\defense_contract_complete_detail.Rdata")
+
+def_detail<-csis360::read_and_join_experiment(def_detail,
+    "Contract.SP_ContractLocationCustomer.txt"
+  ,path=""
+  ,dir="Data\\"
+  ,by="CSIScontractID"
+  ,new_var_checked=FALSE
+  # ,zip_file="Contract.SP_ContractLocationCustomer.zip"
+)
+
+def_detail<-csis360::standardize_variable_names(def_detail)
+
+
+
+# def_detail$pIsInternational<-
+#   as.double(def_detail$ObligatedAmountPlaceIsInternational)/
+#   as.double(def_detail$Action.Obligation)
+# length(def_detail$pIsInternational[
+#   # is.na(def_detail$pIsInternational)&
+#     def_detail$PlaceIsInternational==1
+# ])<-0
+# summary(def_detail$pIsInternational)
+# summary(def_detail$PlaceIsInternational)
+# summary(subset(def_detail,is.finite(pIsInternational)))
+# 
+# ggplot(def_detail, aes(x=ObligatedAmountPlaceIsInternational))+geom_histogram()
+
+# summary(def_detail$ObligatedAmountPlaceIsInternational)
+# summary(def_detail$PlaceIsInternational)
+
+def_detail$AnyPlaceInternational[is.na(def_detail$PlaceIsInternational) &
+    is.na(def_detail$UnmodifiedPlaceIsInternational)]<-NA
+
+summary(def_detail$AnyPlaceInternational)
+summary(def_detail$PlaceIsInternational)
+summary(def_detail$UnmodifiedPlaceIsInternational)
+summary(factor(def_detail$PlaceCountryISO3))
+summary(factor(def_detail$UnmodifiedPlaceCountryISO3))
+
+
+if(is.numeric(def_detail$AnyPlaceInternational)){
+  def_detail$AnyPlaceInternational<-factor(def_detail$AnyPlaceInternational,
+    exclude=NULL,
+    levels=c(0,1,NA),
+    labels=c("Just U.S.","Any International",NA)
+  )
+}
+
+summary(def_detail$AnyPlaceInternational)
+def_detail$UnmodifiedPlaceCountryISO3[is.na(def_detail$UnmodifiedPlaceCountryISO3)]<-
+  def_detail$PlaceCountryISO3[is.na(def_detail$UnmodifiedPlaceCountryISO3)]
+def_detail$UnmodifiedPlaceCountryISO3<-factor(def_detail$UnmodifiedPlaceCountryISO3)
+
+
+def_detail$AnyPlaceInternational<-droplevels(def_detail$AnyPlaceInternational)
+
+def_detail<-def_detail[,!colnames(def_detail) %in% 
+    c(
+  # "PlaceCountryISO3",
+  # "UnmodifiedPlaceCountryISO3",
+  "ObligatedAmountPlaceIsInternational"     ,
+   # "AnyPlaceInternational",
+  "PlaceIsInternational"  ,
+  "UnmodifiedPlaceIsInternational",
+   "VendorCountryISO3",
+  "UnmodifiedVendorCountryISO3" ,
+  "ObligatedAmountVendorIsInternational"  ,
+   "AnyVendorInternational",
+  "VendorIsInternational",
+  "UnmodifiedVendorIsInternational"         ,
+   "OriginCountryISO3",
+  "UnmodifiedOriginCountryISO3",
+  "ObligatedAmountOriginIsInternational"    ,
+   "AnyOriginInternational",
+  "OriginIsInternational",
+  "UnmodifiedOriginIsInternational" ,
+  "pIsInternational" #This just isn't working
+    )]
+
+
+save(file="Data\\defense_contract_complete_detail.Rdata",def_detail)
+
+
+```
+
+
+
+##BucketPlatform
+```{r BucketPlatform}
+# load(file="Data\\defense_contract_complete_detail.Rdata")
+#Note to identify is.defense here.
+def_detail<-csis360::read_and_join_experiment(data=def_detail
+  ,"Contract.SP_ContractBucketPlatformCustomer.txt"
+  ,path=""
+  ,"Data\\"
+  ,by="CSIScontractID"
+  ,new_var_checked=FALSE
+)
+# 
+# def_detail$ObligatedAmountIsProducts<-FactorToNumber(def_detail$ObligatedAmountIsProducts)
+# 
+# def_detail$ObligatedAmountIsServices<-FactorToNumber(def_detail$ObligatedAmountIsServices)
+# 
+# def_detail$ObligatedAmountIsRnD<-FactorToNumber(def_detail$ObligatedAmountIsRnD)
+# 
+# def_detail$pIsProducts <- def_detail$ObligatedAmountIsProducts/def_detail$Action.Obligation
+# def_detail$pIsProducts[is.na(def_detail$ObligatedAmountIsProducts)] <- 0
+# 
+# def_detail$pIsServices <- def_detail$ObligatedAmountIsServices/def_detail$Action.Obligation
+# def_detail$pIsServices[is.na(def_detail$ObligatedAmountIsServices)] <- 0
+# 
+# def_detail$pIsRnD <- def_detail$ObligatedAmountIsRnD/def_detail$Action.Obligation
+# def_detail$pIsRnD[is.na(def_detail$ObligatedAmountIsRnD)] <- 0
+
+#Need to update these to the new platform portfolios
+# 
+# 
+# def_detail$ObligatedAmountIsLand<-FactorToNumber(def_detail$ObligatedAmountIsLand)
+# 
+# def_detail$ObligatedAmountIsVessel<-FactorToNumber(def_detail$ObligatedAmountIsVessel)
+# 
+# 
+# def_detail$ObligatedAmountIsVessel<-FactorToNumber(def_detail$ObligatedAmountIsAir)
+# 
+# def_detail$ObligatedAmountIsVessel<-FactorToNumber(def_detail$ObligatedAmountIsOtherPP)
+# 
+# def_detail$ObligatedAmountIsWnA<-FactorToNumber(def_detail$ObligatedAmountIsWnA)
+# 
+# def_detail$ObligatedAmountIsMnS<-FactorToNumber(def_detail$ObligatedAmountIsMnS)
+# 
+# def_detail$ObligatedAmountIsEnC<-FactorToNumber(def_detail$ObligatedAmountIsEnC)
+# 
+# def_detail$ObligatedAmountIsFRSnC<-FactorToNumber(def_detail$ObligatedAmountIsFRSnC)
+# 
+# 
+# def_detail$pIsLand <- def_detail$ObligatedAmountIsLand/def_detail$Action.Obligation
+# def_detail$pIsLand[is.nan(def_detail$pIsLand)|is.infinite(def_detail$pIsLand)|is.na(def_detail$ObligatedAmountIsLand)] <- 0
+# 
+# def_detail$pIsVessel <- def_detail$ObligatedAmountIsVessel/def_detail$Action.Obligation
+# def_detail$pIsVessel[is.nan(def_detail$pIsVessel)|is.infinite(def_detail$pIsVessel)|is.na(def_detail$ObligatedAmountIsVessel)] <- 0
+# 
+# def_detail$pIsOtherPP <- def_detail$ObligatedAmountIsOtherPP/def_detail$Action.Obligation
+# def_detail$pIsOtherPP[is.nan(def_detail$pIsOtherPP)|is.infinite(def_detail$pIsOtherPP)|is.na(def_detail$ObligatedAmountIsOtherPP)] <- 0
+# 
+# def_detail$pIsAir <- def_detail$ObligatedAmountIsAir/def_detail$Action.Obligation
+# def_detail$pIsAir[is.nan(def_detail$pIsAir)|is.infinite(def_detail$pIsAir)|is.na(def_detail$ObligatedAmountIsAir)] <- 0
+# 
+# def_detail$pIsEnC <- def_detail$ObligatedAmountIsEnC/def_detail$Action.Obligation
+# def_detail$pIsEnC[is.nan(def_detail$pIsEnC)|is.infinite(def_detail$pIsEnC)|is.na(def_detail$ObligatedAmountIsEnC)] <- 0
+# 
+# def_detail$pIsFRSnC <- def_detail$ObligatedAmountIsFRSnC/def_detail$Action.Obligation
+# def_detail$pIsFRSnC[is.nan(def_detail$pIsFRSnC)|is.infinite(def_detail$pIsFRSnC)|is.na(def_detail$ObligatedAmountIsFRSnC)] <- 0
+# 
+# 
+# def_detail$pIsMnS <- def_detail$ObligatedAmountIsMnS/def_detail$Action.Obligation
+# def_detail$pIsMnS[is.nan(def_detail$pIsMnS)|is.infinite(def_detail$pIsMnS)|is.na(def_detail$ObligatedAmountIsMnS)] <- 0
+
+
+# TempList<-c("PlatformPortfolio","UnmodifiedPlatformPortfolio","ObligatedAmountIsAir","ObligatedAmountIsEnC","ObligatedAmountIsFRSnC","ObligatedAmountIsLand","ObligatedAmountIsMnS","ObligatedAmountIsOtherPP","ObligatedAmountIsVessel","ObligatedAmountIsWnA","ProductOrServiceArea","UnmodifiedProductOrServiceArea","SimpleArea","UnmodifiedSimpleArea","ObligatedAmountIsProducts","ObligatedAmountIsServices","ObligatedAmountIsRnD","MaxOfIsPossibleSoftwareEngineering")
+
+# TempList<-TempList[TempList %in% names(def_detail)]
+# def_detail<-subset(def_detail,select=-c(PlatformPortfolio,
+#                                                       UnmodifiedPlatformPortfolio,
+#                                                       SimpleArea,UnmodifiedSimpleArea ))
+
+NASimpleArea<-(def_detail$SimpleArea=="Mixed or Unlabeled" | is.na(def_detail$SimpleArea))&
+  !is.na(def_detail$UnmodifiedSimpleArea) & def_detail$UnmodifiedSimpleArea!="NULL"
+def_detail$SimpleArea[NASimpleArea]<-def_detail$UnmodifiedSimpleArea[NASimpleArea]
+# def_detail$SimpleArea[def_detail$SimpleArea=="Mixed or Unlabeled" & def_detail$pIsProducts>0.5]<-"Products"
+# def_detail$SimpleArea[def_detail$SimpleArea=="Mixed or Unlabeled" & def_detail$pIsServices>0.5]<-"Services"
+# def_detail$SimpleArea[def_detail$SimpleArea=="Mixed or Unlabeled" & def_detail$pIsRnD>0.5]<-"R&D"
+
+
+
+# def_detail$PlatformPortfolio.sum[def_detail$pIsLand>=0.75&
+#     def_detail$PlatformPortfolio.sum=="Unlabeled"]<-"Land Vehicles"
+# def_detail$PlatformPortfolio.sum[def_detail$pIsVessel>=0.75&
+#     def_detail$PlatformPortfolio.sum=="Unlabeled"]<-"Ships & Submarines"
+# def_detail$PlatformPortfolio.sum[def_detail$pIsAir>=0.75&
+#     def_detail$PlatformPortfolio.sum=="Unlabeled"]<-"Aircraft and Drones"
+# def_detail$PlatformPortfolio.sum[def_detail$pIsOtherPP>=0.75&
+#     def_detail$PlatformPortfolio.sum=="Unlabeled"]<-"Other"
+# def_detail$PlatformPortfolio.sum[def_detail$pIsWnA>=0.75&
+#     def_detail$PlatformPortfolio.sum=="Unlabeled"]<-"Weapons and Ammunition"
+# def_detail$PlatformPortfolio.sum[def_detail$pIsMnS>=0.75&
+#     def_detail$PlatformPortfolio.sum=="Unlabeled"]<-"Missile and Space Systems"
+# def_detail$PlatformPortfolio.sum[def_detail$pIsEnC>=0.75&
+#     def_detail$PlatformPortfolio.sum=="Unlabeled"]<-"Electronics and Communications"
+# def_detail$PlatformPortfolio.sum[def_detail$pIsFRSnC>=0.75&
+#     def_detail$PlatformPortfolio.sum=="Unlabeled"]<-"Facilities and Construction"
+# 
+# def_detail$SoftwareEng<-factor(def_detail$MaxOfIsPossibleSoftwareEngineering,
+#   levels=c(0,1),
+#   labels=c("Not Software Eng.","Possible Software Eng.")
+# )
+# 
+# def_detail$SoftwareEng[is.na(def_detail$SoftwareEng)&
+#     !is.na(def_detail$SimpleArea)]<-"Not Software Eng."
+
+
+
+def_detail$PlatformPortfolio<-factor(def_detail$PlatformPortfolio)
+def_detail$UnmodifiedPlatformPortfolio<-factor(def_detail$UnmodifiedPlatformPortfolio)
+
+def_detail$ProductOrServiceArea<-factor(def_detail$ProductOrServiceArea)
+def_detail$UnmodifiedProductOrServiceArea<-factor(def_detail$UnmodifiedProductOrServiceArea)
+
+def_detail$SimpleArea<-factor(def_detail$SimpleArea)
+def_detail$UnmodifiedSimpleArea<-factor(def_detail$UnmodifiedSimpleArea)
+
+
+def_detail<-subset(def_detail,select=-c(
+  # UnmodifiedSimpleArea,
+  # SimpleArea,
+  MaxOfIsPossibleSoftwareEngineering
+  # ObligatedAmountIsProducts,
+  # ObligatedAmountIsServices,
+  # ObligatedAmountIsRnD,
+  # ObligatedAmountIsLand,
+  # ObligatedAmountIsVessel,
+  # ObligatedAmountIsOtherPP,
+  # ObligatedAmountIsAir,
+  # ObligatedAmountIsEnC,
+  # ObligatedAmountIsFRSnC,
+  # ObligatedAmountIsMnS,
+  # ObligatedAmountIsWnA
+  
+  
+))
+
+
+
+
+def_detail$SimpleArea<-droplevels(def_detail$SimpleArea)
+
+
+save(file="Data\\defense_contract_complete_detail.Rdata",def_detail)
+
+```
+
+##Competition Vehicle
+```{r CompetitionVehicle}
+# load(file="Data\\defense_contract_complete_detail.Rdata")
+
+
+##Contract_SP_ContractUnmodifiedCompetitionvehicleCustomer.txt
+def_detail<-csis360::read_and_join_experiment(data=def_detail
+  ,"Contract.SP_ContractUnmodifiedCompetitionvehicleCustomer.txt"
+  ,path=""
+  ,"Data\\"
+  ,by="CSIScontractID"
+  ,new_var_checked=FALSE
+)
+
+#Contract.SP_ContractCompetitionVehicleCustomer.txt
+def_detail<-csis360::read_and_join_experiment(data=def_detail
+  ,"Contract.SP_ContractCompetitionVehicleCustomer.txt"
+  ,path=""
+  ,"Data\\"
+  ,by="CSIScontractID"
+  ,new_var_checked=FALSE
+)
+
+
+#Number of Offers
+def_detail$UnmodifiedNumberOfOffersReceived[def_detail$UnmodifiedNumberOfOffersReceived==0]<-NA
+def_detail$NumberOfOffersReceived[def_detail$NumberOfOffersReceived==0]<-NA
+def_detail$UnmodifiedNumberOfOffersReceived<-FactorToNumber(def_detail$UnmodifiedNumberOfOffersReceived)
+def_detail$NumberOfOffersReceived<-FactorToNumber(def_detail$NumberOfOffersReceived)
+def_detail$UnmodifiedNumberOfOffersReceived[is.null(def_detail$UnmodifiedNumberOfOffersReceived)]<-NA
+def_detail$NumberOfOffersReceived[is.null(def_detail$NumberOfOffersReceived)]<-NA
+
+def_detail$UnmodifiedNumberOfOffersReceived<-impute_unmodified(
+  def_detail$UnmodifiedNumberOfOffersReceived,
+  def_detail$NumberOfOffersReceived
+)
+
+def_detail$Offr <- cut2(def_detail$UnmodifiedNumberOfOffersReceived,cuts=c(1,2,3,5))
+
+
+
+if (all(levels(def_detail$Offr)==c("  1","  2","[  3,  5)","[  5,999]"))){
+  def_detail$Offr<-factor(def_detail$Offr, 
+    levels=c("  1","  2","[  3,  5)","[  5,999]"),
+    labels=c("1","2","3-4","5+"),
+    ordered=TRUE
+  )
+}
+
+
+
+
+#Competition
+
+
+#IsSomeCompetition Impute missing values when labeled entries have a consistent value.
+
+def_detail$UnmodifiedIsSomeCompetition<-impute_unmodified(
+  def_detail$UnmodifiedIsSomeCompetition,
+  def_detail$IsSomeCompetition
+)
+
+
+#Set is some competion = 1 when it is blank and there are multiple offers
+
+def_detail$UnmodifiedIsSomeCompetition[is.na(def_detail$UnmodifiedIsSomeCompetition)&
+    !is.na(def_detail$UnmodifiedNumberOfOffersReceived)&
+    def_detail$UnmodifiedNumberOfOffersReceived>1
+  ]<-1
+
+#Set number of offers =1 when there is a NA and no competition
+def_detail$Offr[is.na(def_detail$Offr)&
+    !is.na(def_detail$UnmodifiedIsSomeCompetition)&
+    def_detail$UnmodifiedIsSomeCompetition==0
+  ]<-"1"
+
+def_detail$UnmodifiedNumberOfOffersReceived[is.na(def_detail$UnmodifiedNumberOfOffersReceived)&
+    !is.na(def_detail$UnmodifiedIsSomeCompetition)&
+    def_detail$UnmodifiedIsSomeCompetition==0
+  ]<-1
+
+
+#Produce Comp factor
+def_detail$Comp[def_detail$UnmodifiedIsSomeCompetition==0]<-"No Comp."
+# def_detail$Comp[def_detail$UnmodifiedIsSomeCompetition=="Comp." &
+#                            def_detail$UnmodifiedIsFullAndOpen=="Not Full & Open"]<-"Comp."
+# def_detail$Comp[def_detail$UnmodifiedIsSomeCompetition=="Comp." &
+#                            def_detail$UnmodifiedIsFullAndOpen=="Comp."]<-"Comp."
+def_detail$Comp[def_detail$UnmodifiedIsSomeCompetition==1]<-"Comp."
+
+def_detail$Comp<-factor(def_detail$Comp,
+                               levels=c("No Comp.","Comp.")
+                                                              )
+
+
+#Produce EffComp factor
+
+#Competition and Offer  
+def_detail$EffComp<-as.character(def_detail$Comp)
+
+def_detail$EffComp[def_detail$Comp=="Comp." & !is.na(def_detail$Comp)]<-
+  ifelse(def_detail$UnmodifiedNumberOfOffersReceived[
+    def_detail$Comp=="Comp." & !is.na(def_detail$Comp)]>1,"2+ Offers","1 Offer")
+
+def_detail$EffComp<-factor(def_detail$EffComp,
+                               levels=c("No Comp.","1 Offer","2+ Offers")
+                               )
+
+
+#Impute missing urgency values
+def_detail$UnmodifiedIsUrgency<-impute_unmodified(
+  def_detail$UnmodifiedIsUrgency,
+  def_detail$IsUrgency
+)
+#If there's competition, than the urgency exception wasn't used
+def_detail$UnmodifiedIsUrgency[is.na(def_detail$UnmodifiedIsUrgency)&
+                               !is.na(def_detail$UnmodifiedIsSomeCompetition)&
+                               def_detail$UnmodifiedIsSomeCompetition==1]<-0
+
+
+def_detail$Urg[def_detail$UnmodifiedIsUrgency==0]<-"Not Urgency"
+def_detail$Urg[def_detail$UnmodifiedIsUrgency==1]<-"Urgency Except."
+def_detail$Urg<-factor(def_detail$Urg,
+                               levels=c("Not Urgency","Urgency Except.")
+                               )
+
+#Vehicle
+#Award_Type_Code Impute missing values when labeled entries have a consistent value.
+def_detail$unmodifiedaward_type_code<-impute_unmodified(
+  def_detail$unmodifiedaward_type_code,
+  def_detail$Award_Type_Code
+)
+
+#idv_type_code Impute missing values when labeled entries have a consistent value.
+def_detail$unmodifiedidv_type_code<-impute_unmodified(
+  def_detail$unmodifiedidv_type_code,
+  def_detail$IDV_Type_Code
+)
+
+
+#Unmodifiedmultipleorsingleawardidc Impute missing values when labeled entries have a consistent value.
+def_detail$Unmodifiedmultipleorsingleawardidc<-impute_unmodified(
+  def_detail$Unmodifiedmultipleorsingleawardidc,
+  def_detail$multipleorsingleawardidc
+)
+
+#Assign Is IDV
+#A = BPA Call, C = Delivery Order
+def_detail$IsIDV[!is.na(def_detail$unmodifiedaward_type_code) &
+                               def_detail$unmodifiedaward_type_code %in% c("A","C")]<-1
+#B = Purchase Order, D = Definitive Contract
+def_detail$IsIDV[!is.na(def_detail$unmodifiedaward_type_code) &
+                               def_detail$unmodifiedaward_type_code %in% c("B","D")]<-0
+def_detail$IsIDV[!is.na(def_detail$unmodifiedidv_type_code)]<-1
+
+if(is.numeric(def_detail$IsIDV)){
+  def_detail$IsIDV<-factor(def_detail$IsIDV,levels=c(0,1),labels=c("def_detail/Pur","IDV"))
+}
+
+
+#Simple Vehicle, which consolidates IDV and award types
+def_detail$Veh[
+  !is.na(def_detail$unmodifiedaward_type_code) &
+    def_detail$unmodifiedaward_type_code %in% c("B","D")]<-"def_detail/Pur"
+
+
+def_detail$Veh[
+  !is.na(def_detail$unmodifiedidv_type_code) &
+    def_detail$unmodifiedidv_type_code %in% c("B") &
+    !is.na(def_detail$Unmodifiedmultipleorsingleawardidc)]<-
+  paste(def_detail$Unmodifiedmultipleorsingleawardidc[
+     !is.na(def_detail$unmodifiedidv_type_code) &
+    def_detail$unmodifiedidv_type_code %in% c("B") &
+    !is.na(def_detail$Unmodifiedmultipleorsingleawardidc)
+  ],"IDC")
+
+#IDV_type_Code D = BOA, E=BPA, Award_Type_code A=BPA Call
+def_detail$Veh[
+  !is.na(def_detail$unmodifiedidv_type_code) &
+    def_detail$unmodifiedidv_type_code %in% c("D","E") |
+  !is.na(def_detail$unmodifiedaward_type_code) &
+    def_detail$unmodifiedaward_type_code %in% c("A") 
+    ]<-
+  "BPA/BOA"
+#IDV_type_cde A=GWAC C=FSS
+def_detail$Veh[
+  !is.na(def_detail$unmodifiedidv_type_code)
+  & def_detail$unmodifiedidv_type_code 
+  %in% c('A','C')]<-"FSS/GWAC"
+
+#Imputing that when Multiple Award/Single Award is known, but IDV_type_code is not
+#that the vehicle type is an IDC
+def_detail$Veh[
+  is.na(def_detail$Veh)&
+  is.na(def_detail$unmodifiedidv_type_code) &
+    !is.na(def_detail$Unmodifiedmultipleorsingleawardidc)]<-
+  paste(def_detail$Unmodifiedmultipleorsingleawardidc[
+  is.na(def_detail$Veh)&
+  is.na(def_detail$unmodifiedidv_type_code) &
+    !is.na(def_detail$Unmodifiedmultipleorsingleawardidc)],"IDC")
+
+def_detail$Veh<-factor(def_detail$Veh)
+summary(def_detail$Veh)
+#Imputing that when the simple vehicle is a kind of IDV, IsIDV should follow as well
+def_detail$IsIDV[
+  is.na(def_detail$IsIDV)&
+    def_detail$Veh %in% c(
+      'BPA/BOA','FSS/GWAC','MULTIPLE AWARD IDC','SINGLE AWARD IDC'
+    )]<-"IDV"
+
+
+
+
+
+def_detail<-def_detail[,!colnames(def_detail) %in% 
+    c(
+  #     UnmodifiedIsFullAndOpen,
+  # "UnmodifiedIsOnlyOneSource",
+  "UnmodifiedIsFollowonToCompetedAction",
+      "Unmodifiedmultipleorsingleawardidc",
+        # "UnmodifiedIsUrgency",
+      "Unmodifiedaddmultipleorsingawardidc",
+  # "IsFullAndOpen",
+  # IsOnlyOneSource 
+  # "IsFollowonToCompetedAction"
+    "IsUrgency",
+      "multipleorsingleawardidc",
+      "AddMultipleOrSingleAwardIDC",
+  "Award_Type_Code",
+  "unmodifiedaward_type_code",
+  "IDV_Type_Code",
+  # "UnmodifiedNumberOfOffersReceived",
+  "unmodifiedidv_type_code",
+  "NumberOfOffersReceived"
+)]
+str(def_detail)
+  
+save(file="Data\\defense_contract_complete_detail.Rdata",def_detail)
+
+```
+
+
+##Pricing
+```{r Pricing}
+# load(file="Data\\defense_contract_complete_detail.Rdata")
+
+def_detail<-csis360::read_and_join_experiment(data=def_detail
+  ,"Contract.SP_ContractPricingCustomer.txt"
+  ,path=""
+  ,"Data\\"
+  ,by="CSIScontractID"
+  ,new_var_checked=FALSE
+)
+
+#Process Fixed Or Cost
+def_detail$pIsFixedPrice<-percent_obligated(def_detail,
+                                          "ObligatedAmountIsFixedPrice",
+                                            "Action.Obligation",
+                                          "UnmodifiedIsFixedPrice",
+                                          "IsFixedPrice")
+
+def_detail$pIsCostBased<-percent_obligated(def_detail,
+                                          "ObligatedAmountIsCostBased",
+                                            "Action.Obligation",
+                                          "UnmodifiedIsCostBased",
+                                          "IsCostBased")
+
+
+def_detail$pIsCombination<-percent_obligated(def_detail,
+                                          "ObligatedAmountIsCombination",
+                                            "Action.Obligation",
+                                          "UnmodifiedIsCombination",
+                                          "IsCombination")
+
+def_detail$pIsOtherFee<-percent_obligated(def_detail,
+                                          "ObligatedAmountIsOtherFee",
+                                            "Action.Obligation",
+                                          "UnmodifiedIsOtherFee",
+                                          "IsOtherFee")
+
+
+#Assign FxCb
+def_detail$FxCb[def_detail$pIsFixedPrice>0  |
+    def_detail$pIsCostBased>0 | 
+    def_detail$pIsCombination>0 | 
+      def_detail$pIsOtherFee>0]<-"Combination or Other"
+
+def_detail$FxCb[def_detail$pIsFixedPrice>=0.95|(def_detail$IsFixedPrice==1 & (def_detail$pIsCombination<=0.05 | is.na(def_detail$pIsCombination)))]<-"Fixed-Price"
+def_detail$FxCb[def_detail$pIsCostBased>=0.95|(def_detail$IsCostBased==1 & (def_detail$pIsCombination<=0.05 | is.na(def_detail$pIsCombination)))]<-"Cost-Based"
+def_detail$FxCb<-factor(def_detail$FxCb,levels=c("Fixed-Price","Cost-Based","Combination or Other"))
+#Process Fee
+
+View(subset(def_detail,is.na(FxCb) & !is.na(FxCb)))
+def_detail$pIsIncentive<-percent_obligated(def_detail,
+                                          "ObligatedAmountIsIncentive",
+                                            "Action.Obligation",
+                                          "UnmodifiedIsIncentive",
+                                          "IsIncentive")
+
+
+def_detail$pIsAwardFee<-percent_obligated(def_detail,
+                                          "ObligatedAmountIsAwardFee",
+                                            "Action.Obligation",
+                                          "UnmodifiedIsAwardFee",
+                                          "IsAwardFee")
+
+
+
+def_detail$pIsFFPorNoFee<-percent_obligated(def_detail,
+                                          "ObligatedAmountIsFFPorNoFee",
+                                            "Action.Obligation",
+                                          "UnmodifiedIsFFPorNoFee",
+                                          "IsFFPorNoFee")
+
+
+def_detail$pIsFixedFee<-percent_obligated(def_detail,
+                                          "ObligatedAmountIsFixedFee",
+                                            "Action.Obligation",
+                                          "UnmodifiedIsFixedFee",
+                                          "IsFixedFee")
+
+
+
+
+
+#AssignFee
+
+def_detail$Fee[def_detail$pIsAwardFee>0  |
+    def_detail$pIsIncentive>0 | 
+    def_detail$pIsFFPorNoFee>0 |
+      def_detail$pIsFixedFee>0 |
+      def_detail$pIsOtherFee>0 |
+      def_detail$pIsCombination>0]<-"Combination"
+
+def_detail$Fee[def_detail$pIsAwardFee>=0.9|(def_detail$IsAwardFee==1
+  & (def_detail$pIsCombination<=0.05 | is.na(def_detail$pIsCombination))) ]<-"Award Fee"
+def_detail$Fee[def_detail$pIsIncentive>=0.9|(def_detail$IsIncentive==1
+  & (def_detail$pIsCombination<=0.05 | is.na(def_detail$pIsCombination)))]<-"Incentive"
+def_detail$Fee[def_detail$pIsFFPorNoFee>=0.9|(def_detail$IsFFPorNoFee==1
+  & (def_detail$pIsCombination<=0.05 | is.na(def_detail$pIsCombination)))]<-"FFP or No Fee"
+def_detail$Fee[def_detail$pIsFixedFee>=0.9|(def_detail$IsFixedFee==1
+  & (def_detail$pIsCombination<=0.05 | is.na(def_detail$pIsCombination)))]<-"Fixed Fee"
+def_detail$Fee[def_detail$pIsOtherFee>=0.9|(def_detail$IsOtherFee==1
+  & (def_detail$pIsCombination<=0.05 | is.na(def_detail$pIsCombination)))]<-"Other Fee"
+
+
+def_detail$Fee<-ordered(def_detail$Fee,
+  levels=c("Incentive","Fixed Fee","Award Fee",
+    "FFP or No Fee","Other Fee","Combination"))
+
+
+summary(def_detail$Fee)
+summary(def_detail$FxCb)
+#Undefinitized Contract Awards
+# def_detail$Veh[def_detail$AwardOrIDVcontractActionType == "Letter Contract"]<-"Letter"
+# def_detail$Veh[def_detail$AwardOrIDVcontractActionType %in%
+#     c("Indefinite Delivery Contract",
+#       "Delivery Order")]<-
+#   as.character(def_detail$multipleorsingleawardidc[def_detail$AwardOrIDVcontractActionType %in%
+#       c("Indefinite Delivery Contract",
+#         "Delivery Order")])
+
+
+#Impute UCA unmodified values when consistent for the remainder of the vehicle
+def_detail$UnmodifiedIsUCA[is.na(def_detail$UnmodifiedIsUCA)&
+  !is.na(def_detail$IsUCA)]<-
+  def_detail$IsUCA[is.na(def_detail$UnmodifiedIsUCA)&
+  !is.na(def_detail$IsUCA)]
+
+
+
+def_detail$UCA<-factor(def_detail$UnmodifiedIsUCA,
+  levels=c(0,1),
+  labels=c("Not UCA","UCA")
+)
+
+#Imputing to make up for absence of 
+#There's no obligations in the dataset to UCAs using the regulated vehicle of FSS/GWAC
+def_detail$UCA[is.na(def_detail$UCA)&
+               def_detail$Veh=="FSS/GWAC"]<-"Not UCA"
+summary(def_detail$UCA)
+def_detail<-def_detail[,!colnames(def_detail) %in% 
+    c(
+  # Pricing.Mechanism.Code,
+  "UnmodifiedTypeOfContractPricing",
+  "IsLabeledPricing",
+  "ObligatedAmountIsFixedPrice",
+  # IsFixedPrice,
+  "UnmodifiedIsFixedPrice",
+  "ObligatedAmountIsCostBased",
+  # IsCostBased,
+  "UnmodifiedIsCostBased",
+  "ObligatedAmountIsCombination",
+  # IsCombination,
+  "UnmodifiedIsCombination",
+  "ObligatedAmountIsIncentive",
+  # IsIncentive,
+  "UnmodifiedIsIncentive",
+  "ObligatedAmountIsAwardFee",
+  # IsAwardFee,
+  "UnmodifiedIsAwardFee",
+  "ObligatedAmountIsFFPorNoFee",
+  # IsFFPorNoFee,
+  "UnmodifiedIsFFPorNoFee",
+  "ObligatedAmountIsFixedFee",
+  # IsFixedFee,
+  "UnmodifiedIsFixedFee",
+  "ObligatedAmountIsOtherFee",
+  # IsOtherFee,
+  "UnmodifiedIsOtherFee"
+  # pIsFixedPrice,
+  # pIsCostBased,
+  # pIsCombination,
+  # pIsIncentive,
+  # pIsAwardFee,
+  # pIsFFPorNoFee,
+  # pIsFixedFee,
+  # pIsOtherFee,
+  # FxCb,
+  # Fee,
+    )]
+
+str(def_detail)
+
+save(file="Data\\defense_contract_complete_detail.Rdata",def_detail)
+
+```
+
+#Final Cleanup and Output
+##Applying lookups
+```{r PostApply}
+# debug(apply_lookups)
+load(file="Data\\defense_contract_all_detail.Rdata")
+load(file="Data\\defense_contract_complete_detail.Rdata")
+
+def_all_detail<-apply_lookups(Path,def_all_detail)
+#Hitting errors, but nothing vital
+debug(apply_lookups)
+def_detail<-apply_lookups(Path,def_detail)
+
+summary
+
+# def_all_detail<-csis360::read_and_join(
+#   def_all_detail,
+#   "Lookup_SubCustomer.csv",
+#   by=c("Customer","SubCustomer"),
+#   # replace_na_var=NULL,
+#   # overlap_var_replaced=TRUE,
+#   add_var="SubCustomer.sum"
+#   # new_var_checked=TRUE,
+#   # skip_check_var="CHPKisCrisisFunding"
+#   )
+
+# def_all_detail$SubCustomer.sum<-factor(def_all_detail$SubCustomer.sum)
+# def_all_detail$SubCustomer.sum<-droplevels(def_all_detail$SubCustomer.sum)
+# def_all_detail$SubCustomer.sum<-droplevels(def_all_detail$SubCustomer.sum)
+
+
+
+save(file="Data\\defense_contract_all_detail.Rdata",def_all_detail)
+save(file="Data\\defense_contract_complete_detail.Rdata",def_detail)
+# def_all_detail<-rename_dataset(def_all_detail)
+
+```
+##Dataset Output
+
+```{r DatasetOutput}
+load(file="Data\\defense_contract_all_detail.Rdata")
+load(file="Data\\defense_contract_complete_detail.Rdata")
+     
+load(file="Data\\defense_contract_CSIScontractID_detail.Rdata")
+def_all<-rename_dataset(def_all_detail)
+def_all<-trim_dataset(def_all)
+def<-rename_dataset(def_detail)
+def<-trim_dataset(def)
+
+
+
+write.table(def_all
+  ,file=paste("data\\defense_contract_all.csv"
+    ,sep=""
+  )
+  #   ,header=TRUE
+  , sep=","
+  , row.names=FALSE
+  , append=FALSE
+)
+
+
+
+
+summary(def_all$Agency[def_all$Who=="Uncategorized"])
+
+save(def_all,file="data\\defense_contract_all.RData")
+save(def,file="data\\defense_contract_complete.RData")
+  
+#Strip out the cuts
+
+
+
+```
+

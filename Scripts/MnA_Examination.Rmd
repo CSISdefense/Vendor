@@ -1,0 +1,154 @@
+---
+title: "M&A Examination"
+author: "Gregory Sanders"
+date: "October 16, 2017"
+output: 
+  html_document: 
+    keep_md: yes
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+library(ggplot2)
+library(ggrepel)
+library(plyr)
+library(lubridate)
+load(file="data//defense_naics_vendor.Rdata")
+
+```
+
+## Identify Companies of Interest
+
+```{r names}
+names<-unique(defense_vendor$ParentID)
+
+
+names[toupper(names) %in% toupper(c(
+"MDA",  #Check
+"DigitalGlobe", #Check
+"United Tech", #Check
+"Rockwell Collins",  #Check
+"Northrop Grumman",  #Check
+  "Orbital ATK",
+"Boeing", #Check
+"Aurora Flight Sciences" #Check but redownload
+))]
+
+```
+
+##Prepare 206 data
+
+```{r Key Vendors, echo=TRUE}
+# Filter defense_naics_vendor to only include fical year ranging from 2009 to 2016
+
+key_vendor<-subset(defense_vendor, Fiscal.Year >=as.Date("2009-01-01")&
+  (pos<=8 |
+         toupper(ParentID) %in% toupper(c("MDA",  #Check
+       "DigitalGlobe", #Check
+       "United Tech", #Check
+       "Rockwell Collins",  #Check
+       "Northrop Grumman",  #Check
+       "Orbital ATK",
+       "Boeing", #Check
+       "Aurora Flight Sciences" #Check but redownload
+))))
+
+
+
+updated_vendor<-subset(key_vendor,Fiscal.Year==as.Date("2016-01-01"))
+key_vendor$Sample<-year(key_vendor$Fiscal.Year)
+vendor_2016<-subset(key_vendor,Fiscal.Year==as.Date("2016-01-01"))
+updated_vendor$Sample<-"Merged"
+
+key_vendor$line_type<-"Actual"
+vendor_2016$line_type<-"Estimate"
+updated_vendor$line_type<-"Estimate"
+updated_vendor<-rbind(key_vendor,vendor_2016,updated_vendor)
+rm(vendor_2016)
+updated_vendor$VendorName<-updated_vendor$ParentID
+updated_vendor$VendorName[toupper(updated_vendor$ParentID)==
+                            toupper("DigitalGlobe")&
+                            updated_vendor$Sample=="Merged"]<-"MDA"
+updated_vendor$VendorName[toupper(updated_vendor$ParentID)==
+                            toupper("Rockwell Collins")&
+                            updated_vendor$Sample=="Merged"]<-"UNITED TECH"
+updated_vendor$VendorName[toupper(updated_vendor$ParentID)==
+                            toupper("Orbital ATK")&
+                            updated_vendor$Sample=="Merged"]<-"NORTHROP GRUMMAN"
+updated_vendor$VendorName[toupper(updated_vendor$ParentID)==
+                            toupper("Aurora Flight Sciences")&
+                            updated_vendor$Sample=="Merged"]<-"BOEING"
+
+
+
+# MDA buying Digital Globe, UTC buying Collins, Northrop buying Orbital, and Boeing buying Aurora
+
+updated_vendor<-ddply(updated_vendor,
+                           .(Fiscal.Year,VendorName,Sample, line_type),
+                           transform, 
+                      Merged.2016 = sum(Obligation.2016),
+                      Merged.pct= sum(pct)
+)
+
+updated_vendor$ParentLabel<-as.character(updated_vendor$Abbreviation)
+updated_vendor$ParentLabel[updated_vendor$Sample!="2009"]<-""
+
+# updated_vendor$Sample<-ordered(updated_vendor$Sample,c("Original","Merged"))
+
+
+updated_vendor$ParentID_line_type<-paste(updated_vendor$ParentID,
+                                         updated_vendor$line_type)
+```
+
+
+##Overall Merger Plot
+```{r Overall Merger Plot}
+
+overall_merger<-ggplot(subset(updated_vendor,pos<=10),
+       aes(x=Sample,
+           y=Merged.2016,
+           color=ParentID,
+           group=ParentID_line_type,
+           linetype=line_type))+
+  geom_line()+
+  geom_label_repel(aes(label = ParentLabel),
+                   segment.color = 'grey50',
+    nudge_x = 0.1,
+    na.rm = TRUE)+
+  # geom_text(aes(label=ParentLabel,hjust=0))+
+  theme(legend.position="none")
+
+
+overall_merger
+ggsave("top8abs.png",overall_merger, width=3, height=6)
+```
+
+
+
+
+##Percentage Merger Plot
+```{r Percentage Merger Plot}
+pct_merger<-ggplot(subset(updated_vendor,pos<=10),
+       aes(x=Sample,
+           y=Merged.pct,
+           color=ParentID,
+           group=ParentID_line_type,
+           linetype=line_type))+
+  geom_line()+
+  geom_label_repel(aes(label = ParentLabel),
+                   segment.color = 'grey50',
+    nudge_x = -0.5,
+    na.rm = TRUE)+
+  
+  # geom_text(aes(label=ParentLabel,hjust=0))+
+  theme(legend.position="none")+ 
+  scale_y_continuous("Percent of DoD Contract Obligations",labels = scales::percent)+
+  scale_x_discrete("Fiscal Year")+
+  theme(axis.text.x = element_text(angle = 45))
+
+
+pct_merger
+
+ggsave("top8pct.png",pct_merger, width=3, height=6)
+
+```
