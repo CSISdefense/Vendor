@@ -1272,7 +1272,7 @@ statsummary_continuous <- function(x, contract,log=TRUE,digits=3){       #input(
   continuous_Info <- data.frame(matrix(ncol = 9,nrow = 0))
   colnames(continuous_Info) <- c("Variable_Name","Min","Max","Median","Logarithmic Mean",
                                  "1 unit below","1 unit above","% of records NA", 
-                                 "% of Obligation to NA records")
+                                 "% of Obligations to NA records")
   contract<-as.data.frame(contract)
   if(log==FALSE)
     colnames(continuous_Info)[colnames(continuous_Info)=="Logarithmic Mean"]<-"Arithmatic Mean"  
@@ -1310,7 +1310,7 @@ statsummary_continuous <- function(x, contract,log=TRUE,digits=3){       #input(
   # editing percentage values
   continuous_Info[,8:9] <- lapply(continuous_Info[,8:9], function(x) percent(x))#, accuracy = .01))
   continuous_Info[,2:7] <- lapply(continuous_Info[,2:7], function(x) comma_format(accuracy = .001)(x))#big.mark = ',',
-  continuous_Info$`% of Obligation to NA records`[continuous_Info$`% of Obligation to NA records`=="NA%"] <- NA
+  continuous_Info$`% of Obligations to NA records`[continuous_Info$`% of Obligations to NA records`=="NA%"] <- NA
   
   continuous_Info$`1 unit below` <- paste(continuous_Info$`1 unit below`,continuous_Info$belowMin)
   continuous_Info$`1 unit below` <- gsub("NA","",continuous_Info$`1 unit below`)
@@ -1388,7 +1388,7 @@ grouped_barplot <- function(x, contract) {
   name_Info[, -1] <- lapply(name_Info[, -1], function(x) as.numeric(gsub("%","",x)))
   name_Info <- melt(name_Info, id = x)
   levels(name_Info$variable)[levels(name_Info$variable)=="%of records"] = "% of records"
-  levels(name_Info$variable)[levels(name_Info$variable)=="% of $s"] = "% of obligation"
+  levels(name_Info$variable)[levels(name_Info$variable)=="% of $s"] = "% of obligations"
   name_Info$variable <- factor(name_Info$variable, rev(levels(name_Info$variable)))
   
   basicplot <- ggplot(data = name_Info, 
@@ -1441,7 +1441,7 @@ part_grouped_barplot <- function(name, frequency_Info){
     ylab("") + 
     coord_flip() + 
     theme_grey() +
-    scale_fill_grey(labels = c("% of records", "% of obligation"),
+    scale_fill_grey(labels = c("% of records", "% of obligations"),
                     guide = guide_legend(reverse = TRUE)) +
     theme(legend.title = element_blank(),
           legend.position = "bottom",

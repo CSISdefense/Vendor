@@ -69,8 +69,8 @@ First we load the data. The dataset used is a U.S. Defense Contracting dataset d
 
 
 
-summary(def$UnmodifiedContractBaseAndAllOptionsValue)
-summary(def$Action.Obligation)
+# summary(def$UnmodifiedContractBaseAndAllOptionsValue)
+# summary(def$Action.Obligation)
 
 
 
@@ -108,7 +108,10 @@ statsummary_continuous(c("UnmodifiedNumberOfOffersReceived"), def)
 ### Termination Examination
 The reason for modification code includes both partial and complete terminations. As a way of differentiating complete from partial terminations, we take a closer look at how much spending happened after a contracts last termination. The last termination was used because a contract with both a partial and a complete termination would still qualify as having been completely terminated.
 
-```{r TermExam}
+
+#### After Termination Processing
+
+```{r TermInput}
 term<-def %>% dplyr::filter(Term=="Terminated")
 
 
@@ -122,7 +125,7 @@ term<-csis360::read_and_join_experiment(term,
                             #                  "ObligatedAfterMaxTerminatedDate")
 )
 
-summary(term)
+# summary(term)
 summary(term$ObligatedBeforeMaxTerminatedDate)
 summary(term$ObligatedAfterMaxTerminatedDate)
 summary(term$ObligatedOnMaxTerminatedDate)
@@ -130,56 +133,74 @@ summary(term$MaxTerminatedDate)
 sum(term$ObligatedBeforeMaxTerminatedDate)
 sum(term$ObligatedOnMaxTerminatedDate)
 sum(term$ObligatedAfterMaxTerminatedDate)
-term$AfterTermRatio<-
 
-  term$
-  
+summary(term$qHighCeiling)
+  if (all(levels(term$qHighCeiling)[1:5]==c("[0.00e+00,1.50e+04)",
+                                             "[1.50e+04,1.00e+05)",
+                                             "[1.00e+05,1.00e+06)",
+                                             "[1.00e+06,1.00e+07)",
+                                             "[1.00e+07,7.50e+07)"))){
+      term$qHighCeiling<-factor(term$qHighCeiling,
+
+                                    levels=c("[0.00e+00,1.50e+04)",
+                                             "[1.50e+04,1.00e+05)",
+                                             "[1.00e+05,1.00e+06)",
+                                             "[1.00e+06,1.00e+07)",
+                                             "[1.00e+07,7.50e+07)",
+                                             levels(term$qHighCeiling)[6]),
+                                    labels=c("[0,15k)",
+                                             "[15k,100k)",
+                                             "[100k,1m)",
+                                             "[1m,10m)",
+                                             "[10m,75m)",
+                                             "[75m+]"),
+                                    ordered=TRUE)
+  }
+```
+
+```{r TermProcess}
+
 #How often there no net pre-termination obligations
 nrow(term %>% filter(ObligatedBeforeMaxTerminatedDate<=0))
 
 #How often are contracts terminated on their first day
 nrow(term %>% filter(MaxTerminatedDate<=MinOfSignedDate) )
 
-term$PreTerm<-NA
-term$PreTerm[term$MaxTerminatedDate<=term$MinOfSignedDate]<-
-  term$ObligatedBeforeMaxTerminatedDate[term$MaxTerminatedDate<=term$MinOfSignedDate]+
+# term$PreTerm<-NA
+# term$PreTerm[term$MaxTerminatedDate<=term$MinOfSignedDate]<-
+#   term$ObligatedBeforeMaxTerminatedDate[term$MaxTerminatedDate<=term$MinOfSignedDate]+
+#   term$ObligatedOnMaxTerminatedDate[term$MaxTerminatedDate<=term$MinOfSignedDate]
+# term$PreTerm[term$MaxTerminatedDate>term$MinOfSignedDate]<-
+#   term$ObligatedBeforeMaxTerminatedDate[term$MaxTerminatedDate>term$MinOfSignedDate]
+
+term$ThroughTerm<-term$ObligatedBeforeMaxTerminatedDate+
   term$ObligatedOnMaxTerminatedDate[term$MaxTerminatedDate<=term$MinOfSignedDate]
-term$PreTerm[term$MaxTerminatedDate>term$MinOfSignedDate]<-
-  term$ObligatedBeforeMaxTerminatedDate[term$MaxTerminatedDate>term$MinOfSignedDate]
+
+
+# term$PostTerm<-NA
+# term$PostTerm[term$MaxTerminatedDate<=term$MinOfSignedDate]<-
+#   term$ObligatedAfterMaxTerminatedDate[term$MaxTerminatedDate<=term$MinOfSignedDate]
+# term$PostTerm[term$MaxTerminatedDate>term$MinOfSignedDate]<-
+#   term$ObligatedOnMaxTerminatedDate[term$MaxTerminatedDate>term$MinOfSignedDate]+
+#   term$ObligatedAfterMaxTerminatedDate[term$MaxTerminatedDate>term$MinOfSignedDate]
+#   
+# term$PreTerm[term$MaxTerminatedDate<=term$MinOfSignedDate]<-
+#   term$ObligatedBeforeMaxTerminatedDate[term$MaxTerminatedDate<=term$MinOfSignedDate]+
+#   term$ObligatedOnMaxTerminatedDate[term$MaxTerminatedDate<=term$MinOfSignedDate]
 
 
 
-term$PostTerm<-NA
-term$PostTerm[term$MaxTerminatedDate<=term$MinOfSignedDate]<-
-  term$ObligatedAfterMaxTerminatedDate[term$MaxTerminatedDate<=term$MinOfSignedDate]
-term$PostTerm[term$MaxTerminatedDate>term$MinOfSignedDate]<-
-  term$ObligatedOnMaxTerminatedDate[term$MaxTerminatedDate>term$MinOfSignedDate]+
-  term$ObligatedAfterMaxTerminatedDate[term$MaxTerminatedDate>term$MinOfSignedDate]
-  
+nrow(term %>% filter(ThroughTerm<=0))
+nrow(term %>% filter(ThroughTerm<=ObligatedAfterMaxTerminatedDate))
+nrow(term %>% filter(ThroughTerm/10<=ObligatedAfterMaxTerminatedDate))
 
-nrow(term %>% filter(PreTerm<=0))
-nrow(term %>% filter(PreTerm<=PostTerm))
-nrow(term %>% filter(PreTerm/10<=PostTerm))
-
-
-
-
-
-
-Weird<-(term %>% filter(ObligatedBeforeMaxTerminatedDate<=0))
-summary(Weird$ObligatedAfterMaxTerminatedDate)
-
-term$Count<-1
-
-??font_families
-library(sysfonts)
-
-term$PostTermFloor0<-term$PostTerm
+term$PostTermFloor0<-term$ObligatedAfterMaxTerminatedDate
 term$PostTermFloor0[term$PostTermFloor0<0]<-0
-term$PreTermFloor1<-term$PreTerm
-term$PreTermFloor1[term$PreTerm<1]<-1
+term$PreTermFloor1<-term$ThroughTerm
+term$PreTermFloor1[term$ThroughTerm<1]<-1
 term$TermRatio<-term$PostTermFloor0/term$PreTermFloor1
-term$TermRatioCapped[term$Term>1]<-1
+term$TermRatioCapped<-term$TermRatio
+term$TermRatioCapped[term$TermRatio>1]<-1
 summary(term$TermRatioCapped)
 # g<-build_plot(
 #   data=term, # %>% dplyr::select(PostTermFloor0),
@@ -196,33 +217,209 @@ summary(term$TermRatioCapped)
 # )
 
 
-term$NoPreTermObl<-"No"
-term$NoPreTermObl[term$PreTerm<=0]<-"Yes"
+term$NoPreTermObl<-"Some Net $s Pre-Term."
+term$NoPreTermObl[term$ObligatedBeforeMaxTerminatedDate<=0]<-"Terminated Before Any Net $s"
 term$NoPreTermObl<-factor(term$NoPreTermObl)
 
-ggplot(term,aes(x=PostTermFloor0+1)) +
-  geom_histogram(bins=100)+scale_x_log10(labels = comma)+scale_y_log10(labels = comma)
 
-ggplot(term,aes(x=TermRatioCapped)) +
-  geom_histogram(bins=100)+scale_y_log10(labels = comma)
+term$TerMRatioCat<-Hmisc::cut2(term$TermRatio,c(0.1,1))
+summary(term$TerMRatioCat)
+levels(term$TerMRatioCat)[3]<-"[100%+]"
+term$TerMRatioCat<-as.character(term$TerMRatioCat)
+term$TerMRatioCat[term$TermRatio==0]<-"[0]"
+term$TerMRatioCat[term$TermRatio==0 & term$ObligatedOnMaxTerminatedDate>0]<-"[0]+Last Day Spend"
+# term$TerMRatioCat[term$TermRatio==0 & term$ObligatedOnMaxTerminatedDate>0 & term$MaxTerminatedDate<=term$MinOfSignedDate]<-"[0]+One Day Spend"
+summary(factor(term$TerMRatioCat))
 
 
-ggplot(term %>% filter(TermRatioCapped>0),aes(x=TermRatioCapped )) +
-  geom_histogram(bins=100)#+scale_y_log10(labels = comma)
+term$TerMRatioCat<-factor(term$TerMRatioCat)
 
 
-ggplot(term %>% filter(TermRatioCapped>0),aes(x=TermRatio )) +
-  geom_histogram(bins=100)+scale_x_log10(labels = comma)
 
-ggplot(term %>% filter(TermRatioCapped>0),aes(x=TermRatio,fill=NoPreTermObl )) +
-  geom_histogram(bins=100)+scale_x_log10(labels = comma)+facet_wrap(~Dur)
+levels(term$TerMRatioCat)<-list(
+  "[0]+No Last Day Spend"="[0]",
+  "[0]+Last Day Spend"="[0]+Last Day Spend",
+  "(0%,10%)"="[0.00e+00,1.00e-01)",
+  "[10%,100%)"="[1.00e-01,1.00e+00)",
+  "[100%+]"="[100%+]"
+)
+term$TerMRatioCat3<-term$TerMRatioCat
+levels(term$TerMRatioCat3)<-list(
+  "Term Ends Spend"="[0]+No Last Day Spend",
+  "Last Day Spend"="[0]+Last Day Spend",
+  "Any After"=c("(0%,10%)","[10%,100%)","[100%+]")
+)
+summary(term$TerMRatioCat)
 
-ggplot(term %>% filter(TermRatioCapped>0),aes(x=TermRatio,fill=NoPreTermObl )) +
+
+term$PreTermLength<-term$MaxTerminatedDate-term$MinOfSignedDate
+summary(term$PreTermLength)
+
+term$FirstDayTerm<-"No"
+term$FirstDayTerm[term$MaxTerminatedDate==term$MinOfSignedDate]<-"Yes"
+
+(
+TermRatioHist<-ggplot(term %>% filter(TermRatioCapped>0),aes(x=TermRatio,fill=TerMRatioCat )) +
   geom_histogram(bins=100)+scale_x_log10(breaks=c(0.001,0.01,0.1,0.5,1,10,100,1000))+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  geom_vline(xintercept = 1)+geom_vline(xintercept = 0.1)+geom_vline(xintercept = 2)
-#+facet_wrap(~Dur)
+  geom_vline(xintercept = 1)+geom_vline(xintercept = 0.1)+
+facet_grid(NoPreTermObl~.,scales="free_y")+
+  labs(title="Distribution of Contracts with Obligations After Last termination",
+       y="Contract Count",
+       x="Ratio of Spending After Termination\nto Spending Through Termination",
+       fill="Termination Completion"
+       )
+)
 
+(
+TermRatio<-ggplot(term,aes(x=TermRatio)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0.9,1),xlim=c(0,2))+
+  labs(title="Cumulative Distribution of Terminated Contracts",
+       y="% of Terminated Contracts",
+       x="Ratio of Spending After Termination\nto Spending Through Termination"
+       )
+)
+
+(
+TermCeilRatio<-ggplot(term,aes(x=TermRatio,color=qHighCeiling)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0.70,1),xlim=c(0,3))+geom_vline(xintercept = 0.1)+
+  labs(title="Cumulative Distribution of Terminated Contracts",
+       y="% of Category's Terminated Contracts",
+       x="Ratio of Spending After Termination\nto Spending Through Termination",
+       color="Initial Ceiling")+
+  scale_y_continuous(label=percent)
+)
+
+(
+TermObl<-ggplot(term,aes(x=PostTermFloor0+1)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0.9,1))+#+,xlim=c(0,1e8)
+  scale_x_log10(label=comma)+
+  labs(title="Cumulative Distribution of Terminated Contracts",
+       y="% of Terminated Contracts",
+       x="Obligations After Termination")
+)
+#+geom_vline(xintercept = 0.1)+geom_vline(xintercept =1)+
+
+# termDouble<-term
+# termDouble$qHighCeiling<-"Overall"
+# termDouble$NoPreTermObl<-"Overall"
+
+(
+TermNoObl<-ggplot(term,aes(x=PostTermFloor0+1,color=NoPreTermObl)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0.9,1))+#+,xlim=c(0,1e8)
+  scale_x_log10(label=comma)+
+  labs(title="Cumulative Distribution of Terminated Contracts",
+       y="% of Category's Terminated Contracts",
+       x="Obligations After Termination",
+       color="Any Spending Before Termination?")+
+    theme(legend.position = "bottom")
+#+geom_vline(xintercept = 0.1)+geom_vline(xintercept =1)+
+)
+
+(
+TermCeilObl<-ggplot(term,aes(x=PostTermFloor0+1,color=qHighCeiling)) +
+  stat_ecdf(geom = "step")+stat_ecdf(geom = "step",aes(x=PostTermFloor0+1))+
+    coord_cartesian(ylim=c(0.65,1))+#+,xlim=c(0,1e8)
+  scale_x_log10(label=comma)+
+  labs(title="Cumulative Distribution of Terminated Contracts",
+       y="% of Category's Terminated Contracts",
+       x="Obligations After Termination",
+       color="Initial Ceiling")+
+  scale_y_continuous(label=percent)
+)
+
+ggsave(TermCeilRatio,file="../Output/TermCeilRatio.png")
+
+```
+An odd side effect of the way histograms work, it actually overestimates the number of 0 and above cap growth entries there are, there's only 83,306 
+
+#### After Term Crosstabs
+```{r TermCrosstab}
+
+summary(term$TerMRatioCat)
+
+
+freq_table("TerMRatioCat",term)
+
+(
+  TermSum<-grouped_barplot("TerMRatioCat",term)+
+    labs(title = "Termination Completion Summary")
+)
+
+(
+TermOblByCeil<-ggplot(term,aes(x=TerMRatioCat,fill=TerMRatioCat,y=Action.Obligation)) +
+  geom_col()+scale_y_continuous(labels = comma)+
+  facet_wrap(qHighCeiling~.)+
+  labs(title="Termination Completeness by Initial Ceiling",
+       y="Contract Obligations",
+       x="Termination Completeness")+
+  theme(legend.position="None",axis.text.x = element_text(angle=90))
+)
+
+# ggplot(term,aes(x=NoPreTermObl,fill=TerMRatioCat)) +facet_grid(TerMRatioCat3~.,scales="free_y")+
+#   geom_bar()+scale_y_continuous(labels = comma)
+
+(
+TermComp<-ggplot(term,aes(x=CompOffr,fill=TerMRatioCat)) +facet_grid(TerMRatioCat3~.,scales="free_y")+
+  geom_bar()+scale_y_continuous(labels = comma)+
+  labs(title="Competition and Termination Completeness",
+       y="Contract Count",
+       x="Termination Completeness",
+       fill="Termination Completeness")
+)
+
+
+(
+TermVeh<-ggplot(term,aes(x=Veh,fill=TerMRatioCat)) +facet_grid(TerMRatioCat3~.,scales="free_y")+
+  geom_bar()+scale_y_continuous(labels = comma)+
+  labs(title="Vehicle and Termination Completeness",
+       y="Contract Count",
+       x="Termination Completeness",
+       fill="Termination Completeness")
+)
+
+term$Veh3<-term$Veh
+levels(term$Veh3)=list(
+  "Def/Pur"="Def/Pur",
+  "S-IDC"="S-IDC",
+  "Other IDV"=c("M-IDC","FSS/GWAC","BPA/BOA" )
+)
+
+(
+TermDur<-ggplot(term,aes(x=PreTermLength,color=TerMRatioCat)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0,1))+#+,xlim=c(0,1e8)
+  # scale_x_log10(label=comma)+
+  labs(title="Duration and Termination Completeness",
+       y="Cumulative Distribution % of\nCategory's Terminated Contracts",
+       x="Days from Start to Final Termination",
+       color="Termination Completeness")+
+  scale_y_continuous(label=percent)
+)
+
+
+(
+TermDay1<-ggplot(term %>% filter(FirstDayTerm=="Yes" & !is.na(CompOffr) & !is.na(Veh)),
+                 aes(x=TerMRatioCat3,fill=TerMRatioCat)) +facet_grid(Veh3~CompOffr)+
+  geom_bar()+scale_y_continuous(labels = comma)+
+  labs(title="Distribution of Day 1 Final Termination Contracts",
+       y="Contract Count",
+       x="Competition Category",
+       fill="Termination Completeness",
+       caption="Unlabeled Vehicle and Competition Excluded")+
+    theme(legend.position = "bottom",
+          axis.text.x = element_text(angle = 90))+
+    scale_fill_discrete(guide=guide_legend(nrow=2))
+)
+
+
+ggsave(TermSum,file="../Output/TermSum.png")
+ggsave(TermDur,file="../Output/TermDur.png")
+ggsave(TermDay1,file="../Output/TermDay1.png")
 
 ```
 
@@ -1268,6 +1465,9 @@ sum(money[!complete],na.rm=TRUE)/sum(money,na.rm=TRUE)
 
 
 ```
+
+
+
 # Loading Models
 ## Output: Offers
 
