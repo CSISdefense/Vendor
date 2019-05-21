@@ -192,16 +192,15 @@ term$ThroughTerm<-term$ObligatedBeforeMaxTerminatedDate+
 
 nrow(term %>% filter(ThroughTerm<=0))
 nrow(term %>% filter(ThroughTerm<=ObligatedAfterMaxTerminatedDate))
-nrow(term %>% filter(ThroughTerm/10<=ObligatedAfterMaxTerminatedDate))
+nrow(term %>% filter(ThroughTerm/3<ObligatedAfterMaxTerminatedDate))
+
 
 term$PostTermFloor0<-term$ObligatedAfterMaxTerminatedDate
 term$PostTermFloor0[term$PostTermFloor0<0]<-0
 term$PreTermFloor1<-term$ThroughTerm
 term$PreTermFloor1[term$ThroughTerm<1]<-1
-term$TermRatio<-term$PostTermFloor0/term$PreTermFloor1
-term$TermRatioCapped<-term$TermRatio
-term$TermRatioCapped[term$TermRatio>1]<-1
-summary(term$TermRatioCapped)
+term$TermPct<-term$PostTermFloor0/(term$PostTermFloor0+term$PreTermFloor1)
+summary(term$TermPct)
 # g<-build_plot(
 #   data=term, # %>% dplyr::select(PostTermFloor0),
 #   chart_geom = "Histogram",
@@ -218,38 +217,45 @@ summary(term$TermRatioCapped)
 
 
 term$NoPreTermObl<-"Some Net $s Pre-Term."
-term$NoPreTermObl[term$ObligatedBeforeMaxTerminatedDate<=0]<-"Terminated Before Any Net $s"
+term$NoPreTermObl[term$ObligatedBeforeMaxTerminatedDate<=0]<-"0 Pre-Term"
 term$NoPreTermObl<-factor(term$NoPreTermObl)
 
 
-term$TerMRatioCat<-Hmisc::cut2(term$TermRatio,c(0.1,1))
-summary(term$TerMRatioCat)
-levels(term$TerMRatioCat)[3]<-"[100%+]"
-term$TerMRatioCat<-as.character(term$TerMRatioCat)
-term$TerMRatioCat[term$TermRatio==0]<-"[0]"
-term$TerMRatioCat[term$TermRatio==0 & term$ObligatedOnMaxTerminatedDate>0]<-"[0]+Last Day Spend"
-# term$TerMRatioCat[term$TermRatio==0 & term$ObligatedOnMaxTerminatedDate>0 & term$MaxTerminatedDate<=term$MinOfSignedDate]<-"[0]+One Day Spend"
-summary(factor(term$TerMRatioCat))
+term$TermPctCat<-Hmisc::cut2(term$TermPct,c(0.25,0.5))
+summary(term$TermPctCat)
+# levels(term$TermPctCat)[3]<-"[50%+]"
+term$TermPctCat<-as.character(term$TermPctCat)
+term$TermPctCat[term$TermPct==0]<-"[0]"
+term$TermPctCat[term$TermPct==0 & term$ObligatedOnMaxTerminatedDate>0]<-"[0]+Last Day Spend"
+# term$TermPctCat[term$TermPct==0 & term$ObligatedOnMaxTerminatedDate>0 & term$MaxTerminatedDate<=term$MinOfSignedDate]<-"[0]+One Day Spend"
+term$TermPctCat<-factor(term$TermPctCat)
+summary(term$TermPctCat)
 
 
-term$TerMRatioCat<-factor(term$TerMRatioCat)
 
 
-
-levels(term$TerMRatioCat)<-list(
+levels(term$TermPctCat)<-list(
   "[0]+No Last Day Spend"="[0]",
   "[0]+Last Day Spend"="[0]+Last Day Spend",
-  "(0%,10%)"="[0.00e+00,1.00e-01)",
-  "[10%,100%)"="[1.00e-01,1.00e+00)",
-  "[100%+]"="[100%+]"
+  "(0%,25%)"="[0.00,0.25)",
+  "[25%,50%)"="[0.25,0.50)",
+  "[50%+]"="[0.50,1.00]"
 )
-term$TerMRatioCat3<-term$TerMRatioCat
-levels(term$TerMRatioCat3)<-list(
+
+term$TermPartial<-term$TermPctCat
+levels(term$TermPartial)<-list(
+  "Complete Termination"=c("[0]+No Last Day Spend","[0]+Last Day Spend","(0%,25%)"),
+  "Partial Termination"=c("[25%,50%)","[50%+]")
+)
+summary(term$TermPartial)
+
+term$TermPctCat3<-term$TermPctCat
+levels(term$TermPctCat3)<-list(
   "Term Ends Spend"="[0]+No Last Day Spend",
   "Last Day Spend"="[0]+Last Day Spend",
   "Any After"=c("(0%,10%)","[10%,100%)","[100%+]")
 )
-summary(term$TerMRatioCat)
+summary(term$TermPctCat)
 
 
 term$PreTermLength<-term$MaxTerminatedDate-term$MinOfSignedDate
@@ -259,35 +265,35 @@ term$FirstDayTerm<-"No"
 term$FirstDayTerm[term$MaxTerminatedDate==term$MinOfSignedDate]<-"Yes"
 
 (
-TermRatioHist<-ggplot(term %>% filter(TermRatioCapped>0),aes(x=TermRatio,fill=TerMRatioCat )) +
-  geom_histogram(bins=100)+scale_x_log10(breaks=c(0.001,0.01,0.1,0.5,1,10,100,1000))+
+TermPctHist<-ggplot(term %>% filter(TermPct>0),aes(x=TermPct,fill=TermPctCat )) +
+  geom_histogram(bins=100)+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+
   geom_vline(xintercept = 1)+geom_vline(xintercept = 0.1)+
-facet_grid(NoPreTermObl~.,scales="free_y")+
+facet_grid(NoPreTermObl~.,scales="free_y", space="free_y")+
   labs(title="Distribution of Contracts with Obligations After Last termination",
        y="Contract Count",
-       x="Ratio of Spending After Termination\nto Spending Through Termination",
+       x="Percent of Obligations After Day of Termination",
        fill="Termination Completion"
        )
 )
 
 (
-TermRatio<-ggplot(term,aes(x=TermRatio)) +
+TermPct<-ggplot(term,aes(x=TermPct)) +
   stat_ecdf(geom = "step")+
-    coord_cartesian(ylim=c(0.9,1),xlim=c(0,2))+
+    coord_cartesian(ylim=c(0.9,1),xlim=c(0,1))+
   labs(title="Cumulative Distribution of Terminated Contracts",
        y="% of Terminated Contracts",
-       x="Ratio of Spending After Termination\nto Spending Through Termination"
-       )
+       x="Percent of Obligations After Day of Termination"
+       )+geom_vline(xintercept = 0.25)
 )
 
 (
-TermCeilRatio<-ggplot(term,aes(x=TermRatio,color=qHighCeiling)) +
+TermCeilRatio<-ggplot(term,aes(x=TermPct,color=qHighCeiling)) +
   stat_ecdf(geom = "step")+
-    coord_cartesian(ylim=c(0.70,1),xlim=c(0,3))+geom_vline(xintercept = 0.1)+
+    coord_cartesian(ylim=c(0.70,1),xlim=c(0,1))+geom_vline(xintercept = 0.25)+
   labs(title="Cumulative Distribution of Terminated Contracts",
        y="% of Category's Terminated Contracts",
-       x="Ratio of Spending After Termination\nto Spending Through Termination",
+       x="Percent of Obligations After Day of Termination",
        color="Initial Ceiling")+
   scale_y_continuous(label=percent)
 )
@@ -340,18 +346,18 @@ An odd side effect of the way histograms work, it actually overestimates the num
 #### After Term Crosstabs
 ```{r TermCrosstab}
 
-summary(term$TerMRatioCat)
+summary(term$TermPctCat)
 
 
-freq_table("TerMRatioCat",term)
+freq_table("TermPctCat",term)
 
 (
-  TermSum<-grouped_barplot("TerMRatioCat",term)+
+  TermSum<-grouped_barplot("TermPctCat",term)+
     labs(title = "Termination Completion Summary")
 )
 
 (
-TermOblByCeil<-ggplot(term,aes(x=TerMRatioCat,fill=TerMRatioCat,y=Action.Obligation)) +
+TermOblByCeil<-ggplot(term,aes(x=TermPctCat,fill=TermPctCat,y=Action.Obligation)) +
   geom_col()+scale_y_continuous(labels = comma)+
   facet_wrap(qHighCeiling~.)+
   labs(title="Termination Completeness by Initial Ceiling",
@@ -360,11 +366,11 @@ TermOblByCeil<-ggplot(term,aes(x=TerMRatioCat,fill=TerMRatioCat,y=Action.Obligat
   theme(legend.position="None",axis.text.x = element_text(angle=90))
 )
 
-# ggplot(term,aes(x=NoPreTermObl,fill=TerMRatioCat)) +facet_grid(TerMRatioCat3~.,scales="free_y")+
+# ggplot(term,aes(x=NoPreTermObl,fill=TermPctCat)) +facet_grid(TermPctCat3~.,scales="free_y")+
 #   geom_bar()+scale_y_continuous(labels = comma)
 
 (
-TermComp<-ggplot(term,aes(x=CompOffr,fill=TerMRatioCat)) +facet_grid(TerMRatioCat3~.,scales="free_y")+
+TermComp<-ggplot(term,aes(x=CompOffr,fill=TermPctCat)) +facet_grid(TermPctCat3~.,scales="free_y")+
   geom_bar()+scale_y_continuous(labels = comma)+
   labs(title="Competition and Termination Completeness",
        y="Contract Count",
@@ -374,7 +380,7 @@ TermComp<-ggplot(term,aes(x=CompOffr,fill=TerMRatioCat)) +facet_grid(TerMRatioCa
 
 
 (
-TermVeh<-ggplot(term,aes(x=Veh,fill=TerMRatioCat)) +facet_grid(TerMRatioCat3~.,scales="free_y")+
+TermVeh<-ggplot(term,aes(x=Veh,fill=TermPctCat)) +facet_grid(TermPctCat3~.,scales="free_y")+
   geom_bar()+scale_y_continuous(labels = comma)+
   labs(title="Vehicle and Termination Completeness",
        y="Contract Count",
@@ -390,7 +396,7 @@ levels(term$Veh3)=list(
 )
 
 (
-TermDur<-ggplot(term,aes(x=PreTermLength,color=TerMRatioCat)) +
+TermDur<-ggplot(term,aes(x=PreTermLength,color=TermPctCat)) +
   stat_ecdf(geom = "step")+
     coord_cartesian(ylim=c(0,1))+#+,xlim=c(0,1e8)
   # scale_x_log10(label=comma)+
@@ -404,7 +410,7 @@ TermDur<-ggplot(term,aes(x=PreTermLength,color=TerMRatioCat)) +
 
 (
 TermDay1<-ggplot(term %>% filter(FirstDayTerm=="Yes" & !is.na(CompOffr) & !is.na(Veh)),
-                 aes(x=TerMRatioCat3,fill=TerMRatioCat)) +facet_grid(Veh3~CompOffr)+
+                 aes(x=TermPctCat3,fill=TermPctCat)) +facet_grid(Veh3~CompOffr)+
   geom_bar()+scale_y_continuous(labels = comma)+
   labs(title="Distribution of Day 1 Final Termination Contracts",
        y="Contract Count",
@@ -420,6 +426,18 @@ TermDay1<-ggplot(term %>% filter(FirstDayTerm=="Yes" & !is.na(CompOffr) & !is.na
 ggsave(TermSum,file="../Output/TermSum.png")
 ggsave(TermDur,file="../Output/TermDur.png")
 ggsave(TermDay1,file="../Output/TermDay1.png")
+
+partialterm<-term %>% group_by() %>% dplyr::select(CSIScontractID,TermPartial)
+summary(partialterm)
+def<-left_join(def,partialterm)
+
+
+# def<-def %>% dplyr::select(-TermPartial)
+def$TermPartial<-as.character(def$TermPartial)
+def$TermPartial[def$Term=="Unterminated"]<-"Unterminated"
+summary(factor(def$TermPartial))
+freq_table("TermPartial",def)
+summary(def$TermPartial)
 
 ```
 
