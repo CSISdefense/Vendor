@@ -395,18 +395,13 @@ levels(term$Veh3)=list(
   "Other IDV"=c("M-IDC","FSS/GWAC","BPA/BOA" )
 )
 
-(
-TermDur<-ggplot(term,aes(x=PreTermLength,color=TermPctCat)) +
-  stat_ecdf(geom = "step")+
-    coord_cartesian(ylim=c(0,1))+#+,xlim=c(0,1e8)
-  # scale_x_log10(label=comma)+
-  labs(title="Duration and Termination Completeness",
-       y="Cumulative Distribution % of\nCategory's Terminated Contracts",
-       x="Days from Start to Final Termination",
-       color="Termination Completeness")+
-  scale_y_continuous(label=percent)
-)
+ggsave(TermSum,file="../Output/TermSum.png")
+ggsave(TermDur,file="../Output/TermDur.png")
 
+
+```
+
+```{r OneDay}
 
 (
 TermDay1<-ggplot(term %>% filter(FirstDayTerm=="Yes" & !is.na(CompOffr) & !is.na(Veh)),
@@ -422,9 +417,29 @@ TermDay1<-ggplot(term %>% filter(FirstDayTerm=="Yes" & !is.na(CompOffr) & !is.na
     scale_fill_discrete(guide=guide_legend(nrow=2))
 )
 
+(
+TermDur<-ggplot(term,aes(x=PreTermLength,color=TermPctCat)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0,1))+#+,xlim=c(0,1e8)
+  # scale_x_log10(label=comma)+
+  labs(title="Duration and Termination Completeness",
+       y="Cumulative Distribution % of\nCategory's Terminated Contracts",
+       x="Days from Start to Final Termination",
+       color="Termination Completeness")+
+  scale_y_continuous(label=percent)
+)
 
-ggsave(TermSum,file="../Output/TermSum.png")
-ggsave(TermDur,file="../Output/TermDur.png")
+(
+TermOblByStart<-ggplot(term,aes(x=TermPctCat,fill=TermPctCat)) +
+  geom_bar()+scale_y_continuous(labels = comma)+
+  facet_wrap(StartCY~.)+
+  labs(title="Termination Completeness by Initial Ceiling",
+       y="Contract Obligations",
+       x="Termination Completeness")+
+  theme(legend.position="None",axis.text.x = element_text(angle=90))
+)
+
+
 ggsave(TermDay1,file="../Output/TermDay1.png")
 
 partialterm<-term %>% group_by() %>% dplyr::select(CSIScontractID,TermPartial)
