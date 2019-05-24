@@ -278,6 +278,19 @@ facet_grid(NoPreTermObl~.,scales="free_y", space="free_y")+
 )
 
 (
+TermPctHistDoC<-ggplot(term %>% filter(TermPct>0),aes(x=TermPct,fill=TermPctCat )) +
+  geom_histogram(bins=100)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  geom_vline(xintercept = 1)+geom_vline(xintercept = 0.1)+
+facet_grid(NoPreTermObl~isDefaultOrCause,scales="free_y", space="free_y")+
+  labs(title="Distribution of Contracts with Obligations After Last termination",
+       y="Contract Count",
+       x="Percent of Obligations After Day of Termination",
+       fill="Termination Completion"
+       )
+)
+
+(
 TermPct<-ggplot(term,aes(x=TermPct)) +
   stat_ecdf(geom = "step")+
     coord_cartesian(ylim=c(0.9,1),xlim=c(0,1))+
@@ -286,6 +299,18 @@ TermPct<-ggplot(term,aes(x=TermPct)) +
        x="Percent of Obligations After Day of Termination"
        )+geom_vline(xintercept = 0.25)
 )
+
+
+(
+TermPctDoC<-ggplot(term,aes(x=TermPct,color=isDefaultOrCause)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0.9,1),xlim=c(0,1))+
+  labs(title="Cumulative Distribution of Terminated Contracts",
+       y="% of Terminated Contracts",
+       x="Percent of Obligations After Day of Termination"
+       )+geom_vline(xintercept = 0.25)
+)
+
 
 (
 TermCeilRatio<-ggplot(term,aes(x=TermPct,color=qHighCeiling)) +
@@ -338,6 +363,20 @@ TermCeilObl<-ggplot(term,aes(x=PostTermFloor0+1,color=qHighCeiling)) +
   scale_y_continuous(label=percent)
 )
 
+(
+TermCeilOblDoC<-ggplot(term,aes(x=PostTermFloor0+1,color=qHighCeiling)) +
+  stat_ecdf(geom = "step")+stat_ecdf(geom = "step",aes(x=PostTermFloor0+1))+
+    coord_cartesian(ylim=c(0.65,1))+#+,xlim=c(0,1e8)
+  scale_x_log10(label=comma)+
+  labs(title="Cumulative Distribution of Terminated Contracts",
+       y="% of Category's Terminated Contracts",
+       x="Obligations After Termination",
+       color="Initial Ceiling")+
+  scale_y_continuous(label=percent)+facet_wrap(~isDefaultOrCause)
+)
+
+
+
 ggsave(TermCeilRatio,file="../Output/TermCeilRatio.png")
 
 ```
@@ -346,7 +385,7 @@ An odd side effect of the way histograms work, it actually overestimates the num
 #### After Term Crosstabs
 ```{r TermCrosstab}
 
-summary(term$TermPctCat)
+term$isDefaultOrCause<-factor(term$isDefaultOrCause)
 
 
 freq_table("TermPctCat",term)
@@ -372,6 +411,17 @@ TermOblByCeil<-ggplot(term,aes(x=TermPctCat,fill=TermPctCat,y=Action.Obligation)
   theme(legend.position="None",axis.text.x = element_text(angle=90))
 )
 
+
+(
+TermOblByCeil<-ggplot(term,aes(x=TermPctCat,fill=TermPctCat,y=Action.Obligation)) +
+  geom_col()+scale_y_continuous(labels = comma)+
+  facet_grid(isDefaultOrCause~.,scale="free_y")+
+  labs(title="Termination Completeness by Initial Ceiling",
+       y="Contract Obligations",
+       x="Termination Completeness")+
+  theme(legend.position="None",axis.text.x = element_text(angle=90))
+)
+
 # ggplot(term,aes(x=NoPreTermObl,fill=TermPctCat)) +facet_grid(TermPctCat3~.,scales="free_y")+
 #   geom_bar()+scale_y_continuous(labels = comma)
 
@@ -385,6 +435,7 @@ TermComp<-ggplot(term,aes(x=CompOffr,fill=TermPctCat)) +facet_grid(TermPctCat3~.
 )
 
 
+
 (
 TermVeh<-ggplot(term,aes(x=Veh,fill=TermPctCat)) +facet_grid(TermPctCat3~.,scales="free_y")+
   geom_bar()+scale_y_continuous(labels = comma)+
@@ -393,6 +444,7 @@ TermVeh<-ggplot(term,aes(x=Veh,fill=TermPctCat)) +facet_grid(TermPctCat3~.,scale
        x="Termination Completeness",
        fill="Termination Completeness")
 )
+
 
 term$Veh3<-term$Veh
 levels(term$Veh3)=list(
