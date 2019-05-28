@@ -38,18 +38,42 @@ source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/
 #Combining Source Files
 ##Sample Criteria
 ```{r DetailCustomer}
-if(!exists("def_all_detail")) def_all_detail<-NULL
+if(!exists("def_all")) def_all<-NULL
 # debug(input_sample_criteria)
 debug(input_sample_criteria)
-def_all_detail<-input_sample_criteria(def_all_detail,                                file="Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
+def_all<-input_sample_criteria(def_all,  
+                      file="Defense_Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
                       drop_incomplete=FALSE)
   
 
 # def_detail<-input_sample_criteria(def_detail,                                file="Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
 #                       drop_incomplete=FALSE)
   
-load(file="Data\\defense_contract_all_detail.Rdata")
-save(file="Data\\defense_contract_all_detail.Rdata",def_all_detail)
+# load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
+
+def_all$IsComplete<-0
+def_all$IsComplete[def_all$StartFiscal_Year>=2007 & 
+                       #For unclosed out contracts both current completion and last signed should bebefore  2016
+                       (def_all$MaxBoostDate<as.Date("2017-01-01")| is.na(def_all$MaxBoostDate))&
+                      (def_all$LastCurrentCompletionDate<as.Date("2017-01-01")
+                     #For closed out it's enough that the boost date is within the range.
+                     | (def_all$IsClosed==1 | def_all$IsTerminated=="Terminated"))
+                        ]<-1
+
+
+ load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
+# def_all<-read_and_join_experiment(def_all,
+#                             lookup_file = "Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
+#                             path="..\\..\\Services\\",
+#                             dir="Data\\semi_clean\\",
+#                             by="CSIScontractID",
+#                             # new_var_checked = FALSE,
+#                             add_var=c("MaxBoostDate",
+#                                       "IsClosed"),
+#                             skip_check_var=c("IsClosed" ,
+#                                              "MaxBoostDate")
+# )
+save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 
 ```
 
@@ -58,7 +82,8 @@ save(file="Data\\defense_contract_all_detail.Rdata",def_all_detail)
 ## Top PSC Office NAICS
 ```{r TopPSCofficeNAICS}
 debug(read_and_join_experiment)
-def_all_detail<-input_contract_psc_office_naics(def_all_detail,                                file="Contract.SP_ContractSampleCriteriaDetailsCustomer.txt")
+def_all<-input_contract_psc_office_naics(def_all,        
+                                         file="Contract.SP_ContractSampleCriteriaDetailsCustomer.txt")
 
 #This works!  
 test<-readr::read_delim("Data\\Contract.SP_ContractTopPSCofficeNAICS.txt",delim="\t",
@@ -85,24 +110,24 @@ test<-readr::read_delim("Data\\Contract.SP_ContractTopPSCofficeNAICS.txt",delim=
 #       col_types=col_types
 #     )
 
-def_all_detail<-dplyr::left_join(def_all_detail,test,by="CSIScontractID")
+def_all<-dplyr::left_join(def_all,test,by="CSIScontractID")
 
-def_all_detail$topContractingOfficeAgencyID<-factor(
-  def_all_detail$topContractingOfficeAgencyID
+def_all$topContractingOfficeAgencyID<-factor(
+  def_all$topContractingOfficeAgencyID
 )
-def_all_detail$topContractingOfficeID<-factor(
-  def_all_detail$topContractingOfficeID
+def_all$topContractingOfficeID<-factor(
+  def_all$topContractingOfficeID
 )
-def_all_detail$topProductOrServiceCode<-factor(
-  def_all_detail$topProductOrServiceCode
+def_all$topProductOrServiceCode<-factor(
+  def_all$topProductOrServiceCode
 )
-def_all_detail$topPrincipalNAICScode<-factor(
-  def_all_detail$topPrincipalNAICScode
+def_all$topPrincipalNAICScode<-factor(
+  def_all$topPrincipalNAICScode
 )
 
-def_all_detail$AgencyID<-def_all_detail$topContractingOfficeAgencyID
+def_all$AgencyID<-def_all$topContractingOfficeAgencyID
 debug(na_check)
-def_all_detail<-read_and_join_experiment(def_all_detail,
+def_all<-read_and_join_experiment(def_all,
                                          "Agency_AgencyID.csv",
                                          by="AgencyID",
                                          # replace_na_var="AgencyID",
@@ -110,8 +135,8 @@ def_all_detail<-read_and_join_experiment(def_all_detail,
                                          path = "https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
                                          directory = ""
 )
-def_all_detail<- subset(def_all_detail,Customer=="Defense")
-def_all_detail<-def_all_detail[,!colnames(def_all_detail) %in% 
+def_all<- subset(def_all,Customer=="Defense")
+def_all<-def_all[,!colnames(def_all) %in% 
                                  c(
                                    # "topContractingOfficeAgencyID",
                                    "topContractingOfficeAgencyIDamount"      ,
@@ -122,49 +147,48 @@ def_all_detail<-def_all_detail[,!colnames(def_all_detail) %in%
                                    # "topPrincipalNAICScode",
                                    "topPrincipalNAICSamount",
                                    "Customer")]
-# load(file="Data\\defense_contract_all_detail.Rdata")
+# load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
 
 ```
 
 
 ##Initial Scope
 ```{r Scope}
-# load(file="Data\\defense_contract_all_detail.Rdata")
+# load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
 # undebug(input_initial_scope)
-def_all_detail<-input_initial_scope(def_all_detail,
+def_all<-input_initial_scope(def_all,
                              file="Contract.SP_ContractUnmodifiedAndOutcomeDetailsCustomer.txt")
 
 # debug(input_initial_scope)
 # def_detail<-input_initial_scope(def_detail,
 #                              file="Contract.SP_ContractUnmodifiedAndOutcomeDetailsCustomer.txt")
-save(file="Data\\defense_contract_all_detail.Rdata",def_all_detail)
+save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 ```
 
 ## Contract Delta
 
 ```{r Delta}
-# load(file="Data\\defense_contract_all_detail.Rdata")
+# load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
 # undebug(input_initial_scope)
-def_all_detail<-input_contract_delta(def_all_detail,
+def_all<-input_contract_delta(def_all,
              file="Defense_Contract_SP_ContractModificationDeltaCustomer.csv")
 
-save(file="Data\\defense_contract_all_detail.Rdata",def_all_detail)
+save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 ```
 
-# Split between def_all_detail and def_detail
+# Split between def_all and def_detail
 
 ##Location
 ```{r Location}
-
-
-def_detail<-def_all_detail
-rm(def_all_detail)
+def_detail<-def_all
+rm(def_all)
 #Drop contracts starting before the study period and not clearly end within it
-def_detail<-subset(def_detail, StartFY>=2007   & year(MinOfSignedDate)<2017 & 
-    (LastCurrentCompletionDate<"2017-01-01" | IsClosed==1)
-)
+def_detail<-def_detail %>% filter(IsComplete==1)
+#   subset(def_detail, StartFY>=2007   & year(MinOfSignedDate)<2017 & 
+#     (LastCurrentCompletionDate<"2017-01-01" | IsClosed==1)
+# )
 
-# load(file="Data\\defense_contract_complete_detail.Rdata")
+# load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
 
 def_detail<-csis360::read_and_join_experiment(def_detail,
     "Contract.SP_ContractLocationCustomer.txt"
@@ -245,7 +269,7 @@ def_detail<-def_detail[,!colnames(def_detail) %in%
     )]
 
 
-save(file="Data\\defense_contract_complete_detail.Rdata",def_detail)
+save(file="..\\data\\clean\\defense_contract_complete_detail.Rdata",def_detail)
 
 
 ```
@@ -254,7 +278,7 @@ save(file="Data\\defense_contract_complete_detail.Rdata",def_detail)
 
 ##BucketPlatform
 ```{r BucketPlatform}
-# load(file="Data\\defense_contract_complete_detail.Rdata")
+# load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
 #Note to identify is.defense here.
 def_detail<-csis360::read_and_join_experiment(data=def_detail
   ,"Contract.SP_ContractBucketPlatformCustomer.txt"
@@ -401,13 +425,13 @@ def_detail<-subset(def_detail,select=-c(
 def_detail$SimpleArea<-droplevels(def_detail$SimpleArea)
 
 
-save(file="Data\\defense_contract_complete_detail.Rdata",def_detail)
+save(file="..\\data\\clean\\defense_contract_complete_detail.Rdata",def_detail)
 
 ```
 
 ##Competition Vehicle
 ```{r CompetitionVehicle}
-# load(file="Data\\defense_contract_complete_detail.Rdata")
+# load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
 
 
 ##Contract_SP_ContractUnmodifiedCompetitionvehicleCustomer.txt
@@ -642,14 +666,14 @@ def_detail<-def_detail[,!colnames(def_detail) %in%
 )]
 str(def_detail)
   
-save(file="Data\\defense_contract_complete_detail.Rdata",def_detail)
+save(file="..\\data\\clean\\defense_contract_complete_detail.Rdata",def_detail)
 
 ```
 
 
 ##Pricing
 ```{r Pricing}
-# load(file="Data\\defense_contract_complete_detail.Rdata")
+# load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
 
 def_detail<-csis360::read_and_join_experiment(data=def_detail
   ,"Contract.SP_ContractPricingCustomer.txt"
@@ -829,7 +853,7 @@ def_detail<-def_detail[,!colnames(def_detail) %in%
 
 str(def_detail)
 
-save(file="Data\\defense_contract_complete_detail.Rdata",def_detail)
+save(file="..\\data\\clean\\defense_contract_complete_detail.Rdata",def_detail)
 
 ```
 
@@ -837,18 +861,18 @@ save(file="Data\\defense_contract_complete_detail.Rdata",def_detail)
 ##Applying lookups
 ```{r PostApply}
 # debug(apply_lookups)
-load(file="Data\\defense_contract_all_detail.Rdata")
-load(file="Data\\defense_contract_complete_detail.Rdata")
+load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
+load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
 
-def_all_detail<-apply_lookups(Path,def_all_detail)
+def_all<-apply_lookups(Path,def_all)
 #Hitting errors, but nothing vital
 debug(apply_lookups)
 def_detail<-apply_lookups(Path,def_detail)
 
 summary
 
-# def_all_detail<-csis360::read_and_join(
-#   def_all_detail,
+# def_all<-csis360::read_and_join(
+#   def_all,
 #   "Lookup_SubCustomer.csv",
 #   by=c("Customer","SubCustomer"),
 #   # replace_na_var=NULL,
@@ -858,25 +882,25 @@ summary
 #   # skip_check_var="CHPKisCrisisFunding"
 #   )
 
-# def_all_detail$SubCustomer.sum<-factor(def_all_detail$SubCustomer.sum)
-# def_all_detail$SubCustomer.sum<-droplevels(def_all_detail$SubCustomer.sum)
-# def_all_detail$SubCustomer.sum<-droplevels(def_all_detail$SubCustomer.sum)
+# def_all$SubCustomer.sum<-factor(def_all$SubCustomer.sum)
+# def_all$SubCustomer.sum<-droplevels(def_all$SubCustomer.sum)
+# def_all$SubCustomer.sum<-droplevels(def_all$SubCustomer.sum)
 
 
 
-save(file="Data\\defense_contract_all_detail.Rdata",def_all_detail)
-save(file="Data\\defense_contract_complete_detail.Rdata",def_detail)
-# def_all_detail<-rename_dataset(def_all_detail)
+save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
+save(file="..\\data\\clean\\defense_contract_complete_detail.Rdata",def_detail)
+# def_all<-rename_dataset(def_all)
 
 ```
 ##Dataset Output
 
 ```{r DatasetOutput}
-load(file="Data\\defense_contract_all_detail.Rdata")
-load(file="Data\\defense_contract_complete_detail.Rdata")
+load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
+load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
      
 load(file="Data\\defense_contract_CSIScontractID_detail.Rdata")
-def_all<-rename_dataset(def_all_detail)
+def_all<-rename_dataset(def_all)
 def_all<-trim_dataset(def_all)
 def<-rename_dataset(def_detail)
 def<-trim_dataset(def)
@@ -887,7 +911,7 @@ write.table(def_all
   ,file=paste("data\\defense_contract_all.csv"
     ,sep=""
   )
-  #   ,header=TRUE
+    #   ,header=TRUE
   , sep=","
   , row.names=FALSE
   , append=FALSE
