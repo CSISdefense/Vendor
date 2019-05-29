@@ -29,6 +29,7 @@ Path<-"https://github.com/CSISdefense/R-scripts-and-data/blob/master/"
 # Path<-"K:\\2007-01 PROFESSIONAL SERVICES\\R scripts and data\\"
 # Path<-"~\\FPDS\\R scripts and data\\"
 # Path<-"C:\\Users\\Greg Sanders\\SkyDrive\\Documents\\R Scripts and Data SkyDrive\\"
+source("DIIGstat.r")
 source("https://raw.githubusercontent.com/CSISdefense/Crisis-Funding/master/Scripts/ContractCleanup.r")
 source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/lookups.r")
 source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/helper.r")
@@ -40,25 +41,33 @@ source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/
 ```{r DetailCustomer}
 if(!exists("def_all")) def_all<-NULL
 # debug(input_sample_criteria)
-debug(input_sample_criteria)
 def_all<-input_sample_criteria(def_all,  
+                               dir="..\\data\\semi_clean\\",
                       file="Defense_Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
+                      last_date=as.Date("2016-12-31"),
                       drop_incomplete=FALSE)
   
+
+
+  
+    
+    def_all$IsComplete<-0
+      #Limit to completed def_alls that start in 2007 or later
+      def_all$IsComplete[def_all$StartFiscal_Year>=2007 & 
+                         #For unclosed out def_alls both current completion and last signed should before  2016
+                         (def_all$MaxBoostDate<=as.Date(last_date)| is.na(def_all$MaxBoostDate))&
+                         (def_all$LastCurrentCompletionDate<=as.Date(last_date)
+                          #For closed out it's enough that the boost date is within the range.
+                          | (def_all$IsClosed==1 | def_all$IsTerminated==1))
+                       ]<-1
+    
+
 
 # def_detail<-input_sample_criteria(def_detail,                                file="Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
 #                       drop_incomplete=FALSE)
   
 # load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
 
-def_all$IsComplete<-0
-def_all$IsComplete[def_all$StartFiscal_Year>=2007 & 
-                       #For unclosed out contracts both current completion and last signed should bebefore  2016
-                       (def_all$MaxBoostDate<as.Date("2017-01-01")| is.na(def_all$MaxBoostDate))&
-                      (def_all$LastCurrentCompletionDate<as.Date("2017-01-01")
-                     #For closed out it's enough that the boost date is within the range.
-                     | (def_all$IsClosed==1 | def_all$IsTerminated=="Terminated"))
-                        ]<-1
 
 
  load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
@@ -897,19 +906,13 @@ save(file="..\\data\\clean\\defense_contract_complete_detail.Rdata",def_detail)
 ##Dataset Output
 
 ```{r DatasetOutput}
+#Trim down def_all
 load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
-load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
      
-load(file="Data\\defense_contract_CSIScontractID_detail.Rdata")
 def_all<-rename_dataset(def_all)
 def_all<-trim_dataset(def_all)
-def<-rename_dataset(def_detail)
-def<-trim_dataset(def)
-
-
-
 write.table(def_all
-  ,file=paste("data\\defense_contract_all.csv"
+  ,file=paste("..\\data\\clean\\defense_contract_all.csv"
     ,sep=""
   )
     #   ,header=TRUE
@@ -918,17 +921,18 @@ write.table(def_all
   , append=FALSE
 )
 
+save(def_all,file="..\\data\\clean\\defense_contract_all.RData")
+rm(def_all)
+
+#Trim down def_detail
+load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
+
+def<-rename_dataset(def_detail)
+rm(def_detail)
+def<-trim_dataset(def)
 
 
-
-summary(def_all$Agency[def_all$Who=="Uncategorized"])
-
-save(def_all,file="data\\defense_contract_all.RData")
-save(def,file="data\\defense_contract_complete.RData")
-  
-#Strip out the cuts
-
-
-
+save(def,file="..\\data\\clean\\defense_contract_complete.RData")
+rm(def)
 ```
 

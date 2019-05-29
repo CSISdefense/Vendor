@@ -68,12 +68,56 @@ First we load the data. The dataset used is a U.S. Defense Contracting dataset d
 # 
 # 
 
+def_update<-def_all
+rm(def_all)
+def_update<-def_update[def$MinOfSignedDate>=as.Date("2008-01-01") & def_update$MinOfSignedDate<=as.Date("2015-12-31"),]
+def_update<-def_update %>% dplyr::select(CSIScontractID,IsComplete)
+load(file="../Data/Clean/transformed_def.Rdata")
+def_trans<-def
+def_trans<-def_trans %>% group_by() %>% dplyr::select(CSIScontractID)
+def_trans$IsOriginal<-1
+
+def_united<-full_join(def_trans,def_update,by="CSIScontractID")
+
+summary(factor(def_united$IsComplete))
+summary(factor(def_united$IsOriginal))
+ggplot(data=def_united,aes(x=factor(IsComplete)))+facet_wrap(~IsOriginal)+geom_bar()
 
 
+
+missing_boost<-def_united %>% filter(is.na(IsBoost))
+missing_original<-def_united %>% filter(is.na(IsOriginal))
+
+load(file="../Data/Clean/defense_contract_all_detail.RData")
+missing_original<-left_join(missing_original,def_all)
+summary(missing_original$LastCurrentCompletionDate)
+summary(missing_original$IsClosed)
+summary(missing_original$MinOfSignedDate)
+
+missing_boost<-left_join(missing_boost,def_all)
+summary(missing_boost$MaxBoostDate)
+summary(missing_boost$MaxBoostDate) #59691 no boost date
+summary(missing_boost$Action_Obligation[is.na(missing_boost$MaxBoostDate)])
+summary(missing_boost$UnmodifiedContractBaseAndAllOptionsValue[is.na(missing_boost$MaxBoostDate)])
+summary(missing_boost$IsClosed[is.na(missing_boost$MaxBoostDate)])
+summary(missing_boost$Action_Obligation)
+completely_missing<-missing_boost %>% filter(is.na(StartFiscal_Year)) %>% select(CSIScontractID,IsOriginal)
+missing_boost<-missing_boost %>%filter(!is.na(StartFiscal_Year)) %>% select(CSIScontractID,IsOriginal)
+missing_boost<-left_join(missing_boost, def)
+
+summary(missing_boost$Term)
+summary(missing_boost$IsClosed)
+
+
+completely_missing<-left_join(completely_missing,def)
+completely_missing<-left_join(completely_missing,def_all,by="CSIScontractID")
 # summary(def$UnmodifiedContractBaseAndAllOptionsValue)
 # summary(def$Action.Obligation)
-
-
+summary(completely_missing$MinOfSignedDate)
+summary(completely_missing$Agency)
+summary(completely_missing$Action.Obligation)
+summary(completely_missing$LastCurrentCompletionDate)
+summary(completely_missing)
 
 load(file="../Data/Clean/transformed_def.Rdata")
 
