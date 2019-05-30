@@ -39,6 +39,8 @@ source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/
 #Combining Source Files
 ##Sample Criteria
 ```{r DetailCustomer}
+# load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
+
 if(!exists("def_all")) def_all<-NULL
 # debug(input_sample_criteria)
 def_all<-input_sample_criteria(def_all,  
@@ -47,41 +49,6 @@ def_all<-input_sample_criteria(def_all,
                       last_date=as.Date("2016-12-31"),
                       drop_incomplete=FALSE)
   
-
-
-  
-    
-    def_all$IsComplete<-0
-      #Limit to completed def_alls that start in 2007 or later
-      def_all$IsComplete[def_all$StartFiscal_Year>=2007 & 
-                         #For unclosed out def_alls both current completion and last signed should before  2016
-                         (def_all$MaxBoostDate<=as.Date(last_date)| is.na(def_all$MaxBoostDate))&
-                         (def_all$LastCurrentCompletionDate<=as.Date(last_date)
-                          #For closed out it's enough that the boost date is within the range.
-                          | (def_all$IsClosed==1 | def_all$IsTerminated==1))
-                       ]<-1
-    
-
-
-# def_detail<-input_sample_criteria(def_detail,                                file="Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
-#                       drop_incomplete=FALSE)
-  
-# load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
-
-
-
- load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
-# def_all<-read_and_join_experiment(def_all,
-#                             lookup_file = "Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
-#                             path="..\\..\\Services\\",
-#                             dir="Data\\semi_clean\\",
-#                             by="CSIScontractID",
-#                             # new_var_checked = FALSE,
-#                             add_var=c("MaxBoostDate",
-#                                       "IsClosed"),
-#                             skip_check_var=c("IsClosed" ,
-#                                              "MaxBoostDate")
-# )
 save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 
 ```
@@ -90,73 +57,23 @@ save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 
 ## Top PSC Office NAICS
 ```{r TopPSCofficeNAICS}
-debug(read_and_join_experiment)
+# load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
 def_all<-input_contract_psc_office_naics(def_all,        
-                                         file="Contract.SP_ContractSampleCriteriaDetailsCustomer.txt")
+                                         file="Contract.SP_ContractTopPSCofficeNAICS.txt")
 
-#This works!  
-test<-readr::read_delim("Data\\Contract.SP_ContractTopPSCofficeNAICS.txt",delim="\t",
-                        na=c("NA","NULL"),
-                        col_types="icdcdcdcd")
-# c(col_integer(),
-#   col_character(),
-#   col_double(),
-#   col_character(),
-#   col_double(),
-#   col_character(),
-#   col_double(),
-#   col_character(),
-#   col_double()))
-
-
-#This has problems. 
-# #lookup<-readr::read_delim(
-#       input,
-#       col_names=TRUE,
-#       delim=ifelse(substring(lookup_file,nchar(lookup_file)-3)==".csv",",","\t"),
-#       na=c("NA","NULL"),
-#       trim_ws=TRUE,
-#       col_types=col_types
-#     )
-
-def_all<-dplyr::left_join(def_all,test,by="CSIScontractID")
-
-def_all$topContractingOfficeAgencyID<-factor(
-  def_all$topContractingOfficeAgencyID
-)
-def_all$topContractingOfficeID<-factor(
-  def_all$topContractingOfficeID
-)
-def_all$topProductOrServiceCode<-factor(
-  def_all$topProductOrServiceCode
-)
-def_all$topPrincipalNAICScode<-factor(
-  def_all$topPrincipalNAICScode
-)
 
 def_all$AgencyID<-def_all$topContractingOfficeAgencyID
-debug(na_check)
 def_all<-read_and_join_experiment(def_all,
                                          "Agency_AgencyID.csv",
                                          by="AgencyID",
                                          # replace_na_var="AgencyID",
                                          add_var=c("Customer","SubCustomer"),
+                                  skip_check_var = "SubCustomer",
                                          path = "https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
                                          directory = ""
 )
-def_all<- subset(def_all,Customer=="Defense")
-def_all<-def_all[,!colnames(def_all) %in% 
-                                 c(
-                                   # "topContractingOfficeAgencyID",
-                                   "topContractingOfficeAgencyIDamount"      ,
-                                   # "topContractingOfficeID",
-                                   "topContractingOfficeAmount"  ,
-                                   # "topProductOrServiceCode",
-                                   "topProductOrServiceAmount"               ,
-                                   # "topPrincipalNAICScode",
-                                   "topPrincipalNAICSamount",
-                                   "Customer")]
-# load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
+# def_all<- subset(def_all,Customer=="Defense")
+save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 
 ```
 
@@ -168,9 +85,6 @@ def_all<-def_all[,!colnames(def_all) %in%
 def_all<-input_initial_scope(def_all,
                              file="Contract.SP_ContractUnmodifiedAndOutcomeDetailsCustomer.txt")
 
-# debug(input_initial_scope)
-# def_detail<-input_initial_scope(def_detail,
-#                              file="Contract.SP_ContractUnmodifiedAndOutcomeDetailsCustomer.txt")
 save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 ```
 
@@ -178,7 +92,6 @@ save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 
 ```{r Delta}
 # load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
-# undebug(input_initial_scope)
 def_all<-input_contract_delta(def_all,
              file="Defense_Contract_SP_ContractModificationDeltaCustomer.csv")
 
