@@ -953,8 +953,8 @@ NA_stats<-function(data,col,exclude_before_2008=TRUE){
   paste("Data is missing for ",
         format(sum(is.na(data[!before2008,col]))/nrow(data[!before2008,col]),digits=3),
         " of records and ",
-        format(sum(data$Action.Obligation[is.na(data[!before2008,col])],na.rm=TRUE)/
-                 sum(data$Action.Obligation[!before2008],na.rm=TRUE),digits=3),
+        format(sum(data$Action_Obligation[is.na(data[!before2008,col])],na.rm=TRUE)/
+                 sum(data$Action_Obligation[!before2008],na.rm=TRUE),digits=3),
         " of obligated dollars."
         ,sep="")
   
@@ -1247,10 +1247,10 @@ statsummary_discrete <- function(x, contract,accuracy=0.01){      #input(x: name
   Percent_Records <- c()
   for (i in 1:length(unique_value_list)){
     Percent_Records <- c(Percent_Records, percent(round(sum(contract[[x]] == unique_value_list[i],na.rm = TRUE)/nrow(contract),5),accuracy = accuracy))
-    Percent_Actions <- c(Percent_Actions, percent(round(sum(contract$Action.Obligation[contract[[x]] == unique_value_list[i]],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5),accuracy = accuracy))    
+    Percent_Actions <- c(Percent_Actions, percent(round(sum(contract$Action_Obligation[contract[[x]] == unique_value_list[i]],na.rm = TRUE)/sum(contract$Action_Obligation,na.rm = TRUE),5),accuracy = accuracy))    
   }
   Percent_Records <- c(Percent_Records, percent(round(sum(is.na(contract[[x]]))/nrow(contract),5),accuracy = .01))
-  Percent_Actions <- c(Percent_Actions, percent(round(sum(contract$Action.Obligation[is.na(contract[[x]])],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5),accuracy = accuracy))
+  Percent_Actions <- c(Percent_Actions, percent(round(sum(contract$Action_Obligation[is.na(contract[[x]])],na.rm = TRUE)/sum(contract$Action_Obligation,na.rm = TRUE),5),accuracy = accuracy))
   name_categorical <- c(x,"%of records","% of $s")
   
   categorical_Info <- as.data.frame(cbind(categories,Percent_Records,Percent_Actions))
@@ -1259,7 +1259,7 @@ statsummary_discrete <- function(x, contract,accuracy=0.01){      #input(x: name
 }
 
 #Extract statistic information of the 26 continuous variables and generate dataframe      
-name_Continuous <- c("Action.Obligation","UnmodifiedContractBaseAndAllOptionsValue",
+name_Continuous <- c("Action_Obligation","UnmodifiedContractBaseAndAllOptionsValue",
                      "ChangeOrderBaseAndAllOptionsValue","UnmodifiedDays",
                      "UnmodifiedNumberOfOffersReceived",
                      "capped_def6_ratio_lag1","capped_def5_ratio_lag1","capped_def4_ratio_lag1","capped_def3_ratio_lag1","capped_def2_ratio_lag1",
@@ -1278,7 +1278,7 @@ statsummary_continuous <- function(x, contract,log=TRUE,digits=3){       #input(
     colnames(continuous_Info)[colnames(continuous_Info)=="Logarithmic Mean"]<-"Arithmatic Mean"  
   for (i in x){
     Percent_NA <- round(sum(is.na(contract[[i]]))/nrow(contract),5)
-    Percent_Ob <- round(sum(contract$Action.Obligation[is.na(contract[[i]])],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5)
+    Percent_Ob <- round(sum(contract$Action_Obligation[is.na(contract[[i]])],na.rm = TRUE)/sum(contract$Action_Obligation,na.rm = TRUE),5)
     transformed_i<-contract[[i]]
     transformed_i[transformed_i==0] <- NA
     transformed_i <- log(contract[[i]])
@@ -1294,7 +1294,7 @@ statsummary_continuous <- function(x, contract,log=TRUE,digits=3){       #input(
     unitabovelog <- round(exp(mean(transformed_i,na.rm = TRUE)+2*sdlog),digits)
     unitbelowlog <- round(exp(mean(transformed_i,na.rm = TRUE)-2*sdlog),digits)
     Percent_NA <- round(sum(is.na(contract[[i]]))/nrow(contract),5)
-    Percent_Ob <- round(sum(contract$Action.Obligation[is.na(contract[[i]])],na.rm = TRUE)/sum(contract$Action.Obligation,na.rm = TRUE),5)
+    Percent_Ob <- round(sum(contract$Action_Obligation[is.na(contract[[i]])],na.rm = TRUE)/sum(contract$Action_Obligation,na.rm = TRUE),5)
     if(log==TRUE)
       newrow <- c(i, minval, maxval, medianval, meanlog, unitbelowlog, unitabovelog,
                   Percent_NA, Percent_Ob)
@@ -1421,7 +1421,7 @@ freq_table <- function(x, contract){
   colnames(Frequency) <- c(x, "Count_Freq", "Percent_Freq")
   Percent_Obli <- c()
   for (i in Frequency[[x]]) {
-    Percent_Obligation <- round(sum(contract[["Action.Obligation"]][contract[[x]] == i], na.rm = TRUE)/sum(contract[["Action.Obligation"]], na.rm = TRUE),5)
+    Percent_Obligation <- round(sum(contract[["Action_Obligation"]][contract[[x]] == i], na.rm = TRUE)/sum(contract[["Action_Obligation"]], na.rm = TRUE),5)
     Percent_Obli <- c(Percent_Obli, Percent_Obligation)
   }
   Frequency[["Percent_Obli"]] <- Percent_Obli*100
