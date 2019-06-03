@@ -59,48 +59,46 @@ First we load the data. The dataset used is a U.S. Defense Contracting dataset d
 
 ```{r ReadInData, echo = TRUE}
 # load(file="../Data/Clean/defense_contract_complete.RData")
-# save(file="../Data/Clean/defense_contract_complete.RData",def)
+# def<-def[def$MinOfSignedDate>=as.Date("2008-01-01") & def$MinOfSignedDate<=as.Date("2015-12-31"),]
 # def<-transform_contract(def)
-gc()
-memory.limit(25000)
 
 # # head(def)
 # debug(transform_contract)
 # 
 # 
-library(dplyr)
-load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
-def_update<-def_all
-rm(def_all)
-def_update<-def_update[def_update$MinOfSignedDate>=as.Date("2008-01-01") & def_update$MinOfSignedDate<=as.Date("2015-12-31"),]
-def_update<-def_update %>% dplyr::select(CSIScontractID,IsComplete)
-load(file="../Data/Clean/transformed_def.Rdata")
-smp_trans<-smp1m
-smp_trans<-smp_trans %>% group_by() %>% dplyr::select(CSIScontractID)
-smp_trans$IsSmp<-1
 
-def_united<-full_join(smp_trans,def_update,by="CSIScontractID")
-
-
-
-ggplot(data=def_united,aes(x=factor(IsComplete)))+facet_wrap(~IsOriginal)+geom_bar()
-load(file="../Data/Clean/transformed_def_2018_08_31.Rdata")
-smp_missing<-def_united %>% filter(is.na(IsComplete)| IsComplete==0)
-smp_missing<-left_join(smp_missing,def, by="CSIScontractID")
-summary(def$LastCurrentCompletionDate)
+# load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
+# def_update<-def_all
+# rm(def_all)
+# def_update<-def_update[def_update$MinOfSignedDate>=as.Date("2008-01-01") & def_update$MinOfSignedDate<=as.Date("2015-12-31"),]
+# def_update<-def_update %>% dplyr::select(CSIScontractID,IsComplete)
+# load(file="../Data/Clean/transformed_def.Rdata")
+# smp_trans<-smp1m
+# smp_trans<-smp_trans %>% group_by() %>% dplyr::select(CSIScontractID)
+# smp_trans$IsSmp<-1
+# 
+# def_united<-full_join(smp_trans,def_update,by="CSIScontractID")
 
 
 
-summary(factor(def_united$IsComplete))
-summary(factor(def_united$IsOriginal))
+# ggplot(data=def_united,aes(x=factor(IsComplete)))+facet_wrap(~IsOriginal)+geom_bar()
+# load(file="../Data/Clean/transformed_def_2018_08_31.Rdata")
+# smp_missing<-def_united %>% filter(is.na(IsComplete)| IsComplete==0)
+# smp_missing<-left_join(smp_missing,def, by="CSIScontractID")
+# summary(def$LastCurrentCompletionDate)
 
 
-
-now_incomplete_boost<-def_united %>% filter(IsComplete==0 & IsOriginal==1)
-completely_missing_boost<-def_united %>% filter(is.na(IsComplete))
-missing_original<-def_united %>% filter(is.na(IsOriginal) & IsComplete==1)
-now_incomplete_boost<-now_incomplete_boost%>% dplyr::select(CSIScontractID,WhyIncomplete,LastCurrentCompletionDate.x,LastCurrentCompletionDate.y)
-load(file="../Data/Clean/defense_contract_all_detail.RData")
+# 
+# summary(factor(def_united$IsComplete))
+# summary(factor(def_united$IsOriginal))
+# 
+# 
+# 
+# now_incomplete_boost<-def_united %>% filter(IsComplete==0 & IsOriginal==1)
+# completely_missing_boost<-def_united %>% filter(is.na(IsComplete))
+# missing_original<-def_united %>% filter(is.na(IsOriginal) & IsComplete==1)
+# now_incomplete_boost<-now_incomplete_boost%>% dplyr::select(CSIScontractID,WhyIncomplete,LastCurrentCompletionDate.x,LastCurrentCompletionDate.y)
+# load(file="../Data/Clean/defense_contract_all_detail.RData")
 # missing_original<-left_join(missing_original,def_all)
 # summary(missing_original$IsClosed[is.na(missing_original$WhyMissing)])
 # summary(missing_original$IsTerminated[is.na(missing_original$WhyMissing)])
@@ -128,54 +126,54 @@ load(file="../Data/Clean/defense_contract_all_detail.RData")
 # sum(missing_original$Action_Obligation[missing_original$WhyMissing=="Close/Term LastCurrent Out of Range"])
 # rm(missing_original)
 
-now_incomplete_boost<-left_join(now_incomplete_boost,def)
-now_incomplete_boost$WhyIncomplete[is.na(now_incomplete_boost$WhyIncomplete)&
-                                     now_incomplete_boost$MaxBoostDate>=as.Date("2017-01-01")]<-"MaxBoostDate>=2017"
-now_incomplete_boost$WhyIncomplete[now_incomplete_boost$LastCurrentCompletionDate>=as.Date("2017-01-01")&
-                                     now_incomplete_boost$IsComplete==0&
-                                     now_incomplete_boost$IsTerminated==0]<-"Not Closed/Term & Last Current>=2017"
-now_incomplete_boost$WhyIncomplete[is.na(now_incomplete_boost$LastCurrentCompletionDate)&
-                                     now_incomplete_boost$IsComplete==0&
-                                     now_incomplete_boost$IsTerminated==0]<-"Not Closed/Term & Last Current is na"
+# now_incomplete_boost<-left_join(now_incomplete_boost,def)
+# now_incomplete_boost$WhyIncomplete[is.na(now_incomplete_boost$WhyIncomplete)&
+#                                      now_incomplete_boost$MaxBoostDate>=as.Date("2017-01-01")]<-"MaxBoostDate>=2017"
+# now_incomplete_boost$WhyIncomplete[now_incomplete_boost$LastCurrentCompletionDate>=as.Date("2017-01-01")&
+#                                      now_incomplete_boost$IsComplete==0&
+#                                      now_incomplete_boost$IsTerminated==0]<-"Not Closed/Term & Last Current>=2017"
+# now_incomplete_boost$WhyIncomplete[is.na(now_incomplete_boost$LastCurrentCompletionDate)&
+#                                      now_incomplete_boost$IsComplete==0&
+#                                      now_incomplete_boost$IsTerminated==0]<-"Not Closed/Term & Last Current is na"
+# 
+# summary(factor(now_incomplete_boost$WhyIncomplete))
+# summary(now_incomplete_boost$Term[now_incomplete_boost$WhyIncomplete=="MaxBoostDate>=2017"])
+# summary(now_incomplete_boost$IsClosed[now_incomplete_boost$WhyIncomplete=="MaxBoostDate>=2017"])
+# sum(now_incomplete_boost$Action_Obligation[now_incomplete_boost$WhyIncomplete=="MaxBoostDate>=2017"])
+# sum(now_incomplete_boost$Action_Obligation.x[now_incomplete_boost$WhyIncomplete=="Not Closed/Term & Last Current is na"])
+# sum(now_incomplete_boost$Action_Obligation.x[now_incomplete_boost$WhyIncomplete=="Not Closed/Term & Last Current>=2017"])
+# 
+# summary(now_incomplete_boost$LastCurrentCompletionDate[now_incomplete_boost$WhyIncomplete=="Not Closed/Term & Last Current>=2017"])
+# 
+# summary(now_incomplete_boost$LastCurrentCompletionDate)
+# summary(now_incomplete_boost$LastCurrentCompletionDate.x)
+# summary(now_incomplete_boost$LastCurrentCompletionDate.y)
+# 
+# 
+# now_incomplete_boost<-left_join(now_incomplete_boost,def, by="CSIScontractID")
+# summary(now_incomplete_boost$LastCurrentCompletionDate.x[now_incomplete_boost$WhyIncomplete=="Not Closed/Term & Last Current>=2017"])
+# summary(now_incomplete_boost$LastCurrentCompletionDate.y[now_incomplete_boost$WhyIncomplete=="Not Closed/Term & Last Current>=2017"])
+# summary(def$LastCurrentCompletionDate)
+# summary(now_incomplete_boost$IsOriginal)
+# 
+# summary(now_incomplete_boost$MaxBoostDate[is.na(now_incomplete_boost$WhyIncomplete)])
+# summary(now_incomplete_boost$LastCurrentCompletionDate[is.na(now_incomplete_boost$WhyIncomplete)])
+# summary(now_incomplete_boost$IsClosed[is.na(now_incomplete_boost$WhyIncomplete)])
+# summary(now_incomplete_boost$IsTerminated[is.na(now_incomplete_boost$WhyIncomplete)])
+# 
+# rm(def)
 
-summary(factor(now_incomplete_boost$WhyIncomplete))
-summary(now_incomplete_boost$Term[now_incomplete_boost$WhyIncomplete=="MaxBoostDate>=2017"])
-summary(now_incomplete_boost$IsClosed[now_incomplete_boost$WhyIncomplete=="MaxBoostDate>=2017"])
-sum(now_incomplete_boost$Action_Obligation[now_incomplete_boost$WhyIncomplete=="MaxBoostDate>=2017"])
-sum(now_incomplete_boost$Action_Obligation.x[now_incomplete_boost$WhyIncomplete=="Not Closed/Term & Last Current is na"])
-sum(now_incomplete_boost$Action_Obligation.x[now_incomplete_boost$WhyIncomplete=="Not Closed/Term & Last Current>=2017"])
 
-summary(now_incomplete_boost$LastCurrentCompletionDate[now_incomplete_boost$WhyIncomplete=="Not Closed/Term & Last Current>=2017"])
-
-summary(now_incomplete_boost$LastCurrentCompletionDate)
-summary(now_incomplete_boost$LastCurrentCompletionDate.x)
-summary(now_incomplete_boost$LastCurrentCompletionDate.y)
-
-
-now_incomplete_boost<-left_join(now_incomplete_boost,def, by="CSIScontractID")
-summary(now_incomplete_boost$LastCurrentCompletionDate.x[now_incomplete_boost$WhyIncomplete=="Not Closed/Term & Last Current>=2017"])
-summary(now_incomplete_boost$LastCurrentCompletionDate.y[now_incomplete_boost$WhyIncomplete=="Not Closed/Term & Last Current>=2017"])
-summary(def$LastCurrentCompletionDate)
-summary(now_incomplete_boost$IsOriginal)
-
-summary(now_incomplete_boost$MaxBoostDate[is.na(now_incomplete_boost$WhyIncomplete)])
-summary(now_incomplete_boost$LastCurrentCompletionDate[is.na(now_incomplete_boost$WhyIncomplete)])
-summary(now_incomplete_boost$IsClosed[is.na(now_incomplete_boost$WhyIncomplete)])
-summary(now_incomplete_boost$IsTerminated[is.na(now_incomplete_boost$WhyIncomplete)])
-
-rm(def)
-
-
-summary(now_incomplete_boost$Action_Obligation[is.na(now_incomplete_boost$MaxBoostDate)])
-summary(now_incomplete_boost$UnmodifiedContractBaseAndAllOptionsValue[is.na(now_incomplete_boost$MaxBoostDate)])
-summary(now_incomplete_boost$IsClosed[is.na(now_incomplete_boost$MaxBoostDate)])
-summary(now_incomplete_boost$Action_Obligation)
-completely_missing<-now_incomplete_boost %>% filter(is.na(StartFiscal_Year)) %>% select(CSIScontractID,IsOriginal)
-now_incomplete_boost<-now_incomplete_boost %>%filter(!is.na(StartFiscal_Year)) %>% select(CSIScontractID,IsOriginal)
-now_incomplete_boost<-left_join(now_incomplete_boost, def)
-
-summary(now_incomplete_boost$Term)
-summary(now_incomplete_boost$IsClosed)
+# summary(now_incomplete_boost$Action_Obligation[is.na(now_incomplete_boost$MaxBoostDate)])
+# summary(now_incomplete_boost$UnmodifiedContractBaseAndAllOptionsValue[is.na(now_incomplete_boost$MaxBoostDate)])
+# summary(now_incomplete_boost$IsClosed[is.na(now_incomplete_boost$MaxBoostDate)])
+# summary(now_incomplete_boost$Action_Obligation)
+# completely_missing<-now_incomplete_boost %>% filter(is.na(StartFiscal_Year)) %>% select(CSIScontractID,IsOriginal)
+# now_incomplete_boost<-now_incomplete_boost %>%filter(!is.na(StartFiscal_Year)) %>% select(CSIScontractID,IsOriginal)
+# now_incomplete_boost<-left_join(now_incomplete_boost, def)
+# 
+# summary(now_incomplete_boost$Term)
+# summary(now_incomplete_boost$IsClosed)
 
 
 # completely_missing_boost<-left_join(completely_missing_boost,def,by="CSIScontractID")
@@ -188,27 +186,15 @@ summary(now_incomplete_boost$IsClosed)
 # summary(completely_missing_boost$LastCurrentCompletionDate)
 # summary(completely_missing_boost)
 
-load(file="next_to_study.rdata")
-save(now_incomplete_boost,file="next_to_study.rdata")
-rm(def) 9134093
-load(file="../data/clean/transformed_def_2018_08_31.Rdata")
-summary(def_united$IsOriginal)
-summary(def_united$IsComplete)
+# load(file="next_to_study.rdata")
+# save(now_incomplete_boost,file="next_to_study.rdata")
+# rm(def) 9134093
+# load(file="../data/clean/transformed_def_2018_08_31.Rdata")
+# summary(def_united$IsOriginal)
+# summary(def_united$IsComplete)
+# 
+# memory.limit(56000)
 
-memory.limit(56000)
-def<-read_and_join_experiment(def,
-                            lookup_file = "Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
-                            path="..\\",
-                            dir="Data\\semi_clean\\",
-                            by="CSIScontractID"
-                            # add_var=c("MaxOfSignedDate",
-                            # "IsClosed")
-                            #,
-                            # skip_check_var=c("IsClosed" ,
-                            #                  "MaxClosedDate",
-                            #                  "ObligatedAfterMaxClosedDate"
-                                             # )
-)
 
 
 # def<-def[!colnames(def) %in% colnames(def)[grep("^l_",colnames(def))]]
@@ -244,20 +230,314 @@ def<-read_and_join_experiment(def,
 
 ## Dependent Variables
 
+### Number of  Offers
+```{r NumOffers}
+
+statsummary_continuous(c("UnmodifiedNumberOfOffersReceived"), def)
+```
+### Terminations
 NA_stats(def,"b_Term")
 * b_Term is a binary variable that has a value of 1 for any contracts that have experienced a partial or complete termination, 0 otherwise. (`r summary(def$b_Term);
 sum(def$Action_Obligation[def$b_Term==1],na.rm=TRUE)/sum(def$Action_Obligation,na.rm=TRUE)`
+```{r vargraphs: b_Term, b_CBre}
+#The original variables for b_Term and b_CBre are Term and CBre
+grouped_barplot("Term", def)
+statsummary_discrete(c("Term"), def)
+```
+
+
+#### Processing
+```{r CloseOutPrep}
+CloseOut<-def %>% dplyr::filter(IsClosed==1 | Term==1)
+CloseOut<-csis360::read_and_join_experiment(CloseOut,
+                            lookup_file = "Contract.SP_ContractCloseOutExamination.txt",
+                            path="..\\",
+                            dir="Data\\semi_clean\\",
+                            by="CSIScontractID",
+                            new_var_checked = FALSE
+                            # skip_check_var=c("IsClosed" ,
+                            #                  "MaxClosedDate",
+                            #                  "ObligatedAfterMaxClosedDate")
+)
+
+
+CloseOut<-csis360::read_and_join_experiment(CloseOut,
+                            lookup_file = "Contract.SP_ContractTerminationExamination.txt",
+                            path="..\\",
+                            dir="Data\\semi_clean\\",
+                            by="CSIScontractID",
+                            new_var_checked = FALSE
+                            # skip_check_var=c("IsClosed" ,
+                            #                  "MaxClosedDate",
+                            #                  "ObligatedAfterMaxClosedDate")
+)
+
+
+# debug(transform_endings)
+CloseOut<-transform_endings(CloseOut)
+
+# termAll$PreTermLengthFloor1<-termAll$PreTermLength
+```
+
+#### Time Periods
+```{r CloseOutDur}
+(
+CloseDur<-ggplot(CloseOut,aes(x=PreTermCloseLength,color=EndType))+ #,color=ClosePctCat)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0,1),xlim=c(0,2500))+#+,xlim=c(0,1e8)
+  # scale_x_log10(label=comma)+
+  labs(title="Duration and Close Out Completeness",
+       y="Cumulative Distribution % of\nCategory's Closed Out Contracts",
+       x="Days from Start to Final Termination / Close Out",
+       color="Ending Type")+
+  scale_y_continuous(label=percent)+facet_wrap(~Ceil)+geom_vline(xintercept = 365)
+)
+
+
+(
+CloseDurSigned<-ggplot(CloseOut,aes(x=PostTermCloseSignedLength,color=EndType))+ #,color=ClosePctCat)) +#
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0.7,1),xlim=c(0,2500))+#+
+  # scale_x_log10(label=comma)+
+  labs(title="Duration and Close Out Completeness",
+       y="Cumulative Distribution % of\nCategory's Closed Out Contracts",
+       x="Days from Termination / Close Out to Final Boost Date",
+       color="Ending Type")+
+  scale_y_continuous(label=percent)+facet_wrap(~Ceil)+geom_vline(xintercept = 365)+
+    theme(legend.position = "bottom")
+)
+
+
+
+(
+CloseDurCurrent<-ggplot(CloseOut,aes(x=PostTermCloseCurrentLength,color=EndType))+ #,color=ClosePctCat)) + #
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0.7,1),xlim=c(0,2000))+#+
+  # scale_x_log10(label=comma)+
+  labs(title="Duration and Close Out Completeness",
+       y="Cumulative Distribution % of\nCategory's Closed Out Contracts",
+       x="Days from Termination / Close Out to Current Completion Date",
+       color="Close Out Completeness")+
+  scale_y_continuous(label=percent)+facet_wrap(~Ceil)+geom_vline(xintercept = 365)+
+    theme(legend.position="bottom")
+)
+
+
+
+
+# 
+# # def<-def %>% dplyr::select(-ClosePartial)
+# def$ClosePartial<-as.character(def$ClosePartial)
+# def$ClosePartial[def$CloseOut=="Unterminated"]<-"Unterminated"
+# summary(factor(def$ClosePartial))
+# freq_table("ClosePartial",def)
+# summary(def$ClosePartial)
+# 
+# summary(def$IsClosed)
+# nrow(def %>% filter(LastCurrentCompletionDate>="2017-10-01"))
+# complete2017<-def %>% filter(LastCurrentCompletionDate>="2017-01-01")
+# summary(complete2017$IsClosed)
+# summary(complete2017$CloseOut)
+# term2017<-CloseOut  %>% filter(LastCurrentCompletionDate>="2017-01-01")
+# summary(term2017$ClosePctCat)
+# summary(factor(term2017$StartCY))
+# summary(factor(term2017$StartFY))
+# summary(term2017$ClosePctCat[term2017$StartCY==2015])
+
+
+```
+
+#### Dollars after Termination
+```{r TermPctCatGraphs}
+(
+TermPctHist<-ggplot(CloseOut %>% filter(TermPct>0),aes(x=TermPct,fill=TermPctCat )) +
+  geom_histogram(bins=100)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  geom_vline(xintercept = 1)+geom_vline(xintercept = 0.1)+
+#facet_grid(NoPreTermObl~.,scales="free_y", space="free_y")+
+  labs(title="Distribution of Contracts with Obligations After Last termination",
+       y="Contract Count",
+       x="Percent of Obligations After Day of Termination",
+       fill="Termination Completion"
+       )
+)
+
+(
+TermPctHistDoC<-ggplot(CloseOut %>% filter(TermPct>0),aes(x=TermPct,fill=TermPctCat )) +
+  geom_histogram(bins=100)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  geom_vline(xintercept = 1)+geom_vline(xintercept = 0.1)+
+facet_grid(EndType ~.,scales="free_y")+
+  labs(title="Distribution of Contracts with Obligations After Last termination",
+       y="Contract Count",
+       x="Percent of Obligations After Day of Termination",
+       fill="Termination Completion"
+       )
+)
+
+
+
+(
+TermPctDoC<-ggplot(CloseOut,aes(x=TermPct,color=isDefaultOrCause)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0.9,1),xlim=c(0,1))+
+  labs(title="Cumulative Distribution of Terminated Contracts",
+       y="% of Terminated Contracts",
+       x="Percent of Obligations After Day of Termination"
+       )+geom_vline(xintercept = 0.25)
+)
+
+
+(
+TermCeilRatio<-ggplot(CloseOut,aes(x=TermPct,color=Ceil)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0.70,1),xlim=c(0,1))+geom_vline(xintercept = 0.25)+
+  labs(title="Cumulative Distribution of Terminated Contracts",
+       y="% of Category's Terminated Contracts",
+       x="Percent of Obligations After Day of Termination",
+       color="Initial Ceiling")+
+  scale_y_continuous(label=percent)
+)
+
+(
+TermObl<-ggplot(CloseOut,aes(x=PostTermFloor0+1)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0.9,1))+#+,xlim=c(0,1e8)
+  scale_x_log10(label=comma)+
+  labs(title="Cumulative Distribution of Terminated Contracts",
+       y="% of Terminated Contracts",
+       x="Obligations After Termination")+facet_wrap(~EndType)
+)
+#+geom_vline(xintercept = 0.1)+geom_vline(xintercept =1)+
+
+# termDouble<-term
+# termDouble$Ceil<-"Overall"
+# termDouble$NoPreTermObl<-"Overall"
+
+(
+TermNoObl<-ggplot(CloseOut,aes(x=PostTermFloor0+1,color=NoPreTermObl)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0.9,1))+#+,xlim=c(0,1e8)
+  scale_x_log10(label=comma)+
+  labs(title="Cumulative Distribution of Terminated Contracts",
+       y="% of Category's Terminated Contracts",
+       x="Obligations After Termination",
+       color="Any Spending Before Termination?")+
+    theme(legend.position = "bottom")
+#+geom_vline(xintercept = 0.1)+geom_vline(xintercept =1)+
+)
+
+(
+TermCeilOblDoC<-ggplot(CloseOut,aes(x=PostTermFloor0+1,color=Ceil))+
+  stat_ecdf(geom = "step")+stat_ecdf(geom = "step",aes(x=PostTermFloor0+1))+
+    coord_cartesian(ylim=c(0.65,1))+#+,xlim=c(0,1e8)
+  scale_x_log10(label=comma)+
+  labs(title="Cumulative Distribution of Terminated Contracts",
+       y="% of Category's Terminated Contracts",
+       x="Obligations After Termination",
+       color="Initial Ceiling")+
+  scale_y_continuous(label=percent)+facet_wrap(~EndType)
+)
+
+
+
+
+ggsave(TermCeilRatio,file="../Output/TermCeilRatio.png")
+
+```
+An odd side effect of the way histograms work, it actually overestimates the number of 0 and above cap growth entries there are, there's only 83,306 
+
+
+### After Term Duration
+```{r TermCrosstab}
+
+summary(term$PreTermLength)
+
+
+ggplot(term,aes(x=PreTermLength,color=TermPctCat)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0,1))+#+,
+  # scale_x_log10(label=comma)+
+  labs(title="Duration and Termination Completeness",
+       y="Cumulative Distribution % of\nCategory's Terminated Contracts",
+       x="Days from Start to Final Termination",
+       color="Termination Completeness")+
+  scale_y_continuous(label=percent)+geom_vline(xintercept = 365)
+
+
+ggplot(term,aes(x=PostTermSignedLength,color=TermPctCat)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0,1))+#+,xlim=c(0,1e8)
+  # scale_x_log10(label=comma)+
+  labs(title="Duration and Termination Completeness",
+       y="Cumulative Distribution % of\nCategory's Terminated Contracts",
+       x="Days from Termination to Max Signed Date",
+       color="Termination Completeness")+
+  scale_y_continuous(label=percent)+geom_vline(xintercept = 365)
+
+
+# 
+# 
+# (
+# TermDur<-ggplot(term,aes(x=PostTermSignedLength,color=TermPctCat)) +
+#   stat_ecdf(geom = "step")+
+#     coord_cartesian(ylim=c(0,1),xlim=c(300,400))+#+,
+#   # scale_x_log10(label=comma)+
+#   labs(title="Duration and Termination Completeness",
+#        y="Cumulative Distribution % of\nCategory's Terminated Contracts",
+#        x="Days from Termination to Max Signed Date",
+#        color="Termination Completeness")+
+#   scale_y_continuous(label=percent)+geom_vline(xintercept = 365)
+# )
+# 
+
+ggplot(term,aes(x=PostTermCurrentLength,color=TermPctCat)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0,1),xlim=c(-365,2500))+#+,xlim=c(0,1e8)
+  # scale_x_log10(label=comma)+
+  labs(title="Duration and Termination Completeness",
+       y="Cumulative Distribution % of\nCategory's Terminated Contracts",
+       x="Days from Termination to Current Completion",
+       color="Termination Completeness")+facet_wrap(~isDefaultOrCause)+
+  scale_y_continuous(label=percent)+geom_vline(xintercept = 365)
+
+
+
+
+# 
+# # def<-def %>% dplyr::select(-TermPartial)
+# def$TermPartial<-as.character(def$TermPartial)
+# def$TermPartial[def$Term=="Unterminated"]<-"Unterminated"
+# summary(factor(def$TermPartial))
+# freq_table("TermPartial",def)
+# summary(def$TermPartial)
+# 
+# summary(def$IsClosed)
+# nrow(def %>% filter(LastCurrentCompletionDate>="2017-10-01"))
+# complete2017<-def %>% filter(LastCurrentCompletionDate>="2017-01-01")
+# summary(complete2017$IsClosed)
+# summary(complete2017$Term)
+# term2017<-term  %>% filter(LastCurrentCompletionDate>="2017-01-01")
+# summary(term2017$TermPctCat)
+# summary(factor(term2017$StartCY))
+# summary(factor(term2017$StartFY))
+# summary(term2017$TermPctCat[term2017$StartCY==2015])
+
+
+```
+
+
+
+
+### Ceiling Breahes
 * b_CBre is a binary variable that has a value of 1 for any contracts that have experienced a partial or complete termination, 0 otherwise. (`r summary(def$b_CBre);
 sum(def$Action_Obligation[def$b_CBre==1],na.rm=TRUE)/sum(def$Action_Obligation,na.rm=TRUE)
 NA_stats(def,"b_CBre")`)
 
-```{r vargraphs: b_Term, b_CBre}
+```{r vargraphs: b_CBre}
 #The original variables for b_Term and b_CBre are Term and CBre
-grouped_barplot("Term", def)
 grouped_barplot("CBre", def)
-statsummary_discrete(c("Term"), def)
 statsummary_discrete(c("CBre"), def)
-statsummary_continuous(c("UnmodifiedNumberOfOffersReceived"), def)
 ```
 
 
@@ -1250,6 +1530,7 @@ smp1m$l_Offr<-na_non_positive_log(smp1m$UnmodifiedNumberOfOffersReceived)
 
 
 
+
 complete<-
   !is.na(def$b_Term)&
   !is.na(def$b_CBre)&
@@ -1271,8 +1552,7 @@ complete<-
   !is.na(def$cl_def6_HHI_lag1)&
   !is.na(def$cl_def6_obl_lag1)&
   !is.na(def$cl_def6_ratio_lag1)&
-  !is.na(def$cl_US6_avg_sal_lag1
-           )
+  !is.na(def$cl_US6_avg_sal_lag1)
 
 
 summary(complete)
