@@ -149,6 +149,8 @@ binned_fitted_versus_residuals<-function(model,bins=20){
   {
     if(!is.null(model@frame$b_CBre)){
       graph<-binned_fitted_versus_cbre_residuals(model,bins)
+    } else if(!is.null(model@frame$l_CBre)){
+      graph<-binned_fitted_versus_l_cbre_residuals(model,bins)
     } else if(!is.null(model@frame$b_Term)){
       graph<-binned_fitted_versus_term_residuals(model,bins)
     } else if(!is.null(model@frame$cl_Offr)){
@@ -160,6 +162,8 @@ binned_fitted_versus_residuals<-function(model,bins=20){
   {
     if(!is.null(model$model$b_CBre)){
       graph<-binned_fitted_versus_cbre_residuals(model,bins)
+    } else if(!is.null(model$model$l_CBre)){
+      graph<-binned_fitted_versus_l_cbre_residuals(model,bins)
     } else if(!is.null(model$model$b_Term)){
       graph<-binned_fitted_versus_term_residuals(model,bins)
     } else if(!is.null(model$model$cl_Offr)){
@@ -210,16 +214,61 @@ binned_fitted_versus_cbre_residuals<-function(model,bins=20){
     labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 }
 
+binned_fitted_versus_l_cbre_residuals<-function(model,bins=20){
+  
+  #Save this for a future GLM
+  # CBre_data_01A<-data.frame(fitted=fitted(CBre_01A),
+  #                        residuals=residuals(CBre_01A),
+  #                        nCBre=CBre_01A@frame$nCBre,
+  #                        cb_Comp=CBre_01A@frame$cb_Comp
+  #                        )
+  
+  if(class(model)[1]=="glmerMod")
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      l_CBre=model@frame$l_CBre
+    )
+    
+  }
+  else
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      l_CBre=model$model$l_CBre
+    )
+  }
+  
+  data$bin_fitted<-bin_df(data,rank_col="fitted",bins=bins)
+  
+  data<-subset(data,!is.na(fitted) & !is.na(residuals) )
+  
+  ggplot(data= data %>% 
+           group_by(bin_fitted) %>% 
+           summarise (mean_CBre = mean(l_CBre),
+                      mean_fitted =mean(fitted)),
+         aes(y=mean_CBre,x=mean_fitted))+geom_point() +
+    labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+}
+
+
 residuals_plot<-function(model,col="fitted",bins=40){
+  #Safety measure for missing output variables.
+  graph<-NULL
   if(class(model)[1]=="glmerMod")
   {
     if(!is.null(model@frame$b_CBre)){
       graph<-residuals_cbre_plot(model,col,bins=bins)
     } else if(!is.null(model@frame$b_Term)){
       graph<-residuals_term_plot(model,col,bins=bins)
-    } else if(!is.null(model@frame$cl_Offr)){
+    } else if(!is.null(model@frame$l_CBre)){
       warning("write this")#graph<-residuals_plot(model,col,bins=bins)
-      graph<-resid_plot(model,sample=25000)
+    } else if(!is.null(model@frame$l_OptGrowth)){
+      warning("write this")#graph<-residuals_plot(model,col,bins=bins)
+    } else if(!is.null(model@frame$l_Offr)){
+      warning("write this")#graph<-residuals_plot(model,col,bins=bins)
     } 
     else{stop("Outcome variable not recognized.")}
   }
@@ -229,7 +278,11 @@ residuals_plot<-function(model,col="fitted",bins=40){
       graph<-residuals_cbre_plot(model,col,bins=bins)
     } else if(!is.null(model$model$b_Term)){
       graph<-residuals_term_plot(model,col,bins=bins)
-    } else if(!is.null(model$model$cl_Offr)){
+    } else if(!is.null(model$model$l_CBre)){
+      warning("write this")#graph<-residuals_plot(model,col,bins=bins)
+    } else if(!is.null(model$model$l_OptGrowth)){
+      warning("write this")#graph<-residuals_plot(model,col,bins=bins)
+    } else if(!is.null(model$model$l_Offr)){
       warning("write this")#graph<-residuals_plot(model,col,bins=bins)
       graph<-resid_plot(model,sample=25000)
     } 
@@ -1041,9 +1094,9 @@ summary_residual_compare<-function(model1_old,model1_new,
                             binned_fitted_versus_residuals(model2_old,bins=bins),
                             binned_fitted_versus_residuals(model2_new,bins=bins),
                             ncol=2)
-    #This only works once you have some continuous variables o
+    #This only works once you have some continuous variables or set a small bin count
     
-    
+    if()
     gridExtra::grid.arrange(residuals_plot(model1_old,bins=bins),
                             residuals_plot(model1_new,bins=bins),
                             residuals_plot(model2_old,bins=bins),
