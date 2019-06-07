@@ -255,81 +255,86 @@ binned_fitted_versus_l_cbre_residuals<-function(model,bins=20){
 
 
 residuals_plot<-function(model,col="fitted",bins=40){
+  if(class(model)[1]=="glmerMod")
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model)
+    )
+    if (col!="fitted"){
+      data$x_col<-model@frame[,col]
+      colnames(data)[colnames(data)=="x_col"]<-col
+    }
+    
+  }
+  else
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model)
+    )
+    
+    if (col!="fitted"){
+      data$x_col<-model$model[,col]
+      colnames(data)[colnames(data)=="x_col"]<-col
+    }
+  }
+  
   #Safety measure for missing output variables.
   graph<-NULL
   if(class(model)[1]=="glmerMod")
   {
     if(!is.null(model@frame$b_CBre)){
-      graph<-residuals_cbre_plot(model,col,bins=bins)
+      data$outcome<-model@frame$b_CBre
+      data<-binned.resids (data[,col],
+                           data$fitted-data$b_CBre, nclass=bins)$binned
     } else if(!is.null(model@frame$b_Term)){
-      graph<-residuals_term_plot(model,col,bins=bins)
+      data$outcome<-model@frame$b_Term
+      data<-binned.resids (data[,col],
+                           data$fitted-data$b_Term, nclass=bins)$binned
     } else if(!is.null(model@frame$l_CBre)){
-      warning("write this")#graph<-residuals_plot(model,col,bins=bins)
+      data$outcome<-model@frame$l_CBre
+      data<-binned.resids (data[,col],
+                           data$residuals, nclass=bins)$binned
     } else if(!is.null(model@frame$l_OptGrowth)){
-      warning("write this")#graph<-residuals_plot(model,col,bins=bins)
+      data$outcome<-model@frame$l_OptGrowth
+      data<-binned.resids (data[,col],
+                           data$residuals, nclass=bins)$binned
     } else if(!is.null(model@frame$l_Offr)){
-      warning("write this")#graph<-residuals_plot(model,col,bins=bins)
+      data$outcome<-model@frame$l_Offr
+      data<-binned.resids(data[,col],
+                           data$residuals, nclass=bins)$binned
     } 
     else{stop("Outcome variable not recognized.")}
   }
   else
   {
     if(!is.null(model$model$b_CBre)){
-      graph<-residuals_cbre_plot(model,col,bins=bins)
+      data$outcome<-model$model$b_CBre
+      data<-binned.resids (data[,col],
+                           data$fitted-data$b_CBre, nclass=bins)$binned
     } else if(!is.null(model$model$b_Term)){
-      graph<-residuals_term_plot(model,col,bins=bins)
+      data$outcome<-model$model$b_Term
+      data<-binned.resids (data[,col],
+                           data$fitted-data$b_Term, nclass=bins)$binned
     } else if(!is.null(model$model$l_CBre)){
-      warning("write this")#graph<-residuals_plot(model,col,bins=bins)
+      data$outcome<-model$model$l_CBre
+      data<-binned.resids (data[,col],
+                           data$residuals, nclass=bins)$binned
     } else if(!is.null(model$model$l_OptGrowth)){
-      warning("write this")#graph<-residuals_plot(model,col,bins=bins)
+      data$outcome<-model$model$l_OptGrowth
+      data<-binned.resids (data[,col],
+                           data$residuals, nclass=bins)$binned
     } else if(!is.null(model$model$l_Offr)){
-      warning("write this")#graph<-residuals_plot(model,col,bins=bins)
-      graph<-resid_plot(model,sample=25000)
+      # graph<-resid_plot(model,sample=25000)
+      data$outcome<-model$model$l_Offr
+      data<-binned.resids (data[,col],
+                           data$residuals, nclass=bins)$binned
     } 
     else{stop("Outcome variable not recognized.")}
   }
-  graph
-}
-
-
-
-
-residuals_term_plot<-function(model,x_col="fitted",bins=40){
-  #Plot the fitted values vs actual results
   
   
-  if(class(model)[1]=="glmerMod")
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      b_Term=model@frame$b_Term
-    )
-    if (x_col!="fitted"){
-      data$x_col<-model@frame[,x_col]
-      colnames(data)[colnames(data)=="x_col"]<-x_col
-    }
-    
-  }
-  else
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      b_Term=model$model$b_Term
-    )
-    
-    if (x_col!="fitted"){
-      data$x_colt<-model$model[,x_col]
-      colnames(data)[colnames(data)=="x_col"]<-x_col
-    }
-  }
-  
-  
-  
-  
-  data<-binned.resids (data[,x_col],
-                       data$fitted-data$b_Term, nclass=bins)$binned
   
   br<-ggplot(data=data,
              aes(x=xbar,y-ybar))+
@@ -339,10 +344,61 @@ residuals_term_plot<-function(model,x_col="fitted",bins=40){
     labs(title="Binned residual plot",
          y="Average residual")
   
-  if (x_col=="fitted"){
+  if (col=="fitted"){
     br<-br+labs(x="Estimated Pr(Termination)")
   }
   br
+}
+
+
+
+
+residuals_term_plot<-function(model,x_col="fitted",bins=40){
+  #Plot the fitted values vs actual results
+  
+  
+  # if(class(model)[1]=="glmerMod")
+  # {
+  #   data <-data.frame(
+  #     fitted=fitted(model),
+  #     residuals=residuals(model),
+  #     b_Term=model@frame$b_Term
+  #   )
+  #   if (x_col!="fitted"){
+  #     data$x_col<-model@frame[,x_col]
+  #     colnames(data)[colnames(data)=="x_col"]<-x_col
+  #   }
+  #   
+  # }
+  # else
+  # {
+  #   data <-data.frame(
+  #     fitted=fitted(model),
+  #     residuals=residuals(model),
+  #     b_Term=model$model$b_Term
+  #   )
+  #   
+  #   if (x_col!="fitted"){
+  #     data$x_col<-model$model[,x_col]
+  #     colnames(data)[colnames(data)=="x_col"]<-x_col
+  #   }
+  # }
+  
+  # data<-binned.resids (data[,x_col],
+  #                      data$fitted-data$b_Term, nclass=bins)$binned
+  # 
+  # br<-ggplot(data=data,
+  #            aes(x=xbar,y-ybar))+
+  #   geom_point(aes(y=ybar))+ #Residuals
+  #   geom_line(aes(y=se2),col="grey")+
+  #   geom_line(aes(y=-se2),col="grey")+
+  #   labs(title="Binned residual plot",
+  #        y="Average residual")
+  # 
+  # if (x_col=="fitted"){
+  #   br<-br+labs(x="Estimated Pr(Termination)")
+  # }
+  # br
 }
 
 residuals_cbre_plot<-function(model,x_col="fitted",bins=40){
@@ -1096,7 +1152,6 @@ summary_residual_compare<-function(model1_old,model1_new,
                             ncol=2)
     #This only works once you have some continuous variables or set a small bin count
     
-    if()
     gridExtra::grid.arrange(residuals_plot(model1_old,bins=bins),
                             residuals_plot(model1_new,bins=bins),
                             residuals_plot(model2_old,bins=bins),
