@@ -62,17 +62,17 @@ First we load the data. The dataset used is a U.S. Defense Contracting dataset d
 
 def_detail<-def_detail %>% dplyr::select(CSIScontractID,ChangeOrderCeilingGrowth)
 smp<-left_join(smp,def_detail)
-smp1m<-left_join(smp1m,def_detail)
+def<-left_join(def,def_detail)
 def<-left_join(def,def_detail)
 
   
-    smp1m$n_CBre<-(smp1m$ChangeOrderCeilingGrowth/
-                        smp1m$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)+1
-    smp1m$n_CBre[
-      is.na(smp1m$n_CBre) & smp1m$b_CBre==0]<-1
+    def$n_CBre<-(def$ChangeOrderCeilingGrowth/
+                        def$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)+1
+    def$n_CBre[
+      is.na(def$n_CBre) & def$b_CBre==0]<-1
 
     #l_CBre
-    smp1m$l_CBre<-na_non_positive_log(smp1m$n_CBre)
+    def$l_CBre<-na_non_positive_log(def$n_CBre)
 
 
 
@@ -582,9 +582,108 @@ NA_stats(def,"b_CBre")`)
 #The original variables for b_Term and b_CBre are Term and CBre
 grouped_barplot("CBre", def)
 statsummary_discrete(c("CBre"), def)
+cbre<-def %>% filter(b_CBre==1)
+cbre$qGrowth<-Hmisc::cut2(cbre$n_CBre-1,c(1,10))
+summary(cbre$qGrowth)
+
 ```
 
+#### Ceiling Growth
+```{r CeilingGrowthGraphs}
 
+(
+ggplot(cbre, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year,y=n_CBre-1)) +#,color=qGrowth
+  geom_point(alpha=0.25,shape=".")+
+  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_x_log10()+scale_y_log10()+
+  #+
+  geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+# facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
+  labs(title="Distribution of Ceiling Breaches",
+       y="Percent of Growth in  Ceiling",
+       x="Unmodified Contract Ceiling")#,
+       # fill="Termination Completion"
+)
+
+
+(
+ggplot(cbre, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year,y=ChangeOrderCeilingGrowth)) +#,color=qGrowth
+  geom_point(alpha=0.25,shape=".")+
+  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_x_log10()+scale_y_log10()+
+  #+
+  geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+# facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
+  labs(title="Distribution of Ceiling Breaches",
+       y="Percent of Growth in  Ceiling",
+       x="Unmodified Contract Ceiling")#,
+       # fill="Termination Completion"
+)
+
+
+(
+ggplot(cbre, aes(x=n_CBre-1,fill=qGrowth)) +
+  geom_histogram(bins=100)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_x_log10()+
+  #+
+  geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
+  labs(title="Distribution of Ceiling Breaches",
+       y="Contract Count",
+       x="Percent of Growth in  Ceiling")#,
+       # fill="Termination Completion"
+)
+
+nrow(cbre %>% filter((n_CBre-1)>1))
+nrow(cbre %>% filter((n_CBre-1)>10))
+nrow(cbre %>% filter((n_CBre-1)>100))
+nrow(cbre %>% filter((n_CBre-1)>100 & UnmodifiedContractBaseAndAllOptionsValue_Then_Year<=0))
+summary(cbre$Ceil[(cbre$n_CBre-1)>10 & cbre$UnmodifiedContractBaseAndAllOptionsValue_Then_Year>0])
+summary(cbre$Ceil[(cbre$n_CBre-1)>100 & cbre$UnmodifiedContractBaseAndAllOptionsValue_Then_Year>0])
+
+
+nrow(cbre %>% filter((ChangeOrderCeilingGrowth)>=1e3))
+nrow(cbre %>% filter((ChangeOrderCeilingGrowth)>=1e6))
+nrow(cbre %>% filter((ChangeOrderCeilingGrowth)>=1e9))
+nrow(cbre %>% filter((ChangeOrderCeilingGrowth)>=1e10))
+nrow(cbre %>% filter((ChangeOrderCeilingGrowth)>=2e10))
+summary(cbre$Ceil[cbre$ChangeOrderCeilingGrowth>=1e6])
+summary(cbre$Ceil[cbre$ChangeOrderCeilingGrowth>=1e9])
+
+
+(
+ggplot(cbre, aes(x=ChangeOrderCeilingGrowth,fill=qGrowth)) +
+  geom_histogram(bins=100)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_x_log10()+
+  #+
+  geom_vline(xintercept = 1)#+geom_vline(xintercept = 0.1)+
+#facet_grid(NoPreTermObl~.,scales="free_y", space="free_y")+
+  # labs(title="Distribution of Contracts with Obligations After Last termination",
+  #      y="Contract Count",
+  #      x="Percent of Obligations After Day of Termination",
+  #      fill="Termination Completion"
+)
+
+(
+ggplot(cbre, aes(x=ChangeOrderCeilingGrowth,fill=qGrowth)) +
+  geom_histogram(bins=100)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_x_log10()+
+  #+
+  geom_vline(xintercept = 1)+
+facet_wrap(~Ceil,scales="free_y")#+, space="free_y"
+#+geom_vline(xintercept = 0.1)+
+#facet_grid(NoPreTermObl~.,scales="free_y", space="free_y")+
+  # labs(title="Distribution of Contracts with Obligations After Last termination",
+  #      y="Contract Count",
+  #      x="Percent of Obligations After Day of Termination",
+  #      fill="Termination Completion"
+)
+
+
+```
 
 
 ## Independent Variables
