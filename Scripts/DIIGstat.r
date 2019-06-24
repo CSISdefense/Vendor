@@ -1349,22 +1349,26 @@ get_pars<-function(model){
 
 # memory.limit(56000)
 
-statsummary_discrete <- function(x, contract,accuracy=0.01){      #input(x: name of the discrete variable, contract：name of the dataframe)
+statsummary_discrete <- function(x, 
+                                 contract,accuracy=0.01,
+                                 value_col="Action_Obligation"){      #input(x: name of the discrete variable, contract：name of the dataframe)
   unique_value_list <- levels(contract[[x]])
-  categories <- c(unique_value_list,"NA")
+  categories <- c(unique_value_list)
   Percent_Actions <- c()
   Percent_Records <- c()
   for (i in 1:length(unique_value_list)){
     Percent_Records <- c(Percent_Records, percent(round(sum(contract[[x]] == unique_value_list[i],na.rm = TRUE)/nrow(contract),5),accuracy = accuracy))
-    Percent_Actions <- c(Percent_Actions, percent(round(sum(contract$Action_Obligation[contract[[x]] == unique_value_list[i]],na.rm = TRUE)/sum(contract$Action_Obligation,na.rm = TRUE),5),accuracy = accuracy))    
+    Percent_Actions <- c(Percent_Actions, percent(round(sum(contract[contract[[x]] == unique_value_list[i],value_col],na.rm = TRUE)/sum(contract[,value_col],na.rm = TRUE),5),accuracy = accuracy))    
   }
-  Percent_Records <- c(Percent_Records, percent(round(sum(is.na(contract[[x]]))/nrow(contract),5),accuracy = .01))
-  Percent_Actions <- c(Percent_Actions, percent(round(sum(contract$Action_Obligation[is.na(contract[[x]])],na.rm = TRUE)/sum(contract$Action_Obligation,na.rm = TRUE),5),accuracy = accuracy))
+  if(sum(is.na(contract[[x]]))>1){#If any NA}
+    categories <- c(unique_value_list,"NA")
+    Percent_Records <- c(Percent_Records, percent(round(sum(is.na(contract[[x]]))/nrow(contract),5),accuracy = .01))
+    Percent_Actions <- c(Percent_Actions, percent(round(sum(contract[[value_col]][is.na(contract[[x]])],na.rm = TRUE)/sum(contract[,value_col],na.rm = TRUE),5),accuracy = accuracy))
+  }
   name_categorical <- c(x,"%of records","% of $s")
-  
-  categorical_Info <- as.data.frame(cbind(categories,Percent_Records,Percent_Actions))
-  colnames(categorical_Info) <- name_categorical
-  return(categorical_Info)
+  categories <- as.data.frame(cbind(categories,Percent_Records,Percent_Actions))
+  colnames(categories) <- name_categorical
+  return(categories)
 }
 
 #Extract statistic information of the 26 continuous variables and generate dataframe      
@@ -1449,10 +1453,11 @@ name_categorical <- c("CompOffr","Veh","PricingFee","UCA","Intl","Term",
 
 #Input(x: name of the categorical variable needs plot; contract: name of the dataframe)
 #Output: grouped bar plot for the selected variable;
-grouped_barplot <- function(x, contract) {
+grouped_barplot <- function(x, contract,
+                            value_col="Action_Obligation") {
   memory.limit(56000)
   #perparing data for ploting
-  name_Info <- statsummary_discrete(x, contract)
+  name_Info <- statsummary_discrete(x, contract,value_col=value_col)
   name_Info_noNAN <- subset(name_Info, name_Info[, 1] != "NA")
   name_Info_noNAN[, 1] <- factor(name_Info_noNAN[, 1], droplevels(name_Info_noNAN[, 1]))
   
@@ -1461,7 +1466,10 @@ grouped_barplot <- function(x, contract) {
   levels(name_Info$variable)[levels(name_Info$variable)=="%of records"] = "% of records"
   levels(name_Info$variable)[levels(name_Info$variable)=="% of $s"] = "% of obligations"
   name_Info$variable <- factor(name_Info$variable, rev(levels(name_Info$variable)))
-  
+  if(any(name_Info[, 1]=="NA"))
+    limits<-rev(c(levels(name_Info_noNAN[ ,1]),"NA"))
+  else
+    limits<-rev(levels(name_Info_noNAN[ ,1]))
   basicplot <- ggplot(data = name_Info, 
                       aes(x = name_Info[, 1], 
                           y = name_Info[, 3], 
@@ -1479,7 +1487,7 @@ grouped_barplot <- function(x, contract) {
           legend.text = element_text(margin = margin(r = 0.5, unit = "cm")),    #increase the distances between two legends
           plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm")) + 
     ggtitle(paste("Statistic summary of categorical variable: ", x)) +
-    scale_x_discrete(limits = rev(c(levels(name_Info_noNAN[ ,1]),"NA")))    #keep the order of category the same
+    scale_x_discrete(limits = limits)    #keep the order of category the same
   return(basicplot)
 }
 
