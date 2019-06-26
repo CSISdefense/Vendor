@@ -131,7 +131,7 @@ Shifting the focus to all contracts with growth of at least 250 million, there a
 
 Inspecting W912UM, either to remove or fix its oversized growth, is an imperative as it accounts for the majority of these contracts or task orders. Even so, there are still `r nrow(cbre %>% filter(Why_Outlier ==">=$250M, Insepect"))` That merit special inspection for given that there growth far outpaces their spending.
 
-##W912UM
+## W912UM Contract
 ```{r W912UM}
 W912UM <- def %>% filter(Office=="W912UM")
 
@@ -230,6 +230,43 @@ facet_wrap(~Intl)#+, space="free_y"
 ```
 
 All of the questionable contracts take place internationally and none use BPA/BOA or FSS/GWACs. That makes sense and raises confidence, but given that the clearly USD contract categories are less common, this doesn't help in resolving the ambiguous cases. That said, Single Award IDCs appear to have most of the ambigious cases, which suggests that this might be resolvable by looking at parent IDVs in those cases. 
+
+## W912UM Transaction
+```{r W912UM_transction}
+# W912UMtrans<-read.delim(file="..\\data\\semi_clean\\W912UM_complete.txt", sep="\t")
+W912UMtrans<-read.delim(file="..\\data\\semi_clean\\W912UM_trans.csv", sep=",")
+summary(W912UMtrans$vendorcountrycode)
+
+W912UMtrans<-remove_bom(W912UMtrans)
+W912UMtrans<-inner_join(W912UMtrans,W912UM %>% group_by() %>% dplyr::select(CSIScontractID,unmodWon,sumWon,changeWon),
+                       by="CSIScontractID")
+
+levels(W912UMtrans$vendorcountrycode)<-list(
+  # ""="",
+  "ABW: ARUBA"="ABW: ARUBA",
+  "JPN: JAPAN"="JPN: JAPAN",
+  "KOR: KOREA, REPUBLIC OF"=c("KOR: KOREA, REPUBLIC OF","KOR","SOUTH KOREA"),
+  "USA: UNITED STATES OF AMERICA"=c("USA: UNITED STATES OF AMERICA","UNITED STATES","USA")
+)
+
+summary(W912UMtrans$modnumber)
+ggplot(filter(W912UMtrans %>% filter(modnumber=='0')) ,aes(x=unmodWon))+geom_bar()+facet_wrap(~vendorcountrycode)
+ggplot(W912UMtrans,aes(x=changeWon))+geom_bar()+facet_wrap(~vendorcountrycode)
+ggplot(W912UMtrans,aes(x=sumWon))+geom_bar()+facet_wrap(~vendorcountrycode)
+
+W912UMtrans$placeofperformancecountrycode
+ggplot(W912UMtrans,aes(x=unmodWon))+geom_bar()+facet_wrap(~placeofmanufacture)
+ggplot(W912UMtrans,aes(x=unmodWon))+geom_bar()+facet_wrap(~countryoforigin)
+ggplot(W912UMtrans,aes(x=unmodWon))+geom_bar()+facet_wrap(~placeofperformancecountrycode)
+                 
+
+View(W912UMtrans %>% filter(unmodWon %in% c("? Unm","Won Unm") & vendorcountrycode=="USA: UNITED STATES OF AMERICA" & modnumber=='0'))
+
+Miscategorized<-W912UMtrans %>% filter(unmodWon %in% c("? Unm","Won Unm") & vendorcountrycode=="USA: UNITED STATES OF AMERICA" & modnumber=='0')
+
+View(W912UM %>% filter(CSIScontractID %in% Miscategorized$CSIScontractID))
+```
+
 
 # Ceiling Growth
 ```{r CeilingGrowthGraphs}
