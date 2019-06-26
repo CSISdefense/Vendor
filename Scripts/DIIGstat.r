@@ -1352,6 +1352,7 @@ get_pars<-function(model){
 statsummary_discrete <- function(x, 
                                  contract,accuracy=0.01,
                                  value_col="Action_Obligation"){      #input(x: name of the discrete variable, contract：name of the dataframe)
+  if(is.character(contract[[x]])) contract[[x]]<-factor(contract[[x]])
   unique_value_list <- levels(contract[[x]])
   categories <- c(unique_value_list)
   Percent_Actions <- c()
