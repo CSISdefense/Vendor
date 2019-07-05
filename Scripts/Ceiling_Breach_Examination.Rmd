@@ -48,7 +48,7 @@ cbre$qGrowth<-Hmisc::cut2(cbre$n_CBre-1,c(1,10))
 summary(cbre$qGrowth)
 
 ```
-# Outlier Study
+# Data Clean Up
 ```{r CeilingOutlier}
 nrow(cbre %>% filter((n_CBre-1)>1))
 nrow(cbre %>% filter((n_CBre-1)>10))
@@ -134,15 +134,17 @@ Inspecting W912UM, either to remove or fix its oversized growth, is an imperativ
 ## W912IM
 ### Setup
 ```{r W912UM_setup}
-W912UM <- def %>% filter(Office=="W912UM")
-W912UMtrans<-read.delim(file="..\\data\\semi_clean\\W912UM_trans.csv", sep=",")
-W912UMtrans<-remove_bom(W912UMtrans)
+load(file="..\\data\\semi_clean\\W912UM_original.rdata")
+# W912UM <- def %>% filter(Office=="W912UM")
+# W912UMtrans<-read.delim(file="..\\data\\semi_clean\\W912UM_trans.csv", sep=",")
+# W912UMtrans<-remove_bom(W912UMtrans)
+
+# save(W912UM,W912UMtrans,file="..\\data\\semi_clean\\W912UM_original.rdata")
 
 ```
 
-### Contract
+### Contract Initial Examination
 ```{r W912UM}
-W912UM$bas
 sum(W912UM$Action_Obligation_Then_Year[])
 
 (
@@ -246,8 +248,8 @@ statsummary_discrete(c("unmodWon"), W912UM %>% filter(Intl=="Any Intl."&
 ```
 
 All of the questionable contracts take place internationally and none use BPA/BOA or FSS/GWACs. That makes sense and raises confidence, but given that the clearly USD contract categories are less common, this doesn't help in resolving the ambiguous cases. That said, Single Award IDCs appear to have most of the ambigious cases, which suggests that this might be resolvable by looking at parent IDVs in those cases. 
-
-#### Unmodified Examination
+### Transaction
+#### Unmodified Transactions
 ```{r W912UM_transction_unmodified}
 # W912UMtrans<-read.delim(file="..\\data\\semi_clean\\W912UM_complete.txt", sep="\t")
 
@@ -280,9 +282,8 @@ View(W912UMtrans %>% filter(unmodWonT!='WON Unm'& unmodWon=='WON Unm') )
 #Examining ?s
 View(W912UMtrans %>% filter(unmodWonT=='? Unm'& obligatedamount>0) )
 View(W912UMtrans %>% filter(unmodWonT=='? Unm'& obligatedamount==0) )
+  
 
-debug(statsummary_discrete)
-W912UMtrans<-factor()
 statsummary_discrete(c("unmodWon"),W912UMtrans %>% filter(modnumber=='0'),
                      value_col="Action_Obligation_Then_Year")
 grouped_barplot(c("unmodWon"),W912UMtrans %>% filter(modnumber=='0'),
@@ -292,7 +293,6 @@ UnmodDisagree<-W912UMtrans %>% filter(unmodWonT=='WON Unm'& unmodWon!='WON Unm')
 View(W912UM %>% filter(CSIScontractID %in% UnmodDisagree$CSIScontractID))
 CSIScontractID_ceil_to_na<-W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT == 'WON Unm'&
                                                         !is.na(W912UMtrans$unmodWonT)]
-CSIScontractID_ceil_to_na<-
 ```
 
 
@@ -304,7 +304,7 @@ Contracts ceilings are marked null if:
 Then it the ceiling is set to NA and it will not be in the sample.
 
 
-#### Change Order Examination
+#### Change Order Transactions
 ```{r W912UM_transaction}
 
 W912UMtrans$unmodWonT[W912UMtrans$CSIScontractID %in% CSIScontractID_ceil_to_na]<-'WON Unm'
@@ -383,6 +383,110 @@ Miscategorized<-W912UMtrans %>% filter(unmodWon %in% c("? Unm","WON Unm") & (
 
 
 View(W912UM %>% filter(CSIScontractID %in% Miscategorized$CSIScontractID))
+```
+
+
+### Contract Revised
+```{r W912UM}
+
+(
+ggplot(W912UM, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year+ChangeOrderBaseAndAllOptionsValue,y=Action_Obligation_Then_Year)) +#,color=qGrowth
+  geom_point(alpha=0.25,shape=".")+
+  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_x_log10()+scale_y_log10()+
+  #+
+#   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+facet_wrap(~StartFY,scales="free_y")#+, space="free_y"
+#   labs(title="Distribution of Ceiling Breaches",
+#        y="Percent of Growth in  Ceiling",
+#        x="Unmodified Contract Ceiling")#,
+#        # fill="Termination Completion"
+)
+
+summary(W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)
+W912UM$unmodWon<-NA
+W912UM$unmodWon[W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year>=W912UM$Action_Obligation_Then_Year*400&W912UM$Action_Obligation_Then_Year>0]<-'WON Unm'
+W912UM$unmodWon[is.na(W912UM$unmodWon) &
+                    W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year>=W912UM$Action_Obligation_Then_Year*20]<-'? Unm'
+W912UM$unmodWon[is.na(W912UM$unmodWon) &
+                    W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year<W912UM$Action_Obligation_Then_Year*20]<-'$ Unm'
+summary(factor(W912UM$unmodWon))
+
+
+W912UM$changeWon<-NA
+W912UM$changeWon[abs(W912UM$ChangeOrderBaseAndAllOptionsValue)==0]<-'0 Chg'
+W912UM$changeWon[abs(W912UM$ChangeOrderBaseAndAllOptionsValue)>=W912UM$Action_Obligation_Then_Year*100]<-'WON Chg'
+W912UM$changeWon[is.na(W912UM$changeWon) &
+                    abs(W912UM$ChangeOrderBaseAndAllOptionsValue)>=W912UM$Action_Obligation_Then_Year*10]<-'? Chg'
+W912UM$changeWon[is.na(W912UM$changeWon) &
+                    abs(W912UM$ChangeOrderBaseAndAllOptionsValue)<W912UM$Action_Obligation_Then_Year*10]<-'$ Chg'
+summary(factor(W912UM$changeWon))
+
+
+W912UM$sumWon<-NA
+W912UM$sumWon[W912UM$Action_Obligation_Then_Year==0]<-'0 Obl'
+W912UM$sumWon[W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
+                W912UM$ChangeOrderBaseAndAllOptionsValue>=W912UM$Action_Obligation_Then_Year*400]<-'WON Sum'
+W912UM$sumWon[is.na(W912UM$sumWon) &
+                    W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
+                W912UM$ChangeOrderBaseAndAllOptionsValue>=W912UM$Action_Obligation_Then_Year*20]<-'? Sum'
+W912UM$sumWon[is.na(W912UM$sumWon) &
+                    W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
+                W912UM$ChangeOrderBaseAndAllOptionsValue<W912UM$Action_Obligation_Then_Year*20]<-'$ Sum'
+summary(factor(W912UM$sumWon))
+
+
+
+(
+ggplot(W912UM, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year+ChangeOrderBaseAndAllOptionsValue,y=Action_Obligation_Then_Year,color=sumWon)) +#,color=qGrowth
+  geom_point(alpha=0.25)+
+  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_x_log10()+scale_y_log10()+
+  #+
+#   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+facet_grid(unmodWon~changeWon)#+, space="free_y"
+#   labs(title="Distribution of Ceiling Breaches",
+#        y="Percent of Growth in  Ceiling",
+#        x="Unmodified Contract Ceiling")#,
+#        # fill="Termination Completion"
+)
+
+
+(
+ggplot(W912UM, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year+ChangeOrderBaseAndAllOptionsValue,y=Action_Obligation_Then_Year,color=sumWon)) +#,color=qGrowth
+  geom_point(alpha=0.25)+
+  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_x_log10()+scale_y_log10()+
+  #+
+#   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+facet_wrap(~Veh)#+, space="free_y"
+#   labs(title="Distribution of Ceiling Breaches",
+#        y="Percent of Growth in  Ceiling",
+#        x="Unmodified Contract Ceiling")#,
+#        # fill="Termination Completion"
+)
+
+(
+ggplot(W912UM, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year+ChangeOrderBaseAndAllOptionsValue,y=Action_Obligation_Then_Year,color=sumWon)) +#,color=qGrowth
+  geom_point(alpha=0.25)+
+  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_x_log10()+scale_y_log10()+
+  #+
+#   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+facet_wrap(~Intl)#+, space="free_y"
+#   labs(title="Distribution of Ceiling Breaches",
+#        y="Percent of Growth in  Ceiling",
+#        x="Unmodified Contract Ceiling")#,
+#        # fill="Termination Completion"
+)
+undebug(statsummary_discrete)
+summary(W912UM$Intl)
+W912UM$unmodWon<-factor(W912UM$Intl)
+summary(W912UM$Veh)
+statsummary_discrete(c("unmodWon"), W912UM %>% filter(Intl=="Any Intl."&
+                                                        !Veh %in% c("FSS/GWAC","BPA/BOA")),
+                     value_col="Action_Obligation_Then_Year")
+
 ```
 
 
