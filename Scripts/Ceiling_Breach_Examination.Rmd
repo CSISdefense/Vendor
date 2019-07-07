@@ -583,29 +583,57 @@ if(nrow(Miscategorized)>0) stop("False positive contract in Won performed in US"
 ```{r clean_setup}
 load(file="../Data/Clean/transformed_def.Rdata")
 
+
+
+summary(factor(W912UMtrans$chgWonT))
+summary(factor(W912UMtrans$changeWon))
+summary(factor(W912UM$changeWon))
+
+
 def$UnmodifiedContractBaseAndAllOptionsValue_Then_Year[
   def$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$unmodWon=="WON Unm"],
                                      W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"])]<-NA
 def$UnmodifiedContractBaseAndAllOptionsValue_Then_Year[def$UnmodifiedContractBaseAndAllOptionsValue_Then_Year==0]<-NA
+
+def$Ceil[
+  def$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$unmodWon=="WON Unm"],
+                                     W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"])]<-NA
+def$Ceil[def$UnmodifiedContractBaseAndAllOptionsValue_Then_Year==0]<-NA
+
+def$cl_Ceil[
+  def$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$unmodWon=="WON Unm"],
+                                     W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"])]<-NA
+def$cl_Ceil[def$UnmodifiedContractBaseAndAllOptionsValue_Then_Year==0]<-NA
+
+
 summary(def$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)
 
-summary(factor(W912UMtrans$chgWonT))
+
+def$ChangeOrderBaseAndAllOptionsValue[def$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
+                                                       W912UMtrans$CSIScontractID[W912UMtrans$chgWonT=="WON Chg"]
+                                                         )]<-NA
+def$ChangeOrderCeilingGrowth[def$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
+                                                       W912UMtrans$CSIScontractID[W912UMtrans$chgWonT=="WON Chg"]
+                                                         )]<-NA
+def$n_CBre[def$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
+                                                       W912UMtrans$CSIScontractID[W912UMtrans$chgWonT=="WON Chg"]
+                                                         )]<-NA
+def$l_Cbre[def$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
+                                                       W912UMtrans$CSIScontractID[W912UMtrans$chgWonT=="WON Chg"]
+                                                         )]<-NA
 
 
 summary(def$ChangeOrderBaseAndAllOptionsValue)
-def$ChangeOrderBaseAndAllOptionsValue[def$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
-                                                       W912UMtrans$CSIScontractID[W912UMtrans$changeWon=="chgWonT"]
-                                                         )]<-NA
-def$ChangeOrderCeilingGrowth[def$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
-                                                       W912UMtrans$CSIScontractID[W912UMtrans$changeWon=="chgWonT"]
-                                                         )]<-NA
+summary(def$Ceil)
+summary(def$cl_Ceil)
+
 
 #The original variables for b_Term and b_CBre are Term and CBre
 grouped_barplot("CBre", def,value_col="Action_Obligation_Then_Year")
 statsummary_discrete(c("CBre"), def,value_col="Action_Obligation_Then_Year")
 cbre<-def %>% filter(b_CBre==1)
-cbre$qGrowth<-Hmisc::cut2(cbre$n_CBre-1,c(1,10))
-summary(cbre$qGrowth)
+# cbre$qGrowth<-Hmisc::cut2(cbre$n_CBre-1,c(1,10))
+# summary(cbre$qGrowth)
 
 
 ```
