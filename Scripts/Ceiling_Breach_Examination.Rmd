@@ -48,7 +48,8 @@ load(file="..\\data\\semi_clean\\CBre_pre_clean.rdata")
 # cbre_preclean$qGrowth<-Hmisc::cut2(cbre_preclean$n_CBre-1,c(1,10))
 # summary(cbre_preclean$qGrowth)
 # save(W912UM,W912UMtrans,cbre_preclean,file="..\\data\\semi_clean\\CBre_pre_clean.rdata")
-
+summary(def$n_CBre)
+summary(def$p_CBre)
 ```
 
 
@@ -183,20 +184,6 @@ ggplot(cbre_preclean, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year+C
 #        # fill="Termination Completion"
 )
 
-
-(
-ggplot(cbre_preclean, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year+ChangeOrderCeilingGrowth,y=Action_Obligation_Then_Year)) +#,color=qGrowth
-  geom_point(alpha=0.25,shape=".")+
-  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+scale_y_log10()#+
-  #+
-#   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-# # facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
-#   labs(title="Distribution of Ceiling Breaches",
-#        y="Percent of Growth in  Ceiling",
-#        x="Unmodified Contract Ceiling")#,
-#        # fill="Termination Completion"
-)
 summary(cbre_preclean$ChangeOrderBaseAndAllOptionsValue)
 
 
@@ -580,6 +567,8 @@ if(nrow(Miscategorized)>0) stop("False positive contract in Won performed in US"
 ```
 
 # Cleaning
+
+## Ceiling Growth after Cleaning
 ```{r clean_setup}
 load(file="../Data/Clean/transformed_def.Rdata")
 
@@ -632,33 +621,222 @@ summary(def$cl_Ceil)
 grouped_barplot("CBre", def,value_col="Action_Obligation_Then_Year")
 statsummary_discrete(c("CBre"), def,value_col="Action_Obligation_Then_Year")
 cbre<-def %>% filter(b_CBre==1)
-# cbre$qGrowth<-Hmisc::cut2(cbre$n_CBre-1,c(1,10))
-# summary(cbre$qGrowth)
-
-
-```
-```
-
-
-### Contract Revised
-```{r W912UM}
-
-W912UM
-summary(W912UM$unmodWon)
-summary(factor(W912UMtrans$unmodWonT))
-summary(factor(W912UM$changeWon))
-summary(factor(W912UMtrans$chgWonT))
-
-
-
-
-cbre$ChangeOrderCeilingGrowth[cbre$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"])]<-NA
-
-summary(cbre$Ceil)
-summary(cbre$ChangeOrderCeilingGrowth)
-
+cbre$qGrowth<-Hmisc::cut2(cbre$n_CBre-1,c(1,10))
+summary(cbre$qGrowth)
 
 
 ```
 
 
+## Graphs after Cleaning
+
+```{r CeilingOutlier}
+
+cbre$Why_Outlier<-NA
+cbre$Why_Outlier[is.na(cbre$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)]<-"No Unmodified Ceiling"
+cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
+                   cbre$Action_Obligation_Then_Year*2>=cbre$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
+                   cbre$ChangeOrderCeilingGrowth]<-
+  "Obligations at least half Orig+CRai"
+cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
+                   cbre$Office=="W912UM"]<-
+  "Korean Office W912UM"
+cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
+                   cbre$ChangeOrderCeilingGrowth>=2.5e8]<-
+  ">=$250M, Insepect"
+cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
+                   cbre$n_CBre-1>10]<-
+  "Other Unexplained 10x Ceiling Breach"
+cbre$Why_Outlier<-factor(cbre$Why_Outlier,
+                         levels=c(
+                           "No Unmodified Ceiling",
+                           "Obligations at least half Orig+CRai",
+                           "Later Deobligated",
+                           "Korean Office W912UM",
+                           ">=$250M, Insepect",
+                           "Other Unexplained 10x Ceiling Breach"
+                         ))
+
+#Percent Growth
+summary(Hmisc::cut2(cbre_preclean$n_CBre-1,c(1,
+                                          10,
+                                          100
+                                          )))
+summary(Hmisc::cut2(cbre$n_CBre-1,c(1,
+                                          10,
+                                          100
+                                          )))
+
+summary(cbre$Ceil[(cbre$n_CBre-1)>10])
+summary(cbre$Ceil[(cbre$n_CBre-1)>100])
+
+
+p_outlier_summary<-cbre %>% filter(n_CBre-1>10) %>% group_by(Why_Outlier) %>%
+  dplyr::summarise(nContract=length(ChangeOrderCeilingGrowth),
+    SumOfChangeOrderCeilingGrowth=sum(ChangeOrderCeilingGrowth),
+                   MaxOfChangeOrderCeilingGrowth=max(ChangeOrderCeilingGrowth),
+                   SumOfAction_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
+
+#Absolute Growth
+summary(Hmisc::cut2(cbre_preclean$ChangeOrderCeilingGrowth,c(1e3,
+                                          1e6,
+                                          1e7,
+                                          1e8,
+                                          2.5e8,
+                                          1e9,
+                                          1e10,
+                                          2e10
+                                          ))
+)
+summary(Hmisc::cut2(cbre$ChangeOrderCeilingGrowth,c(1e3,
+                                          1e6,
+                                          1e7,
+                                          1e8,
+                                          2.5e8,
+                                          1e9,
+                                          1e10,
+                                          2e10
+                                          ))
+)
+
+summary(cbre$Ceil[cbre$ChangeOrderCeilingGrowth>=1e6])
+summary(cbre$Ceil[cbre$ChangeOrderCeilingGrowth>=1e9])
+
+
+
+n_outlier_summary<-cbre %>% filter(ChangeOrderCeilingGrowth>2.5e8) %>% group_by(Why_Outlier) %>%
+  dplyr::summarise(nContract=length(ChangeOrderCeilingGrowth),
+    SumOfChangeOrderCeilingGrowth=sum(ChangeOrderCeilingGrowth),
+                   MaxOfChangeOrderCeilingGrowth=max(ChangeOrderCeilingGrowth),
+                   SumOfAction_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
+
+
+# write.csv(file="..\\Data\\semi_clean\\p_CBre_post_clean_outliers.csv",cbre %>% filter((n_CBre-1)>10),row.names = FALSE)
+write.csv(file="..\\Data\\semi_clean\\n_CBre_post_clean_outliers.csv",cbre %>% filter(ChangeOrderCeilingGrowth>=2.5e8),row.names = FALSE)
+```
+
+The cleaning has cut in half the outliers with growth >=100,000,000, although the influence has been much smaller on the percentage growth outliers, reinforcing the choice to switch to absolute growth. The study team chose to set a threshold of Shifting the focus to all contracts with growth of at least 250 million, there are far fewer contracts that account for far more money.
+`r knitr::kable(n_outlier_summary)`
+
+After the cleaning, 2 categories remain relevant.
+
+`r knitr::kable(p_outlier_summary)`
+* Obligations at least half Orig+CRai: For this category, total obligations of the contract were at least half the value of the initial ceiling plus ceiling growth under change orders. As before, this category accounts for the overwhelming majority of outlier spending but only a tiny fraction of change order growth.
+* There are `r nrow(cbre %>% dplyr::filter(Why_Outlier ==">=$250M, Insepect" ))` contracts with ceiling growth of over $250 million that account for hundreds of billions in change order growth. These merit manual inspection.
+
+
+```{r CeilingGrowthAfterCleaning}
+
+(
+ggplot(cbre, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year,y=n_CBre-1)) +#,color=qGrowth
+  geom_point(alpha=0.25,shape=".")+
+  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_x_log10()+scale_y_log10()+
+  #+
+  geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+# facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
+  labs(title="Distribution of Ceiling Breaches",
+       y="Percent of Growth in  Ceiling",
+       x="Unmodified Contract Ceiling")#,
+       # fill="Termination Completion"
+)
+
+
+(
+ggplot(cbre, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year,y=ChangeOrderCeilingGrowth)) +#,color=qGrowth
+  geom_point(alpha=0.25,shape=".")+
+  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_x_log10()+scale_y_log10()+
+  #+
+  geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+# facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
+  labs(title="Distribution of Ceiling Breaches",
+       y="Percent of Growth in  Ceiling",
+       x="Unmodified Contract Ceiling")#,
+       # fill="Termination Completion"
+)
+
+(
+ggplot(cbre, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year+ChangeOrderBaseAndAllOptionsValue,y=Action_Obligation_Then_Year)) +#,color=qGrowth
+  geom_point(alpha=0.25,shape=".")+
+  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_x_log10()+scale_y_log10()#+
+  #+
+#   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+# # facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
+#   labs(title="Distribution of Ceiling Breaches",
+#        y="Percent of Growth in  Ceiling",
+#        x="Unmodified Contract Ceiling")#,
+#        # fill="Termination Completion"
+)
+
+summary(cbre$ChangeOrderBaseAndAllOptionsValue)
+
+
+
+
+(
+ggplot(cbre, aes(x=ChangeOrderCeilingGrowth,y=ChangeOrderBaseAndAllOptionsValue)) +#,color=qGrowth
+  geom_point(alpha=0.25,shape=".")+
+  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_x_log10()+scale_y_log10()#+
+  #+
+#   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+# # facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
+#   labs(title="Distribution of Ceiling Breaches",
+#        y="Percent of Growth in  Ceiling",
+#        x="Unmodified Contract Ceiling")#,
+#        # fill="Termination Completion"
+)
+
+(
+ggplot(cbre, aes(x=n_CBre-1,fill=qGrowth)) +
+  geom_histogram(bins=100)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_x_log10()+
+  #+
+  geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
+  labs(title="Distribution of Ceiling Breaches",
+       y="Contract Count",
+       x="Percent of Growth in  Ceiling")#,
+       # fill="Termination Completion"
+)
+
+
+
+
+
+
+(
+ggplot(cbre, aes(x=ChangeOrderCeilingGrowth,fill=qGrowth)) +
+  geom_histogram(bins=100)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_x_log10()+
+  #+
+  geom_vline(xintercept = 1)#+geom_vline(xintercept = 0.1)+
+#facet_grid(NoPreTermObl~.,scales="free_y", space="free_y")+
+  # labs(title="Distribution of Contracts with Obligations After Last termination",
+  #      y="Contract Count",
+  #      x="Percent of Obligations After Day of Termination",
+  #      fill="Termination Completion"
+)
+
+(
+ggplot(cbre, aes(x=ChangeOrderCeilingGrowth,fill=qGrowth)) +
+  geom_histogram(bins=100)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_x_log10()+
+  #+
+  geom_vline(xintercept = 1)+
+facet_wrap(~Ceil,scales="free_y")#+, space="free_y"
+#+geom_vline(xintercept = 0.1)+
+#facet_grid(NoPreTermObl~.,scales="free_y", space="free_y")+
+  # labs(title="Distribution of Contracts with Obligations After Last termination",
+  #      y="Contract Count",
+  #      x="Percent of Obligations After Day of Termination",
+  #      fill="Termination Completion"
+)
+
+
+```
