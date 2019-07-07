@@ -39,15 +39,15 @@ note.text.size<-1.40
 ```
 
 ```{r vargraphs: b_CBre}
-load(file="../Data/Clean/transformed_def.Rdata")
-# load(file="..\\data\\semi_clean\\CBre_pre_clean.rdata")
+# load(file="../Data/Clean/transformed_def.Rdata")
+load(file="..\\data\\semi_clean\\CBre_pre_clean.rdata")
 # W912UM <- def %>% filter(Office=="W912UM")
 # W912UMtrans<-read.delim(file="..\\data\\semi_clean\\W912UM_trans.csv", sep=",")
 # W912UMtrans<-remove_bom(W912UMtrans)
 # cbre_preclean<-def %>% filter(b_CBre==1)
 # cbre_preclean$qGrowth<-Hmisc::cut2(cbre_preclean$n_CBre-1,c(1,10))
 # summary(cbre_preclean$qGrowth)
-# save(W912UM,W912UMtrans,cbre_preclean,file="..\\data\\semi_clean\\W912UM_original.rdata")
+# save(W912UM,W912UMtrans,cbre_preclean,file="..\\data\\semi_clean\\CBre_pre_clean.rdata")
 
 ```
 
@@ -290,34 +290,47 @@ facet_wrap(~StartFY,scales="free_y")#+, space="free_y"
 
 summary(W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)
 W912UM$unmodWon<-NA
-W912UM$unmodWon[W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year>=W912UM$Action_Obligation_Then_Year*400&W912UM$Action_Obligation_Then_Year>0]<-'WON Unm'
+W912UM$unmodWon[W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year>=W912UM$Action_Obligation_Then_Year*400&
+                  W912UM$Action_Obligation_Then_Year>0]<-'WON Unm'
 W912UM$unmodWon[is.na(W912UM$unmodWon) &
-                    W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year>=W912UM$Action_Obligation_Then_Year*20]<-'? Unm'
+                    W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year>=W912UM$Action_Obligation_Then_Year*20 &
+                  W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year>10000
+                  ]<-'? Unm'
 W912UM$unmodWon[is.na(W912UM$unmodWon) &
-                    W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year<W912UM$Action_Obligation_Then_Year*20]<-'$ Unm'
+                    (W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year<W912UM$Action_Obligation_Then_Year*20|
+                  W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year<10000)]<-'$ Unm'
 summary(factor(W912UM$unmodWon))
 
 
 W912UM$changeWon<-NA
 W912UM$changeWon[abs(W912UM$ChangeOrderBaseAndAllOptionsValue)==0]<-'0 Chg'
-W912UM$changeWon[abs(W912UM$ChangeOrderBaseAndAllOptionsValue)>=W912UM$Action_Obligation_Then_Year*100]<-'WON Chg'
+W912UM$changeWon[abs(W912UM$ChangeOrderBaseAndAllOptionsValue)>=W912UM$Action_Obligation_Then_Year*100&
+                  W912UM$ChangeOrderBaseAndAllOptionsValue>10000]<-'WON Chg'
 W912UM$changeWon[is.na(W912UM$changeWon) &
-                    abs(W912UM$ChangeOrderBaseAndAllOptionsValue)>=W912UM$Action_Obligation_Then_Year*10]<-'? Chg'
+                    abs(W912UM$ChangeOrderBaseAndAllOptionsValue)>=W912UM$Action_Obligation_Then_Year*10&
+                  W912UM$ChangeOrderBaseAndAllOptionsValue>10000]<-'? Chg'
 W912UM$changeWon[is.na(W912UM$changeWon) &
-                    abs(W912UM$ChangeOrderBaseAndAllOptionsValue)<W912UM$Action_Obligation_Then_Year*10]<-'$ Chg'
+                  (abs(W912UM$ChangeOrderBaseAndAllOptionsValue)<W912UM$Action_Obligation_Then_Year*10|
+                   W912UM$ChangeOrderBaseAndAllOptionsValue<=10000)]<-'$ Chg'
 summary(factor(W912UM$changeWon))
 
 
 W912UM$sumWon<-NA
 W912UM$sumWon[W912UM$Action_Obligation_Then_Year==0]<-'0 Obl'
 W912UM$sumWon[W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
-                W912UM$ChangeOrderBaseAndAllOptionsValue>=W912UM$Action_Obligation_Then_Year*400]<-'WON Sum'
+                W912UM$ChangeOrderBaseAndAllOptionsValue>=W912UM$Action_Obligation_Then_Year*400&
+                 W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
+                W912UM$ChangeOrderBaseAndAllOptionsValue>10000]<-'WON Sum'
 W912UM$sumWon[is.na(W912UM$sumWon) &
                     W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
-                W912UM$ChangeOrderBaseAndAllOptionsValue>=W912UM$Action_Obligation_Then_Year*20]<-'? Sum'
+                W912UM$ChangeOrderBaseAndAllOptionsValue>=W912UM$Action_Obligation_Then_Year*20&
+                 W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
+                W912UM$ChangeOrderBaseAndAllOptionsValue>10000]<-'? Sum'
 W912UM$sumWon[is.na(W912UM$sumWon) &
-                    W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
-                W912UM$ChangeOrderBaseAndAllOptionsValue<W912UM$Action_Obligation_Then_Year*20]<-'$ Sum'
+                    (W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
+                W912UM$ChangeOrderBaseAndAllOptionsValue<W912UM$Action_Obligation_Then_Year*20|
+                 W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
+                W912UM$ChangeOrderBaseAndAllOptionsValue>10000)]<-'$ Sum'
 summary(factor(W912UM$sumWon))
 
 
@@ -389,21 +402,25 @@ W912UMtrans<-inner_join(W912UMtrans,W912UM %>% group_by() %>%
                                         unmodWon,sumWon,changeWon,
                                         ChangeOrderBaseAndAllOptionsValue,
                                         UnmodifiedContractBaseAndAllOptionsValue_Then_Year,
-                                        Action_Obligation_Then_Year),
+                                        Action_Obligation_Then_Year,
+                                        ChangeOrderCeilingGrowth),
                         by="CSIScontractID")
 
 W912UMtrans$unmodWonT<-NA
 W912UMtrans$unmodWonT[W912UMtrans$baseandalloptionsvalue>=W912UMtrans$obligatedamount*400&
+                        W912UMtrans$baseandalloptionsvalue>10000&
                         W912UMtrans$baseandalloptionsvalue>=W912UMtrans$Action_Obligation_Then_Year*400&
                        (W912UMtrans$obligatedamount>0 | W912UMtrans$Action_Obligation_Then_Year>0)& 
                        W912UMtrans$modnumber=='0']<-'WON Unm'
 W912UMtrans$unmodWonT[is.na(W912UMtrans$unmodWonT) &
                     W912UMtrans$baseandalloptionsvalue>=W912UMtrans$obligatedamount*20&
+                      W912UMtrans$baseandalloptionsvalue>10000&
                         W912UMtrans$baseandalloptionsvalue>=W912UMtrans$Action_Obligation_Then_Year*20&
                       W912UMtrans$modnumber=='0']<-'? Unm'
 W912UMtrans$unmodWonT[is.na(W912UMtrans$unmodWonT) &
                     (W912UMtrans$baseandalloptionsvalue<W912UMtrans$obligatedamount*20|
-                        W912UMtrans$baseandalloptionsvalue<W912UMtrans$Action_Obligation_Then_Year*20) &
+                        W912UMtrans$baseandalloptionsvalue<W912UMtrans$Action_Obligation_Then_Year*20|
+                       W912UMtrans$baseandalloptionsvalue<=10000) &
                       W912UMtrans$modnumber=='0']<-'$ Unm'
 W912UMtrans$unmodWonT[W912UMtrans$modnumber!='0']<-"Not Unmodified Transaction"
 
@@ -433,6 +450,20 @@ UnmodDisagree<-W912UMtrans %>% filter(unmodWonT=='WON Unm'& unmodWon!='WON Unm')
 # View(W912UM %>% filter(CSIScontractID %in% UnmodDisagree$CSIScontractID))
 CSIScontractID_ceil_to_na<-W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT == 'WON Unm'&
                                                         !is.na(W912UMtrans$unmodWonT)]
+
+
+#Spreading  the labeled values to modified entries, which helps in the next step.
+W912UMtrans$unmodWonT[W912UMtrans$unmodWonT=="Not Unmodified Transaction" &
+  W912UMtrans$CSIScontractID %in% CSIScontractID_ceil_to_na]<-'WON Unm'
+# 
+W912UMtrans$unmodWonT[W912UMtrans$unmodWonT=="Not Unmodified Transaction" &
+  W912UMtrans$CSIScontractID %in% W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT == '? Unm'&
+                                                        !is.na(W912UMtrans$unmodWonT)]]<- '? Unm'
+W912UMtrans$unmodWonT[W912UMtrans$unmodWonT=="Not Unmodified Transaction" &
+  W912UMtrans$CSIScontractID %in% W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT == '$ Unm'&
+                                                        !is.na(W912UMtrans$unmodWonT)]]<- '$ Unm'
+
+summary(factor(W912UMtrans$unmodWonT))
 ```
 
 
@@ -447,48 +478,58 @@ Then it the ceiling is set to NA and it will not be in the sample.
 #### Change Order Transactions
 ```{r W912UM_transaction}
 
-W912UMtrans$unmodWonT[W912UMtrans$CSIScontractID %in% CSIScontractID_ceil_to_na]<-'WON Unm'
-
-W912UMtrans$unmodWonT[W912UMtrans$CSIScontractID %in% W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT == '? Unm'&
-                                                        !is.na(W912UMtrans$unmodWonT)]]<- '? Unm'
-summary(factor(W912UMtrans$unmodWonT))
 W912UMtrans$chgWonT<-NA
-
-
-W912UMtrans$chgWonT[abs(W912UMtrans$baseandalloptionsvalue)>=abs(W912UMtrans$obligatedamount*400)&
-                        (W912UMtrans$ChangeOrderBaseAndAllOptionsValue+
+W912UMtrans$chgWonT[W912UMtrans$modnumber=='0']<-"Unmodified Transaction"
+W912UMtrans$chgWonT[is.na(W912UMtrans$chgWonT)&
+                      (W912UMtrans$baseandalloptionsvalue==0 | 
+                       W912UMtrans$ChangeOrderCeilingGrowth==0)
+                    &W912UMtrans$modnumber!='0']<-'0 Chg Growth'
+W912UMtrans$chgWonT[is.na(W912UMtrans$chgWonT)&
+                      abs(W912UMtrans$baseandalloptionsvalue)>=abs(W912UMtrans$obligatedamount*400)&
+                        (abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)+
                            W912UMtrans$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)>=
                        W912UMtrans$Action_Obligation_Then_Year*10&
+                      abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)>10000
                         # (W912UMtrans$baseandalloptionsvalue>=
                         #    W912UMtrans$UnmodifiedContractBaseAndAllOptionsValue_Then_Year*100 |
                        #   (!is.na(W912UMtrans$unmodWonT) & W912UMtrans$unmodWonT %in% c('WON Unm','? Unm')))&
                        # # (W912UMtrans$obligatedamount>0 | W912UMtrans$Action_Obligation_Then_Year>0)& 
-                       W912UMtrans$modnumber!='0'&
-                      abs(W912UMtrans$baseandalloptionsvalue)>0 & W912UMtrans$ChangeOrderBaseAndAllOptionsValue>0]<-'WON Chg'
+                      # abs(W912UMtrans$baseandalloptionsvalue)>0 & W912UMtrans$ChangeOrderBaseAndAllOptionsValue>0
+                    ]<-'WON Chg'
 W912UMtrans$chgWonT[is.na(W912UMtrans$chgWonT) &
                         abs(W912UMtrans$baseandalloptionsvalue)>=abs(W912UMtrans$obligatedamount*20)&
-                        (W912UMtrans$ChangeOrderBaseAndAllOptionsValue+
+                        (abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)+
                            W912UMtrans$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)>=
                        W912UMtrans$Action_Obligation_Then_Year*5&
+                      abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)
                         # (W912UMtrans$baseandalloptionsvalue>=
                         #    W912UMtrans$UnmodifiedContractBaseAndAllOptionsValue_Then_Year*10 |
                         #  (!is.na(W912UMtrans$unmodWonT) & W912UMtrans$unmodWonT %in% c('WON Unm','? Unm')))&
-                      W912UMtrans$modnumber!='0'&
-                      abs(W912UMtrans$baseandalloptionsvalue)>0 & W912UMtrans$ChangeOrderBaseAndAllOptionsValue>0]<-'? Chg'
+                      # abs(W912UMtrans$baseandalloptionsvalue)>0 & W912UMtrans$ChangeOrderBaseAndAllOptionsValue>0
+                      ]<-'? Chg'
 W912UMtrans$chgWonT[is.na(W912UMtrans$chgWonT) &
-                        abs(W912UMtrans$baseandalloptionsvalue)<abs(W912UMtrans$obligatedamount*20)|
-                        (W912UMtrans$ChangeOrderBaseAndAllOptionsValue+
+                        (abs(W912UMtrans$baseandalloptionsvalue)<abs(W912UMtrans$obligatedamount*20)|
+                        (abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)+
                            W912UMtrans$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)<
-                       W912UMtrans$Action_Obligation_Then_Year*5&
+                       W912UMtrans$Action_Obligation_Then_Year*5 |
+                         abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)<=10000)
                         # (W912UMtrans$baseandalloptionsvalue<
                         #    W912UMtrans$UnmodifiedContractBaseAndAllOptionsValue_Then_Year*10 |
                         #  (!is.na(W912UMtrans$unmodWonT) & W912UMtrans$unmodWonT %in% c('WON Unm','? Unm')))&
-                      W912UMtrans$modnumber!='0'&
-                      abs(W912UMtrans$baseandalloptionsvalue)>0 & W912UMtrans$ChangeOrderBaseAndAllOptionsValue>0]<-'$ Chg'
-W912UMtrans$chgWonT[W912UMtrans$baseandalloptionsvalue==0 | W912UMtrans$ChangeOrderBaseAndAllOptionsValue==0]<-'0 Chg'
+                      # abs(W912UMtrans$baseandalloptionsvalue)>0 & W912UMtrans$ChangeOrderBaseAndAllOptionsValue>0
+                      ]<-'$ Chg'
+
 summary(factor(W912UMtrans$chgWonT))
 
+if(any(is.na(W912UMtrans$chgWonT))) stop("Unclassified chgWonT")
+# View(W912UMtrans[is.na(is.na(W912UMtrans$chgWonT)),])
+write.csv(file="..\\Data\\semi_clean\\chgWonT.csv",W912UMtrans %>% filter(chgWonT=="WON Chg"),row.names = FALSE)
 
+```
+
+
+#### Examining International Related Vars
+```{r tran_related_vars}
 
 levels(W912UMtrans$vendorcountrycode)<-list(
   # ""="",
@@ -513,21 +554,29 @@ ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=unmodWon))+
   geom_bar()+facet_wrap(~placeofperformancecountrycode)
                  
 
-View(W912UMtrans %>% filter(unmodWon %in% c("? Unm","Won Unm") & vendorcountrycode=="USA: UNITED STATES OF AMERICA" & modnumber=='0'))
+# View(W912UMtrans %>% filter(unmodWon %in% c("? Unm","Won Unm") & vendorcountrycode=="USA: UNITED STATES OF AMERICA" & modnumber=='0'))
 
-Miscategorized<-W912UMtrans %>% filter(unmodWon %in% c("? Unm","WON Unm") & (
-  vendorcountrycode=="USA: UNITED STATES OF AMERICA" |
-    countryoforigin=="USA" |
-    placeofperformancecountrycode=="USA")
-  & modnumber=='0')
+# Miscategorized<-W912UMtrans %>% filter(unmodWon %in% c("? Unm","WON Unm") & (
+#   vendorcountrycode=="USA: UNITED STATES OF AMERICA" |
+#     countryoforigin=="USA" |
+#     placeofperformancecountrycode=="USA")
+#   & modnumber=='0')
 
-Miscategorized<-W912UMtrans %>% filter(unmodWon %in% c("? Unm","WON Unm") & (
+summary(factor(W912UMtrans$chgWonT))
+
+Miscategorized<-W912UMtrans %>% filter((unmodWon %in% c("? Unm","WON Unm")|
+                                          unmodWonT %in% c("? Unm","WON Unm")|
+                                          changeWon %in% c("? Chg","WON Chg")|
+                                          chgWonT %in% c("? Chg","WON Chg")
+                                        )& (
   
     placeofperformancecountrycode=="USA")
   & modnumber=='0')
 
+if(nrow(Miscategorized)>0) stop("False positive contract in Won performed in US")
+# View(W912UM %>% filter(CSIScontractID %in% Miscategorized$CSIScontractID))
 
-View(W912UM %>% filter(CSIScontractID %in% Miscategorized$CSIScontractID))
+
 ```
 
 # Cleaning
