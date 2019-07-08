@@ -10,6 +10,45 @@ SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
 
+
+
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+
+--This way takes hours!
+--select *
+--from contract.csistransactionid ctid
+--inner join contract.fpds f
+--on f.csistransactionid = ctid.csistransactionid
+--where ctid.csiscontractid in (19005830,
+--1431340,
+--24816950,
+--10090818,
+--8341560,
+--24807877,
+--24719937,
+--24905030
+--)
+
+--This way took 5 minutes.
+select f.*, t.CSIScontractID
+from contract.csistransactionid t
+inner join contract.fpds f
+on f.csistransactionid = t.csistransactionid
+where f.CSIStransactionID in 
+(select CSIStransactionID
+from contract.csistransactionid ctid
+where ctid.csiscontractid in (19005830,
+1431340,
+24816950,
+10090818,
+8341560,
+24807877,
+24719937,
+24905030
+))
+
 DECLARE	@return_value int
 
 --EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
