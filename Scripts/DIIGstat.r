@@ -1379,6 +1379,7 @@ statsummary_discrete <- function(x,
                                  contract,accuracy=0.01,
                                  value_col=NULL){      #input(x: name of the discrete variable, contract：name of the dataframe)
   value_col<-get_value_col(contract,value_col)
+  if(!x %in% colnames(contract)) stop(paste(x,"is not a column in contract."))
   if(!is.factor(contract[[x]])) contract[[x]]<-factor(contract[[x]])
   unique_value_list <- levels(contract[[x]])
   categories <- c(unique_value_list)
@@ -1415,6 +1416,7 @@ statsummary_continuous <- function(x,
                                    digits=3,
                                    value_col=NULL)
   {       #input(x: namelist of all continuous variables contract: name of the data frame)
+  if(!x %in% colnames(contract)) stop(paste(x,"is not a column in contract."))
   value_col<-get_value_col(contract,value_col)
   continuous_Info <- data.frame(matrix(ncol = 9,nrow = 0))
   colnames(continuous_Info) <- c("Variable_Name","Min","Max","Median","Logarithmic Mean",
@@ -1489,6 +1491,7 @@ name_categorical <- c("CompOffr","Veh","PricingFee","UCA","Intl","Term",
 #Output: grouped bar plot for the selected variable;
 grouped_barplot <- function(x, contract,
                             value_col=NULL) {
+  if(!x %in% colnames(contract)) stop(paste(x,"is not a column in contract."))
   value_col<-get_value_col(contract,value_col)
   
   memory.limit(56000)
