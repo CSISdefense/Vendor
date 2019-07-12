@@ -1058,13 +1058,14 @@ centered_description<-function(x,units=NA){
 }
 
 
-NA_stats<-function(data,col,exclude_before_2008=TRUE){
+NA_stats<-function(data,col,exclude_before_2008=TRUE,value_col=NULL){
+  value_col<-get_value_col(contract,value_col)
   if(exclude_before_2008==TRUE) before2008<-data$StartCY<2008
   paste("Data is missing for ",
         format(sum(is.na(data[!before2008,col]))/nrow(data[!before2008,col]),digits=3),
         " of records and ",
-        format(sum(data$Action_Obligation[is.na(data[!before2008,col])],na.rm=TRUE)/
-                 sum(data$Action_Obligation[!before2008],na.rm=TRUE),digits=3),
+        format(sum(data[[value_col]][is.na(data[!before2008,col])],na.rm=TRUE)/
+                 sum(data[[value_col]][!before2008],na.rm=TRUE),digits=3),
         " of obligated dollars."
         ,sep="")
   
@@ -1349,10 +1350,36 @@ get_pars<-function(model){
 
 # memory.limit(56000)
 
+#Input(contract: the dataframe; value_col: the name of the value measuring variable)
+#Output: an updated value_col, if the value_col is null
+get_value_col<-function(contract,
+                        value_col=NULL){
+  if(is.null(value_col)){
+    if("Action_Obligation.OMB20_GDP18" %in% colnames(contract)){
+      value_col<-"Action_Obligation.OMB20_GDP18"
+    }
+    else if("Action_Obligation" %in% colnames(contract)){
+      value_col<-"Action_Obligation"
+    }
+    else if("Action_Obligation.Then.Year" %in% colnames(contract)){
+      value_col<-"Action_Obligation.Then.Year"
+    }
+    else if("Action.Obligation" %in% colnames(contract)){
+      value_col<-"Action.Obligation"
+    }
+    else stop("No standard value column in dataset, pass the desired column to oolumn_name.")
+  }
+  else if(!value_col %in% colnames(contract) ){
+    stop(paste(value_col,"not present in contract."))
+  }
+  value_col
+}
+
 statsummary_discrete <- function(x, 
                                  contract,accuracy=0.01,
-                                 value_col="Action_Obligation"){      #input(x: name of the discrete variable, contract：name of the dataframe)
-  if(is.character(contract[[x]])) contract[[x]]<-factor(contract[[x]])
+                                 value_col=NULL){      #input(x: name of the discrete variable, contract：name of the dataframe)
+  value_col<-get_value_col(contract,value_col)
+  if(!is.factor(contract[[x]])) contract[[x]]<-factor(contract[[x]])
   unique_value_list <- levels(contract[[x]])
   categories <- c(unique_value_list)
   Percent_Actions <- c()
@@ -1382,7 +1409,13 @@ name_Continuous <- c("Action_Obligation","UnmodifiedContractBaseAndAllOptionsVal
                      "US6_avg_sal_lag1","US5_avg_sal_lag1","US4_avg_sal_lag1","US3_avg_sal_lag1","US2_avg_sal_lag1"
 )
 
-statsummary_continuous <- function(x, contract,log=TRUE,digits=3){       #input(x: namelist of all continuous variables contract: name of the data frame)
+statsummary_continuous <- function(x, 
+                                   contract,
+                                   log=TRUE,
+                                   digits=3,
+                                   value_col=NULL)
+  {       #input(x: namelist of all continuous variables contract: name of the data frame)
+  value_col<-get_value_col(contract,value_col)
   continuous_Info <- data.frame(matrix(ncol = 9,nrow = 0))
   colnames(continuous_Info) <- c("Variable_Name","Min","Max","Median","Logarithmic Mean",
                                  "1 unit below","1 unit above","% of records NA", 
@@ -1392,7 +1425,7 @@ statsummary_continuous <- function(x, contract,log=TRUE,digits=3){       #input(
     colnames(continuous_Info)[colnames(continuous_Info)=="Logarithmic Mean"]<-"Arithmatic Mean"  
   for (i in x){
     Percent_NA <- round(sum(is.na(contract[[i]]))/nrow(contract),5)
-    Percent_Ob <- round(sum(contract$Action_Obligation[is.na(contract[[i]])],na.rm = TRUE)/sum(contract$Action_Obligation,na.rm = TRUE),5)
+    Percent_Ob <- round(sum(contract[[value_col]][is.na(contract[[i]])],na.rm = TRUE)/sum(contract[[value_col]],na.rm = TRUE),5)
     transformed_i<-contract[[i]]
     transformed_i[transformed_i==0] <- NA
     transformed_i <- log(contract[[i]])
@@ -1408,7 +1441,7 @@ statsummary_continuous <- function(x, contract,log=TRUE,digits=3){       #input(
     unitabovelog <- round(exp(mean(transformed_i,na.rm = TRUE)+2*sdlog),digits)
     unitbelowlog <- round(exp(mean(transformed_i,na.rm = TRUE)-2*sdlog),digits)
     Percent_NA <- round(sum(is.na(contract[[i]]))/nrow(contract),5)
-    Percent_Ob <- round(sum(contract$Action_Obligation[is.na(contract[[i]])],na.rm = TRUE)/sum(contract$Action_Obligation,na.rm = TRUE),5)
+    Percent_Ob <- round(sum(contract[[value_col]][is.na(contract[[i]])],na.rm = TRUE)/sum(contract[[value_col]],na.rm = TRUE),5)
     if(log==TRUE)
       newrow <- c(i, minval, maxval, medianval, meanlog, unitbelowlog, unitabovelog,
                   Percent_NA, Percent_Ob)
@@ -1455,7 +1488,9 @@ name_categorical <- c("CompOffr","Veh","PricingFee","UCA","Intl","Term",
 #Input(x: name of the categorical variable needs plot; contract: name of the dataframe)
 #Output: grouped bar plot for the selected variable;
 grouped_barplot <- function(x, contract,
-                            value_col="Action_Obligation") {
+                            value_col=NULL) {
+  value_col<-get_value_col(contract,value_col)
+  
   memory.limit(56000)
   #perparing data for ploting
   name_Info <- statsummary_discrete(x, contract,value_col=value_col)
@@ -1463,7 +1498,7 @@ grouped_barplot <- function(x, contract,
   name_Info_noNAN[, 1] <- factor(name_Info_noNAN[, 1], droplevels(name_Info_noNAN[, 1]))
   
   name_Info[, -1] <- lapply(name_Info[, -1], function(x) as.numeric(gsub("%","",x)))
-  name_Info <- melt(name_Info, id = x)
+  name_Info <- reshape2::melt(name_Info, id = x)
   levels(name_Info$variable)[levels(name_Info$variable)=="%of records"] = "% of records"
   levels(name_Info$variable)[levels(name_Info$variable)=="% of $s"] = "% of obligations"
   name_Info$variable <- factor(name_Info$variable, rev(levels(name_Info$variable)))
