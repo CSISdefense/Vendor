@@ -1059,7 +1059,7 @@ centered_description<-function(x,units=NA){
 
 
 NA_stats<-function(data,col,exclude_before_2008=TRUE,value_col=NULL){
-  value_col<-get_value_col(contract,value_col)
+  value_col<-get_value_col(data,value_col)
   if(exclude_before_2008==TRUE) before2008<-data$StartCY<2008
   paste("Data is missing for ",
         format(sum(is.na(data[!before2008,col]))/nrow(data[!before2008,col]),digits=3),
