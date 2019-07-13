@@ -1549,9 +1549,9 @@ freq_table <- function(x, contract){
 #generate barplot according to frequency information table for categorical variables                                 
 part_grouped_barplot <- function(name, frequency_Info){
   part_barplot <- ggplot(data = frequency_Info, 
-                         aes(x = frequency_Info[["Description"]], 
-                             y = frequency_Info[["value"]], 
-                             fill=factor(frequency_Info[["variable"]]))) + 
+                         aes(x = Description, 
+                             y = value, 
+                             fill=factor(variable))) + 
     geom_bar(stat = "identity", 
              position= "dodge", 
              width = 0.8) + 
