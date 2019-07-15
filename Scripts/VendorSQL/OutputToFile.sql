@@ -32,6 +32,7 @@ SET NOCOUNT ON;
 --)
 
 --This way took 5 minutes.
+--gt250k_change_outliers.txt
 select f.*, t.CSIScontractID
 from contract.csistransactionid t
 inner join contract.fpds f
