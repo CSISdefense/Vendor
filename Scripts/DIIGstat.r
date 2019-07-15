@@ -381,8 +381,16 @@ residuals_plot<-function(model,col="fitted",bins=40){
       data$outcome<-model$model$lp_CBre
       data<-binned.resids (data[,col],
                            data$residuals, nclass=bins)$binned
+    } else if(!is.null(model$model$ln_CBre)){
+      data$outcome<-model$model$ln_CBre
+      data<-binned.resids (data[,col],
+                           data$residuals, nclass=bins)$binned
     } else if(!is.null(model$model$lp_OptGrowth)){
       data$outcome<-model$model$lp_OptGrowth
+      data<-binned.resids (data[,col],
+                           data$residuals, nclass=bins)$binned
+    } else if(!is.null(model$model$ln_OptGrowth)){
+      data$outcome<-model$model$ln_OptGrowth
       data<-binned.resids (data[,col],
                            data$residuals, nclass=bins)$binned
     } else if(!is.null(model$model$l_Offr)){
