@@ -39,14 +39,15 @@ on f.csistransactionid = t.csistransactionid
 where f.CSIStransactionID in 
 (select CSIStransactionID
 from contract.csistransactionid ctid
-where ctid.csiscontractid in (19005830,
+where ctid.csiscontractid in (
 1431340,
-24816950,
-10090818,
 8341560,
+19005830,
+10090818,
 24807877,
 24719937,
 24905030
+24816950,
 ))
 
 DECLARE	@return_value int

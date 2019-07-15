@@ -151,11 +151,15 @@ binned_fitted_versus_residuals<-function(model,bins=20){
       graph<-binned_fitted_versus_cbre_residuals(model,bins)
     } else if(!is.null(model@frame$lp_CBre)){
       graph<-binned_fitted_versus_lp_CBre_residuals(model,bins)
+    } else if(!is.null(model@frame$ln_CBre)){
+      graph<-binned_fitted_versus_ln_CBre_residuals(model,bins)
     } else if(!is.null(model@frame$b_Term)){
       graph<-binned_fitted_versus_term_residuals(model,bins)
     } else if(!is.null(model@frame$l_Offr)){
       graph<-resid_plot(model,sample=25000)
     } else if(!is.null(model@frame$lp_OptGrowth)){
+      graph<-resid_plot(model,sample=25000)  
+    } else if(!is.null(model@frame$ln_OptGrowth)){
       graph<-resid_plot(model,sample=25000)  
     }
     else{stop("Outcome variable not recognized.")}
@@ -166,11 +170,15 @@ binned_fitted_versus_residuals<-function(model,bins=20){
       graph<-binned_fitted_versus_cbre_residuals(model,bins)
     } else if(!is.null(model$model$lp_CBre)){
       graph<-binned_fitted_versus_lp_CBre_residuals(model,bins)
+    } else if(!is.null(model$model$ln_CBre)){
+      graph<-binned_fitted_versus_ln_CBre_residuals(model,bins)
     } else if(!is.null(model$model$b_Term)){
       graph<-binned_fitted_versus_term_residuals(model,bins)
     } else if(!is.null(model$model$l_Offr)){
       graph<-resid_plot(model,sample=25000)
     } else if(!is.null(model$model$lp_OptGrowth)){
+      graph<-resid_plot(model,sample=25000)  
+    } else if(!is.null(model$model$ln_OptGrowth)){
       graph<-resid_plot(model,sample=25000)  
     }
     else{stop("Outcome variable not recognized.")}
@@ -258,6 +266,46 @@ binned_fitted_versus_lp_CBre_residuals<-function(model,bins=20){
 }
 
 
+binned_fitted_versus_ln_CBre_residuals<-function(model,bins=20){
+  
+  #Save this for a future GLM
+  # CBre_data_01A<-data.frame(fitted=fitted(CBre_01A),
+  #                        residuals=residuals(CBre_01A),
+  #                        nCBre=CBre_01A@frame$nCBre,
+  #                        cb_Comp=CBre_01A@frame$cb_Comp
+  #                        )
+  
+  if(class(model)[1]=="glmerMod")
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      ln_CBre=model@frame$ln_CBre
+    )
+    
+  }
+  else
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      ln_CBre=model$model$ln_CBre
+    )
+  }
+  
+  data$bin_fitted<-bin_df(data,rank_col="fitted",bins=bins)
+  
+  data<-subset(data,!is.na(fitted) & !is.na(residuals) )
+  
+  ggplot(data= data %>% 
+           group_by(bin_fitted) %>% 
+           summarise (mean_CBre = mean(ln_CBre),
+                      mean_fitted =mean(fitted)),
+         aes(y=mean_CBre,x=mean_fitted))+geom_point() +
+    labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+}
+
+
 residuals_plot<-function(model,col="fitted",bins=40){
   if(class(model)[1]=="glmerMod")
   {
@@ -300,8 +348,16 @@ residuals_plot<-function(model,col="fitted",bins=40){
       data$outcome<-model@frame$lp_CBre
       data<-binned.resids (data[,col],
                            data$residuals, nclass=bins)$binned
+    } else if(!is.null(model@frame$ln_CBre)){
+      data$outcome<-model@frame$ln_CBre
+      data<-binned.resids (data[,col],
+                           data$residuals, nclass=bins)$binned
     } else if(!is.null(model@frame$lp_OptGrowth)){
       data$outcome<-model@frame$lp_OptGrowth
+      data<-binned.resids (data[,col],
+                           data$residuals, nclass=bins)$binned
+    } else if(!is.null(model@frame$ln_OptGrowth)){
+      data$outcome<-model@frame$ln_OptGrowth
       data<-binned.resids (data[,col],
                            data$residuals, nclass=bins)$binned
     } else if(!is.null(model@frame$l_Offr)){
