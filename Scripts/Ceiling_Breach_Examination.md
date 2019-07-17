@@ -39,6 +39,14 @@ output:
 ```
 
 ```
+## Warning: package 'ggplot2' was built under R version 3.5.3
+```
+
+```
+## Warning: package 'dplyr' was built under R version 3.5.3
+```
+
+```
 ## 
 ## Attaching package: 'dplyr'
 ```
@@ -53,6 +61,10 @@ output:
 ## The following objects are masked from 'package:base':
 ## 
 ##     intersect, setdiff, setequal, union
+```
+
+```
+## Warning: package 'arm' was built under R version 3.5.3
 ```
 
 ```
@@ -79,16 +91,28 @@ output:
 ```
 
 ```
+## Warning: package 'lme4' was built under R version 3.5.3
+```
+
+```
 ## 
 ## arm (Version 1.10-1, built: 2018-4-12)
 ```
 
 ```
-## Working directory is C:/Users/gsand/Repositories/Vendor/scripts
+## Working directory is C:/Users/JGraham/Documents/CSIS/Vendor/Scripts
+```
+
+```
+## Warning: package 'R2WinBUGS' was built under R version 3.5.3
 ```
 
 ```
 ## Loading required package: coda
+```
+
+```
+## Warning: package 'coda' was built under R version 3.5.3
 ```
 
 ```
@@ -118,6 +142,14 @@ output:
 ```
 
 ```
+## Warning: package 'knitr' was built under R version 3.5.3
+```
+
+```
+## Warning: package 'stargazer' was built under R version 3.5.2
+```
+
+```
 ## 
 ## Please cite as:
 ```
@@ -128,6 +160,10 @@ output:
 
 ```
 ##  R package version 5.2.2. https://CRAN.R-project.org/package=stargazer
+```
+
+```
+## Warning: package 'texreg' was built under R version 3.5.3
 ```
 
 ```
@@ -150,7 +186,23 @@ output:
 ```
 
 ```
+## Warning: package 'reshape2' was built under R version 3.5.3
+```
+
+```
+## Warning: package 'sjstats' was built under R version 3.5.3
+```
+
+```
+## Warning: package 'car' was built under R version 3.5.3
+```
+
+```
 ## Loading required package: carData
+```
+
+```
+## Warning: package 'carData' was built under R version 3.5.2
 ```
 
 ```
@@ -174,6 +226,10 @@ output:
 ## The following object is masked from 'package:dplyr':
 ## 
 ##     recode
+```
+
+```
+## Warning: package 'scales' was built under R version 3.5.3
 ```
 
 ```
@@ -321,67 +377,24 @@ n_outlier_summary<-cbre_preclean %>% filter(n_CBre>2.5e8) %>% group_by(Why_Outli
                    SumOfAction_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
 
 
-nrow(cbre_preclean %>% filter((n_CBre)>=1e3))
+summary(Hmisc::cut2(cbre_preclean$n_CBre,c(1e3,
+                                          1e6,
+                                          1e7,
+                                          1e8,
+                                          2.5e8,
+                                          1e9,
+                                          1e10,
+                                          2e10
+                                          )))
 ```
 
 ```
-## [1] 76252
-```
-
-```r
-nrow(cbre_preclean %>% filter((n_CBre)>=1e6))
-```
-
-```
-## [1] 4199
-```
-
-```r
-nrow(cbre_preclean %>% filter((n_CBre)>=1e7))
-```
-
-```
-## [1] 682
-```
-
-```r
-nrow(cbre_preclean %>% filter((n_CBre)>=1e8))
-```
-
-```
-## [1] 111
-```
-
-```r
-nrow(cbre_preclean %>% filter((n_CBre)>=2.5e8))
-```
-
-```
-## [1] 44
-```
-
-```r
-nrow(cbre_preclean %>% filter((n_CBre)>=1e9))
-```
-
-```
-## [1] 12
-```
-
-```r
-nrow(cbre_preclean %>% filter((n_CBre)>=1e10))
-```
-
-```
-## [1] 3
-```
-
-```r
-nrow(cbre_preclean %>% filter((n_CBre)>=2e10))
-```
-
-```
-## [1] 2
+## [1.00e-02,1.00e+03) [1.00e+03,1.00e+06) [1.00e+06,1.00e+07) 
+##               18238               72053                3517 
+## [1.00e+07,1.00e+08) [1.00e+08,2.50e+08) [2.50e+08,1.00e+09) 
+##                 571                  67                  32 
+## [1.00e+09,1.00e+10) [1.00e+10,2.00e+10) [2.00e+10,3.45e+11] 
+##                   9                   1                   2
 ```
 
 ```r
@@ -477,7 +490,7 @@ ggplot(cbre_preclean, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year,y
   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
 # facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
   labs(title="Distribution of Ceiling Breaches",
-       y="Percent of Growth in  Ceiling",
+       y="Absolute Growth in  Ceiling",
        x="Unmodified Contract Ceiling")#,
        # fill="Termination Completion"
 )
@@ -605,6 +618,99 @@ facet_wrap(~Ceil,scales="free_y")#+, space="free_y"
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthGraphs-7.png)<!-- -->
+
+## >250 Inspect
+
+```r
+inspect250<-cbre_preclean %>% filter(Why_Outlier==">=$250M, Insepect")
+inspect250trans<-read.delim(file="..\\data\\semi_clean\\gt250k_change_outliers.txt", sep="\t")
+
+inspect250trans %>% group_by(CSIScontractID)
+```
+
+```
+## # A tibble: 192 x 253
+## # Groups:   CSIScontractID [8]
+##    ï..unique_trans~ transaction_sta~ obligatedamount baseandexercise~
+##    <fct>            <fct>                      <dbl>            <dbl>
+##  1 adce4f89-8327-c~ Active                    50106            50106 
+##  2 2703255d-eb32-a~ Active                        0                0 
+##  3 13270f71-3154-9~ Active                   109475           109475 
+##  4 6c7c1d74-bce3-2~ Active                        0           362176 
+##  5 01657f4b-32d0-5~ Active                  -336157.         -336157.
+##  6 49bd1c7d-08f9-5~ Active                   133496           133496 
+##  7 8000a003-96e9-6~ Active                245250000        575000000 
+##  8 76dc0e64-d385-b~ Active                    45000            45000 
+##  9 7987edff-c34b-8~ Active                   246970.     13513049088 
+## 10 1800c42c-6e27-3~ Active                   110000                0 
+## # ... with 182 more rows, and 249 more variables:
+## #   baseandalloptionsvalue <dbl>, maj_agency_cat <int>, mod_agency <int>,
+## #   maj_fund_agency_cat <int>, contractingofficeagencyid <int>,
+## #   contractingofficeid <fct>, fundingrequestingagencyid <int>,
+## #   fundingrequestingofficeid <fct>, fundedbyforeignentity <fct>,
+## #   signeddate <fct>, effectivedate <fct>, currentcompletiondate <fct>,
+## #   ultimatecompletiondate <fct>, lastdatetoorder <fct>,
+## #   contractactiontype <fct>, reasonformodification <fct>,
+## #   typeofcontractpricing <fct>, priceevaluationpercentdifference <int>,
+## #   subcontractplan <fct>, lettercontract <fct>, multiyearcontract <int>,
+## #   performancebasedservicecontract <fct>, majorprogramcode <lgl>,
+## #   contingencyhumanitarianpeacekeepingoperation <fct>,
+## #   contractfinancing <fct>, costorpricingdata <fct>,
+## #   costaccountingstandardsclause <fct>,
+## #   descriptionofcontractrequirement <fct>,
+## #   purchasecardaspaymentmethod <int>, nationalinterestactioncode <fct>,
+## #   progsourceagency <int>, progsourceaccount <int>,
+## #   progsourcesubacct <lgl>, account_title <lgl>, rec_flag <lgl>,
+## #   typeofidc <lgl>, multipleorsingleawardidc <lgl>, programacronym <lgl>,
+## #   vendorname <fct>, vendoralternatename <fct>,
+## #   vendorlegalorganizationname <fct>, vendordoingasbusinessname <lgl>,
+## #   divisionname <lgl>, divisionnumberorofficecode <lgl>,
+## #   ccrexception <lgl>, streetaddress <fct>, streetaddress2 <lgl>,
+## #   streetaddress3 <lgl>, city <fct>, zipcode <int>,
+## #   vendorcountrycode <fct>, vendor_state_code <fct>, vendor_cd <int>,
+## #   vendorsitecode <fct>, vendoralternatesitecode <int>, dunsnumber <int>,
+## #   parentdunsnumber <int>, phoneno <dbl>, faxno <dbl>,
+## #   registrationdate <fct>, renewaldate <fct>, mod_parent <fct>,
+## #   locationcode <int>, statecode <fct>, pop_state_code <fct>,
+## #   placeofperformancecountrycode <fct>, placeofperformancezipcode <int>,
+## #   placeofperformancecongressionaldistrict <fct>, psc_cat <fct>,
+## #   productorservicecode <fct>, systemequipmentcode <int>,
+## #   claimantprogramcode <fct>, principalnaicscode <int>,
+## #   informationtechnologycommercialitemcategory <fct>, gfe_gfp_code <fct>,
+## #   useofepadesignatedproducts <fct>, recoveredmaterialclauses <fct>,
+## #   seatransportation <fct>, contractbundling <fct>,
+## #   consolidatedcontract <fct>, countryoforigin <fct>,
+## #   placeofmanufacture <fct>, manufacturingorganizationtype <fct>,
+## #   agencyid <int>, piid <fct>, modnumber <fct>, transactionnumber <int>,
+## #   fiscal_year <int>, idvagencyid <int>, idvpiid <fct>,
+## #   idvmodificationnumber <fct>, solicitationid <fct>,
+## #   extentcompeted <fct>, reasonnotcompeted <fct>,
+## #   numberofoffersreceived <int>,
+## #   commercialitemacquisitionprocedures <fct>,
+## #   commercialitemtestprogram <int>,
+## #   smallbusinesscompetitivenessdemonstrationprogram <fct>,
+## #   a76action <fct>, solicitationprocedures <fct>, ...
+```
+
+```r
+#This is obviously unfinished, just  managed the download  this morning
+```
+CSIScontractID 1431340 IDV -- FA881111C0001. This is a MDAP "LETTER CONTRACT FOR MUOS-2, WGS-6, NROL-65" The massive change order is for "FY 12 ATLAS-V MISSIONS AND FY12 DELTA IV MISSIONS" This is later descreased for "TRANSFER THE FY-12 MISSIONS OFF THIS CONTRACT AND RE-ALIGN ONTO CONTRACT FA8811-13-C-0002 FOR ADMINISTRATIVE PURPOSES." and "DEFINITIZATION OF DELTA IV ELS UCA MISSIONS: NROL-65, WGS-6, AND WGS-5" before being increased again for "DEFINITIZE ATLAS FY 12 LAUNCH SERVICE MISSIONS INITIALLY AWARDED VIA P00012". Thus the amounts seem entirely realistic.
+
+CSIScontractID 8341560 IDV -- PIID W912GB09C0090. "FIELD MODIFICATION A00002, CR 002 CONVOY LIVE FIRE RANGE" with 344 billion increase immediately rescinded "ADMINISTRATIVE MODIFICATION TO CORRECT TYPOGRAPHICAL ERROR ON PRIOR MODIFICATION. THIS CONTRACT ACTION IS GOVERNED BY THE ABG75 PROCESS AND NOT THE FAR." which was an other administrative action. Overriding.
+
+CSIScontractID 10090818 IDV FA860410D7045 / PIID 1 "DESCOPE CLINS 1001,2001,3001,4001,  5001 AND ADD NEW REVISED PWS 0001" is a single transaction responsible for  289,097,216 increase. Software development "ADP SYSTEMS DEVELOPMENT SERVICES" Seems improbable, especially considering there's a ceiling increase that's literally one percent of the size in the next transaction, but the evidence isn't overwhelmiing
+
+
+CSIScontractID 19005830 IDV N4008005D3501 / PIID 87
+$13 billion ceiling for "MISC SERVICE & TRADE EQ" / "FFP BASE OPERATIONS SUPPORT SERVICES FOR PHASE IN PERIOD OF 01/01/2012 - 02/29/2012." Seems safely classified as a mistake even absent any subsequent correction.
+
+CSIScontractID 24816950 IDV W912HN07D0061 / PIID 4
+"PROJECT NUMBER 71657, STARSHIP 11000 REPAIR, FORT JACKSON, SC"
+
+CSIS contractID 24719937 IDV W9126G08D0016 / PIID 1
+Construction of "STUDENT DORMITORIES 1 & 2" 447M corrected by the next transaction in an other administrative action.
+
 
 ## W912IM
 
@@ -1608,6 +1714,13 @@ summary(def$cl_Ceil)
 ```
 
 ```r
+#Finding contracts to override
+#knitr::kable(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"], caption = "Contract IDs for WON Chg")
+#knitr::kable(W912UM$CSIScontractID[W912UM$changeWon=="WON Unm"], caption = "Contract IDs for WON Unm")
+#knitr::kable(unique(W912UM$changeWon), caption = "Check changeWon values")
+write.csv(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"], file = "../Data/semi_clean/WON_chg_override_contracts.csv")
+
+
 #The original variables for b_Term and b_CBre are Term and CBre
 grouped_barplot("CBre", def,value_col="Action_Obligation_Then_Year")
 ```
@@ -1797,10 +1910,6 @@ n_outlier_summary<-cbre %>% filter(n_CBre>2.5e8) %>% group_by(Why_Outlier) %>%
     SumOfChangeOrderCeilingGrowth=sum(n_CBre),
                    MaxOfChangeOrderCeilingGrowth=max(n_CBre),
                    SumOfAction_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
-
-
-# write.csv(file="..\\Data\\semi_clean\\p_CBre_post_clean_outliers.csv",cbre %>% filter((p_CBre-1)>10),row.names = FALSE)
-write.csv(file="..\\Data\\semi_clean\\n_CBre_post_clean_outliers.csv",cbre %>% filter(n_CBre>=2.5e8),row.names = FALSE)
 ```
 
 The cleaning has cut in half the outliers with growth >=100,000,000, although the influence has been much smaller on the percentage growth outliers, reinforcing the choice to switch to absolute growth. The study team chose to set a threshold of Shifting the focus to all contracts with growth of at least 250 million, there are far fewer contracts that account for far more money.
@@ -1863,7 +1972,7 @@ ggplot(cbre, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year,y=n_CBre))
   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
 # facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
   labs(title="Distribution of Ceiling Breaches",
-       y="Percent of Growth in  Ceiling",
+       y="Absolute Growth in  Ceiling",
        x="Unmodified Contract Ceiling")#,
        # fill="Termination Completion"
 )
