@@ -495,13 +495,13 @@ Then it the ceiling is set to NA and it will not be in the sample.
 #### Change Order Transactions
 ```{r W912UM_transaction}
 
-W912UMtrans$chgWonT<-NA
-W912UMtrans$chgWonT[W912UMtrans$modnumber=='0']<-"Unmodified Transaction"
-W912UMtrans$chgWonT[is.na(W912UMtrans$chgWonT)&
+W912UMtrans$changeWonT<-NA
+W912UMtrans$changeWonT[W912UMtrans$modnumber=='0']<-"Unmodified Transaction"
+W912UMtrans$changeWonT[is.na(W912UMtrans$changeWonT)&
                       (W912UMtrans$baseandalloptionsvalue==0 | 
                        W912UMtrans$n_CBre==0)
                     &W912UMtrans$modnumber!='0']<-'0 Chg Growth'
-W912UMtrans$chgWonT[is.na(W912UMtrans$chgWonT)&
+W912UMtrans$changeWonT[is.na(W912UMtrans$changeWonT)&
                       abs(W912UMtrans$baseandalloptionsvalue)>=abs(W912UMtrans$obligatedamount*400)&
                         (abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)+
                            W912UMtrans$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)>=
@@ -513,7 +513,7 @@ W912UMtrans$chgWonT[is.na(W912UMtrans$chgWonT)&
                        # # (W912UMtrans$obligatedamount>0 | W912UMtrans$Action_Obligation_Then_Year>0)& 
                       # abs(W912UMtrans$baseandalloptionsvalue)>0 & W912UMtrans$ChangeOrderBaseAndAllOptionsValue>0
                     ]<-'WON Chg'
-W912UMtrans$chgWonT[is.na(W912UMtrans$chgWonT) &
+W912UMtrans$changeWonT[is.na(W912UMtrans$changeWonT) &
                         abs(W912UMtrans$baseandalloptionsvalue)>=abs(W912UMtrans$obligatedamount*20)&
                         (abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)+
                            W912UMtrans$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)>=
@@ -524,7 +524,7 @@ W912UMtrans$chgWonT[is.na(W912UMtrans$chgWonT) &
                         #  (!is.na(W912UMtrans$unmodWonT) & W912UMtrans$unmodWonT %in% c('WON Unm','? Unm')))&
                       # abs(W912UMtrans$baseandalloptionsvalue)>0 & W912UMtrans$ChangeOrderBaseAndAllOptionsValue>0
                       ]<-'? Chg'
-W912UMtrans$chgWonT[is.na(W912UMtrans$chgWonT) &
+W912UMtrans$changeWonT[is.na(W912UMtrans$changeWonT) &
                         (abs(W912UMtrans$baseandalloptionsvalue)<abs(W912UMtrans$obligatedamount*20)|
                         (abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)+
                            W912UMtrans$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)<
@@ -536,11 +536,11 @@ W912UMtrans$chgWonT[is.na(W912UMtrans$chgWonT) &
                       # abs(W912UMtrans$baseandalloptionsvalue)>0 & W912UMtrans$ChangeOrderBaseAndAllOptionsValue>0
                       ]<-'$ Chg'
 
-summary(factor(W912UMtrans$chgWonT))
+summary(factor(W912UMtrans$changeWonT))
 
-if(any(is.na(W912UMtrans$chgWonT))) stop("Unclassified chgWonT")
-# View(W912UMtrans[is.na(is.na(W912UMtrans$chgWonT)),])
-write.csv(file="..\\Data\\semi_clean\\chgWonT.csv",W912UMtrans %>% filter(chgWonT=="WON Chg"),row.names = FALSE)
+if(any(is.na(W912UMtrans$changeWonT))) stop("Unclassified changeWonT")
+# View(W912UMtrans[is.na(is.na(W912UMtrans$changeWonT)),])
+write.csv(file="..\\Data\\semi_clean\\changeWonT.csv",W912UMtrans %>% filter(changeWonT=="WON Chg"),row.names = FALSE)
 
 ```
 
@@ -556,10 +556,10 @@ levels(W912UMtrans$vendorcountrycode)<-list(
   "USA: UNITED STATES OF AMERICA"=c("USA: UNITED STATES OF AMERICA","UNITED STATES","USA")
 )
 
-summary(W912UMtrans$chgWonT)
+summary(W912UMtrans$changeWonT)
 ggplot(W912UMtrans %>% filter(modnumber=='0') ,aes(x=unmodWonT))+geom_bar()+facet_wrap(~vendorcountrycode)
-ggplot(W912UMtrans %>% filter(modnumber!='0'),aes(x=chgWonT))+geom_bar()+facet_wrap(~vendorcountrycode)
-ggplot(W912UMtrans %>% filter(modnumber!='0'),aes(x=chgWonT))+geom_bar()+facet_wrap(~unmodWonT)
+ggplot(W912UMtrans %>% filter(modnumber!='0'),aes(x=changeWonT))+geom_bar()+facet_wrap(~vendorcountrycode)
+ggplot(W912UMtrans %>% filter(modnumber!='0'),aes(x=changeWonT))+geom_bar()+facet_wrap(~unmodWonT)
 ggplot(W912UMtrans,aes(x=sumWon))+geom_bar()+facet_wrap(~vendorcountrycode)
 
 W912UMtrans$placeofperformancecountrycode
@@ -579,12 +579,12 @@ ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=unmodWon))+
 #     placeofperformancecountrycode=="USA")
 #   & modnumber=='0')
 
-summary(factor(W912UMtrans$chgWonT))
+summary(factor(W912UMtrans$changeWonT))
 
 Miscategorized<-W912UMtrans %>% filter((unmodWon %in% c("? Unm","WON Unm")|
                                           unmodWonT %in% c("? Unm","WON Unm")|
                                           changeWon %in% c("? Chg","WON Chg")|
-                                          chgWonT %in% c("? Chg","WON Chg")
+                                          changeWonT %in% c("? Chg","WON Chg")
                                         )& (
   
     placeofperformancecountrycode=="USA")
@@ -597,69 +597,182 @@ if(nrow(Miscategorized)>0) stop("False positive contract in Won performed in US"
 ```
 
 # Cleaning
+## Validating CSIS_contract_inspection
+### Unmodified Ceiling in Won
+```{r validate_inspection_lookup}
+inspected<-read.csv(file.path("https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                              "contract/","CSIS_contract_inspection.csv"))
+                              
+#Identify incorrectly FALSE in inspection
+inspect_should_be_true<-inspected$CSIScontractID[
+  inspected$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$unmodWon=="WON Unm"],
+                                     W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"])&
+  inspected$override_unmodified_ceiling==FALSE
+  ]
 
+if(length(inspect_should_be_true)>0){
+  inspected[inspected$CSIScontractID %in% inspect_should_be_true,]
+  inspected$override_unmodified_ceiling[inspected$CSIScontractID %in% inspect_should_be_true]<-TRUE
+  write.csv(inspected,file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
+  stop(paste("CSIS_contract_inspection.csv has incorrect false values for",length(inspect_should_be_true),
+             "CSIScontractIDs in override_unmodified_ceiling.",
+             "See Output/CSIS_contract_inspection.csv for updated file."))
+}
+rm(inspect_should_be_true)
 
-```{r clean_setup}
+#Identify incorrectly true in inspection
+inspect_should_be_false<-inspected$CSIScontractID[
+  !inspected$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$unmodWon=="WON Unm"],
+                                     W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"])&
+  inspected$override_unmodified_ceiling==TRUE &
+    inspected$CSIS_inspection=="W912UM Won"
+  ]
+
+if(length(inspect_should_be_false)>0){
+  inspected[inspected$CSIScontractID %in% inspect_should_be_true,]
+  inspected$override_unmodified_ceiling[inspected$CSIScontractID %in% inspect_should_be_false]<-FALSE
+  write.csv(inspected,file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
+  stop(paste("CSIS_contract_inspection.csv has incorrect true values for",length(inspect_should_be_false),
+             "CSIScontractIDs in override_unmodified_ceiling.",
+             "See Output/CSIS_contract_inspection.csv for updated file."))
+}
+rm(inspect_should_be_false)
+
+#Identify missing from csis_inspect
+inspect_missing<-unique(c(W912UM$CSIScontractID[W912UM$unmodWon=="WON Unm"],
+                                     W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"]))
+inspect_missing<-inspect_missing[!inspect_missing %in% inspected$CSIScontractID]
+
+if(length(inspect_missing)>0){
+  new_rows<-data.frame(CSIScontractID=inspect_missing,
+             override_unmodified_ceiling=TRUE,
+             override_unmodified_base=FALSE,
+             override_change_order_growth=FALSE,
+             override_exercised_growth=FALSE,
+             CSIS_inspection="W912UM Won")
+
+  
+  new_rows$override_change_order_growth[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
+                                                       W912UMtrans$CSIScontractID[W912UMtrans$changeWonT=="WON Chg"]
+                                                         )]<-TRUE
+  
+  write.csv(rbind(inspected,new_rows),file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
+  rm(new_rows)
+  stop(paste("CSIS_contract_inspection.csv is missing rows for ",length(inspect_missing),
+             "CSIScontractIDs.",
+             "See Output/CSIS_contract_inspection.csv for updated file."))
+}
+rm(inspect_missing)
+```
+### Change Order in Won
+  
+```{r validate_inspection_lookup}
+inspected<-read.csv(file.path("https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                              "contract/","CSIS_contract_inspection.csv"))
+                              
+#Identify incorrectly FALSE in inspection
+inspect_should_be_true<-inspected$CSIScontractID[
+  inspected$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
+                                     W912UMtrans$CSIScontractID[W912UMtrans$changeWonT=="WON Chg"])&
+  inspected$override_change_order_growth==FALSE
+  ]
+
+if(length(inspect_should_be_true)>0){
+  inspected[inspected$CSIScontractID %in% inspect_should_be_true,]
+  inspected$override_change_order_growth[inspected$CSIScontractID %in% inspect_should_be_true]<-TRUE
+  write.csv(inspected,file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
+  stop(paste("CSIS_contract_inspection.csv has incorrect false values for",length(inspect_should_be_true),
+             "CSIScontractIDs in override_change_order_growth.",
+             "See Output/CSIS_contract_inspection.csv for updated file."))
+}
+rm(inspect_should_be_true)
+
+#Identify incorrectly true in inspection
+inspect_should_be_false<-inspected$CSIScontractID[
+  !inspected$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
+                                     W912UMtrans$CSIScontractID[W912UMtrans$changeWonT=="WON Chg"])&
+  inspected$override_change_order_growth==TRUE &
+    inspected$CSIS_inspection=="W912UM Won"
+  ]
+
+if(length(inspect_should_be_false)>0){
+  inspected[inspected$CSIScontractID %in% inspect_should_be_true,]
+  inspected$override_change_order_growth[inspected$CSIScontractID %in% inspect_should_be_false]<-FALSE
+  write.csv(inspected,file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
+  stop(paste("CSIS_contract_inspection.csv has incorrect true values for",length(inspect_should_be_false),
+             "CSIScontractIDs in override_change_order_growth.",
+             "See Output/CSIS_contract_inspection.csv for updated file."))
+}
+rm(inspect_should_be_false)
+
+#Identify missing from csis_inspect
+inspect_missing<-unique(c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
+                                     W912UMtrans$CSIScontractID[W912UMtrans$changeWonT=="WON Chg"]))
+inspect_missing<-inspect_missing[!inspect_missing %in% inspected$CSIScontractID]
+
+if(length(inspect_missing)>0){
+  new_rows<-data.frame(CSIScontractID=inspect_missing,
+             override_unmodified_ceiling=FALSE,
+             override_unmodified_base=FALSE,
+             override_change_order_growth=TRUE,
+             override_exercised_growth=FALSE,
+             CSIS_inspection="W912UM Won")
+
+  
+  new_rows$override_unmodified_ceiling[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$unmodWon=="WON Unm"],
+                                                       W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"]
+                                                         )]<-TRUE
+  
+  write.csv(rbind(inspected,new_rows),file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
+  rm(new_rows)
+  stop(paste("CSIS_contract_inspection.csv is missing rows for ",length(inspect_missing),
+             "CSIScontractIDs.",
+             "See Output/CSIS_contract_inspection.csv for updated file."))
+}
+rm(inspect_missing)
+  
+
+```
+
+  
+  
+## Validate Transformed_Dataset
+This is a quick inspection to make sure that the version of the transformed dataset to be used is current.
+  
+```{r validate_transformed_dataset}
+
 load(file="../Data/Clean/transformed_def.Rdata")
 
-colnames(def)[colnames(def)=="l_CBre"]<-"lp_CBre"
-colnames(def)[colnames(def)=="n_CBre"]<-"p_CBre"
-colnames(def)[colnames(def)=="ChangeOrderCeilingGrowth"]<-"n_CBre"
+  #Overrides
+  def<-read_and_join_experiment( def,
+                                      "CSIS_contract_inspection.csv",
+                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                      directory="contract/",
+                                      by=c("CSIScontractID"),
+                                      # add_var=c("EntityID","UnmodifiedEntityID"),
+                                      new_var_checked=FALSE,
+                                      create_lookup_rdata=FALSE
+  )
 
-summary(def$n_CBre)
-summary(def$p_CBre)
+  #Making sure the transformed dataset has been set to NA 
+  if(any(!is.na(def$UnmodifiedContractBaseAndAllOptionsValue_Then_Year[
+    def$override_unmodified_ceiling==TRUE]))){
+    stop("Unmodified Ceilings set to be overiden have not been set to NA. Rerun Create_Dataset.R")
+  }
 
-
-summary(factor(W912UMtrans$chgWonT))
-summary(factor(W912UMtrans$changeWon))
-summary(factor(W912UM$changeWon))
-
-
-def$UnmodifiedContractBaseAndAllOptionsValue_Then_Year[
-  def$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$unmodWon=="WON Unm"],
-                                     W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"])]<-NA
-def$UnmodifiedContractBaseAndAllOptionsValue_Then_Year[def$UnmodifiedContractBaseAndAllOptionsValue_Then_Year==0]<-NA
-
-def$Ceil[
-  def$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$unmodWon=="WON Unm"],
-                                     W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"])]<-NA
-def$Ceil[def$UnmodifiedContractBaseAndAllOptionsValue_Then_Year==0]<-NA
-
-def$cl_Ceil[
-  def$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$unmodWon=="WON Unm"],
-                                     W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"])]<-NA
-def$cl_Ceil[def$UnmodifiedContractBaseAndAllOptionsValue_Then_Year==0]<-NA
+  if(any(!is.na(def$ChangeOrderBaseAndAllOptionsValue[
+    def$override_change_order_growth==TRUE]))){
+    stop("Unmodified Ceilings set to be overiden have not been set to NA. Rerun Create_Dataset.R")
+  }
 
 
-summary(def$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)
+```
 
+# Examining Outliers
 
-def$ChangeOrderBaseAndAllOptionsValue[def$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
-                                                       W912UMtrans$CSIScontractID[W912UMtrans$chgWonT=="WON Chg"]
-                                                         )]<-NA
-def$n_CBre[def$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
-                                                       W912UMtrans$CSIScontractID[W912UMtrans$chgWonT=="WON Chg"]
-                                                         )]<-NA
-def$p_CBre[def$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
-                                                       W912UMtrans$CSIScontractID[W912UMtrans$chgWonT=="WON Chg"]
-                                                         )]<-NA
-def$l_Cbre[def$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
-                                                       W912UMtrans$CSIScontractID[W912UMtrans$chgWonT=="WON Chg"]
-                                                         )]<-NA
-
-
-summary(def$ChangeOrderBaseAndAllOptionsValue)
-summary(def$Ceil)
-summary(def$cl_Ceil)
-
-#Finding contracts to override
-#knitr::kable(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"], caption = "Contract IDs for WON Chg")
-#knitr::kable(W912UM$CSIScontractID[W912UM$changeWon=="WON Unm"], caption = "Contract IDs for WON Unm")
-#knitr::kable(unique(W912UM$changeWon), caption = "Check changeWon values")
-
-#Export for incorporation into override lookup table
-#write.csv(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"], file = "../Data/semi_clean/WON_chg_override_contracts.csv")
-
+```{r CeilingOutlier_post}
 
 #The original variables for b_Term and b_CBre are Term and CBre
 grouped_barplot("CBre", def,value_col="Action_Obligation_Then_Year")
@@ -667,13 +780,6 @@ statsummary_discrete(c("CBre"), def,value_col="Action_Obligation_Then_Year")
 cbre<-def %>% filter(b_CBre==1)
 cbre$qGrowth<-Hmisc::cut2(cbre$p_CBre-1,c(1,10))
 summary(cbre$qGrowth)
-
-
-```
-
-## Examining Outliers
-
-```{r CeilingOutlier_post}
 
 cbre$Why_Outlier<-NA
 cbre$Why_Outlier[is.na(cbre$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)]<-"No Unmodified Ceiling"
@@ -885,7 +991,7 @@ facet_wrap(~Ceil,scales="free_y")#+, space="free_y"
 ## W912UM
 
 ### Contract Initial Examination
-```{r W912UM}
+```{r W912UMExercised}
 #Old W912UM Code copied over from Exercised_Option_Examination.Rmd in the services repo
 sum(W912UM$Action_Obligation.Then.Year[])
 
@@ -1007,7 +1113,7 @@ statsummary_discrete(c("unmodWon"), W912UM %>% filter(Intl=="Any Intl."&
 All of the questionable contracts take place internationally and none use BPA/BOA or FSS/GWACs. That makes sense and raises confidence, but given that the clearly USD contract categories are less common, this doesn't help in resolving the ambiguous cases. That said, Single Award IDCs appear to have most of the ambigious cases, which suggests that this might be resolvable by looking at parent IDVs in those cases. 
 ### Transaction
 #### Unmodified Transactions
-```{r W912UM_transction_unmodified}
+```{r W912UM_exercised_transction_unmodified}
 # W912UMtrans<-read.delim(file="..\\data\\semi_clean\\W912UM_complete.txt", sep="\t")
 
 
@@ -1093,7 +1199,7 @@ Then it the base is set to NA and it will not be in the sample.
 
 
 #### Change Order Transactions
-```{r W912UM_transaction}
+```{r W912UM_exercised_transaction}
 
 W912UMtrans$optWonT<-NA
 W912UMtrans$optWonT[W912UMtrans$modnumber=='0']<-"Unmodified Transaction"
@@ -1146,7 +1252,7 @@ write.csv(file="..\\Data\\semi_clean\\optWonT.csv",W912UMtrans %>% filter(optWon
 
 
 #### Examining International Related Vars
-```{r tran_related_vars}
+```{r tran_exercised_related_vars}
 
 levels(W912UMtrans$vendorcountrycode)<-list(
   # ""="",
