@@ -891,10 +891,17 @@ In this step the datset is pruned and transformed for use in the Monopolies anal
 ```{r Dataset_Transformation}
 
 ###Data Transformations and Summary
-load(file="Data/Clean/defense_contract_complete.RData")
+load(file="../data/clean/defense_contract_complete.RData")
 def<-def[def$MinOfSignedDate>=as.Date("2008-01-01") & def$MinOfSignedDate<=as.Date("2015-12-31"),]
-
+# debug(transform_contract)
+memory.limit(36000)
 def<-transform_contract(def)
+colnames(def)[colnames(def)=="Action_Obligation.Then.Year"]<-"Action_Obligation_Then_Year"
+colnames(def)[colnames(def)=="UnmodifiedContractBaseAndAllOptionsValue.Then.Year"]<-
+  "UnmodifiedContractBaseAndAllOptionsValue_Then_Year"
+
+
+
 def$l_Ceil<-na_non_positive_log(def$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)
 def$cl_Ceil<-arm::rescale(def$l_Ceil)
 def$l_def6_obl_lag1<-na_non_positive_log(def$def6_obl_lag1)
@@ -906,17 +913,13 @@ def<-def[!colnames(def) %in% colnames(def)[grep("^l_",colnames(def))]]
 def<-def[!colnames(def) %in% colnames(def)[grep("^capped_l_",colnames(def))]]
 
 
-l_Offr
+#l_Offr
 def$l_Offr<-na_non_positive_log(def$UnmodifiedNumberOfOffersReceived)
 #ObligationWT
-if("Action_Obligation.Then.Year" %in% colnames(def)){
-  def$ObligationWT_Then_Year<-def$Action_Obligation.Then.Year
+if("Action_Obligation_Then_Year" %in% colnames(def)){
+  def$ObligationWT_Then_Year<-def$Action_Obligation_Then_Year
   def$ObligationWT_Then_Year[def$ObligationWT_Then_Year<0]<-NA
 }
-colnames(def)[colnames(def)=="Action_Obligation.Then.Year"]<-"Action_Obligation_Then_Year"
-colnames(def)[colnames(def)=="UnmodifiedContractBaseAndAllOptionsValue.Then.Year"]<-
-  "UnmodifiedContractBaseAndAllOptionsValue_Then_Year"
-
 
 # # head(def)
 # debug(transform_contract)
@@ -970,7 +973,7 @@ colnames(def)[colnames(def)=="UnmodifiedContractBaseAndAllOptionsValue.Then.Year
 # 
 
 
-save(file="data/clean/transformed_def_serv.Rdata",def_serv)
+save(file="../data/clean/transformed_def.Rdata",def)
 
 
 ```
