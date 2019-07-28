@@ -865,7 +865,6 @@ Miscategorized<-W912UMtrans %>% filter((unmodWon %in% c("? Unm","WON Unm")|
     placeofperformancecountrycode=="USA")
   & modnumber=='0')
 
-)
 
 if(nrow(Miscategorized)>0) stop("False positive contract in Won performed in US")
 # View(W912UM %>% filter(CSIScontractID %in% Miscategorized$CSIScontractID))
@@ -882,7 +881,7 @@ inspected<-read.csv(file.path("https://raw.githubusercontent.com/CSISdefense/Loo
                               
 #Identify incorrectly FALSE in inspection
 inspect_should_be_true<-inspected$CSIScontractID[
-  inspected$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$baseWon=="WON Unm"],
+  inspected$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$unmodWon=="WON Unm"],
                                      W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"])&
   inspected$override_unmodified_ceiling==FALSE
   ]
@@ -906,7 +905,7 @@ inspect_should_be_false<-inspected$CSIScontractID[
   ]
 
 if(length(inspect_should_be_false)>0){
-  inspected[inspected$CSIScontractID %in% inspect_should_be_true,]
+  inspected[inspected$CSIScontractID %in% inspect_should_be_false,]
   inspected$override_unmodified_ceiling[inspected$CSIScontractID %in% inspect_should_be_false]<-FALSE
   write.csv(inspected,file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
   stop(paste("CSIS_contract_inspection.csv has incorrect true values for",length(inspect_should_be_false),
@@ -928,11 +927,99 @@ if(length(inspect_missing)>0){
              override_exercised_growth=FALSE,
              CSIS_inspection="W912UM Won")
 
+
+  new_rows$override_unmodified_base[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$baseWon=="WON Base"],
+                                   W912UMtrans$CSIScontractID[W912UMtrans$baseWonT=="WON Base"])]<-TRUE
+    
+  new_rows$override_change_order_growth[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
+                                                       W912UMtrans$CSIScontractID[W912UMtrans$changeWonT=="WON Chg"]
+                                                         )]<-TRUE
+  
+  new_rows$override_exercised_growth[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$optWon=="WON Opt"],
+                                     W912UMtrans$CSIScontractID[W912UMtrans$optWonT=="WON Opt"])]<-TRUE
+  
+  
+    
+  write.csv(rbind(inspected,new_rows),file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
+  rm(new_rows)
+  stop(paste("CSIS_contract_inspection.csv is missing rows for ",length(inspect_missing),
+             "CSIScontractIDs.",
+             "See Output/CSIS_contract_inspection.csv for updated file."))
+}
+rm(inspect_missing)
+```
+
+### Unmodified Base in Won
+```{r validate_inspection_lookup}
+inspected<-read.csv(file.path("https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                              "contract/","CSIS_contract_inspection.csv"))
+                              
+#Identify incorrectly FALSE in inspection
+inspect_should_be_true<-inspected$CSIScontractID[
+  inspected$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$baseWon=="WON Base"],
+                                     W912UMtrans$CSIScontractID[W912UMtrans$baseWonT=="WON Base"])&
+  inspected$override_unmodified_base==FALSE
+  ]
+
+summary(W912UMtrans$baseWon)
+
+if(length(inspect_should_be_true)>0){
+  inspected[inspected$CSIScontractID %in% inspect_should_be_true,]
+  inspected$override_unmodified_base[inspected$CSIScontractID %in% inspect_should_be_true]<-TRUE
+  write.csv(inspected,file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
+  stop(paste("CSIS_contract_inspection.csv has incorrect false values for",length(inspect_should_be_true),
+             "CSIScontractIDs in override_unmodified_base.",
+             "See Output/CSIS_contract_inspection.csv for updated file."))
+}
+rm(inspect_should_be_true)
+
+#Identify incorrectly true in inspection
+inspect_should_be_false<-inspected$CSIScontractID[
+  !inspected$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$baseWon=="WON Base"],
+                                     W912UMtrans$CSIScontractID[W912UMtrans$baseWonT=="WON Base"])&
+  inspected$override_unmodified_base==TRUE &
+    inspected$CSIS_inspection=="W912UM Won"
+  ]
+
+if(length(inspect_should_be_false)>0){
+  inspected[inspected$CSIScontractID %in% inspect_should_be_false,]
+  inspected$override_unmodified_base[inspected$CSIScontractID %in% inspect_should_be_false]<-FALSE
+  write.csv(inspected,file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
+  stop(paste("CSIS_contract_inspection.csv has incorrect true values for",length(inspect_should_be_false),
+             "CSIScontractIDs in override_unmodified_base.",
+             "See Output/CSIS_contract_inspection.csv for updated file."))
+}
+rm(inspect_should_be_false)
+
+#Identify missing from csis_inspect
+inspect_missing<-unique(c(W912UM$CSIScontractID[W912UM$baseWon=="WON Base"],
+                                     W912UMtrans$CSIScontractID[W912UMtrans$baseWonT=="WON Base"]))
+inspect_missing<-inspect_missing[!inspect_missing %in% inspected$CSIScontractID]
+
+if(length(inspect_missing)>0){
+  new_rows<-data.frame(CSIScontractID=inspect_missing,
+             override_unmodified_base=TRUE,
+             override_unmodified_base=FALSE,
+             override_change_order_growth=FALSE,
+             override_exercised_growth=FALSE,
+             CSIS_inspection="W912UM Won")
+
+
+  new_rows$override_unmodified_base[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$unmodWon=="WON Unm"],
+                                                       W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"]
+                                                         )]<-TRUE
   
   new_rows$override_change_order_growth[
     new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
                                                        W912UMtrans$CSIScontractID[W912UMtrans$changeWonT=="WON Chg"]
                                                          )]<-TRUE
+  new_rows$override_exercised_growth[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$optWon=="WON Opt"],
+                                     W912UMtrans$CSIScontractID[W912UMtrans$optWonT=="WON Opt"])]<-TRUE
   
   write.csv(rbind(inspected,new_rows),file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
   rm(new_rows)
@@ -942,6 +1029,8 @@ if(length(inspect_missing)>0){
 }
 rm(inspect_missing)
 ```
+
+
 ### Change Order in Won
   
 ```{r validate_inspection_lookup}
@@ -974,7 +1063,7 @@ inspect_should_be_false<-inspected$CSIScontractID[
   ]
 
 if(length(inspect_should_be_false)>0){
-  inspected[inspected$CSIScontractID %in% inspect_should_be_true,]
+  inspected[inspected$CSIScontractID %in% inspect_should_be_false,]
   inspected$override_change_order_growth[inspected$CSIScontractID %in% inspect_should_be_false]<-FALSE
   write.csv(inspected,file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
   stop(paste("CSIS_contract_inspection.csv has incorrect true values for",length(inspect_should_be_false),
@@ -996,10 +1085,104 @@ if(length(inspect_missing)>0){
              override_exercised_growth=FALSE,
              CSIS_inspection="W912UM Won")
 
+
+  new_rows$override_unmodified_base[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$baseWon=="WON Base"],
+                                   W912UMtrans$CSIScontractID[W912UMtrans$baseWonT=="WON Base"])]<-TRUE
   
-  new_rows$override_unmodified_ceiling[
+  new_rows$override_unmodified_base[
     new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$unmodWon=="WON Unm"],
                                                        W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"]
+                                                         )]<-TRUE
+  
+  new_rows$override_exercised_growth[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$optWon=="WON Opt"],
+                                     W912UMtrans$CSIScontractID[W912UMtrans$optWonT=="WON Opt"])]<-TRUE
+  
+  write.csv(rbind(inspected,new_rows),file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
+  rm(new_rows)
+  stop(paste("CSIS_contract_inspection.csv is missing rows for ",length(inspect_missing),
+             "CSIScontractIDs.",
+             "See Output/CSIS_contract_inspection.csv for updated file."))
+}
+rm(inspect_missing)
+  
+
+```
+
+
+
+### Options in Won
+  
+```{r validate_inspection_lookup}
+inspected<-read.csv(file.path("https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                              "contract/","CSIS_contract_inspection.csv"))
+              
+
+summary(factor(W912UM$optWon))
+                
+#Identify incorrectly FALSE in inspection
+inspect_should_be_true<-inspected$CSIScontractID[
+  inspected$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$optWon=="WON Opt"],
+                                     W912UMtrans$CSIScontractID[W912UMtrans$optWonT=="WON Opt"])&
+  inspected$override_exercised_growth==FALSE
+  ]
+
+if(length(inspect_should_be_true)>0){
+  inspected[inspected$CSIScontractID %in% inspect_should_be_true,]
+  inspected$override_exercised_growth[inspected$CSIScontractID %in% inspect_should_be_true]<-TRUE
+  write.csv(inspected,file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
+  stop(paste("CSIS_contract_inspection.csv has incorrect false values for",length(inspect_should_be_true),
+             "CSIScontractIDs in override_exercised_growth.",
+             "See Output/CSIS_contract_inspection.csv for updated file."))
+}
+rm(inspect_should_be_true)
+
+#Identify incorrectly true in inspection
+inspect_should_be_false<-inspected$CSIScontractID[
+  !inspected$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$optWon=="WON Opt"],
+                                     W912UMtrans$CSIScontractID[W912UMtrans$optWonT=="WON Opt"])&
+  inspected$override_exercised_growth==TRUE &
+    inspected$CSIS_inspection=="W912UM Won"
+  ]
+
+if(length(inspect_should_be_false)>0){
+  inspected[inspected$CSIScontractID %in% inspect_should_be_false,]
+  inspected$override_exercised_growth[inspected$CSIScontractID %in% inspect_should_be_false]<-FALSE
+  write.csv(inspected,file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
+  stop(paste("CSIS_contract_inspection.csv has incorrect true values for",length(inspect_should_be_false),
+             "CSIScontractIDs in override_exercised_growth.",
+             "See Output/CSIS_contract_inspection.csv for updated file."))
+}
+rm(inspect_should_be_false)
+
+#Identify missing from csis_inspect
+inspect_missing<-unique(c(W912UM$CSIScontractID[W912UM$optWon=="WON Opt"],
+                                     W912UMtrans$CSIScontractID[W912UMtrans$optWonT=="WON Opt"]))
+inspect_missing<-inspect_missing[!inspect_missing %in% inspected$CSIScontractID]
+
+if(length(inspect_missing)>0){
+  new_rows<-data.frame(CSIScontractID=inspect_missing,
+             override_unmodified_ceiling=FALSE,
+             override_unmodified_base=FALSE,
+             override_exercised_growth=TRUE,
+             override_exercised_growth=FALSE,
+             CSIS_inspection="W912UM Won")
+
+
+  
+  
+  new_rows$override_unmodified_base[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$baseWon=="WON Base"],
+                                   W912UMtrans$CSIScontractID[W912UMtrans$baseWonT=="WON Base"])]<-TRUE  
+  new_rows$override_unmodified_base[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$unmodWon=="WON Unm"],
+                                                       W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"]
+                                                         )]<-TRUE
+  
+  new_rows$override_change_order_growth[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
+                                                       W912UMtrans$CSIScontractID[W912UMtrans$changeWonT=="WON Chg"]
                                                          )]<-TRUE
   
   write.csv(rbind(inspected,new_rows),file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
@@ -1013,7 +1196,6 @@ rm(inspect_missing)
 
 ```
 
-  
   
 ## Validate Transformed_Dataset
 This is a quick inspection to make sure that the version of the transformed dataset to be used is current.
