@@ -809,19 +809,38 @@ levels(W912UMtrans$vendorcountrycode)<-list(
 )
 
 summary(W912UMtrans$changeWonT)
+#Ceiling and Change Orders
 ggplot(W912UMtrans %>% filter(modnumber=='0') ,aes(x=unmodWonT))+geom_bar()+facet_wrap(~vendorcountrycode)
 ggplot(W912UMtrans %>% filter(modnumber!='0'),aes(x=changeWonT))+geom_bar()+facet_wrap(~vendorcountrycode)
 ggplot(W912UMtrans %>% filter(modnumber!='0'),aes(x=changeWonT))+geom_bar()+facet_wrap(~unmodWonT)
 ggplot(W912UMtrans,aes(x=sumWon))+geom_bar()+facet_wrap(~vendorcountrycode)
 
-W912UMtrans$placeofperformancecountrycode
+#Base and Options
+ggplot(W912UMtrans %>% filter(modnumber=='0') ,aes(x=baseWonT))+geom_bar()+facet_wrap(~vendorcountrycode)
+ggplot(W912UMtrans %>% filter(modnumber!='0'),aes(x=optWonT))+geom_bar()+facet_wrap(~vendorcountrycode)
+ggplot(W912UMtrans %>% filter(modnumber!='0'),aes(x=optWonT))+geom_bar()+facet_wrap(~baseWonT)
+ggplot(W912UMtrans,aes(x=sumWon))+geom_bar()+facet_wrap(~vendorcountrycode)
+
+
+#Ceiling and Change Order
 ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=unmodWon))+
   geom_bar()+facet_wrap(~placeofmanufacture)
 ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=unmodWon))+
   geom_bar()+facet_wrap(~countryoforigin)
 ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=unmodWon))+
   geom_bar()+facet_wrap(~placeofperformancecountrycode)
+
+#Base and Options
+
+W912UMtrans$placeofperformancecountrycode
+ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=baseWon))+
+  geom_bar()+facet_wrap(~placeofmanufacture)
+ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=baseWon))+
+  geom_bar()+facet_wrap(~countryoforigin)
+ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=baseWon))+
+  geom_bar()+facet_wrap(~placeofperformancecountrycode)
                  
+summary(factor(W912UMtrans$optWonT))
 
 # View(W912UMtrans %>% filter(unmodWon %in% c("? Unm","Won Unm") & vendorcountrycode=="USA: UNITED STATES OF AMERICA" & modnumber=='0'))
 
@@ -836,11 +855,17 @@ summary(factor(W912UMtrans$changeWonT))
 Miscategorized<-W912UMtrans %>% filter((unmodWon %in% c("? Unm","WON Unm")|
                                           unmodWonT %in% c("? Unm","WON Unm")|
                                           changeWon %in% c("? Chg","WON Chg")|
-                                          changeWonT %in% c("? Chg","WON Chg")
+                                          changeWonT %in% c("? Chg","WON Chg")|
+                                          baseWon %in% c("? Base","WON Base")|
+                                          baseWonT %in% c("? Base","WON Base")|
+                                          optWon %in% c("? Opt","WON Opt")|
+                                          optWonT %in% c("? Opt","WON Opt")
                                         )& (
   
     placeofperformancecountrycode=="USA")
   & modnumber=='0')
+
+)
 
 if(nrow(Miscategorized)>0) stop("False positive contract in Won performed in US")
 # View(W912UM %>% filter(CSIScontractID %in% Miscategorized$CSIScontractID))
@@ -857,7 +882,7 @@ inspected<-read.csv(file.path("https://raw.githubusercontent.com/CSISdefense/Loo
                               
 #Identify incorrectly FALSE in inspection
 inspect_should_be_true<-inspected$CSIScontractID[
-  inspected$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$unmodWon=="WON Unm"],
+  inspected$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$baseWon=="WON Unm"],
                                      W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"])&
   inspected$override_unmodified_ceiling==FALSE
   ]
@@ -1241,59 +1266,3 @@ facet_wrap(~Ceil,scales="free_y")#+, space="free_y"
 ```
 
 
-## W912UM
-
-
-### Transaction
-
-
-#### Examining International Related Vars
-```{r tran_exercised_related_vars}
-
-levels(W912UMtrans$vendorcountrycode)<-list(
-  # ""="",
-  "ABW: ARUBA"="ABW: ARUBA",
-  "JPN: JAPAN"="JPN: JAPAN",
-  "KOR: KOREA, REPUBLIC OF"=c("KOR: KOREA, REPUBLIC OF","KOR","SOUTH KOREA"),
-  "USA: UNITED STATES OF AMERICA"=c("USA: UNITED STATES OF AMERICA","UNITED STATES","USA")
-)
-
-summary(W912UMtrans$optWonT)
-ggplot(W912UMtrans %>% filter(modnumber=='0') ,aes(x=baseWonT))+geom_bar()+facet_wrap(~vendorcountrycode)
-ggplot(W912UMtrans %>% filter(modnumber!='0'),aes(x=optWonT))+geom_bar()+facet_wrap(~vendorcountrycode)
-ggplot(W912UMtrans %>% filter(modnumber!='0'),aes(x=optWonT))+geom_bar()+facet_wrap(~baseWonT)
-ggplot(W912UMtrans,aes(x=sumWon))+geom_bar()+facet_wrap(~vendorcountrycode)
-
-W912UMtrans$placeofperformancecountrycode
-ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=unmodWon))+
-  geom_bar()+facet_wrap(~placeofmanufacture)
-ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=unmodWon))+
-  geom_bar()+facet_wrap(~countryoforigin)
-ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=unmodWon))+
-  geom_bar()+facet_wrap(~placeofperformancecountrycode)
-                 
-
-# View(W912UMtrans %>% filter(unmodWon %in% c("? Base","Won Base") & vendorcountrycode=="USA: UNITED STATES OF AMERICA" & modnumber=='0'))
-
-# Miscategorized<-W912UMtrans %>% filter(unmodWon %in% c("? Base","WON Base") & (
-#   vendorcountrycode=="USA: UNITED STATES OF AMERICA" |
-#     countryoforigin=="USA" |
-#     placeofperformancecountrycode=="USA")
-#   & modnumber=='0')
-
-summary(factor(W912UMtrans$optWonT))
-
-Miscategorized<-W912UMtrans %>% filter((unmodWon %in% c("? Base","WON Base")|
-                                          baseWonT %in% c("? Base","WON Base")|
-                                          optWon %in% c("? Opt","WON Opt")|
-                                          optWonT %in% c("? Opt","WON Opt")
-                                        )& (
-  
-    placeofperformancecountrycode=="USA")
-  & modnumber=='0')
-
-if(nrow(Miscategorized)>0) stop("False positive contract in Won performed in US")
-# View(W912UM %>% filter(CSIScontractID %in% Miscategorized$CSIScontractID))
-
-
-```
