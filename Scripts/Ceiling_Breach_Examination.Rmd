@@ -382,7 +382,7 @@ summary(factor(W912UM$sumWon))
 )
 
 (
-  ggplot(W912UM, aes(x=UnmodifiedCeiling_Then_Year+ChangeOrderBaseAndAllOptionsValue,y=Action_Obligation_Then_Year,color=sumWon)) +#,color=qGrowth
+  ggplot(W912UM, aes(x=UnmodifiedCeiling_Then_Year+ChangeOrderCeilingGrowth+ChangeOrderCeilingRescision,y=Action_Obligation_Then_Year,color=sumWon)) +#,color=qGrowth
     geom_point(alpha=0.25)+
     # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+scale_y_log10()+
@@ -538,7 +538,7 @@ All of the questionable contracts take place internationally and none use BPA/BO
 W912UMtrans<-inner_join(W912UMtrans,W912UM %>% group_by() %>%
                           dplyr::select(CSIScontractID,
                                         unmodWon,sumWon,changeWon,baseWon,optWon,
-                                        ChangeOrderBaseAndAllOptionsValue,
+                                        ChangeOrderCeilingGrowth+ChangeOrderCeilingRescision,
                                         UnmodifiedCeiling_Then_Year,
                                         Action_Obligation_Then_Year,
                                         UnmodifiedBaseandExercisedOptionsValue,
@@ -702,37 +702,37 @@ W912UMtrans$changeWonT[is.na(W912UMtrans$changeWonT)&
                        &W912UMtrans$modnumber!='0']<-'0 Chg Growth'
 W912UMtrans$changeWonT[is.na(W912UMtrans$changeWonT)&
                          abs(W912UMtrans$baseandalloptionsvalue)>=abs(W912UMtrans$obligatedamount*400)&
-                         (abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)+
+                         (abs(W912UMtrans$ChangeOrderCeilingGrowth+W912UMtrans$ChangeOrderCeilingRescision)+
                             W912UMtrans$UnmodifiedCeiling_Then_Year)>=
                          W912UMtrans$Action_Obligation_Then_Year*10&
-                         abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)>10000
+                         abs(W912UMtrans$ChangeOrderCeilingGrowth+W912UMtrans$ChangeOrderCeilingRescision)>10000
                        # (W912UMtrans$baseandalloptionsvalue>=
                        #    W912UMtrans$UnmodifiedCeiling_Then_Year*100 |
                        #   (!is.na(W912UMtrans$unmodWonT) & W912UMtrans$unmodWonT %in% c('WON Unm','? Unm')))&
                        # # (W912UMtrans$obligatedamount>0 | W912UMtrans$Action_Obligation_Then_Year>0)& 
-                       # abs(W912UMtrans$baseandalloptionsvalue)>0 & W912UMtrans$ChangeOrderBaseAndAllOptionsValue>0
+                       # abs(W912UMtrans$baseandalloptionsvalue)>0 & W912UMtrans$ChangeOrderCeilingGrowth+W912UMtrans$ChangeOrderCeilingRescision>0
                        ]<-'WON Chg'
 W912UMtrans$changeWonT[is.na(W912UMtrans$changeWonT) &
                          abs(W912UMtrans$baseandalloptionsvalue)>=abs(W912UMtrans$obligatedamount*20)&
-                         (abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)+
+                         (abs(W912UMtrans$ChangeOrderCeilingGrowth+W912UMtrans$ChangeOrderCeilingRescision)+
                             W912UMtrans$UnmodifiedCeiling_Then_Year)>=
                          W912UMtrans$Action_Obligation_Then_Year*5&
-                         abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)
+                         abs(W912UMtrans$ChangeOrderCeilingGrowth+W912UMtrans$ChangeOrderCeilingRescision)
                        # (W912UMtrans$baseandalloptionsvalue>=
                        #    W912UMtrans$UnmodifiedCeiling_Then_Year*10 |
                        #  (!is.na(W912UMtrans$unmodWonT) & W912UMtrans$unmodWonT %in% c('WON Unm','? Unm')))&
-                       # abs(W912UMtrans$baseandalloptionsvalue)>0 & W912UMtrans$ChangeOrderBaseAndAllOptionsValue>0
+                       # abs(W912UMtrans$baseandalloptionsvalue)>0 & W912UMtrans$ChangeOrderCeilingGrowth+W912UMtrans$ChangeOrderCeilingRescision>0
                        ]<-'? Chg'
 W912UMtrans$changeWonT[is.na(W912UMtrans$changeWonT) &
                          (abs(W912UMtrans$baseandalloptionsvalue)<abs(W912UMtrans$obligatedamount*20)|
-                            (abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)+
+                            (abs(W912UMtrans$ChangeOrderCeilingGrowth+W912UMtrans$ChangeOrderCeilingRescision)+
                                W912UMtrans$UnmodifiedCeiling_Then_Year)<
                             W912UMtrans$Action_Obligation_Then_Year*5 |
-                            abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)<=10000)
+                            abs(W912UMtrans$ChangeOrderCeilingGrowth+W912UMtrans$ChangeOrderCeilingRescision)<=10000)
                        # (W912UMtrans$baseandalloptionsvalue<
                        #    W912UMtrans$UnmodifiedCeiling_Then_Year*10 |
                        #  (!is.na(W912UMtrans$unmodWonT) & W912UMtrans$unmodWonT %in% c('WON Unm','? Unm')))&
-                       # abs(W912UMtrans$baseandalloptionsvalue)>0 & W912UMtrans$ChangeOrderBaseAndAllOptionsValue>0
+                       # abs(W912UMtrans$baseandalloptionsvalue)>0 & W912UMtrans$ChangeOrderCeilingGrowth+W912UMtrans$ChangeOrderCeilingRescision>0
                        ]<-'$ Chg'
 
 summary(factor(W912UMtrans$changeWonT))
@@ -1219,7 +1219,7 @@ if(any(!is.na(def$UnmodifiedCeiling_Then_Year[
   stop("Unmodified Ceilings set to be overiden have not been set to NA. Rerun transform portion of creat_defense_contract_dataset.r")
 }
 
-if(any(!is.na(def$ChangeOrderBaseAndAllOptionsValue[
+if(any(!is.na(def$ChangeOrderCeilingGrowth[
   def$override_change_order_growth==TRUE]))){
   stop("Ceilings Breaches set to be overiden have not been set to NA. Rerun transform portion of creat_defense_contract_dataset.r")
 }
