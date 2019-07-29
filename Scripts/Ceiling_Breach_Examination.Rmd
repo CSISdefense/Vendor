@@ -49,8 +49,6 @@ load(file="..\\data\\semi_clean\\CBre_pre_clean.rdata")
 # summary(cbre_preclean$qGrowth)
 # save(W912UM,W912UMtrans,cbre_preclean,file="..\\data\\semi_clean\\CBre_pre_clean.rdata")
 
-
-
 ```
 
 
@@ -66,54 +64,54 @@ summary(cbre_preclean$Ceil[(cbre_preclean$p_CBre-1)>100 & cbre_preclean$Unmodifi
 cbre_preclean$Why_Outlier<-NA
 cbre_preclean$Why_Outlier[cbre_preclean$UnmodifiedContractBaseAndAllOptionsValue_Then_Year<=0]<-"No Unmodified Ceiling"
 cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
-                   cbre_preclean$Action_Obligation_Then_Year*2>=cbre_preclean$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
-                   cbre_preclean$n_CBre]<-
+                            cbre_preclean$Action_Obligation_Then_Year*2>=cbre_preclean$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
+                            cbre_preclean$n_CBre]<-
   "Obligations at least half Orig+CRai"
 cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
-                   cbre_preclean$Office=="W912UM"]<-
+                            cbre_preclean$Office=="W912UM"]<-
   "Korean Office W912UM"
 cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
-                   cbre_preclean$n_CBre>=2.5e8]<-
+                            cbre_preclean$n_CBre>=2.5e8]<-
   ">=$250M, Insepect"
 cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
-                   cbre_preclean$p_CBre-1>10]<-
+                            cbre_preclean$p_CBre-1>10]<-
   "Other Unexplained 10x Ceiling Breach"
 cbre_preclean$Why_Outlier<-factor(cbre_preclean$Why_Outlier,
-                         levels=c(
-                           "No Unmodified Ceiling",
-                           "Obligations at least half Orig+CRai",
-                           "Later Deobligated",
-                           "Korean Office W912UM",
-                           ">=$250M, Insepect",
-                           "Other Unexplained 10x Ceiling Breach"
-                         ))
+                                  levels=c(
+                                    "No Unmodified Ceiling",
+                                    "Obligations at least half Orig+CRai",
+                                    "Later Deobligated",
+                                    "Korean Office W912UM",
+                                    ">=$250M, Insepect",
+                                    "Other Unexplained 10x Ceiling Breach"
+                                  ))
 summary(cbre_preclean$Why_Outlier[(cbre_preclean$p_CBre-1)>10])
 summary(cbre_preclean$Why_Outlier)
 
 
 p_outlier_summary<-cbre_preclean %>% filter(p_CBre-1>10) %>% group_by(Why_Outlier) %>%
   dplyr::summarise(nContract=length(n_CBre),
-    SumOfChangeOrderCeilingGrowth=sum(n_CBre),
+                   SumOfChangeOrderCeilingGrowth=sum(n_CBre),
                    MaxOfChangeOrderCeilingGrowth=max(n_CBre),
                    SumOfAction_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
 
 
 n_outlier_summary<-cbre_preclean %>% filter(n_CBre>2.5e8) %>% group_by(Why_Outlier) %>%
   dplyr::summarise(nContract=length(n_CBre),
-    SumOfChangeOrderCeilingGrowth=sum(n_CBre),
+                   SumOfChangeOrderCeilingGrowth=sum(n_CBre),
                    MaxOfChangeOrderCeilingGrowth=max(n_CBre),
                    SumOfAction_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
 
 
 summary(Hmisc::cut2(cbre_preclean$n_CBre,c(1e3,
-                                          1e6,
-                                          1e7,
-                                          1e8,
-                                          2.5e8,
-                                          1e9,
-                                          1e10,
-                                          2e10
-                                          )))
+                                           1e6,
+                                           1e7,
+                                           1e8,
+                                           2.5e8,
+                                           1e9,
+                                           1e10,
+                                           2e10
+)))
 summary(cbre_preclean$Ceil[cbre_preclean$n_CBre>=1e6])
 summary(cbre_preclean$Ceil[cbre_preclean$n_CBre>=1e9])
 
@@ -144,46 +142,46 @@ Inspecting W912UM, either to remove or fix its oversized growth, is an imperativ
 ```{r CeilingGrowthGraphs}
 
 (
-ggplot(cbre_preclean, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year,y=p_CBre-1)) +#,color=qGrowth
-  geom_point(alpha=0.25,shape=".")+
-  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+scale_y_log10()+
-  #+
-  geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-# facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
-  labs(title="Distribution of Ceiling Breaches",
-       y="Percent of Growth in  Ceiling",
-       x="Unmodified Contract Ceiling")#,
-       # fill="Termination Completion"
+  ggplot(cbre_preclean, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year,y=p_CBre-1)) +#,color=qGrowth
+    geom_point(alpha=0.25,shape=".")+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()+
+    #+
+    geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+    # facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
+    labs(title="Distribution of Ceiling Breaches",
+         y="Percent of Growth in  Ceiling",
+         x="Unmodified Contract Ceiling")#,
+  # fill="Termination Completion"
 )
 
 
 (
-ggplot(cbre_preclean, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year,y=n_CBre)) +#,color=qGrowth
-  geom_point(alpha=0.25,shape=".")+
-  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+scale_y_log10()+
-  #+
-  geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-# facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
-  labs(title="Distribution of Ceiling Breaches",
-       y="Absolute Growth in  Ceiling",
-       x="Unmodified Contract Ceiling")#,
-       # fill="Termination Completion"
+  ggplot(cbre_preclean, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year,y=n_CBre)) +#,color=qGrowth
+    geom_point(alpha=0.25,shape=".")+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()+
+    #+
+    geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+    # facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
+    labs(title="Distribution of Ceiling Breaches",
+         y="Absolute Growth in  Ceiling",
+         x="Unmodified Contract Ceiling")#,
+  # fill="Termination Completion"
 )
 
 (
-ggplot(cbre_preclean, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year+ChangeOrderBaseAndAllOptionsValue,y=Action_Obligation_Then_Year)) +#,color=qGrowth
-  geom_point(alpha=0.25,shape=".")+
-  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+scale_y_log10()#+
+  ggplot(cbre_preclean, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year+ChangeOrderBaseAndAllOptionsValue,y=Action_Obligation_Then_Year)) +#,color=qGrowth
+    geom_point(alpha=0.25,shape=".")+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()#+
   #+
-#   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-# # facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
-#   labs(title="Distribution of Ceiling Breaches",
-#        y="Percent of Growth in  Ceiling",
-#        x="Unmodified Contract Ceiling")#,
-#        # fill="Termination Completion"
+  #   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+  # # facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
+  #   labs(title="Distribution of Ceiling Breaches",
+  #        y="Percent of Growth in  Ceiling",
+  #        x="Unmodified Contract Ceiling")#,
+  #        # fill="Termination Completion"
 )
 
 summary(cbre_preclean$ChangeOrderBaseAndAllOptionsValue)
@@ -192,31 +190,31 @@ summary(cbre_preclean$ChangeOrderBaseAndAllOptionsValue)
 
 
 (
-ggplot(cbre_preclean, aes(x=n_CBre,y=ChangeOrderBaseAndAllOptionsValue)) +#,color=qGrowth
-  geom_point(alpha=0.25,shape=".")+
-  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+scale_y_log10()#+
+  ggplot(cbre_preclean, aes(x=n_CBre,y=ChangeOrderBaseAndAllOptionsValue)) +#,color=qGrowth
+    geom_point(alpha=0.25,shape=".")+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()#+
   #+
-#   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-# # facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
-#   labs(title="Distribution of Ceiling Breaches",
-#        y="Percent of Growth in  Ceiling",
-#        x="Unmodified Contract Ceiling")#,
-#        # fill="Termination Completion"
+  #   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+  # # facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
+  #   labs(title="Distribution of Ceiling Breaches",
+  #        y="Percent of Growth in  Ceiling",
+  #        x="Unmodified Contract Ceiling")#,
+  #        # fill="Termination Completion"
 )
 
 (
-ggplot(cbre_preclean, aes(x=p_CBre-1,fill=qGrowth)) +
-  geom_histogram(bins=100)+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+
-  #+
-  geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
-  labs(title="Distribution of Ceiling Breaches",
-       y="Contract Count",
-       x="Percent of Growth in  Ceiling")#,
-       # fill="Termination Completion"
+  ggplot(cbre_preclean, aes(x=p_CBre-1,fill=qGrowth)) +
+    geom_histogram(bins=100)+
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+
+    #+
+    geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+    facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
+    labs(title="Distribution of Ceiling Breaches",
+         y="Contract Count",
+         x="Percent of Growth in  Ceiling")#,
+  # fill="Termination Completion"
 )
 
 
@@ -225,13 +223,13 @@ facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
 
 
 (
-ggplot(cbre_preclean, aes(x=n_CBre,fill=qGrowth)) +
-  geom_histogram(bins=100)+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+
-  #+
-  geom_vline(xintercept = 1)#+geom_vline(xintercept = 0.1)+
-#facet_grid(NoPreTermObl~.,scales="free_y", space="free_y")+
+  ggplot(cbre_preclean, aes(x=n_CBre,fill=qGrowth)) +
+    geom_histogram(bins=100)+
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+
+    #+
+    geom_vline(xintercept = 1)#+geom_vline(xintercept = 0.1)+
+  #facet_grid(NoPreTermObl~.,scales="free_y", space="free_y")+
   # labs(title="Distribution of Contracts with Obligations After Last termination",
   #      y="Contract Count",
   #      x="Percent of Obligations After Day of Termination",
@@ -239,15 +237,15 @@ ggplot(cbre_preclean, aes(x=n_CBre,fill=qGrowth)) +
 )
 
 (
-ggplot(cbre_preclean, aes(x=n_CBre,fill=qGrowth)) +
-  geom_histogram(bins=100)+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+
-  #+
-  geom_vline(xintercept = 1)+
-facet_wrap(~Ceil,scales="free_y")#+, space="free_y"
-#+geom_vline(xintercept = 0.1)+
-#facet_grid(NoPreTermObl~.,scales="free_y", space="free_y")+
+  ggplot(cbre_preclean, aes(x=n_CBre,fill=qGrowth)) +
+    geom_histogram(bins=100)+
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+
+    #+
+    geom_vline(xintercept = 1)+
+    facet_wrap(~Ceil,scales="free_y")#+, space="free_y"
+  #+geom_vline(xintercept = 0.1)+
+  #facet_grid(NoPreTermObl~.,scales="free_y", space="free_y")+
   # labs(title="Distribution of Contracts with Obligations After Last termination",
   #      y="Contract Count",
   #      x="Percent of Obligations After Day of Termination",
@@ -288,21 +286,23 @@ Construction of "STUDENT DORMITORIES 1 & 2" 447M corrected by the next transacti
 ## W912IM
 
 ### Contract Initial Examination
+
+#### Ceiling/Change Orders  
 ```{r W912UM}
 sum(W912UM$Action_Obligation_Then_Year[])
 
 (
-ggplot(W912UM, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year+ChangeOrderBaseAndAllOptionsValue,y=Action_Obligation_Then_Year)) +#,color=qGrowth
-  geom_point(alpha=0.25,shape=".")+
-  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+scale_y_log10()+
-  #+
-#   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-facet_wrap(~StartFY,scales="free_y")#+, space="free_y"
-#   labs(title="Distribution of Ceiling Breaches",
-#        y="Percent of Growth in  Ceiling",
-#        x="Unmodified Contract Ceiling")#,
-#        # fill="Termination Completion"
+  ggplot(W912UM, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year+ChangeOrderBaseAndAllOptionsValue,y=Action_Obligation_Then_Year)) +#,color=qGrowth
+    geom_point(alpha=0.25,shape=".")+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()+
+    #+
+    #   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+    facet_wrap(~StartFY,scales="free_y")#+, space="free_y"
+  #   labs(title="Distribution of Ceiling Breaches",
+  #        y="Percent of Growth in  Ceiling",
+  #        x="Unmodified Contract Ceiling")#,
+  #        # fill="Termination Completion"
 )
 
 summary(W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)
@@ -310,25 +310,25 @@ W912UM$unmodWon<-NA
 W912UM$unmodWon[W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year>=W912UM$Action_Obligation_Then_Year*400&
                   W912UM$Action_Obligation_Then_Year>0]<-'WON Unm'
 W912UM$unmodWon[is.na(W912UM$unmodWon) &
-                    W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year>=W912UM$Action_Obligation_Then_Year*20 &
+                  W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year>=W912UM$Action_Obligation_Then_Year*20 &
                   W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year>10000
-                  ]<-'? Unm'
+                ]<-'? Unm'
 W912UM$unmodWon[is.na(W912UM$unmodWon) &
-                    (W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year<W912UM$Action_Obligation_Then_Year*20|
-                  W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year<10000)]<-'$ Unm'
+                  (W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year<W912UM$Action_Obligation_Then_Year*20|
+                     W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year<10000)]<-'$ Unm'
 summary(factor(W912UM$unmodWon))
 
 
 W912UM$changeWon<-NA
 W912UM$changeWon[abs(W912UM$ChangeOrderBaseAndAllOptionsValue)==0]<-'0 Chg'
 W912UM$changeWon[abs(W912UM$ChangeOrderBaseAndAllOptionsValue)>=W912UM$Action_Obligation_Then_Year*100&
-                  W912UM$ChangeOrderBaseAndAllOptionsValue>10000]<-'WON Chg'
+                   W912UM$ChangeOrderBaseAndAllOptionsValue>10000]<-'WON Chg'
 W912UM$changeWon[is.na(W912UM$changeWon) &
-                    abs(W912UM$ChangeOrderBaseAndAllOptionsValue)>=W912UM$Action_Obligation_Then_Year*10&
-                  W912UM$ChangeOrderBaseAndAllOptionsValue>10000]<-'? Chg'
+                   abs(W912UM$ChangeOrderBaseAndAllOptionsValue)>=W912UM$Action_Obligation_Then_Year*10&
+                   W912UM$ChangeOrderBaseAndAllOptionsValue>10000]<-'? Chg'
 W912UM$changeWon[is.na(W912UM$changeWon) &
-                  (abs(W912UM$ChangeOrderBaseAndAllOptionsValue)<W912UM$Action_Obligation_Then_Year*10|
-                   W912UM$ChangeOrderBaseAndAllOptionsValue<=10000)]<-'$ Chg'
+                   (abs(W912UM$ChangeOrderBaseAndAllOptionsValue)<W912UM$Action_Obligation_Then_Year*10|
+                      W912UM$ChangeOrderBaseAndAllOptionsValue<=10000)]<-'$ Chg'
 summary(factor(W912UM$changeWon))
 
 
@@ -336,63 +336,63 @@ W912UM$sumWon<-NA
 W912UM$sumWon[W912UM$Action_Obligation_Then_Year==0]<-'0 Obl'
 W912UM$sumWon[W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
                 W912UM$ChangeOrderBaseAndAllOptionsValue>=W912UM$Action_Obligation_Then_Year*400&
-                 W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
+                W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
                 W912UM$ChangeOrderBaseAndAllOptionsValue>10000]<-'WON Sum'
 W912UM$sumWon[is.na(W912UM$sumWon) &
-                    W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
+                W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
                 W912UM$ChangeOrderBaseAndAllOptionsValue>=W912UM$Action_Obligation_Then_Year*20&
-                 W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
+                W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
                 W912UM$ChangeOrderBaseAndAllOptionsValue>10000]<-'? Sum'
 W912UM$sumWon[is.na(W912UM$sumWon) &
-                    (W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
-                W912UM$ChangeOrderBaseAndAllOptionsValue<W912UM$Action_Obligation_Then_Year*20|
-                 W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
-                W912UM$ChangeOrderBaseAndAllOptionsValue>10000)]<-'$ Sum'
+                (W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
+                   W912UM$ChangeOrderBaseAndAllOptionsValue<W912UM$Action_Obligation_Then_Year*20|
+                   W912UM$UnmodifiedContractBaseAndAllOptionsValue_Then_Year+
+                   W912UM$ChangeOrderBaseAndAllOptionsValue>10000)]<-'$ Sum'
 summary(factor(W912UM$sumWon))
 
 
 
 (
-ggplot(W912UM, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year+ChangeOrderBaseAndAllOptionsValue,y=Action_Obligation_Then_Year,color=sumWon)) +#,color=qGrowth
-  geom_point(alpha=0.25)+
-  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+scale_y_log10()+
-  #+
-#   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-facet_grid(unmodWon~changeWon)#+, space="free_y"
-#   labs(title="Distribution of Ceiling Breaches",
-#        y="Percent of Growth in  Ceiling",
-#        x="Unmodified Contract Ceiling")#,
-#        # fill="Termination Completion"
+  ggplot(W912UM, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year+ChangeOrderBaseAndAllOptionsValue,y=Action_Obligation_Then_Year,color=sumWon)) +#,color=qGrowth
+    geom_point(alpha=0.25)+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()+
+    #+
+    #   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+    facet_grid(unmodWon~changeWon)#+, space="free_y"
+  #   labs(title="Distribution of Ceiling Breaches",
+  #        y="Percent of Growth in  Ceiling",
+  #        x="Unmodified Contract Ceiling")#,
+  #        # fill="Termination Completion"
 )
 
 
 (
-ggplot(W912UM, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year+ChangeOrderBaseAndAllOptionsValue,y=Action_Obligation_Then_Year,color=sumWon)) +#,color=qGrowth
-  geom_point(alpha=0.25)+
-  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+scale_y_log10()+
-  #+
-#   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-facet_wrap(~Veh)#+, space="free_y"
-#   labs(title="Distribution of Ceiling Breaches",
-#        y="Percent of Growth in  Ceiling",
-#        x="Unmodified Contract Ceiling")#,
-#        # fill="Termination Completion"
+  ggplot(W912UM, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year+ChangeOrderBaseAndAllOptionsValue,y=Action_Obligation_Then_Year,color=sumWon)) +#,color=qGrowth
+    geom_point(alpha=0.25)+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()+
+    #+
+    #   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+    facet_wrap(~Veh)#+, space="free_y"
+  #   labs(title="Distribution of Ceiling Breaches",
+  #        y="Percent of Growth in  Ceiling",
+  #        x="Unmodified Contract Ceiling")#,
+  #        # fill="Termination Completion"
 )
 
 (
-ggplot(W912UM, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year+ChangeOrderBaseAndAllOptionsValue,y=Action_Obligation_Then_Year,color=sumWon)) +#,color=qGrowth
-  geom_point(alpha=0.25)+
-  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+scale_y_log10()+
-  #+
-#   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-facet_wrap(~Intl)#+, space="free_y"
-#   labs(title="Distribution of Ceiling Breaches",
-#        y="Percent of Growth in  Ceiling",
-#        x="Unmodified Contract Ceiling")#,
-#        # fill="Termination Completion"
+  ggplot(W912UM, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year+ChangeOrderBaseAndAllOptionsValue,y=Action_Obligation_Then_Year,color=sumWon)) +#,color=qGrowth
+    geom_point(alpha=0.25)+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()+
+    #+
+    #   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+    facet_wrap(~Intl)#+, space="free_y"
+  #   labs(title="Distribution of Ceiling Breaches",
+  #        y="Percent of Growth in  Ceiling",
+  #        x="Unmodified Contract Ceiling")#,
+  #        # fill="Termination Completion"
 )
 
 summary(W912UM$Intl)
@@ -407,8 +407,129 @@ statsummary_discrete(c("unmodWon"), W912UM %>% filter(Intl=="Any Intl."&
 ```
 
 All of the questionable contracts take place internationally and none use BPA/BOA or FSS/GWACs. That makes sense and raises confidence, but given that the clearly USD contract categories are less common, this doesn't help in resolving the ambiguous cases. That said, Single Award IDCs appear to have most of the ambigious cases, which suggests that this might be resolvable by looking at parent IDVs in those cases. 
+
+#### Base/Options
+```{r W912UMExercised}
+(
+  ggplot(W912UM, aes(x=UnmodifiedBaseandExercisedOptionsValue+ExercisedOptions,y=Action_Obligation_Then_Year)) +#,color=q_OptGrowth
+    geom_point(alpha=0.25,shape=".")+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()+
+    #+
+    #   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+    facet_wrap(~StartFY,scales="free_y")#+, space="free_y"
+  #   labs(title="Distribution of Exercised Options",
+  #        y="Percent of Options Growth from Base",
+  #        x="Unmodified Contract Base")#,
+  #        # fill="Termination Completion"
+)
+
+summary(W912UM$UnmodifiedBaseandExercisedOptionsValue)
+W912UM$baseWon<-NA
+W912UM$baseWon[W912UM$UnmodifiedBaseandExercisedOptionsValue>=W912UM$Action_Obligation_Then_Year*400&
+                 W912UM$Action_Obligation_Then_Year>0]<-'WON Base'
+W912UM$baseWon[is.na(W912UM$baseWon) &
+                 W912UM$UnmodifiedBaseandExercisedOptionsValue>=W912UM$Action_Obligation_Then_Year*20 &
+                 W912UM$UnmodifiedBaseandExercisedOptionsValue>10000
+               ]<-'? Base'
+W912UM$baseWon[is.na(W912UM$baseWon) &
+                 (W912UM$UnmodifiedBaseandExercisedOptionsValue<W912UM$Action_Obligation_Then_Year*20|
+                    W912UM$UnmodifiedBaseandExercisedOptionsValue<10000)]<-'$ Base'
+summary(factor(W912UM$baseWon))
+
+
+W912UM$optWon<-NA
+W912UM$optWon[abs(W912UM$ExercisedOptions)==0]<-'0 Opt'
+W912UM$optWon[abs(W912UM$ExercisedOptions)>=W912UM$Action_Obligation_Then_Year*100&
+                W912UM$ExercisedOptions>10000]<-'WON Opt'
+W912UM$optWon[is.na(W912UM$optWon) &
+                abs(W912UM$ExercisedOptions)>=W912UM$Action_Obligation_Then_Year*10&
+                W912UM$ExercisedOptions>10000]<-'? Opt'
+W912UM$optWon[is.na(W912UM$optWon) &
+                (abs(W912UM$ExercisedOptions)<W912UM$Action_Obligation_Then_Year*10|
+                   W912UM$ExercisedOptions<=10000)]<-'$ Opt'
+summary(factor(W912UM$optWon))
+
+
+W912UM$sumWon<-NA
+W912UM$sumWon[W912UM$Action_Obligation_Then_Year==0]<-'0 Obl'
+W912UM$sumWon[W912UM$UnmodifiedBaseandExercisedOptionsValue+
+                W912UM$ExercisedOptions>=W912UM$Action_Obligation_Then_Year*400&
+                W912UM$UnmodifiedBaseandExercisedOptionsValue+
+                W912UM$ExercisedOptions>10000]<-'WON Sum'
+W912UM$sumWon[is.na(W912UM$sumWon) &
+                W912UM$UnmodifiedBaseandExercisedOptionsValue+
+                W912UM$ExercisedOptions>=W912UM$Action_Obligation_Then_Year*20&
+                W912UM$UnmodifiedBaseandExercisedOptionsValue+
+                W912UM$ExercisedOptions>10000]<-'? Sum'
+W912UM$sumWon[is.na(W912UM$sumWon) &
+                (W912UM$UnmodifiedBaseandExercisedOptionsValue+
+                   W912UM$ExercisedOptions<W912UM$Action_Obligation_Then_Year*20|
+                   W912UM$UnmodifiedBaseandExercisedOptionsValue+
+                   W912UM$ExercisedOptions>10000)]<-'$ Sum'
+summary(factor(W912UM$sumWon))
+
+
+
+(
+  ggplot(W912UM, aes(x=UnmodifiedBaseandExercisedOptionsValue+ExercisedOptions,y=Action_Obligation_Then_Year,color=sumWon)) +#,color=q_OptGrowth
+    geom_point(alpha=0.25)+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()+
+    #+
+    #   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+    facet_grid(baseWon~optWon)#+, space="free_y"
+  #   labs(title="Distribution of Exercised Options",
+  #        y="Percent of Options Growth from Base",
+  #        x="Unmodified Contract Base")#,
+  #        # fill="Termination Completion"
+)
+
+
+(
+  ggplot(W912UM, aes(x=UnmodifiedBaseandExercisedOptionsValue+ExercisedOptions,y=Action_Obligation_Then_Year,color=sumWon)) +#,color=q_OptGrowth
+    geom_point(alpha=0.25)+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()+
+    #+
+    #   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+    facet_wrap(~Veh)#+, space="free_y"
+  #   labs(title="Distribution of Exercised Options",
+  #        y="Percent of Options Growth from Base",
+  #        x="Unmodified Contract Base")#,
+  #        # fill="Termination Completion"
+)
+
+(
+  ggplot(W912UM, aes(x=UnmodifiedBaseandExercisedOptionsValue+ExercisedOptions,y=Action_Obligation_Then_Year,color=sumWon)) +#,color=q_OptGrowth
+    geom_point(alpha=0.25)+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()+
+    #+
+    #   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+    facet_wrap(~Intl)#+, space="free_y"
+  #   labs(title="Distribution of Exercised Options",
+  #        y="Percent of Options Growth from Base",
+  #        x="Unmodified Contract Base")#,
+  #        # fill="Termination Completion"
+)
+
+summary(W912UM$Intl)
+W912UM$baseWon<-factor(W912UM$baseWon)
+summary(W912UM$Veh)
+summary(W912UM$baseWon)
+summary(factor(W912UM$optWon))
+statsummary_discrete(c("baseWon"), W912UM %>% filter(Intl=="Any Intl."&
+                                                       !Veh %in% c("FSS/GWAC","BPA/BOA")),
+                     value_col="Action_Obligation_Then_Year")
+
+```
+
+All of the questionable contracts take place internationally and none use BPA/BOA or FSS/GWACs. That makes sense and raises confidence, but given that the clearly USD contract categories are less common, this doesn't help in resolving the ambiguous cases. That said, Single Award IDCs appear to have most of the ambigious cases, which suggests that this might be resolvable by looking at parent IDVs in those cases. 
+
 ### Transaction
 #### Unmodified Transactions
+##### Ceiling
 ```{r W912UM_transction_unmodified}
 # W912UMtrans<-read.delim(file="..\\data\\semi_clean\\W912UM_complete.txt", sep="\t")
 
@@ -416,10 +537,12 @@ All of the questionable contracts take place internationally and none use BPA/BO
 
 W912UMtrans<-inner_join(W912UMtrans,W912UM %>% group_by() %>%
                           dplyr::select(CSIScontractID,
-                                        unmodWon,sumWon,changeWon,
+                                        unmodWon,sumWon,changeWon,baseWon,optWon,
                                         ChangeOrderBaseAndAllOptionsValue,
                                         UnmodifiedContractBaseAndAllOptionsValue_Then_Year,
                                         Action_Obligation_Then_Year,
+                                        UnmodifiedBaseandExercisedOptionsValue,
+                                        ExercisedOptions,
                                         n_CBre),
                         by="CSIScontractID")
 
@@ -427,18 +550,18 @@ W912UMtrans$unmodWonT<-NA
 W912UMtrans$unmodWonT[W912UMtrans$baseandalloptionsvalue>=W912UMtrans$obligatedamount*400&
                         W912UMtrans$baseandalloptionsvalue>10000&
                         W912UMtrans$baseandalloptionsvalue>=W912UMtrans$Action_Obligation_Then_Year*400&
-                       (W912UMtrans$obligatedamount>0 | W912UMtrans$Action_Obligation_Then_Year>0)& 
-                       W912UMtrans$modnumber=='0']<-'WON Unm'
+                        (W912UMtrans$obligatedamount>0 | W912UMtrans$Action_Obligation_Then_Year>0)& 
+                        W912UMtrans$modnumber=='0']<-'WON Unm'
 W912UMtrans$unmodWonT[is.na(W912UMtrans$unmodWonT) &
-                    W912UMtrans$baseandalloptionsvalue>=W912UMtrans$obligatedamount*20&
-                      W912UMtrans$baseandalloptionsvalue>10000&
+                        W912UMtrans$baseandalloptionsvalue>=W912UMtrans$obligatedamount*20&
+                        W912UMtrans$baseandalloptionsvalue>10000&
                         W912UMtrans$baseandalloptionsvalue>=W912UMtrans$Action_Obligation_Then_Year*20&
-                      W912UMtrans$modnumber=='0']<-'? Unm'
+                        W912UMtrans$modnumber=='0']<-'? Unm'
 W912UMtrans$unmodWonT[is.na(W912UMtrans$unmodWonT) &
-                    (W912UMtrans$baseandalloptionsvalue<W912UMtrans$obligatedamount*20|
-                        W912UMtrans$baseandalloptionsvalue<W912UMtrans$Action_Obligation_Then_Year*20|
-                       W912UMtrans$baseandalloptionsvalue<=10000) &
-                      W912UMtrans$modnumber=='0']<-'$ Unm'
+                        (W912UMtrans$baseandalloptionsvalue<W912UMtrans$obligatedamount*20|
+                           W912UMtrans$baseandalloptionsvalue<W912UMtrans$Action_Obligation_Then_Year*20|
+                           W912UMtrans$baseandalloptionsvalue<=10000) &
+                        W912UMtrans$modnumber=='0']<-'$ Unm'
 W912UMtrans$unmodWonT[W912UMtrans$modnumber!='0']<-"Not Unmodified Transaction"
 
 
@@ -456,12 +579,12 @@ if(any(is.na(W912UMtrans$unmodWonT))) stop("Unclassified unmodWonT")
 #Examining ?s
 # View(W912UMtrans %>% filter(unmodWonT=='? Unm'& obligatedamount>0) )
 # View(W912UMtrans %>% filter(unmodWonT=='? Unm'& obligatedamount==0) )
-  
+
 
 statsummary_discrete(c("unmodWon"),W912UMtrans %>% filter(modnumber=='0'),
                      value_col="Action_Obligation_Then_Year")
 grouped_barplot(c("unmodWon"),W912UMtrans %>% filter(modnumber=='0'),
-                     value_col="Action_Obligation_Then_Year")
+                value_col="Action_Obligation_Then_Year")
 
 UnmodDisagree<-W912UMtrans %>% filter(unmodWonT=='WON Unm'& unmodWon!='WON Unm') 
 # View(W912UM %>% filter(CSIScontractID %in% UnmodDisagree$CSIScontractID))
@@ -471,14 +594,14 @@ CSIScontractID_ceil_to_na<-W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT == '
 
 #Spreading  the labeled values to modified entries, which helps in the next step.
 W912UMtrans$unmodWonT[W912UMtrans$unmodWonT=="Not Unmodified Transaction" &
-  W912UMtrans$CSIScontractID %in% CSIScontractID_ceil_to_na]<-'WON Unm'
+                        W912UMtrans$CSIScontractID %in% CSIScontractID_ceil_to_na]<-'WON Unm'
 # 
 W912UMtrans$unmodWonT[W912UMtrans$unmodWonT=="Not Unmodified Transaction" &
-  W912UMtrans$CSIScontractID %in% W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT == '? Unm'&
-                                                        !is.na(W912UMtrans$unmodWonT)]]<- '? Unm'
+                        W912UMtrans$CSIScontractID %in% W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT == '? Unm'&
+                                                                                     !is.na(W912UMtrans$unmodWonT)]]<- '? Unm'
 W912UMtrans$unmodWonT[W912UMtrans$unmodWonT=="Not Unmodified Transaction" &
-  W912UMtrans$CSIScontractID %in% W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT == '$ Unm'&
-                                                        !is.na(W912UMtrans$unmodWonT)]]<- '$ Unm'
+                        W912UMtrans$CSIScontractID %in% W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT == '$ Unm'&
+                                                                                     !is.na(W912UMtrans$unmodWonT)]]<- '$ Unm'
 
 summary(factor(W912UMtrans$unmodWonT))
 ```
@@ -491,50 +614,126 @@ Contracts ceilings are marked null if:
 * Initial or total obligations are positive.
 Then it the ceiling is set to NA and it will not be in the sample.
 
+##### Base
+```{r W912UM_exercised_transction_base}
+# W912UMtrans<-read.delim(file="..\\data\\semi_clean\\W912UM_complete.txt", sep="\t")
 
-#### Change Order Transactions
+
+
+W912UMtrans$ExercisedOptions[is.na(W912UMtrans$ExercisedOptions)]<-0
+W912UMtrans$baseandexercisedoptionsvalue<-as.numeric(as.character(W912UMtrans$baseandexercisedoptionsvalue))
+W912UMtrans$baseWonT<-NA
+W912UMtrans$baseWonT[W912UMtrans$baseandexercisedoptionsvalue>=W912UMtrans$obligatedamount*400&
+                       W912UMtrans$baseandexercisedoptionsvalue>10000&
+                       W912UMtrans$baseandexercisedoptionsvalue>=W912UMtrans$Action_Obligation_Then_Year*400&
+                       (W912UMtrans$obligatedamount>0 | W912UMtrans$Action_Obligation_Then_Year>0)& 
+                       W912UMtrans$modnumber=='0']<-'WON Base'
+W912UMtrans$baseWonT[is.na(W912UMtrans$baseWonT) &
+                       W912UMtrans$baseandexercisedoptionsvalue>=W912UMtrans$obligatedamount*20&
+                       W912UMtrans$baseandexercisedoptionsvalue>10000&
+                       W912UMtrans$baseandexercisedoptionsvalue>=W912UMtrans$Action_Obligation_Then_Year*20&
+                       W912UMtrans$modnumber=='0']<-'? Base'
+W912UMtrans$baseWonT[is.na(W912UMtrans$baseWonT) &
+                       (W912UMtrans$baseandexercisedoptionsvalue<W912UMtrans$obligatedamount*20|
+                          W912UMtrans$baseandexercisedoptionsvalue<W912UMtrans$Action_Obligation_Then_Year*20|
+                          W912UMtrans$baseandexercisedoptionsvalue<=10000) &
+                       W912UMtrans$modnumber=='0']<-'$ Base'
+W912UMtrans$baseWonT[W912UMtrans$modnumber!='0']<-"Not Unmodified Transaction"
+
+
+
+
+summary(factor(W912UMtrans$baseWonT))
+
+if(any(is.na(W912UMtrans$baseWonT))) stop("Unclassified baseWonT")
+# View(W912UMtrans[is.na(),])
+# write.csv(file="..\\Data\\semi_clean\\NA_baseWonT.csv",W912UMtrans[is.na(W912UMtrans$baseWonT),],row.names = FALSE)
+
+#Examining disagreements
+# View(W912UMtrans %>% filter(baseWonT=='WON Base'& unmodWon!='WON Base') )
+# View(W912UMtrans %>% filter(baseWonT!='WON Base'& unmodWon=='WON Base') )
+#Examining ?s
+# View(W912UMtrans %>% filter(baseWonT=='? Base'& obligatedamount>0) )
+# View(W912UMtrans %>% filter(baseWonT=='? Base'& obligatedamount==0) )
+
+
+statsummary_discrete(c("baseWonT"),W912UMtrans %>% filter(modnumber=='0'),
+                     value_col="Action_Obligation_Then_Year")
+grouped_barplot(c("baseWonT"),W912UMtrans %>% filter(modnumber=='0'),
+                value_col="Action_Obligation_Then_Year")
+
+UnmodDisagree<-W912UMtrans %>% filter(baseWonT=='WON Base'& unmodWon!='WON Base') 
+# View(W912UM %>% filter(CSIScontractID %in% UnmodDisagree$CSIScontractID))
+CSIScontractID_ceil_to_na<-W912UMtrans$CSIScontractID[W912UMtrans$baseWonT == 'WON Base'&
+                                                        !is.na(W912UMtrans$baseWonT)]
+
+
+#Spreading  the labeled values to modified entries, which helps in the next step.
+W912UMtrans$baseWonT[W912UMtrans$baseWonT=="Not Unmodified Transaction" &
+                       W912UMtrans$CSIScontractID %in% CSIScontractID_ceil_to_na]<-'WON Base'
+# 
+W912UMtrans$baseWonT[W912UMtrans$baseWonT=="Not Unmodified Transaction" &
+                       W912UMtrans$CSIScontractID %in% W912UMtrans$CSIScontractID[W912UMtrans$baseWonT == '? Base'&
+                                                                                    !is.na(W912UMtrans$baseWonT)]]<- '? Base'
+W912UMtrans$baseWonT[W912UMtrans$baseWonT=="Not Unmodified Transaction" &
+                       W912UMtrans$CSIScontractID %in% W912UMtrans$CSIScontractID[W912UMtrans$baseWonT == '$ Base'&
+                                                                                    !is.na(W912UMtrans$baseWonT)]]<- '$ Base'
+
+summary(factor(W912UMtrans$baseWonT))
+```
+
+
+Contracts bases are marked null if:
+* Contracting office W912UM 
+* Initial transaction has a base 400 times obligations.
+* initial base 400 times total obligations.
+* Initial or total obligations are positive.
+Then it the base is set to NA and it will not be in the sample.
+
+#### Modified Transactions
+##### Change Order Transactions
 ```{r W912UM_transaction}
 
 W912UMtrans$changeWonT<-NA
 W912UMtrans$changeWonT[W912UMtrans$modnumber=='0']<-"Unmodified Transaction"
 W912UMtrans$changeWonT[is.na(W912UMtrans$changeWonT)&
-                      (W912UMtrans$baseandalloptionsvalue==0 | 
-                       W912UMtrans$n_CBre==0)
-                    &W912UMtrans$modnumber!='0']<-'0 Chg Growth'
+                         (W912UMtrans$baseandalloptionsvalue==0 | 
+                            W912UMtrans$n_CBre==0)
+                       &W912UMtrans$modnumber!='0']<-'0 Chg Growth'
 W912UMtrans$changeWonT[is.na(W912UMtrans$changeWonT)&
-                      abs(W912UMtrans$baseandalloptionsvalue)>=abs(W912UMtrans$obligatedamount*400)&
-                        (abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)+
-                           W912UMtrans$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)>=
-                       W912UMtrans$Action_Obligation_Then_Year*10&
-                      abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)>10000
-                        # (W912UMtrans$baseandalloptionsvalue>=
-                        #    W912UMtrans$UnmodifiedContractBaseAndAllOptionsValue_Then_Year*100 |
+                         abs(W912UMtrans$baseandalloptionsvalue)>=abs(W912UMtrans$obligatedamount*400)&
+                         (abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)+
+                            W912UMtrans$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)>=
+                         W912UMtrans$Action_Obligation_Then_Year*10&
+                         abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)>10000
+                       # (W912UMtrans$baseandalloptionsvalue>=
+                       #    W912UMtrans$UnmodifiedContractBaseAndAllOptionsValue_Then_Year*100 |
                        #   (!is.na(W912UMtrans$unmodWonT) & W912UMtrans$unmodWonT %in% c('WON Unm','? Unm')))&
                        # # (W912UMtrans$obligatedamount>0 | W912UMtrans$Action_Obligation_Then_Year>0)& 
-                      # abs(W912UMtrans$baseandalloptionsvalue)>0 & W912UMtrans$ChangeOrderBaseAndAllOptionsValue>0
-                    ]<-'WON Chg'
+                       # abs(W912UMtrans$baseandalloptionsvalue)>0 & W912UMtrans$ChangeOrderBaseAndAllOptionsValue>0
+                       ]<-'WON Chg'
 W912UMtrans$changeWonT[is.na(W912UMtrans$changeWonT) &
-                        abs(W912UMtrans$baseandalloptionsvalue)>=abs(W912UMtrans$obligatedamount*20)&
-                        (abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)+
-                           W912UMtrans$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)>=
-                       W912UMtrans$Action_Obligation_Then_Year*5&
-                      abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)
-                        # (W912UMtrans$baseandalloptionsvalue>=
-                        #    W912UMtrans$UnmodifiedContractBaseAndAllOptionsValue_Then_Year*10 |
-                        #  (!is.na(W912UMtrans$unmodWonT) & W912UMtrans$unmodWonT %in% c('WON Unm','? Unm')))&
-                      # abs(W912UMtrans$baseandalloptionsvalue)>0 & W912UMtrans$ChangeOrderBaseAndAllOptionsValue>0
-                      ]<-'? Chg'
+                         abs(W912UMtrans$baseandalloptionsvalue)>=abs(W912UMtrans$obligatedamount*20)&
+                         (abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)+
+                            W912UMtrans$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)>=
+                         W912UMtrans$Action_Obligation_Then_Year*5&
+                         abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)
+                       # (W912UMtrans$baseandalloptionsvalue>=
+                       #    W912UMtrans$UnmodifiedContractBaseAndAllOptionsValue_Then_Year*10 |
+                       #  (!is.na(W912UMtrans$unmodWonT) & W912UMtrans$unmodWonT %in% c('WON Unm','? Unm')))&
+                       # abs(W912UMtrans$baseandalloptionsvalue)>0 & W912UMtrans$ChangeOrderBaseAndAllOptionsValue>0
+                       ]<-'? Chg'
 W912UMtrans$changeWonT[is.na(W912UMtrans$changeWonT) &
-                        (abs(W912UMtrans$baseandalloptionsvalue)<abs(W912UMtrans$obligatedamount*20)|
-                        (abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)+
-                           W912UMtrans$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)<
-                       W912UMtrans$Action_Obligation_Then_Year*5 |
-                         abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)<=10000)
-                        # (W912UMtrans$baseandalloptionsvalue<
-                        #    W912UMtrans$UnmodifiedContractBaseAndAllOptionsValue_Then_Year*10 |
-                        #  (!is.na(W912UMtrans$unmodWonT) & W912UMtrans$unmodWonT %in% c('WON Unm','? Unm')))&
-                      # abs(W912UMtrans$baseandalloptionsvalue)>0 & W912UMtrans$ChangeOrderBaseAndAllOptionsValue>0
-                      ]<-'$ Chg'
+                         (abs(W912UMtrans$baseandalloptionsvalue)<abs(W912UMtrans$obligatedamount*20)|
+                            (abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)+
+                               W912UMtrans$UnmodifiedContractBaseAndAllOptionsValue_Then_Year)<
+                            W912UMtrans$Action_Obligation_Then_Year*5 |
+                            abs(W912UMtrans$ChangeOrderBaseAndAllOptionsValue)<=10000)
+                       # (W912UMtrans$baseandalloptionsvalue<
+                       #    W912UMtrans$UnmodifiedContractBaseAndAllOptionsValue_Then_Year*10 |
+                       #  (!is.na(W912UMtrans$unmodWonT) & W912UMtrans$unmodWonT %in% c('WON Unm','? Unm')))&
+                       # abs(W912UMtrans$baseandalloptionsvalue)>0 & W912UMtrans$ChangeOrderBaseAndAllOptionsValue>0
+                       ]<-'$ Chg'
 
 summary(factor(W912UMtrans$changeWonT))
 
@@ -543,6 +742,59 @@ if(any(is.na(W912UMtrans$changeWonT))) stop("Unclassified changeWonT")
 write.csv(file="..\\Data\\semi_clean\\changeWonT.csv",W912UMtrans %>% filter(changeWonT=="WON Chg"),row.names = FALSE)
 
 ```
+##### Exercised  Options Transactions
+```{r W912UM_exercised_transaction}
+
+W912UMtrans$optWonT<-NA
+W912UMtrans$optWonT[W912UMtrans$modnumber=='0']<-"Unmodified Transaction"
+W912UMtrans$optWonT[is.na(W912UMtrans$optWonT)&
+                      (W912UMtrans$baseandexercisedoptionsvalue==0 | 
+                         W912UMtrans$ExercisedOptions==0)
+                    &W912UMtrans$modnumber!='0']<-'0 Opt Growth'
+W912UMtrans$optWonT[is.na(W912UMtrans$optWonT)&
+                      abs(W912UMtrans$baseandexercisedoptionsvalue)>=abs(W912UMtrans$obligatedamount*400)&
+                      (abs(W912UMtrans$ExercisedOptions)+
+                         W912UMtrans$UnmodifiedBaseandExercisedOptionsValue)>=
+                      W912UMtrans$Action_Obligation_Then_Year*10&
+                      abs(W912UMtrans$ExercisedOptions)>10000
+                    # (W912UMtrans$baseandexercisedoptionsvalue>=
+                    #    W912UMtrans$UnmodifiedBaseandExercisedOptionsValue*100 |
+                    #   (!is.na(W912UMtrans$baseWonT) & W912UMtrans$baseWonT %in% c('WON Base','? Base')))&
+                    # # (W912UMtrans$obligatedamount>0 | W912UMtrans$Action_Obligation_Then_Year>0)& 
+                    # abs(W912UMtrans$baseandexercisedoptionsvalue)>0 & W912UMtrans$ExercisedOptions>0
+                    ]<-'WON Opt'
+W912UMtrans$optWonT[is.na(W912UMtrans$optWonT) &
+                      abs(W912UMtrans$baseandexercisedoptionsvalue)>=abs(W912UMtrans$obligatedamount*20)&
+                      (abs(W912UMtrans$ExercisedOptions)+
+                         W912UMtrans$UnmodifiedBaseandExercisedOptionsValue)>=
+                      W912UMtrans$Action_Obligation_Then_Year*5&
+                      abs(W912UMtrans$ExercisedOptions)
+                    # (W912UMtrans$baseandexercisedoptionsvalue>=
+                    #    W912UMtrans$UnmodifiedBaseandExercisedOptionsValue*10 |
+                    #  (!is.na(W912UMtrans$baseWonT) & W912UMtrans$baseWonT %in% c('WON Base','? Base')))&
+                    # abs(W912UMtrans$baseandexercisedoptionsvalue)>0 & W912UMtrans$ExercisedOptions>0
+                    ]<-'? Opt'
+W912UMtrans$optWonT[is.na(W912UMtrans$optWonT) &
+                      (abs(W912UMtrans$baseandexercisedoptionsvalue)<abs(W912UMtrans$obligatedamount*20)|
+                         (abs(W912UMtrans$ExercisedOptions)+
+                            W912UMtrans$UnmodifiedBaseandExercisedOptionsValue)<
+                         W912UMtrans$Action_Obligation_Then_Year*5 |
+                         abs(W912UMtrans$ExercisedOptions)<=10000)
+                    # (W912UMtrans$baseandexercisedoptionsvalue<
+                    #    W912UMtrans$UnmodifiedBaseandExercisedOptionsValue*10 |
+                    #  (!is.na(W912UMtrans$baseWonT) & W912UMtrans$baseWonT %in% c('WON Base','? Base')))&
+                    # abs(W912UMtrans$baseandexercisedoptionsvalue)>0 & W912UMtrans$ExercisedOptions>0
+                    ]<-'$ Opt'
+
+summary(factor(W912UMtrans$optWonT))
+
+if(any(is.na(W912UMtrans$optWonT))) stop("Unclassified optWonT")
+# View(W912UMtrans[is.na(W912UMtrans$optWonT),])
+write.csv(file="..\\Data\\semi_clean\\optWonT.csv",W912UMtrans %>% filter(optWonT=="WON Opt"),row.names = FALSE)
+
+```
+
+
 
 
 #### Examining International Related Vars
@@ -557,19 +809,38 @@ levels(W912UMtrans$vendorcountrycode)<-list(
 )
 
 summary(W912UMtrans$changeWonT)
+#Ceiling and Change Orders
 ggplot(W912UMtrans %>% filter(modnumber=='0') ,aes(x=unmodWonT))+geom_bar()+facet_wrap(~vendorcountrycode)
 ggplot(W912UMtrans %>% filter(modnumber!='0'),aes(x=changeWonT))+geom_bar()+facet_wrap(~vendorcountrycode)
 ggplot(W912UMtrans %>% filter(modnumber!='0'),aes(x=changeWonT))+geom_bar()+facet_wrap(~unmodWonT)
 ggplot(W912UMtrans,aes(x=sumWon))+geom_bar()+facet_wrap(~vendorcountrycode)
 
-W912UMtrans$placeofperformancecountrycode
+#Base and Options
+ggplot(W912UMtrans %>% filter(modnumber=='0') ,aes(x=baseWonT))+geom_bar()+facet_wrap(~vendorcountrycode)
+ggplot(W912UMtrans %>% filter(modnumber!='0'),aes(x=optWonT))+geom_bar()+facet_wrap(~vendorcountrycode)
+ggplot(W912UMtrans %>% filter(modnumber!='0'),aes(x=optWonT))+geom_bar()+facet_wrap(~baseWonT)
+ggplot(W912UMtrans,aes(x=sumWon))+geom_bar()+facet_wrap(~vendorcountrycode)
+
+
+#Ceiling and Change Order
 ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=unmodWon))+
   geom_bar()+facet_wrap(~placeofmanufacture)
 ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=unmodWon))+
   geom_bar()+facet_wrap(~countryoforigin)
 ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=unmodWon))+
   geom_bar()+facet_wrap(~placeofperformancecountrycode)
-                 
+
+#Base and Options
+
+W912UMtrans$placeofperformancecountrycode
+ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=baseWon))+
+  geom_bar()+facet_wrap(~placeofmanufacture)
+ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=baseWon))+
+  geom_bar()+facet_wrap(~countryoforigin)
+ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=baseWon))+
+  geom_bar()+facet_wrap(~placeofperformancecountrycode)
+
+summary(factor(W912UMtrans$optWonT))
 
 # View(W912UMtrans %>% filter(unmodWon %in% c("? Unm","Won Unm") & vendorcountrycode=="USA: UNITED STATES OF AMERICA" & modnumber=='0'))
 
@@ -584,11 +855,16 @@ summary(factor(W912UMtrans$changeWonT))
 Miscategorized<-W912UMtrans %>% filter((unmodWon %in% c("? Unm","WON Unm")|
                                           unmodWonT %in% c("? Unm","WON Unm")|
                                           changeWon %in% c("? Chg","WON Chg")|
-                                          changeWonT %in% c("? Chg","WON Chg")
-                                        )& (
+                                          changeWonT %in% c("? Chg","WON Chg")|
+                                          baseWon %in% c("? Base","WON Base")|
+                                          baseWonT %in% c("? Base","WON Base")|
+                                          optWon %in% c("? Opt","WON Opt")|
+                                          optWonT %in% c("? Opt","WON Opt")
+)& (
   
-    placeofperformancecountrycode=="USA")
-  & modnumber=='0')
+  placeofperformancecountrycode=="USA")
+& modnumber=='0')
+
 
 if(nrow(Miscategorized)>0) stop("False positive contract in Won performed in US")
 # View(W912UM %>% filter(CSIScontractID %in% Miscategorized$CSIScontractID))
@@ -599,15 +875,15 @@ if(nrow(Miscategorized)>0) stop("False positive contract in Won performed in US"
 # Cleaning
 ## Validating CSIS_contract_inspection
 ### Unmodified Ceiling in Won
-```{r validate_inspection_lookup}
+```{r validate_ceiling_inspection_lookup}
 inspected<-read.csv(file.path("https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
                               "contract/","CSIS_contract_inspection.csv"))
-                              
+
 #Identify incorrectly FALSE in inspection
 inspect_should_be_true<-inspected$CSIScontractID[
   inspected$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$unmodWon=="WON Unm"],
-                                     W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"])&
-  inspected$override_unmodified_ceiling==FALSE
+                                  W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"])&
+    inspected$override_unmodified_ceiling==FALSE
   ]
 
 if(length(inspect_should_be_true)>0){
@@ -623,13 +899,13 @@ rm(inspect_should_be_true)
 #Identify incorrectly true in inspection
 inspect_should_be_false<-inspected$CSIScontractID[
   !inspected$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$unmodWon=="WON Unm"],
-                                     W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"])&
-  inspected$override_unmodified_ceiling==TRUE &
+                                   W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"])&
+    inspected$override_unmodified_ceiling==TRUE &
     inspected$CSIS_inspection=="W912UM Won"
   ]
 
 if(length(inspect_should_be_false)>0){
-  inspected[inspected$CSIScontractID %in% inspect_should_be_true,]
+  inspected[inspected$CSIScontractID %in% inspect_should_be_false,]
   inspected$override_unmodified_ceiling[inspected$CSIScontractID %in% inspect_should_be_false]<-FALSE
   write.csv(inspected,file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
   stop(paste("CSIS_contract_inspection.csv has incorrect true values for",length(inspect_should_be_false),
@@ -640,22 +916,32 @@ rm(inspect_should_be_false)
 
 #Identify missing from csis_inspect
 inspect_missing<-unique(c(W912UM$CSIScontractID[W912UM$unmodWon=="WON Unm"],
-                                     W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"]))
+                          W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"]))
 inspect_missing<-inspect_missing[!inspect_missing %in% inspected$CSIScontractID]
 
 if(length(inspect_missing)>0){
   new_rows<-data.frame(CSIScontractID=inspect_missing,
-             override_unmodified_ceiling=TRUE,
-             override_unmodified_base=FALSE,
-             override_change_order_growth=FALSE,
-             override_exercised_growth=FALSE,
-             CSIS_inspection="W912UM Won")
-
+                       override_unmodified_ceiling=TRUE,
+                       override_unmodified_base=FALSE,
+                       override_change_order_growth=FALSE,
+                       override_exercised_growth=FALSE,
+                       CSIS_inspection="W912UM Won")
+  
+  
+  new_rows$override_unmodified_base[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$baseWon=="WON Base"],
+                                   W912UMtrans$CSIScontractID[W912UMtrans$baseWonT=="WON Base"])]<-TRUE
   
   new_rows$override_change_order_growth[
     new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
-                                                       W912UMtrans$CSIScontractID[W912UMtrans$changeWonT=="WON Chg"]
-                                                         )]<-TRUE
+                                   W912UMtrans$CSIScontractID[W912UMtrans$changeWonT=="WON Chg"]
+    )]<-TRUE
+  
+  new_rows$override_exercised_growth[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$optWon=="WON Opt"],
+                                   W912UMtrans$CSIScontractID[W912UMtrans$optWonT=="WON Opt"])]<-TRUE
+  
+  
   
   write.csv(rbind(inspected,new_rows),file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
   rm(new_rows)
@@ -665,17 +951,97 @@ if(length(inspect_missing)>0){
 }
 rm(inspect_missing)
 ```
-### Change Order in Won
-  
-```{r validate_inspection_lookup}
+
+### Unmodified Base in Won
+```{r validate_base_inspection_lookup}
 inspected<-read.csv(file.path("https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
                               "contract/","CSIS_contract_inspection.csv"))
-                              
+
+#Identify incorrectly FALSE in inspection
+inspect_should_be_true<-inspected$CSIScontractID[
+  inspected$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$baseWon=="WON Base"],
+                                  W912UMtrans$CSIScontractID[W912UMtrans$baseWonT=="WON Base"])&
+    inspected$override_unmodified_base==FALSE
+  ]
+
+summary(W912UMtrans$baseWon)
+
+if(length(inspect_should_be_true)>0){
+  inspected[inspected$CSIScontractID %in% inspect_should_be_true,]
+  inspected$override_unmodified_base[inspected$CSIScontractID %in% inspect_should_be_true]<-TRUE
+  write.csv(inspected,file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
+  stop(paste("CSIS_contract_inspection.csv has incorrect false values for",length(inspect_should_be_true),
+             "CSIScontractIDs in override_unmodified_base.",
+             "See Output/CSIS_contract_inspection.csv for updated file."))
+}
+rm(inspect_should_be_true)
+
+#Identify incorrectly true in inspection
+inspect_should_be_false<-inspected$CSIScontractID[
+  !inspected$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$baseWon=="WON Base"],
+                                   W912UMtrans$CSIScontractID[W912UMtrans$baseWonT=="WON Base"])&
+    inspected$override_unmodified_base==TRUE &
+    inspected$CSIS_inspection=="W912UM Won"
+  ]
+
+if(length(inspect_should_be_false)>0){
+  inspected[inspected$CSIScontractID %in% inspect_should_be_false,]
+  inspected$override_unmodified_base[inspected$CSIScontractID %in% inspect_should_be_false]<-FALSE
+  write.csv(inspected,file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
+  stop(paste("CSIS_contract_inspection.csv has incorrect true values for",length(inspect_should_be_false),
+             "CSIScontractIDs in override_unmodified_base.",
+             "See Output/CSIS_contract_inspection.csv for updated file."))
+}
+rm(inspect_should_be_false)
+
+#Identify missing from csis_inspect
+inspect_missing<-unique(c(W912UM$CSIScontractID[W912UM$baseWon=="WON Base"],
+                          W912UMtrans$CSIScontractID[W912UMtrans$baseWonT=="WON Base"]))
+inspect_missing<-inspect_missing[!inspect_missing %in% inspected$CSIScontractID]
+
+if(length(inspect_missing)>0){
+  new_rows<-data.frame(CSIScontractID=inspect_missing,
+                       override_unmodified_ceiling=FALSE,
+                       override_unmodified_base=TRUE,
+                       override_change_order_growth=FALSE,
+                       override_exercised_growth=FALSE,
+                       CSIS_inspection="W912UM Won")
+  
+  
+new_rows$override_unmodified_ceiling[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$unmodWon=="WON Unm"],
+                                   W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"]
+    )]<-TRUE
+    
+  new_rows$override_change_order_growth[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
+                                   W912UMtrans$CSIScontractID[W912UMtrans$changeWonT=="WON Chg"]
+    )]<-TRUE
+  new_rows$override_exercised_growth[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$optWon=="WON Opt"],
+                                   W912UMtrans$CSIScontractID[W912UMtrans$optWonT=="WON Opt"])]<-TRUE
+  
+  write.csv(rbind(inspected,new_rows),file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
+  rm(new_rows)
+  stop(paste("CSIS_contract_inspection.csv is missing rows for ",length(inspect_missing),
+             "CSIScontractIDs.",
+             "See Output/CSIS_contract_inspection.csv for updated file."))
+}
+rm(inspect_missing)
+```
+
+
+### Change Order in Won
+
+```{r validate_change_inspection_lookup}
+inspected<-read.csv(file.path("https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                              "contract/","CSIS_contract_inspection.csv"))
+
 #Identify incorrectly FALSE in inspection
 inspect_should_be_true<-inspected$CSIScontractID[
   inspected$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
-                                     W912UMtrans$CSIScontractID[W912UMtrans$changeWonT=="WON Chg"])&
-  inspected$override_change_order_growth==FALSE
+                                  W912UMtrans$CSIScontractID[W912UMtrans$changeWonT=="WON Chg"])&
+    inspected$override_change_order_growth==FALSE
   ]
 
 if(length(inspect_should_be_true)>0){
@@ -691,13 +1057,13 @@ rm(inspect_should_be_true)
 #Identify incorrectly true in inspection
 inspect_should_be_false<-inspected$CSIScontractID[
   !inspected$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
-                                     W912UMtrans$CSIScontractID[W912UMtrans$changeWonT=="WON Chg"])&
-  inspected$override_change_order_growth==TRUE &
+                                   W912UMtrans$CSIScontractID[W912UMtrans$changeWonT=="WON Chg"])&
+    inspected$override_change_order_growth==TRUE &
     inspected$CSIS_inspection=="W912UM Won"
   ]
 
 if(length(inspect_should_be_false)>0){
-  inspected[inspected$CSIScontractID %in% inspect_should_be_true,]
+  inspected[inspected$CSIScontractID %in% inspect_should_be_false,]
   inspected$override_change_order_growth[inspected$CSIScontractID %in% inspect_should_be_false]<-FALSE
   write.csv(inspected,file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
   stop(paste("CSIS_contract_inspection.csv has incorrect true values for",length(inspect_should_be_false),
@@ -708,22 +1074,29 @@ rm(inspect_should_be_false)
 
 #Identify missing from csis_inspect
 inspect_missing<-unique(c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
-                                     W912UMtrans$CSIScontractID[W912UMtrans$changeWonT=="WON Chg"]))
+                          W912UMtrans$CSIScontractID[W912UMtrans$changeWonT=="WON Chg"]))
 inspect_missing<-inspect_missing[!inspect_missing %in% inspected$CSIScontractID]
 
 if(length(inspect_missing)>0){
   new_rows<-data.frame(CSIScontractID=inspect_missing,
-             override_unmodified_ceiling=FALSE,
-             override_unmodified_base=FALSE,
-             override_change_order_growth=TRUE,
-             override_exercised_growth=FALSE,
-             CSIS_inspection="W912UM Won")
-
+                       override_unmodified_ceiling=FALSE,
+                       override_unmodified_base=FALSE,
+                       override_change_order_growth=TRUE,
+                       override_exercised_growth=FALSE,
+                       CSIS_inspection="W912UM Won")
   
   new_rows$override_unmodified_ceiling[
     new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$unmodWon=="WON Unm"],
-                                                       W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"]
-                                                         )]<-TRUE
+                                   W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"]
+    )]<-TRUE
+  
+  new_rows$override_unmodified_base[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$baseWon=="WON Base"],
+                                   W912UMtrans$CSIScontractID[W912UMtrans$baseWonT=="WON Base"])]<-TRUE
+  
+  new_rows$override_exercised_growth[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$optWon=="WON Opt"],
+                                   W912UMtrans$CSIScontractID[W912UMtrans$optWonT=="WON Opt"])]<-TRUE
   
   write.csv(rbind(inspected,new_rows),file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
   rm(new_rows)
@@ -732,40 +1105,124 @@ if(length(inspect_missing)>0){
              "See Output/CSIS_contract_inspection.csv for updated file."))
 }
 rm(inspect_missing)
-  
+
 
 ```
 
+
+
+### Options in Won
+
+```{r validate_option_inspection_lookup}
+inspected<-read.csv(file.path("https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                              "contract/","CSIS_contract_inspection.csv"))
+
+
+summary(factor(W912UM$optWon))
+
+#Identify incorrectly FALSE in inspection
+inspect_should_be_true<-inspected$CSIScontractID[
+  inspected$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$optWon=="WON Opt"],
+                                  W912UMtrans$CSIScontractID[W912UMtrans$optWonT=="WON Opt"])&
+    inspected$override_exercised_growth==FALSE
+  ]
+
+if(length(inspect_should_be_true)>0){
+  inspected[inspected$CSIScontractID %in% inspect_should_be_true,]
+  inspected$override_exercised_growth[inspected$CSIScontractID %in% inspect_should_be_true]<-TRUE
+  write.csv(inspected,file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
+  stop(paste("CSIS_contract_inspection.csv has incorrect false values for",length(inspect_should_be_true),
+             "CSIScontractIDs in override_exercised_growth.",
+             "See Output/CSIS_contract_inspection.csv for updated file."))
+}
+rm(inspect_should_be_true)
+
+#Identify incorrectly true in inspection
+inspect_should_be_false<-inspected$CSIScontractID[
+  !inspected$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$optWon=="WON Opt"],
+                                   W912UMtrans$CSIScontractID[W912UMtrans$optWonT=="WON Opt"])&
+    inspected$override_exercised_growth==TRUE &
+    inspected$CSIS_inspection=="W912UM Won"
+  ]
+
+if(length(inspect_should_be_false)>0){
+  inspected[inspected$CSIScontractID %in% inspect_should_be_false,]
+  inspected$override_exercised_growth[inspected$CSIScontractID %in% inspect_should_be_false]<-FALSE
+  write.csv(inspected,file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
+  stop(paste("CSIS_contract_inspection.csv has incorrect true values for",length(inspect_should_be_false),
+             "CSIScontractIDs in override_exercised_growth.",
+             "See Output/CSIS_contract_inspection.csv for updated file."))
+}
+rm(inspect_should_be_false)
+
+#Identify missing from csis_inspect
+inspect_missing<-unique(c(W912UM$CSIScontractID[W912UM$optWon=="WON Opt"],
+                          W912UMtrans$CSIScontractID[W912UMtrans$optWonT=="WON Opt"]))
+inspect_missing<-inspect_missing[!inspect_missing %in% inspected$CSIScontractID]
+
+if(length(inspect_missing)>0){
+  new_rows<-data.frame(CSIScontractID=inspect_missing,
+                       override_unmodified_ceiling=FALSE,
+                       override_unmodified_base=FALSE,
+                       override_change_order_growth=FALSE,
+                       override_exercised_growth=TRUE,
+                       CSIS_inspection="W912UM Won")
   
+
+  new_rows$override_unmodified_ceiling[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$unmodWon=="WON Unm"],
+                                   W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT=="WON Unm"]
+    )]<-TRUE
+    
+  new_rows$override_unmodified_base[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$baseWon=="WON Base"],
+                                   W912UMtrans$CSIScontractID[W912UMtrans$baseWonT=="WON Base"])]<-TRUE  
+
+    new_rows$override_change_order_growth[
+    new_rows$CSIScontractID %in% c(W912UM$CSIScontractID[W912UM$changeWon=="WON Chg"],
+                                   W912UMtrans$CSIScontractID[W912UMtrans$changeWonT=="WON Chg"]
+    )]<-TRUE
   
+  write.csv(rbind(inspected,new_rows),file="../Output/CSIS_contract_inspection.csv",row.names=FALSE)
+  rm(new_rows)
+  stop(paste("CSIS_contract_inspection.csv is missing rows for ",length(inspect_missing),
+             "CSIScontractIDs.",
+             "See Output/CSIS_contract_inspection.csv for updated file."))
+}
+rm(inspect_missing)
+
+
+```
+
+
 ## Validate Transformed_Dataset
-This is a quick inspection to make sure that the version of the transformed dataset to be used is current.
-  
+This is a quick inspection to make sure that the version of the transformed dataset to be used is current, focusing on ceiling and change orders.
+
 ```{r validate_transformed_dataset}
 
 load(file="../Data/Clean/transformed_def.Rdata")
+colnames(def)[colnames(def)=="ChangeOrderCeilingGrowth"]<-"n_CBre"
+#Overrides
+def<-read_and_join_experiment( def,
+                               "CSIS_contract_inspection.csv",
+                               path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                               directory="contract/",
+                               by=c("CSIScontractID"),
+                               # add_var=c("EntityID","UnmodifiedEntityID"),
+                               new_var_checked=FALSE,
+                               create_lookup_rdata=FALSE
+)
 
-  #Overrides
-  def<-read_and_join_experiment( def,
-                                      "CSIS_contract_inspection.csv",
-                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                                      directory="contract/",
-                                      by=c("CSIScontractID"),
-                                      # add_var=c("EntityID","UnmodifiedEntityID"),
-                                      new_var_checked=FALSE,
-                                      create_lookup_rdata=FALSE
-  )
+#Making sure the transformed dataset has been set to NA 
+if(any(!is.na(def$UnmodifiedContractBaseAndAllOptionsValue_Then_Year[
+  def$override_unmodified_ceiling==TRUE]))){
+  stop("Unmodified Ceilings set to be overiden have not been set to NA. Rerun transform portion of creat_defense_contract_dataset.r")
+}
 
-  #Making sure the transformed dataset has been set to NA 
-  if(any(!is.na(def$UnmodifiedContractBaseAndAllOptionsValue_Then_Year[
-    def$override_unmodified_ceiling==TRUE]))){
-    stop("Unmodified Ceilings set to be overiden have not been set to NA. Rerun Create_Dataset.R")
-  }
-
-  if(any(!is.na(def$ChangeOrderBaseAndAllOptionsValue[
-    def$override_change_order_growth==TRUE]))){
-    stop("Unmodified Ceilings set to be overiden have not been set to NA. Rerun Create_Dataset.R")
-  }
+if(any(!is.na(def$ChangeOrderBaseAndAllOptionsValue[
+  def$override_change_order_growth==TRUE]))){
+  stop("Ceilings Breaches set to be overiden have not been set to NA. Rerun transform portion of creat_defense_contract_dataset.r")
+}
 
 
 ```
@@ -808,54 +1265,54 @@ cbre$Why_Outlier<-factor(cbre$Why_Outlier,
 
 #Percent Growth
 summary(Hmisc::cut2(cbre_preclean$p_CBre-1,c(1,
-                                          10,
-                                          100
-                                          )))
+                                             10,
+                                             100
+)))
 summary(Hmisc::cut2(cbre$p_CBre-1,c(1,
-                                          10,
-                                          100
-                                          )))
+                                    10,
+                                    100
+)))
 
-summary(cbre$Ceil[(cbre$p_CBre-1)>10])
-summary(cbre$Ceil[(cbre$p_CBre-1)>100])
+summary(cbre$qHighCeiling[(cbre$p_CBre-1)>10])
+summary(cbre$qHighCeiling[(cbre$p_CBre-1)>100])
 
 
 p_outlier_summary<-cbre %>% filter(p_CBre-1>10) %>% group_by(Why_Outlier) %>%
   dplyr::summarise(nContract=length(n_CBre),
-    SumOfChangeOrderCeilingGrowth=sum(n_CBre),
+                   SumOfChangeOrderCeilingGrowth=sum(n_CBre),
                    MaxOfChangeOrderCeilingGrowth=max(n_CBre),
                    SumOfAction_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
 
 #Absolute Growth
 summary(Hmisc::cut2(cbre_preclean$n_CBre,c(1e3,
-                                          1e6,
-                                          1e7,
-                                          1e8,
-                                          2.5e8,
-                                          1e9,
-                                          1e10,
-                                          2e10
-                                          ))
+                                           1e6,
+                                           1e7,
+                                           1e8,
+                                           2.5e8,
+                                           1e9,
+                                           1e10,
+                                           2e10
+))
 )
 summary(Hmisc::cut2(cbre$n_CBre,c(1e3,
-                                          1e6,
-                                          1e7,
-                                          1e8,
-                                          2.5e8,
-                                          1e9,
-                                          1e10,
-                                          2e10
-                                          ))
+                                  1e6,
+                                  1e7,
+                                  1e8,
+                                  2.5e8,
+                                  1e9,
+                                  1e10,
+                                  2e10
+))
 )
 
-summary(cbre$Ceil[cbre$n_CBre>=1e6])
-summary(cbre$Ceil[cbre$n_CBre>=1e9])
+summary(cbre$qHighCeiling[cbre$n_CBre>=1e6])
+summary(cbre$qHighCeiling[cbre$n_CBre>=1e9])
 
 
 
 n_outlier_summary<-cbre %>% filter(n_CBre>2.5e8) %>% group_by(Why_Outlier) %>%
   dplyr::summarise(nContract=length(n_CBre),
-    SumOfChangeOrderCeilingGrowth=sum(n_CBre),
+                   SumOfChangeOrderCeilingGrowth=sum(n_CBre),
                    MaxOfChangeOrderCeilingGrowth=max(n_CBre),
                    SumOfAction_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
 
@@ -875,46 +1332,47 @@ After the cleaning, 2 categories remain relevant.
 ```{r CeilingGrowthAfterCleaning}
 
 (
-ggplot(cbre, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year,y=p_CBre-1)) +#,color=qGrowth
-  geom_point(alpha=0.25,shape=".")+
-  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+scale_y_log10()+
-  #+
-  geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-# facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
-  labs(title="Distribution of Ceiling Breaches",
-       y="Percent of Growth in  Ceiling",
-       x="Unmodified Contract Ceiling")#,
-       # fill="Termination Completion"
+  ggplot(cbre, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year,y=p_CBre-1)) +#,color=qGrowth
+    geom_point(alpha=0.25,shape=".")+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()+
+    #+
+    geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+    # facet_wrap(~qHighCeiling,scales="free_y")+#+, space="free_y"
+    labs(title="Distribution of Ceiling Breaches",
+         y="Percent of Growth in  Ceiling",
+         x="Unmodified Contract Ceiling")#,
+  # fill="Termination Completion"
 )
 
 
 (
-ggplot(cbre, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year,y=n_CBre)) +#,color=qGrowth
-  geom_point(alpha=0.25,shape=".")+
-  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+scale_y_log10()+
-  #+
-  geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-# facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
-  labs(title="Distribution of Ceiling Breaches",
-       y="Absolute Growth in  Ceiling",
-       x="Unmodified Contract Ceiling")#,
-       # fill="Termination Completion"
+  ggplot(cbre, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year,y=n_CBre)) +#,color=qGrowth
+    geom_point(alpha=0.25,shape=".")+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()+
+    #+
+    geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+    # facet_wrap(~qHighCeiling,scales="free_y")+#+, space="free_y"
+    labs(title="Distribution of Ceiling Breaches",
+         y="Absolute Growth in  Ceiling",
+         x="Unmodified Contract Ceiling")#,
+  # fill="Termination Completion"
 )
 
 (
-ggplot(cbre, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year+ChangeOrderBaseAndAllOptionsValue,y=Action_Obligation_Then_Year)) +#,color=qGrowth
-  geom_point(alpha=0.25,shape=".")+
-  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+scale_y_log10()#+
+  ggplot(cbre, aes(x=UnmodifiedContractBaseAndAllOptionsValue_Then_Year+ChangeOrderBaseAndAllOptionsValue,
+                   y=Action_Obligation_Then_Year)) +#,color=qGrowth
+    geom_point(alpha=0.25,shape=".")+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()#+
   #+
-#   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-# # facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
-#   labs(title="Distribution of Ceiling Breaches",
-#        y="Percent of Growth in  Ceiling",
-#        x="Unmodified Contract Ceiling")#,
-#        # fill="Termination Completion"
+  #   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+  # # facet_wrap(~qHighCeiling,scales="free_y")+#+, space="free_y"
+  #   labs(title="Distribution of Ceiling Breaches",
+  #        y="Percent of Growth in  Ceiling",
+  #        x="Unmodified Contract Ceiling")#,
+  #        # fill="Termination Completion"
 )
 
 summary(cbre$ChangeOrderBaseAndAllOptionsValue)
@@ -923,31 +1381,31 @@ summary(cbre$ChangeOrderBaseAndAllOptionsValue)
 
 
 (
-ggplot(cbre, aes(x=n_CBre,y=ChangeOrderBaseAndAllOptionsValue)) +#,color=qGrowth
-  geom_point(alpha=0.25,shape=".")+
-  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+scale_y_log10()#+
+  ggplot(cbre, aes(x=n_CBre,y=ChangeOrderBaseAndAllOptionsValue)) +#,color=qGrowth
+    geom_point(alpha=0.25,shape=".")+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()#+
   #+
-#   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-# # facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
-#   labs(title="Distribution of Ceiling Breaches",
-#        y="Percent of Growth in  Ceiling",
-#        x="Unmodified Contract Ceiling")#,
-#        # fill="Termination Completion"
+  #   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+  # # facet_wrap(~qHighCeiling,scales="free_y")+#+, space="free_y"
+  #   labs(title="Distribution of Ceiling Breaches",
+  #        y="Percent of Growth in  Ceiling",
+  #        x="Unmodified Contract Ceiling")#,
+  #        # fill="Termination Completion"
 )
 
 (
-ggplot(cbre, aes(x=p_CBre-1,fill=qGrowth)) +
-  geom_histogram(bins=100)+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+
-  #+
-  geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
-  labs(title="Distribution of Ceiling Breaches",
-       y="Contract Count",
-       x="Percent of Growth in  Ceiling")#,
-       # fill="Termination Completion"
+  ggplot(cbre, aes(x=p_CBre-1,fill=qGrowth)) +
+    geom_histogram(bins=100)+
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+
+    #+
+    geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+    facet_wrap(~qHighCeiling,scales="free_y")+#+, space="free_y"
+    labs(title="Distribution of Ceiling Breaches",
+         y="Contract Count",
+         x="Percent of Growth in  Ceiling")#,
+  # fill="Termination Completion"
 )
 
 
@@ -956,13 +1414,13 @@ facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
 
 
 (
-ggplot(cbre, aes(x=n_CBre,fill=qGrowth)) +
-  geom_histogram(bins=100)+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+
-  #+
-  geom_vline(xintercept = 1)#+geom_vline(xintercept = 0.1)+
-#facet_grid(NoPreTermObl~.,scales="free_y", space="free_y")+
+  ggplot(cbre, aes(x=n_CBre,fill=qGrowth)) +
+    geom_histogram(bins=100)+
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+
+    #+
+    geom_vline(xintercept = 1)#+geom_vline(xintercept = 0.1)+
+  #facet_grid(NoPreTermObl~.,scales="free_y", space="free_y")+
   # labs(title="Distribution of Contracts with Obligations After Last termination",
   #      y="Contract Count",
   #      x="Percent of Obligations After Day of Termination",
@@ -970,15 +1428,15 @@ ggplot(cbre, aes(x=n_CBre,fill=qGrowth)) +
 )
 
 (
-ggplot(cbre, aes(x=n_CBre,fill=qGrowth)) +
-  geom_histogram(bins=100)+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+
-  #+
-  geom_vline(xintercept = 1)+
-facet_wrap(~Ceil,scales="free_y")#+, space="free_y"
-#+geom_vline(xintercept = 0.1)+
-#facet_grid(NoPreTermObl~.,scales="free_y", space="free_y")+
+  ggplot(cbre, aes(x=n_CBre,fill=qGrowth)) +
+    geom_histogram(bins=100)+
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+
+    #+
+    geom_vline(xintercept = 1)+
+    facet_wrap(~qHighCeiling,scales="free_y")#+, space="free_y"
+  #+geom_vline(xintercept = 0.1)+
+  #facet_grid(NoPreTermObl~.,scales="free_y", space="free_y")+
   # labs(title="Distribution of Contracts with Obligations After Last termination",
   #      y="Contract Count",
   #      x="Percent of Obligations After Day of Termination",
@@ -987,317 +1445,5 @@ facet_wrap(~Ceil,scales="free_y")#+, space="free_y"
 
 
 ```
---------------------------------------------------------------------------------------------------------------------------------------------------------------
-## W912UM
-
-### Contract Initial Examination
-```{r W912UMExercised}
-#Old W912UM Code copied over from Exercised_Option_Examination.Rmd in the services repo
-sum(W912UM$Action_Obligation.Then.Year[])
-
-(
-ggplot(W912UM, aes(x=UnmodifiedBaseandExercisedOptionsValue+ExercisedOptions,y=Action_Obligation.Then.Year)) +#,color=q_OptGrowth
-  geom_point(alpha=0.25,shape=".")+
-  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+scale_y_log10()+
-  #+
-#   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-facet_wrap(~StartFY,scales="free_y")#+, space="free_y"
-#   labs(title="Distribution of Exercised Options",
-#        y="Percent of Options Growth from Base",
-#        x="Unmodified Contract Base")#,
-#        # fill="Termination Completion"
-)
-
-summary(W912UM$UnmodifiedBaseandExercisedOptionsValue)
-W912UM$unmodWon<-NA
-W912UM$unmodWon[W912UM$UnmodifiedBaseandExercisedOptionsValue>=W912UM$Action_Obligation.Then.Year*400&
-                  W912UM$Action_Obligation.Then.Year>0]<-'WON Base'
-W912UM$unmodWon[is.na(W912UM$unmodWon) &
-                    W912UM$UnmodifiedBaseandExercisedOptionsValue>=W912UM$Action_Obligation.Then.Year*20 &
-                  W912UM$UnmodifiedBaseandExercisedOptionsValue>10000
-                  ]<-'? Base'
-W912UM$unmodWon[is.na(W912UM$unmodWon) &
-                    (W912UM$UnmodifiedBaseandExercisedOptionsValue<W912UM$Action_Obligation.Then.Year*20|
-                  W912UM$UnmodifiedBaseandExercisedOptionsValue<10000)]<-'$ Base'
-summary(factor(W912UM$unmodWon))
 
 
-W912UM$optWon<-NA
-W912UM$optWon[abs(W912UM$ExercisedOptions)==0]<-'0 Opt'
-W912UM$optWon[abs(W912UM$ExercisedOptions)>=W912UM$Action_Obligation.Then.Year*100&
-                  W912UM$ExercisedOptions>10000]<-'WON Opt'
-W912UM$optWon[is.na(W912UM$optWon) &
-                    abs(W912UM$ExercisedOptions)>=W912UM$Action_Obligation.Then.Year*10&
-                  W912UM$ExercisedOptions>10000]<-'? Opt'
-W912UM$optWon[is.na(W912UM$optWon) &
-                  (abs(W912UM$ExercisedOptions)<W912UM$Action_Obligation.Then.Year*10|
-                   W912UM$ExercisedOptions<=10000)]<-'$ Opt'
-summary(factor(W912UM$optWon))
-
-
-W912UM$sumWon<-NA
-W912UM$sumWon[W912UM$Action_Obligation.Then.Year==0]<-'0 Obl'
-W912UM$sumWon[W912UM$UnmodifiedBaseandExercisedOptionsValue+
-                W912UM$ExercisedOptions>=W912UM$Action_Obligation.Then.Year*400&
-                 W912UM$UnmodifiedBaseandExercisedOptionsValue+
-                W912UM$ExercisedOptions>10000]<-'WON Sum'
-W912UM$sumWon[is.na(W912UM$sumWon) &
-                    W912UM$UnmodifiedBaseandExercisedOptionsValue+
-                W912UM$ExercisedOptions>=W912UM$Action_Obligation.Then.Year*20&
-                 W912UM$UnmodifiedBaseandExercisedOptionsValue+
-                W912UM$ExercisedOptions>10000]<-'? Sum'
-W912UM$sumWon[is.na(W912UM$sumWon) &
-                    (W912UM$UnmodifiedBaseandExercisedOptionsValue+
-                W912UM$ExercisedOptions<W912UM$Action_Obligation.Then.Year*20|
-                 W912UM$UnmodifiedBaseandExercisedOptionsValue+
-                W912UM$ExercisedOptions>10000)]<-'$ Sum'
-summary(factor(W912UM$sumWon))
-
-
-
-(
-ggplot(W912UM, aes(x=UnmodifiedBaseandExercisedOptionsValue+ExercisedOptions,y=Action_Obligation.Then.Year,color=sumWon)) +#,color=q_OptGrowth
-  geom_point(alpha=0.25)+
-  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+scale_y_log10()+
-  #+
-#   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-facet_grid(unmodWon~optWon)#+, space="free_y"
-#   labs(title="Distribution of Exercised Options",
-#        y="Percent of Options Growth from Base",
-#        x="Unmodified Contract Base")#,
-#        # fill="Termination Completion"
-)
-
-
-(
-ggplot(W912UM, aes(x=UnmodifiedBaseandExercisedOptionsValue+ExercisedOptions,y=Action_Obligation.Then.Year,color=sumWon)) +#,color=q_OptGrowth
-  geom_point(alpha=0.25)+
-  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+scale_y_log10()+
-  #+
-#   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-facet_wrap(~Veh)#+, space="free_y"
-#   labs(title="Distribution of Exercised Options",
-#        y="Percent of Options Growth from Base",
-#        x="Unmodified Contract Base")#,
-#        # fill="Termination Completion"
-)
-
-(
-ggplot(W912UM, aes(x=UnmodifiedBaseandExercisedOptionsValue+ExercisedOptions,y=Action_Obligation.Then.Year,color=sumWon)) +#,color=q_OptGrowth
-  geom_point(alpha=0.25)+
-  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_x_log10()+scale_y_log10()+
-  #+
-#   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-facet_wrap(~Intl)#+, space="free_y"
-#   labs(title="Distribution of Exercised Options",
-#        y="Percent of Options Growth from Base",
-#        x="Unmodified Contract Base")#,
-#        # fill="Termination Completion"
-)
-
-summary(W912UM$Intl)
-W912UM$unmodWon<-factor(W912UM$unmodWon)
-summary(W912UM$Veh)
-summary(W912UM$unmodWon)
-summary(factor(W912UM$optWon))
-statsummary_discrete(c("unmodWon"), W912UM %>% filter(Intl=="Any Intl."&
-                                                        !Veh %in% c("FSS/GWAC","BPA/BOA")),
-                     value_col="Action_Obligation.Then.Year")
-
-```
-
-All of the questionable contracts take place internationally and none use BPA/BOA or FSS/GWACs. That makes sense and raises confidence, but given that the clearly USD contract categories are less common, this doesn't help in resolving the ambiguous cases. That said, Single Award IDCs appear to have most of the ambigious cases, which suggests that this might be resolvable by looking at parent IDVs in those cases. 
-### Transaction
-#### Unmodified Transactions
-```{r W912UM_exercised_transction_unmodified}
-# W912UMtrans<-read.delim(file="..\\data\\semi_clean\\W912UM_complete.txt", sep="\t")
-
-
-
-W912UMtrans<-inner_join(W912UMtrans,W912UM %>% group_by() %>%
-                          dplyr::select(CSIScontractID,
-                                        unmodWon,sumWon,optWon,
-                                        ExercisedOptions,
-                                        UnmodifiedBaseandExercisedOptionsValue,
-                                        Action_Obligation.Then.Year,
-                                        ExercisedOptions),
-                        by="CSIScontractID")
-
-W912UMtrans$ExercisedOptions[is.na(W912UMtrans$ExercisedOptions)]<-0
-W912UMtrans$baseandexercisedoptionsvalue<-as.numeric(as.character(W912UMtrans$baseandexercisedoptionsvalue))
-W912UMtrans$baseWonT<-NA
-W912UMtrans$baseWonT[W912UMtrans$baseandexercisedoptionsvalue>=W912UMtrans$obligatedamount*400&
-                        W912UMtrans$baseandexercisedoptionsvalue>10000&
-                        W912UMtrans$baseandexercisedoptionsvalue>=W912UMtrans$Action_Obligation.Then.Year*400&
-                       (W912UMtrans$obligatedamount>0 | W912UMtrans$Action_Obligation.Then.Year>0)& 
-                       W912UMtrans$modnumber=='0']<-'WON Base'
-W912UMtrans$baseWonT[is.na(W912UMtrans$baseWonT) &
-                    W912UMtrans$baseandexercisedoptionsvalue>=W912UMtrans$obligatedamount*20&
-                      W912UMtrans$baseandexercisedoptionsvalue>10000&
-                        W912UMtrans$baseandexercisedoptionsvalue>=W912UMtrans$Action_Obligation.Then.Year*20&
-                      W912UMtrans$modnumber=='0']<-'? Base'
-W912UMtrans$baseWonT[is.na(W912UMtrans$baseWonT) &
-                    (W912UMtrans$baseandexercisedoptionsvalue<W912UMtrans$obligatedamount*20|
-                        W912UMtrans$baseandexercisedoptionsvalue<W912UMtrans$Action_Obligation.Then.Year*20|
-                       W912UMtrans$baseandexercisedoptionsvalue<=10000) &
-                      W912UMtrans$modnumber=='0']<-'$ Base'
-W912UMtrans$baseWonT[W912UMtrans$modnumber!='0']<-"Not Unmodified Transaction"
-
-
-
-
-summary(factor(W912UMtrans$baseWonT))
-
-if(any(is.na(W912UMtrans$baseWonT))) stop("Unclassified baseWonT")
-# View(W912UMtrans[is.na(),])
-# write.csv(file="..\\Data\\semi_clean\\NA_baseWonT.csv",W912UMtrans[is.na(W912UMtrans$baseWonT),],row.names = FALSE)
-
-#Examining disagreements
-# View(W912UMtrans %>% filter(baseWonT=='WON Base'& unmodWon!='WON Base') )
-# View(W912UMtrans %>% filter(baseWonT!='WON Base'& unmodWon=='WON Base') )
-#Examining ?s
-# View(W912UMtrans %>% filter(baseWonT=='? Base'& obligatedamount>0) )
-# View(W912UMtrans %>% filter(baseWonT=='? Base'& obligatedamount==0) )
-  
-
-statsummary_discrete(c("unmodWon"),W912UMtrans %>% filter(modnumber=='0'),
-                     value_col="Action_Obligation.Then.Year")
-grouped_barplot(c("unmodWon"),W912UMtrans %>% filter(modnumber=='0'),
-                     value_col="Action_Obligation.Then.Year")
-
-UnmodDisagree<-W912UMtrans %>% filter(baseWonT=='WON Base'& unmodWon!='WON Base') 
-# View(W912UM %>% filter(CSIScontractID %in% UnmodDisagree$CSIScontractID))
-CSIScontractID_ceil_to_na<-W912UMtrans$CSIScontractID[W912UMtrans$baseWonT == 'WON Base'&
-                                                        !is.na(W912UMtrans$baseWonT)]
-
-
-#Spreading  the labeled values to modified entries, which helps in the next step.
-W912UMtrans$baseWonT[W912UMtrans$baseWonT=="Not Unmodified Transaction" &
-  W912UMtrans$CSIScontractID %in% CSIScontractID_ceil_to_na]<-'WON Base'
-# 
-W912UMtrans$baseWonT[W912UMtrans$baseWonT=="Not Unmodified Transaction" &
-  W912UMtrans$CSIScontractID %in% W912UMtrans$CSIScontractID[W912UMtrans$baseWonT == '? Base'&
-                                                        !is.na(W912UMtrans$baseWonT)]]<- '? Base'
-W912UMtrans$baseWonT[W912UMtrans$baseWonT=="Not Unmodified Transaction" &
-  W912UMtrans$CSIScontractID %in% W912UMtrans$CSIScontractID[W912UMtrans$baseWonT == '$ Base'&
-                                                        !is.na(W912UMtrans$baseWonT)]]<- '$ Base'
-
-summary(factor(W912UMtrans$baseWonT))
-```
-
-
-Contracts bases are marked null if:
-* Contracting office W912UM 
-* Initial transaction has a base 400 times obligations.
-* initial base 400 times total obligations.
-* Initial or total obligations are positive.
-Then it the base is set to NA and it will not be in the sample.
-
-
-#### Change Order Transactions
-```{r W912UM_exercised_transaction}
-
-W912UMtrans$optWonT<-NA
-W912UMtrans$optWonT[W912UMtrans$modnumber=='0']<-"Unmodified Transaction"
-W912UMtrans$optWonT[is.na(W912UMtrans$optWonT)&
-                      (W912UMtrans$baseandexercisedoptionsvalue==0 | 
-                       W912UMtrans$ExercisedOptions==0)
-                    &W912UMtrans$modnumber!='0']<-'0 Opt Growth'
-W912UMtrans$optWonT[is.na(W912UMtrans$optWonT)&
-                      abs(W912UMtrans$baseandexercisedoptionsvalue)>=abs(W912UMtrans$obligatedamount*400)&
-                        (abs(W912UMtrans$ExercisedOptions)+
-                           W912UMtrans$UnmodifiedBaseandExercisedOptionsValue)>=
-                       W912UMtrans$Action_Obligation.Then.Year*10&
-                      abs(W912UMtrans$ExercisedOptions)>10000
-                        # (W912UMtrans$baseandexercisedoptionsvalue>=
-                        #    W912UMtrans$UnmodifiedBaseandExercisedOptionsValue*100 |
-                       #   (!is.na(W912UMtrans$baseWonT) & W912UMtrans$baseWonT %in% c('WON Base','? Base')))&
-                       # # (W912UMtrans$obligatedamount>0 | W912UMtrans$Action_Obligation.Then.Year>0)& 
-                      # abs(W912UMtrans$baseandexercisedoptionsvalue)>0 & W912UMtrans$ExercisedOptions>0
-                    ]<-'WON Opt'
-W912UMtrans$optWonT[is.na(W912UMtrans$optWonT) &
-                        abs(W912UMtrans$baseandexercisedoptionsvalue)>=abs(W912UMtrans$obligatedamount*20)&
-                        (abs(W912UMtrans$ExercisedOptions)+
-                           W912UMtrans$UnmodifiedBaseandExercisedOptionsValue)>=
-                       W912UMtrans$Action_Obligation.Then.Year*5&
-                      abs(W912UMtrans$ExercisedOptions)
-                        # (W912UMtrans$baseandexercisedoptionsvalue>=
-                        #    W912UMtrans$UnmodifiedBaseandExercisedOptionsValue*10 |
-                        #  (!is.na(W912UMtrans$baseWonT) & W912UMtrans$baseWonT %in% c('WON Base','? Base')))&
-                      # abs(W912UMtrans$baseandexercisedoptionsvalue)>0 & W912UMtrans$ExercisedOptions>0
-                      ]<-'? Opt'
-W912UMtrans$optWonT[is.na(W912UMtrans$optWonT) &
-                        (abs(W912UMtrans$baseandexercisedoptionsvalue)<abs(W912UMtrans$obligatedamount*20)|
-                        (abs(W912UMtrans$ExercisedOptions)+
-                           W912UMtrans$UnmodifiedBaseandExercisedOptionsValue)<
-                       W912UMtrans$Action_Obligation.Then.Year*5 |
-                         abs(W912UMtrans$ExercisedOptions)<=10000)
-                        # (W912UMtrans$baseandexercisedoptionsvalue<
-                        #    W912UMtrans$UnmodifiedBaseandExercisedOptionsValue*10 |
-                        #  (!is.na(W912UMtrans$baseWonT) & W912UMtrans$baseWonT %in% c('WON Base','? Base')))&
-                      # abs(W912UMtrans$baseandexercisedoptionsvalue)>0 & W912UMtrans$ExercisedOptions>0
-                      ]<-'$ Opt'
-
-summary(factor(W912UMtrans$optWonT))
-
-if(any(is.na(W912UMtrans$optWonT))) stop("Unclassified optWonT")
-# View(W912UMtrans[is.na(W912UMtrans$optWonT),])
-write.csv(file="..\\Data\\semi_clean\\optWonT.csv",W912UMtrans %>% filter(optWonT=="WON Opt"),row.names = FALSE)
-
-```
-
-
-#### Examining International Related Vars
-```{r tran_exercised_related_vars}
-
-levels(W912UMtrans$vendorcountrycode)<-list(
-  # ""="",
-  "ABW: ARUBA"="ABW: ARUBA",
-  "JPN: JAPAN"="JPN: JAPAN",
-  "KOR: KOREA, REPUBLIC OF"=c("KOR: KOREA, REPUBLIC OF","KOR","SOUTH KOREA"),
-  "USA: UNITED STATES OF AMERICA"=c("USA: UNITED STATES OF AMERICA","UNITED STATES","USA")
-)
-
-summary(W912UMtrans$optWonT)
-ggplot(W912UMtrans %>% filter(modnumber=='0') ,aes(x=baseWonT))+geom_bar()+facet_wrap(~vendorcountrycode)
-ggplot(W912UMtrans %>% filter(modnumber!='0'),aes(x=optWonT))+geom_bar()+facet_wrap(~vendorcountrycode)
-ggplot(W912UMtrans %>% filter(modnumber!='0'),aes(x=optWonT))+geom_bar()+facet_wrap(~baseWonT)
-ggplot(W912UMtrans,aes(x=sumWon))+geom_bar()+facet_wrap(~vendorcountrycode)
-
-W912UMtrans$placeofperformancecountrycode
-ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=unmodWon))+
-  geom_bar()+facet_wrap(~placeofmanufacture)
-ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=unmodWon))+
-  geom_bar()+facet_wrap(~countryoforigin)
-ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=unmodWon))+
-  geom_bar()+facet_wrap(~placeofperformancecountrycode)
-                 
-
-# View(W912UMtrans %>% filter(unmodWon %in% c("? Base","Won Base") & vendorcountrycode=="USA: UNITED STATES OF AMERICA" & modnumber=='0'))
-
-# Miscategorized<-W912UMtrans %>% filter(unmodWon %in% c("? Base","WON Base") & (
-#   vendorcountrycode=="USA: UNITED STATES OF AMERICA" |
-#     countryoforigin=="USA" |
-#     placeofperformancecountrycode=="USA")
-#   & modnumber=='0')
-
-summary(factor(W912UMtrans$optWonT))
-
-Miscategorized<-W912UMtrans %>% filter((unmodWon %in% c("? Base","WON Base")|
-                                          baseWonT %in% c("? Base","WON Base")|
-                                          optWon %in% c("? Opt","WON Opt")|
-                                          optWonT %in% c("? Opt","WON Opt")
-                                        )& (
-  
-    placeofperformancecountrycode=="USA")
-  & modnumber=='0')
-
-if(nrow(Miscategorized)>0) stop("False positive contract in Won performed in US")
-# View(W912UM %>% filter(CSIScontractID %in% Miscategorized$CSIScontractID))
-
-
-```
