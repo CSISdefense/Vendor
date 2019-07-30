@@ -103,8 +103,57 @@ save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 # load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
 # debug(read_and_join_experiment)
 
+colnames(def_all)[colnames(def_all)=="UnmodifiedContractBaseAndAllOptionsValue"]<-"UnmodifiedCeiling"
 def_all<-input_contract_ceiling_breach(def_all,
              file="Contract.SP_ContractCeilingBreachCustomer.txt")
+
+sum(def_all$ContractBaseAndAllOptionsValue)
+
+nrow(def_all[def_all$UnmodifiedCeiling+
+  def_all$ChangeOrderCeilingGrowth+
+  def_all$ChangeOrderCeilingRescision+
+    def_all$AdminCeilingModification+
+    def_all$EndingCeilingModification+
+    def_all$OtherCeilingModification+
+  def_all$SteadyScopeCeilingModification!=
+    def_all$ContractBaseAndAllOptionsValue,])
+
+
+def_all$CeilingCheckSum<-def_all$UnmodifiedCeiling+
+  def_all$ChangeOrderCeilingGrowth+
+  def_all$ChangeOrderCeilingRescision+
+    def_all$AdminCeilingModification+
+    def_all$EndingCeilingModification+
+  def_all$SteadyScopeCeilingModification+
+    def_all$OtherCeilingModification
+
+summary(def_all$CeilingCheckSum)
+summary(def_all$ContractBaseAndAllOptionsValue)
+
+
+View(def_all %>% dplyr::select(CSIScontractID,
+                               UnmodifiedCeiling,
+                               ChangeOrderCeilingGrowth,
+                               ChangeOrderCeilingRescision,
+                               AdminCeilingModification,
+                               EndingCeilingModification,
+                               SteadyScopeCeilingModification,
+                               OtherCeilingModification,
+                               ContractBaseAndAllOptionsValue,
+                               CeilingCheckSum) %>% 
+       filter(CeilingCheckSum!=ContractBaseAndAllOptionsValue))
+     
+
+if(any(
+  def_all$UnmodifiedCeiling+
+  def_all$ChangeOrderCeilingGrowth+
+  def_all$ChangeOrderCeilingRescision+
+    def_all$AdminCeilingModification+
+    def_all$EndingCeilingModification+
+    def_all$OtherCeilingModification!=
+    def_all$ContractBaseAndAllOptionsValue
+)) stop("Ceiling Modification Checksum failure.")
+
 save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 ```
 
