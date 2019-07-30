@@ -54,21 +54,21 @@ load(file="..\\data\\semi_clean\\CBre_pre_clean.rdata")
 # W912UM<-input_contract_delta(W912UM,
 #              file="Contract.SP_ContractModificationDeltaCustomer.txt")
 # colnames(W912UM)[colnames(W912UM)=="UnmodifiedCeiling"]<-"UnmodifiedCeiling_Then_Year"
-debug(read_and_join_experiment)
-  W912UM<-read_and_join_experiment( W912UM,
-                                        "Contract.sp_ContractExercisedOptions.txt",
-                                        path="",
-                                        directory="..\\data\\semi_clean\\",
-                                        by=c("CSIScontractID"),
-                                        add_var=c("AnyUnmodifiedUnexercisedOptions",
-                                                  "AnyUnmodifiedUnexercisedOptionsWhy",
-                                                  "UnmodifiedBase",
-                                                  "SteadyScopeOptionGrowthAlone",
-                                                  "SteadyScopeOptionRescision",
-                                                  "AdminOptionModification"),
-                                        new_var_checked=FALSE,
-                                        create_lookup_rdata=TRUE,
-                                        lookup_char_as_factor=TRUE)
+# debug(read_and_join_experiment)
+  # W912UM<-read_and_join_experiment( W912UM,
+  #                                       "Contract.sp_ContractExercisedOptions.txt",
+  #                                       path="",
+  #                                       directory="..\\data\\semi_clean\\",
+  #                                       by=c("CSIScontractID"),
+  #                                       add_var=c("AnyUnmodifiedUnexercisedOptions",
+  #                                                 "AnyUnmodifiedUnexercisedOptionsWhy",
+  #                                                 "UnmodifiedBase",
+  #                                                 "SteadyScopeOptionGrowthAlone",
+  #                                                 "SteadyScopeOptionRescision",
+  #                                                 "AdminOptionModification"),
+  #                                       new_var_checked=FALSE,
+  #                                       create_lookup_rdata=TRUE,
+  #                                       lookup_char_as_factor=TRUE)
   
 ```
 
@@ -560,7 +560,8 @@ All of the questionable contracts take place internationally and none use BPA/BO
 W912UMtrans<-inner_join(W912UMtrans,W912UM %>% group_by() %>%
                           dplyr::select(CSIScontractID,
                                         unmodWon,sumWon,changeWon,baseWon,optWon,
-                                        ChangeOrderCeilingGrowth+ChangeOrderCeilingRescision,
+                                        ChangeOrderCeilingGrowth,
+                                        ChangeOrderCeilingRescision,
                                         UnmodifiedCeiling_Then_Year,
                                         Action_Obligation_Then_Year,
                                         UnmodifiedBase,
@@ -622,8 +623,9 @@ W912UMtrans$unmodWonT[W912UMtrans$unmodWonT=="Not Unmodified Transaction" &
                         W912UMtrans$CSIScontractID %in% W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT == '? Unm'&
                                                                                      !is.na(W912UMtrans$unmodWonT)]]<- '? Unm'
 W912UMtrans$unmodWonT[W912UMtrans$unmodWonT=="Not Unmodified Transaction" &
-                        W912UMtrans$CSIScontractID %in% W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT == '$ Unm'&
-                                                                                     !is.na(W912UMtrans$unmodWonT)]]<- '$ Unm'
+                        W912UMtrans$CSIScontractID %in%
+                        W912UMtrans$CSIScontractID[W912UMtrans$unmodWonT == '$ Unm'& 
+                                                     !is.na(W912UMtrans$unmodWonT)]]<- '$ Unm'
 
 summary(factor(W912UMtrans$unmodWonT))
 ```
