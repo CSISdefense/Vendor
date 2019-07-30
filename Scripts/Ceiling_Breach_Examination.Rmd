@@ -158,6 +158,23 @@ Shifting the focus to all contracts with growth of at least 250 million, there a
 
 Inspecting W912UM, either to remove or fix its oversized growth, is an imperative as it accounts for the majority of these contracts or task orders. Even so, there are still `r nrow(cbre_preclean %>% filter(Why_Outlier ==">=$250M, Insepect"))` That merit special inspection for given that there growth far outpaces their spending.
 
+## Ceiling Change Checksum
+```{r CeilingChangeChecksum}
+load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
+
+if(any(
+  def_all$UnmodifiedCeiling+
+  def_all$ChangeOrderCeilingGrowth+
+  def_all$ChangeOrderCeilingRescision+
+    def_all$AdminCeilingModification+
+    def_all$EndingCeilingModification+
+    def_all$OtherCeilingModification!=
+    def_all$SumOfbaseandalloptionsvalue
+)) stop("Ceiling Modification Checksum failure.")
+    
+
+```
+
 
 ## Ceiling Growth
 ```{r CeilingGrowthGraphs}
@@ -1266,13 +1283,13 @@ cbre$Why_Outlier<-NA
 cbre$Why_Outlier[is.na(cbre$UnmodifiedCeiling_Then_Year)]<-"No Unmodified Ceiling"
 cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
                    cbre$Action_Obligation_Then_Year*2>=cbre$UnmodifiedCeiling_Then_Year+
-                   cbre$n_CBre]<-
+                   cbre$ChangeOrderCeilingGrowth]<-
   "Obligations at least half Orig+CRai"
 cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
                    cbre$Office=="W912UM"]<-
   "Korean Office W912UM"
 cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
-                   cbre$n_CBre>=2.5e8]<-
+                   cbre$ChangeOrderCeilingGrowth>=2.5e8]<-
   ">=$250M, Insepect"
 cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
                    cbre$p_CBre-1>10]<-
@@ -1302,13 +1319,13 @@ summary(cbre$qHighCeiling[(cbre$p_CBre-1)>100])
 
 
 p_outlier_summary<-cbre %>% filter(p_CBre-1>10) %>% group_by(Why_Outlier) %>%
-  dplyr::summarise(nContract=length(n_CBre),
-                   SumOfChangeOrderCeilingGrowth=sum(n_CBre),
-                   MaxOfChangeOrderCeilingGrowth=max(n_CBre),
+  dplyr::summarise(nContract=length(ChangeOrderCeilingGrowth),
+                   SumOfChangeOrderCeilingGrowth=sum(ChangeOrderCeilingGrowth),
+                   MaxOfChangeOrderCeilingGrowth=max(ChangeOrderCeilingGrowth),
                    SumOfAction_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
 
 #Absolute Growth
-summary(Hmisc::cut2(cbre_preclean$n_CBre,c(1e3,
+summary(Hmisc::cut2(cbre_preclean$ChangeOrderCeilingGrowth,c(1e3,
                                            1e6,
                                            1e7,
                                            1e8,
@@ -1318,7 +1335,7 @@ summary(Hmisc::cut2(cbre_preclean$n_CBre,c(1e3,
                                            2e10
 ))
 )
-summary(Hmisc::cut2(cbre$n_CBre,c(1e3,
+summary(Hmisc::cut2(cbre$ChangeOrderCeilingGrowth,c(1e3,
                                   1e6,
                                   1e7,
                                   1e8,
@@ -1329,15 +1346,15 @@ summary(Hmisc::cut2(cbre$n_CBre,c(1e3,
 ))
 )
 
-summary(cbre$qHighCeiling[cbre$n_CBre>=1e6])
-summary(cbre$qHighCeiling[cbre$n_CBre>=1e9])
+summary(cbre$qHighCeiling[cbre$ChangeOrderCeilingGrowth>=1e6])
+summary(cbre$qHighCeiling[cbre$ChangeOrderCeilingGrowth>=1e9])
 
 
 
-n_outlier_summary<-cbre %>% filter(n_CBre>2.5e8) %>% group_by(Why_Outlier) %>%
-  dplyr::summarise(nContract=length(n_CBre),
-                   SumOfChangeOrderCeilingGrowth=sum(n_CBre),
-                   MaxOfChangeOrderCeilingGrowth=max(n_CBre),
+n_outlier_summary<-cbre %>% filter(ChangeOrderCeilingGrowth>2.5e8) %>% group_by(Why_Outlier) %>%
+  dplyr::summarise(nContract=length(ChangeOrderCeilingGrowth),
+                   SumOfChangeOrderCeilingGrowth=sum(ChangeOrderCeilingGrowth),
+                   MaxOfChangeOrderCeilingGrowth=max(ChangeOrderCeilingGrowth),
                    SumOfAction_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
 
 ```
@@ -1371,7 +1388,7 @@ After the cleaning, 2 categories remain relevant.
 
 
 (
-  ggplot(cbre, aes(x=UnmodifiedCeiling_Then_Year,y=n_CBre)) +#,color=qGrowth
+  ggplot(cbre, aes(x=UnmodifiedCeiling_Then_Year,y=ChangeOrderCeilingGrowth)) +#,color=qGrowth
     geom_point(alpha=0.25,shape=".")+
     # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+scale_y_log10()+
@@ -1406,7 +1423,7 @@ summary(cbre$ChangeOrderCeilingRescision)
 
 
 (
-  ggplot(cbre, aes(x=n_CBre,y=ChangeOrderCeilingGrowth+ChangeOrderCeilingRescision)) +#,color=qGrowth
+  ggplot(cbre, aes(x=ChangeOrderCeilingGrowth,y=ChangeOrderCeilingGrowth+ChangeOrderCeilingRescision)) +#,color=qGrowth
     geom_point(alpha=0.25,shape=".")+
     # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+scale_y_log10()#+
@@ -1439,7 +1456,7 @@ summary(cbre$ChangeOrderCeilingRescision)
 
 
 (
-  ggplot(cbre, aes(x=n_CBre,fill=qGrowth)) +
+  ggplot(cbre, aes(x=ChangeOrderCeilingGrowth,fill=qGrowth)) +
     geom_histogram(bins=100)+
     theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+
@@ -1453,7 +1470,7 @@ summary(cbre$ChangeOrderCeilingRescision)
 )
 
 (
-  ggplot(cbre, aes(x=n_CBre,fill=qGrowth)) +
+  ggplot(cbre, aes(x=ChangeOrderCeilingGrowth,fill=qGrowth)) +
     geom_histogram(bins=100)+
     theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+
