@@ -39,7 +39,7 @@ note.text.size<-1.40
 ```
 
 ```{r vargraphs: b_CBre}
-# load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
+load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
 
 # load(file="../Data/Clean/transformed_def.Rdata")
 load(file="..\\data\\semi_clean\\CBre_pre_clean.rdata")
@@ -47,6 +47,7 @@ load(file="..\\data\\semi_clean\\CBre_pre_clean.rdata")
 # W912UMtrans<-read.delim(file="..\\data\\semi_clean\\W912UM_trans.csv", sep=",")
 # W912UMtrans<-remove_bom(W912UMtrans)
 cbre_preclean<-def_detail %>% filter(ChangeOrderCeilingGrowth>0)
+rm(def_detail)
 # save(W912UM,W912UMtrans,cbre_preclean,file="..\\data\\semi_clean\\CBre_pre_clean.rdata")
 
 # colnames(W912UM)[colnames(W912UM)=="UnmodifiedCeiling_Then_Year"]<-"UnmodifiedCeiling"
@@ -100,7 +101,7 @@ cbre_preclean<-def_detail %>% filter(ChangeOrderCeilingGrowth>0)
 
 
 ## Ceiling Modification Metrics
-```{r CeilingGrowthGraphs}
+```{r CeilingModification}
 summary(cbre_preclean$ChangeOrderCeilingRescision)
 summary(cbre_preclean$AdminCeilingModification)
 (
@@ -185,7 +186,7 @@ cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
   "Korean Office W912UM"
 cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
                             cbre_preclean$ChangeOrderCeilingGrowth>=2.5e8]<-
-  ">=$250M, Insepect"
+  ">=$250M, Inspect"
 cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
                             cbre_preclean$p_ChangeOrderCeilingGrowth-1>10]<-
   "Other Unexplained 10x Ceiling Breach"
@@ -199,7 +200,7 @@ cbre_preclean$Why_Outlier<-factor(cbre_preclean$Why_Outlier,
                                     "At Least 1/2 After Change Order Rescision",
                                     "At Least 1/2 After Other Rescision",
                                     "Korean Office W912UM",
-                                    ">=$250M, Insepect",
+                                    ">=$250M, Inspect",
                                     "Other Unexplained 10x Ceiling Breach"
                                   ))
 
@@ -235,7 +236,7 @@ summary(cbre_preclean$qHighCeiling[cbre_preclean$ChangeOrderCeilingGrowth>=1e9])
 write.csv(file="..\\Data\\semi_clean\\p_CBre_outliers.csv",cbre_preclean %>% filter((p_ChangeOrderCeilingGrowth-1)>10),row.names = FALSE)
 write.csv(file="..\\Data\\semi_clean\\n_CBre_outliers.csv",cbre_preclean %>% filter(ChangeOrderCeilingGrowth>=2.5e8),row.names = FALSE)
 ```
-Examining cases of large ceiling growth, `r nrow(cbre_preclean %>% filter(p_CBre-1>10))` contracts experienced greater than 10 fold growth. An increase of that side strains credulity, even in high risk defense contracting. While by no means impossible, the more likely explaination is a misrecorded initial ceiling.
+Examining cases of large ceiling growth, `r nrow(cbre_preclean %>% filter(p_ChangeOrderCeilingGrowth-1>10))` contracts experienced greater than 10 fold growth. An increase of that side strains credulity, even in high risk defense contracting. While by no means impossible, the more likely explaination is a misrecorded initial ceiling.
 
 The study team broke down the outliers into 6 categories:
 `r knitr::kable(p_outlier_summary)`
@@ -243,15 +244,15 @@ The study team broke down the outliers into 6 categories:
 * Obligations at least half Orig+CRai: For this category, total obligations of the contract were at least half the value of the initial ceiling plus ceiling growth under change orders. These contrats have had spending that massively exceeded their original ceiling, so the growth in absolute terrms seems plausible. This category accounts for the overwhelming majority of outlier spending but only a tiny fraction of change order growth.
 * Later Deobligated: The change order growth metrics only counts increases. These may simply have been mistaken increases, as when including deobligation the growth no longer exceeded 10x the original ceiling. The number, obligations, and change order growth of these contracts are comparatively small, and thus should not distort the overall data.
 * Korean Office W912UM refers to a contracting office that sometimes records base and all options values in Korean Won, approximate exchange rate 1,000 Won : 1 USD. 
-* There are nrow(cbre_preclean %>% dplyr::filter(Why_Outlier ==">=$250M, Insepect" & (p_CBre-1)>10)) contracts with ceiling growth of over $250 million that account for hundreds of billions in change order growth. These merit manual inspection.
+* There are nrow(cbre_preclean %>% dplyr::filter(Why_Outlier ==">=$250M, Inspect" & (p_ChangeOrderCeilingGrowth-1)>10)) contracts with ceiling growth of over $250 million that account for hundreds of billions in change order growth. These merit manual inspection.
 * Finally a few score contrats have unexplained growth, but remain below the $10M threshold. The quantity and magnitude of these contrats is not sufficient to risk the overall model.
 
-This examination left the study team less confident in percentage growth as a metric, especially in extreme cases, while increasing the study team's confidence in measures of growth in absoute term. In the worst case, simply removing all of the unexplained over  10 million contracts from the sample would reduce the number of contracts by a tiny amount and reduce the spending accounted for by  `r sum(cbre_preclean$Action_Obligation[cbre_preclean$Why_Outlier ==">=$250M, Insepect"& (cbre_preclean$p_CBre-1)>10] ,na.rm=TRUE)`.
+This examination left the study team less confident in percentage growth as a metric, especially in extreme cases, while increasing the study team's confidence in measures of growth in absoute term. In the worst case, simply removing all of the unexplained over  10 million contracts from the sample would reduce the number of contracts by a tiny amount and reduce the spending accounted for by  `r sum(cbre_preclean$Action_Obligation[cbre_preclean$Why_Outlier ==">=$250M, Inspect"& (cbre_preclean$p_ChangeOrderCeilingGrowth-1)>10] ,na.rm=TRUE)`.
 
 Shifting the focus to all contracts with growth of at least 250 million, there are far fewer contracts that account for far more money.
 `r knitr::kable(n_outlier_summary)`
 
-Inspecting W912UM, either to remove or fix its oversized growth, is an imperative as it accounts for the majority of these contracts or task orders. Even so, there are still `r nrow(cbre_preclean %>% filter(Why_Outlier ==">=$250M, Insepect"))` That merit special inspection for given that there growth far outpaces their spending.
+Inspecting W912UM, either to remove or fix its oversized growth, is an imperative as it accounts for the majority of these contracts or task orders. Even so, there are still `r nrow(cbre_preclean %>% filter(Why_Outlier ==">=$250M, Inspect"))` That merit special inspection for given that there growth far outpaces their spending.
 
 
 ## Ceiling Growth
@@ -386,14 +387,13 @@ summary(cbre_preclean$ChangeOrderCeilingRescision)
 
 ## >250 Inspect
 ```{r gt250k}
-inspect250<-cbre_preclean %>% filter(Why_Outlier==">=$250M, Insepect")
+inspect250<-cbre_preclean %>% filter(!Why_Outlier %in% c("Obligations at least half Orig+CRai","Korean Office W912UM") &
+                                       ChangeOrderCeilingGrowth >= 2.5e8)
 inspect250trans<-read.delim(file="..\\data\\semi_clean\\gt250k_change_outliers.txt", sep="\t")
 
 inspect250trans %>% group_by(CSIScontractID)
 
 
-
-#This is obviously unfinished, just  managed the download  this morning
 ```
 CSIScontractID 1431340 IDV -- FA881111C0001. This is a MDAP "LETTER CONTRACT FOR MUOS-2, WGS-6, NROL-65" The massive change order is for "FY 12 ATLAS-V MISSIONS AND FY12 DELTA IV MISSIONS" This is later descreased for "TRANSFER THE FY-12 MISSIONS OFF THIS CONTRACT AND RE-ALIGN ONTO CONTRACT FA8811-13-C-0002 FOR ADMINISTRATIVE PURPOSES." and "DEFINITIZATION OF DELTA IV ELS UCA MISSIONS: NROL-65, WGS-6, AND WGS-5" before being increased again for "DEFINITIZE ATLAS FY 12 LAUNCH SERVICE MISSIONS INITIALLY AWARDED VIA P00012". Thus the amounts seem entirely realistic.
 
@@ -421,7 +421,7 @@ Construction of "STUDENT DORMITORIES 1 & 2" 447M corrected by the next transacti
 sum(W912UM$Action_Obligation_Then_Year[])
 
 (
-  ggplot(W912UM, aes(x=UnmodifiedCeiling+ChangeOrderCeilingGrowth+ChangeOrderCeilingRescision,y=Action_Obligation_Then_Year)) +#,color=qGrowth
+  ggplot(W912UM, aes(x=UnmodifiedCeiling_Then_Year+ChangeOrderCeilingGrowth+ChangeOrderCeilingRescision,y=Action_Obligation_Then_Year)) +#,color=qGrowth
     geom_point(alpha=0.25,shape=".")+
     # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+scale_y_log10()+
@@ -1379,7 +1379,7 @@ cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
   "Korean Office W912UM"
 cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
                    cbre$ChangeOrderCeilingGrowth>=2.5e8]<-
-  ">=$250M, Insepect"
+  ">=$250M, Inspect"
 cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
                    cbre$p_CBre-1>10]<-
   "Other Unexplained 10x Ceiling Breach"
@@ -1389,7 +1389,7 @@ cbre$Why_Outlier<-factor(cbre$Why_Outlier,
                            "Obligations at least half Orig+CRai",
                            "Later Deobligated",
                            "Korean Office W912UM",
-                           ">=$250M, Insepect",
+                           ">=$250M, Inspect",
                            "Other Unexplained 10x Ceiling Breach"
                          ))
 
@@ -1455,7 +1455,7 @@ After the cleaning, 2 categories remain relevant.
 
 `r knitr::kable(p_outlier_summary)`
 * Obligations at least half Orig+CRai: For this category, total obligations of the contract were at least half the value of the initial ceiling plus ceiling growth under change orders. As before, this category accounts for the overwhelming majority of outlier spending but only a tiny fraction of change order growth.
-* There are `r nrow(cbre %>% dplyr::filter(Why_Outlier ==">=$250M, Insepect" ))` contracts with ceiling growth of over $250 million that account for hundreds of billions in change order growth. These merit manual inspection.
+* There are `r nrow(cbre %>% dplyr::filter(Why_Outlier ==">=$250M, Inspect" ))` contracts with ceiling growth of over $250 million that account for hundreds of billions in change order growth. These merit manual inspection.
 
 ## Graphs after Cleaning
 
