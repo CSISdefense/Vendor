@@ -189,14 +189,15 @@ output:
 
 
 ```r
+load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
+
 # load(file="../Data/Clean/transformed_def.Rdata")
 load(file="..\\data\\semi_clean\\CBre_pre_clean.rdata")
 # W912UM <- def %>% filter(Office=="W912UM")
 # W912UMtrans<-read.delim(file="..\\data\\semi_clean\\W912UM_trans.csv", sep=",")
 # W912UMtrans<-remove_bom(W912UMtrans)
-# cbre_preclean<-def %>% filter(b_CBre==1)
-# cbre_preclean$qGrowth<-Hmisc::cut2(cbre_preclean$p_CBre-1,c(1,10))
-# summary(cbre_preclean$qGrowth)
+cbre_preclean<-def_detail %>% filter(ChangeOrderCeilingGrowth>0)
+rm(def_detail)
 # save(W912UM,W912UMtrans,cbre_preclean,file="..\\data\\semi_clean\\CBre_pre_clean.rdata")
 
 # colnames(W912UM)[colnames(W912UM)=="UnmodifiedCeiling_Then_Year"]<-"UnmodifiedCeiling"
@@ -225,200 +226,8 @@ load(file="..\\data\\semi_clean\\CBre_pre_clean.rdata")
 
 # Before Cleaning
 
-```r
-nrow(cbre_preclean %>% filter((p_CBre-1)>1))
-```
-
-```
-## [1] 11954
-```
-
-```r
-nrow(cbre_preclean %>% filter((p_CBre-1)>10))
-```
-
-```
-## [1] 1462
-```
-
-```r
-nrow(cbre_preclean %>% filter((p_CBre-1)>100))
-```
-
-```
-## [1] 419
-```
-
-```r
-nrow(cbre_preclean %>% filter((p_CBre-1)>100 & UnmodifiedCeiling_Then_Year<=0))
-```
-
-```
-## [1] 232
-```
-
-```r
-summary(cbre_preclean$Ceil[(cbre_preclean$p_CBre-1)>10 & cbre_preclean$UnmodifiedCeiling_Then_Year>0])
-```
-
-```
-##    [0,15k) [15k,100k)  [100k,1m)   [1m,10m)  [10m,75m)     [75m+] 
-##        859        213        120         34          4          0
-```
-
-```r
-summary(cbre_preclean$Ceil[(cbre_preclean$p_CBre-1)>100 & cbre_preclean$UnmodifiedCeiling_Then_Year>0])
-```
-
-```
-##    [0,15k) [15k,100k)  [100k,1m)   [1m,10m)  [10m,75m)     [75m+] 
-##        138         32         15          2          0          0
-```
-
-```r
-cbre_preclean$Why_Outlier<-NA
-cbre_preclean$Why_Outlier[cbre_preclean$UnmodifiedCeiling_Then_Year<=0]<-"No Unmodified Ceiling"
-cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
-                            cbre_preclean$Action_Obligation_Then_Year*2>=cbre_preclean$UnmodifiedCeiling_Then_Year+
-                            cbre_preclean$n_CBre]<-
-  "Obligations at least half Orig+CRai"
-cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
-                            cbre_preclean$Office=="W912UM"]<-
-  "Korean Office W912UM"
-cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
-                            cbre_preclean$n_CBre>=2.5e8]<-
-  ">=$250M, Insepect"
-cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
-                            cbre_preclean$p_CBre-1>10]<-
-  "Other Unexplained 10x Ceiling Breach"
-cbre_preclean$Why_Outlier<-factor(cbre_preclean$Why_Outlier,
-                                  levels=c(
-                                    "No Unmodified Ceiling",
-                                    "Obligations at least half Orig+CRai",
-                                    "Later Deobligated",
-                                    "Korean Office W912UM",
-                                    ">=$250M, Insepect",
-                                    "Other Unexplained 10x Ceiling Breach"
-                                  ))
-summary(cbre_preclean$Why_Outlier[(cbre_preclean$p_CBre-1)>10])
-```
-
-```
-##                No Unmodified Ceiling  Obligations at least half Orig+CRai 
-##                                  232                                 1146 
-##                    Later Deobligated                 Korean Office W912UM 
-##                                    0                                   11 
-##                    >=$250M, Insepect Other Unexplained 10x Ceiling Breach 
-##                                    5                                   68
-```
-
-```r
-summary(cbre_preclean$Why_Outlier)
-```
-
-```
-##                No Unmodified Ceiling  Obligations at least half Orig+CRai 
-##                                  232                                91626 
-##                    Later Deobligated                 Korean Office W912UM 
-##                                    0                                  198 
-##                    >=$250M, Insepect Other Unexplained 10x Ceiling Breach 
-##                                    8                                   68 
-##                                 NA's 
-##                                 2358
-```
-
-```r
-p_outlier_summary<-cbre_preclean %>% filter(p_CBre-1>10) %>% group_by(Why_Outlier) %>%
-  dplyr::summarise(nContract=length(n_CBre),
-                   SumOfChangeOrderCeilingGrowth=sum(n_CBre),
-                   MaxOfChangeOrderCeilingGrowth=max(n_CBre),
-                   SumOfAction_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
 
 
-n_outlier_summary<-cbre_preclean %>% filter(n_CBre>2.5e8) %>% group_by(Why_Outlier) %>%
-  dplyr::summarise(nContract=length(n_CBre),
-                   SumOfChangeOrderCeilingGrowth=sum(n_CBre),
-                   MaxOfChangeOrderCeilingGrowth=max(n_CBre),
-                   SumOfAction_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
-
-
-summary(Hmisc::cut2(cbre_preclean$n_CBre,c(1e3,
-                                           1e6,
-                                           1e7,
-                                           1e8,
-                                           2.5e8,
-                                           1e9,
-                                           1e10,
-                                           2e10
-)))
-```
-
-```
-## [1.00e-02,1.00e+03) [1.00e+03,1.00e+06) [1.00e+06,1.00e+07) 
-##               18238               72053                3517 
-## [1.00e+07,1.00e+08) [1.00e+08,2.50e+08) [2.50e+08,1.00e+09) 
-##                 571                  67                  32 
-## [1.00e+09,1.00e+10) [1.00e+10,2.00e+10) [2.00e+10,3.45e+11] 
-##                   9                   1                   2
-```
-
-```r
-summary(cbre_preclean$Ceil[cbre_preclean$n_CBre>=1e6])
-```
-
-```
-##    [0,15k) [15k,100k)  [100k,1m)   [1m,10m)  [10m,75m)     [75m+] 
-##         59         97        488       1777       1366        412
-```
-
-```r
-summary(cbre_preclean$Ceil[cbre_preclean$n_CBre>=1e9])
-```
-
-```
-##    [0,15k) [15k,100k)  [100k,1m)   [1m,10m)  [10m,75m)     [75m+] 
-##          0          1          1          2          0          8
-```
-
-```r
-write.csv(file="..\\Data\\semi_clean\\p_CBre_outliers.csv",cbre_preclean %>% filter((p_CBre-1)>10),row.names = FALSE)
-write.csv(file="..\\Data\\semi_clean\\n_CBre_outliers.csv",cbre_preclean %>% filter(n_CBre>=2.5e8),row.names = FALSE)
-```
-Examining cases of large ceiling growth, 1462 contracts experienced greater than 10 fold growth. An increase of that side strains credulity, even in high risk defense contracting. While by no means impossible, the more likely explaination is a misrecorded initial ceiling.
-
-The study team broke down the outliers into 6 categories:
-
-
-Why_Outlier                             nContract   SumOfChangeOrderCeilingGrowth   MaxOfChangeOrderCeilingGrowth   SumOfAction_Obligation_Then_Year
--------------------------------------  ----------  ------------------------------  ------------------------------  ---------------------------------
-No Unmodified Ceiling                         232                        81591718                        20862815                          383117339
-Obligations at least half Orig+CRai          1146                      4418306936                       769789464                         8799240742
-Korean Office W912UM                           11                      7681224515                      5364187370                           16969010
->=$250M, Insepect                               5                    476290148280                    344739578535                           29052394
-Other Unexplained 10x Ceiling Breach           68                       484851277                        95979870                           86701052
-
-
-* No Unmodified Ceiling: Contracts with an initial ceiling <=0. These are eliminated from the sample as missing data.
-* Obligations at least half Orig+CRai: For this category, total obligations of the contract were at least half the value of the initial ceiling plus ceiling growth under change orders. These contrats have had spending that massively exceeded their original ceiling, so the growth in absolute terrms seems plausible. This category accounts for the overwhelming majority of outlier spending but only a tiny fraction of change order growth.
-* Later Deobligated: The change order growth metrics only counts increases. These may simply have been mistaken increases, as when including deobligation the growth no longer exceeded 10x the original ceiling. The number, obligations, and change order growth of these contracts are comparatively small, and thus should not distort the overall data.
-* Korean Office W912UM refers to a contracting office that sometimes records base and all options values in Korean Won, approximate exchange rate 1,000 Won : 1 USD. 
-* There are nrow(cbre_preclean %>% dplyr::filter(Why_Outlier ==">=$250M, Insepect" & (p_CBre-1)>10)) contracts with ceiling growth of over $250 million that account for hundreds of billions in change order growth. These merit manual inspection.
-* Finally a few score contrats have unexplained growth, but remain below the $10M threshold. The quantity and magnitude of these contrats is not sufficient to risk the overall model.
-
-This examination left the study team less confident in percentage growth as a metric, especially in extreme cases, while increasing the study team's confidence in measures of growth in absoute term. In the worst case, simply removing all of the unexplained over  10 million contracts from the sample would reduce the number of contracts by a tiny amount and reduce the spending accounted for by  2.9052394\times 10^{7}.
-
-Shifting the focus to all contracts with growth of at least 250 million, there are far fewer contracts that account for far more money.
-
-
-Why_Outlier                            nContract   SumOfChangeOrderCeilingGrowth   MaxOfChangeOrderCeilingGrowth   SumOfAction_Obligation_Then_Year
-------------------------------------  ----------  ------------------------------  ------------------------------  ---------------------------------
-Obligations at least half Orig+CRai           11                      5525269281                       992698908                        16999937992
-Korean Office W912UM                          24                     27401542851                      5364187370                          197697808
->=$250M, Insepect                              8                    479197384535                    344739578535                         1611779996
-
-
-
-Inspecting W912UM, either to remove or fix its oversized growth, is an imperative as it accounts for the majority of these contracts or task orders. Even so, there are still 8 That merit special inspection for given that there growth far outpaces their spending.
 
 ## Ceiling Change Checksum
 
@@ -439,17 +248,339 @@ Inspecting W912UM, either to remove or fix its oversized growth, is an imperativ
 ```
 
 
-## Ceiling Growth
+
+
+## Ceiling Modification Metrics
+
+```r
+summary(cbre_preclean$ChangeOrderCeilingRescision)
+```
+
+```
+##       Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
+## -3.363e+12  0.000e+00  0.000e+00 -2.783e+07  0.000e+00  0.000e+00
+```
+
+```r
+summary(cbre_preclean$AdminCeilingModification)
+```
+
+```
+##       Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
+## -3.447e+11  0.000e+00  0.000e+00 -2.560e+06  0.000e+00  1.764e+10
+```
 
 ```r
 (
-  ggplot(cbre_preclean, aes(x=UnmodifiedCeiling_Then_Year,y=p_CBre-1)) +#,color=qGrowth
+  ggplot(cbre_preclean, aes(x=ChangeOrderCeilingGrowth,y=abs(ChangeOrderCeilingRescision))) +#,color=qGrowth
     geom_point(alpha=0.25,shape=".")+
     # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+scale_y_log10()+
     #+
     geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-    # facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
+    # facet_wrap(~qHighCeiling,scales="free_y")+#+, space="free_y"
+    labs(title="Distribution of Ceiling Breaches",
+         y="abs(Change Order Ceiling Rescision)",
+         x="Change Order Ceiling Growth")#,
+  # fill="Termination Completion"
+)
+```
+
+```
+## Warning: Transformation introduced infinite values in continuous y-axis
+```
+
+![](Ceiling_Breach_Examination_files/figure-html/CeilingModification-1.png)<!-- -->
+
+```r
+(
+  ggplot(cbre_preclean, aes(x=ChangeOrderCeilingGrowth,y=abs(AdminCeilingModification),
+                                                             color=ifelse(AdminCeilingModification>=0,'0 or +','negative'))) +#,color=qGrowth
+    geom_point(alpha=0.25,shape=".")+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()+
+    #+
+    geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+    # facet_wrap(~qHighCeiling,scales="free_y")+#+, space="free_y"
+    labs(title="Distribution of Ceiling Breaches",
+         y="Change Order Ceiling Growth + Admin Reduction",
+         x="Change Order Ceiling Growth")#,
+  # fill="Termination Completion"
+)
+```
+
+```
+## Warning: Transformation introduced infinite values in continuous y-axis
+```
+
+![](Ceiling_Breach_Examination_files/figure-html/CeilingModification-2.png)<!-- -->
+
+```r
+# cbre_preclean$n_CBre<-cbre_preclean$ChangeOrderCeilingGrowth + 
+#   ifelse(cbre_preclean$AdminCeilingModification<0,cbre_preclean$AdminCeilingModification,0)+1
+# cbre_preclean$n_CBre[cbre_preclean$n_CBre<1]<-NA
+# summary(cbre_preclean$ChangeOrderCeilingGrowth)
+# summary(cbre_preclean$n_CBre)
+cbre_preclean$p_ChangeOrderCeilingGrowth<-((cbre_preclean$ChangeOrderCeilingGrowth-1)/
+                          cbre_preclean$UnmodifiedCeiling)+1
+# cbre_preclean$qGrowth<-Hmisc::cut2(cbre_preclean$p_ChangeOrderCeilingGrowth-1,c(1,10))
+# summary(cbre_preclean$qGrowth)
+cbre_preclean$qGrowth<-Hmisc::cut2(cbre_preclean$p_ChangeOrderCeilingGrowth-1,c(1,10))
+```
+
+## Outlier Labeling
+
+
+```r
+nrow(cbre_preclean %>% filter((p_ChangeOrderCeilingGrowth-1)>1))
+```
+
+```
+## [1] 14803
+```
+
+```r
+nrow(cbre_preclean %>% filter((p_ChangeOrderCeilingGrowth-1)>10))
+```
+
+```
+## [1] 1894
+```
+
+```r
+nrow(cbre_preclean %>% filter((p_ChangeOrderCeilingGrowth-1)>100))
+```
+
+```
+## [1] 560
+```
+
+```r
+nrow(cbre_preclean %>% filter((p_ChangeOrderCeilingGrowth-1)>100 & UnmodifiedCeiling<=0))
+```
+
+```
+## [1] 316
+```
+
+```r
+summary(cbre_preclean$qHighCeiling[(cbre_preclean$p_ChangeOrderCeilingGrowth-1)>10 & cbre_preclean$UnmodifiedCeiling>0])
+```
+
+```
+## [0.0e+00,1.5e+04) [1.5e+04,1.0e+05) [1.0e+05,1.0e+06) [1.0e+06,1.0e+07) 
+##              1055               297               172                47 
+## [1.0e+07,7.5e+07) [7.5e+07,1.0e+13] 
+##                 7                 0
+```
+
+```r
+summary(cbre_preclean$qHighCeiling[(cbre_preclean$p_ChangeOrderCeilingGrowth-1)>100 & cbre_preclean$UnmodifiedCeiling>0])
+```
+
+```
+## [0.0e+00,1.5e+04) [1.5e+04,1.0e+05) [1.0e+05,1.0e+06) [1.0e+06,1.0e+07) 
+##               181                43                18                 2 
+## [1.0e+07,7.5e+07) [7.5e+07,1.0e+13] 
+##                 0                 0
+```
+
+```r
+cbre_preclean$Why_Outlier<-NA
+cbre_preclean$Why_Outlier[cbre_preclean$UnmodifiedCeiling<=0]<-"No Unmodified Ceiling"
+cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
+                            cbre_preclean$Action_Obligation*2>=cbre_preclean$UnmodifiedCeiling+
+                            cbre_preclean$ChangeOrderCeilingGrowth]<-
+  "Obligations at least half Orig+CRai"
+cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
+                            cbre_preclean$Action_Obligation*2>=
+                            (cbre_preclean$ChangeOrderCeilingGrowth+cbre_preclean$AdminCeilingModification)]<-
+  "At Least 1/2 After Admin Rescision"
+cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
+                            cbre_preclean$Action_Obligation*2>=
+                            (cbre_preclean$ChangeOrderCeilingGrowth+cbre_preclean$EndingCeilingModification)]<-
+  "At Least 1/2 After Ending Rescision"
+cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
+                            cbre_preclean$Action_Obligation*2>=
+                            (cbre_preclean$ChangeOrderCeilingGrowth+cbre_preclean$SteadyScopeCeilingModification)]<-
+  "At Least 1/2 After Steady Scope Rescision"
+cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
+                            cbre_preclean$Action_Obligation*2>=
+                            (cbre_preclean$ChangeOrderCeilingGrowth+cbre_preclean$ChangeOrderCeilingRescision)]<-
+  "At Least 1/2 After Change Order Rescision"
+cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
+                            cbre_preclean$Action_Obligation*2>=
+                            (cbre_preclean$ChangeOrderCeilingGrowth+cbre_preclean$OtherCeilingModification)]<-
+  "At Least 1/2 After Other Rescision"
+cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
+                            cbre_preclean$topContractingOfficeID=="W912UM"]<-
+  "Korean Office W912UM"
+cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
+                            cbre_preclean$ChangeOrderCeilingGrowth>=2.5e8]<-
+  ">=$250M, Inspect"
+cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
+                            cbre_preclean$p_ChangeOrderCeilingGrowth-1>10]<-
+  "Other Unexplained 10x Ceiling Breach"
+cbre_preclean$Why_Outlier<-factor(cbre_preclean$Why_Outlier,
+                                  levels=c(
+                                    "No Unmodified Ceiling",
+                                    "Obligations at least half Orig+CRai",
+                                    "At Least 1/2 After Admin Rescision",
+                                    "At Least 1/2 After Ending Rescision",
+                                    "At Least 1/2 After Steady Scope Rescision",
+                                    "At Least 1/2 After Change Order Rescision",
+                                    "At Least 1/2 After Other Rescision",
+                                    "Korean Office W912UM",
+                                    ">=$250M, Inspect",
+                                    "Other Unexplained 10x Ceiling Breach"
+                                  ))
+
+summary(cbre_preclean$Why_Outlier)
+```
+
+```
+##                     No Unmodified Ceiling 
+##                                       318 
+##       Obligations at least half Orig+CRai 
+##                                    116643 
+##        At Least 1/2 After Admin Rescision 
+##                                      3138 
+##       At Least 1/2 After Ending Rescision 
+##                                       306 
+## At Least 1/2 After Steady Scope Rescision 
+##                                        73 
+## At Least 1/2 After Change Order Rescision 
+##                                       239 
+##        At Least 1/2 After Other Rescision 
+##                                         3 
+##                      Korean Office W912UM 
+##                                       233 
+##                          >=$250M, Inspect 
+##                                         8 
+##      Other Unexplained 10x Ceiling Breach 
+##                                        30 
+##                                      NA's 
+##                                       406
+```
+
+```r
+p_outlier_summary<-cbre_preclean %>% filter(p_ChangeOrderCeilingGrowth-1>10) %>% group_by(Why_Outlier) %>%
+  dplyr::summarise(nContract=length(ChangeOrderCeilingGrowth),
+                   SumOfChangeOrderCeilingGrowth=sum(ChangeOrderCeilingGrowth),
+                   MaxOfChangeOrderCeilingGrowth=max(ChangeOrderCeilingGrowth),
+                   SumOfAction_Obligation_Then_Year=sum(Action_Obligation))
+
+
+n_outlier_summary<-cbre_preclean %>% filter(ChangeOrderCeilingGrowth>2.5e8) %>% group_by(Why_Outlier) %>%
+  dplyr::summarise(nContract=length(ChangeOrderCeilingGrowth),
+                   SumOfChangeOrderCeilingGrowth=sum(ChangeOrderCeilingGrowth),
+                   MaxOfChangeOrderCeilingGrowth=max(ChangeOrderCeilingGrowth),
+                   SumOfAction_Obligation_Then_Year=sum(Action_Obligation))
+
+
+summary(Hmisc::cut2(cbre_preclean$ChangeOrderCeilingGrowth,c(1e3,
+                                           1e6,
+                                           1e7,
+                                           1e8,
+                                           2.5e8,
+                                           1e9,
+                                           1e10,
+                                           2e10
+)))
+```
+
+```
+## [1.00e-02,1.00e+03) [1.00e+03,1.00e+06) [1.00e+06,1.00e+07) 
+##               24093               91923                4457 
+## [1.00e+07,1.00e+08) [1.00e+08,2.50e+08) [2.50e+08,1.00e+09) 
+##                 759                  93                  50 
+## [1.00e+09,1.00e+10) [1.00e+10,2.00e+10) [2.00e+10,3.45e+11] 
+##                  16                   2                   4
+```
+
+```r
+summary(cbre_preclean$qHighCeiling[cbre_preclean$ChangeOrderCeilingGrowth>=1e6])
+```
+
+```
+## [0.0e+00,1.5e+04) [1.5e+04,1.0e+05) [1.0e+05,1.0e+06) [1.0e+06,1.0e+07) 
+##                84               137               657              2236 
+## [1.0e+07,7.5e+07) [7.5e+07,1.0e+13] 
+##              1703               564
+```
+
+```r
+summary(cbre_preclean$qHighCeiling[cbre_preclean$ChangeOrderCeilingGrowth>=1e9])
+```
+
+```
+## [0.0e+00,1.5e+04) [1.5e+04,1.0e+05) [1.0e+05,1.0e+06) [1.0e+06,1.0e+07) 
+##                 0                 1                 1                 2 
+## [1.0e+07,7.5e+07) [7.5e+07,1.0e+13] 
+##                 1                17
+```
+
+```r
+write.csv(file="..\\Data\\semi_clean\\p_CBre_outliers.csv",cbre_preclean %>% filter((p_ChangeOrderCeilingGrowth-1)>10),row.names = FALSE)
+write.csv(file="..\\Data\\semi_clean\\n_CBre_outliers.csv",cbre_preclean %>% filter(ChangeOrderCeilingGrowth>=2.5e8),row.names = FALSE)
+```
+Examining cases of large ceiling growth, 1894 contracts experienced greater than 10 fold growth. An increase of that side strains credulity, even in high risk defense contracting. While by no means impossible, the more likely explaination is a misrecorded initial ceiling.
+
+The study team broke down the outliers into 6 categories:
+
+
+Why_Outlier                                  nContract   SumOfChangeOrderCeilingGrowth   MaxOfChangeOrderCeilingGrowth   SumOfAction_Obligation_Then_Year
+------------------------------------------  ----------  ------------------------------  ------------------------------  ---------------------------------
+No Unmodified Ceiling                              316                    1.893034e+08                    3.332945e+07                       7.199748e+08
+Obligations at least half Orig+CRai               1458                    6.308093e+09                    7.697895e+08                       1.385196e+10
+At Least 1/2 After Admin Rescision                  10                    3.455751e+11                    3.447396e+11                       7.148765e+07
+At Least 1/2 After Ending Rescision                 10                    8.144617e+05                    5.007609e+05                       8.068750e+04
+At Least 1/2 After Steady Scope Rescision            7                    1.161151e+11                    1.160931e+11                       1.354886e+07
+At Least 1/2 After Change Order Rescision           43                    8.514926e+07                    3.761755e+07                       2.363342e+06
+At Least 1/2 After Other Rescision                   1                    1.502467e+05                    1.502467e+05                       6.673660e+03
+Korean Office W912UM                                16                    8.877176e+09                    5.364187e+09                       1.891750e+07
+>=$250M, Inspect                                     3                    1.582823e+10                    1.443441e+10                       1.236160e+08
+Other Unexplained 10x Ceiling Breach                30                    3.069881e+08                    7.487936e+07                       3.101379e+07
+
+
+* No Unmodified Ceiling: Contracts with an initial ceiling <=0. These are eliminated from the sample as missing data.
+* Obligations at least half Orig+CRai: For this category, total obligations of the contract were at least half the value of the initial ceiling plus ceiling growth under change orders. These contrats have had spending that massively exceeded their original ceiling, so the growth in absolute terrms seems plausible. This category accounts for the overwhelming majority of outlier spending but only a tiny fraction of change order growth.
+* Later Deobligated: The change order growth metrics only counts increases. These may simply have been mistaken increases, as when including deobligation the growth no longer exceeded 10x the original ceiling. The number, obligations, and change order growth of these contracts are comparatively small, and thus should not distort the overall data.
+* Korean Office W912UM refers to a contracting office that sometimes records base and all options values in Korean Won, approximate exchange rate 1,000 Won : 1 USD. 
+* There are nrow(cbre_preclean %>% dplyr::filter(Why_Outlier ==">=$250M, Inspect" & (p_ChangeOrderCeilingGrowth-1)>10)) contracts with ceiling growth of over $250 million that account for hundreds of billions in change order growth. These merit manual inspection.
+* Finally a few score contrats have unexplained growth, but remain below the $10M threshold. The quantity and magnitude of these contrats is not sufficient to risk the overall model.
+
+This examination left the study team less confident in percentage growth as a metric, especially in extreme cases, while increasing the study team's confidence in measures of growth in absoute term. In the worst case, simply removing all of the unexplained over  10 million contracts from the sample would reduce the number of contracts by a tiny amount and reduce the spending accounted for by  1.2361599\times 10^{8}.
+
+Shifting the focus to all contracts with growth of at least 250 million, there are far fewer contracts that account for far more money.
+
+
+Why_Outlier                                  nContract   SumOfChangeOrderCeilingGrowth   MaxOfChangeOrderCeilingGrowth   SumOfAction_Obligation_Then_Year
+------------------------------------------  ----------  ------------------------------  ------------------------------  ---------------------------------
+Obligations at least half Orig+CRai                 17                      7542163613                       992698908                        23989114419
+At Least 1/2 After Admin Rescision                   5                    348399711493                    344739578535                         1851142076
+At Least 1/2 After Steady Scope Rescision            1                    116093071716                    116093071716                            6649389
+At Least 1/2 After Change Order Rescision            1                       296534102                       296534102                           68972740
+At Least 1/2 After Other Rescision                   1                      1456705136                      1456705136                                  0
+Korean Office W912UM                                38                     38741059518                      5364187370                          365803594
+>=$250M, Inspect                                     8                     84991428928                     26457083904                          765730150
+
+
+
+Inspecting W912UM, either to remove or fix its oversized growth, is an imperative as it accounts for the majority of these contracts or task orders. Even so, there are still 8 That merit special inspection for given that there growth far outpaces their spending.
+
+
+## Ceiling Growth
+
+```r
+(
+  ggplot(cbre_preclean, aes(x=UnmodifiedCeiling,y=p_ChangeOrderCeilingGrowth-1)) +#,color=qGrowth
+    geom_point(alpha=0.25,shape=".")+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()+
+    #+
+    geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+    # facet_wrap(~qHighCeiling,scales="free_y")+#+, space="free_y"
     labs(title="Distribution of Ceiling Breaches",
          y="Percent of Growth in  Ceiling",
          x="Unmodified Contract Ceiling")#,
@@ -461,17 +592,29 @@ Inspecting W912UM, either to remove or fix its oversized growth, is an imperativ
 ## Warning: Transformation introduced infinite values in continuous x-axis
 ```
 
+```
+## Warning in self$trans$transform(x): NaNs produced
+```
+
+```
+## Warning: Transformation introduced infinite values in continuous y-axis
+```
+
+```
+## Warning: Removed 328 rows containing missing values (geom_point).
+```
+
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthGraphs-1.png)<!-- -->
 
 ```r
 (
-  ggplot(cbre_preclean, aes(x=UnmodifiedCeiling_Then_Year,y=n_CBre)) +#,color=qGrowth
+  ggplot(cbre_preclean, aes(x=UnmodifiedCeiling,y=ChangeOrderCeilingGrowth)) +#,color=qGrowth
     geom_point(alpha=0.25,shape=".")+
     # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+scale_y_log10()+
     #+
     geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-    # facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
+    # facet_wrap(~qHighCeiling,scales="free_y")+#+, space="free_y"
     labs(title="Distribution of Ceiling Breaches",
          y="Absolute Growth in  Ceiling",
          x="Unmodified Contract Ceiling")#,
@@ -487,13 +630,13 @@ Inspecting W912UM, either to remove or fix its oversized growth, is an imperativ
 
 ```r
 (
-  ggplot(cbre_preclean, aes(x=UnmodifiedCeiling_Then_Year+ChangeOrderCeilingGrowth+ChangeOrderCeilingRescision,y=Action_Obligation_Then_Year)) +#,color=qGrowth
+  ggplot(cbre_preclean, aes(x=UnmodifiedCeiling+ChangeOrderCeilingGrowth,y=Action_Obligation)) +#,color=qGrowth
     geom_point(alpha=0.25,shape=".")+
     # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+scale_y_log10()#+
   #+
   #   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-  # # facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
+  # # facet_wrap(~qHighCeiling,scales="free_y")+#+, space="free_y"
   #   labs(title="Distribution of Ceiling Breaches",
   #        y="Percent of Growth in  Ceiling",
   #        x="Unmodified Contract Ceiling")#,
@@ -510,10 +653,86 @@ Inspecting W912UM, either to remove or fix its oversized growth, is an imperativ
 ```
 
 ```
-## Warning: Removed 24 rows containing missing values (geom_point).
+## Warning: Removed 35 rows containing missing values (geom_point).
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthGraphs-3.png)<!-- -->
+
+```r
+(
+  ggplot(cbre_preclean, aes(x=UnmodifiedCeiling+ChangeOrderCeilingGrowth+ChangeOrderCeilingRescision,y=Action_Obligation)) +#,color=qGrowth
+    geom_point(alpha=0.25,shape=".")+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()#+
+  #+
+  #   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+  # # facet_wrap(~qHighCeiling,scales="free_y")+#+, space="free_y"
+  #   labs(title="Distribution of Ceiling Breaches",
+  #        y="Percent of Growth in  Ceiling",
+  #        x="Unmodified Contract Ceiling")#,
+  #        # fill="Termination Completion"
+)
+```
+
+```
+## Warning in self$trans$transform(x): NaNs produced
+```
+
+```
+## Warning: Transformation introduced infinite values in continuous x-axis
+```
+
+```
+## Warning in self$trans$transform(x): NaNs produced
+```
+
+```
+## Warning: Transformation introduced infinite values in continuous y-axis
+```
+
+```
+## Warning: Removed 94 rows containing missing values (geom_point).
+```
+
+![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthGraphs-4.png)<!-- -->
+
+```r
+(
+  ggplot(cbre_preclean, aes(x=UnmodifiedCeiling+ChangeOrderCeilingGrowth-1,y=Action_Obligation)) +#,color=qGrowth
+    geom_point(alpha=0.25,shape=".")+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()#+
+  #+
+  #   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+  # # facet_wrap(~qHighCeiling,scales="free_y")+#+, space="free_y"
+  #   labs(title="Distribution of Ceiling Breaches",
+  #        y="Percent of Growth in  Ceiling",
+  #        x="Unmodified Contract Ceiling")#,
+  #        # fill="Termination Completion"
+)
+```
+
+```
+## Warning in self$trans$transform(x): NaNs produced
+```
+
+```
+## Warning: Transformation introduced infinite values in continuous x-axis
+```
+
+```
+## Warning in self$trans$transform(x): NaNs produced
+```
+
+```
+## Warning: Transformation introduced infinite values in continuous y-axis
+```
+
+```
+## Warning: Removed 39 rows containing missing values (geom_point).
+```
+
+![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthGraphs-5.png)<!-- -->
 
 ```r
 summary(cbre_preclean$ChangeOrderCeilingGrowth)
@@ -521,7 +740,7 @@ summary(cbre_preclean$ChangeOrderCeilingGrowth)
 
 ```
 ##      Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
-## 0.000e+00 1.664e+03 9.600e+03 5.865e+06 5.483e+04 3.447e+11
+## 0.000e+00 1.576e+03 9.102e+03 5.380e+06 5.287e+04 3.447e+11
 ```
 
 ```r
@@ -530,36 +749,18 @@ summary(cbre_preclean$ChangeOrderCeilingRescision)
 
 ```
 ##       Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
-## -510889128          0          0     -41803          0          0
+## -3.363e+12  0.000e+00  0.000e+00 -2.783e+07  0.000e+00  0.000e+00
 ```
 
 ```r
 (
-  ggplot(cbre_preclean, aes(x=n_CBre,y=ChangeOrderCeilingGrowth+ChangeOrderCeilingRescision)) +#,color=qGrowth
-    geom_point(alpha=0.25,shape=".")+
-    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-    scale_x_log10()+scale_y_log10()#+
-  #+
-  #   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-  # # facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
-  #   labs(title="Distribution of Ceiling Breaches",
-  #        y="Percent of Growth in  Ceiling",
-  #        x="Unmodified Contract Ceiling")#,
-  #        # fill="Termination Completion"
-)
-```
-
-![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthGraphs-4.png)<!-- -->
-
-```r
-(
-  ggplot(cbre_preclean, aes(x=p_CBre-1,fill=qGrowth)) +
+  ggplot(cbre_preclean, aes(x=p_ChangeOrderCeilingGrowth-1,fill=qGrowth)) +
     geom_histogram(bins=100)+
     theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+
     #+
     geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
-    facet_wrap(~Ceil,scales="free_y")+#+, space="free_y"
+    facet_wrap(~qHighCeiling,scales="free_y")+#+, space="free_y"
     labs(title="Distribution of Ceiling Breaches",
          y="Contract Count",
          x="Percent of Growth in  Ceiling")#,
@@ -568,14 +769,22 @@ summary(cbre_preclean$ChangeOrderCeilingRescision)
 ```
 
 ```
-## Warning: Removed 232 rows containing non-finite values (stat_bin).
+## Warning in self$trans$transform(x): NaNs produced
 ```
 
-![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthGraphs-5.png)<!-- -->
+```
+## Warning: Transformation introduced infinite values in continuous x-axis
+```
+
+```
+## Warning: Removed 673 rows containing non-finite values (stat_bin).
+```
+
+![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthGraphs-6.png)<!-- -->
 
 ```r
 (
-  ggplot(cbre_preclean, aes(x=n_CBre,fill=qGrowth)) +
+  ggplot(cbre_preclean, aes(x=ChangeOrderCeilingGrowth,fill=qGrowth)) +
     geom_histogram(bins=100)+
     theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+
@@ -589,17 +798,17 @@ summary(cbre_preclean$ChangeOrderCeilingRescision)
 )
 ```
 
-![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthGraphs-6.png)<!-- -->
+![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthGraphs-7.png)<!-- -->
 
 ```r
 (
-  ggplot(cbre_preclean, aes(x=n_CBre,fill=qGrowth)) +
+  ggplot(cbre_preclean, aes(x=ChangeOrderCeilingGrowth,fill=qGrowth)) +
     geom_histogram(bins=100)+
     theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+
     #+
     geom_vline(xintercept = 1)+
-    facet_wrap(~Ceil,scales="free_y")#+, space="free_y"
+    facet_wrap(~qHighCeiling,scales="free_y")#+, space="free_y"
   #+geom_vline(xintercept = 0.1)+
   #facet_grid(NoPreTermObl~.,scales="free_y", space="free_y")+
   # labs(title="Distribution of Contracts with Obligations After Last termination",
@@ -609,12 +818,13 @@ summary(cbre_preclean$ChangeOrderCeilingRescision)
 )
 ```
 
-![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthGraphs-7.png)<!-- -->
+![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthGraphs-8.png)<!-- -->
 
 ## >250 Inspect
 
 ```r
-inspect250<-cbre_preclean %>% filter(Why_Outlier==">=$250M, Insepect")
+inspect250<-cbre_preclean %>% filter(!Why_Outlier %in% c("Obligations at least half Orig+CRai","Korean Office W912UM") &
+                                       ChangeOrderCeilingGrowth >= 2.5e8)
 inspect250trans<-read.delim(file="..\\data\\semi_clean\\gt250k_change_outliers.txt", sep="\t")
 
 inspect250trans %>% group_by(CSIScontractID)
@@ -682,10 +892,6 @@ inspect250trans %>% group_by(CSIScontractID)
 ## #   commercialitemtestprogram <int>,
 ## #   smallbusinesscompetitivenessdemonstrationprogram <fct>,
 ## #   a76action <fct>, solicitationprocedures <fct>, ...
-```
-
-```r
-#This is obviously unfinished, just  managed the download  this morning
 ```
 CSIScontractID 1431340 IDV -- FA881111C0001. This is a MDAP "LETTER CONTRACT FOR MUOS-2, WGS-6, NROL-65" The massive change order is for "FY 12 ATLAS-V MISSIONS AND FY12 DELTA IV MISSIONS" This is later descreased for "TRANSFER THE FY-12 MISSIONS OFF THIS CONTRACT AND RE-ALIGN ONTO CONTRACT FA8811-13-C-0002 FOR ADMINISTRATIVE PURPOSES." and "DEFINITIZATION OF DELTA IV ELS UCA MISSIONS: NROL-65, WGS-6, AND WGS-5" before being increased again for "DEFINITIZE ATLAS FY 12 LAUNCH SERVICE MISSIONS INITIALLY AWARDED VIA P00012". Thus the amounts seem entirely realistic.
 
@@ -2470,7 +2676,7 @@ cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
   "Korean Office W912UM"
 cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
                    cbre$ChangeOrderCeilingGrowth>=2.5e8]<-
-  ">=$250M, Insepect"
+  ">=$250M, Inspect"
 cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
                    cbre$p_CBre-1>10]<-
   "Other Unexplained 10x Ceiling Breach"
@@ -2480,7 +2686,7 @@ cbre$Why_Outlier<-factor(cbre$Why_Outlier,
                            "Obligations at least half Orig+CRai",
                            "Later Deobligated",
                            "Korean Office W912UM",
-                           ">=$250M, Insepect",
+                           ">=$250M, Inspect",
                            "Other Unexplained 10x Ceiling Breach"
                          ))
 
@@ -2492,10 +2698,20 @@ summary(Hmisc::cut2(cbre_preclean$p_CBre-1,c(1,
 ```
 
 ```
-## [4.69e-10,1.00e+00) [1.00e+00,1.00e+01) [1.00e+01,1.00e+02) 
-##               81198               11830                1043 
-## [1.00e+02,     Inf] 
-##                 419
+## Warning: Unknown or uninitialised column: 'p_CBre'.
+```
+
+```
+## Warning in min(x): no non-missing arguments to min; returning Inf
+```
+
+```
+## Warning in max(x): no non-missing arguments to max; returning -Inf
+```
+
+```
+##         1 [ 10,100] 
+##         0         0
 ```
 
 ```r
@@ -2621,7 +2837,7 @@ The cleaning has cut in half the outliers with growth >=100,000,000, although th
 Why_Outlier                            nContract   SumOfChangeOrderCeilingGrowth   MaxOfChangeOrderCeilingGrowth   SumOfAction_Obligation_Then_Year
 ------------------------------------  ----------  ------------------------------  ------------------------------  ---------------------------------
 Obligations at least half Orig+CRai           11                      5525269281                       992698908                        16999937992
->=$250M, Insepect                              1                      2156385183                      2156385183                         1363572085
+>=$250M, Inspect                               1                      2156385183                      2156385183                         1363572085
 
 
 
