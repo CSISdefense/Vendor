@@ -93,48 +93,38 @@ summary(factor(def_all$StartFiscal_Year))
 # undebug(input_initial_scope)
 def_all<-input_initial_scope(def_all,
                              file="Contract.SP_ContractUnmodifiedScope.txt")
-def_all<-def_all[,-c(22:24)]
+def_all<-def_all[,-c(31)]
 colnames(def_all)[22:24]
+
+
+
+def_detail<-input_contract_ceiling_breach(def_detail,
+             file="Contract.SP_ContractCeilingBreachCustomer.txt")
+
 save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 ```
 
 ## Ceiling Breaches
 
-```{r Delta}
+```{r CeilingBreaches}
 # load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
 # debug(read_and_join_experiment)
 def_all<-input_contract_ceiling_breach(def_all,
              file="Contract.SP_ContractCeilingBreachCustomer.txt")
 
-sum(def_all$ContractBaseAndAllOptionsValue)
 
-sum(def_all$UnmodifiedCeiling)
-sum(def_all$ChangeOrderCeilingGrowth)
-
-
-nrow(def_all[def_all$UnmodifiedCeiling+
+sumcheck<-abs(def_all$UnmodifiedCeiling+
   def_all$ChangeOrderCeilingGrowth+
   def_all$ChangeOrderCeilingRescision+
     def_all$AdminCeilingModification+
     def_all$EndingCeilingModification+
     def_all$OtherCeilingModification+
-  def_all$SteadyScopeCeilingModification!=
-    def_all$ContractBaseAndAllOptionsValue,])
+    def_all$SteadyScopeCeilingModification-
+    def_all$ContractBaseAndAllOptionsValue)>1
 
-
-def_all$CeilingCheckSum<-def_all$UnmodifiedCeiling+
-  def_all$ChangeOrderCeilingGrowth+
-  def_all$ChangeOrderCeilingRescision+
-    def_all$AdminCeilingModification+
-    def_all$EndingCeilingModification+
-  def_all$SteadyScopeCeilingModification+
-    def_all$OtherCeilingModification
-
-summary(def_all$CeilingCheckSum)
-summary(def_all$ContractBaseAndAllOptionsValue)
-
-
-View(def_all %>% dplyr::select(CSIScontractID,
+if(any(sumcheck)){
+  write.csv(file="..\\output\\ceiling_breach_sumcheck_failures.csv",
+    def_all[sumcheck,] %>% dplyr::select(CSIScontractID,
                                UnmodifiedCeiling,
                                ChangeOrderCeilingGrowth,
                                ChangeOrderCeilingRescision,
@@ -142,20 +132,13 @@ View(def_all %>% dplyr::select(CSIScontractID,
                                EndingCeilingModification,
                                SteadyScopeCeilingModification,
                                OtherCeilingModification,
-                               ContractBaseAndAllOptionsValue,
-                               CeilingCheckSum) %>% 
-       filter(CeilingCheckSum-ContractBaseAndAllOptionsValue>1))
-     
-
-if(any(
-  def_all$UnmodifiedCeiling+
-  def_all$ChangeOrderCeilingGrowth+
-  def_all$ChangeOrderCeilingRescision+
-    def_all$AdminCeilingModification+
-    def_all$EndingCeilingModification+
-    def_all$OtherCeilingModification!=
-    def_all$ContractBaseAndAllOptionsValue
-)) stop("Ceiling Modification Checksum failure.")
+                               ContractBaseAndAllOptionsValue)
+  )
+  if(any(sumcheck&def_all$UnmodifiedCeiling>0))
+    stop("Ceiling Modification Checksum failure.")
+  else warning("Checksum failure for entries with na unmodified")
+}
+rm(sumcheck)
 
 save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 ```
