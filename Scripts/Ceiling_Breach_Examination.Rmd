@@ -46,7 +46,10 @@ load(file="..\\data\\semi_clean\\CBre_pre_clean.rdata")
 # W912UM <- def %>% filter(Office=="W912UM")
 # W912UMtrans<-read.delim(file="..\\data\\semi_clean\\W912UM_trans.csv", sep=",")
 # W912UMtrans<-remove_bom(W912UMtrans)
-cbre_preclean<-def_detail %>% filter(ChangeOrderCeilingGrowth>0)
+cbre_preclean<-def_detail %>% filter(ChangeOrderCeilingGrowth>0 &
+                                       MinOfSignedDate>=as.Date("2008-01-01") &
+                                       MinOfSignedDate<=as.Date("2015-12-31"))
+
 rm(def_detail)
 # save(W912UM,W912UMtrans,cbre_preclean,file="..\\data\\semi_clean\\CBre_pre_clean.rdata")
 
@@ -99,8 +102,8 @@ rm(def_detail)
 
 
 
-
-## Ceiling Modification Metrics
+## Examining Ceiling Modifications
+### Ceiling Modification Metrics
 ```{r CeilingModification}
 summary(cbre_preclean$ChangeOrderCeilingRescision)
 summary(cbre_preclean$AdminCeilingModification)
@@ -146,7 +149,7 @@ cbre_preclean$p_ChangeOrderCeilingGrowth<-((cbre_preclean$ChangeOrderCeilingGrow
 cbre_preclean$qGrowth<-Hmisc::cut2(cbre_preclean$p_ChangeOrderCeilingGrowth-1,c(1,10))
 ```
 
-## Outlier Labeling
+### Outlier Labeling
 
 ```{r CeilingOutlier_pre}
 nrow(cbre_preclean %>% filter((p_ChangeOrderCeilingGrowth-1)>1))
@@ -244,7 +247,7 @@ The study team broke down the outliers into 6 categories:
 * Obligations at least half Orig+CRai: For this category, total obligations of the contract were at least half the value of the initial ceiling plus ceiling growth under change orders. These contrats have had spending that massively exceeded their original ceiling, so the growth in absolute terrms seems plausible. This category accounts for the overwhelming majority of outlier spending but only a tiny fraction of change order growth.
 * Later Deobligated: The change order growth metrics only counts increases. These may simply have been mistaken increases, as when including deobligation the growth no longer exceeded 10x the original ceiling. The number, obligations, and change order growth of these contracts are comparatively small, and thus should not distort the overall data.
 * Korean Office W912UM refers to a contracting office that sometimes records base and all options values in Korean Won, approximate exchange rate 1,000 Won : 1 USD. 
-* There are nrow(cbre_preclean %>% dplyr::filter(Why_Outlier ==">=$250M, Inspect" & (p_ChangeOrderCeilingGrowth-1)>10)) contracts with ceiling growth of over $250 million that account for hundreds of billions in change order growth. These merit manual inspection.
+* There are `r nrow(cbre_preclean %>% dplyr::filter(Why_Outlier ==">=$250M, Inspect" & (p_ChangeOrderCeilingGrowth-1)>10))` contracts with ceiling growth of over $250 million that account for hundreds of billions in change order growth. These merit manual inspection.
 * Finally a few score contrats have unexplained growth, but remain below the $10M threshold. The quantity and magnitude of these contrats is not sufficient to risk the overall model.
 
 This examination left the study team less confident in percentage growth as a metric, especially in extreme cases, while increasing the study team's confidence in measures of growth in absoute term. In the worst case, simply removing all of the unexplained over  10 million contracts from the sample would reduce the number of contracts by a tiny amount and reduce the spending accounted for by  `r sum(cbre_preclean$Action_Obligation[cbre_preclean$Why_Outlier ==">=$250M, Inspect"& (cbre_preclean$p_ChangeOrderCeilingGrowth-1)>10] ,na.rm=TRUE)`.
@@ -252,10 +255,10 @@ This examination left the study team less confident in percentage growth as a me
 Shifting the focus to all contracts with growth of at least 250 million, there are far fewer contracts that account for far more money.
 `r knitr::kable(n_outlier_summary)`
 
-Inspecting W912UM, either to remove or fix its oversized growth, is an imperative as it accounts for the majority of these contracts or task orders. Even so, there are still `r nrow(cbre_preclean %>% filter(Why_Outlier ==">=$250M, Inspect"))` That merit special inspection for given that there growth far outpaces their spending.
+Inspecting W912UM, either to remove or fix its oversized growth, is an imperative as it accounts for the majority of these contracts or task orders. Even so, there are still `r nrow(cbre_preclean %>% filter(Why_Outlier ==">=$250M, Inspect"))` that merit special inspection for given that there growth far outpaces their spending.
 
 
-## Ceiling Growth
+### Ceiling Growth
 ```{r CeilingGrowthGraphs}
 
 (
@@ -302,7 +305,7 @@ Inspecting W912UM, either to remove or fix its oversized growth, is an imperativ
 )
 
 (
-  ggplot(cbre_preclean, aes(x=UnmodifiedCeiling+ChangeOrderCeilingGrowth+ChangeOrderCeilingRescision,y=Action_Obligation)) +#,color=qGrowth
+  ggplot(cbre_preclean, aes(x=ChangeOrderCeilingGrowth,y=Action_Obligation-UnmodifiedCeiling)) +#,color=qGrowth
     geom_point(alpha=0.25,shape=".")+
     # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+scale_y_log10()#+
@@ -316,7 +319,7 @@ Inspecting W912UM, either to remove or fix its oversized growth, is an imperativ
 )
 
 (
-  ggplot(cbre_preclean, aes(x=UnmodifiedCeiling+ChangeOrderCeilingGrowth-1,y=Action_Obligation)) +#,color=qGrowth
+  ggplot(cbre_preclean, aes(x=p_ChangeOrderCeilingGrowth,y=Action_Obligation/UnmodifiedCeiling)) +#,color=qGrowth
     geom_point(alpha=0.25,shape=".")+
     # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+scale_y_log10()#+
@@ -328,9 +331,6 @@ Inspecting W912UM, either to remove or fix its oversized growth, is an imperativ
   #        x="Unmodified Contract Ceiling")#,
   #        # fill="Termination Completion"
 )
-
-summary(cbre_preclean$ChangeOrderCeilingGrowth)
-summary(cbre_preclean$ChangeOrderCeilingRescision)
 
 
 (
@@ -384,32 +384,223 @@ summary(cbre_preclean$ChangeOrderCeilingRescision)
 
 
 ```
+## Adjusting Ceiling Growth
 
-## >250 Inspect
-```{r gt250k}
-inspect250<-cbre_preclean %>% filter(!Why_Outlier %in% c("Obligations at least half Orig+CRai","Korean Office W912UM") &
+###  >250 Inspect
+```{r gt250m}
+inspect250<-cbre_preclean %>% filter(!Why_Outlier %in% 
+                                       c("Obligations at least half Orig+CRai","Korean Office W912UM") &
                                        ChangeOrderCeilingGrowth >= 2.5e8)
-inspect250trans<-read.delim(file="..\\data\\semi_clean\\gt250k_change_outliers.txt", sep="\t")
+inspect250trans<-read.delim(file="..\\data\\semi_clean\\gt250m_change_outliers.txt", sep="\t")
 
 inspect250trans %>% group_by(CSIScontractID)
 
+inspect250trans<-left_join(inspect250  %>% 
+                             dplyr::select(CSIScontractID,
+                                           Why_Outlier),
+                           inspect250trans, 
+                           by="CSIScontractID")
+
+write.csv(file="..\\data\\semi_clean\\gt250m_change_outliers_why_origin.csv", 
+          inspect250trans,
+          row.names = FALSE)
 
 ```
-CSIScontractID 1431340 IDV -- FA881111C0001. This is a MDAP "LETTER CONTRACT FOR MUOS-2, WGS-6, NROL-65" The massive change order is for "FY 12 ATLAS-V MISSIONS AND FY12 DELTA IV MISSIONS" This is later descreased for "TRANSFER THE FY-12 MISSIONS OFF THIS CONTRACT AND RE-ALIGN ONTO CONTRACT FA8811-13-C-0002 FOR ADMINISTRATIVE PURPOSES." and "DEFINITIZATION OF DELTA IV ELS UCA MISSIONS: NROL-65, WGS-6, AND WGS-5" before being increased again for "DEFINITIZE ATLAS FY 12 LAUNCH SERVICE MISSIONS INITIALLY AWARDED VIA P00012". Thus the amounts seem entirely realistic.
 
-CSIScontractID 8341560 IDV -- PIID W912GB09C0090. "FIELD MODIFICATION A00002, CR 002 CONVOY LIVE FIRE RANGE" with 344 billion increase immediately rescinded "ADMINISTRATIVE MODIFICATION TO CORRECT TYPOGRAPHICAL ERROR ON PRIOR MODIFICATION. THIS CONTRACT ACTION IS GOVERNED BY THE ABG75 PROCESS AND NOT THE FAR." which was an other administrative action. Overriding.
+**Contract (CSIScontractID):** 1431340
+**PIID:** FA881111C0001 - Firm Fixed Price Federal Contract Award to United Launch Services
+**Product/Service Code (ProdServ):** 1810 – Space Vehicles
+**NAICS Code (NAICS):** 336414 – Guided Missile and Space Vehicle Manufacturing
+Amounts seem realistic – they either amount to reasonable additions (for new payload launches) or administrative shifts in money into/out of this contract from/to other contracts.  See breakout file for transaction details.
 
-CSIScontractID 10090818 IDV FA860410D7045 / PIID 1 "DESCOPE CLINS 1001,2001,3001,4001,  5001 AND ADD NEW REVISED PWS 0001" is a single transaction responsible for  289,097,216 increase. Software development "ADP SYSTEMS DEVELOPMENT SERVICES" Seems improbable, especially considering there's a ceiling increase that's literally one percent of the size in the next transaction, but the evidence isn't overwhelmiing
+This is a MDAP "LETTER CONTRACT FOR MUOS-2, WGS-6, NROL-65" The massive change order is for "FY 12 ATLAS-V MISSIONS AND FY12 DELTA IV MISSIONS" This is later descreased for "TRANSFER THE FY-12 MISSIONS OFF THIS CONTRACT AND RE-ALIGN ONTO CONTRACT FA8811-13-C-0002 FOR ADMINISTRATIVE PURPOSES." and "DEFINITIZATION OF DELTA IV ELS UCA MISSIONS: NROL-65, WGS-6, AND WGS-5" before being increased again for "DEFINITIZE ATLAS FY 12 LAUNCH SERVICE MISSIONS INITIALLY AWARDED VIA P00012". Thus the amounts seem entirely realistic.
+
+**Contract (CSIScontractID):** 8341560
+**PIID:** W912GB09C0090 – Description unavailable
+**Product/Service Code (ProdServ):** Y112 – Construction of Conference Space and Facilities
+**NAICS Code (NAICS):** 238990 – All other specialty trade contractors
+Large ceiling change caused by transaction 36322433 worth ~$344, which is immediately corrected in transaction 36441698 for administrative reasons (incorrect procedure followed).  Classified as adusted automatically.  See breakout file for transaction details.
+
+"FIELD MODIFICATION A00002, CR 002 CONVOY LIVE FIRE RANGE" with 344 billion increase immediately rescinded "ADMINISTRATIVE MODIFICATION TO CORRECT TYPOGRAPHICAL ERROR ON PRIOR MODIFICATION. THIS CONTRACT ACTION IS GOVERNED BY THE ABG75 PROCESS AND NOT THE FAR." which was an other administrative action. 
 
 
-CSIScontractID 19005830 IDV N4008005D3501 / PIID 87
-$13 billion ceiling for "MISC SERVICE & TRADE EQ" / "FFP BASE OPERATIONS SUPPORT SERVICES FOR PHASE IN PERIOD OF 01/01/2012 - 02/29/2012." Seems safely classified as a mistake even absent any subsequent correction.
+**Contract (CSIScontractID):** 10090818
+**IDVPIID:** FA860410D7045 / PIID 1 – Firm Fixed Price Federal Contract IDV Award to Triune Software
+**Product/Service Code (ProdServ):** D302 – Automatic Data Processing Systems Development
+**NAICS Code (NAICS):** 541512 - Computer Systems Design Services
+Large ceiling change caused almost solely by transaction 9893024, which is more than an order of magnitude greater than other transactions associated with the contract.  Moreover, Triune Software is an IT/HR service provider, and publicly available aggregate data for the IDDVPIID associated with the contract does not seem to reflect the large increase from transaction 9893024.  
 
-CSIScontractID 24816950 IDV W912HN07D0061 / PIID 4
-"PROJECT NUMBER 71657, STARSHIP 11000 REPAIR, FORT JACKSON, SC"
+"DESCOPE CLINS 1001,2001,3001,4001,  5001 AND ADD NEW REVISED PWS 0001" is a single transaction responsible for  289,097,216 increase. Software development "ADP SYSTEMS DEVELOPMENT SERVICES" Seems improbable, especially considering there's a ceiling increase that's literally one percent of the size in the next transaction, but the evidence isn't overwhelmiing. Transaction is qualified as questionable.
 
-CSIS contractID 24719937 IDV W9126G08D0016 / PIID 1
-Construction of "STUDENT DORMITORIES 1 & 2" 447M corrected by the next transaction in an other administrative action.
+**Contract (CSIScontractID):** 19005830
+**IDVPIID:** N4008005D3501 / PIID 87 – Firm Fixed Price Federal Contract IDV Award to Lbm, Inc., funded by the Naval Facilities Engineering Command
+**Product/Service Code (ProdServ):** 3590 – Miscellaneous Service and Trade Equipment
+**NAICS Code (NAICS):** 561210 – Facilities Support Services
+Large ceiling change caused almost solely by transaction 2676817, for more than USD 13B, an order of magnitude larger than any other transaction associated with this contract.  This seems like an inordinate amount of money for NAVFAC.  This transaction is explicitly described as "NAVFAC WASHINGTON."  The website for NAVFAC Washington declares that it manages only around ~$1B in annual business volume, so this transaction is classified as an error.
+
+$13 billion ceiling for "MISC SERVICE & TRADE EQ" / "FFP BASE OPERATIONS SUPPORT SERVICES FOR PHASE IN PERIOD OF 01/01/2012 - 02/29/2012." 
+
+**Contract (CSIScontractID):** 24719937
+**IDVPIID:** W9126G08D0016 / PIID 1 - Firm Fixed Price Federal Contract IDV Award to Hensel Phelps Construction Company
+**Product/Service Code (ProdServ):** Y199 – Construction of Misc. Building
+**NAICS Code (NAICS):** 236220 – Commercial and Institutional Building Construction
+
+Large ceiling change caused by transactions 18949835 and 20056794.  Transaction 18949835 listed with a description of ‘CONSTRUCTION OF THE STUDENT DORMITORY 2.’  Transaction 13118696 has the same description, and almost entirely rescinds transaction 18949835.  
+
+Construction of "STUDENT DORMITORIES 1 & 2" 447M corrected by the next transaction in an other administrative action. Adjusted automatically.
+
+**Contract (CSIScontractID):** 24807877
+**IDVPIID:** W912ER04D0004 / PIID 21- Cost Plus Award Fee Federal Contract IDV Award to 
+**Product/Service Code (ProdServ):** AD25 – R&D: Defense Services-Operational System Development
+**NAICS Code (NAICS):** 236220 – Commercial and Institutional Building Construction
+
+Large ceiling change caused mostly by transaction 2771200.  Transaction 15994427 rescinds (with a million-dollar excess) 2771200.  These transactions do not have the same descriptions, but 15994427 almost exactly matches 2771200 in amount (since these transactions are on the order of ~100 billion), and 15994427 immediately follows 2771200.  Thus, comfortable coding these as an error, especially as these two transactions exceed all others in size by several orders of magnitude.
+
+116B added in all three categories in  a definitized change order for HOME OFFICE SUPPORT and  then removed by a funding only action for IN-THEATRE OPERATIONS SUPPORT. Classified as an adjusted automatically.
+
+**Contract (CSIScontractID):** 24816950
+**IDVPIID:** W912HN07D0061 - Order Dependent (IDV only) Federal Contract IDV Award to Sauer Incorporated
+**Product/Service Code (ProdServ):** Z199 – Maintenance, Repair or Alteration of Misc. Buildings
+**NAICS Code (NAICS):** 236200 – Commercial and Institutional Building Construction
+
+Large ceiling change caused by a series of numerous transactions all described as for “BUILDING 11000 REPAIR.”  Again, these transactions are then largely rescinded by several large negative transactions described as the same.  While there is still ~$14 million remaining in the black after these negative transactions are included, given the sheer number of negative and positive contracts, and what seems to be at least a large negative revision done via change order. Classified as questionable.
+
+"PROJECT NUMBER 71657, STARSHIP 11000 REPAIR, FORT JACKSON, SC" Adjusted by ceiling breach. 
+
+**Contract (CSIScontractID):** 24905030
+**IDVPIID:** W917PM08D0001 / PIID 1- Firm Fixed Price Federal Contract Award, funded by ENDIST Afghanistan
+**Product/Service Code (ProdServ):** R499 – Other Professional Services
+**NAICS Code (NAICS):** 561612 – Security Guards and patrol Services
+
+Large ceiling change caused entirely by transaction 31507239, which is exactly rescinded by transaction 21282329.  These transactions do not share the same descriptions, but given that the dollar amounts match perfectly, I feel comfortable coding this as an error and a correction, respectively.
+
+Added under AIRCRAFT-ROTARY WING, HOURLY RATE and rescinded under SECURITY LIASON TEAM - MONTHLY RATE. Automatically adjusted.
+
+### Considering Alternate Labeling Systems
+
+```{r Alternate_Label}
+
+summary(cbre_preclean$Why_Outlier)
+# Step 1, Change Order Ceiling Growth
+cbre_preclean$n_CBre_test <- cbre_preclean$ChangeOrderCeilingGrowth
+cbre_preclean$p_CBre_test <- cbre_preclean$n_CBre_test/cbre_preclean$UnmodifiedCeiling
+
+
+
+# Step 2, No non-whole number ceilings
+cbre_preclean$p_CBre_test <- cbre_preclean$n_CBre_test/ifelse(cbre_preclean$UnmodifiedCeiling>0,
+                                                    cbre_preclean$UnmodifiedCeiling,NA)
+cbre_preclean$qp_CBre <-Hmisc::cut2(cbre_preclean$p_CBre_test,c(0,1,5,10))
+cbre_preclean$qp_CBre<-factor(cbre_preclean$qp_CBre,levels=c(levels(cbre_preclean$qp_CBre),"W912UM"))
+cbre_preclean$qp_CBre[cbre_preclean$topContractingOfficeID=="W912UM"]<-"W912UM"
+summary(cbre_preclean$qp_CBre)
+
+cbre_preclean %>% group_by(qp_CBre) %>% dplyr::summarise(
+  nContract=length(CSIScontractID),
+  OblOverCeil=sum(ifelse(Action_Obligation>UnmodifiedCeiling,1,0)/length(CSIScontractID)),
+  AvgOblToCeil=mean(Action_Obligation/UnmodifiedCeiling,na.rm=TRUE),
+  # MaxOfChangeOrderCeilingGrowth=max(ChangeOrderCeilingGrowth),
+  OblM=sum(Action_Obligation)/1000000,
+  SumOfn_CBreM=sum(n_CBre_test)/1000000,
+  SumOfCOCGM=sum(ChangeOrderCeilingGrowth)/1000000,
+  AvgOfp_CBre=mean(p_CBre_test,na.rm=TRUE),
+  AvgOfp_COCG=mean(p_ChangeOrderCeilingGrowth,na.rm=TRUE))
+  
+
+#Step 3 Rescinding Net-Negative Admin Adjustments
+
+cbre_preclean$n_CBre_test <- cbre_preclean$ChangeOrderCeilingGrowth + ifelse(cbre_preclean$AdminCeilingModification<0,
+                                                      cbre_preclean$AdminCeilingModification,0)
+
+cbre_preclean$p_CBre_test <- cbre_preclean$n_CBre_test/ifelse(cbre_preclean$UnmodifiedCeiling>0,
+                                                    cbre_preclean$UnmodifiedCeiling,NA)
+cbre_preclean$qp_CBre <-Hmisc::cut2(cbre_preclean$p_CBre_test,c(0,1,5,10))
+cbre_preclean$qp_CBre<-factor(cbre_preclean$qp_CBre,levels=c(levels(cbre_preclean$qp_CBre),"W912UM"))
+cbre_preclean$qp_CBre[cbre_preclean$topContractingOfficeID=="W912UM"]<-"W912UM"
+
+cbre_preclean %>% group_by(qp_CBre) %>% dplyr::summarise(
+  nContract=length(CSIScontractID),
+  OblOverCeil=sum(ifelse(Action_Obligation>UnmodifiedCeiling,1,0)/length(CSIScontractID)),
+  AvgOblToCeil=mean(Action_Obligation/UnmodifiedCeiling,na.rm=TRUE),
+  # MaxOfChangeOrderCeilingGrowth=max(ChangeOrderCeilingGrowth),
+  OblM=sum(Action_Obligation)/1000000,
+  SumOfn_CBreM=sum(n_CBre_test)/1000000,
+  SumOfCOCGM=sum(ChangeOrderCeilingGrowth)/1000000,
+  AvgOfp_CBre=mean(p_CBre_test,na.rm=TRUE),
+  AvgOfp_COCG=mean(p_ChangeOrderCeilingGrowth,na.rm=TRUE))
+
+
+
+
+#Step 4 Rescinding Net-Negative Steady Scope Adjustments
+cbre_preclean$n_CBre_test <- cbre_preclean$ChangeOrderCeilingGrowth +
+  ifelse(cbre_preclean$SteadyScopeCeilingModification+cbre_preclean$AdminCeilingModification<0,
+         cbre_preclean$SteadyScopeCeilingModification+cbre_preclean$AdminCeilingModification,0)
+
+cbre_preclean$p_CBre_test <- cbre_preclean$n_CBre_test/ifelse(cbre_preclean$UnmodifiedCeiling>0,
+                                                    cbre_preclean$UnmodifiedCeiling,NA)
+
+cbre_preclean$qp_CBre <-Hmisc::cut2(cbre_preclean$p_CBre_test,c(0,1,5,10))
+cbre_preclean$qp_CBre<-factor(cbre_preclean$qp_CBre,levels=c(levels(cbre_preclean$qp_CBre),"W912UM"))
+cbre_preclean$qp_CBre[cbre_preclean$topContractingOfficeID=="W912UM"]<-"W912UM"
+
+cbre_preclean %>% group_by(qp_CBre) %>% dplyr::summarise(
+  nContract=length(CSIScontractID),
+  OblOverCeil=sum(ifelse(Action_Obligation>UnmodifiedCeiling,1,0)/length(CSIScontractID)),
+  AvgOblToCeil=mean(Action_Obligation/UnmodifiedCeiling,na.rm=TRUE),
+  # MaxOfChangeOrderCeilingGrowth=max(ChangeOrderCeilingGrowth),
+  OblM=sum(Action_Obligation)/1000000,
+  SumOfn_CBreM=sum(n_CBre_test)/1000000,
+  SumOfCOCGM=sum(ChangeOrderCeilingGrowth)/1000000,
+  AvgOfp_CBre=mean(p_CBre_test,na.rm=TRUE),
+  AvgOfp_COCG=mean(p_ChangeOrderCeilingGrowth,na.rm=TRUE))
+
+
+#Step 4 Change Order Rescisions  
+cbre_preclean$n_CBre_test <- cbre_preclean$n_CBre_test + ifelse(cbre_preclean$ChangeOrderCeilingRescision<0,
+                                                      cbre_preclean$ChangeOrderCeilingRescision,0)
+
+cbre_preclean$p_CBre_test <- cbre_preclean$n_CBre_test/ifelse(cbre_preclean$UnmodifiedCeiling>0,
+                                                    cbre_preclean$UnmodifiedCeiling,NA)
+
+cbre_preclean$qp_CBre <-Hmisc::cut2(cbre_preclean$p_CBre_test,c(0,1,5,10))
+cbre_preclean$qp_CBre<-factor(cbre_preclean$qp_CBre,levels=c(levels(cbre_preclean$qp_CBre),"W912UM"))
+cbre_preclean$qp_CBre[cbre_preclean$topContractingOfficeID=="W912UM"]<-"W912UM"
+
+cbre_preclean %>% group_by(qp_CBre) %>% dplyr::summarise(
+  nContract=length(CSIScontractID),
+  OblOverCeil=sum(ifelse(Action_Obligation>UnmodifiedCeiling,1,0)/length(CSIScontractID)),
+  AvgOblToCeil=mean(Action_Obligation/UnmodifiedCeiling,na.rm=TRUE),
+  # MaxOfChangeOrderCeilingGrowth=max(ChangeOrderCeilingGrowth),
+  OblM=sum(Action_Obligation)/1000000,
+  SumOfn_CBreM=sum(n_CBre_test)/1000000,
+  SumOfCOCGM=sum(ChangeOrderCeilingGrowth)/1000000,
+  AvgOfp_CBre=mean(p_CBre_test,na.rm=TRUE),
+  AvgOfp_COCG=mean(p_ChangeOrderCeilingGrowth,na.rm=TRUE))
+
+write.csv(file="..\\Data\\semi_clean\\p_CBre_outliers_post_cleaning.csv",cbre_preclean %>% filter((p_ChangeOrderCeilingGrowth-1)>10),row.names = FALSE)
+write.csv(file="..\\Data\\semi_clean\\n_CBre_outliers_post_cleaning.csv",cbre_preclean %>% filter(ChangeOrderCeilingGrowth>=2.5e8),row.names = FALSE)
+```
+
+### Implementing the change
+```{r ImplementingChange}
+cbre_preclean$n_CBre <- cbre_preclean$ChangeOrderCeilingGrowth +
+  ifelse(cbre_preclean$SteadyScopeCeilingModification+cbre_preclean$AdminCeilingModification<0,
+         cbre_preclean$SteadyScopeCeilingModification+cbre_preclean$AdminCeilingModification,0)+1
+cbre_preclean$n_CBre[cbre_preclean$n_CBre<=1 & cbre_preclean$ChangeOrderCeilingGrowth>0]<-NA
+summary(cbre_preclean$n_CBre)
+
+cbre_preclean$p_CBre <- cbre_preclean$n_CBre/ifelse(cbre_preclean$UnmodifiedCeiling>0,
+                                                    cbre_preclean$UnmodifiedCeiling,NA)+1
+summary(cbre_preclean$p_CBre)
+
+inspect250<-cbre_preclean %>% filter(!Why_Outlier %in% 
+                                       c("Obligations at least half Orig+CRai","Korean Office W912UM") &
+                                       n_CBre >= 2.5e8)
+
+
+```
+
 
 
 ## W912IM
@@ -963,7 +1154,6 @@ ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=unmodWon))+
 
 #Base and Options
 
-W912UMtrans$placeofperformancecountrycode
 ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=baseWon))+
   geom_bar()+facet_wrap(~placeofmanufacture)
 ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=baseWon))+
@@ -1004,6 +1194,10 @@ if(nrow(Miscategorized)>0) stop("False positive contract in Won performed in US"
 ```
 
 # Cleaning
+
+
+After examination, checking the net steady scope and administrative modifications and, when negative, reducing ceiling breaches by that amount seams to do a reasonable job of seperating those contracts that have genuinely expxerienced real cost overruns from those that may have had an administrative error that wildly overinflated the size of the ceiling breach. This adjustment isn't ideal as it does result in $16 billion of ceiling breaching contracts that no longer have a net increase and thus will need to be excluded from the sample, but it also addresses the majority of the 250M plus ceiling breaches algorithmically, which is important as it is  outside the capabilities  of  the studyteam to manually inspect the hordes of smaller contracts.
+
 ## Validating CSIS_contract_inspection
 ### Unmodified Ceiling in Won
 ```{r validate_ceiling_inspection_lookup}
@@ -1349,7 +1543,7 @@ if(any(!is.na(def$UnmodifiedCeiling_Then_Year[
   stop("Unmodified Ceilings set to be overiden have not been set to NA. Rerun transform portion of creat_defense_contract_dataset.r")
 }
 
-if(any(!is.na(def$ChangeOrderCeilingGrowth[
+if(any(!is.na(def$n_CBre[
   def$override_change_order_growth==TRUE]))){
   stop("Ceilings Breaches set to be overiden have not been set to NA. Rerun transform portion of creat_defense_contract_dataset.r")
 }
@@ -1372,13 +1566,13 @@ cbre$Why_Outlier<-NA
 cbre$Why_Outlier[is.na(cbre$UnmodifiedCeiling_Then_Year)]<-"No Unmodified Ceiling"
 cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
                    cbre$Action_Obligation_Then_Year*2>=cbre$UnmodifiedCeiling_Then_Year+
-                   cbre$ChangeOrderCeilingGrowth]<-
+                   cbre$n_CBre]<-
   "Obligations at least half Orig+CRai"
 cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
                    cbre$Office=="W912UM"]<-
   "Korean Office W912UM"
 cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
-                   cbre$ChangeOrderCeilingGrowth>=2.5e8]<-
+                   cbre$n_CBre>=2.5e8]<-
   ">=$250M, Inspect"
 cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
                    cbre$p_CBre-1>10]<-
@@ -1408,13 +1602,13 @@ summary(cbre$qHighCeiling[(cbre$p_CBre-1)>100])
 
 
 p_outlier_summary<-cbre %>% filter(p_CBre-1>10) %>% group_by(Why_Outlier) %>%
-  dplyr::summarise(nContract=length(ChangeOrderCeilingGrowth),
-                   SumOfChangeOrderCeilingGrowth=sum(ChangeOrderCeilingGrowth),
-                   MaxOfChangeOrderCeilingGrowth=max(ChangeOrderCeilingGrowth),
+  dplyr::summarise(nContract=length(n_CBre),
+                   SumOfn_CBre=sum(n_CBre),
+                   MaxOfn_CBre=max(n_CBre),
                    SumOfAction_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
 
 #Absolute Growth
-summary(Hmisc::cut2(cbre$ChangeOrderCeilingGrowth,c(1e3,
+summary(Hmisc::cut2(cbre$n_CBre,c(1e3,
                                            1e6,
                                            1e7,
                                            1e8,
@@ -1424,7 +1618,7 @@ summary(Hmisc::cut2(cbre$ChangeOrderCeilingGrowth,c(1e3,
                                            2e10
 ))
 )
-summary(Hmisc::cut2(cbre$ChangeOrderCeilingGrowth,c(1e3,
+summary(Hmisc::cut2(cbre$n_CBre,c(1e3,
                                   1e6,
                                   1e7,
                                   1e8,
@@ -1435,15 +1629,15 @@ summary(Hmisc::cut2(cbre$ChangeOrderCeilingGrowth,c(1e3,
 ))
 )
 
-summary(cbre$qHighCeiling[cbre$ChangeOrderCeilingGrowth>=1e6])
-summary(cbre$qHighCeiling[cbre$ChangeOrderCeilingGrowth>=1e9])
+summary(cbre$qHighCeiling[cbre$n_CBre>=1e6])
+summary(cbre$qHighCeiling[cbre$n_CBre>=1e9])
 
 
 
-n_outlier_summary<-cbre %>% filter(ChangeOrderCeilingGrowth>2.5e8) %>% group_by(Why_Outlier) %>%
-  dplyr::summarise(nContract=length(ChangeOrderCeilingGrowth),
-                   SumOfChangeOrderCeilingGrowth=sum(ChangeOrderCeilingGrowth),
-                   MaxOfChangeOrderCeilingGrowth=max(ChangeOrderCeilingGrowth),
+n_outlier_summary<-cbre %>% filter(n_CBre>2.5e8) %>% group_by(Why_Outlier) %>%
+  dplyr::summarise(nContract=length(n_CBre),
+                   SumOfn_CBre=sum(n_CBre),
+                   MaxOfn_CBre=max(n_CBre),
                    SumOfAction_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
 
 ```
@@ -1477,7 +1671,7 @@ After the cleaning, 2 categories remain relevant.
 
 
 (
-  ggplot(cbre, aes(x=UnmodifiedCeiling_Then_Year,y=ChangeOrderCeilingGrowth)) +#,color=qGrowth
+  ggplot(cbre, aes(x=UnmodifiedCeiling_Then_Year,y=n_CBre)) +#,color=qGrowth
     geom_point(alpha=0.25,shape=".")+
     # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+scale_y_log10()+
@@ -1491,7 +1685,7 @@ After the cleaning, 2 categories remain relevant.
 )
 
 (
-  ggplot(cbre, aes(x=UnmodifiedCeiling_Then_Year+ChangeOrderCeilingGrowth+ChangeOrderCeilingRescision,
+  ggplot(cbre, aes(x=UnmodifiedCeiling_Then_Year+n_CBre,
                    y=Action_Obligation_Then_Year)) +#,color=qGrowth
     geom_point(alpha=0.25,shape=".")+
     # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
@@ -1505,14 +1699,25 @@ After the cleaning, 2 categories remain relevant.
   #        # fill="Termination Completion"
 )
 
-summary(cbre$ChangeOrderCeilingGrowth)
-summary(cbre$ChangeOrderCeilingRescision)
-
-
-
-
 (
-  ggplot(cbre, aes(x=ChangeOrderCeilingGrowth,y=ChangeOrderCeilingGrowth+ChangeOrderCeilingRescision)) +#,color=qGrowth
+  ggplot(cbre, aes(x=n_CBre,
+                   y=Action_Obligation_Then_Year-UnmodifiedCeiling_Then_Year)) +#,color=qGrowth
+    geom_point(alpha=0.25,shape=".")+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()#+
+  #+
+  #   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+  # # facet_wrap(~qHighCeiling,scales="free_y")+#+, space="free_y"
+  #   labs(title="Distribution of Ceiling Breaches",
+  #        y="Percent of Growth in  Ceiling",
+  #        x="Unmodified Contract Ceiling")#,
+  #        # fill="Termination Completion"
+)
+
+# 
+(
+  ggplot(cbre, aes(x=p_CBre-1,
+                   y=Action_Obligation_Then_Year/UnmodifiedCeiling_Then_Year)) +#,color=qGrowth
     geom_point(alpha=0.25,shape=".")+
     # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+scale_y_log10()#+
@@ -1539,13 +1744,8 @@ summary(cbre$ChangeOrderCeilingRescision)
   # fill="Termination Completion"
 )
 
-
-
-
-
-
 (
-  ggplot(cbre, aes(x=ChangeOrderCeilingGrowth,fill=qGrowth)) +
+  ggplot(cbre, aes(x=n_CBre,fill=qGrowth)) +
     geom_histogram(bins=100)+
     theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+
@@ -1559,7 +1759,7 @@ summary(cbre$ChangeOrderCeilingRescision)
 )
 
 (
-  ggplot(cbre, aes(x=ChangeOrderCeilingGrowth,fill=qGrowth)) +
+  ggplot(cbre, aes(x=n_CBre,fill=qGrowth)) +
     geom_histogram(bins=100)+
     theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+

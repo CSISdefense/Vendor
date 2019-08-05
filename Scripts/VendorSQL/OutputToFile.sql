@@ -42,14 +42,23 @@ where f.CSIStransactionID in
 from contract.csistransactionid ctid
 where ctid.csiscontractid in (
 1431340,
+2966598,
+7878880,
+8157803,
 8341560,
-19005830,
+8567148,
 10090818,
-24807877,
+18671771,
+18671780,
+18671888,
+18671981,
+19005830,
 24719937,
-24905030
+24807877,
 24816950,
-))
+24905030
+) or IDVPIID='N0002400D6000'
+)
 
 DECLARE	@return_value int
 

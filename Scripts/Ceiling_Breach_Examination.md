@@ -196,7 +196,10 @@ load(file="..\\data\\semi_clean\\CBre_pre_clean.rdata")
 # W912UM <- def %>% filter(Office=="W912UM")
 # W912UMtrans<-read.delim(file="..\\data\\semi_clean\\W912UM_trans.csv", sep=",")
 # W912UMtrans<-remove_bom(W912UMtrans)
-cbre_preclean<-def_detail %>% filter(ChangeOrderCeilingGrowth>0)
+cbre_preclean<-def_detail %>% filter(ChangeOrderCeilingGrowth>0 &
+                                       MinOfSignedDate>=as.Date("2008-01-01") &
+                                       MinOfSignedDate<=as.Date("2015-12-31"))
+
 rm(def_detail)
 # save(W912UM,W912UMtrans,cbre_preclean,file="..\\data\\semi_clean\\CBre_pre_clean.rdata")
 
@@ -249,8 +252,8 @@ rm(def_detail)
 
 
 
-
-## Ceiling Modification Metrics
+## Examining Ceiling Modifications
+### Ceiling Modification Metrics
 
 ```r
 summary(cbre_preclean$ChangeOrderCeilingRescision)
@@ -258,7 +261,7 @@ summary(cbre_preclean$ChangeOrderCeilingRescision)
 
 ```
 ##       Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
-## -3.363e+12  0.000e+00  0.000e+00 -2.783e+07  0.000e+00  0.000e+00
+## -510889128          0          0     -79406          0          0
 ```
 
 ```r
@@ -267,7 +270,7 @@ summary(cbre_preclean$AdminCeilingModification)
 
 ```
 ##       Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
-## -3.447e+11  0.000e+00  0.000e+00 -2.560e+06  0.000e+00  1.764e+10
+## -3.447e+11  0.000e+00  0.000e+00 -3.666e+06  0.000e+00  9.141e+08
 ```
 
 ```r
@@ -328,7 +331,7 @@ cbre_preclean$p_ChangeOrderCeilingGrowth<-((cbre_preclean$ChangeOrderCeilingGrow
 cbre_preclean$qGrowth<-Hmisc::cut2(cbre_preclean$p_ChangeOrderCeilingGrowth-1,c(1,10))
 ```
 
-## Outlier Labeling
+### Outlier Labeling
 
 
 ```r
@@ -336,7 +339,7 @@ nrow(cbre_preclean %>% filter((p_ChangeOrderCeilingGrowth-1)>1))
 ```
 
 ```
-## [1] 14803
+## [1] 11854
 ```
 
 ```r
@@ -344,7 +347,7 @@ nrow(cbre_preclean %>% filter((p_ChangeOrderCeilingGrowth-1)>10))
 ```
 
 ```
-## [1] 1894
+## [1] 1479
 ```
 
 ```r
@@ -352,7 +355,7 @@ nrow(cbre_preclean %>% filter((p_ChangeOrderCeilingGrowth-1)>100))
 ```
 
 ```
-## [1] 560
+## [1] 427
 ```
 
 ```r
@@ -360,7 +363,7 @@ nrow(cbre_preclean %>% filter((p_ChangeOrderCeilingGrowth-1)>100 & UnmodifiedCei
 ```
 
 ```
-## [1] 316
+## [1] 236
 ```
 
 ```r
@@ -369,9 +372,9 @@ summary(cbre_preclean$qHighCeiling[(cbre_preclean$p_ChangeOrderCeilingGrowth-1)>
 
 ```
 ## [0.0e+00,1.5e+04) [1.5e+04,1.0e+05) [1.0e+05,1.0e+06) [1.0e+06,1.0e+07) 
-##              1055               297               172                47 
+##               871               214               120                34 
 ## [1.0e+07,7.5e+07) [7.5e+07,1.0e+13] 
-##                 7                 0
+##                 4                 0
 ```
 
 ```r
@@ -380,7 +383,7 @@ summary(cbre_preclean$qHighCeiling[(cbre_preclean$p_ChangeOrderCeilingGrowth-1)>
 
 ```
 ## [0.0e+00,1.5e+04) [1.5e+04,1.0e+05) [1.0e+05,1.0e+06) [1.0e+06,1.0e+07) 
-##               181                43                18                 2 
+##               141                33                15                 2 
 ## [1.0e+07,7.5e+07) [7.5e+07,1.0e+13] 
 ##                 0                 0
 ```
@@ -440,27 +443,27 @@ summary(cbre_preclean$Why_Outlier)
 
 ```
 ##                     No Unmodified Ceiling 
-##                                       318 
+##                                       237 
 ##       Obligations at least half Orig+CRai 
-##                                    116643 
+##                                     96334 
 ##        At Least 1/2 After Admin Rescision 
-##                                      3138 
+##                                      2570 
 ##       At Least 1/2 After Ending Rescision 
-##                                       306 
+##                                       237 
 ## At Least 1/2 After Steady Scope Rescision 
-##                                        73 
+##                                        55 
 ## At Least 1/2 After Change Order Rescision 
-##                                       239 
+##                                       197 
 ##        At Least 1/2 After Other Rescision 
-##                                         3 
+##                                         2 
 ##                      Korean Office W912UM 
-##                                       233 
+##                                       187 
 ##                          >=$250M, Inspect 
-##                                         8 
+##                                         2 
 ##      Other Unexplained 10x Ceiling Breach 
-##                                        30 
+##                                        27 
 ##                                      NA's 
-##                                       406
+##                                       315
 ```
 
 ```r
@@ -491,11 +494,11 @@ summary(Hmisc::cut2(cbre_preclean$ChangeOrderCeilingGrowth,c(1e3,
 
 ```
 ## [1.00e-02,1.00e+03) [1.00e+03,1.00e+06) [1.00e+06,1.00e+07) 
-##               24093               91923                4457 
+##               20366               75486                3610 
 ## [1.00e+07,1.00e+08) [1.00e+08,2.50e+08) [2.50e+08,1.00e+09) 
-##                 759                  93                  50 
+##                 587                  70                  32 
 ## [1.00e+09,1.00e+10) [1.00e+10,2.00e+10) [2.00e+10,3.45e+11] 
-##                  16                   2                   4
+##                   9                   1                   2
 ```
 
 ```r
@@ -504,9 +507,9 @@ summary(cbre_preclean$qHighCeiling[cbre_preclean$ChangeOrderCeilingGrowth>=1e6])
 
 ```
 ## [0.0e+00,1.5e+04) [1.5e+04,1.0e+05) [1.0e+05,1.0e+06) [1.0e+06,1.0e+07) 
-##                84               137               657              2236 
+##                60                98               489              1800 
 ## [1.0e+07,7.5e+07) [7.5e+07,1.0e+13] 
-##              1703               564
+##              1420               444
 ```
 
 ```r
@@ -517,60 +520,59 @@ summary(cbre_preclean$qHighCeiling[cbre_preclean$ChangeOrderCeilingGrowth>=1e9])
 ## [0.0e+00,1.5e+04) [1.5e+04,1.0e+05) [1.0e+05,1.0e+06) [1.0e+06,1.0e+07) 
 ##                 0                 1                 1                 2 
 ## [1.0e+07,7.5e+07) [7.5e+07,1.0e+13] 
-##                 1                17
+##                 0                 8
 ```
 
 ```r
 write.csv(file="..\\Data\\semi_clean\\p_CBre_outliers.csv",cbre_preclean %>% filter((p_ChangeOrderCeilingGrowth-1)>10),row.names = FALSE)
 write.csv(file="..\\Data\\semi_clean\\n_CBre_outliers.csv",cbre_preclean %>% filter(ChangeOrderCeilingGrowth>=2.5e8),row.names = FALSE)
 ```
-Examining cases of large ceiling growth, 1894 contracts experienced greater than 10 fold growth. An increase of that side strains credulity, even in high risk defense contracting. While by no means impossible, the more likely explaination is a misrecorded initial ceiling.
+Examining cases of large ceiling growth, 1479 contracts experienced greater than 10 fold growth. An increase of that side strains credulity, even in high risk defense contracting. While by no means impossible, the more likely explaination is a misrecorded initial ceiling.
 
 The study team broke down the outliers into 6 categories:
 
 
 Why_Outlier                                  nContract   SumOfChangeOrderCeilingGrowth   MaxOfChangeOrderCeilingGrowth   SumOfAction_Obligation_Then_Year
 ------------------------------------------  ----------  ------------------------------  ------------------------------  ---------------------------------
-No Unmodified Ceiling                              316                    1.893034e+08                    3.332945e+07                       7.199748e+08
-Obligations at least half Orig+CRai               1458                    6.308093e+09                    7.697895e+08                       1.385196e+10
-At Least 1/2 After Admin Rescision                  10                    3.455751e+11                    3.447396e+11                       7.148765e+07
-At Least 1/2 After Ending Rescision                 10                    8.144617e+05                    5.007609e+05                       8.068750e+04
-At Least 1/2 After Steady Scope Rescision            7                    1.161151e+11                    1.160931e+11                       1.354886e+07
-At Least 1/2 After Change Order Rescision           43                    8.514926e+07                    3.761755e+07                       2.363342e+06
+No Unmodified Ceiling                              236                    8.167884e+07                    2.086281e+07                       3.858640e+08
+Obligations at least half Orig+CRai               1148                    4.418689e+09                    7.697895e+08                       8.935369e+09
+At Least 1/2 After Admin Rescision                   9                    3.455750e+11                    3.447396e+11                       7.148418e+07
+At Least 1/2 After Ending Rescision                  5                    7.916516e+05                    5.007609e+05                       7.971426e+04
+At Least 1/2 After Steady Scope Rescision            4                    1.161107e+11                    1.160931e+11                       1.326282e+07
+At Least 1/2 After Change Order Rescision           36                    8.371512e+07                    3.761755e+07                       2.077179e+06
 At Least 1/2 After Other Rescision                   1                    1.502467e+05                    1.502467e+05                       6.673660e+03
-Korean Office W912UM                                16                    8.877176e+09                    5.364187e+09                       1.891750e+07
->=$250M, Inspect                                     3                    1.582823e+10                    1.443441e+10                       1.236160e+08
-Other Unexplained 10x Ceiling Breach                30                    3.069881e+08                    7.487936e+07                       3.101379e+07
+Korean Office W912UM                                11                    7.681225e+09                    5.364187e+09                       1.696901e+07
+>=$250M, Inspect                                     2                    1.472351e+10                    1.443441e+10                       1.304025e+06
+Other Unexplained 10x Ceiling Breach                27                    2.937186e+08                    7.487936e+07                       2.758867e+07
 
 
 * No Unmodified Ceiling: Contracts with an initial ceiling <=0. These are eliminated from the sample as missing data.
 * Obligations at least half Orig+CRai: For this category, total obligations of the contract were at least half the value of the initial ceiling plus ceiling growth under change orders. These contrats have had spending that massively exceeded their original ceiling, so the growth in absolute terrms seems plausible. This category accounts for the overwhelming majority of outlier spending but only a tiny fraction of change order growth.
 * Later Deobligated: The change order growth metrics only counts increases. These may simply have been mistaken increases, as when including deobligation the growth no longer exceeded 10x the original ceiling. The number, obligations, and change order growth of these contracts are comparatively small, and thus should not distort the overall data.
 * Korean Office W912UM refers to a contracting office that sometimes records base and all options values in Korean Won, approximate exchange rate 1,000 Won : 1 USD. 
-* There are nrow(cbre_preclean %>% dplyr::filter(Why_Outlier ==">=$250M, Inspect" & (p_ChangeOrderCeilingGrowth-1)>10)) contracts with ceiling growth of over $250 million that account for hundreds of billions in change order growth. These merit manual inspection.
+* There are 2 contracts with ceiling growth of over $250 million that account for hundreds of billions in change order growth. These merit manual inspection.
 * Finally a few score contrats have unexplained growth, but remain below the $10M threshold. The quantity and magnitude of these contrats is not sufficient to risk the overall model.
 
-This examination left the study team less confident in percentage growth as a metric, especially in extreme cases, while increasing the study team's confidence in measures of growth in absoute term. In the worst case, simply removing all of the unexplained over  10 million contracts from the sample would reduce the number of contracts by a tiny amount and reduce the spending accounted for by  1.2361599\times 10^{8}.
+This examination left the study team less confident in percentage growth as a metric, especially in extreme cases, while increasing the study team's confidence in measures of growth in absoute term. In the worst case, simply removing all of the unexplained over  10 million contracts from the sample would reduce the number of contracts by a tiny amount and reduce the spending accounted for by  1.304025\times 10^{6}.
 
 Shifting the focus to all contracts with growth of at least 250 million, there are far fewer contracts that account for far more money.
 
 
 Why_Outlier                                  nContract   SumOfChangeOrderCeilingGrowth   MaxOfChangeOrderCeilingGrowth   SumOfAction_Obligation_Then_Year
 ------------------------------------------  ----------  ------------------------------  ------------------------------  ---------------------------------
-Obligations at least half Orig+CRai                 17                      7542163613                       992698908                        23989114419
-At Least 1/2 After Admin Rescision                   5                    348399711493                    344739578535                         1851142076
+Obligations at least half Orig+CRai                 11                      5525269281                       992698908                        16999937992
+At Least 1/2 After Admin Rescision                   4                    348084268765                    344739578535                         1534853842
 At Least 1/2 After Steady Scope Rescision            1                    116093071716                    116093071716                            6649389
 At Least 1/2 After Change Order Rescision            1                       296534102                       296534102                           68972740
-At Least 1/2 After Other Rescision                   1                      1456705136                      1456705136                                  0
-Korean Office W912UM                                38                     38741059518                      5364187370                          365803594
->=$250M, Inspect                                     8                     84991428928                     26457083904                          765730150
+Korean Office W912UM                                24                     27401542851                      5364187370                          197697808
+>=$250M, Inspect                                     2                     14723509952                     14434412736                            1304025
 
 
 
-Inspecting W912UM, either to remove or fix its oversized growth, is an imperative as it accounts for the majority of these contracts or task orders. Even so, there are still 8 That merit special inspection for given that there growth far outpaces their spending.
+Inspecting W912UM, either to remove or fix its oversized growth, is an imperative as it accounts for the majority of these contracts or task orders. Even so, there are still 2 that merit special inspection for given that there growth far outpaces their spending.
 
 
-## Ceiling Growth
+### Ceiling Growth
 
 ```r
 (
@@ -601,7 +603,7 @@ Inspecting W912UM, either to remove or fix its oversized growth, is an imperativ
 ```
 
 ```
-## Warning: Removed 328 rows containing missing values (geom_point).
+## Warning: Removed 297 rows containing missing values (geom_point).
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthGraphs-1.png)<!-- -->
@@ -653,14 +655,14 @@ Inspecting W912UM, either to remove or fix its oversized growth, is an imperativ
 ```
 
 ```
-## Warning: Removed 35 rows containing missing values (geom_point).
+## Warning: Removed 32 rows containing missing values (geom_point).
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthGraphs-3.png)<!-- -->
 
 ```r
 (
-  ggplot(cbre_preclean, aes(x=UnmodifiedCeiling+ChangeOrderCeilingGrowth+ChangeOrderCeilingRescision,y=Action_Obligation)) +#,color=qGrowth
+  ggplot(cbre_preclean, aes(x=ChangeOrderCeilingGrowth,y=Action_Obligation-UnmodifiedCeiling)) +#,color=qGrowth
     geom_point(alpha=0.25,shape=".")+
     # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+scale_y_log10()#+
@@ -679,26 +681,18 @@ Inspecting W912UM, either to remove or fix its oversized growth, is an imperativ
 ```
 
 ```
-## Warning: Transformation introduced infinite values in continuous x-axis
-```
-
-```
-## Warning in self$trans$transform(x): NaNs produced
-```
-
-```
 ## Warning: Transformation introduced infinite values in continuous y-axis
 ```
 
 ```
-## Warning: Removed 94 rows containing missing values (geom_point).
+## Warning: Removed 12110 rows containing missing values (geom_point).
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthGraphs-4.png)<!-- -->
 
 ```r
 (
-  ggplot(cbre_preclean, aes(x=UnmodifiedCeiling+ChangeOrderCeilingGrowth-1,y=Action_Obligation)) +#,color=qGrowth
+  ggplot(cbre_preclean, aes(x=p_ChangeOrderCeilingGrowth,y=Action_Obligation/UnmodifiedCeiling)) +#,color=qGrowth
     geom_point(alpha=0.25,shape=".")+
     # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+scale_y_log10()#+
@@ -729,28 +723,10 @@ Inspecting W912UM, either to remove or fix its oversized growth, is an imperativ
 ```
 
 ```
-## Warning: Removed 39 rows containing missing values (geom_point).
+## Warning: Removed 63 rows containing missing values (geom_point).
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthGraphs-5.png)<!-- -->
-
-```r
-summary(cbre_preclean$ChangeOrderCeilingGrowth)
-```
-
-```
-##      Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
-## 0.000e+00 1.576e+03 9.102e+03 5.380e+06 5.287e+04 3.447e+11
-```
-
-```r
-summary(cbre_preclean$ChangeOrderCeilingRescision)
-```
-
-```
-##       Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
-## -3.363e+12  0.000e+00  0.000e+00 -2.783e+07  0.000e+00  0.000e+00
-```
 
 ```r
 (
@@ -777,7 +753,7 @@ summary(cbre_preclean$ChangeOrderCeilingRescision)
 ```
 
 ```
-## Warning: Removed 673 rows containing non-finite values (stat_bin).
+## Warning: Removed 552 rows containing non-finite values (stat_bin).
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthGraphs-6.png)<!-- -->
@@ -819,53 +795,62 @@ summary(cbre_preclean$ChangeOrderCeilingRescision)
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthGraphs-8.png)<!-- -->
+## Adjusting Ceiling Growth
 
-## >250 Inspect
+###  >250 Inspect
 
 ```r
-inspect250<-cbre_preclean %>% filter(!Why_Outlier %in% c("Obligations at least half Orig+CRai","Korean Office W912UM") &
+inspect250<-cbre_preclean %>% filter(!Why_Outlier %in% 
+                                       c("Obligations at least half Orig+CRai","Korean Office W912UM") &
                                        ChangeOrderCeilingGrowth >= 2.5e8)
-inspect250trans<-read.delim(file="..\\data\\semi_clean\\gt250k_change_outliers.txt", sep="\t")
+inspect250trans<-read.delim(file="..\\data\\semi_clean\\gt250m_change_outliers.txt", sep="\t")
+```
 
+```
+## Warning in scan(file = file, what = what, sep = sep, quote = quote, dec =
+## dec, : EOF within quoted string
+```
+
+```r
 inspect250trans %>% group_by(CSIScontractID)
 ```
 
 ```
-## # A tibble: 192 x 253
-## # Groups:   CSIScontractID [8]
+## # A tibble: 1,650 x 253
+## # Groups:   CSIScontractID [38]
 ##    ï..unique_trans~ transaction_sta~ obligatedamount baseandexercise~
-##    <fct>            <fct>                      <dbl>            <dbl>
-##  1 adce4f89-8327-c~ Active                    50106            50106 
-##  2 2703255d-eb32-a~ Active                        0                0 
-##  3 13270f71-3154-9~ Active                   109475           109475 
-##  4 6c7c1d74-bce3-2~ Active                        0           362176 
-##  5 01657f4b-32d0-5~ Active                  -336157.         -336157.
-##  6 49bd1c7d-08f9-5~ Active                   133496           133496 
-##  7 8000a003-96e9-6~ Active                245250000        575000000 
-##  8 76dc0e64-d385-b~ Active                    45000            45000 
-##  9 7987edff-c34b-8~ Active                   246970.     13513049088 
-## 10 1800c42c-6e27-3~ Active                   110000                0 
-## # ... with 182 more rows, and 249 more variables:
-## #   baseandalloptionsvalue <dbl>, maj_agency_cat <int>, mod_agency <int>,
-## #   maj_fund_agency_cat <int>, contractingofficeagencyid <int>,
-## #   contractingofficeid <fct>, fundingrequestingagencyid <int>,
+##    <fct>            <fct>                      <dbl> <fct>           
+##  1 ac2536aa-30dc-8~ Active                     16575 16575.0000      
+##  2 6bae985b-4b98-7~ Active                     18000 18000.0000      
+##  3 3e6ea0c8-a014-3~ Active                     20000 20000.0000      
+##  4 2bb243e2-0402-c~ Active                     10000 10000.0000      
+##  5 f90f4eaa-f037-e~ Active                     31206 31206.0000      
+##  6 9d6487bc-6406-b~ Active                         0 0.0000          
+##  7 3a9992fb-54c1-9~ Active                      1000 1000.0000       
+##  8 4155b758-8fb8-0~ Active                      7500 7500.0000       
+##  9 39d11f2e-9ddd-0~ Active                     15000 15000.0000      
+## 10 2eaffa03-47e6-f~ Active                     18000 18000.0000      
+## # ... with 1,640 more rows, and 249 more variables:
+## #   baseandalloptionsvalue <dbl>, maj_agency_cat <int>, mod_agency <fct>,
+## #   maj_fund_agency_cat <int>, contractingofficeagencyid <fct>,
+## #   contractingofficeid <fct>, fundingrequestingagencyid <fct>,
 ## #   fundingrequestingofficeid <fct>, fundedbyforeignentity <fct>,
 ## #   signeddate <fct>, effectivedate <fct>, currentcompletiondate <fct>,
 ## #   ultimatecompletiondate <fct>, lastdatetoorder <fct>,
 ## #   contractactiontype <fct>, reasonformodification <fct>,
-## #   typeofcontractpricing <fct>, priceevaluationpercentdifference <int>,
-## #   subcontractplan <fct>, lettercontract <fct>, multiyearcontract <int>,
-## #   performancebasedservicecontract <fct>, majorprogramcode <lgl>,
+## #   typeofcontractpricing <fct>, priceevaluationpercentdifference <fct>,
+## #   subcontractplan <fct>, lettercontract <fct>, multiyearcontract <fct>,
+## #   performancebasedservicecontract <fct>, majorprogramcode <fct>,
 ## #   contingencyhumanitarianpeacekeepingoperation <fct>,
 ## #   contractfinancing <fct>, costorpricingdata <fct>,
 ## #   costaccountingstandardsclause <fct>,
 ## #   descriptionofcontractrequirement <fct>,
-## #   purchasecardaspaymentmethod <int>, nationalinterestactioncode <fct>,
+## #   purchasecardaspaymentmethod <fct>, nationalinterestactioncode <fct>,
 ## #   progsourceagency <int>, progsourceaccount <int>,
-## #   progsourcesubacct <lgl>, account_title <lgl>, rec_flag <lgl>,
-## #   typeofidc <lgl>, multipleorsingleawardidc <lgl>, programacronym <lgl>,
+## #   progsourcesubacct <int>, account_title <lgl>, rec_flag <lgl>,
+## #   typeofidc <fct>, multipleorsingleawardidc <fct>, programacronym <lgl>,
 ## #   vendorname <fct>, vendoralternatename <fct>,
-## #   vendorlegalorganizationname <fct>, vendordoingasbusinessname <lgl>,
+## #   vendorlegalorganizationname <fct>, vendordoingasbusinessname <fct>,
 ## #   divisionname <lgl>, divisionnumberorofficecode <lgl>,
 ## #   ccrexception <lgl>, streetaddress <fct>, streetaddress2 <lgl>,
 ## #   streetaddress3 <lgl>, city <fct>, zipcode <int>,
@@ -876,7 +861,7 @@ inspect250trans %>% group_by(CSIScontractID)
 ## #   locationcode <int>, statecode <fct>, pop_state_code <fct>,
 ## #   placeofperformancecountrycode <fct>, placeofperformancezipcode <int>,
 ## #   placeofperformancecongressionaldistrict <fct>, psc_cat <fct>,
-## #   productorservicecode <fct>, systemequipmentcode <int>,
+## #   productorservicecode <fct>, systemequipmentcode <fct>,
 ## #   claimantprogramcode <fct>, principalnaicscode <int>,
 ## #   informationtechnologycommercialitemcategory <fct>, gfe_gfp_code <fct>,
 ## #   useofepadesignatedproducts <fct>, recoveredmaterialclauses <fct>,
@@ -893,21 +878,341 @@ inspect250trans %>% group_by(CSIScontractID)
 ## #   smallbusinesscompetitivenessdemonstrationprogram <fct>,
 ## #   a76action <fct>, solicitationprocedures <fct>, ...
 ```
-CSIScontractID 1431340 IDV -- FA881111C0001. This is a MDAP "LETTER CONTRACT FOR MUOS-2, WGS-6, NROL-65" The massive change order is for "FY 12 ATLAS-V MISSIONS AND FY12 DELTA IV MISSIONS" This is later descreased for "TRANSFER THE FY-12 MISSIONS OFF THIS CONTRACT AND RE-ALIGN ONTO CONTRACT FA8811-13-C-0002 FOR ADMINISTRATIVE PURPOSES." and "DEFINITIZATION OF DELTA IV ELS UCA MISSIONS: NROL-65, WGS-6, AND WGS-5" before being increased again for "DEFINITIZE ATLAS FY 12 LAUNCH SERVICE MISSIONS INITIALLY AWARDED VIA P00012". Thus the amounts seem entirely realistic.
 
-CSIScontractID 8341560 IDV -- PIID W912GB09C0090. "FIELD MODIFICATION A00002, CR 002 CONVOY LIVE FIRE RANGE" with 344 billion increase immediately rescinded "ADMINISTRATIVE MODIFICATION TO CORRECT TYPOGRAPHICAL ERROR ON PRIOR MODIFICATION. THIS CONTRACT ACTION IS GOVERNED BY THE ABG75 PROCESS AND NOT THE FAR." which was an other administrative action. Overriding.
+```r
+inspect250trans<-left_join(inspect250  %>% 
+                             dplyr::select(CSIScontractID,
+                                           Why_Outlier),
+                           inspect250trans, 
+                           by="CSIScontractID")
 
-CSIScontractID 10090818 IDV FA860410D7045 / PIID 1 "DESCOPE CLINS 1001,2001,3001,4001,  5001 AND ADD NEW REVISED PWS 0001" is a single transaction responsible for  289,097,216 increase. Software development "ADP SYSTEMS DEVELOPMENT SERVICES" Seems improbable, especially considering there's a ceiling increase that's literally one percent of the size in the next transaction, but the evidence isn't overwhelmiing
+write.csv(file="..\\data\\semi_clean\\gt250m_change_outliers_why_origin.csv", 
+          inspect250trans,
+          row.names = FALSE)
+```
+
+**Contract (CSIScontractID):** 1431340
+**PIID:** FA881111C0001 - Firm Fixed Price Federal Contract Award to United Launch Services
+**Product/Service Code (ProdServ):** 1810 – Space Vehicles
+**NAICS Code (NAICS):** 336414 – Guided Missile and Space Vehicle Manufacturing
+Amounts seem realistic – they either amount to reasonable additions (for new payload launches) or administrative shifts in money into/out of this contract from/to other contracts.  See breakout file for transaction details.
+
+This is a MDAP "LETTER CONTRACT FOR MUOS-2, WGS-6, NROL-65" The massive change order is for "FY 12 ATLAS-V MISSIONS AND FY12 DELTA IV MISSIONS" This is later descreased for "TRANSFER THE FY-12 MISSIONS OFF THIS CONTRACT AND RE-ALIGN ONTO CONTRACT FA8811-13-C-0002 FOR ADMINISTRATIVE PURPOSES." and "DEFINITIZATION OF DELTA IV ELS UCA MISSIONS: NROL-65, WGS-6, AND WGS-5" before being increased again for "DEFINITIZE ATLAS FY 12 LAUNCH SERVICE MISSIONS INITIALLY AWARDED VIA P00012". Thus the amounts seem entirely realistic.
+
+**Contract (CSIScontractID):** 8341560
+**PIID:** W912GB09C0090 – Description unavailable
+**Product/Service Code (ProdServ):** Y112 – Construction of Conference Space and Facilities
+**NAICS Code (NAICS):** 238990 – All other specialty trade contractors
+Large ceiling change caused by transaction 36322433 worth ~$344, which is immediately corrected in transaction 36441698 for administrative reasons (incorrect procedure followed).  Classified as adusted automatically.  See breakout file for transaction details.
+
+"FIELD MODIFICATION A00002, CR 002 CONVOY LIVE FIRE RANGE" with 344 billion increase immediately rescinded "ADMINISTRATIVE MODIFICATION TO CORRECT TYPOGRAPHICAL ERROR ON PRIOR MODIFICATION. THIS CONTRACT ACTION IS GOVERNED BY THE ABG75 PROCESS AND NOT THE FAR." which was an other administrative action. 
 
 
-CSIScontractID 19005830 IDV N4008005D3501 / PIID 87
-$13 billion ceiling for "MISC SERVICE & TRADE EQ" / "FFP BASE OPERATIONS SUPPORT SERVICES FOR PHASE IN PERIOD OF 01/01/2012 - 02/29/2012." Seems safely classified as a mistake even absent any subsequent correction.
+**Contract (CSIScontractID):** 10090818
+**IDVPIID:** FA860410D7045 / PIID 1 – Firm Fixed Price Federal Contract IDV Award to Triune Software
+**Product/Service Code (ProdServ):** D302 – Automatic Data Processing Systems Development
+**NAICS Code (NAICS):** 541512 - Computer Systems Design Services
+Large ceiling change caused almost solely by transaction 9893024, which is more than an order of magnitude greater than other transactions associated with the contract.  Moreover, Triune Software is an IT/HR service provider, and publicly available aggregate data for the IDDVPIID associated with the contract does not seem to reflect the large increase from transaction 9893024.  
 
-CSIScontractID 24816950 IDV W912HN07D0061 / PIID 4
-"PROJECT NUMBER 71657, STARSHIP 11000 REPAIR, FORT JACKSON, SC"
+"DESCOPE CLINS 1001,2001,3001,4001,  5001 AND ADD NEW REVISED PWS 0001" is a single transaction responsible for  289,097,216 increase. Software development "ADP SYSTEMS DEVELOPMENT SERVICES" Seems improbable, especially considering there's a ceiling increase that's literally one percent of the size in the next transaction, but the evidence isn't overwhelmiing. Transaction is qualified as questionable.
 
-CSIS contractID 24719937 IDV W9126G08D0016 / PIID 1
-Construction of "STUDENT DORMITORIES 1 & 2" 447M corrected by the next transaction in an other administrative action.
+**Contract (CSIScontractID):** 19005830
+**IDVPIID:** N4008005D3501 / PIID 87 – Firm Fixed Price Federal Contract IDV Award to Lbm, Inc., funded by the Naval Facilities Engineering Command
+**Product/Service Code (ProdServ):** 3590 – Miscellaneous Service and Trade Equipment
+**NAICS Code (NAICS):** 561210 – Facilities Support Services
+Large ceiling change caused almost solely by transaction 2676817, for more than USD 13B, an order of magnitude larger than any other transaction associated with this contract.  This seems like an inordinate amount of money for NAVFAC.  This transaction is explicitly described as "NAVFAC WASHINGTON."  The website for NAVFAC Washington declares that it manages only around ~$1B in annual business volume, so this transaction is classified as an error.
+
+$13 billion ceiling for "MISC SERVICE & TRADE EQ" / "FFP BASE OPERATIONS SUPPORT SERVICES FOR PHASE IN PERIOD OF 01/01/2012 - 02/29/2012." 
+
+**Contract (CSIScontractID):** 24719937
+**IDVPIID:** W9126G08D0016 / PIID 1 - Firm Fixed Price Federal Contract IDV Award to Hensel Phelps Construction Company
+**Product/Service Code (ProdServ):** Y199 – Construction of Misc. Building
+**NAICS Code (NAICS):** 236220 – Commercial and Institutional Building Construction
+
+Large ceiling change caused by transactions 18949835 and 20056794.  Transaction 18949835 listed with a description of ‘CONSTRUCTION OF THE STUDENT DORMITORY 2.’  Transaction 13118696 has the same description, and almost entirely rescinds transaction 18949835.  
+
+Construction of "STUDENT DORMITORIES 1 & 2" 447M corrected by the next transaction in an other administrative action. Adjusted automatically.
+
+**Contract (CSIScontractID):** 24807877
+**IDVPIID:** W912ER04D0004 / PIID 21- Cost Plus Award Fee Federal Contract IDV Award to 
+**Product/Service Code (ProdServ):** AD25 – R&D: Defense Services-Operational System Development
+**NAICS Code (NAICS):** 236220 – Commercial and Institutional Building Construction
+
+Large ceiling change caused mostly by transaction 2771200.  Transaction 15994427 rescinds (with a million-dollar excess) 2771200.  These transactions do not have the same descriptions, but 15994427 almost exactly matches 2771200 in amount (since these transactions are on the order of ~100 billion), and 15994427 immediately follows 2771200.  Thus, comfortable coding these as an error, especially as these two transactions exceed all others in size by several orders of magnitude.
+
+116B added in all three categories in  a definitized change order for HOME OFFICE SUPPORT and  then removed by a funding only action for IN-THEATRE OPERATIONS SUPPORT. Classified as an adjusted automatically.
+
+**Contract (CSIScontractID):** 24816950
+**IDVPIID:** W912HN07D0061 - Order Dependent (IDV only) Federal Contract IDV Award to Sauer Incorporated
+**Product/Service Code (ProdServ):** Z199 – Maintenance, Repair or Alteration of Misc. Buildings
+**NAICS Code (NAICS):** 236200 – Commercial and Institutional Building Construction
+
+Large ceiling change caused by a series of numerous transactions all described as for “BUILDING 11000 REPAIR.”  Again, these transactions are then largely rescinded by several large negative transactions described as the same.  While there is still ~$14 million remaining in the black after these negative transactions are included, given the sheer number of negative and positive contracts, and what seems to be at least a large negative revision done via change order. Classified as questionable.
+
+"PROJECT NUMBER 71657, STARSHIP 11000 REPAIR, FORT JACKSON, SC" Adjusted by ceiling breach. 
+
+**Contract (CSIScontractID):** 24905030
+**IDVPIID:** W917PM08D0001 / PIID 1- Firm Fixed Price Federal Contract Award, funded by ENDIST Afghanistan
+**Product/Service Code (ProdServ):** R499 – Other Professional Services
+**NAICS Code (NAICS):** 561612 – Security Guards and patrol Services
+
+Large ceiling change caused entirely by transaction 31507239, which is exactly rescinded by transaction 21282329.  These transactions do not share the same descriptions, but given that the dollar amounts match perfectly, I feel comfortable coding this as an error and a correction, respectively.
+
+Added under AIRCRAFT-ROTARY WING, HOURLY RATE and rescinded under SECURITY LIASON TEAM - MONTHLY RATE. Automatically adjusted.
+
+### Considering Alternate Labeling Systems
+
+
+```r
+summary(cbre_preclean$Why_Outlier)
+```
+
+```
+##                     No Unmodified Ceiling 
+##                                       237 
+##       Obligations at least half Orig+CRai 
+##                                     96334 
+##        At Least 1/2 After Admin Rescision 
+##                                      2570 
+##       At Least 1/2 After Ending Rescision 
+##                                       237 
+## At Least 1/2 After Steady Scope Rescision 
+##                                        55 
+## At Least 1/2 After Change Order Rescision 
+##                                       197 
+##        At Least 1/2 After Other Rescision 
+##                                         2 
+##                      Korean Office W912UM 
+##                                       187 
+##                          >=$250M, Inspect 
+##                                         2 
+##      Other Unexplained 10x Ceiling Breach 
+##                                        27 
+##                                      NA's 
+##                                       315
+```
+
+```r
+# Step 1, Change Order Ceiling Growth
+cbre_preclean$n_CBre_test <- cbre_preclean$ChangeOrderCeilingGrowth
+cbre_preclean$p_CBre_test <- cbre_preclean$n_CBre_test/cbre_preclean$UnmodifiedCeiling
+
+
+
+# Step 2, No non-whole number ceilings
+cbre_preclean$p_CBre_test <- cbre_preclean$n_CBre_test/ifelse(cbre_preclean$UnmodifiedCeiling>0,
+                                                    cbre_preclean$UnmodifiedCeiling,NA)
+cbre_preclean$qp_CBre <-Hmisc::cut2(cbre_preclean$p_CBre_test,c(0,1,5,10))
+cbre_preclean$qp_CBre<-factor(cbre_preclean$qp_CBre,levels=c(levels(cbre_preclean$qp_CBre),"W912UM"))
+cbre_preclean$qp_CBre[cbre_preclean$topContractingOfficeID=="W912UM"]<-"W912UM"
+summary(cbre_preclean$qp_CBre)
+```
+
+```
+## [       0,       1) [       1,       5) [       5,      10) 
+##               87852                9447                1107 
+## [      10,20440194]              W912UM                NA's 
+##                1231                 289                 237
+```
+
+```r
+cbre_preclean %>% group_by(qp_CBre) %>% dplyr::summarise(
+  nContract=length(CSIScontractID),
+  OblOverCeil=sum(ifelse(Action_Obligation>UnmodifiedCeiling,1,0)/length(CSIScontractID)),
+  AvgOblToCeil=mean(Action_Obligation/UnmodifiedCeiling,na.rm=TRUE),
+  # MaxOfChangeOrderCeilingGrowth=max(ChangeOrderCeilingGrowth),
+  OblM=sum(Action_Obligation)/1000000,
+  SumOfn_CBreM=sum(n_CBre_test)/1000000,
+  SumOfCOCGM=sum(ChangeOrderCeilingGrowth)/1000000,
+  AvgOfp_CBre=mean(p_CBre_test,na.rm=TRUE),
+  AvgOfp_COCG=mean(p_ChangeOrderCeilingGrowth,na.rm=TRUE))
+```
+
+```
+## Warning: Factor `qp_CBre` contains implicit NA, consider using
+## `forcats::fct_explicit_na`
+```
+
+```
+## # A tibble: 6 x 9
+##   qp_CBre nContract OblOverCeil AvgOblToCeil   OblM SumOfn_CBreM SumOfCOCGM
+##   <fct>       <int>       <dbl>        <dbl>  <dbl>        <dbl>      <dbl>
+## 1 [     ~     87852       0.857         1.29 2.59e5      22111.     22111. 
+## 2 [     ~      9447       0.974         4.02 2.06e4      11245.     11245. 
+## 3 [     ~      1107       0.973        12.5  3.79e3       2149.      2149. 
+## 4 [     ~      1231       0.972    118967.   9.05e3     481206.    481206. 
+## 5 W912UM        289       0.280       742.   7.50e2      38727.     38727. 
+## 6 <NA>          237       0.869       NaN    3.86e2         81.7       81.7
+## # ... with 2 more variables: AvgOfp_CBre <dbl>, AvgOfp_COCG <dbl>
+```
+
+```r
+#Step 3 Rescinding Net-Negative Admin Adjustments
+
+cbre_preclean$n_CBre_test <- cbre_preclean$ChangeOrderCeilingGrowth + ifelse(cbre_preclean$AdminCeilingModification<0,
+                                                      cbre_preclean$AdminCeilingModification,0)
+
+cbre_preclean$p_CBre_test <- cbre_preclean$n_CBre_test/ifelse(cbre_preclean$UnmodifiedCeiling>0,
+                                                    cbre_preclean$UnmodifiedCeiling,NA)
+cbre_preclean$qp_CBre <-Hmisc::cut2(cbre_preclean$p_CBre_test,c(0,1,5,10))
+cbre_preclean$qp_CBre<-factor(cbre_preclean$qp_CBre,levels=c(levels(cbre_preclean$qp_CBre),"W912UM"))
+cbre_preclean$qp_CBre[cbre_preclean$topContractingOfficeID=="W912UM"]<-"W912UM"
+
+cbre_preclean %>% group_by(qp_CBre) %>% dplyr::summarise(
+  nContract=length(CSIScontractID),
+  OblOverCeil=sum(ifelse(Action_Obligation>UnmodifiedCeiling,1,0)/length(CSIScontractID)),
+  AvgOblToCeil=mean(Action_Obligation/UnmodifiedCeiling,na.rm=TRUE),
+  # MaxOfChangeOrderCeilingGrowth=max(ChangeOrderCeilingGrowth),
+  OblM=sum(Action_Obligation)/1000000,
+  SumOfn_CBreM=sum(n_CBre_test)/1000000,
+  SumOfCOCGM=sum(ChangeOrderCeilingGrowth)/1000000,
+  AvgOfp_CBre=mean(p_CBre_test,na.rm=TRUE),
+  AvgOfp_COCG=mean(p_ChangeOrderCeilingGrowth,na.rm=TRUE))
+```
+
+```
+## Warning: Factor `qp_CBre` contains implicit NA, consider using
+## `forcats::fct_explicit_na`
+```
+
+```
+## # A tibble: 7 x 9
+##   qp_CBre nContract OblOverCeil AvgOblToCeil   OblM SumOfn_CBreM SumOfCOCGM
+##   <fct>       <int>       <dbl>        <dbl>  <dbl>        <dbl>      <dbl>
+## 1 [   -1~      1290       0.212        15.5  1.16e4      -15195.      320. 
+## 2 [     ~     86702       0.867         1.29 2.51e5       22332.    25748. 
+## 3 [     ~      9323       0.977         4.04 1.76e4        7962.     8091. 
+## 4 [     ~      1098       0.973        12.7  3.63e3        2083.     2086. 
+## 5 [     ~      1223       0.974    119730.   8.89e3      135706.   480465. 
+## 6 W912UM        289       0.280       742.   7.50e2       37179.    38727. 
+## 7 <NA>          238       0.870       NaN    3.96e2      -10604.       82.4
+## # ... with 2 more variables: AvgOfp_CBre <dbl>, AvgOfp_COCG <dbl>
+```
+
+```r
+#Step 4 Rescinding Net-Negative Steady Scope Adjustments
+cbre_preclean$n_CBre_test <- cbre_preclean$ChangeOrderCeilingGrowth +
+  ifelse(cbre_preclean$SteadyScopeCeilingModification+cbre_preclean$AdminCeilingModification<0,
+         cbre_preclean$SteadyScopeCeilingModification+cbre_preclean$AdminCeilingModification,0)
+
+cbre_preclean$p_CBre_test <- cbre_preclean$n_CBre_test/ifelse(cbre_preclean$UnmodifiedCeiling>0,
+                                                    cbre_preclean$UnmodifiedCeiling,NA)
+
+cbre_preclean$qp_CBre <-Hmisc::cut2(cbre_preclean$p_CBre_test,c(0,1,5,10))
+cbre_preclean$qp_CBre<-factor(cbre_preclean$qp_CBre,levels=c(levels(cbre_preclean$qp_CBre),"W912UM"))
+cbre_preclean$qp_CBre[cbre_preclean$topContractingOfficeID=="W912UM"]<-"W912UM"
+
+cbre_preclean %>% group_by(qp_CBre) %>% dplyr::summarise(
+  nContract=length(CSIScontractID),
+  OblOverCeil=sum(ifelse(Action_Obligation>UnmodifiedCeiling,1,0)/length(CSIScontractID)),
+  AvgOblToCeil=mean(Action_Obligation/UnmodifiedCeiling,na.rm=TRUE),
+  # MaxOfChangeOrderCeilingGrowth=max(ChangeOrderCeilingGrowth),
+  OblM=sum(Action_Obligation)/1000000,
+  SumOfn_CBreM=sum(n_CBre_test)/1000000,
+  SumOfCOCGM=sum(ChangeOrderCeilingGrowth)/1000000,
+  AvgOfp_CBre=mean(p_CBre_test,na.rm=TRUE),
+  AvgOfp_COCG=mean(p_ChangeOrderCeilingGrowth,na.rm=TRUE))
+```
+
+```
+## Warning: Factor `qp_CBre` contains implicit NA, consider using
+## `forcats::fct_explicit_na`
+```
+
+```
+## # A tibble: 7 x 9
+##   qp_CBre nContract OblOverCeil AvgOblToCeil   OblM SumOfn_CBreM SumOfCOCGM
+##   <fct>       <int>       <dbl>        <dbl>  <dbl>        <dbl>      <dbl>
+## 1 [   -1~      2971      0.0263        0.789 1.66e4      -16618.      847. 
+## 2 [     ~     85131      0.886         1.30  2.43e5       20910.   138842. 
+## 3 [     ~      9241      0.979         4.09  2.03e4        9314.    10669. 
+## 4 [     ~      1079      0.974        12.8   3.76e3        1976.     1982. 
+## 5 [     ~      1214      0.975    120633.    9.03e3       19593.   364371. 
+## 6 W912UM        289      0.280       742.    7.50e2       27971.    38727. 
+## 7 <NA>          238      0.870       NaN     3.89e2        -823.       81.7
+## # ... with 2 more variables: AvgOfp_CBre <dbl>, AvgOfp_COCG <dbl>
+```
+
+```r
+#Step 4 Change Order Rescisions  
+cbre_preclean$n_CBre_test <- cbre_preclean$n_CBre_test + ifelse(cbre_preclean$ChangeOrderCeilingRescision<0,
+                                                      cbre_preclean$ChangeOrderCeilingRescision,0)
+
+cbre_preclean$p_CBre_test <- cbre_preclean$n_CBre_test/ifelse(cbre_preclean$UnmodifiedCeiling>0,
+                                                    cbre_preclean$UnmodifiedCeiling,NA)
+
+cbre_preclean$qp_CBre <-Hmisc::cut2(cbre_preclean$p_CBre_test,c(0,1,5,10))
+cbre_preclean$qp_CBre<-factor(cbre_preclean$qp_CBre,levels=c(levels(cbre_preclean$qp_CBre),"W912UM"))
+cbre_preclean$qp_CBre[cbre_preclean$topContractingOfficeID=="W912UM"]<-"W912UM"
+
+cbre_preclean %>% group_by(qp_CBre) %>% dplyr::summarise(
+  nContract=length(CSIScontractID),
+  OblOverCeil=sum(ifelse(Action_Obligation>UnmodifiedCeiling,1,0)/length(CSIScontractID)),
+  AvgOblToCeil=mean(Action_Obligation/UnmodifiedCeiling,na.rm=TRUE),
+  # MaxOfChangeOrderCeilingGrowth=max(ChangeOrderCeilingGrowth),
+  OblM=sum(Action_Obligation)/1000000,
+  SumOfn_CBreM=sum(n_CBre_test)/1000000,
+  SumOfCOCGM=sum(ChangeOrderCeilingGrowth)/1000000,
+  AvgOfp_CBre=mean(p_CBre_test,na.rm=TRUE),
+  AvgOfp_COCG=mean(p_ChangeOrderCeilingGrowth,na.rm=TRUE))
+```
+
+```
+## Warning: Factor `qp_CBre` contains implicit NA, consider using
+## `forcats::fct_explicit_na`
+```
+
+```
+## # A tibble: 7 x 9
+##   qp_CBre nContract OblOverCeil AvgOblToCeil   OblM SumOfn_CBreM SumOfCOCGM
+##   <fct>       <int>       <dbl>        <dbl>  <dbl>        <dbl>      <dbl>
+## 1 [   -1~      7889      0.0845         3.73 3.68e4      -18507.     1483. 
+## 2 [     ~     80669      0.933          1.32 2.24e5       18788.   138704. 
+## 3 [     ~      8884      0.984          4.08 1.97e4        8655.    10271. 
+## 4 [     ~      1030      0.984         13.2  3.76e3        1927.     1982. 
+## 5 [     ~      1164      0.985     125796.   8.84e3       19413.   364271. 
+## 6 W912UM        289      0.280        742.   7.50e2       24920.    38727. 
+## 7 <NA>          238      0.870        NaN    3.89e2        -826.       81.7
+## # ... with 2 more variables: AvgOfp_CBre <dbl>, AvgOfp_COCG <dbl>
+```
+
+```r
+write.csv(file="..\\Data\\semi_clean\\p_CBre_outliers_post_cleaning.csv",cbre_preclean %>% filter((p_ChangeOrderCeilingGrowth-1)>10),row.names = FALSE)
+write.csv(file="..\\Data\\semi_clean\\n_CBre_outliers_post_cleaning.csv",cbre_preclean %>% filter(ChangeOrderCeilingGrowth>=2.5e8),row.names = FALSE)
+```
+
+### Implementing the change
+
+```r
+cbre_preclean$n_CBre <- cbre_preclean$ChangeOrderCeilingGrowth +
+  ifelse(cbre_preclean$SteadyScopeCeilingModification+cbre_preclean$AdminCeilingModification<0,
+         cbre_preclean$SteadyScopeCeilingModification+cbre_preclean$AdminCeilingModification,0)+1
+cbre_preclean$n_CBre[cbre_preclean$n_CBre<=1 & cbre_preclean$ChangeOrderCeilingGrowth>0]<-NA
+summary(cbre_preclean$n_CBre)
+```
+
+```
+##      Min.   1st Qu.    Median      Mean   3rd Qu.      Max.      NA's 
+## 1.000e+00 1.501e+03 8.809e+03 9.295e+05 5.097e+04 1.443e+10      3223
+```
+
+```r
+cbre_preclean$p_CBre <- cbre_preclean$n_CBre/ifelse(cbre_preclean$UnmodifiedCeiling>0,
+                                                    cbre_preclean$UnmodifiedCeiling,NA)+1
+summary(cbre_preclean$p_CBre)
+```
+
+```
+##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max.     NA's 
+##        1        1        1      521        1 20440196     3457
+```
+
+```r
+inspect250<-cbre_preclean %>% filter(!Why_Outlier %in% 
+                                       c("Obligations at least half Orig+CRai","Korean Office W912UM") &
+                                       n_CBre >= 2.5e8)
+```
+
 
 
 ## W912IM
@@ -1848,332 +2153,6 @@ ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=unmodWon))+
 ```r
 #Base and Options
 
-W912UMtrans$placeofperformancecountrycode
-```
-
-```
-##    [1] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##   [18] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##   [35] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##   [52] KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##   [69] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##   [86] KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [103] KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA
-##  [120] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [137] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [154] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [171] KOR KOR USA KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [188] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [205] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [222] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR
-##  [239] KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [256] USA KOR KOR KOR KOR KOR KOR KOR LSO KOR KOR KOR KOR KOR KOR KOR KOR
-##  [273] KOR KOR KOR KOR KOR KOR KOR LSO KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [290] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [307] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [324] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [341] USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [358] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [375] KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [392] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [409] KOR KOR USA USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [426] KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR
-##  [443] KOR KOR KOR KOR KOR USA KOR KOR KOR KOR USA KOR USA KOR KOR KOR KOR
-##  [460] KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [477] KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR USA KOR KOR KOR USA KOR
-##  [494] KOR KOR KOR KOR KOR KOR KOR KOR KOR USA USA KOR KOR KOR KOR KOR KOR
-##  [511] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [528] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [545] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [562] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [579] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [596] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [613] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [630] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [647] KOR KOR KOR KOR KOR LSO KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR
-##  [664] KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR
-##  [681] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR
-##  [698] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [715] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [732] KOR MNG KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [749] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [766] KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [783] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [800] KOR KOR KOR KOR USA KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR
-##  [817] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [834] KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR USA KOR KOR KOR KOR KOR
-##  [851] KOR KOR KOR KOR KOR USA KOR KOR KOR LSO KOR KOR KOR KOR KOR KOR KOR
-##  [868] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [885] KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [902] USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [919] KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR
-##  [936] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [953] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR
-##  [970] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-##  [987] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1004] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR LSO KOR KOR KOR
-## [1021] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1038] KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1055] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1072] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR USA KOR KOR KOR KOR
-## [1089] KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1106] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA
-## [1123] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR
-## [1140] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1157] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1174] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1191] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1208] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1225] KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR
-## [1242] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1259] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1276] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR
-## [1293] KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR
-## [1310] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1327] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR
-## [1344] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1361] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1378] KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1395] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1412] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR
-## [1429] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1446] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1463] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR
-## [1480] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1497] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1514] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR
-## [1531] KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR
-## [1548] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1565] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1582] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1599] KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1616] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA
-## [1633] KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1650] KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR
-## [1667] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1684] KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1701] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1718] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1735] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1752] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1769] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1786] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1803] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR
-## [1820] KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1837] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1854] KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1871] KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR USA KOR USA KOR KOR
-## [1888] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA USA KOR KOR KOR
-## [1905] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1922] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1939] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1956] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1973] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [1990] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2007] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2024] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2041] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2058] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2075] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2092] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2109] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2126] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2143] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2160] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2177] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2194] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2211] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2228] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2245] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA
-## [2262] USA USA USA USA KOR USA USA USA USA USA USA KOR KOR KOR KOR KOR KOR
-## [2279] USA USA KOR USA USA KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR
-## [2296] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2313] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2330] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2347] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2364] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2381] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2398] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2415] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2432] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2449] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2466] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2483] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2500] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2517] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2534] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2551] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2568] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2585] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2602] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2619] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2636] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2653] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2670] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2687] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2704] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2721] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR
-## [2738] KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2755] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2772] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2789] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR
-## [2806] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2823] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR
-## [2840] KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR
-## [2857] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2874] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR
-## [2891] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2908] KOR KOR KOR USA KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2925] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR MNG KOR KOR KOR KOR KOR KOR
-## [2942] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2959] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2976] KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [2993] KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3010] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3027] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3044] KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR USA KOR KOR KOR KOR KOR
-## [3061] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3078] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3095] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3112] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3129] KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3146] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3163] USA KOR KOR KOR KOR USA USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3180] KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3197] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3214] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3231] KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3248] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR
-## [3265] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3282] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3299] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3316] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3333] KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3350] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3367] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3384] KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR USA KOR USA KOR KOR
-## [3401] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3418] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3435] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3452] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3469] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR
-## [3486] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3503] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3520] KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR
-## [3537] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3554] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3571] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3588] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR
-## [3605] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3622] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3639] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR
-## [3656] USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3673] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3690] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3707] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3724] KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3741] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3758] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3775] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR
-## [3792] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3809] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA
-## [3826] KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR
-## [3843] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3860] KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR
-## [3877] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3894] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3911] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3928] KOR KOR KOR USA KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3945] USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3962] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3979] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [3996] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4013] USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR
-## [4030] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR
-## [4047] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4064] KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR
-## [4081] KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR USA
-## [4098] KOR USA KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4115] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4132] KOR USA KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4149] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4166] KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4183] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4200] KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR USA KOR KOR KOR KOR KOR
-## [4217] KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4234] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4251] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4268] KOR USA KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4285] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4302] KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4319] KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA
-## [4336] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4353] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4370] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA
-## [4387] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4404] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR
-## [4421] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4438] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4455] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR
-## [4472] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4489] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4506] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA
-## [4523] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4540] KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR
-## [4557] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4574] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR
-## [4591] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA
-## [4608] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4625] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4642] KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4659] KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4676] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4693] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4710] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4727] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4744] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4761] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4778] KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4795] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR
-## [4812] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4829] USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4846] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4863] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4880] KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4897] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4914] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4931] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4948] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4965] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR     KOR KOR KOR KOR
-## [4982] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [4999] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR
-## [5016] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR
-## [5033] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [5050] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR
-## [5067] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [5084] KOR KOR USA USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [5101] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [5118] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR
-## [5135] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [5152] KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [5169] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [5186] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR
-## [5203] KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [5220] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [5237] USA KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [5254] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [5271] KOR KOR KOR KOR KOR KOR KOR USA KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [5288] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [5305] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [5322] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [5339] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [5356] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [5373] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## [5390] KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR KOR
-## Levels:  KOR LSO MKD MNG USA VNM
-```
-
-```r
 ggplot(W912UMtrans %>% filter(modnumber=='0'),aes(x=baseWon))+
   geom_bar()+facet_wrap(~placeofmanufacture)
 ```
@@ -2244,6 +2223,10 @@ if(nrow(Miscategorized)>0) stop("False positive contract in Won performed in US"
 ```
 
 # Cleaning
+
+
+After examination, checking the net steady scope and administrative modifications and, when negative, reducing ceiling breaches by that amount seams to do a reasonable job of seperating those contracts that have genuinely expxerienced real cost overruns from those that may have had an administrative error that wildly overinflated the size of the ceiling breach. This adjustment isn't ideal as it does result in $16 billion of ceiling breaching contracts that no longer have a net increase and thus will need to be excluded from the sample, but it also addresses the majority of the 250M plus ceiling breaches algorithmically, which is important as it is  outside the capabilities  of  the studyteam to manually inspect the hordes of smaller contracts.
+
 ## Validating CSIS_contract_inspection
 ### Unmodified Ceiling in Won
 
@@ -2625,7 +2608,7 @@ if(any(!is.na(def$UnmodifiedCeiling_Then_Year[
   stop("Unmodified Ceilings set to be overiden have not been set to NA. Rerun transform portion of creat_defense_contract_dataset.r")
 }
 
-if(any(!is.na(def$ChangeOrderCeilingGrowth[
+if(any(!is.na(def$n_CBre[
   def$override_change_order_growth==TRUE]))){
   stop("Ceilings Breaches set to be overiden have not been set to NA. Rerun transform portion of creat_defense_contract_dataset.r")
 }
@@ -2658,10 +2641,10 @@ summary(cbre$qGrowth)
 ```
 
 ```
-## [4.69e-10,1.00e+00) [1.00e+00,1.00e+01) [1.00e+01,     Inf] 
-##               86521               11961                1464 
+## [9.86e-09,1.00e+00) [1.00e+00,1.00e+01) [1.00e+01,     Inf] 
+##               83423               11854                1453 
 ##                NA's 
-##                 217
+##                3433
 ```
 
 ```r
@@ -2669,13 +2652,13 @@ cbre$Why_Outlier<-NA
 cbre$Why_Outlier[is.na(cbre$UnmodifiedCeiling_Then_Year)]<-"No Unmodified Ceiling"
 cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
                    cbre$Action_Obligation_Then_Year*2>=cbre$UnmodifiedCeiling_Then_Year+
-                   cbre$ChangeOrderCeilingGrowth]<-
+                   cbre$n_CBre]<-
   "Obligations at least half Orig+CRai"
 cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
                    cbre$Office=="W912UM"]<-
   "Korean Office W912UM"
 cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
-                   cbre$ChangeOrderCeilingGrowth>=2.5e8]<-
+                   cbre$n_CBre>=2.5e8]<-
   ">=$250M, Inspect"
 cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
                    cbre$p_CBre-1>10]<-
@@ -2698,20 +2681,10 @@ summary(Hmisc::cut2(cbre_preclean$p_CBre-1,c(1,
 ```
 
 ```
-## Warning: Unknown or uninitialised column: 'p_CBre'.
-```
-
-```
-## Warning in min(x): no non-missing arguments to min; returning Inf
-```
-
-```
-## Warning in max(x): no non-missing arguments to max; returning -Inf
-```
-
-```
-##         1 [ 10,100] 
-##         0         0
+## [9.86e-09,1.00e+00) [1.00e+00,1.00e+01) [1.00e+01,1.00e+02) 
+##               83609               11865                1043 
+## [1.00e+02,2.04e+07]                NA's 
+##                 189                3457
 ```
 
 ```r
@@ -2722,10 +2695,10 @@ summary(Hmisc::cut2(cbre$p_CBre-1,c(1,
 ```
 
 ```
-## [4.69e-10,1.00e+00) [1.00e+00,1.00e+01) [1.00e+01,1.00e+02) 
-##               86521               11961                1047 
+## [9.86e-09,1.00e+00) [1.00e+00,1.00e+01) [1.00e+01,1.00e+02) 
+##               83423               11854                1039 
 ## [1.00e+02,     Inf]                NA's 
-##                 417                 217
+##                 414                3433
 ```
 
 ```r
@@ -2734,9 +2707,9 @@ summary(cbre$qHighCeiling[(cbre$p_CBre-1)>10])
 
 ```
 ##    [0,15k) [15k,100k)  [100k,1m)   [1m,10m)  [10m,75m)     [75m+] 
-##       1089        231        112         29          3          0 
+##       1079        229        113         29          3          0 
 ##       NA's 
-##        217
+##       3433
 ```
 
 ```r
@@ -2745,20 +2718,20 @@ summary(cbre$qHighCeiling[(cbre$p_CBre-1)>100])
 
 ```
 ##    [0,15k) [15k,100k)  [100k,1m)   [1m,10m)  [10m,75m)     [75m+] 
-##        373         34         10          0          0          0 
+##        370         34         10          0          0          0 
 ##       NA's 
-##        217
+##       3433
 ```
 
 ```r
 p_outlier_summary<-cbre %>% filter(p_CBre-1>10) %>% group_by(Why_Outlier) %>%
-  dplyr::summarise(nContract=length(ChangeOrderCeilingGrowth),
-                   SumOfChangeOrderCeilingGrowth=sum(ChangeOrderCeilingGrowth),
-                   MaxOfChangeOrderCeilingGrowth=max(ChangeOrderCeilingGrowth),
+  dplyr::summarise(nContract=length(n_CBre),
+                   SumOfn_CBre=sum(n_CBre),
+                   MaxOfn_CBre=max(n_CBre),
                    SumOfAction_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
 
 #Absolute Growth
-summary(Hmisc::cut2(cbre$ChangeOrderCeilingGrowth,c(1e3,
+summary(Hmisc::cut2(cbre$n_CBre,c(1e3,
                                            1e6,
                                            1e7,
                                            1e8,
@@ -2771,16 +2744,16 @@ summary(Hmisc::cut2(cbre$ChangeOrderCeilingGrowth,c(1e3,
 ```
 
 ```
-## [1.0e-02,1.0e+03) [1.0e+03,1.0e+06) [1.0e+06,1.0e+07) [1.0e+07,1.0e+08) 
-##             20366             75483              3576               483 
-## [1.0e+08,2.5e+08) [2.5e+08,1.0e+09) [1.0e+09,1.0e+10) [1.0e+10,2.0e+10] 
-##                27                11                 1                 0 
+## [1.0e+00,1.0e+03) [1.0e+03,1.0e+06) [1.0e+06,1.0e+07) [1.0e+07,1.0e+08) 
+##             19847             72978              3406               463 
+## [1.0e+08,2.5e+08) [2.5e+08,1.0e+09)           1.0e+09           2.0e+10 
+##                25                12                 0                 0 
 ##              NA's 
-##               216
+##              3432
 ```
 
 ```r
-summary(Hmisc::cut2(cbre$ChangeOrderCeilingGrowth,c(1e3,
+summary(Hmisc::cut2(cbre$n_CBre,c(1e3,
                                   1e6,
                                   1e7,
                                   1e8,
@@ -2793,51 +2766,50 @@ summary(Hmisc::cut2(cbre$ChangeOrderCeilingGrowth,c(1e3,
 ```
 
 ```
-## [1.0e-02,1.0e+03) [1.0e+03,1.0e+06) [1.0e+06,1.0e+07) [1.0e+07,1.0e+08) 
-##             20366             75483              3576               483 
-## [1.0e+08,2.5e+08) [2.5e+08,1.0e+09) [1.0e+09,1.0e+10) [1.0e+10,2.0e+10] 
-##                27                11                 1                 0 
+## [1.0e+00,1.0e+03) [1.0e+03,1.0e+06) [1.0e+06,1.0e+07) [1.0e+07,1.0e+08) 
+##             19847             72978              3406               463 
+## [1.0e+08,2.5e+08) [2.5e+08,1.0e+09)           1.0e+09           2.0e+10 
+##                25                12                 0                 0 
 ##              NA's 
-##               216
+##              3432
 ```
 
 ```r
-summary(cbre$qHighCeiling[cbre$ChangeOrderCeilingGrowth>=1e6])
+summary(cbre$qHighCeiling[cbre$n_CBre>=1e6])
 ```
 
 ```
 ##    [0,15k) [15k,100k)  [100k,1m)   [1m,10m)  [10m,75m)     [75m+] 
-##         52        104        472       1772       1422        275 
+##         52        104        457       1691       1347        254 
 ##       NA's 
-##        217
+##       3433
 ```
 
 ```r
-summary(cbre$qHighCeiling[cbre$ChangeOrderCeilingGrowth>=1e9])
+summary(cbre$qHighCeiling[cbre$n_CBre>=1e9])
 ```
 
 ```
 ##    [0,15k) [15k,100k)  [100k,1m)   [1m,10m)  [10m,75m)     [75m+] 
-##          0          0          0          0          0          1 
+##          0          0          0          0          0          0 
 ##       NA's 
-##        216
+##       3432
 ```
 
 ```r
-n_outlier_summary<-cbre %>% filter(ChangeOrderCeilingGrowth>2.5e8) %>% group_by(Why_Outlier) %>%
-  dplyr::summarise(nContract=length(ChangeOrderCeilingGrowth),
-                   SumOfChangeOrderCeilingGrowth=sum(ChangeOrderCeilingGrowth),
-                   MaxOfChangeOrderCeilingGrowth=max(ChangeOrderCeilingGrowth),
+n_outlier_summary<-cbre %>% filter(n_CBre>2.5e8) %>% group_by(Why_Outlier) %>%
+  dplyr::summarise(nContract=length(n_CBre),
+                   SumOfn_CBre=sum(n_CBre),
+                   MaxOfn_CBre=max(n_CBre),
                    SumOfAction_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
 ```
 
 The cleaning has cut in half the outliers with growth >=100,000,000, although the influence has been much smaller on the percentage growth outliers, reinforcing the choice to switch to absolute growth. The study team chose to set a threshold of Shifting the focus to all contracts with growth of at least 250 million, there are far fewer contracts that account for far more money.
 
 
-Why_Outlier                            nContract   SumOfChangeOrderCeilingGrowth   MaxOfChangeOrderCeilingGrowth   SumOfAction_Obligation_Then_Year
-------------------------------------  ----------  ------------------------------  ------------------------------  ---------------------------------
-Obligations at least half Orig+CRai           11                      5525269281                       992698908                        16999937992
->=$250M, Inspect                               1                      2156385183                      2156385183                         1363572085
+Why_Outlier                            nContract   SumOfn_CBre   MaxOfn_CBre   SumOfAction_Obligation_Then_Year
+------------------------------------  ----------  ------------  ------------  ---------------------------------
+Obligations at least half Orig+CRai           12    6366398624     992698909                        18363510077
 
 
 
@@ -2845,14 +2817,14 @@ After the cleaning, 2 categories remain relevant.
 
 
 
-Why_Outlier                             nContract   SumOfChangeOrderCeilingGrowth   MaxOfChangeOrderCeilingGrowth   SumOfAction_Obligation_Then_Year
--------------------------------------  ----------  ------------------------------  ------------------------------  ---------------------------------
-Obligations at least half Orig+CRai          1343                      4492100974                       769789464                         9319148775
-Other Unexplained 10x Ceiling Breach          121                       505634643                        95979870                           88835258
+Why_Outlier                             nContract   SumOfn_CBre   MaxOfn_CBre   SumOfAction_Obligation_Then_Year
+-------------------------------------  ----------  ------------  ------------  ---------------------------------
+Obligations at least half Orig+CRai          1343    4567957181     769789465                         9379652534
+Other Unexplained 10x Ceiling Breach          110     386492485      74879363                           34503202
 
 
 * Obligations at least half Orig+CRai: For this category, total obligations of the contract were at least half the value of the initial ceiling plus ceiling growth under change orders. As before, this category accounts for the overwhelming majority of outlier spending but only a tiny fraction of change order growth.
-* There are 1 contracts with ceiling growth of over $250 million that account for hundreds of billions in change order growth. These merit manual inspection.
+* There are 0 contracts with ceiling growth of over $250 million that account for hundreds of billions in change order growth. These merit manual inspection.
 
 ## Graphs after Cleaning
 
@@ -2878,14 +2850,14 @@ Other Unexplained 10x Ceiling Breach          121                       50563464
 ```
 
 ```
-## Warning: Removed 217 rows containing missing values (geom_point).
+## Warning: Removed 3433 rows containing missing values (geom_point).
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthAfterCleaning-1.png)<!-- -->
 
 ```r
 (
-  ggplot(cbre, aes(x=UnmodifiedCeiling_Then_Year,y=ChangeOrderCeilingGrowth)) +#,color=qGrowth
+  ggplot(cbre, aes(x=UnmodifiedCeiling_Then_Year,y=n_CBre)) +#,color=qGrowth
     geom_point(alpha=0.25,shape=".")+
     # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+scale_y_log10()+
@@ -2902,14 +2874,14 @@ Other Unexplained 10x Ceiling Breach          121                       50563464
 ```
 ## Warning: Transformation introduced infinite values in continuous x-axis
 
-## Warning: Removed 217 rows containing missing values (geom_point).
+## Warning: Removed 3433 rows containing missing values (geom_point).
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthAfterCleaning-2.png)<!-- -->
 
 ```r
 (
-  ggplot(cbre, aes(x=UnmodifiedCeiling_Then_Year+ChangeOrderCeilingGrowth+ChangeOrderCeilingRescision,
+  ggplot(cbre, aes(x=UnmodifiedCeiling_Then_Year+n_CBre,
                    y=Action_Obligation_Then_Year)) +#,color=qGrowth
     geom_point(alpha=0.25,shape=".")+
     # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
@@ -2929,44 +2901,19 @@ Other Unexplained 10x Ceiling Breach          121                       50563464
 ```
 
 ```
-## Warning: Transformation introduced infinite values in continuous x-axis
-```
-
-```
-## Warning in self$trans$transform(x): NaNs produced
-```
-
-```
 ## Warning: Transformation introduced infinite values in continuous y-axis
 ```
 
 ```
-## Warning: Removed 294 rows containing missing values (geom_point).
+## Warning: Removed 3459 rows containing missing values (geom_point).
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthAfterCleaning-3.png)<!-- -->
 
 ```r
-summary(cbre$ChangeOrderCeilingGrowth)
-```
-
-```
-##      Min.   1st Qu.    Median      Mean   3rd Qu.      Max.      NA's 
-## 0.000e+00 1.503e+03 8.936e+03 3.979e+05 5.146e+04 2.156e+09       216
-```
-
-```r
-summary(cbre$ChangeOrderCeilingRescision)
-```
-
-```
-##       Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
-## -510889128          0          0     -79406          0          0
-```
-
-```r
 (
-  ggplot(cbre, aes(x=ChangeOrderCeilingGrowth,y=ChangeOrderCeilingGrowth+ChangeOrderCeilingRescision)) +#,color=qGrowth
+  ggplot(cbre, aes(x=n_CBre,
+                   y=Action_Obligation_Then_Year-UnmodifiedCeiling_Then_Year)) +#,color=qGrowth
     geom_point(alpha=0.25,shape=".")+
     # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+scale_y_log10()#+
@@ -2989,10 +2936,42 @@ summary(cbre$ChangeOrderCeilingRescision)
 ```
 
 ```
-## Warning: Removed 5333 rows containing missing values (geom_point).
+## Warning: Removed 12389 rows containing missing values (geom_point).
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthAfterCleaning-4.png)<!-- -->
+
+```r
+# 
+(
+  ggplot(cbre, aes(x=p_CBre-1,
+                   y=Action_Obligation_Then_Year/UnmodifiedCeiling_Then_Year)) +#,color=qGrowth
+    geom_point(alpha=0.25,shape=".")+
+    # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    scale_x_log10()+scale_y_log10()#+
+  #+
+  #   geom_vline(xintercept = c(1,10,100))+#+geom_vline(xintercept = 0.1)+
+  # # facet_wrap(~qHighCeiling,scales="free_y")+#+, space="free_y"
+  #   labs(title="Distribution of Ceiling Breaches",
+  #        y="Percent of Growth in  Ceiling",
+  #        x="Unmodified Contract Ceiling")#,
+  #        # fill="Termination Completion"
+)
+```
+
+```
+## Warning in self$trans$transform(x): NaNs produced
+```
+
+```
+## Warning: Transformation introduced infinite values in continuous y-axis
+```
+
+```
+## Warning: Removed 3487 rows containing missing values (geom_point).
+```
+
+![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthAfterCleaning-5.png)<!-- -->
 
 ```r
 (
@@ -3011,14 +2990,14 @@ summary(cbre$ChangeOrderCeilingRescision)
 ```
 
 ```
-## Warning: Removed 454 rows containing non-finite values (stat_bin).
+## Warning: Removed 3667 rows containing non-finite values (stat_bin).
 ```
 
-![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthAfterCleaning-5.png)<!-- -->
+![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthAfterCleaning-6.png)<!-- -->
 
 ```r
 (
-  ggplot(cbre, aes(x=ChangeOrderCeilingGrowth,fill=qGrowth)) +
+  ggplot(cbre, aes(x=n_CBre,fill=qGrowth)) +
     geom_histogram(bins=100)+
     theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+
@@ -3033,14 +3012,14 @@ summary(cbre$ChangeOrderCeilingRescision)
 ```
 
 ```
-## Warning: Removed 216 rows containing non-finite values (stat_bin).
+## Warning: Removed 3432 rows containing non-finite values (stat_bin).
 ```
 
-![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthAfterCleaning-6.png)<!-- -->
+![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthAfterCleaning-7.png)<!-- -->
 
 ```r
 (
-  ggplot(cbre, aes(x=ChangeOrderCeilingGrowth,fill=qGrowth)) +
+  ggplot(cbre, aes(x=n_CBre,fill=qGrowth)) +
     geom_histogram(bins=100)+
     theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+
@@ -3057,9 +3036,9 @@ summary(cbre$ChangeOrderCeilingRescision)
 ```
 
 ```
-## Warning: Removed 216 rows containing non-finite values (stat_bin).
+## Warning: Removed 3432 rows containing non-finite values (stat_bin).
 ```
 
-![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthAfterCleaning-7.png)<!-- -->
+![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthAfterCleaning-8.png)<!-- -->
 
 
