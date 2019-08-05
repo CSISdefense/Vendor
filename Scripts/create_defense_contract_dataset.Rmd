@@ -51,6 +51,7 @@ def_all<-input_sample_criteria(def_all,
 
 def_all<-def_all %>% filter(StartFiscal_Year<2018 & StartFiscal_Year>=2007)
   
+
 save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 
 ```
@@ -154,11 +155,31 @@ save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 ```
 
 # Split between def_all and def_detail
+```{r Split}
+# load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
+def_detail<-def_all
+rm(def_all)
+
+def_detail<-read_and_join_experiment(def_detail,
+                                         "Contract.IsParentContractID.txt",
+                                         by="CSIScontractID",
+                                         # replace_na_var="AgencyID",
+                                         add_var=c("IsParentCSIScontractID"),
+                                  skip_check_var = "IsParentCSIScontractID",
+                                         path ="", 
+                                  directory = "..\\data\\semi_clean\\"
+)
+summary(def_detail$IsParentCSIScontractID)
+def_detail<-def_detail %>% dplyr::filter(is.na(IsParentCSIScontractID) | IsParentCSIScontractID==0)
+
+save(file="..\\data\\clean\\defense_contract_complete_detail.Rdata",def_detail)
+
+```
 
 ##Location
 ```{r Location}
-def_detail<-def_all
-rm(def_all)
+# load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
+
 #Drop contracts starting before the study period and not clearly end within it
 def_detail<-def_detail %>% filter(IsComplete==1)
 #   subset(def_detail, StartFY>=2007   & year(MinOfSignedDate)<2017 & 
@@ -1014,6 +1035,5 @@ if("Action_Obligation_Then_Year" %in% colnames(def)){
 
 
 save(file="../data/clean/transformed_def.Rdata",def)
-
 
 ```
