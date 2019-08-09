@@ -229,29 +229,6 @@ rm(def_detail)
 
 # Before Cleaning
 
-
-
-
-## Ceiling Change Checksum
-
-```r
-# load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
-# 
-# if(any(
-#   def_all$UnmodifiedCeiling+
-#   def_all$ChangeOrderCeilingGrowth+
-#   def_all$ChangeOrderCeilingRescision+
-#     def_all$AdminCeilingModification+
-#     def_all$EndingCeilingModification+
-#     def_all$OtherCeilingModification!=
-#     def_all$SumOfBaseandalloptionsvalue
-# )) stop("Ceiling Modification Checksum failure.")
-  # rm(def_all)
-#Cn't do this yet, need SumOfBaseandalloptionsvalue
-```
-
-
-
 ## Examining Ceiling Modifications
 ### Ceiling Modification Metrics
 
@@ -261,7 +238,7 @@ summary(cbre_preclean$ChangeOrderCeilingRescision)
 
 ```
 ##       Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
-## -510889128          0          0     -79406          0          0
+## -510889128          0          0     -79112          0          0
 ```
 
 ```r
@@ -270,7 +247,7 @@ summary(cbre_preclean$AdminCeilingModification)
 
 ```
 ##       Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
-## -3.447e+11  0.000e+00  0.000e+00 -3.666e+06  0.000e+00  9.141e+08
+## -3.447e+11  0.000e+00  0.000e+00 -3.668e+06  0.000e+00  9.141e+08
 ```
 
 ```r
@@ -319,11 +296,11 @@ summary(cbre_preclean$AdminCeilingModification)
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingModification-2.png)<!-- -->
 
 ```r
-# cbre_preclean$n_CBre<-cbre_preclean$ChangeOrderCeilingGrowth + 
+# cbre_preclean$n_CBre_Then_Year<-cbre_preclean$ChangeOrderCeilingGrowth + 
 #   ifelse(cbre_preclean$AdminCeilingModification<0,cbre_preclean$AdminCeilingModification,0)+1
-# cbre_preclean$n_CBre[cbre_preclean$n_CBre<1]<-NA
+# cbre_preclean$n_CBre_Then_Year[cbre_preclean$n_CBre_Then_Year<1]<-NA
 # summary(cbre_preclean$ChangeOrderCeilingGrowth)
-# summary(cbre_preclean$n_CBre)
+# summary(cbre_preclean$n_CBre_Then_Year)
 cbre_preclean$p_ChangeOrderCeilingGrowth<-((cbre_preclean$ChangeOrderCeilingGrowth-1)/
                           cbre_preclean$UnmodifiedCeiling)+1
 # cbre_preclean$qGrowth<-Hmisc::cut2(cbre_preclean$p_ChangeOrderCeilingGrowth-1,c(1,10))
@@ -339,7 +316,7 @@ nrow(cbre_preclean %>% filter((p_ChangeOrderCeilingGrowth-1)>1))
 ```
 
 ```
-## [1] 11854
+## [1] 11847
 ```
 
 ```r
@@ -347,7 +324,7 @@ nrow(cbre_preclean %>% filter((p_ChangeOrderCeilingGrowth-1)>10))
 ```
 
 ```
-## [1] 1479
+## [1] 1475
 ```
 
 ```r
@@ -355,7 +332,7 @@ nrow(cbre_preclean %>% filter((p_ChangeOrderCeilingGrowth-1)>100))
 ```
 
 ```
-## [1] 427
+## [1] 426
 ```
 
 ```r
@@ -372,7 +349,7 @@ summary(cbre_preclean$qHighCeiling[(cbre_preclean$p_ChangeOrderCeilingGrowth-1)>
 
 ```
 ## [0.0e+00,1.5e+04) [1.5e+04,1.0e+05) [1.0e+05,1.0e+06) [1.0e+06,1.0e+07) 
-##               871               214               120                34 
+##               871               214               117                33 
 ## [1.0e+07,7.5e+07) [7.5e+07,1.0e+13] 
 ##                 4                 0
 ```
@@ -383,7 +360,7 @@ summary(cbre_preclean$qHighCeiling[(cbre_preclean$p_ChangeOrderCeilingGrowth-1)>
 
 ```
 ## [0.0e+00,1.5e+04) [1.5e+04,1.0e+05) [1.0e+05,1.0e+06) [1.0e+06,1.0e+07) 
-##               141                33                15                 2 
+##               141                33                14                 2 
 ## [1.0e+07,7.5e+07) [7.5e+07,1.0e+13] 
 ##                 0                 0
 ```
@@ -397,24 +374,33 @@ cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
   "Obligations at least half Orig+CRai"
 cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
                             cbre_preclean$Action_Obligation*2>=
-                            (cbre_preclean$ChangeOrderCeilingGrowth+cbre_preclean$AdminCeilingModification)]<-
+                            (cbre_preclean$UnmodifiedCeiling+
+                               cbre_preclean$ChangeOrderCeilingGrowth+cbre_preclean$AdminCeilingModification)]<-
   "At Least 1/2 After Admin Rescision"
 cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
                             cbre_preclean$Action_Obligation*2>=
-                            (cbre_preclean$ChangeOrderCeilingGrowth+cbre_preclean$EndingCeilingModification)]<-
-  "At Least 1/2 After Ending Rescision"
-cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
-                            cbre_preclean$Action_Obligation*2>=
-                            (cbre_preclean$ChangeOrderCeilingGrowth+cbre_preclean$SteadyScopeCeilingModification)]<-
+                            (cbre_preclean$UnmodifiedCeiling+
+                               cbre_preclean$ChangeOrderCeilingGrowth+
+                               cbre_preclean$SteadyScopeCeilingModification)]<-
   "At Least 1/2 After Steady Scope Rescision"
 cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
                             cbre_preclean$Action_Obligation*2>=
-                            (cbre_preclean$ChangeOrderCeilingGrowth+cbre_preclean$ChangeOrderCeilingRescision)]<-
+                            (cbre_preclean$UnmodifiedCeiling+
+                               cbre_preclean$ChangeOrderCeilingGrowth+
+                               cbre_preclean$ChangeOrderCeilingRescision)]<-
   "At Least 1/2 After Change Order Rescision"
 cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
                             cbre_preclean$Action_Obligation*2>=
-                            (cbre_preclean$ChangeOrderCeilingGrowth+cbre_preclean$OtherCeilingModification)]<-
+                            (cbre_preclean$UnmodifiedCeiling+
+                               cbre_preclean$ChangeOrderCeilingGrowth+
+                               cbre_preclean$OtherCeilingModification)]<-
   "At Least 1/2 After Other Rescision"
+cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
+                            cbre_preclean$Action_Obligation*2>=
+                            (cbre_preclean$UnmodifiedCeiling+
+                               cbre_preclean$ChangeOrderCeilingGrowth+cbre_preclean$EndingCeilingModification)]<-
+  "At Least 1/2 After Ending Rescision"
+
 cbre_preclean$Why_Outlier[is.na(cbre_preclean$Why_Outlier)&
                             cbre_preclean$topContractingOfficeID=="W912UM"]<-
   "Korean Office W912UM"
@@ -447,23 +433,23 @@ summary(cbre_preclean$Why_Outlier)
 ##       Obligations at least half Orig+CRai 
 ##                                     96334 
 ##        At Least 1/2 After Admin Rescision 
-##                                      2570 
+##                                       228 
 ##       At Least 1/2 After Ending Rescision 
-##                                       237 
+##                                       526 
 ## At Least 1/2 After Steady Scope Rescision 
-##                                        55 
+##                                       301 
 ## At Least 1/2 After Change Order Rescision 
-##                                       197 
+##                                       883 
 ##        At Least 1/2 After Other Rescision 
-##                                         2 
+##                                         8 
 ##                      Korean Office W912UM 
-##                                       187 
+##                                       208 
 ##                          >=$250M, Inspect 
 ##                                         2 
 ##      Other Unexplained 10x Ceiling Breach 
-##                                        27 
+##                                        25 
 ##                                      NA's 
-##                                       315
+##                                      1334
 ```
 
 ```r
@@ -494,9 +480,9 @@ summary(Hmisc::cut2(cbre_preclean$ChangeOrderCeilingGrowth,c(1e3,
 
 ```
 ## [1.00e-02,1.00e+03) [1.00e+03,1.00e+06) [1.00e+06,1.00e+07) 
-##               20366               75486                3610 
+##               20361               75436                3597 
 ## [1.00e+07,1.00e+08) [1.00e+08,2.50e+08) [2.50e+08,1.00e+09) 
-##                 587                  70                  32 
+##                 579                  69                  32 
 ## [1.00e+09,1.00e+10) [1.00e+10,2.00e+10) [2.00e+10,3.45e+11] 
 ##                   9                   1                   2
 ```
@@ -507,9 +493,9 @@ summary(cbre_preclean$qHighCeiling[cbre_preclean$ChangeOrderCeilingGrowth>=1e6])
 
 ```
 ## [0.0e+00,1.5e+04) [1.5e+04,1.0e+05) [1.0e+05,1.0e+06) [1.0e+06,1.0e+07) 
-##                60                98               489              1800 
+##                60                98               486              1797 
 ## [1.0e+07,7.5e+07) [7.5e+07,1.0e+13] 
-##              1420               444
+##              1412               436
 ```
 
 ```r
@@ -527,7 +513,7 @@ summary(cbre_preclean$qHighCeiling[cbre_preclean$ChangeOrderCeilingGrowth>=1e9])
 write.csv(file="..\\Data\\semi_clean\\p_CBre_outliers.csv",cbre_preclean %>% filter((p_ChangeOrderCeilingGrowth-1)>10),row.names = FALSE)
 write.csv(file="..\\Data\\semi_clean\\n_CBre_outliers.csv",cbre_preclean %>% filter(ChangeOrderCeilingGrowth>=2.5e8),row.names = FALSE)
 ```
-Examining cases of large ceiling growth, 1479 contracts experienced greater than 10 fold growth. An increase of that side strains credulity, even in high risk defense contracting. While by no means impossible, the more likely explaination is a misrecorded initial ceiling.
+Examining cases of large ceiling growth, 1475 contracts experienced greater than 10 fold growth. An increase of that side strains credulity, even in high risk defense contracting. While by no means impossible, the more likely explaination is a misrecorded initial ceiling.
 
 The study team broke down the outliers into 6 categories:
 
@@ -536,14 +522,14 @@ Why_Outlier                                  nContract   SumOfChangeOrderCeiling
 ------------------------------------------  ----------  ------------------------------  ------------------------------  ---------------------------------
 No Unmodified Ceiling                              236                    8.167884e+07                    2.086281e+07                       3.858640e+08
 Obligations at least half Orig+CRai               1148                    4.418689e+09                    7.697895e+08                       8.935369e+09
-At Least 1/2 After Admin Rescision                   9                    3.455750e+11                    3.447396e+11                       7.148418e+07
-At Least 1/2 After Ending Rescision                  5                    7.916516e+05                    5.007609e+05                       7.971426e+04
-At Least 1/2 After Steady Scope Rescision            4                    1.161107e+11                    1.160931e+11                       1.326282e+07
-At Least 1/2 After Change Order Rescision           36                    8.371512e+07                    3.761755e+07                       2.077179e+06
+At Least 1/2 After Admin Rescision                   6                    3.455698e+11                    3.447396e+11                       6.872346e+07
+At Least 1/2 After Ending Rescision                  5                    7.740812e+05                    5.007609e+05                       8.154131e+04
+At Least 1/2 After Steady Scope Rescision            5                    1.161109e+11                    1.160931e+11                       1.336305e+07
+At Least 1/2 After Change Order Rescision           36                    5.100828e+07                    2.276753e+07                       4.515064e+06
 At Least 1/2 After Other Rescision                   1                    1.502467e+05                    1.502467e+05                       6.673660e+03
 Korean Office W912UM                                11                    7.681225e+09                    5.364187e+09                       1.696901e+07
 >=$250M, Inspect                                     2                    1.472351e+10                    1.443441e+10                       1.304025e+06
-Other Unexplained 10x Ceiling Breach                27                    2.937186e+08                    7.487936e+07                       2.758867e+07
+Other Unexplained 10x Ceiling Breach                25                    2.018076e+08                    7.487936e+07                       2.780944e+07
 
 
 * No Unmodified Ceiling: Contracts with an initial ceiling <=0. These are eliminated from the sample as missing data.
@@ -603,7 +589,7 @@ Inspecting W912UM, either to remove or fix its oversized growth, is an imperativ
 ```
 
 ```
-## Warning: Removed 297 rows containing missing values (geom_point).
+## Warning: Removed 296 rows containing missing values (geom_point).
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthGraphs-1.png)<!-- -->
@@ -685,7 +671,7 @@ Inspecting W912UM, either to remove or fix its oversized growth, is an imperativ
 ```
 
 ```
-## Warning: Removed 12110 rows containing missing values (geom_point).
+## Warning: Removed 12033 rows containing missing values (geom_point).
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthGraphs-4.png)<!-- -->
@@ -753,7 +739,7 @@ Inspecting W912UM, either to remove or fix its oversized growth, is an imperativ
 ```
 
 ```
-## Warning: Removed 552 rows containing non-finite values (stat_bin).
+## Warning: Removed 551 rows containing non-finite values (stat_bin).
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthGraphs-6.png)<!-- -->
@@ -973,23 +959,23 @@ summary(cbre_preclean$Why_Outlier)
 ##       Obligations at least half Orig+CRai 
 ##                                     96334 
 ##        At Least 1/2 After Admin Rescision 
-##                                      2570 
+##                                       228 
 ##       At Least 1/2 After Ending Rescision 
-##                                       237 
+##                                       526 
 ## At Least 1/2 After Steady Scope Rescision 
-##                                        55 
+##                                       301 
 ## At Least 1/2 After Change Order Rescision 
-##                                       197 
+##                                       883 
 ##        At Least 1/2 After Other Rescision 
-##                                         2 
+##                                         8 
 ##                      Korean Office W912UM 
-##                                       187 
+##                                       208 
 ##                          >=$250M, Inspect 
 ##                                         2 
 ##      Other Unexplained 10x Ceiling Breach 
-##                                        27 
+##                                        25 
 ##                                      NA's 
-##                                       315
+##                                      1334
 ```
 
 ```r
@@ -1010,9 +996,9 @@ summary(cbre_preclean$qp_CBre)
 
 ```
 ## [       0,       1) [       1,       5) [       5,      10) 
-##               87852                9447                1107 
+##               87782                9445                1106 
 ## [      10,20440194]              W912UM                NA's 
-##                1231                 289                 237
+##                1227                 289                 237
 ```
 
 ```r
@@ -1037,10 +1023,10 @@ cbre_preclean %>% group_by(qp_CBre) %>% dplyr::summarise(
 ## # A tibble: 6 x 9
 ##   qp_CBre nContract OblOverCeil AvgOblToCeil   OblM SumOfn_CBreM SumOfCOCGM
 ##   <fct>       <int>       <dbl>        <dbl>  <dbl>        <dbl>      <dbl>
-## 1 [     ~     87852       0.857         1.29 2.59e5      22111.     22111. 
-## 2 [     ~      9447       0.974         4.02 2.06e4      11245.     11245. 
-## 3 [     ~      1107       0.973        12.5  3.79e3       2149.      2149. 
-## 4 [     ~      1231       0.972    118967.   9.05e3     481206.    481206. 
+## 1 [     ~     87782       0.858         1.29 2.59e5      21650.     21650. 
+## 2 [     ~      9445       0.975         4.02 2.06e4      11241.     11241. 
+## 3 [     ~      1106       0.974        12.5  3.79e3       2149.      2149. 
+## 4 [     ~      1227       0.976    119355.   9.05e3     481077.    481077. 
 ## 5 W912UM        289       0.280       742.   7.50e2      38727.     38727. 
 ## 6 <NA>          237       0.869       NaN    3.86e2         81.7       81.7
 ## # ... with 2 more variables: AvgOfp_CBre <dbl>, AvgOfp_COCG <dbl>
@@ -1079,11 +1065,11 @@ cbre_preclean %>% group_by(qp_CBre) %>% dplyr::summarise(
 ## # A tibble: 7 x 9
 ##   qp_CBre nContract OblOverCeil AvgOblToCeil   OblM SumOfn_CBreM SumOfCOCGM
 ##   <fct>       <int>       <dbl>        <dbl>  <dbl>        <dbl>      <dbl>
-## 1 [   -1~      1290       0.212        15.5  1.16e4      -15195.      320. 
-## 2 [     ~     86702       0.867         1.29 2.51e5       22332.    25748. 
-## 3 [     ~      9323       0.977         4.04 1.76e4        7962.     8091. 
-## 4 [     ~      1098       0.973        12.7  3.63e3        2083.     2086. 
-## 5 [     ~      1223       0.974    119730.   8.89e3      135706.   480465. 
+## 1 [   -1~      1285       0.212        15.6  1.16e4      -14909.      320. 
+## 2 [     ~     86636       0.868         1.29 2.51e5       21903.    25283. 
+## 3 [     ~      9321       0.977         4.04 1.76e4        7958.     8088. 
+## 4 [     ~      1097       0.974        12.7  3.63e3        2083.     2086. 
+## 5 [     ~      1220       0.976    120024.   8.89e3      135581.   480340. 
 ## 6 W912UM        289       0.280       742.   7.50e2       37179.    38727. 
 ## 7 <NA>          238       0.870       NaN    3.96e2      -10604.       82.4
 ## # ... with 2 more variables: AvgOfp_CBre <dbl>, AvgOfp_COCG <dbl>
@@ -1123,11 +1109,11 @@ cbre_preclean %>% group_by(qp_CBre) %>% dplyr::summarise(
 ## # A tibble: 7 x 9
 ##   qp_CBre nContract OblOverCeil AvgOblToCeil   OblM SumOfn_CBreM SumOfCOCGM
 ##   <fct>       <int>       <dbl>        <dbl>  <dbl>        <dbl>      <dbl>
-## 1 [   -1~      2971      0.0263        0.789 1.66e4      -16618.      847. 
-## 2 [     ~     85131      0.886         1.30  2.43e5       20910.   138842. 
-## 3 [     ~      9241      0.979         4.09  2.03e4        9314.    10669. 
-## 4 [     ~      1079      0.974        12.8   3.76e3        1976.     1982. 
-## 5 [     ~      1214      0.975    120633.    9.03e3       19593.   364371. 
+## 1 [   -1~      2964      0.0263        0.791 1.66e4      -16320.      845. 
+## 2 [     ~     85067      0.887         1.31  2.43e5       20485.   138378. 
+## 3 [     ~      9239      0.979         4.09  2.03e4        9310.    10665. 
+## 4 [     ~      1078      0.975        12.8   3.76e3        1976.     1982. 
+## 5 [     ~      1211      0.978    120931.    9.03e3       19468.   364246. 
 ## 6 W912UM        289      0.280       742.    7.50e2       27971.    38727. 
 ## 7 <NA>          238      0.870       NaN     3.89e2        -823.       81.7
 ## # ... with 2 more variables: AvgOfp_CBre <dbl>, AvgOfp_COCG <dbl>
@@ -1166,11 +1152,11 @@ cbre_preclean %>% group_by(qp_CBre) %>% dplyr::summarise(
 ## # A tibble: 7 x 9
 ##   qp_CBre nContract OblOverCeil AvgOblToCeil   OblM SumOfn_CBreM SumOfCOCGM
 ##   <fct>       <int>       <dbl>        <dbl>  <dbl>        <dbl>      <dbl>
-## 1 [   -1~      7889      0.0845         3.73 3.68e4      -18507.     1483. 
-## 2 [     ~     80669      0.933          1.32 2.24e5       18788.   138704. 
-## 3 [     ~      8884      0.984          4.08 1.97e4        8655.    10271. 
-## 4 [     ~      1030      0.984         13.2  3.76e3        1927.     1982. 
-## 5 [     ~      1164      0.985     125796.   8.84e3       19413.   364271. 
+## 1 [   -1~      7880      0.0846         3.73 3.68e4      -18197.     1481. 
+## 2 [     ~     80607      0.933          1.32 2.24e5       18385.   138240. 
+## 3 [     ~      8882      0.984          4.08 1.97e4        8651.    10268. 
+## 4 [     ~      1029      0.985         13.2  3.76e3        1927.     1982. 
+## 5 [     ~      1161      0.988     126121.   8.84e3       19289.   364146. 
 ## 6 W912UM        289      0.280        742.   7.50e2       24920.    38727. 
 ## 7 <NA>          238      0.870        NaN    3.89e2        -826.       81.7
 ## # ... with 2 more variables: AvgOfp_CBre <dbl>, AvgOfp_COCG <dbl>
@@ -1193,7 +1179,7 @@ summary(cbre_preclean$n_CBre)
 
 ```
 ##      Min.   1st Qu.    Median      Mean   3rd Qu.      Max.      NA's 
-## 1.000e+00 1.501e+03 8.809e+03 9.295e+05 5.097e+04 1.443e+10      3223
+## 1.000e+00 1.501e+03 8.801e+03 9.245e+05 5.084e+04 1.443e+10      3216
 ```
 
 ```r
@@ -1204,7 +1190,7 @@ summary(cbre_preclean$p_CBre)
 
 ```
 ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max.     NA's 
-##        1        1        1      521        1 20440196     3457
+##        1        1        1      521        1 20440196     3450
 ```
 
 ```r
@@ -2593,14 +2579,6 @@ def<-read_and_join_experiment( def,
 ## )
 ```
 
-```
-## Warning: Factor `qHighCeiling` contains implicit NA, consider using
-## `forcats::fct_explicit_na`
-
-## Warning: Factor `qHighCeiling` contains implicit NA, consider using
-## `forcats::fct_explicit_na`
-```
-
 ```r
 #Making sure the transformed dataset has been set to NA 
 if(any(!is.na(def$UnmodifiedCeiling_Then_Year[
@@ -2642,9 +2620,9 @@ summary(cbre$qGrowth)
 
 ```
 ## [9.86e-09,1.00e+00) [1.00e+00,1.00e+01) [1.00e+01,     Inf] 
-##               83423               11854                1453 
+##               83369               11841                1450 
 ##                NA's 
-##                3433
+##                3426
 ```
 
 ```r
@@ -2652,13 +2630,13 @@ cbre$Why_Outlier<-NA
 cbre$Why_Outlier[is.na(cbre$UnmodifiedCeiling_Then_Year)]<-"No Unmodified Ceiling"
 cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
                    cbre$Action_Obligation_Then_Year*2>=cbre$UnmodifiedCeiling_Then_Year+
-                   cbre$n_CBre]<-
+                   cbre$n_CBre_Then_Year]<-
   "Obligations at least half Orig+CRai"
 cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
                    cbre$Office=="W912UM"]<-
   "Korean Office W912UM"
 cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
-                   cbre$n_CBre>=2.5e8]<-
+                   cbre$n_CBre_Then_Year>=2.5e8]<-
   ">=$250M, Inspect"
 cbre$Why_Outlier[is.na(cbre$Why_Outlier)&
                    cbre$p_CBre-1>10]<-
@@ -2682,9 +2660,9 @@ summary(Hmisc::cut2(cbre_preclean$p_CBre-1,c(1,
 
 ```
 ## [9.86e-09,1.00e+00) [1.00e+00,1.00e+01) [1.00e+01,1.00e+02) 
-##               83609               11865                1043 
+##               83555               11852                1041 
 ## [1.00e+02,2.04e+07]                NA's 
-##                 189                3457
+##                 188                3450
 ```
 
 ```r
@@ -2696,9 +2674,9 @@ summary(Hmisc::cut2(cbre$p_CBre-1,c(1,
 
 ```
 ## [9.86e-09,1.00e+00) [1.00e+00,1.00e+01) [1.00e+01,1.00e+02) 
-##               83423               11854                1039 
+##               83369               11841                1037 
 ## [1.00e+02,     Inf]                NA's 
-##                 414                3433
+##                 413                3426
 ```
 
 ```r
@@ -2707,9 +2685,9 @@ summary(cbre$qHighCeiling[(cbre$p_CBre-1)>10])
 
 ```
 ##    [0,15k) [15k,100k)  [100k,1m)   [1m,10m)  [10m,75m)     [75m+] 
-##       1079        229        113         29          3          0 
+##       1079        229        111         28          3          0 
 ##       NA's 
-##       3433
+##       3426
 ```
 
 ```r
@@ -2718,20 +2696,20 @@ summary(cbre$qHighCeiling[(cbre$p_CBre-1)>100])
 
 ```
 ##    [0,15k) [15k,100k)  [100k,1m)   [1m,10m)  [10m,75m)     [75m+] 
-##        370         34         10          0          0          0 
+##        370         34          9          0          0          0 
 ##       NA's 
-##       3433
+##       3426
 ```
 
 ```r
 p_outlier_summary<-cbre %>% filter(p_CBre-1>10) %>% group_by(Why_Outlier) %>%
-  dplyr::summarise(nContract=length(n_CBre),
-                   SumOfn_CBre=sum(n_CBre),
-                   MaxOfn_CBre=max(n_CBre),
+  dplyr::summarise(nContract=length(n_CBre_Then_Year),
+                   SumOfn_CBre=sum(n_CBre_Then_Year),
+                   MaxOfn_CBre=max(n_CBre_Then_Year),
                    SumOfAction_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
 
 #Absolute Growth
-summary(Hmisc::cut2(cbre$n_CBre,c(1e3,
+summary(Hmisc::cut2(cbre$n_CBre_Then_Year,c(1e3,
                                            1e6,
                                            1e7,
                                            1e8,
@@ -2745,15 +2723,15 @@ summary(Hmisc::cut2(cbre$n_CBre,c(1e3,
 
 ```
 ## [1.0e+00,1.0e+03) [1.0e+03,1.0e+06) [1.0e+06,1.0e+07) [1.0e+07,1.0e+08) 
-##             19847             72978              3406               463 
+##             19842             72932              3396               455 
 ## [1.0e+08,2.5e+08) [2.5e+08,1.0e+09)           1.0e+09           2.0e+10 
-##                25                12                 0                 0 
+##                24                12                 0                 0 
 ##              NA's 
-##              3432
+##              3425
 ```
 
 ```r
-summary(Hmisc::cut2(cbre$n_CBre,c(1e3,
+summary(Hmisc::cut2(cbre$n_CBre_Then_Year,c(1e3,
                                   1e6,
                                   1e7,
                                   1e8,
@@ -2767,40 +2745,40 @@ summary(Hmisc::cut2(cbre$n_CBre,c(1e3,
 
 ```
 ## [1.0e+00,1.0e+03) [1.0e+03,1.0e+06) [1.0e+06,1.0e+07) [1.0e+07,1.0e+08) 
-##             19847             72978              3406               463 
+##             19842             72932              3396               455 
 ## [1.0e+08,2.5e+08) [2.5e+08,1.0e+09)           1.0e+09           2.0e+10 
-##                25                12                 0                 0 
+##                24                12                 0                 0 
 ##              NA's 
-##              3432
+##              3425
 ```
 
 ```r
-summary(cbre$qHighCeiling[cbre$n_CBre>=1e6])
+summary(cbre$qHighCeiling[cbre$n_CBre_Then_Year>=1e6])
 ```
 
 ```
 ##    [0,15k) [15k,100k)  [100k,1m)   [1m,10m)  [10m,75m)     [75m+] 
-##         52        104        457       1691       1347        254 
+##         52        104        455       1687       1342        246 
 ##       NA's 
-##       3433
+##       3426
 ```
 
 ```r
-summary(cbre$qHighCeiling[cbre$n_CBre>=1e9])
+summary(cbre$qHighCeiling[cbre$n_CBre_Then_Year>=1e9])
 ```
 
 ```
 ##    [0,15k) [15k,100k)  [100k,1m)   [1m,10m)  [10m,75m)     [75m+] 
 ##          0          0          0          0          0          0 
 ##       NA's 
-##       3432
+##       3425
 ```
 
 ```r
-n_outlier_summary<-cbre %>% filter(n_CBre>2.5e8) %>% group_by(Why_Outlier) %>%
-  dplyr::summarise(nContract=length(n_CBre),
-                   SumOfn_CBre=sum(n_CBre),
-                   MaxOfn_CBre=max(n_CBre),
+n_outlier_summary<-cbre %>% filter(n_CBre_Then_Year>2.5e8) %>% group_by(Why_Outlier) %>%
+  dplyr::summarise(nContract=length(n_CBre_Then_Year),
+                   SumOfn_CBre=sum(n_CBre_Then_Year),
+                   MaxOfn_CBre=max(n_CBre_Then_Year),
                    SumOfAction_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
 ```
 
@@ -2820,7 +2798,7 @@ After the cleaning, 2 categories remain relevant.
 Why_Outlier                             nContract   SumOfn_CBre   MaxOfn_CBre   SumOfAction_Obligation_Then_Year
 -------------------------------------  ----------  ------------  ------------  ---------------------------------
 Obligations at least half Orig+CRai          1343    4567957181     769789465                         9379652534
-Other Unexplained 10x Ceiling Breach          110     386492485      74879363                           34503202
+Other Unexplained 10x Ceiling Breach          107     261659279      74879363                           34503202
 
 
 * Obligations at least half Orig+CRai: For this category, total obligations of the contract were at least half the value of the initial ceiling plus ceiling growth under change orders. As before, this category accounts for the overwhelming majority of outlier spending but only a tiny fraction of change order growth.
@@ -2850,14 +2828,14 @@ Other Unexplained 10x Ceiling Breach          110     386492485      74879363   
 ```
 
 ```
-## Warning: Removed 3433 rows containing missing values (geom_point).
+## Warning: Removed 3426 rows containing missing values (geom_point).
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthAfterCleaning-1.png)<!-- -->
 
 ```r
 (
-  ggplot(cbre, aes(x=UnmodifiedCeiling_Then_Year,y=n_CBre)) +#,color=qGrowth
+  ggplot(cbre, aes(x=UnmodifiedCeiling_Then_Year,y=n_CBre_Then_Year)) +#,color=qGrowth
     geom_point(alpha=0.25,shape=".")+
     # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+scale_y_log10()+
@@ -2874,14 +2852,14 @@ Other Unexplained 10x Ceiling Breach          110     386492485      74879363   
 ```
 ## Warning: Transformation introduced infinite values in continuous x-axis
 
-## Warning: Removed 3433 rows containing missing values (geom_point).
+## Warning: Removed 3426 rows containing missing values (geom_point).
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthAfterCleaning-2.png)<!-- -->
 
 ```r
 (
-  ggplot(cbre, aes(x=UnmodifiedCeiling_Then_Year+n_CBre,
+  ggplot(cbre, aes(x=UnmodifiedCeiling_Then_Year+n_CBre_Then_Year,
                    y=Action_Obligation_Then_Year)) +#,color=qGrowth
     geom_point(alpha=0.25,shape=".")+
     # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
@@ -2905,14 +2883,14 @@ Other Unexplained 10x Ceiling Breach          110     386492485      74879363   
 ```
 
 ```
-## Warning: Removed 3459 rows containing missing values (geom_point).
+## Warning: Removed 3452 rows containing missing values (geom_point).
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthAfterCleaning-3.png)<!-- -->
 
 ```r
 (
-  ggplot(cbre, aes(x=n_CBre,
+  ggplot(cbre, aes(x=n_CBre_Then_Year,
                    y=Action_Obligation_Then_Year-UnmodifiedCeiling_Then_Year)) +#,color=qGrowth
     geom_point(alpha=0.25,shape=".")+
     # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
@@ -2936,7 +2914,7 @@ Other Unexplained 10x Ceiling Breach          110     386492485      74879363   
 ```
 
 ```
-## Warning: Removed 12389 rows containing missing values (geom_point).
+## Warning: Removed 12312 rows containing missing values (geom_point).
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthAfterCleaning-4.png)<!-- -->
@@ -2968,7 +2946,7 @@ Other Unexplained 10x Ceiling Breach          110     386492485      74879363   
 ```
 
 ```
-## Warning: Removed 3487 rows containing missing values (geom_point).
+## Warning: Removed 3480 rows containing missing values (geom_point).
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthAfterCleaning-5.png)<!-- -->
@@ -2990,14 +2968,14 @@ Other Unexplained 10x Ceiling Breach          110     386492485      74879363   
 ```
 
 ```
-## Warning: Removed 3667 rows containing non-finite values (stat_bin).
+## Warning: Removed 3660 rows containing non-finite values (stat_bin).
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthAfterCleaning-6.png)<!-- -->
 
 ```r
 (
-  ggplot(cbre, aes(x=n_CBre,fill=qGrowth)) +
+  ggplot(cbre, aes(x=n_CBre_Then_Year,fill=qGrowth)) +
     geom_histogram(bins=100)+
     theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+
@@ -3012,14 +2990,14 @@ Other Unexplained 10x Ceiling Breach          110     386492485      74879363   
 ```
 
 ```
-## Warning: Removed 3432 rows containing non-finite values (stat_bin).
+## Warning: Removed 3425 rows containing non-finite values (stat_bin).
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthAfterCleaning-7.png)<!-- -->
 
 ```r
 (
-  ggplot(cbre, aes(x=n_CBre,fill=qGrowth)) +
+  ggplot(cbre, aes(x=n_CBre_Then_Year,fill=qGrowth)) +
     geom_histogram(bins=100)+
     theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     scale_x_log10()+
@@ -3036,7 +3014,7 @@ Other Unexplained 10x Ceiling Breach          110     386492485      74879363   
 ```
 
 ```
-## Warning: Removed 3432 rows containing non-finite values (stat_bin).
+## Warning: Removed 3425 rows containing non-finite values (stat_bin).
 ```
 
 ![](Ceiling_Breach_Examination_files/figure-html/CeilingGrowthAfterCleaning-8.png)<!-- -->

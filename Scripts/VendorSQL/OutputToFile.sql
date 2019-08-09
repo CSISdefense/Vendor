@@ -16,21 +16,6 @@ SET NOCOUNT ON;
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
---This way takes hours!
---select *
---from contract.csistransactionid ctid
---inner join contract.fpds f
---on f.csistransactionid = ctid.csistransactionid
---where ctid.csiscontractid in (19005830,
---1431340,
---24816950,
---10090818,
---8341560,
---24807877,
---24719937,
---24905030
---)
-
 --This way took 5 minutes.
 --gt250k_change_outliers.txt
 select f.*, t.CSIScontractID
@@ -56,8 +41,40 @@ where ctid.csiscontractid in (
 24719937,
 24807877,
 24816950,
-24905030
-) or IDVPIID='N0002400D6000'
+24905030,
+24596370, 
+1306182, 
+18189486, 
+3463800, 
+23709649, 
+23881549, 
+18802894, 
+8677136, 
+18189315, 
+27098370, 
+1294337, 
+3473194, 
+18199664, 
+8673962, 
+24590177, 
+2964273, 
+24590159, 
+9991092, 
+18189308, 
+8675166, 
+8005655, 
+18186731, 
+15461175, 
+16642987, 
+18189518, 
+61686173, 
+8012194, 
+8008914, 
+27512038, 
+18801607,
+8496473, 
+8496476
+)
 )
 
 DECLARE	@return_value int
