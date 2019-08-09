@@ -25,6 +25,8 @@ if(!exists("def")) load("data/clean/transformed_def.Rdata")
 ## Computational Sample Creation
 
 
+# load(file="../Data/Clean//def_sample.Rdata")
+
 #Output variables
 summary(def$b_Term)
 summary(def$b_CBre)
@@ -36,11 +38,11 @@ summary(def$cl_def3_HHI_lag1)
 summary(def$cl_def6_HHI_lag1)
 #Controls
 summary(def$cl_Ceil)
-summary(def$capped_cl_Days)
+summary(def$cl_Days)
 summary(def$Veh) 
-summary(def$Pricing)
-summary(def$UCA)
-summary(def$Intl)
+summary(def$PricingFee)
+summary(def$b_UCA)
+summary(def$b_Intl)
 summary(def$NAICS)
 summary(def$NAICS3)
 summary(def$Office)
@@ -52,8 +54,6 @@ summary(def$cl_def6_ratio_lag1)
 summary(def$cl_US6_avg_sal_lag1)
 
 #New Controls
-summary(def$Crisis)
-
 complete<-
   #Dependent Variables
   !is.na(def$b_Term)& #summary(def$b_Term)
@@ -64,10 +64,10 @@ complete<-
   !is.na(def$cl_def6_HHI_lag1)&
   #Controls
   !is.na(def$cl_Ceil)&
-  !is.na(def$capped_cl_Days)&
+  !is.na(def$cl_Days)&
   !is.na(def$Veh) &
-  !is.na(def$Pricing)&
-  !is.na(def$Intl)& 
+  !is.na(def$PricingFee)&
+  !is.na(def$b_Intl)& 
   !is.na(def$b_UCA)& 
   !is.na(def$NAICS)&
   !is.na(def$NAICS3)&
@@ -78,6 +78,7 @@ complete<-
   !is.na(def$cl_def6_obl_lag1Const)&
   !is.na(def$cl_def6_ratio_lag1)&
   !is.na(def$cl_US6_avg_sal_lag1)
+
 
 
 summary(complete)
