@@ -27,6 +27,12 @@ if(!exists("def")) load("data/clean/transformed_def.Rdata")
 
 # load(file="../Data/Clean//def_sample.Rdata")
 
+if("cl_Ceil" %in% colnames(def)){
+  def<-def %>% dplyr::select(-c(cl_Ceil))
+  def$cl_Ceil_Then_Year<-rescale(log(def$UnmodifiedCeiling_Then_Year))
+}
+
+
 #Output variables
 summary(def$b_Term)
 summary(def$b_CBre)
@@ -37,7 +43,7 @@ summary(def$CompOffr)
 summary(def$cl_def3_HHI_lag1)
 summary(def$cl_def6_HHI_lag1)
 #Controls
-summary(def$cl_Ceil)
+summary(def$cl_Ceil_Then_Year)
 summary(def$cl_Days)
 summary(def$Veh) 
 summary(def$PricingFee)
@@ -58,12 +64,14 @@ complete<-
   #Dependent Variables
   !is.na(def$b_Term)& #summary(def$b_Term)
   !is.na(def$b_CBre)&
+  summary(def$n_CBre_Then_Year)&
+  summary(def$p_CBre)&
   #Study Variables
   !is.na(def$CompOffr)&
   !is.na(def$cl_def3_HHI_lag1)&
   !is.na(def$cl_def6_HHI_lag1)&
   #Controls
-  !is.na(def$cl_Ceil)&
+  !is.na(def$cl_Ceil_Then_Year)&
   !is.na(def$cl_Days)&
   !is.na(def$Veh) &
   !is.na(def$PricingFee)&
@@ -75,68 +83,66 @@ complete<-
   !is.na(def$Agency)&
   !is.na(def$StartCY)&
   !is.na(def$cl_def3_ratio_lag1)&
-  !is.na(def$cl_def6_obl_lag1Const)&
+  !is.na(def$cl_def6_obl_lag1)&
   !is.na(def$cl_def6_ratio_lag1)&
   !is.na(def$cl_US6_avg_sal_lag1)
 
 
 
 summary(complete)
-summary(def$Action_Obligation.OMB20_GDP18)
-money<-def$Action_Obligation.OMB20_GDP18
-any(def$Action_Obligation.OMB20_GDP18<0)
-money[def$Action_Obligation.OMB20_GDP18<0]<-0
-sum(def$Action_Obligation.OMB20_GDP18[def$Action_Obligation.OMB20_GDP18<0])
+summary(def$Action_Obligation_Then_Year)
+money<-def$Action_Obligation_Then_Year
+any(def$Action_Obligation_Then_Year<0)
+money[def$Action_Obligation_Then_Year<0]<-0
+sum(def$Action_Obligation_Then_Year[def$Action_Obligation_Then_Year<0])
+
+
+
+
+
+
+
 
 #Missing data, how many records and how much money
 length(money[!complete])/length(money)
 sum(money[!complete],na.rm=TRUE)/sum(money,na.rm=TRUE)
 
-#What portion of contracts have potential options, 
-sum(money[def$AnyUnmodifiedUnexercisedOptions==1],na.rm=TRUE)/
-  sum(money,na.rm=TRUE)
 
-#Missing data with potential options how much money?
-length(money[!complete&def$AnyUnmodifiedUnexercisedOptions==1])/
-  length(money[def$AnyUnmodifiedUnexercisedOptions==1])
-sum(money[!complete&def$AnyUnmodifiedUnexercisedOptions==1],na.rm=TRUE)/
-  sum(money[def$AnyUnmodifiedUnexercisedOptions==1],na.rm=TRUE)
+# smp_complete<-def[complete,]
+# #
+# smp1m<-smp_complete[sample(nrow(smp_complete),1000000),]
+# smp<-smp_complete[sample(nrow(smp_complete),250000),]
+# rm(sm_complete)
 
-#Refreshing
-serv_complete<-def[complete,]
-serv_smp1m<-serv_complete[sample(nrow(serv_complete),1000000),]
-serv_smp<-serv_complete[sample(nrow(serv_complete),250000),]
-rm(serv_complete)
-serv_opt<-def[complete&def$AnyUnmodifiedUnexercisedOptions==1,]
 
 #To instead replace entries in existing sample, use  this code.
-# load(file="data/clean/def_sample.Rdata")
-serv_smp<-update_sample_col_CSIScontractID(serv_smp,
-                                           def[complete,],
-                                           col=NULL,
-                                           drop_and_replace=TRUE)
+load(file="data/clean/def_sample.Rdata")
 
-serv_smp1m<-update_sample_col_CSIScontractID(serv_smp1m,
-                                           def[complete,],
-                                           col=NULL,
-                                           drop_and_replace=TRUE)
-
-serv_opt<-update_sample_col_CSIScontractID(serv_opt,
-                                             def[complete,],
-                                             col=NULL,
-                                             drop_and_replace=TRUE)
-
-# serv_smp<-serv_smp %>% dplyr::select(-c(Ceil, qCRais))
-# serv_smp1m<-serv_smp1m %>% dplyr::select(-c(Ceil, qCRais))
-# serv_opt<-serv_opt %>% dplyr::select(-c(Ceil, qCRais))
+#Missing colnames in sample from Def
+colnames(smp)[!colnames(smp) %in% colnames(def)]
+colnames(smp1m)[!colnames(smp1m) %in% colnames(def)]
+colnames(def)[!colnames(def) %in% colnames(smp)]
 
 
-save(file="data/clean/def_sample.Rdata",serv_smp,serv_smp1m,serv_opt)
-write.foreign(df=serv_smp,
-              datafile="data//clean//def_sample250k.dat",
-              codefile="data//clean//def_sample250k_code.do",
+
+#  #         
+# #Sample adjustments
+# colnames(smp)[colnames(smp)=="Action.Obligation"]<-"Action_Obligation_Then_Year"
+# colnames(smp1m)[colnames(smp1m)=="Action.Obligation"]<-"Action_Obligation_Then_Year"
+memory.limit(36000)
+smp<-smp[,colnames(smp)=="CSIScontractID"]
+smp<-update_sample_col_CSIScontractID(smp,def[complete,],drop_and_replace=TRUE)
+smp1m<-smp1m[,colnames(smp1m)=="CSIScontractID"]
+smp1m<-update_sample_col_CSIScontractID(smp1m,def[complete,],drop_and_replace=TRUE)
+
+
+save(file="data//clean//def_sample.Rdata",smp,smp1m)
+write.foreign(df=smp,
+              datafile="Data//clean//def_sample250k.dat",
+              codefile="Data//clean//def_sample250k_code.do",
               package = "Stata")
-write.foreign(df=serv_smp1m,
-              datafile="data//clean//def_sample1m.dat",
-              codefile="data//clean//def_sample1m_code.do",
+write.foreign(df=smp1m,
+              datafile="Data//clean//def_sample1m.dat",
+              codefile="Data//clean//def_sample1m_code.do",
               package = "Stata")
+

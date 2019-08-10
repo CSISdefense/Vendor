@@ -1,0 +1,325 @@
+---
+title: "Close Out Examination"
+author: "Greg Sanders"
+date: "August 9, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(csis360)
+library(ggplot2)
+library(dplyr)
+library(arm)
+library(R2WinBUGS)
+library(knitr)
+library(foreign)
+library(stargazer)
+library(texreg)
+library(reshape2)
+source("DIIGstat.r")
+
+axis.text.size<-10
+strip.text.size<-10
+legend.text.size<-8
+# table.text.size<-5.75
+title.text.size<-12
+geom.text.size<-12
+
+main.text.size<-1
+note.text.size<-1.40
+
+```
+
+
+```{r ReadInData, echo = TRUE}
+
+  
+load(file="../Data/Clean/transformed_def.Rdata")
+
+```
+
+
+## Close Out Examination
+
+
+#### Processing
+```{r CloseOutPrep}
+CloseOut<-def %>% dplyr::filter(IsClosed==1 | Term==1)
+CloseOut<-csis360::read_and_join_experiment(CloseOut,
+                            lookup_file = "Contract.SP_ContractCloseOutExamination.txt",
+                            path="..\\",
+                            dir="Data\\semi_clean\\",
+                            by="CSIScontractID",
+                            new_var_checked = FALSE
+                            # skip_check_var=c("IsClosed" ,
+                            #                  "MaxClosedDate",
+                            #                  "ObligatedAfterMaxClosedDate")
+)
+
+
+CloseOut<-csis360::read_and_join_experiment(CloseOut,
+                            lookup_file = "Contract.SP_ContractTerminationExamination.txt",
+                            path="..\\",
+                            dir="Data\\semi_clean\\",
+                            by="CSIScontractID",
+                            new_var_checked = FALSE
+                            # skip_check_var=c("IsClosed" ,
+                            #                  "MaxClosedDate",
+                            #                  "ObligatedAfterMaxClosedDate")
+)
+
+
+# debug(transform_endings)
+CloseOut<-transform_endings(CloseOut)
+
+# termAll$PreTermLengthFloor1<-termAll$PreTermLength
+```
+
+#### Time Periods
+```{r CloseOutDur}
+(
+CloseDur<-ggplot(CloseOut,aes(x=PreTermCloseLength,color=EndType))+ #,color=ClosePctCat)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0,1),xlim=c(0,2500))+#+,xlim=c(0,1e8)
+  # scale_x_log10(label=comma)+
+  labs(title="Duration and Close Out Completeness",
+       y="Cumulative Distribution % of\nCategory's Closed Out Contracts",
+       x="Days from Start to Final Termination / Close Out",
+       color="Ending Type")+
+  scale_y_continuous(label=percent)+facet_wrap(~Ceil)+geom_vline(xintercept = 365)
+)
+
+
+(
+CloseDurSigned<-ggplot(CloseOut,aes(x=PostTermCloseSignedLength,color=EndType))+ #,color=ClosePctCat)) +#
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0.7,1),xlim=c(0,2500))+#+
+  # scale_x_log10(label=comma)+
+  labs(title="Duration and Close Out Completeness",
+       y="Cumulative Distribution % of\nCategory's Closed Out Contracts",
+       x="Days from Termination / Close Out to Final Boost Date",
+       color="Ending Type")+
+  scale_y_continuous(label=percent)+facet_wrap(~Ceil)+geom_vline(xintercept = 365)+
+    theme(legend.position = "bottom")
+)
+
+
+
+(
+CloseDurCurrent<-ggplot(CloseOut,aes(x=PostTermCloseCurrentLength,color=EndType))+ #,color=ClosePctCat)) + #
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0.7,1),xlim=c(0,2000))+#+
+  # scale_x_log10(label=comma)+
+  labs(title="Duration and Close Out Completeness",
+       y="Cumulative Distribution % of\nCategory's Closed Out Contracts",
+       x="Days from Termination / Close Out to Current Completion Date",
+       color="Close Out Completeness")+
+  scale_y_continuous(label=percent)+facet_wrap(~Ceil)+geom_vline(xintercept = 365)+
+    theme(legend.position="bottom")
+)
+
+
+
+
+# 
+# # def<-def %>% dplyr::select(-ClosePartial)
+# def$ClosePartial<-as.character(def$ClosePartial)
+# def$ClosePartial[def$CloseOut=="Unterminated"]<-"Unterminated"
+# summary(factor(def$ClosePartial))
+# freq_table("ClosePartial",def)
+# summary(def$ClosePartial)
+# 
+# summary(def$IsClosed)
+# nrow(def %>% filter(LastCurrentCompletionDate>="2017-10-01"))
+# complete2017<-def %>% filter(LastCurrentCompletionDate>="2017-01-01")
+# summary(complete2017$IsClosed)
+# summary(complete2017$CloseOut)
+# term2017<-CloseOut  %>% filter(LastCurrentCompletionDate>="2017-01-01")
+# summary(term2017$ClosePctCat)
+# summary(factor(term2017$StartCY))
+# summary(factor(term2017$StartFY))
+# summary(term2017$ClosePctCat[term2017$StartCY==2015])
+
+
+```
+
+#### Dollars after Termination
+```{r TermPctCatGraphs}
+(
+TermPctHist<-ggplot(CloseOut %>% filter(TermPct>0),aes(x=TermPct,fill=TermPctCat )) +
+  geom_histogram(bins=100)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  geom_vline(xintercept = 1)+geom_vline(xintercept = 0.1)+
+#facet_grid(NoPreTermObl~.,scales="free_y", space="free_y")+
+  labs(title="Distribution of Contracts with Obligations After Last termination",
+       y="Contract Count",
+       x="Percent of Obligations After Day of Termination",
+       fill="Termination Completion"
+       )
+)
+
+(
+TermPctHistDoC<-ggplot(CloseOut %>% filter(TermPct>0),aes(x=TermPct,fill=TermPctCat )) +
+  geom_histogram(bins=100)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  geom_vline(xintercept = 1)+geom_vline(xintercept = 0.1)+
+facet_grid(EndType ~.,scales="free_y")+
+  labs(title="Distribution of Contracts with Obligations After Last termination",
+       y="Contract Count",
+       x="Percent of Obligations After Day of Termination",
+       fill="Termination Completion"
+       )
+)
+
+
+
+(
+TermPctDoC<-ggplot(CloseOut,aes(x=TermPct,color=isDefaultOrCause)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0.9,1),xlim=c(0,1))+
+  labs(title="Cumulative Distribution of Terminated Contracts",
+       y="% of Terminated Contracts",
+       x="Percent of Obligations After Day of Termination"
+       )+geom_vline(xintercept = 0.25)
+)
+
+
+(
+TermCeilRatio<-ggplot(CloseOut,aes(x=TermPct,color=Ceil)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0.70,1),xlim=c(0,1))+geom_vline(xintercept = 0.25)+
+  labs(title="Cumulative Distribution of Terminated Contracts",
+       y="% of Category's Terminated Contracts",
+       x="Percent of Obligations After Day of Termination",
+       color="Initial Ceiling")+
+  scale_y_continuous(label=percent)
+)
+
+(
+TermObl<-ggplot(CloseOut,aes(x=PostTermFloor0+1)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0.9,1))+#+,xlim=c(0,1e8)
+  scale_x_log10(label=comma)+
+  labs(title="Cumulative Distribution of Terminated Contracts",
+       y="% of Terminated Contracts",
+       x="Obligations After Termination")+facet_wrap(~EndType)
+)
+#+geom_vline(xintercept = 0.1)+geom_vline(xintercept =1)+
+
+# termDouble<-term
+# termDouble$Ceil<-"Overall"
+# termDouble$NoPreTermObl<-"Overall"
+
+(
+TermNoObl<-ggplot(CloseOut,aes(x=PostTermFloor0+1,color=NoPreTermObl)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0.9,1))+#+,xlim=c(0,1e8)
+  scale_x_log10(label=comma)+
+  labs(title="Cumulative Distribution of Terminated Contracts",
+       y="% of Category's Terminated Contracts",
+       x="Obligations After Termination",
+       color="Any Spending Before Termination?")+
+    theme(legend.position = "bottom")
+#+geom_vline(xintercept = 0.1)+geom_vline(xintercept =1)+
+)
+
+(
+TermCeilOblDoC<-ggplot(CloseOut,aes(x=PostTermFloor0+1,color=Ceil))+
+  stat_ecdf(geom = "step")+stat_ecdf(geom = "step",aes(x=PostTermFloor0+1))+
+    coord_cartesian(ylim=c(0.65,1))+#+,xlim=c(0,1e8)
+  scale_x_log10(label=comma)+
+  labs(title="Cumulative Distribution of Terminated Contracts",
+       y="% of Category's Terminated Contracts",
+       x="Obligations After Termination",
+       color="Initial Ceiling")+
+  scale_y_continuous(label=percent)+facet_wrap(~EndType)
+)
+
+
+
+
+ggsave(TermCeilRatio,file="../Output/TermCeilRatio.png")
+
+```
+An odd side effect of the way histograms work, it actually overestimates the number of 0 and above cap growth entries there are, there's only 83,306 
+
+
+### After Term Duration
+```{r TermCrosstab}
+
+summary(term$PreTermLength)
+
+
+ggplot(term,aes(x=PreTermLength,color=TermPctCat)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0,1))+#+,
+  # scale_x_log10(label=comma)+
+  labs(title="Duration and Termination Completeness",
+       y="Cumulative Distribution % of\nCategory's Terminated Contracts",
+       x="Days from Start to Final Termination",
+       color="Termination Completeness")+
+  scale_y_continuous(label=percent)+geom_vline(xintercept = 365)
+
+
+ggplot(term,aes(x=PostTermSignedLength,color=TermPctCat)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0,1))+#+,xlim=c(0,1e8)
+  # scale_x_log10(label=comma)+
+  labs(title="Duration and Termination Completeness",
+       y="Cumulative Distribution % of\nCategory's Terminated Contracts",
+       x="Days from Termination to Max Signed Date",
+       color="Termination Completeness")+
+  scale_y_continuous(label=percent)+geom_vline(xintercept = 365)
+
+
+# 
+# 
+# (
+# TermDur<-ggplot(term,aes(x=PostTermSignedLength,color=TermPctCat)) +
+#   stat_ecdf(geom = "step")+
+#     coord_cartesian(ylim=c(0,1),xlim=c(300,400))+#+,
+#   # scale_x_log10(label=comma)+
+#   labs(title="Duration and Termination Completeness",
+#        y="Cumulative Distribution % of\nCategory's Terminated Contracts",
+#        x="Days from Termination to Max Signed Date",
+#        color="Termination Completeness")+
+#   scale_y_continuous(label=percent)+geom_vline(xintercept = 365)
+# )
+# 
+
+ggplot(term,aes(x=PostTermCurrentLength,color=TermPctCat)) +
+  stat_ecdf(geom = "step")+
+    coord_cartesian(ylim=c(0,1),xlim=c(-365,2500))+#+,xlim=c(0,1e8)
+  # scale_x_log10(label=comma)+
+  labs(title="Duration and Termination Completeness",
+       y="Cumulative Distribution % of\nCategory's Terminated Contracts",
+       x="Days from Termination to Current Completion",
+       color="Termination Completeness")+facet_wrap(~isDefaultOrCause)+
+  scale_y_continuous(label=percent)+geom_vline(xintercept = 365)
+
+
+
+
+# 
+# # def<-def %>% dplyr::select(-TermPartial)
+# def$TermPartial<-as.character(def$TermPartial)
+# def$TermPartial[def$Term=="Unterminated"]<-"Unterminated"
+# summary(factor(def$TermPartial))
+# freq_table("TermPartial",def)
+# summary(def$TermPartial)
+# 
+# summary(def$IsClosed)
+# nrow(def %>% filter(LastCurrentCompletionDate>="2017-10-01"))
+# complete2017<-def %>% filter(LastCurrentCompletionDate>="2017-01-01")
+# summary(complete2017$IsClosed)
+# summary(complete2017$Term)
+# term2017<-term  %>% filter(LastCurrentCompletionDate>="2017-01-01")
+# summary(term2017$TermPctCat)
+# summary(factor(term2017$StartCY))
+# summary(factor(term2017$StartFY))
+# summary(term2017$TermPctCat[term2017$StartCY==2015])
+
+
+```
+
