@@ -342,9 +342,14 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
       b_CBre$output<-"Breach Occured"
       ln_CBre$output<-"Average Size (logged)"
       scatter_CBre$output<-"Breach Scatterplot (logged)"
-      data<-rbind(b_CBre,b_CBre,b_CBre,b_CBre,
-                  ln_CBre,ln_CBre,ln_CBre,ln_CBre,
-                  scatter_CBre)
+      #For the def_breach dataset, there are no unbreached contracts, making this graph unhelpful.
+      if(any(b_CBre$mean_y<1)) 
+        data<-rbind(b_CBre,b_CBre,b_CBre,b_CBre,
+                    ln_CBre,ln_CBre,ln_CBre,ln_CBre,
+                    scatter_CBre)
+      else
+        data<-rbind(ln_CBre,ln_CBre,ln_CBre,ln_CBre,
+                    scatter_CBre)
       data$output<-factor(data$output,c("Breach Occured","Average Size (logged)","Breach Scatterplot (logged)"))  
     }
     
@@ -379,20 +384,28 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
       data$output<-factor(data$output,c("Comp.","Offers (logged)"))  
     }
     else if (metric=="cbre"){
+      
       b_CBre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"
                                       , mean_x =  paste( "mean(" ,  x_col  ,")"  ))
       ln_CBre<-data %>% summarise_ (   mean_y = "mean(ln_CBre_OMB20_GDP18,na.rm=TRUE)"
                                        , mean_x =  paste( "mean(" ,  x_col  ,")"  ))
-      scatter_CBre<-data[data$b_CBre==1,colnames(data) %in% c("ln_CBre_OMB20_GDP18",x_col)]
+      scatter_CBre<-data[data$b_CBre==1,colnames(data) %in% c("ln_CBre_OMB20_GDP18",x_col,group_col)]
       colnames(scatter_CBre)[colnames(scatter_CBre)=="ln_CBre_OMB20_GDP18"]<-"mean_y"
       colnames(scatter_CBre)[colnames(scatter_CBre)==x_col]<-"mean_x"
+      b_CBre<-as.data.frame(b_CBre)
+      ln_CBre<-as.data.frame(ln_CBre)
+      scatter_CBre<-as.data.frame(scatter_CBre)
       scatter_CBre$bin_x<-0
       b_CBre$output<-"Breach Occured"
       ln_CBre$output<-"Average Size (logged)"
       scatter_CBre$output<-"Breach Scatterplot (logged)"
-      data<-rbind(b_CBre,b_CBre,b_CBre,b_CBre,
-                  ln_CBre,ln_CBre,ln_CBre,ln_CBre,
-                  scatter_CBre)
+      if(any(b_CBre$mean_y<1)) 
+        data<-rbind(b_CBre,b_CBre,b_CBre,b_CBre,
+                    ln_CBre,ln_CBre,ln_CBre,ln_CBre,
+                    scatter_CBre)
+      else
+        data<-rbind(ln_CBre,ln_CBre,ln_CBre,ln_CBre,
+                    scatter_CBre)
       data$output<-factor(data$output,c("Breach Occured","Average Size (logged)","Breach Scatterplot (logged)"))  
     }
     
@@ -582,7 +595,11 @@ discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,rot
       ln_CBre<-data %>% summarise_ (   mean_y = "mean(ln_CBre_OMB20_GDP18,na.rm=TRUE)"   )  
       b_CBre$output<-"Breach Occured"
       ln_CBre$output<-"Breach Size (logged)"
-      data<-rbind(b_CBre,ln_CBre)
+      #For the def_breach dataset, there are no unbreached contracts, making this graph unhelpful.
+      if(any(b_CBre$mean_y<1)) 
+        data<-rbind(b_CBre,ln_CBre)
+      else
+        data<-ln_CBre
       data$output<-factor(data$output,c("Breach Occured","Breach Size (logged)"))  
     }
     
@@ -617,7 +634,11 @@ discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,rot
       ln_CBre<-data %>% summarise_ (   mean_y = "mean(ln_CBre_OMB20_GDP18)"   )  
       b_CBre$output<-"Breach Occured"
       ln_CBre$output<-"Breach Size (logged)"
-      data<-rbind(b_CBre,ln_CBre)
+      #For the def_breach dataset, there are no unbreached contracts, making this graph unhelpful.
+      if(any(b_CBre$mean_y<1)) 
+        data<-rbind(b_CBre,ln_CBre)
+      else
+        data<-ln_CBre
       data$output<-factor(data$output,c("Breach Occured","Breach Size (logged)"))  
     }
     
