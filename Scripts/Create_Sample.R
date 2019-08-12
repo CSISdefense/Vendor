@@ -28,15 +28,18 @@ if(!exists("def")) load("data/clean/transformed_def.Rdata")
 # load(file="../Data/Clean//def_sample.Rdata")
 
 if("cl_Ceil" %in% colnames(def)){
+  def$l_Ceil_Then_Year<-log(def$UnmodifiedCeiling_Then_Year)
+  def$l_Ceil_Then_Year[is.na(def$cl_Ceil)]<-NA
+  def$cl_Ceil_Then_Year<-arm::rescale(def$l_Ceil_Then_Year)
   def<-def %>% dplyr::select(-c(cl_Ceil))
-  def$cl_Ceil_Then_Year<-rescale(log(def$UnmodifiedCeiling_Then_Year))
+  summary(def$cl_Ceil_Then_Year,l_Ceil_Then_Year)
 }
 
 
 #Output variables
 summary(def$b_Term)
 summary(def$b_CBre)
-summary(def$n_CBre_Then_Year)
+summary(def$ln_CBre_Then_Year)
 summary(def$p_CBre)
 #Study Variables
 summary(def$CompOffr)
@@ -64,8 +67,7 @@ complete<-
   #Dependent Variables
   !is.na(def$b_Term)& #summary(def$b_Term)
   !is.na(def$b_CBre)&
-  summary(def$n_CBre_Then_Year)&
-  summary(def$p_CBre)&
+  !is.na(def$ln_CBre_Then_Year)&
   #Study Variables
   !is.na(def$CompOffr)&
   !is.na(def$cl_def3_HHI_lag1)&
@@ -123,7 +125,8 @@ colnames(smp)[!colnames(smp) %in% colnames(def)]
 colnames(smp1m)[!colnames(smp1m) %in% colnames(def)]
 colnames(def)[!colnames(def) %in% colnames(smp)]
 
-
+nrow(smp[smp$CSIScontractID %in% def$CSIScontractID[complete],])
+nrow(smp[!smp$CSIScontractID %in% def$CSIScontractID[complete],])
 
 #  #         
 # #Sample adjustments
@@ -134,9 +137,9 @@ smp<-smp[,colnames(smp)=="CSIScontractID"]
 smp<-update_sample_col_CSIScontractID(smp,def[complete,],drop_and_replace=TRUE)
 smp1m<-smp1m[,colnames(smp1m)=="CSIScontractID"]
 smp1m<-update_sample_col_CSIScontractID(smp1m,def[complete,],drop_and_replace=TRUE)
+def_breach<-def[complete&def$b_CBre==1,]
 
-
-save(file="data//clean//def_sample.Rdata",smp,smp1m)
+save(file="data//clean//def_sample.Rdata",smp,smp1m,def_breach)
 write.foreign(df=smp,
               datafile="Data//clean//def_sample250k.dat",
               codefile="Data//clean//def_sample250k_code.do",
@@ -145,4 +148,9 @@ write.foreign(df=smp1m,
               datafile="Data//clean//def_sample1m.dat",
               codefile="Data//clean//def_sample1m_code.do",
               package = "Stata")
+write.foreign(df=def_breach,
+              datafile="Data//clean//def_breach.dat",
+              codefile="Data//clean//def_breach_code.do",
+              package = "Stata")
+save(file="data//clean//def_sample.Rdata",smp,smp1m,def_breach)
 

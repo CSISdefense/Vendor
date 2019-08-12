@@ -7,7 +7,7 @@ output:
     keep_md: yes
 --- 
 
-Modeling Likelihood of Contract Termination
+Modeling Size f  Contract Breaches for those Contracts that Breached
 ============================================================================
 
 #Setup
@@ -38,10 +38,7 @@ Contracts are classified using a mix of numerical and categorical variables. Whi
 
 ##Prepare Data
 
-First we load the data. The dataset used is a U.S. Defense Contracting dataset derived from   FPDS.
-
-
-###Data Transformations and Sample Loading 
+First we load the data. The dataset used is a U.S. Defense Contracting dataset derived from FPDS.
 
 The final sample uses 1 million rows of data, but as a computation shortcut, only a subset of the data is needed to allow for processing of models in minutes rather than hours.
 
@@ -54,7 +51,6 @@ load(file="..//data//clean//def_sample.Rdata")
 
 Contract Ceiling Breaches and the number of change orders can be calculated for the entire sample.  Change orders are determined using the *Reason for Modification* field in FPDS. 
 
-
 #Level-1 Regression Model
 
 ##Study Variable: Competition
@@ -65,28 +61,17 @@ Competition has the potential to reduce terminations by giving the government mo
 ```{r Model01A}
 
 #Frequency Plot
-summary_discrete_plot(smp,"CompOffr")
+summary_discrete_plot(def_breach,"CompOffr",metric="cbre")
 
 #Model
-ln_CBre_Comp_01A <- glm (data=smp,
+ln_CBre_Comp_01A <- glm (data=def_breach,
                  ln_CBre_Then_Year ~ CompOffr)
 summary(ln_CBre_Comp_01A)
-
+summary_residual_compare(ln_CBre_Comp_01A,bins=2, skip_vif=TRUE)
 
 ```
 
-As measured by residual deviance, this variable has slightly less predictive power than random noise. That can likely be attributed to the fact that 5+ offers category has a higher termination rate than 2 and 3-4. In theory, this could be because of non-liner relationship, for example higher number of offers competition may be more vulnerable to aggressive bidding beavior. However, this explaination would likely be better captured by other hidden variables such as competition methods rather than having a direct relationship with an increased number of offers. As a result, we are not testing offers as a categorical variable with dummies. 
-
-Instead, the last variant to be checked is the number of offers directly. This is handled logarithmicly because the differences between number of offers at the bottom end of the scale mtters much more than at the high end of the scale. In this method, contracts that were not open to competition are grouped with contracts that received only a single offer.
-
-
-Closer examination further undercuts the idea that more offers is associated with a lower termination risk. As measured by deviance, the number offers adds less to the model than random noise. A quick experiment also found that use of number of offer squared only made the model slightly better than noise.
-
-A variety of binned percent terminated graphs found that in the middle range of the number of offers, there is often an increase in the percent terminated. The study team had expected that this phenomenon may prove isolated to a certain type of contracting mechanism or product/service, but that did not prove to be the case.
-
-The difference between single-offer and effective competition is worth exploring, even if it lowers the significance of the starting model. Happily, this decision is supported by the fact that this three category variable offers the greatest reduction in residual deviance. However, lacking a specific theoretical argument for the importance of a greater number of offers, and given the results, the more detailed competition breakdowns will not be used. This may be an issue worth exploring more in a future work.
-
-The greatest distinctiveness can be found in types of indefinite delivery vehicles. Definitive contracts and purchase orders show a higher termination rate as the number of offers increase. However, for single and multiple award IDVs, there's a decline in terminations rates correlated with low levels of competition, that often fades and even reverses as the number of offers increases. However, the results do not seem consistent with am exponential relationship.
+For ceiling breaches, no competition is associated with larger magnitude breaches in line with expectations. Contrary to expectations, so competition with 5+ offers is only a bit below that. The other results are in line with expectations, with 3-4 offers is associated with the smallest size of breaches and perhaps surprisingly single offer competition having similar results as competition with two offers.
 
 ## Study Variable Consolidation
 
@@ -96,14 +81,14 @@ The greatest distinctiveness can be found in types of indefinite delivery vehicl
 Expectations is that more consolidation is assoiated a change in occurance of breaches.
 ```{r ModelNCS6A}
 #Frequency Plot for unlogged ceiling
-summary_continuous_plot(smp1m,"def6_HHI_lag1")
-summary_continuous_plot(smp1m,"def6_HHI_lag1",log=TRUE)
-summary_continuous_plot(smp1m,"def3_HHI_lag1")
-summary_continuous_plot(smp1m,"def3_HHI_lag1",log=TRUE)
+summary_continuous_plot(def_breach,"def6_HHI_lag1",metric="cbre")
+summary_continuous_plot(def_breach,"def6_HHI_lag1",metric="cbre",log=TRUE)
+summary_continuous_plot(def_breach,"def3_HHI_lag1",metric="cbre")
+summary_continuous_plot(def_breach,"def3_HHI_lag1",metric="cbre",log=TRUE)
 
 
 #Model
-ln_CBre_Cons_NCS6A <- glm (data=smp,
+ln_CBre_Cons_NCS6A <- glm (data=def_breach,
                  ln_CBre_Then_Year ~cl_def6_HHI_lag1)
 summary(ln_CBre_Cons_NCS6A)
 
@@ -111,6 +96,10 @@ summary(ln_CBre_Cons_NCS6A)
 #Plot residuals versus fitted
   stargazer::stargazer(ln_CBre_Comp_01A,ln_CBre_Cons_NCS6A,type="text",
                        digits=2)
+  
+#For first model in category, include only the new model(s), skip_vif=true
+summary_residual_compare(ln_CBre_Cons_NCS6A,bins=20,skip_vif = TRUE)
+
 
 ```
 
@@ -118,18 +107,18 @@ Expectation is are upheld with a negative sign.
 
 #### Model NCS6B: Defense to Overall ratio
 The higher the ratio of defense obligations to reciepts in the overall economy, the DoD holds a monosopy over a sector. Given the challenges of monosopy, the a higher ratio estimates a greater  risk of ceiling breaches.
-```{r ModelNCS6l}
+```{r ModelNCS6B}
 #Frequency Plot for unlogged ceiling
-summary_continuous_plot(smp1m,"capped_def6_ratio_lag1")
-      summary_continuous_plot(smp1m,"capped_def6_ratio_lag1",log=TRUE)
+summary_continuous_plot(def_breach,"capped_def6_ratio_lag1",metric="cbre")
+      summary_continuous_plot(def_breach,"capped_def6_ratio_lag1",metric="cbre",log=TRUE)
 
-      summary_continuous_plot(smp1m,"capped_def3_ratio_lag1")
-      summary_continuous_plot(smp1m,"capped_def3_ratio_lag1",log=TRUE)
+      summary_continuous_plot(def_breach,"capped_def3_ratio_lag1",metric="cbre")
+      summary_continuous_plot(def_breach,"capped_def3_ratio_lag1",metric="cbre",log=TRUE)
 
 
 
 #Model
-ln_CBre_NCS6B <- glm (data=smp,
+ln_CBre_NCS6B <- glm (data=def_breach,
                  ln_CBre_Then_Year ~cl_def6_ratio_lag1)
 summary(ln_CBre_NCS6B)
 
@@ -138,7 +127,7 @@ summary(ln_CBre_NCS6B)
 # ln_CBre_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(ln_CBre_02A))}
 # 
 # #Competition curves
-# fitted_ln_CBre_model(smp,"cl_Ceil") + stat_function(fun = ln_CBre_02A_curve, 
+# fitted_ln_CBre_model(def_breach,"cl_Ceil_Then_Year") + stat_function(fun = ln_CBre_02A_curve, 
 #                              args=list(Comp=0),color="blue")+
 #   stat_function(fun = ln_CBre_02A_curve, 
 #                              args=list(Comp=2),color="blue")
@@ -151,23 +140,25 @@ summary(ln_CBre_NCS6B)
                        digits=2)
 
 
-summary_residual_compare(ln_CBre_Cons_NCS6A,ln_CBre_NCS6B,skip_vif=TRUE,bins=10)
+#For first model in category, include only the new model(s), skip_vif=true
+summary_residual_compare(ln_CBre_NCS6B,skip_vif=TRUE,bins=10)
 
 
 ```
-The results align with expectations, although the magnitude is minimal.
+The results align with expectations, when ratio is  logged.
 
 
 #### Model NCS6C: cl_def6_obl_lag1
 Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
 Expectations are  unchanged.
 ```{r ModelNCS6C}
-summary_continuous_plot(smp1m,"cl_def6_obl_lag1")
-      summary_continuous_plot(smp1m,"cl_def6_obl_lag1",log=TRUE)
+
+summary_continuous_plot(def_breach,"cl_def6_obl_lag1",metric="cbre")
+      summary_continuous_plot(def_breach,"cl_def6_obl_lag1",metric="cbre",log=TRUE)
 
 
 #Model
-ln_CBre_NCS6C <- glm (data=smp,
+ln_CBre_NCS6C <- glm (data=def_breach,
                  ln_CBre_Then_Year ~cl_def6_obl_lag1)
 summary(ln_CBre_NCS6C)
 
@@ -177,27 +168,24 @@ stargazer::stargazer(ln_CBre_Cons_NCS6A,ln_CBre_NCS6B,ln_CBre_NCS6C,
                        digits=2)
 
 
+#For first model in category, include only the new model(s), skip_vif=true
+summary_residual_compare(ln_CBre_NCS6C,bins=10,skip_vif = TRUE)
 
-  #Compare to prior at same level
-summary_residual_compare(ln_CBre_Cons_NCS6A,ln_CBre_NCS6C,bins=20,skip_vif = TRUE)
-#Compare to prior at lower level
-summary_residual_compare(ln_CBre_NCS6B,ln_CBre_NCS6C,bins=10,skip_vif = TRUE)
+
 ```
-The result runs contrary to expectation.
-
+The result runs contrary to expectation. 
 
 #### Model NCS6D: Average Salary
 Average salary can be an proxy for unobserved skill requirements. We expect that a greater skill requirement will estimate a greater risk of ceiling breaches.
 ```{r ModelNCS6D}
 #Frequency Plot for unlogged ceiling
 
-
-summary_continuous_plot(smp,"US6_avg_sal_lag1")
-summary_continuous_plot(smp,"US6_avg_sal_lag1",log=TRUE)
+summary_continuous_plot(def_breach,"US6_avg_sal_lag1",metric="cbre")
+summary_continuous_plot(def_breach,"US6_avg_sal_lag1",metric="cbre" ,log=TRUE)
 
 #Model
 
-ln_CBre_NCS6D <- glm (data=smp,
+ln_CBre_NCS6D <- glm (data=def_breach,
                  ln_CBre_Then_Year ~cl_US6_avg_sal_lag1 )
 summary(ln_CBre_NCS6D)
 
@@ -208,48 +196,51 @@ stargazer::stargazer(ln_CBre_Cons_NCS6A,ln_CBre_NCS6B,ln_CBre_NCS6C,ln_CBre_NCS6
                        type="text",
                        digits=2)
 
+
+# For individual models, only the new model(s) unless they have a clear counterpart or alternate, skip_vif=true
+summary_residual_compare(ln_CBre_NCS6D,bins=10,skip_vif = TRUE)
+
 ```
-Results run contrary to expectations.
+Results align with expectations. Interestingly, this had not been true in the logit model, suggesting that larger salary may be associated with less frequent but greater magnitude breaches.
 
 #### Model NCS6E: Cumulative
 ```{r ModelNCS6l}
 #Model
-ln_CBre_Cons_NCS6E <- glm (data=smp,
+ln_CBre_Cons_NCS6E <- glm (data=def_breach,
                  ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1)
 glmer_examine(ln_CBre_Cons_NCS6E)
 
-ln_CBre_Comp_NCS6E <- glm (data=smp,
+ln_CBre_Comp_NCS6E <- glm (data=def_breach,
                  ln_CBre_Then_Year ~CompOffr+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1)
 glmer_examine(ln_CBre_Comp_NCS6E)
 # 
 
 
 #Plot residuals versus fitted
-  stargazer::stargazer(ln_CBre_NCS6B,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS6E,
+  stargazer::stargazer(ln_CBre_Cons_NCS6A,ln_CBre_NCS6B,ln_CBre_NCS6C,ln_CBre_NCS6D,ln_CBre_Cons_NCS6E,
                        ln_CBre_Comp_01A,ln_CBre_Comp_NCS6E,type="text",
                        digits=2)
 
-summary_residual_compare(ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS6E,bins=25)
-summary_residual_compare(ln_CBre_NCS6B,ln_CBre_Cons_NCS6E,bins=10)
-summary_residual_compare(ln_CBre_NCS6C,ln_CBre_Cons_NCS6E,bins=20)
-summary_residual_compare(ln_CBre_NCS6D,ln_CBre_Cons_NCS6E,bins=20)
+#For the first cumulative model(s) compare to compnent study variables, skip_vif =false
+summary_residual_compare(ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS6E,bins=10)
 summary_residual_compare(ln_CBre_Comp_01A,ln_CBre_Comp_NCS6E,bins=2)
 
 
 ```
-Introducing ratio notably dimishes the coefficient for competition with 5 offers, which is suggestive that the commercial vendor pool of the sector, rather than the number of competitors per se.
+With the ceiling breach model, when combined magnitudes are reduced but the signs are unchanged.
 
+With competition, the sign flips for ratio and average salary, in both cases turning it contrary to expectation.
 
 ### Level 3
 #### Model NCS3A: cl_def3_HHI
 As with NAICS6, consolidation is expected to influence ceiling breach occurance/size, but the direction is not predicted.
 ```{r ModelNCS3A}
 #Frequency Plot for unlogged ceiling
-summary_continuous_plot(smp,"def3_HHI_lag1")
-summary_continuous_plot(smp,"def3_HHI_lag1",log=TRUE)
+summary_continuous_plot(def_breach,"def3_HHI_lag1",metric="cbre")
+summary_continuous_plot(def_breach,"def3_HHI_lag1",metric="cbre",log=TRUE)
 
 #Model
-ln_CBre_Cons_NCS3A <- glm (data=smp,
+ln_CBre_Cons_NCS3A <- glm (data=def_breach,
                  ln_CBre_Then_Year ~cl_def3_HHI_lag1)
 summary(ln_CBre_Cons_NCS3A)
 
@@ -260,12 +251,13 @@ stargazer::stargazer(ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS6E,ln_CBre_Cons_NCS3A,
                        digits=2)
 
 
+#For subsequent models in category, compare to prior in category or prior highly relevant, skip_vif=true
 summary_residual_compare(ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,bins=20,skip_vif=TRUE)
 
 
 ```
 
-Expectations are upheld with a negative sign.
+Expectations are upheld with a negative sign. That said, this seems to turn around some at the high end of the scale.
 
 #### Model NCS3B: Defense to Overall ratio
 The higher the ratio of defense obligations to reciepts in the overall economy, the DoD holds a monosopy over a sector. Given the challenges of monosopy, the a higher ratio estimates a greater  risk of ceiling breaches.
@@ -273,11 +265,11 @@ The higher the ratio of defense obligations to reciepts in the overall economy, 
 #Frequency Plot for unlogged ceiling
 
 
-summary_continuous_plot(smp,"capped_def3_ratio_lag1")
-summary_continuous_plot(smp,"capped_def3_ratio_lag1",log=TRUE)
+summary_continuous_plot(def_breach,"capped_def3_ratio_lag1",metric="cbre")
+summary_continuous_plot(def_breach,"capped_def3_ratio_lag1",metric="cbre",log=TRUE)
 
 #Model
-ln_CBre_NCS3B <- glm (data=smp,
+ln_CBre_NCS3B <- glm (data=def_breach,
                  ln_CBre_Then_Year ~ cl_def3_ratio_lag1)
 summary(ln_CBre_NCS3B)
 # 
@@ -286,44 +278,56 @@ stargazer::stargazer(ln_CBre_Cons_NCS3A,ln_CBre_NCS3B,ln_CBre_NCS6B,ln_CBre_Cons
                      type="text",
                        digits=2)
 
-summary_residual_compare(ln_CBre_NCS6B,ln_CBre_NCS3B,bins=10,skip_vif = TRUE)
+#For subsequent models in category, compare to prior in category or prior highly relevant, skip_vif=true
+summary_residual_compare(ln_CBre_NCS6B,ln_CBre_NCS3B,bins=5,skip_vif = TRUE)
 
 
 
 ```
-The results align with the hypothesis, although the magnitude is small, if larger in magnitude than the level 6 version. 
-
-
-
-
+The results align with the hypothesis and the magnitude is larger than the level 6 version.
 
 #### Model NCS3C: Cumulative Model
 Consolidation at lessa nd more granular levels may have different effects. Efficiencies are often used to describe sectors, like utilities, with high barriers to entry. Many of these aspects seem like they would already be captured at less granular NAICS levels, e.g. power plants, rather than more specific NAICS levels, like solar vs. coal. As a result, consolidation for more granular NAICS codes should estimate higher rates of ceiling breaches compared to less granular NAICS code.
 
 We'll start by adding in everything from both models and seeing what violates VIF.
-```{r ModelNCS3G}
+```{r ModelNCS3C}
 #Frequency Plot for unlogged ceiling
 
 
 
 #Model
-ln_CBre_Cons_NCS3C <- glm (data=smp,
+ln_CBre_Cons_NCS3C <- glm (data=def_breach,
                  ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_HHI_lag1+cl_def3_ratio_lag1)
 glmer_examine(ln_CBre_Cons_NCS3C)
 
-ln_CBre_Comp_NCS3C <- glm (data=smp,
+
+ln_CBre_Cons_NCS3C2 <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   cl_def3_HHI_lag1)
+glmer_examine(ln_CBre_Cons_NCS3C2)
+
+ln_CBre_Cons_NCS3C3 <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
+                   cl_def3_HHI_lag1+cl_def3_ratio_lag1)
+glmer_examine(ln_CBre_Cons_NCS3C3)
+
+ln_CBre_Comp_NCS3C <- glm (data=def_breach,
                  ln_CBre_Then_Year ~CompOffr+
                    cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_ratio_lag1)
 glmer_examine(ln_CBre_Comp_NCS3C)
 # 
-
+ln_CBre_Comp_NCS3C2 <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~CompOffr+
+                   cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
+                   cl_def3_ratio_lag1)
+glmer_examine(ln_CBre_Comp_NCS3C2)
 
 #Plot residuals versus fitted
   stargazer::stargazer(ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS6E,
-                       ln_CBre_Cons_NCS3A,ln_CBre_NCS3B,ln_CBre_Cons_NCS3C,
-                       ln_CBre_Comp_01A,ln_CBre_Comp_NCS6E,ln_CBre_Comp_NCS3C,type="text",
+                       ln_CBre_Cons_NCS3A,ln_CBre_NCS3B,ln_CBre_Cons_NCS3C3,
+                       ln_CBre_Comp_01A,ln_CBre_Comp_NCS6E,ln_CBre_Comp_NCS3C2,type="text",
                        digits=2)
 
 
@@ -333,25 +337,22 @@ glmer_examine(ln_CBre_Comp_NCS3C)
 # ln_CBre_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(ln_CBre_02A))}
 # 
 # #Competition curves
-# fitted_ln_CBre_model(smp,"cl_Ceil") + stat_function(fun = ln_CBre_02A_curve, 
+# fitted_ln_CBre_model(def_breach,"cl_Ceil_Then_Year") + stat_function(fun = ln_CBre_02A_curve, 
 #                              args=list(Comp=0),color="blue")+
 #   stat_function(fun = ln_CBre_02A_curve, 
 #                              args=list(Comp=2),color="blue")
 
 
-
-summary_residual_compare(ln_CBre_Cons_NCS3A,ln_CBre_Cons_NCS3C,bins=20)
-summary_residual_compare(ln_CBre_NCS3B,ln_CBre_Cons_NCS3C,bins=10)
-summary_residual_compare(ln_CBre_NCS3B,ln_CBre_Comp_NCS3C,bins=10)
-
-summary_residual_compare(ln_CBre_Cons_NCS6E,ln_CBre_Cons_NCS3C,bins=20)
-summary_residual_compare(ln_CBre_Comp_NCS6E,ln_CBre_Comp_NCS3C,bins=10)
+#ompare with cumulative consolidation and competition
+summary_residual_compare(ln_CBre_Cons_NCS6E,ln_CBre_Cons_NCS3C3,ln_CBre_Comp_NCS6E,ln_CBre_Comp_NCS3C2,bins=10)
 
 ```
-Def 6 HHI now aligns with expectations, though is not significant at the 0.05 level. Def 6 ratio loses significance and changes sign.
+Dropping defense obligations in both models due to VIF challenges in the consolidation model and a desire to maintain consistency between the models.
 
-Otherwise some reduction in magnitude, e.g. for 3-4 offers, but nothing dramatic.
+Def 6 HHI grows  in magnitude. Def 3 ratio greatly reduces in magnitude for competition, though retains signficance. Also in the competition model, average salary and def 6 ratio reverses itself,  resuming the expected direction.
+Otherwise some reduction in magnitude, e.g. for 5 offers in the competition model and def3 hhi in the consolidation model.
 
+In the residuals, the high end fitted values appear to overestimate the size of breach. Also worth watching the vif for the two HHI variables remains high in the consolidation model.
 
 ##Scope Variables
 ###Model 02A: Cost Ceiling
@@ -359,98 +360,78 @@ Otherwise some reduction in magnitude, e.g. for 3-4 offers, but nothing dramatic
 
 ```{r Model02A}
 #Frequency Plot for unlogged ceiling
-summary_continuous_plot(smp,"UnmodifiedCeiling_Then_Year",
+summary_continuous_plot(def_breach,"UnmodifiedCeiling_Then_Year",metric="cbre",
                bins=1000)
 #Frequency Plot for logged ceiling
-summary_continuous_plot(smp,"UnmodifiedCeiling_Then_Year",
+summary_continuous_plot(def_breach,"UnmodifiedCeiling_Then_Year",metric="cbre",
                log=TRUE)
 
 
 #Model
-ln_CBre_02A <- glm (data=smp,
-                 ln_CBre_Then_Year ~ cl_Ceil)
+ln_CBre_02A <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~ cl_Ceil_Then_Year)
 summary(ln_CBre_02A)
 
 #Plot residuals versus fitted
-stargazer::stargazer(ln_CBre_02A,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_Cons_NCS3C,
-                       ln_CBre_Comp_01A,ln_CBre_Comp_NCS3C,type="text",
+stargazer::stargazer(ln_CBre_02A,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_Cons_NCS3C3,
+                       ln_CBre_Comp_01A,ln_CBre_Comp_NCS3C2,type="text",
                        digits=2)
 
 
-#Compare with starting consolidation
-summary_residual_compare(ln_CBre_Cons_NCS6A,ln_CBre_02A,ln_CBre_Cons_NCS3A,ln_CBre_02A,bins=20,skip_vif = TRUE)
-#ompare with starting competition
-summary_residual_compare(ln_CBre_Comp_01A,ln_CBre_02A,bins=3,skip_vif = TRUE)
-#ompare with cumulative consolidation and competition
-summary_residual_compare(ln_CBre_Cons_NCS3C,ln_CBre_02A,ln_CBre_Comp_NCS6E,ln_CBre_02A,bins=20,skip_vif = TRUE)
-
-
+#For first model in category, include only the new model(s), skip_vif=true
+summary_residual_compare(ln_CBre_02A,bins=20,skip_vif = TRUE)
 
 ```
 
-Contract ceiling has a significant relationship, although a small magnitude. 
-
-
-
-
-
+Contract ceiling has a significant relationship, the largest magnitude of the models yet included, and more explanatory power than the previous cumulative model. That said, while the relationship  with contract size for the sample that overruns appears to be linear (once both are logged), the relatonship with frequency appears to follow an exponential pattern. Likewise the residuals are parabolic. Perhaps l_ceil^2 should be introduced.
 
 ###Model 02B: Maximum Duration
 
 
-```{r Model02l}
+```{r Model02B}
 #Frequency Plot for max duration
-summary_continuous_plot(smp,"UnmodifiedDays",
-               bins=1000)
+summary_continuous_plot(def_breach,"UnmodifiedDays",
+               bins=1000,metric="cbre")
 
 #Frequency Plot for logged max duration
-summary_continuous_plot(smp,"UnmodifiedDays", log=TRUE)
+summary_continuous_plot(def_breach,"UnmodifiedDays", metric="cbre",log=TRUE)
 
 #Model
-ln_CBre_02B <- glm (data=smp,
+ln_CBre_02B <- glm (data=def_breach,
                  ln_CBre_Then_Year ~ cl_Days )
 summary(ln_CBre_02B)
 
 
-stargazer::stargazer(ln_CBre_02A,ln_CBre_02B,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_Cons_NCS3C,
-                       ln_CBre_Comp_01A,ln_CBre_Comp_NCS3C,type="text",
+stargazer::stargazer(ln_CBre_02A,ln_CBre_02B,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_Cons_NCS3C3,
+                       ln_CBre_Comp_01A,ln_CBre_Comp_NCS3C2,type="text",
                        digits=2)
 
+
+
 #Compare with prior in category
-summary_residual_compare(ln_CBre_02A,ln_CBre_02B,bins=5,skip_vif = TRUE)
-#Compare with starting consolidation
-summary_residual_compare(ln_CBre_Cons_NCS6A,ln_CBre_02B,ln_CBre_Cons_NCS3A,ln_CBre_02B,bins=10,skip_vif = TRUE)
-#ompare with starting competition
-summary_residual_compare(ln_CBre_Comp_01A,ln_CBre_02B,bins=3,skip_vif = TRUE)
-#ompare with cumulative consolidation and competition
-summary_residual_compare(ln_CBre_Cons_NCS3C,ln_CBre_02B,ln_CBre_Comp_NCS6E,ln_CBre_02B,bins=10,skip_vif = TRUE)
+summary_residual_compare(ln_CBre_02B,bins=10,skip_vif = TRUE)
 
 ```
-Initial duration has the expected relationship, and a stronger one than for ceiling. Duration alone also has roughly equivalent explanatory power to all of the prior variables combined.
+Initial duration has the expected relationship, though not as strongly as ceiling. and a stronger one than for ceiling. The frequency relationship looks exponential, if  perhaps not as clearly as for ceiling, and the breach size relationship, when breaches occur, is slightly parabolic, with short duration contracts and long durations contracts both associated with some of the larger breaches.
 
 ###Model 02C: Both Scope
 
 
-```{r Model02l}
+```{r Model02C}
 #Model
-ln_CBre_02C <- glm (data=smp,
-                 ln_CBre_Then_Year ~ cl_Ceil+ cl_Days )
+ln_CBre_02C <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~ cl_Ceil_Then_Year+ cl_Days )
 summary(ln_CBre_02C)
 
 
-stargazer::stargazer(ln_CBre_02A,ln_CBre_02B,ln_CBre_02C,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_Cons_NCS3C,
-                       ln_CBre_Comp_01A,ln_CBre_Comp_NCS3C,type="text",
+stargazer::stargazer(ln_CBre_02A,ln_CBre_02B,ln_CBre_02C,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_Cons_NCS3C3,
+                       ln_CBre_Comp_01A,ln_CBre_Comp_NCS3C2,type="text",
                        digits=2)
 
-
-#Compare with prior in category
-summary_residual_compare(ln_CBre_02A,ln_CBre_02C,ln_CBre_02B,ln_CBre_02C,bins=5,skip_vif = TRUE)
-#Compare with starting consolidation
-summary_residual_compare(ln_CBre_Cons_NCS6A,ln_CBre_02C,ln_CBre_Cons_NCS3A,ln_CBre_02C,bins=10,skip_vif = TRUE)
-#ompare with starting competition
-summary_residual_compare(ln_CBre_Comp_01A,ln_CBre_02C,bins=3,skip_vif = TRUE)
 #ompare with cumulative consolidation and competition
-summary_residual_compare(ln_CBre_Cons_NCS3C,ln_CBre_02C,ln_CBre_Comp_NCS6E,ln_CBre_02C,bins=10,skip_vif = TRUE)
+summary_residual_compare(ln_CBre_Cons_NCS3C3,ln_CBre_02C,ln_CBre_Comp_NCS6E,ln_CBre_02C,bins=10,skip_vif = FALSE)
+
+
 
 ```
 Including both moderates both of their influence. 
@@ -458,43 +439,47 @@ Including both moderates both of their influence.
 ###Model 02D: Cumulative 
 
 
-```{r Model02l}
+```{r Model02D}
 #Model
-ln_CBre_02C <- glm (data=smp,
-                 ln_CBre_Then_Year ~ cl_Ceil+ cl_Days )
+ln_CBre_02C <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~ cl_Ceil_Then_Year+ cl_Days )
 summary(ln_CBre_02C)
 
 
 
 #Model
-ln_CBre_Cons_02D <- glm (data=smp,
-                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+ln_CBre_Cons_02D <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days)
+                   cl_Ceil_Then_Year+ cl_Days)
 glmer_examine(ln_CBre_Cons_02D)
 
-ln_CBre_Comp_02D <- glm (data=smp,
+ln_CBre_Comp_02D <- glm (data=def_breach,
                  ln_CBre_Then_Year ~CompOffr+
-                   cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days)
+                   cl_Ceil_Then_Year+ cl_Days)
 glmer_examine(ln_CBre_Comp_02D)
 
 
 
 
-stargazer::stargazer(ln_CBre_02A,ln_CBre_02B,ln_CBre_02C,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_Cons_NCS3C,ln_CBre_Cons_02D,
-                       ln_CBre_Comp_01A,ln_CBre_Comp_NCS3C,ln_CBre_Comp_02D,type="text",
+stargazer::stargazer(ln_CBre_02A,ln_CBre_02B,ln_CBre_02C,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_Cons_NCS3C3,ln_CBre_Cons_02D,
+                       ln_CBre_Comp_01A,ln_CBre_Comp_NCS3C2,ln_CBre_Comp_02D,type="text",
                        digits=2)
 
-#Compare with both scope
-summary_residual_compare(ln_CBre_02C,ln_CBre_Cons_02D,ln_CBre_02C,ln_CBre_Comp_02D,bins=10)
-#Compare with starting consolidation
-summary_residual_compare(ln_CBre_Cons_NCS6A,ln_CBre_Cons_02D,ln_CBre_Cons_NCS3A,ln_CBre_Cons_02D,bins=10)
-#ompare with starting competition
-summary_residual_compare(ln_CBre_Comp_01A,ln_CBre_Comp_02D,bins=3)
 #ompare with cumulative consolidation and competition
-summary_residual_compare(ln_CBre_Cons_NCS3C,ln_CBre_Cons_02D,ln_CBre_Comp_NCS6E,ln_CBre_Comp_02D,bins=10)
+summary_residual_compare(ln_CBre_Cons_NCS3C3,ln_CBre_Cons_02D,ln_CBre_Comp_NCS6E,ln_CBre_Comp_02D,bins=10)
+
+
+if(exists("ln_CBre_NCS6C")){
+  #Drop models  not used in NAICS3 comparisons
+  rm(ln_CBre_NCS6C,ln_CBre_NCS6D)
+  #Drop individual models that  aren't study  variables.
+  rm(ln_CBre_NCS3B)
+  #Drop NAICS6 models used in NAICS3 comparisons, execept original HHI
+  rm(ln_CBre_NCS6B)
+}
 
 ```
 Adding ceiling and duration strengthens the significance of HHI6 but weakens def3_ratio in the consolidation model. Likewise def3_ratio loses significance for the competition model.
@@ -507,11 +492,11 @@ Expectations, lower ceiling breaches for IDVs in general, in particular for FSS/
 
 ```{r Model03A}
 #Frequency Plot
-summary_discrete_plot(smp,"Veh")
+summary_discrete_plot(def_breach,"Veh")
 
 
 #Create the model
-ln_CBre_03A <- glm (data=smp,
+ln_CBre_03A <- glm (data=def_breach,
                  ln_CBre_Then_Year ~ Veh)
 summary(ln_CBre_03A)
 
@@ -521,15 +506,8 @@ stargazer::stargazer(ln_CBre_03A,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_C
                        ln_CBre_Comp_01A,ln_CBre_Comp_02D,type="text",
                        digits=2)
 
-
-
-
-#Compare with starting consolidation
-summary_residual_compare(ln_CBre_Cons_NCS6A,ln_CBre_03A,ln_CBre_Cons_NCS3A,ln_CBre_03A,bins=3,skip_vif = TRUE)
-#ompare with starting competition
-summary_residual_compare(ln_CBre_Comp_01A,ln_CBre_03A,bins=3,skip_vif = TRUE)
-#ompare with cumulative consolidation and competition
-summary_residual_compare(ln_CBre_Cons_02D,ln_CBre_03A,ln_CBre_Comp_02D,ln_CBre_03A,bins=3,skip_vif = TRUE)
+#For first model in category, include only the new model(s), skip_vif=true
+summary_residual_compare(ln_CBre_03A,bins=3,skip_vif = TRUE)
 
 ```
 
@@ -540,18 +518,18 @@ Expetation doesn't really hold, both Multiaward and BPA/BOA show higher more/lar
 
 ```{r Model03B}
 #Model
-ln_CBre_Cons_03B <- glm (data=smp,
-                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+ln_CBre_Cons_03B <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh)
 glmer_examine(ln_CBre_Cons_03B)
 
-ln_CBre_Comp_03B <- glm (data=smp,
+ln_CBre_Comp_03B <- glm (data=def_breach,
                  ln_CBre_Then_Year ~CompOffr+
-                   cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh)
 glmer_examine(ln_CBre_Comp_03B)
 
@@ -564,14 +542,10 @@ stargazer::stargazer(ln_CBre_03A,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_C
 
 
 
-#Compare compare with stand alone vehicle
-summary_residual_compare(ln_CBre_03A,ln_CBre_Cons_03B,ln_CBre_03A,ln_CBre_Cons_03B,bins=3,skip_vif = TRUE)
-#Compare with starting consolidation
-summary_residual_compare(ln_CBre_Cons_NCS6A,ln_CBre_Cons_03B,ln_CBre_Cons_NCS3A,ln_CBre_Cons_03B,bins=10,skip_vif = TRUE)
-#ompare with starting competition
-summary_residual_compare(ln_CBre_Comp_01A,ln_CBre_Comp_03B,bins=3,skip_vif = TRUE)
-#ompare with cumulative consolidation and competition
-summary_residual_compare(ln_CBre_Cons_02D,ln_CBre_Cons_03B,ln_CBre_Comp_02D,ln_CBre_Comp_03B,bins=10,skip_vif = TRUE)
+#Compare to prior cumulative model(s), skip_vif =false
+summary_residual_compare(ln_CBre_Cons_02D,ln_CBre_Cons_03B,ln_CBre_Comp_02D,ln_CBre_Comp_03B,bins=10,skip_vif = FALSE)
+#Remove all but cumulative model
+if(exists("ln_CBre_02A"))  rm(ln_CBre_02A,ln_CBre_02B,ln_CBre_02C)
 
 
 ```
@@ -591,13 +565,13 @@ In the performance of the defense acquisition system report, the benefits found 
 ```{r Model04A}
 
 #Frequency Plot
-summary_discrete_plot(smp,"PricingFee")
+summary_discrete_plot(def_breach,"PricingFee")
 
 
 
 
 #Create the model
-ln_CBre_04A <- glm (data=smp,
+ln_CBre_04A <- glm (data=def_breach,
                  ln_CBre_Then_Year ~PricingFee)
 summary(ln_CBre_04A)
 
@@ -611,13 +585,8 @@ stargazer::stargazer(ln_CBre_04A,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_C
 
 
 
-#Compare with starting consolidation
-summary_residual_compare(ln_CBre_Cons_NCS6A,ln_CBre_04A,ln_CBre_Cons_NCS3A,ln_CBre_04A,bins=2,skip_vif = TRUE)
-#ompare with starting competition
-summary_residual_compare(ln_CBre_Comp_01A,ln_CBre_04A,bins=2,skip_vif = TRUE)
-#ompare with cumulative consolidation and competition
-# summary_residual_compare(ln_CBre_Cons_03B,ln_CBre_04A,ln_CBre_Comp_03B,ln_CBre_04A,bins=2,skip_vif = TRUE)
-#Not sure why the breaks don't work here.
+#For first model in category, include only the new model(s), skip_vif=true
+summary_residual_compare(ln_CBre_04A,bins=2,skip_vif = TRUE)
 
 
 ```
@@ -632,12 +601,12 @@ Undefinitized Contract Awards allow for quick action in situations where there i
 ```{r Model04B}
 
 #Frequency Plot
-summary_discrete_plot(smp,"UCA")
+summary_discrete_plot(def_breach,"UCA")
 
 
 
 #Create the model
-ln_CBre_04B <- glm (data=smp,
+ln_CBre_04B <- glm (data=def_breach,
                  ln_CBre_Then_Year ~ b_UCA )
 summary(ln_CBre_04B)
 
@@ -649,13 +618,6 @@ stargazer::stargazer(ln_CBre_04A,ln_CBre_04B,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS
 
 #Compare to earlier contract types
 summary_residual_compare(ln_CBre_04A,ln_CBre_04B,bins=2,skip_vif = TRUE)
-#Compare with starting consolidation
-summary_residual_compare(ln_CBre_Cons_NCS6A,ln_CBre_04B,ln_CBre_Cons_NCS3A,ln_CBre_04B,bins=2,skip_vif = TRUE)
-#ompare with starting competition
-summary_residual_compare(ln_CBre_Comp_01A,ln_CBre_04B,bins=2,skip_vif = TRUE)
-#ompare with cumulative consolidation and competition
-# summary_residual_compare(ln_CBre_Cons_03B,ln_CBre_04B,ln_CBre_Comp_03B,ln_CBre_04B,bins=2,skip_vif = TRUE)
-#Not sure why the breaks don't work here.
 
 
 ```
@@ -665,19 +627,19 @@ UCAs are associated with more/larger ceiling breaches ,as expected.
 
 ```{r Model04C}
 #Create the model
-ln_CBre_Cons_04C <- glm (data=smp,
-                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+ln_CBre_Cons_04C <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA)
 glmer_examine(ln_CBre_Cons_04C)
 
-ln_CBre_Comp_04C <- glm (data=smp,
+ln_CBre_Comp_04C <- glm (data=def_breach,
                  ln_CBre_Then_Year ~CompOffr+
-                   cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA)
 glmer_examine(ln_CBre_Comp_04C)
@@ -689,17 +651,11 @@ stargazer::stargazer(ln_CBre_04A,ln_CBre_04B,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS
                        digits=2)
 
 
-#Compare to earlier contract types
-summary_residual_compare(ln_CBre_04A,ln_CBre_Cons_04C,ln_CBre_04A,ln_CBre_Comp_04C,bins=2,skip_vif = TRUE)
-summary_residual_compare(ln_CBre_04B,ln_CBre_Cons_04C,ln_CBre_04B,ln_CBre_Comp_04C,bins=2,skip_vif = TRUE)
-#Compare with starting consolidation
-summary_residual_compare(ln_CBre_Cons_NCS6A,ln_CBre_Cons_04C,ln_CBre_Cons_NCS3A,ln_CBre_Cons_04C,bins=20,skip_vif = TRUE)
-#ompare with starting competition
-summary_residual_compare(ln_CBre_Comp_01A,ln_CBre_Comp_04C,bins=3,skip_vif = TRUE)
-#ompare with cumulative consolidation and competition
+#Compare with cumulative consolidation and competition
 summary_residual_compare(ln_CBre_Cons_03B,ln_CBre_Comp_04C,ln_CBre_Comp_03B,ln_CBre_Comp_04C,bins=20,skip_vif = TRUE)
+rm(ln_CBre_04A,ln_CBre_04B)
 
-
+if(exists("ln_CBre_03A")) rm(ln_CBre_03A)
 
 ```
 
@@ -712,12 +668,12 @@ International contracts may often be in conflict zones and thus experience great
 ```{r Model05A_Intl}
 
 #Frequency Plot
-summary_discrete_plot(smp,"Intl")
+summary_discrete_plot(def_breach,"Intl")
 
 
 
 #Create the model
-ln_CBre_05A <- glm(data=smp,
+ln_CBre_05A <- glm(data=def_breach,
   ln_CBre_Then_Year ~b_Intl
 )
 summary(ln_CBre_05A)
@@ -729,14 +685,8 @@ stargazer::stargazer(ln_CBre_05A,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_C
                        digits=2)
 
 
-#Compare with starting consolidation
-summary_residual_compare(ln_CBre_Cons_NCS6A,ln_CBre_05A,ln_CBre_Cons_NCS3A,ln_CBre_05A,bins=2,skip_vif = TRUE)
-#ompare with starting competition
-summary_residual_compare(ln_CBre_Comp_01A,ln_CBre_05A,bins=2,skip_vif = TRUE)
-#ompare with cumulative consolidation and competition
-summary_residual_compare(ln_CBre_Cons_04C,ln_CBre_05A,ln_CBre_Comp_04C,ln_CBre_05A,bins=2,skip_vif = TRUE)
-
-
+#For first model in category, include only the new model(s), skip_vif=true
+summary_residual_compare(ln_CBre_05A,bins=2,skip_vif = TRUE)
 
 ```
 
@@ -747,20 +697,20 @@ International performance of contract had a positive  coefficent as expected.
 ```{r Model05B_Comp}
 
 #Create the model
-ln_CBre_Cons_05B <- glm (data=smp,
-                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+ln_CBre_Cons_05B <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl)
 glmer_examine(ln_CBre_Cons_05B)
 
-ln_CBre_Comp_05B <- glm (data=smp,
+ln_CBre_Comp_05B <- glm (data=def_breach,
                  ln_CBre_Then_Year ~CompOffr+
-                   cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl)
@@ -773,18 +723,12 @@ stargazer::stargazer(ln_CBre_05A,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_C
                        ln_CBre_Comp_01A,ln_CBre_Comp_04C,ln_CBre_Comp_05B,type="text",
                        digits=2)
 
-#Compare to stand alone  intl
-summary_residual_compare(ln_CBre_05A,ln_CBre_Cons_05B,ln_CBre_05A,ln_CBre_Comp_05B,bins=2,skip_vif = TRUE)
-#Compare with starting consolidation
-summary_residual_compare(ln_CBre_Cons_NCS6A,ln_CBre_Cons_05B,ln_CBre_Cons_NCS3A,ln_CBre_Cons_05B,bins=2,skip_vif = TRUE)
-#ompare with starting competition
-summary_residual_compare(ln_CBre_Comp_01A,ln_CBre_Comp_05B,bins=2,skip_vif = TRUE)
 #ompare with cumulative consolidation and competition
-summary_residual_compare(ln_CBre_Cons_04C,ln_CBre_Cons_05B,ln_CBre_Comp_04C,ln_CBre_Comp_05B,bins=2,skip_vif = TRUE)
+summary_residual_compare(ln_CBre_Cons_04C,ln_CBre_Cons_05B,ln_CBre_Comp_04C,ln_CBre_Comp_05B,bins=20,skip_vif = FALSE)
 
+rm(ln_CBre_05A)
 
-
-
+if(exists("ln_CBre_04A")) rm(ln_CBre_04A,ln_CBre_04B)
 
 ```
 Not much in the way of big changes, though reduction in significance for ceiling for competition.
@@ -792,15 +736,15 @@ Not much in the way of big changes, though reduction in significance for ceiling
 
 ## Competition and Consolidation together
 ### Model 09A: Combination
-```{r Model07B}
+```{r Model09A}
 
 
 #Sumamry plot
 
-ln_CBre_Cons_Comp_09A <- glm (data=smp,
-                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+ln_CBre_Cons_Comp_09A <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl)
@@ -812,12 +756,14 @@ stargazer::stargazer(ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_Cons_05B,
                        ln_CBre_Comp_01A,ln_CBre_Comp_05B,ln_CBre_Cons_Comp_09A,type="text",
                        digits=2)
 
-summary_residual_compare(ln_CBre_Cons_07B,ln_CBre_Cons_Comp_09A,ln_CBre_Comp_07B,ln_CBre_Cons_Comp_09A,bins=100)
+#Compare with cumulative consolidation and competition
+summary_residual_compare(ln_CBre_Cons_05B,ln_CBre_Cons_Comp_09A,ln_CBre_Comp_05B,ln_CBre_Cons_Comp_09A,bins=20,skip_vif = TRUE)
 
 
+if(exists("ln_CBre_05A")) rm(ln_CBre_05A)
 ```
 There is no real hange in the study variables. Instead, those controls that were significant in only one of the two models, 
-cl_ceil, FSS/GWAC, and BPA/BOA lost significance. b_Intl also increased in magnitude.
+cl_Ceil_Then_Year, FSS/GWAC, and BPA/BOA lost significance. b_Intl also increased in magnitude. The patterns in the residuals show no signs of abating, suggesting that ceiling breaches may simply be too rare for this approach. 
 ## Interactions
 
 ### Interactions with Study Variables
@@ -826,17 +772,17 @@ cl_ceil, FSS/GWAC, and BPA/BOA lost significance. b_Intl also increased in magni
 Starting with Competition and UCA. It's strong in both models and thus a natural starting point.Competition is expected to mitigate the risks of UCA.
 ```{r Model10A}
 #Sumamry plot
-summary_discrete_plot(smp1m,"CompOffr","UCA")
+summary_discrete_plot(def_breach,"CompOffr","UCA")
 
 
 #Create the model
-ln_CBre_Comp_10A_no_interact <- glm (data=smp,
+ln_CBre_Comp_10A_no_interact <- glm (data=def_breach,
                  ln_CBre_Then_Year ~CompOffr+b_UCA)
 glmer_examine(ln_CBre_Comp_10A)
 
 
 
-ln_CBre_Comp_10A <- glm (data=smp,
+ln_CBre_Comp_10A <- glm (data=def_breach,
                  ln_CBre_Then_Year ~CompOffr+b_UCA+
                         b_UCA:CompOffr)
 glmer_examine(ln_CBre_Comp_10A)
@@ -862,11 +808,11 @@ Starting with Competition and UCA. It's strong in both models and thus a natural
 
 
 #Create the model
-ln_CBre_Comp_10B <- glm (data=smp,
+ln_CBre_Comp_10B <- glm (data=def_breach,
                  ln_CBre_Then_Year ~CompOffr+
-                   cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl +
@@ -875,10 +821,10 @@ glmer_examine(ln_CBre_Comp_10B)
 
 
 
-ln_CBre_Cons_Comp_10B <- glm (data=smp,
-                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+ln_CBre_Cons_Comp_10B <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl +
@@ -908,26 +854,26 @@ In diagnostic terms, the residuals for ceiling breaches get a little worse, but 
 Next Consolidation and UCA. Testing at both levels. Right now 3 HHI is negative, and 6 HHI is positive, but in both case expect a less consolidated market is riskier for UCA.
 ```{r Model10C}
 #Sumamry plot
-summary_continuous_plot(smp1m,"cl_def6_HHI_lag1","UCA")
+summary_continuous_plot(def_breach,"cl_def6_HHI_lag1","UCA")
 
 
 
 #Create the model
-ln_CBre_Cons_10C_NCS6_no_interact <- glm (data=smp,
+ln_CBre_Cons_10C_NCS6_no_interact <- glm (data=def_breach,
                  ln_CBre_Then_Year ~cl_def6_HHI_lag1+b_UCA)
 glmer_examine(ln_CBre_Cons_10C_NCS6_no_interact)
 
-ln_CBre_Cons_10C_NCS6 <- glm (data=smp,
+ln_CBre_Cons_10C_NCS6 <- glm (data=def_breach,
                  ln_CBre_Then_Year ~cl_def6_HHI_lag1+b_UCA+
                         b_UCA:cl_def6_HHI_lag1 )
 glmer_examine(ln_CBre_Cons_10C_NCS6)
 
-ln_CBre_Cons_10C_NCS3_no_interact <- glm (data=smp,
+ln_CBre_Cons_10C_NCS3_no_interact <- glm (data=def_breach,
                  ln_CBre_Then_Year ~cl_def3_HHI_lag1+b_UCA )
 glmer_examine(ln_CBre_Cons_10C_NCS3_no_interact)
 
 
-ln_CBre_Cons_10C_NCS3 <- glm (data=smp,
+ln_CBre_Cons_10C_NCS3 <- glm (data=def_breach,
                  ln_CBre_Then_Year ~cl_def3_HHI_lag1+b_UCA+
                         b_UCA:cl_def3_HHI_lag1 )
 glmer_examine(ln_CBre_Cons_10C_NCS3)
@@ -949,25 +895,25 @@ Expectations hold. Both improve the AIC, the jump for HHI3 is larger than for HH
 #### Model 10D: Cumulative
 ```{r Model10D}
 #Sumamry plot
-summary_continuous_plot(smp1m,"cl_def6_HHI_lag1","UCA")
-summary_discrete_plot(smp1m,"CompOffr","UCA")
+summary_continuous_plot(def_breach,"cl_def6_HHI_lag1","UCA")
+summary_discrete_plot(def_breach,"CompOffr","UCA")
 
 
 #Create the model
-ln_CBre_Cons_10D_NCS6 <- glm (data=smp,
-                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+ln_CBre_Cons_10D_NCS6 <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl +
                         b_UCA:cl_def6_HHI_lag1 )
 glmer_examine(ln_CBre_Cons_10D_NCS6)
 
-ln_CBre_Cons_10D_NCS3 <- glm (data=smp,
-                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+ln_CBre_Cons_10D_NCS3 <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl +
@@ -975,10 +921,10 @@ ln_CBre_Cons_10D_NCS3 <- glm (data=smp,
 glmer_examine(ln_CBre_Cons_10D_NCS3)
 
 
-ln_CBre_Cons_Comp_10D_NCS6 <- glm (data=smp,
-                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+ln_CBre_Cons_Comp_10D_NCS6 <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl +
@@ -986,10 +932,10 @@ ln_CBre_Cons_Comp_10D_NCS6 <- glm (data=smp,
 glmer_examine(ln_CBre_Cons_Comp_10D_NCS6)
 
 
-ln_CBre_Cons_Comp_10D_NCS3 <- glm (data=smp,
-                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+ln_CBre_Cons_Comp_10D_NCS3 <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl +
@@ -1030,17 +976,17 @@ The next reintroduction is competition and days. The benefits of competition may
 
 
 #Sumamry plot
-summary_continuous_plot(smp1m,"cl_Days","EffComp")
+summary_continuous_plot(def_breach,"cl_Days","EffComp")
 
 
 
-ln_CBre_Comp_10E_no_interact <- glm (data=smp,
+ln_CBre_Comp_10E_no_interact <- glm (data=def_breach,
                       ln_CBre_Then_Year~CompOffr+ cl_Days
                       )
 glmer_examine(ln_CBre_Comp_10E_no_interact)
 
 
-ln_CBre_Comp_10E <- glm (data=smp,
+ln_CBre_Comp_10E <- glm (data=def_breach,
                       ln_CBre_Then_Year~CompOffr+ cl_Days+
                         cl_Days:CompOffr
                       )
@@ -1057,19 +1003,19 @@ The next reintroduction is competition and size. Large contracts may inspire agg
 
 
 #Sumamry plot
-summary_continuous_plot(smp1m,"cl_Ceil","EffComp")
+summary_continuous_plot(def_breach,"cl_Ceil_Then_Year","EffComp")
 
 
 
-ln_CBre_Comp_10F_no_interact <- glm (data=smp,
-                      ln_CBre_Then_Year~CompOffr+ cl_Ceil
+ln_CBre_Comp_10F_no_interact <- glm (data=def_breach,
+                      ln_CBre_Then_Year~CompOffr+ cl_Ceil_Then_Year
                       )
 glmer_examine(ln_CBre_Comp_10F_no_interact)
 
 
-ln_CBre_Comp_10F <- glm (data=smp,
-                      ln_CBre_Then_Year~CompOffr+ cl_Ceil+
-                        cl_Ceil:CompOffr
+ln_CBre_Comp_10F <- glm (data=def_breach,
+                      ln_CBre_Then_Year~CompOffr+ cl_Ceil_Then_Year+
+                        cl_Ceil_Then_Year:CompOffr
                       )
 glmer_examine(ln_CBre_Comp_10F)
 
@@ -1083,17 +1029,17 @@ Competition works differently for single award vehicles, it represents  the init
 
 
 #Sumamry plot
-summary_continuous_plot(smp1m,"cl_Ceil","EffComp")
+summary_continuous_plot(def_breach,"cl_Ceil_Then_Year","EffComp")
 
 
 
-ln_CBre_Comp_10G_no_interact <- glm (data=smp,
+ln_CBre_Comp_10G_no_interact <- glm (data=def_breach,
                       ln_CBre_Then_Year~CompOffr+ Veh
                       )
 glmer_examine(ln_CBre_Comp_10G_no_interact)
 
 
-ln_CBre_Comp_10G <- glm (data=smp,
+ln_CBre_Comp_10G <- glm (data=def_breach,
                       ln_CBre_Then_Year~CompOffr+ Veh+
                         Veh:CompOffr
                       )
@@ -1115,11 +1061,11 @@ Starting with Competition and UCA. It's strong in both models and thus a natural
 
 
 #Create the model
-ln_CBre_Comp_10H <- glm (data=smp,
+ln_CBre_Comp_10H <- glm (data=def_breach,
                  ln_CBre_Then_Year ~CompOffr+
-                   cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl +
@@ -1131,96 +1077,6 @@ glmer_examine(ln_CBre_Comp_10H)
 
 VIF precludes this combination.
 
-#### Model 10I: Def Sec Obl:HHI
-Because HHI in smaller sectors tends to be larger, high readings from large sectors may deserve more weight. This interaction is expected to amplify HHI magnitudes. This is most relevant for detailed sectors, which are highly variable in size.
-```{r Model10I}
-
-
-#Sumamry plot
-summary_continuous_plot(smp1m,"cl_US6_avg_sal_lag1","PricingFee")
-
-
-#Create the model
-
-
-ln_CBre_Cons_10I_no_interact <- glm (data=smp,
-                      ln_CBre_Then_Year ~
-                        cl_def6_HHI_lag1+cl_def6_obl_lag1 
-                      )
-glmer_examine(ln_CBre_Cons_10I_no_interact)
-
-
-ln_CBre_Cons_10I<- glm (data=smp,
-                      ln_CBre_Then_Year ~
-                        cl_def6_HHI_lag1+cl_def6_obl_lag1+
-                        cl_def6_HHI_lag1:cl_def6_obl_lag1  
-                      )
-glmer_examine(ln_CBre_Cons_10I)
-
-
-  stargazer::stargazer(ln_CBre_Cons_NCS6A,ln_CBre_NCS6C,
-    ln_CBre_Cons_10I_no_interact,ln_CBre_Cons_10I,type="text",
-                       digits=2)
-  
-  
-
-summary_residual_compare(ln_CBre_Cons_10I_no_interact,ln_CBre_Cons_10I,bins=20)
-
-
-```
-Results are significant but are  are contrary to expectations.
-
-#### Model 10J: Cumulative
-```{r Model10J}
-#Sumamry plot
-summary_continuous_plot(smp1m,"cl_def6_HHI_lag1","UCA")
-summary_discrete_plot(smp1m,"CompOffr","UCA")
-
-
-#Create the model
-ln_CBre_Cons_10J <- glm (data=smp,
-                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
-                   cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
-                   Veh+
-                   PricingFee+b_UCA+
-                   b_Intl +
-                        b_UCA:cl_def6_HHI_lag1+
-                    cl_def6_HHI_lag1:cl_def6_obl_lag1  
-                   )
-glmer_examine(ln_CBre_Cons_10J)
-
-
-ln_CBre_Cons_Comp_10J <- glm (data=smp,
-                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
-                   cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
-                   Veh+
-                   PricingFee+b_UCA+
-                   b_Intl +
-                        b_UCA:CompOffr+b_UCA:cl_def6_HHI_lag1 +
-                    cl_def6_HHI_lag1:cl_def6_obl_lag1  )
-glmer_examine(ln_CBre_Cons_Comp_10J)
-
-
-
-
-stargazer::stargazer(ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_NCS6C,ln_CBre_Cons_10I_no_interact,ln_CBre_Cons_10I,ln_CBre_Cons_10D_NCS6,ln_CBre_Cons_10J,
-                     ln_CBre_Cons_Comp_10D_NCS6,ln_CBre_Cons_Comp_10J,type="text",
-                       digits=2)
-
-  
-
-
-summary_residual_compare(ln_CBre_Cons_10I,ln_CBre_Cons_10J,
-                         ln_CBre_Cons_10I,ln_CBre_Cons_Comp_10J,bins=20)
-
-
-summary_residual_compare(ln_CBre_Cons_10D_NCS6,ln_CBre_Cons_10J,
-                         ln_CBre_Cons_Comp_10D_NCS6,ln_CBre_Cons_Comp_10J,bins=50)
-
-```
-The interaction goes against expectation, has a minimal change in AIC. It helps a bit with the residual in some ways but less for comp_cons.
 
 #### Model 10K: Ratio:HHI
 Because HHI in smaller sectors tends to be larger, high readings from large sectors may deserve more weight. This interaction is expected to amplify HHI magnitudes.
@@ -1229,24 +1085,24 @@ Because HHI in smaller sectors tends to be larger, high readings from large sect
 
 
 #Sumamry plot
-summary_continuous_plot(smp1m,"cl_def6_ratio_lag1","cl_def6_HHI_lag1")
+summary_continuous_plot(def_breach,"cl_def6_ratio_lag1","cl_def6_HHI_lag1")
 
 #Create the model
-ln_CBre_Cons_10K_NCS6_no_interact <- glm (data=smp,
+ln_CBre_Cons_10K_NCS6_no_interact <- glm (data=def_breach,
                  ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1)
 glmer_examine(ln_CBre_Cons_10K_NCS6_no_interact)
 
-ln_CBre_Cons_10K_NCS6 <- glm (data=smp,
+ln_CBre_Cons_10K_NCS6 <- glm (data=def_breach,
                  ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+
                         cl_def6_ratio_lag1:cl_def6_HHI_lag1 )
 glmer_examine(ln_CBre_Cons_10K_NCS6)
 
-ln_CBre_Cons_10K_NCS3_no_interact <- glm (data=smp,
+ln_CBre_Cons_10K_NCS3_no_interact <- glm (data=def_breach,
                  ln_CBre_Then_Year ~cl_def3_HHI_lag1+cl_def3_ratio_lag1 )
 glmer_examine(ln_CBre_Cons_10K_NCS3_no_interact)
 
 
-ln_CBre_Cons_10K_NCS3 <- glm (data=smp,
+ln_CBre_Cons_10K_NCS3 <- glm (data=def_breach,
                  ln_CBre_Then_Year ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
                         cl_def3_ratio_lag1:cl_def3_HHI_lag1 )
 glmer_examine(ln_CBre_Cons_10K_NCS3)
@@ -1269,15 +1125,15 @@ Significant and in line with expectations for def 6 but contract for def 3, desp
 #### Model 10L: Cumulative
 ```{r Model10L}
 #Sumamry plot
-summary_continuous_plot(smp1m,"cl_def6_HHI_lag1","UCA")
-summary_discrete_plot(smp1m,"CompOffr","UCA")
+summary_continuous_plot(def_breach,"cl_def6_HHI_lag1","UCA")
+summary_discrete_plot(def_breach,"CompOffr","UCA")
 
 
 #Create the model
-ln_CBre_Cons_10L_NCS6 <- glm (data=smp,
-                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+ln_CBre_Cons_10L_NCS6 <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl +
@@ -1285,10 +1141,10 @@ ln_CBre_Cons_10L_NCS6 <- glm (data=smp,
                    cl_def6_ratio_lag1:cl_def6_HHI_lag1)
 glmer_examine(ln_CBre_Cons_10L_NCS6)
 
-ln_CBre_Cons_10L_NCS3 <- glm (data=smp,
-                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+ln_CBre_Cons_10L_NCS3 <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl +
@@ -1297,10 +1153,10 @@ ln_CBre_Cons_10L_NCS3 <- glm (data=smp,
 glmer_examine(ln_CBre_Cons_10L_NCS3)
 
 
-ln_CBre_Cons_Comp_10L_NCS6 <- glm (data=smp,
-                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+ln_CBre_Cons_Comp_10L_NCS6 <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl +
@@ -1309,10 +1165,10 @@ ln_CBre_Cons_Comp_10L_NCS6 <- glm (data=smp,
 glmer_examine(ln_CBre_Cons_Comp_10L_NCS6)
 
 
-ln_CBre_Cons_Comp_10L_NCS3 <- glm (data=smp,
-                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+ln_CBre_Cons_Comp_10L_NCS3 <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl +
@@ -1356,10 +1212,10 @@ NAICS6 has the  better AIC, restores significance to HHI6 and goes in the expect
 #### Model 10M: Ratio:Comp
 Likewise, competition may be more effective in more commercial sectors where monosopy is not a problem.
 ```{r Model10M}
-summary_continuous_plot(smp1m,"cl_def6_ratio_lag1","EffComp")
-summary_continuous_plot(smp1m,"cl_def3_ratio_lag1","EffComp")
+summary_continuous_plot(def_breach,"cl_def6_ratio_lag1","EffComp")
+summary_continuous_plot(def_breach,"cl_def3_ratio_lag1","EffComp")
 
-ln_CBre_Comp_10M_NCS3_no_interact <- glm (data=smp,
+ln_CBre_Comp_10M_NCS3_no_interact <- glm (data=def_breach,
                       ln_CBre_Then_Year ~
                         cl_def3_ratio_lag1+
                         CompOffr
@@ -1368,7 +1224,7 @@ glmer_examine(ln_CBre_Comp_10M_NCS3_no_interact)
 
 
 
-ln_CBre_Comp_10M_NCS3 <- glm (data=smp,
+ln_CBre_Comp_10M_NCS3 <- glm (data=def_breach,
                       ln_CBre_Then_Year ~
                         cl_def3_ratio_lag1+
                         CompOffr+
@@ -1378,7 +1234,7 @@ glmer_examine(ln_CBre_Comp_10M_NCS3)
 
 
 
-ln_CBre_Comp_10M_NCS6_no_interact <- glm (data=smp,
+ln_CBre_Comp_10M_NCS6_no_interact <- glm (data=def_breach,
                       ln_CBre_Then_Year ~
                         cl_def6_ratio_lag1+
                         CompOffr
@@ -1387,7 +1243,7 @@ glmer_examine(ln_CBre_Comp_10M_NCS6_no_interact)
 
 
 
-ln_CBre_Comp_10M_NCS6 <- glm (data=smp,
+ln_CBre_Comp_10M_NCS6 <- glm (data=def_breach,
                       ln_CBre_Then_Year ~
                         cl_def6_ratio_lag1+
                         CompOffr+
@@ -1414,21 +1270,21 @@ If competition is an instrument for consolidation, than it should be most effect
 
 
 #Create the model
-ln_CBre_Cons_Comp_10O_NCS6_no_interact <- glm (data=smp,
+ln_CBre_Cons_Comp_10O_NCS6_no_interact <- glm (data=def_breach,
                  ln_CBre_Then_Year ~cl_def6_HHI_lag1+CompOffr)
 glmer_examine(ln_CBre_Cons_Comp_10O_NCS6_no_interact)
 
-ln_CBre_Cons_Comp_10O_NCS6 <- glm (data=smp,
+ln_CBre_Cons_Comp_10O_NCS6 <- glm (data=def_breach,
                  ln_CBre_Then_Year ~cl_def6_HHI_lag1+CompOffr+
                         CompOffr:cl_def6_HHI_lag1 )
 glmer_examine(ln_CBre_Cons_Comp_10O_NCS6)
 
-ln_CBre_Cons_Comp_10O_NCS3_no_interact <- glm (data=smp,
+ln_CBre_Cons_Comp_10O_NCS3_no_interact <- glm (data=def_breach,
                  ln_CBre_Then_Year ~cl_def3_HHI_lag1+CompOffr )
 glmer_examine(ln_CBre_Cons_Comp_10O_NCS3_no_interact)
 
 
-ln_CBre_Cons_Comp_10O_NCS3 <- glm (data=smp,
+ln_CBre_Cons_Comp_10O_NCS3 <- glm (data=def_breach,
                  ln_CBre_Then_Year ~cl_def3_HHI_lag1+CompOffr+
                         CompOffr:cl_def3_HHI_lag1 )
 glmer_examine(ln_CBre_Cons_Comp_10O_NCS3)
@@ -1449,20 +1305,20 @@ Larger ceiling UCAs may run into bigger problems. The interaction of UCA and cei
 
 
 #Sumamry plot
-summary_continuous_plot(smp1m,"cl_Ceil","UCA")
+summary_continuous_plot(def_breach,"cl_Ceil_Then_Year","UCA")
 
 #Create the model
 
 
-ln_CBre_11A_no_interact <- glm (data=smp,
-                      ln_CBre_Then_Year ~cl_Ceil + b_UCA
+ln_CBre_11A_no_interact <- glm (data=def_breach,
+                      ln_CBre_Then_Year ~cl_Ceil_Then_Year + b_UCA
                       )
 glmer_examine(ln_CBre_11A_no_interact)
 
 
-ln_CBre_11A <- glm (data=smp,
-                      ln_CBre_Then_Year ~cl_Ceil + b_UCA+
-                        b_UCA:cl_Ceil
+ln_CBre_11A <- glm (data=def_breach,
+                      ln_CBre_Then_Year ~cl_Ceil_Then_Year + b_UCA+
+                        b_UCA:cl_Ceil_Then_Year
                       )
 glmer_examine(ln_CBre_11A)
 
@@ -1483,43 +1339,43 @@ The result runs contrary to expectation and only slightly reduces AIC and is lar
 ```{r Model11B}
 
 #Create the model
-ln_CBre_Cons_11B <- glm (data=smp,
-                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+ln_CBre_Cons_11B <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl +
                         b_UCA:cl_def6_HHI_lag1+
                    cl_def6_ratio_lag1:cl_def6_HHI_lag1+
-                        b_UCA:cl_Ceil)
+                        b_UCA:cl_Ceil_Then_Year)
 glmer_examine(ln_CBre_Cons_11B)
 
 
-ln_CBre_Comp_11B <- glm (data=smp,
+ln_CBre_Comp_11B <- glm (data=def_breach,
                  ln_CBre_Then_Year ~CompOffr+
-                   cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl +
                         b_UCA:CompOffr+
-                        b_UCA:cl_Ceil)
+                        b_UCA:cl_Ceil_Then_Year)
 glmer_examine(ln_CBre_Comp_10B)
 
 
 
-ln_CBre_Cons_Comp_11B <- glm (data=smp,
-                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+ln_CBre_Cons_Comp_11B <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl +
                         b_UCA:CompOffr+b_UCA:cl_def6_HHI_lag1+
                    cl_def6_ratio_lag1:cl_def6_HHI_lag1+
-                        b_UCA:cl_Ceil)
+                        b_UCA:cl_Ceil_Then_Year)
 glmer_examine(ln_CBre_Cons_Comp_11B)
 
 
@@ -1554,16 +1410,16 @@ UCA is sometimes used for contracts that need to be executed fast and may be sho
 
 
 #Sumamry plot
-summary_continuous_plot(smp1m,"cl_Days","UCA")
+summary_continuous_plot(def_breach,"cl_Days","UCA")
 
 #Create the model
-ln_CBre_11C_no_interact <- glm (data=smp,
+ln_CBre_11C_no_interact <- glm (data=def_breach,
                       ln_CBre_Then_Year ~cl_Days + b_UCA
                       )
 glmer_examine(ln_CBre_11C_no_interact)
 
 
-ln_CBre_11C <- glm (data=smp,
+ln_CBre_11C <- glm (data=def_breach,
                       ln_CBre_Then_Year ~cl_Days + b_UCA+
                         b_UCA:cl_Days
                       )
@@ -1585,23 +1441,23 @@ The direction is as expected and highmagnitude, though adds little to the AIC.
 #### Model 11D: Cumulative
 ```{r Model11D}
 #Create the model
-ln_CBre_NCS6D_no_interact <- glm (data=smp,
+ln_CBre_NCS6D_no_interact <- glm (data=def_breach,
                       ln_CBre_Then_Year ~cl_Days + b_UCA
                       )
 glmer_examine(ln_CBre_NCS6D_no_interact)
 
 
-ln_CBre_NCS6D <- glm (data=smp,
+ln_CBre_NCS6D <- glm (data=def_breach,
                       ln_CBre_Then_Year ~cl_Days + b_UCA+
                         b_UCA:cl_Days
                       )
 glmer_examine(ln_CBre_NCS6D)
 
-ln_CBre_Comp_11D2 <- glm (data=smp,
+ln_CBre_Comp_11D2 <- glm (data=def_breach,
                  ln_CBre_Then_Year ~CompOffr+
-                   cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl +
@@ -1611,10 +1467,10 @@ glmer_examine(ln_CBre_Comp_11D2)
 
 
 
-ln_CBre_Cons_Comp_11D <- glm (data=smp,
-                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+ln_CBre_Cons_Comp_11D <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl +
@@ -1624,10 +1480,10 @@ ln_CBre_Cons_Comp_11D <- glm (data=smp,
 glmer_examine(ln_CBre_Cons_Comp_11D)
 
 
-ln_CBre_Cons_Comp_11D2 <- glm (data=smp,
-                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+ln_CBre_Cons_Comp_11D2 <- glm (data=def_breach,
+                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl +
@@ -1653,16 +1509,16 @@ Average wage is a proxy for unobserved skill requirements, which in turn is a pr
 
 
 #Sumamry plot
-summary_continuous_plot(smp1m,"cl_US6_avg_sal_lag1","PricingFee",log=TRUE)
+summary_continuous_plot(def_breach,"cl_US6_avg_sal_lag1","PricingFee",log=TRUE)
 
 
 #Create the model
-ln_CBre_NCS6D_no_interact <- glm (data=smp,
+ln_CBre_NCS6D_no_interact <- glm (data=def_breach,
                       ln_CBre_Then_Year ~cl_US6_avg_sal_lag1 + PricingFee
                       )
 glmer_examine(ln_CBre_NCS6D_no_interact)
 
-ln_CBre_NCS6D <- glm (data=smp,
+ln_CBre_NCS6D <- glm (data=def_breach,
                       ln_CBre_Then_Year ~cl_US6_avg_sal_lag1 + PricingFee+
                         cl_US6_avg_sal_lag1:PricingFee
                       )
@@ -1688,10 +1544,10 @@ This initial run proved a bit premature, as incorporation of Agency as a dummy v
 if(file.exists("..//Output//ln_CBre_Cons_12A.rdata")) load(file="..//Output//ln_CBre_Cons_12A.rdata")
 
 if(!exists("ln_CBre_Cons_12A_1m"))
-ln_CBre_Cons_12A_1m <- lmer (data=smp1m,
-                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+ln_CBre_Cons_12A_1m <- lmer (data=def_breach,
+                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl +
@@ -1707,10 +1563,10 @@ glmer_examine(ln_CBre_Cons_12A_1m)
 
 
 if(!exists("ln_CBre_Comp_12A_1m"))
-ln_CBre_Comp_12A_1m <- lmer (data=smp1m,
-                 ln_CBre_Then_Year ~CompOffr+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+ln_CBre_Comp_12A_1m <- lmer (data=def_breach,
+                 ln_CBre_Then_Year ~CompOffr+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl +
@@ -1721,10 +1577,10 @@ ln_CBre_Comp_12A_1m <- lmer (data=smp1m,
 glmer_examine(ln_CBre_Comp_12A_1m)
 
 if(!exists("ln_CBre_Cons_Comp_12A_1m"))
-ln_CBre_Cons_Comp_12A_1m <- lmer (data=smp1m,
-                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+ln_CBre_Cons_Comp_12A_1m <- lmer (data=def_breach,
+                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                    cl_def3_HHI_lag1+cl_def3_ratio_lag1+
-                   cl_Ceil+ cl_Days+
+                   cl_Ceil_Then_Year+ cl_Days+
                    Veh+
                    PricingFee+b_UCA+
                    b_Intl +
@@ -1735,7 +1591,7 @@ ln_CBre_Cons_Comp_12A_1m <- lmer (data=smp1m,
                           (1 | Agency/Office))
 glmer_examine(ln_CBre_Cons_Comp_12A_1m)
 
-summary(smp1m$n_CBre)
+summary(def_breach$n_CBre)
 
 stargazer::stargazer(ln_CBre_Comp_01A,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,
                      ln_CBre_Cons_10L_NCS6,ln_CBre_Cons_12A_1m,
@@ -1761,14 +1617,14 @@ The initial attempt to include the pre-existing intercepts and all inputs result
 ### Model 12B: Trimmed 
 ```{r Model12B}
 #Frequency Plot
-summary_discrete_plot(smp,"NAICS")
+summary_discrete_plot(def_breach,"NAICS")
 
 #This is currently running at home
 
-ln_CBre_Cons_12B <- glmer (data=smp,
+ln_CBre_Cons_12B <- glmer (data=def_breach,
                         ln_CBre_Then_Year ~cl_def6_HHI_lag1 +cl_def6_ratio_lag1+cl_def6_obl_lag1+
                           cl_US6_avg_sal_lag1+
-                          cl_Ceil + cl_Days+ 
+                          cl_Ceil_Then_Year + cl_Days+ 
                           Veh +
                           PricingFee + b_UCA +
                           b_Intl+
@@ -1777,7 +1633,7 @@ ln_CBre_Cons_12B <- glmer (data=smp,
                           
                           cl_def6_HHI_lag1:cl_def6_obl_lag1+ 
                           b_UCA:cl_def6_HHI_lag1 + 
-                          b_UCA:cl_Ceil+
+                          b_UCA:cl_Ceil_Then_Year+
 
                           (1 | NAICS) + (1 | Agency/Office)
                         
@@ -1786,16 +1642,16 @@ ln_CBre_Cons_12B <- glmer (data=smp,
 
 glmer_examine(ln_CBre_Cons_12B)
 
-ln_CBre_Comp_12B <-  glmer (data=smp,
+ln_CBre_Comp_12B <-  glmer (data=def_breach,
                       ln_CBre_Then_Year ~CompOffr +
-                        cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
-                        cl_Ceil + cl_Days+
+                        cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
+                        cl_Ceil_Then_Year + cl_Days+
                         Veh  +
                         PricingFee+ b_UCA +
                         b_Intl+
                     
                         b_UCA:CompOffr +
-                        b_UCA:cl_Ceil+
+                        b_UCA:cl_Ceil_Then_Year+
 
                    (1 | NAICS) + (1 | Agency/Office)
 
@@ -1814,12 +1670,12 @@ The North American Industrial Classification system captures the sector of each 
 load(file="Output//ln_CBre_Cons_13A.rdata")
 
 if(!exists("ln_CBre_Cons_13A"))
-  ln_CBre_Cons_13A <- glmer (data=smp,
+  ln_CBre_Cons_13A <- glmer (data=def_breach,
                           ln_CBre_Then_Year ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                             #cl_US3_avg_sal_lag1+
-                            cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                            cl_def6_HHI_lag1+cl_def6_ratio_lag1+
                             cl_US6_avg_sal_lag1+
-                            cl_Ceil + cl_Days+ 
+                            cl_Ceil_Then_Year + cl_Days+ 
                             Veh +
                             PricingFee + b_UCA +
                             b_Intl+
@@ -1827,11 +1683,11 @@ if(!exists("ln_CBre_Cons_13A"))
                            
                             Veh:cl_Days+
                             
-                            Veh:cl_Ceil+
-                            cl_Ceil:PricingFee+
+                            Veh:cl_Ceil_Then_Year+
+                            cl_Ceil_Then_Year:PricingFee+
                             cl_def6_HHI_lag1:cl_def6_obl_lag1+
                             b_UCA:cl_def6_HHI_lag1 + 
-                            b_UCA:cl_Ceil+
+                            b_UCA:cl_Ceil_Then_Year+
                             # 6
                             b_Intl:Veh+ 
                             (1 | NAICS3/NAICS) + 
@@ -1851,12 +1707,12 @@ save(ln_CBre_Cons_13A,file="Output//ln_CBre_Cons_13A.rdata")
 ```{r Model13B}
 load("Output//ln_CBre_Cons_13B.rdata")
 
-ln_CBre_Cons_13B <- glmer (data=smp,
+ln_CBre_Cons_13B <- glmer (data=def_breach,
                         ln_CBre_Then_Year ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                           #cl_US3_avg_sal_lag1+
-                          cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                          cl_def6_HHI_lag1+cl_def6_ratio_lag1+
                           cl_US6_avg_sal_lag1+
-                          cl_Ceil + cl_Days+ 
+                          cl_Ceil_Then_Year + cl_Days+ 
                           Veh +
                           PricingFee + b_UCA +
                           b_Intl+
@@ -1865,7 +1721,7 @@ ln_CBre_Cons_13B <- glmer (data=smp,
                           
                           
                           b_UCA:cl_def6_HHI_lag1 + 
-                          b_UCA:cl_Ceil+
+                          b_UCA:cl_Ceil_Then_Year+
                           cl_def6_HHI_lag1:cl_def6_obl_lag1+
                           
                           (1 | NAICS3/NAICS) + 
@@ -1877,20 +1733,20 @@ ln_CBre_Cons_13B <- glmer (data=smp,
 glmer_examine(ln_CBre_Cons_13B,display=TRUE)
 
 
-  ln_CBre_Cons_13B_1m <- glmer (data=smp1m,
+  ln_CBre_Cons_13B_1m <- glmer (data=def_breach,
                           ln_CBre_Then_Year ~cl_def3_HHI_lag1+
                             cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                             #cl_US3_avg_sal_lag1+
                             cl_def6_HHI_lag1+
-                            cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                            cl_def6_ratio_lag1+
                             cl_US6_avg_sal_lag1+
-                            cl_Ceil + cl_Days+ 
+                            cl_Ceil_Then_Year + cl_Days+ 
                             Veh +
                             PricingFee + b_UCA +
                             b_Intl+
                             
                             b_UCA:cl_def6_HHI_lag1 + 
-                            b_UCA:cl_Ceil+
+                            b_UCA:cl_Ceil_Then_Year+
                             cl_def6_HHI_lag1:cl_def6_obl_lag1+
                             
                             (1 | NAICS3/NAICS) + 
@@ -1901,21 +1757,21 @@ glmer_examine(ln_CBre_Cons_13B,display=TRUE)
 glmer_examine(ln_CBre_Cons_13B_1m,display=TRUE)
 
 save(ln_CBre_Cons_13B,file="Output//ln_CBre_Cons_13B.rdata")
-ln_CBre_Comp_13B <- glmer (data=smp,
+ln_CBre_Comp_13B <- glmer (data=def_breach,
                         ln_CBre_Then_Year~CompOffr+
                           cl_def3_ratio_lag1+
                           #cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                           CompOffr+
                           cl_def6_ratio_lag1+
-                          cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
-                          cl_Ceil + cl_Days+
+                          cl_US6_avg_sal_lag1+
+                          cl_Ceil_Then_Year + cl_Days+
                           Veh  +
                           PricingFee+
                           b_UCA +
                           b_Intl+
                           
                           b_UCA:CompOffr +
-                          b_UCA:cl_Ceil+
+                          b_UCA:cl_Ceil_Then_Year+
                           
                           (1 | NAICS3/NAICS) + (1 | Agency/Office)
                         ,
@@ -2060,36 +1916,36 @@ save(ln_CBre_Cons_13B,ln_CBre_Comp_13B,ln_CBre_Cons_13B.restart,ln_CBre_Cons_13C
 ###Model 13C: Agency/Office+NAICS6/NAICS3 Binned Comp Offers
 ```{r Model13C}
 
-ln_CBre_Comp_13C <- glmer (data=smp,
+ln_CBre_Comp_13C <- glmer (data=def_breach,
                         ln_CBre_Then_Year ~CompOffr+cl_def3_ratio_lag1+
                           #cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
-                          cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
-                          cl_Ceil + cl_Days+
+                          cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
+                          cl_Ceil_Then_Year + cl_Days+
                           Veh  +
                           PricingFee+
                           b_UCA +
                           b_Intl+
                           
                           b_UCA:CompOffr +
-                          b_UCA:cl_Ceil+
+                          b_UCA:cl_Ceil_Then_Year+
                           
                           (1 | NAICS3/NAICS) + (1 | Agency/Office)
                         ,
                         verbose=1)
 glmer_examine(ln_CBre_Comp_13C)
 
-ln_CBre_Comp_13C_1m <- glmer (data=smp1m,
+ln_CBre_Comp_13C_1m <- glmer (data=def_breach,
                         ln_CBre_Then_Year ~CompOffr+cl_def3_ratio_lag1+
                           #cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
-                          cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
-                          cl_Ceil + cl_Days+
+                          cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
+                          cl_Ceil_Then_Year + cl_Days+
                           Veh  +
                           PricingFee+
                           b_UCA +
                           b_Intl+
                           
                           b_UCA:CompOffr +
-                          b_UCA:cl_Ceil+
+                          b_UCA:cl_Ceil_Then_Year+
                           
                           (1 | NAICS3/NAICS) + (1 | Agency/Office)
                         ,
@@ -2181,10 +2037,10 @@ load("Output//ln_CBre_Comp_13C.rdata")
 
 load("Output//ln_CBre_Cons_13D.rdata")
 
-ln_CBre_Cons_13D <- glmer (data=smp,
+ln_CBre_Cons_13D <- glmer (data=def_breach,
                         ln_CBre_Then_Year ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                           #cl_US3_avg_sal_lag1+
-                          cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                          cl_def6_HHI_lag1+cl_def6_ratio_lag1+
                           cl_US6_avg_sal_lag1+
                           c_office_l_Ceil + c_office_l_Days+ 
                           Veh +
@@ -2206,9 +2062,9 @@ ln_CBre_Cons_13D <- glmer (data=smp,
 glmer_examine(ln_CBre_Cons_13D,display=TRUE)
 
 
-ln_CBre_Comp_13D <- glmer (data=smp,
+ln_CBre_Comp_13D <- glmer (data=def_breach,
                         ln_CBre_Then_Year ~CompOffr+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
-                   CompOffr+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   CompOffr+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                         c_office_l_Ceil + c_office_l_Days+
                         Veh  +
                         PricingFee+
@@ -2311,10 +2167,10 @@ load("Output//ln_CBre_Comp_13D.rdata")
 ```{r Model13E}
 
 load(file="Output//ln_CBre_Cons_13E.rdata")
-ln_CBre_Cons_13E <- glmer (data=smp,
+ln_CBre_Cons_13E <- glmer (data=def_breach,
                         ln_CBre_Then_Year ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                           #cl_US3_avg_sal_lag1+
-                          cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                          cl_def6_HHI_lag1+cl_def6_ratio_lag1+
                           cl_US6_avg_sal_lag1+
                           c_office_l_Ceil + c_office_l_Days+ 
                           Veh +
@@ -2336,9 +2192,9 @@ ln_CBre_Cons_13E <- glmer (data=smp,
 glmer_examine(ln_CBre_Cons_13E,display=TRUE)
 save(ln_CBre_Cons_13E,file="Output//ln_CBre_Cons_13E.rdata")
 
-ln_CBre_Comp_13E <- glmer (data=smp,
+ln_CBre_Comp_13E <- glmer (data=def_breach,
                         ln_CBre_Then_Year ~CompOffr+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
-                   CompOffr+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   CompOffr+cl_def6_ratio_lag1+cl_US6_avg_sal_lag1+
                         c_office_l_Ceil + c_office_l_Days+
                         Veh  +
                         PricingFee+
@@ -2486,11 +2342,11 @@ load("Output//ln_CBre_Cons_Comp_14A.rdata")
 
 
 
-ln_CBre_Cons_Comp_14A <- glmer (data=smp,
+ln_CBre_Cons_Comp_14A <- glmer (data=def_breach,
                       ln_CBre_Then_Year ~cl_def6_HHI_lag1 +cl_def6_ratio_lag1+cl_def6_obl_lag1+
                   cl_US6_avg_sal_lag1+
                     CompOffr+
-                        cl_Ceil + cl_Days+ 
+                        cl_Ceil_Then_Year + cl_Days+ 
                         Veh +
                         PricingFee + b_UCA +
                         b_Intl+
@@ -2500,7 +2356,7 @@ ln_CBre_Cons_Comp_14A <- glmer (data=smp,
                         # Veh:cl_def6_HHI_lag1  +
                         b_UCA:cl_def6_HHI_lag1 + 
                             b_UCA:CompOffr + 
-                        b_UCA:cl_Ceil+
+                        b_UCA:cl_Ceil_Then_Year+
                         
         (1 | NAICS) + 
                         (1 | Agency/Office) 
@@ -2593,11 +2449,11 @@ load("Output//ln_CBre_Cons_Comp_14B.rdata")
 
 
 
-ln_CBre_Cons_Comp_14B <- glmer (data=smp,
+ln_CBre_Cons_Comp_14B <- glmer (data=def_breach,
                       ln_CBre_Then_Year ~cl_def6_HHI_lag1 +cl_def6_ratio_lag1+cl_def6_obl_lag1+
                   cl_US6_avg_sal_lag1+
                     CompOffr+
-                        cl_Ceil + cl_Days+ 
+                        cl_Ceil_Then_Year + cl_Days+ 
                         Veh +
                         PricingFee + b_UCA +
                         b_Intl+
@@ -2607,7 +2463,7 @@ ln_CBre_Cons_Comp_14B <- glmer (data=smp,
                         # Veh:cl_def6_HHI_lag1  +
                         b_UCA:cl_def6_HHI_lag1 + 
                             b_UCA:CompOffr + 
-                        b_UCA:cl_Ceil+
+                        b_UCA:cl_Ceil_Then_Year+
                         
         (1 | NAICS) + 
                         (1 | Agency/Office) 
@@ -2699,13 +2555,13 @@ load("Output//ln_CBre_Comp_13B.rdata")
 ```{r Model15A}
 load("Output//ln_CBre_Cons_Comp_15A.rdata")
 
-ln_CBre_Cons_Comp_15A <- glmer (data=smp,
+ln_CBre_Cons_Comp_15A <- glmer (data=def_breach,
                  ln_CBre_Then_Year ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                   #cl_US3_avg_sal_lag1+
-                   cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+
                   cl_US6_avg_sal_lag1+
                    CompOffr+
-                                                cl_Ceil + cl_Days+ 
+                                                cl_Ceil_Then_Year + cl_Days+ 
                         Veh +
                         PricingFee + b_UCA +
                         b_Intl+
@@ -2714,7 +2570,7 @@ ln_CBre_Cons_Comp_15A <- glmer (data=smp,
                         
                         b_UCA:CompOffr +
                         b_UCA:cl_def6_HHI_lag1 + 
-                        b_UCA:cl_Ceil+
+                        b_UCA:cl_Ceil_Then_Year+
                         cl_def6_HHI_lag1:cl_def6_obl_lag1+
                          
                         (1 | NAICS3/NAICS) + 
@@ -2739,12 +2595,12 @@ stargazer::stargazer(ln_CBre_Cons_Comp_15A,ln_CBre_Cons_Comp_15A_1m,type="text",
 ```{r Model15B}
 load("Output//ln_CBre_Cons_15B.rdata")
 
-ln_CBre_Cons_15B <- glmer (data=smp,
+ln_CBre_Cons_15B <- glmer (data=def_breach,
                  ln_CBre_Then_Year ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                   #cl_US3_avg_sal_lag1+
-                   cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+
                   cl_US6_avg_sal_lag1+
-                                                cl_Ceil + cl_Days+ 
+                                                cl_Ceil_Then_Year + cl_Days+ 
                         Veh +
                         PricingFee + b_UCA +
                         b_Intl+
@@ -2753,7 +2609,7 @@ ln_CBre_Cons_15B <- glmer (data=smp,
                         
                         
                         b_UCA:cl_def6_HHI_lag1 + 
-                        b_UCA:cl_Ceil+
+                        b_UCA:cl_Ceil_Then_Year+
                         cl_def6_ratio_lag1:cl_def6_HHI_lag1+
                          
                         (1 | NAICS3/NAICS) + 
@@ -2764,13 +2620,13 @@ ln_CBre_Cons_15B <- glmer (data=smp,
 
 glmer_examine(ln_CBre_Cons_15B,display=TRUE)
 
-ln_CBre_Cons_Comp_15B <- glmer (data=smp,
+ln_CBre_Cons_Comp_15B <- glmer (data=def_breach,
                  ln_CBre_Then_Year ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                   #cl_US3_avg_sal_lag1+
-                   cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                   cl_def6_HHI_lag1+cl_def6_ratio_lag1+
                   cl_US6_avg_sal_lag1+
                    CompOffr+
-                                                cl_Ceil + cl_Days+ 
+                                                cl_Ceil_Then_Year + cl_Days+ 
                         Veh +
                         PricingFee + b_UCA +
                         b_Intl+
@@ -2779,7 +2635,7 @@ ln_CBre_Cons_Comp_15B <- glmer (data=smp,
                         
                         b_UCA:CompOffr +
                         b_UCA:cl_def6_HHI_lag1 + 
-                        b_UCA:cl_Ceil+
+                        b_UCA:cl_Ceil_Then_Year+
                         cl_def6_ratio_lag1:cl_def6_HHI_lag1+
                          
                         (1 | NAICS3/NAICS) + 
@@ -2810,13 +2666,13 @@ The new variable proves to not be significant.
 # stargazer::stargazer(ln_CBre_Cons_Comp_16A,type="text",
 #                        digits=2)
 # if(!exists("ln_CBre_Cons_Comp_16A")){
-  ln_CBre_Cons_Comp_16A <- glm (data=smp,
+  ln_CBre_Cons_Comp_16A <- glm (data=def_breach,
                                ln_CBre_Then_Year ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                                  #cl_US3_avg_sal_lag1+
-                                 cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                                 cl_def6_HHI_lag1+cl_def6_ratio_lag1+
                                  cl_US6_avg_sal_lag1+
                                  CompOffr+
-                                   cl_Ceil + cl_Days+ 
+                                   cl_Ceil_Then_Year + cl_Days+ 
                                  Veh +
                                  PricingFee + b_UCA +
                                  b_Intl+
@@ -2825,20 +2681,20 @@ The new variable proves to not be significant.
                                  
                                  b_UCA:CompOffr +
                                  b_UCA:cl_def6_HHI_lag1 + 
-                                 b_UCA:cl_Ceil+
+                                 b_UCA:cl_Ceil_Then_Year+
                                  cl_def6_HHI_lag1:cl_def6_obl_lag1+
                                  
                                  NAICS3 + 
                                  Agency ,
                                family=binomial(link="logit"))
   
-  ln_CBre_Cons_Comp_16A_1m <- glm (data=smp1m,
+  ln_CBre_Cons_Comp_16A_1m <- glm (data=def_breach,
                                ln_CBre_Then_Year ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                                  #cl_US3_avg_sal_lag1+
-                                 cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                                 cl_def6_HHI_lag1+cl_def6_ratio_lag1+
                                  cl_US6_avg_sal_lag1+
                                  CompOffr+
-                                 cl_Ceil + cl_Days+ 
+                                 cl_Ceil_Then_Year + cl_Days+ 
                                  Veh +
                                  PricingFee + b_UCA +
                                  b_Intl+
@@ -2847,7 +2703,7 @@ The new variable proves to not be significant.
                                  
                                  b_UCA:CompOffr +
                                  b_UCA:cl_def6_HHI_lag1 + 
-                                 b_UCA:cl_Ceil+
+                                 b_UCA:cl_Ceil_Then_Year+
                                  cl_def6_HHI_lag1:cl_def6_obl_lag1+
                                  
                                  NAICS3+
@@ -2875,13 +2731,13 @@ The new variable proves to not be significant.
 # stargazer::stargazer(ln_CBre_Cons_Comp_16B,type="text",
 #                        digits=2)
 # if(!exists("ln_CBre_Cons_Comp_16B")){
-  ln_CBre_Cons_Comp_16B <- Zelig::zelig(data=as.data.frame(smp),
+  ln_CBre_Cons_Comp_16B <- Zelig::zelig(data=as.data.frame(def_breach),
                                ln_CBre_Then_Year ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                                  #cl_US3_avg_sal_lag1+
-                                 cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                                 cl_def6_HHI_lag1+cl_def6_ratio_lag1+
                                  cl_US6_avg_sal_lag1+
                                  CompOffr+
-                                   cl_Ceil + cl_Days+ 
+                                   cl_Ceil_Then_Year + cl_Days+ 
                                  Veh +
                                  PricingFee + b_UCA +
                                  b_Intl+
@@ -2890,20 +2746,20 @@ The new variable proves to not be significant.
                                  
                                  b_UCA:CompOffr +
                                  b_UCA:cl_def6_HHI_lag1 + 
-                                 b_UCA:cl_Ceil+
+                                 b_UCA:cl_Ceil_Then_Year+
                                  cl_def6_HHI_lag1:cl_def6_obl_lag1+
                                  
                                  NAICS3 + 
                                  Agency ,
                                model="relogit")
   
-  ln_CBre_Cons_Comp_16B_1m <- Zelig::zelig(data=as.data.frame(smp1m),
+  ln_CBre_Cons_Comp_16B_1m <- Zelig::zelig(data=as.data.frame(def_breach),
                                ln_CBre_Then_Year ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                                  #cl_US3_avg_sal_lag1+
-                                 cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                                 cl_def6_HHI_lag1+cl_def6_ratio_lag1+
                                  cl_US6_avg_sal_lag1+
                                  CompOffr+
-                                 cl_Ceil + cl_Days+ 
+                                 cl_Ceil_Then_Year + cl_Days+ 
                                  Veh +
                                  PricingFee + b_UCA +
                                  b_Intl+
@@ -2912,7 +2768,7 @@ The new variable proves to not be significant.
                                  
                                  b_UCA:CompOffr +
                                  b_UCA:cl_def6_HHI_lag1 + 
-                                 b_UCA:cl_Ceil+
+                                 b_UCA:cl_Ceil_Then_Year+
                                  cl_def6_HHI_lag1:cl_def6_obl_lag1+
                                  
                                  NAICS3+

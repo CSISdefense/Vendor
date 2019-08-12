@@ -1,0 +1,756 @@
+---
+title: "Contract Breach Size"
+author: "Greg Sanders"
+date: "Wednesday, February 8, 2017"
+output:
+  html_document:
+    keep_md: yes
+--- 
+
+Modeling Likelihood and Size of Contract Termination
+============================================================================
+
+#Setup
+```{r Libraries, echo = FALSE}
+library(csis360)
+library(ggplot2)
+library(dplyr)
+library(arm)
+library(R2WinBUGS)
+library(Hmisc)
+library(sjstats)
+source("..\\..\\scripts\\DIIGstat.r")
+source("..\\..\\scripts\\NAICS.r")
+
+axis.text.size<-10
+strip.text.size<-10
+legend.text.size<-8
+# table.text.size<-5.75
+title.text.size<-12
+geom.text.size<-12
+
+main.text.size<-1
+note.text.size<-1.40
+
+```
+
+Contracts are classified using a mix of numerical and categorical variables. While the changes in numerical variables are easy to grasp and summarize, a contract may have one line item that is competed and another that is not. As is detailed in the exploration on R&D, we are only considering information available prior to contract start. The percentage of contract obligations that were competed is a valuable benchmark, but is highly influenced by factors that occured after contract start.
+
+##Prepare Data
+
+First we load the data. The dataset used is a U.S. Defense Contracting dataset derived from FPDS.
+
+The final sample uses 1 million rows of data, but as a computation shortcut, only a subset of the data is needed to allow for processing of models in minutes rather than hours.
+
+```{r ReadInData, echo = TRUE}
+load(file="..//..//data//clean//def_sample.Rdata")
+rm(def_breach)
+```
+
+### Contract Ceiling Breaches
+
+Contract Ceiling Breaches and the number of change orders can be calculated for the entire sample.  Change orders are determined using the *Reason for Modification* field in FPDS. 
+
+#Level-1 Regression Model
+
+##Study Variable: Competition
+Competition has the potential to reduce terminations by giving the government more options in vendors and encouraging better behavior from the contractor that was chosen. 
+
+###Model 01A: No Competition / Number of Offer Categories 
+
+```{r Model01A}
+
+#Frequency Plot
+summary_discrete_plot(smp,"CompOffr",metric="cbre")
+
+#Model
+ln_CBre_Comp_01A <- glm (data=smp,
+                 ln_CBre_Then_Year ~ CompOffr)
+summary(ln_CBre_Comp_01A)
+summary_residual_compare(ln_CBre_Comp_01A,bins=2, skip_vif=TRUE)
+
+```
+
+For ceiling breaches, no competition is associated with high  frequency, though oddlt  so are 3-4 offers. Competition with 2 offers performs best. Nonetheless expectations are upheld across all variables as all forms of competition
+
+## Study Variable Consolidation
+
+### Level 6
+#### Model NCS6A: l_def6_HHI_lag1
+
+Expectations is that more consolidation is assoiated a change in occurance of breaches.
+```{r ModelNCS6A}
+#Frequency Plot for unlogged ceiling
+summary_continuous_plot(smp1m,"def6_HHI_lag1",metric="cbre")
+summary_continuous_plot(smp1m,"def6_HHI_lag1",metric="cbre",log=TRUE)
+summary_continuous_plot(smp1m,"def3_HHI_lag1",metric="cbre")
+summary_continuous_plot(smp1m,"def3_HHI_lag1",metric="cbre",log=TRUE)
+
+
+#Model
+ln_CBre_Cons_NCS6A <- glm (data=smp,
+                 ln_CBre_Then_Year ~cl_def6_HHI_lag1)
+summary(ln_CBre_Cons_NCS6A)
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(ln_CBre_Comp_01A,ln_CBre_Cons_NCS6A,type="text",
+                       digits=2)
+  
+#For first model in category, include only the new model(s), skip_vif=true
+summary_residual_compare(ln_CBre_Cons_NCS6A,bins=20,skip_vif = TRUE)
+
+
+```
+
+Expectation is are upheld with a negative sign.
+
+#### Model NCS6B: Defense to Overall ratio
+The higher the ratio of defense obligations to reciepts in the overall economy, the DoD holds a monosopy over a sector. Given the challenges of monosopy, the a higher ratio estimates a greater  risk of ceiling breaches.
+```{r ModelNCS6B}
+#Frequency Plot for unlogged ceiling
+summary_continuous_plot(smp1m,"capped_def6_ratio_lag1",metric="cbre")
+      summary_continuous_plot(smp1m,"capped_def6_ratio_lag1",metric="cbre",log=TRUE)
+
+      summary_continuous_plot(smp1m,"capped_def3_ratio_lag1",metric="cbre")
+      summary_continuous_plot(smp1m,"capped_def3_ratio_lag1",metric="cbre",log=TRUE)
+
+
+
+#Model
+ln_CBre_NCS6B <- glm (data=smp,
+                 ln_CBre_Then_Year ~cl_def6_ratio_lag1)
+summary(ln_CBre_NCS6B)
+
+# 
+# #Plot the fitted model plot
+# ln_CBre_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(ln_CBre_02A))}
+# 
+# #Competition curves
+# fitted_ln_CBre_model(smp,"cl_Ceil_Then_Year") + stat_function(fun = ln_CBre_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = ln_CBre_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(ln_CBre_Cons_NCS6A,ln_CBre_NCS6B,
+                       ln_CBre_Comp_01A,type="text",
+                       digits=2)
+
+
+#For first model in category, include only the new model(s), skip_vif=true
+summary_residual_compare(ln_CBre_NCS6B,skip_vif=TRUE,bins=10)
+
+
+```
+The results align with expectations, when  ratio  is  logged.
+
+
+#### Model NCS6C: cl_def6_obl_lag1
+Defense sector obligations are added to better adjust for the fact that larger sectors tend to have lower HHI indices if only because they include a broader range of activities. In addition, Acting somewhat as a proxy for MDAP status, larger sectors may also have a greater risk of cascading problems. Thus greater defense obligations in a given sector are expected to estimate a greater likelihood over ceiling breaches,
+Expectations are  unchanged.
+```{r ModelNCS6C}
+
+summary_continuous_plot(smp1m,"cl_def6_obl_lag1",metric="cbre")
+      summary_continuous_plot(smp1m,"cl_def6_obl_lag1",metric="cbre",log=TRUE)
+
+
+#Model
+ln_CBre_NCS6C <- glm (data=smp,
+                 ln_CBre_Then_Year ~cl_def6_obl_lag1)
+summary(ln_CBre_NCS6C)
+
+#Plot residuals versus fitted
+stargazer::stargazer(ln_CBre_Cons_NCS6A,ln_CBre_NCS6B,ln_CBre_NCS6C,
+                       type="text",
+                       digits=2)
+
+
+#For first model in category, include only the new model(s), skip_vif=true
+summary_residual_compare(ln_CBre_NCS6C,bins=10,skip_vif = TRUE)
+
+
+```
+The result runs contrary to expectation. It also may be introducing a potentially parabolic pattern to the residuals. For low values, the fitted value goes below the minimum possible outcome (0, corresponding to no/$1 dollar of growth) and at the high end the fitted values correspond with progressively larger ceiling breaches and end up estimating them.
+
+
+#### Model NCS6D: Average Salary
+Average salary can be an proxy for unobserved skill requirements. We expect that a greater skill requirement will estimate a greater risk of ceiling breaches.
+```{r ModelNCS6D}
+#Frequency Plot for unlogged ceiling
+
+summary_continuous_plot(smp,"US6_avg_sal_lag1",metric="cbre")
+summary_continuous_plot(smp,"US6_avg_sal_lag1",metric="cbre" ,log=TRUE)
+
+#Model
+
+ln_CBre_NCS6D <- glm (data=smp,
+                 ln_CBre_Then_Year ~cl_US6_avg_sal_lag1 )
+summary(ln_CBre_NCS6D)
+
+
+
+#Plot residuals versus fitted
+stargazer::stargazer(ln_CBre_Cons_NCS6A,ln_CBre_NCS6B,ln_CBre_NCS6C,ln_CBre_NCS6D,
+                       type="text",
+                       digits=2)
+
+
+# For individual models, only the new model(s) unless they have a clear counterpart or alternate, skip_vif=true
+summary_residual_compare(ln_CBre_NCS6D,bins=10,skip_vif = TRUE)
+
+```
+Results run contrary to expectations. Interestingly, the scatter plot is more in line with expectations, suggesting that larger salary may be associated with less frequent but greater magnitude breaches.
+
+#### Model NCS6E: Cumulative
+```{r ModelNCS6l}
+#Model
+ln_CBre_Cons_NCS6E <- glm (data=smp,
+                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1)
+glmer_examine(ln_CBre_Cons_NCS6E)
+
+ln_CBre_Comp_NCS6E <- glm (data=smp,
+                 ln_CBre_Then_Year ~CompOffr+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1)
+glmer_examine(ln_CBre_Comp_NCS6E)
+# 
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(ln_CBre_Cons_NCS6A,ln_CBre_NCS6B,ln_CBre_NCS6C,ln_CBre_NCS6D,ln_CBre_Cons_NCS6E,
+                       ln_CBre_Comp_01A,ln_CBre_Comp_NCS6E,type="text",
+                       digits=2)
+
+#For the first cumulative model(s) compare to compnent study variables, skip_vif =false
+summary_residual_compare(ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS6E,bins=10)
+summary_residual_compare(ln_CBre_Comp_01A,ln_CBre_Comp_NCS6E,bins=2)
+
+
+```
+Introducing other variables causes ratio to lose signifcance and increases the magnitude of obligations and average salary. 
+
+The parabolic pattern in the binned residuals appears to have grown stronger once all of the NAICS6 variables are included in the same model. 
+
+
+### Level 3
+#### Model NCS3A: cl_def3_HHI
+As with NAICS6, consolidation is expected to influence ceiling breach occurance/size, but the direction is not predicted.
+```{r ModelNCS3A}
+#Frequency Plot for unlogged ceiling
+summary_continuous_plot(smp,"def3_HHI_lag1",metric="cbre")
+summary_continuous_plot(smp,"def3_HHI_lag1",metric="cbre",log=TRUE)
+
+#Model
+ln_CBre_Cons_NCS3A <- glm (data=smp,
+                 ln_CBre_Then_Year ~cl_def3_HHI_lag1)
+summary(ln_CBre_Cons_NCS3A)
+
+
+#Plot residuals versus fitted
+stargazer::stargazer(ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS6E,ln_CBre_Cons_NCS3A,
+                       ln_CBre_Comp_01A,ln_CBre_Comp_NCS6E,type="text",
+                       digits=2)
+
+
+#For subsequent models in category, compare to prior in category or prior highly relevant, skip_vif=true
+summary_residual_compare(ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,bins=20,skip_vif=TRUE)
+
+
+```
+
+Expectations are upheld with a negative sign. That said, this is another case where the frequency and the magnitude of ceiling breaches may be trending in opposite directions.
+
+#### Model NCS3B: Defense to Overall ratio
+The higher the ratio of defense obligations to reciepts in the overall economy, the DoD holds a monosopy over a sector. Given the challenges of monosopy, the a higher ratio estimates a greater  risk of ceiling breaches.
+```{r ModelNCS3l}
+#Frequency Plot for unlogged ceiling
+
+
+summary_continuous_plot(smp,"capped_def3_ratio_lag1",metric="cbre")
+summary_continuous_plot(smp,"capped_def3_ratio_lag1",metric="cbre",log=TRUE)
+
+#Model
+ln_CBre_NCS3B <- glm (data=smp,
+                 ln_CBre_Then_Year ~ cl_def3_ratio_lag1)
+summary(ln_CBre_NCS3B)
+# 
+stargazer::stargazer(ln_CBre_Cons_NCS3A,ln_CBre_NCS3B,ln_CBre_NCS6B,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS6E,
+                       ln_CBre_Comp_01A,ln_CBre_Comp_NCS6E,
+                     type="text",
+                       digits=2)
+
+#For subsequent models in category, compare to prior in category or prior highly relevant, skip_vif=true
+summary_residual_compare(ln_CBre_NCS6B,ln_CBre_NCS3B,bins=10,skip_vif = TRUE)
+
+
+
+```
+The results align with the hypothesis, although the magnitude is small, if larger in magnitude than the level 6 version. 
+
+
+
+
+
+#### Model NCS3C: Cumulative Model
+Consolidation at lessa nd more granular levels may have different effects. Efficiencies are often used to describe sectors, like utilities, with high barriers to entry. Many of these aspects seem like they would already be captured at less granular NAICS levels, e.g. power plants, rather than more specific NAICS levels, like solar vs. coal. As a result, consolidation for more granular NAICS codes should estimate higher rates of ceiling breaches compared to less granular NAICS code.
+
+We'll start by adding in everything from both models and seeing what violates VIF.
+```{r ModelNCS3C}
+#Frequency Plot for unlogged ceiling
+
+
+
+#Model
+ln_CBre_Cons_NCS3C <- glm (data=smp,
+                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   cl_def3_HHI_lag1+cl_def3_ratio_lag1)
+glmer_examine(ln_CBre_Cons_NCS3C)
+
+ln_CBre_Comp_NCS3C <- glm (data=smp,
+                 ln_CBre_Then_Year ~CompOffr+
+                   cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   cl_def3_ratio_lag1)
+glmer_examine(ln_CBre_Comp_NCS3C)
+# 
+
+
+#Plot residuals versus fitted
+  stargazer::stargazer(ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS6E,
+                       ln_CBre_Cons_NCS3A,ln_CBre_NCS3B,ln_CBre_Cons_NCS3C,
+                       ln_CBre_Comp_01A,ln_CBre_Comp_NCS6E,ln_CBre_Comp_NCS3C,type="text",
+                       digits=2)
+
+
+
+# 
+# #Plot the fitted model plot
+# ln_CBre_02A_curve<-function(x, Comp){invlogit(cbind(1,Comp,x) %*%  coef(ln_CBre_02A))}
+# 
+# #Competition curves
+# fitted_ln_CBre_model(smp,"cl_Ceil_Then_Year") + stat_function(fun = ln_CBre_02A_curve, 
+#                              args=list(Comp=0),color="blue")+
+#   stat_function(fun = ln_CBre_02A_curve, 
+#                              args=list(Comp=2),color="blue")
+
+
+#ompare with cumulative consolidation and competition
+summary_residual_compare(ln_CBre_Cons_NCS6E,ln_CBre_Cons_NCS3C,ln_CBre_Comp_NCS6E,ln_CBre_Comp_NCS3C,bins=10)
+
+```
+Def 6 HHI reduced in magnitude. Def 3 ratio loses significance for consolidation but merely  reduces  in magnitude for competition, althouogh def 6 ratio is now significant in the opposite direction. and changes sign.
+
+Otherwise some reduction in magnitude, e.g. for 3-4 offers, but nothing dramatic.
+
+
+##Scope Variables
+###Model 02A: Cost Ceiling
+
+
+```{r Model02A}
+#Frequency Plot for unlogged ceiling
+summary_continuous_plot(smp,"UnmodifiedCeiling_Then_Year",metric="cbre",
+               bins=1000)
+#Frequency Plot for logged ceiling
+summary_continuous_plot(smp,"UnmodifiedCeiling_Then_Year",metric="cbre",
+               log=TRUE)
+
+
+#Model
+ln_CBre_02A <- glm (data=smp,
+                 ln_CBre_Then_Year ~ cl_Ceil_Then_Year)
+summary(ln_CBre_02A)
+
+#Plot residuals versus fitted
+stargazer::stargazer(ln_CBre_02A,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_Cons_NCS3C,
+                       ln_CBre_Comp_01A,ln_CBre_Comp_NCS3C,type="text",
+                       digits=2)
+
+
+#For first model in category, include only the new model(s), skip_vif=true
+summary_residual_compare(ln_CBre_02A,bins=20,skip_vif = TRUE)
+
+```
+
+Contract ceiling has a significant relationship, the largest magnitude of the models yet included, and more explanatory power than the previous cumulative model. That said, while the relationship  with contract size for the sample that overruns appears to be linear (once both are logged), the relatonship with frequency appears to follow an exponential pattern. Likewise the residuals are parabolic. Perhaps l_ceil^2 should be introduced.
+
+
+###Model 02B: Maximum Duration
+
+
+```{r Model02B}
+#Frequency Plot for max duration
+summary_continuous_plot(smp,"UnmodifiedDays",
+               bins=1000,metric="cbre")
+
+#Frequency Plot for logged max duration
+summary_continuous_plot(smp,"UnmodifiedDays", metric="cbre",log=TRUE)
+
+#Model
+ln_CBre_02B <- glm (data=smp,
+                 ln_CBre_Then_Year ~ cl_Days )
+summary(ln_CBre_02B)
+
+
+stargazer::stargazer(ln_CBre_02A,ln_CBre_02B,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_Cons_NCS3C,
+                       ln_CBre_Comp_01A,ln_CBre_Comp_NCS3C,type="text",
+                       digits=2)
+
+
+
+#Compare with prior in category
+summary_residual_compare(ln_CBre_02B,bins=10,skip_vif = TRUE)
+
+```
+Initial duration has the expected relationship, though not as strongly as ceiling. and a stronger one than for ceiling. The frequency relationship looks exponential, if  perhaps not as clearly as for ceiling, and the breach size relationship, when breaches occur, is slightly parabolic, with short duration contracts and long durations contracts both associated with some of the larger breaches.
+
+###Model 02C: Both Scope
+
+
+```{r Model02C}
+#Model
+ln_CBre_02C <- glm (data=smp,
+                 ln_CBre_Then_Year ~ cl_Ceil_Then_Year+ cl_Days )
+summary(ln_CBre_02C)
+
+
+stargazer::stargazer(ln_CBre_02A,ln_CBre_02B,ln_CBre_02C,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_Cons_NCS3C,
+                       ln_CBre_Comp_01A,ln_CBre_Comp_NCS3C,type="text",
+                       digits=2)
+
+#ompare with cumulative consolidation and competition
+summary_residual_compare(ln_CBre_Cons_NCS3C,ln_CBre_02C,ln_CBre_Comp_NCS6E,ln_CBre_02C,bins=10,skip_vif = FALSE)
+
+
+
+```
+Including both moderates both of their influence. 
+
+###Model 02D: Cumulative 
+
+
+```{r Model02D}
+#Model
+ln_CBre_02C <- glm (data=smp,
+                 ln_CBre_Then_Year ~ cl_Ceil_Then_Year+ cl_Days )
+summary(ln_CBre_02C)
+
+
+
+#Model
+ln_CBre_Cons_02D <- glm (data=smp,
+                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                   cl_Ceil_Then_Year+ cl_Days)
+glmer_examine(ln_CBre_Cons_02D)
+
+ln_CBre_Comp_02D <- glm (data=smp,
+                 ln_CBre_Then_Year ~CompOffr+
+                   cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   cl_def3_ratio_lag1+
+                   cl_Ceil_Then_Year+ cl_Days)
+glmer_examine(ln_CBre_Comp_02D)
+
+
+
+
+stargazer::stargazer(ln_CBre_02A,ln_CBre_02B,ln_CBre_02C,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_Cons_NCS3C,ln_CBre_Cons_02D,
+                       ln_CBre_Comp_01A,ln_CBre_Comp_NCS3C,ln_CBre_Comp_02D,type="text",
+                       digits=2)
+
+#ompare with cumulative consolidation and competition
+summary_residual_compare(ln_CBre_Cons_NCS3C,ln_CBre_Cons_02D,ln_CBre_Comp_NCS6E,ln_CBre_Comp_02D,bins=10)
+
+
+if(exists("ln_CBre_NCS6C")){
+  #Drop models  not used in NAICS3 comparisons
+  rm(ln_CBre_NCS6C,ln_CBre_NCS6D)
+  #Drop individual models that  aren't study  variables.
+  rm(ln_CBre_NCS3B)
+  #Drop NAICS6 models used in NAICS3 comparisons, execept original HHI
+  rm(ln_CBre_NCS6B)
+}
+
+```
+Adding ceiling and duration strengthens the significance of HHI6 but weakens def3_ratio in the consolidation model. Likewise def3_ratio loses significance for the competition model.
+
+##Contract Vehicle
+Our dataset includes both stand alone contract awards and task orders that are under larger indefinite delivery vehilces (IDVs). 
+
+###Model 03A: Single-Award, Multi-Award, and Other Indefinite Delivery Vehicles
+Expectations, lower ceiling breaches for IDVs in general, in particular for FSS/GWAC
+
+```{r Model03A}
+#Frequency Plot
+summary_discrete_plot(smp,"Veh")
+
+
+#Create the model
+ln_CBre_03A <- glm (data=smp,
+                 ln_CBre_Then_Year ~ Veh)
+summary(ln_CBre_03A)
+
+
+
+stargazer::stargazer(ln_CBre_03A,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_Cons_02D,
+                       ln_CBre_Comp_01A,ln_CBre_Comp_02D,type="text",
+                       digits=2)
+
+#For first model in category, include only the new model(s), skip_vif=true
+summary_residual_compare(ln_CBre_03A,bins=3,skip_vif = TRUE)
+
+```
+
+Expetation doesn't really hold, both Multiaward and BPA/BOA show higher more/larger ceiling breaches.
+
+
+###Model 03B: Cumulative
+
+```{r Model03B}
+#Model
+ln_CBre_Cons_03B <- glm (data=smp,
+                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                   cl_Ceil_Then_Year+ cl_Days+
+                   Veh)
+glmer_examine(ln_CBre_Cons_03B)
+
+ln_CBre_Comp_03B <- glm (data=smp,
+                 ln_CBre_Then_Year ~CompOffr+
+                   cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   cl_def3_ratio_lag1+
+                   cl_Ceil_Then_Year+ cl_Days+
+                   Veh)
+glmer_examine(ln_CBre_Comp_03B)
+
+
+
+
+stargazer::stargazer(ln_CBre_03A,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_Cons_02D,ln_CBre_Cons_03B,
+                       ln_CBre_Comp_01A,ln_CBre_Comp_02D,ln_CBre_Comp_03B,type="text",
+                       digits=2)
+
+
+
+#Compare to prior cumulative model(s), skip_vif =false
+summary_residual_compare(ln_CBre_Cons_02D,ln_CBre_Cons_03B,ln_CBre_Comp_02D,ln_CBre_Comp_03B,bins=10,skip_vif = FALSE)
+#Remove all but cumulative model
+if(exists("ln_CBre_02A"))  rm(ln_CBre_02A,ln_CBre_02B,ln_CBre_02C)
+
+
+```
+Intriguingly,  the sign on single award IDVs flips after the introduction of the full model.
+
+##Type of Contract
+
+The next step adds a measure for whether the contract was cost-based or fixed-price. Prior CSIS research has found that fixed-price contracts do face a higher risk of termination across the board.
+
+###Model 04A: Incentive Fees
+
+Fixed-price contracts are generally thought to be at greater risk of overruns, as they are less flexible, although prior CSIS work complicates this finding.
+
+In the performance of the defense acquisition system report, the benefits found were reduced cost overruns. That could help avoid terminations, but it's an indirect connection at best. Unfortunately, incentive fees are incredibly rare, which makes them challenging to examine directly.
+
+
+```{r Model04A}
+
+#Frequency Plot
+summary_discrete_plot(smp,"PricingFee")
+
+
+
+
+#Create the model
+ln_CBre_04A <- glm (data=smp,
+                 ln_CBre_Then_Year ~PricingFee)
+summary(ln_CBre_04A)
+
+
+
+stargazer::stargazer(ln_CBre_04A,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_Cons_03B,
+                       ln_CBre_Comp_01A,ln_CBre_Comp_03B,type="text",
+                       digits=2)
+
+
+
+
+
+#For first model in category, include only the new model(s), skip_vif=true
+summary_residual_compare(ln_CBre_04A,bins=2,skip_vif = TRUE)
+
+
+```
+Expectations are not particularly met, incentive fees have a lower coefficient than cost based, other fixed price is lowest.
+
+
+
+###Model 04B: Undefinitized Contract Awards
+Undefinitized Contract Awards allow for quick action in situations where there is not time or information to establish all of a contracts properties at the time of signing. They have been found by the GAO and the Performance of the Defense Acquisition studies to contain notable risks, primarily relating to cost overruns and thus ceiling breaches. Will these risks also carry into terminations and ceiling breaches?
+
+
+```{r Model04B}
+
+#Frequency Plot
+summary_discrete_plot(smp,"UCA")
+
+
+
+#Create the model
+ln_CBre_04B <- glm (data=smp,
+                 ln_CBre_Then_Year ~ b_UCA )
+summary(ln_CBre_04B)
+
+
+stargazer::stargazer(ln_CBre_04A,ln_CBre_04B,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_Cons_03B,
+                       ln_CBre_Comp_01A,ln_CBre_Comp_03B,type="text",
+                       digits=2)
+
+
+#Compare to earlier contract types
+summary_residual_compare(ln_CBre_04A,ln_CBre_04B,bins=2,skip_vif = TRUE)
+
+
+```
+UCAs are associated with more/larger ceiling breaches ,as expected.
+
+###Model 04C: Cumulative
+
+```{r Model04C}
+#Create the model
+ln_CBre_Cons_04C <- glm (data=smp,
+                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                   cl_Ceil_Then_Year+ cl_Days+
+                   Veh+
+                   PricingFee+b_UCA)
+glmer_examine(ln_CBre_Cons_04C)
+
+ln_CBre_Comp_04C <- glm (data=smp,
+                 ln_CBre_Then_Year ~CompOffr+
+                   cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   cl_def3_ratio_lag1+
+                   cl_Ceil_Then_Year+ cl_Days+
+                   Veh+
+                   PricingFee+b_UCA)
+glmer_examine(ln_CBre_Comp_04C)
+
+
+
+stargazer::stargazer(ln_CBre_04A,ln_CBre_04B,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_Cons_03B,ln_CBre_Cons_04C,
+                       ln_CBre_Comp_01A,ln_CBre_Comp_03B,ln_CBre_Comp_04C,type="text",
+                       digits=2)
+
+
+#Compare with cumulative consolidation and competition
+summary_residual_compare(ln_CBre_Cons_03B,ln_CBre_Comp_04C,ln_CBre_Comp_03B,ln_CBre_Comp_04C,bins=20,skip_vif = TRUE)
+rm(ln_CBre_04A,ln_CBre_04B)
+
+if(exists("ln_CBre_03A")) rm(ln_CBre_03A)
+
+```
+
+The pricing variables reduce significance for HHI and magnitude for Comp. Changes for vehicle are more sporatic.  Def3_ratio and ceiling also face decreasing/loss of significance. UCA and Combination/Fee have perhaps the largest coefficients.
+
+##Place of Performance
+###Model 05A: Any International
+
+International contracts may often be in conflict zones and thus experience greater risk. International contracts are exepected to estimate a higher probability of ceiling breaches.
+```{r Model05A_Intl}
+
+#Frequency Plot
+summary_discrete_plot(smp,"Intl")
+
+
+
+#Create the model
+ln_CBre_05A <- glm(data=smp,
+  ln_CBre_Then_Year ~b_Intl
+)
+summary(ln_CBre_05A)
+
+
+
+stargazer::stargazer(ln_CBre_05A,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_Cons_04C,
+                       ln_CBre_Comp_01A,ln_CBre_Comp_04C,type="text",
+                       digits=2)
+
+
+#For first model in category, include only the new model(s), skip_vif=true
+summary_residual_compare(ln_CBre_05A,bins=2,skip_vif = TRUE)
+
+```
+
+International performance of contract had a positive  coefficent as expected.
+
+###Model 05B: Cumulative
+
+```{r Model05B_Comp}
+
+#Create the model
+ln_CBre_Cons_05B <- glm (data=smp,
+                 ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                   cl_Ceil_Then_Year+ cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl)
+glmer_examine(ln_CBre_Cons_05B)
+
+ln_CBre_Comp_05B <- glm (data=smp,
+                 ln_CBre_Then_Year ~CompOffr+
+                   cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   cl_def3_ratio_lag1+
+                   cl_Ceil_Then_Year+ cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl)
+glmer_examine(ln_CBre_Comp_05B)
+
+
+
+
+stargazer::stargazer(ln_CBre_05A,ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_Cons_04C,ln_CBre_Cons_05B,
+                       ln_CBre_Comp_01A,ln_CBre_Comp_04C,ln_CBre_Comp_05B,type="text",
+                       digits=2)
+
+#ompare with cumulative consolidation and competition
+summary_residual_compare(ln_CBre_Cons_04C,ln_CBre_Cons_05B,ln_CBre_Comp_04C,ln_CBre_Comp_05B,bins=20,skip_vif = FALSE)
+
+rm(ln_CBre_05A)
+
+if(exists("ln_CBre_04A")) rm(ln_CBre_04A,ln_CBre_04B)
+
+```
+Not much in the way of big changes, though reduction in significance for ceiling for competition.
+
+
+## Competition and Consolidation together
+### Model 09A: Combination
+```{r Model09A}
+
+
+#Sumamry plot
+
+ln_CBre_Cons_Comp_09A <- glm (data=smp,
+                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                   cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                   cl_Ceil_Then_Year+ cl_Days+
+                   Veh+
+                   PricingFee+b_UCA+
+                   b_Intl)
+glmer_examine(ln_CBre_Cons_Comp_09A)
+
+
+
+stargazer::stargazer(ln_CBre_Cons_NCS6A,ln_CBre_Cons_NCS3A,ln_CBre_Cons_05B,
+                       ln_CBre_Comp_01A,ln_CBre_Comp_05B,ln_CBre_Cons_Comp_09A,type="text",
+                       digits=2)
+
+#Compare with cumulative consolidation and competition
+summary_residual_compare(ln_CBre_Cons_05B,ln_CBre_Cons_Comp_09A,ln_CBre_Comp_05B,ln_CBre_Cons_Comp_09A,bins=20,skip_vif = TRUE)
+
+
+if(exists("ln_CBre_05A")) rm(ln_CBre_05A)
+```
+There is no real hange in the study variables. Instead, those controls that were significant in only one of the two models, 
+cl_Ceil_Then_Year, FSS/GWAC, and BPA/BOA lost significance. b_Intl also increased in magnitude. The patterns in the residuals show no signs of abating, suggesting that ceiling breaches may simply be too rare for this approach. 
