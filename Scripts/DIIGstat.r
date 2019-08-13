@@ -1111,37 +1111,44 @@ residuals_binned<-function(model,col="fitted",bins=40){
   }
   else
   {
-    if(!is.null(model$model$b_CBre)){
-      data$outcome<-model$model$b_CBre
+    data$outcome<-model$y
+    if(is.null(model$model$b_CBre) & is.null(model$model$b_Term))
       data<-binned.resids (data[,col],
                            data$residuals, nclass=bins)$binned
-    } else if(!is.null(model$model$b_Term)){
-      data$outcome<-model$model$b_Term
+    else
       data<-binned.resids (data[,col],
-                           data$residuals, nclass=bins)$binned
-    } else if(!is.null(model$model$lp_CBre)){
-      data$outcome<-model$model$lp_CBre
-      data<-binned.resids (data[,col],
-                           data$residuals, nclass=bins)$binned
-    } else if(!is.null(model$model$ln_CBre)){
-      data$outcome<-model$model$ln_CBre
-      data<-binned.resids (data[,col],
-                           data$residuals, nclass=bins)$binned
-    } else if(!is.null(model$model$lp_OptGrowth)){
-      data$outcome<-model$model$lp_OptGrowth
-      data<-binned.resids (data[,col],
-                           data$residuals, nclass=bins)$binned
-    } else if(!is.null(model$model$ln_OptGrowth)){
-      data$outcome<-model$model$ln_OptGrowth
-      data<-binned.resids (data[,col],
-                           data$residuals, nclass=bins)$binned
-    } else if(!is.null(model$model$l_Offr)){
-      # graph<-resid_plot(model,sample=25000)
-      data$outcome<-model$model$l_Offr
-      data<-binned.resids (data[,col],
-                           data$residuals, nclass=bins)$binned
-    } 
-    else{stop("Outcome variable not recognized.")}
+                           data$fitted-model$y, nclass=bins)$binned
+    # if(!is.null(model$model$b_CBre)){
+    #   data$outcome<-model$model$b_CBre
+    #   data<-binned.resids (data[,col],
+    #                        data$residuals, nclass=bins)$binned
+    # } else if(!is.null(model$model$b_Term)){
+    #   data$outcome<-model$model$b_Term
+    #   data<-binned.resids (data[,col],
+    #                        data$residuals, nclass=bins)$binned
+    # } else if(!is.null(model$model$lp_CBre)){
+    #   data$outcome<-model$model$lp_CBre
+    #   data<-binned.resids (data[,col],
+    #                        data$residuals, nclass=bins)$binned
+    # } else if(!is.null(model$model$ln_CBre)){
+    #   data$outcome<-model$model$ln_CBre
+    #   data<-binned.resids (data[,col],
+    #                        data$residuals, nclass=bins)$binned
+    # } else if(!is.null(model$model$lp_OptGrowth)){
+    #   data$outcome<-model$model$lp_OptGrowth
+    #   data<-binned.resids (data[,col],
+    #                        data$residuals, nclass=bins)$binned
+    # } else if(!is.null(model$model$ln_OptGrowth)){
+    #   data$outcome<-model$model$ln_OptGrowth
+    #   data<-binned.resids (data[,col],
+    #                        data$residuals, nclass=bins)$binned
+    # } else if(!is.null(model$model$l_Offr)){
+    #   # graph<-resid_plot(model,sample=25000)
+    #   data$outcome<-model$model$l_Offr
+    #   data<-binned.resids (data[,col],
+    #                        data$residuals, nclass=bins)$binned
+    # } 
+    # else{stop("Outcome variable not recognized.")}
   }
   
   
@@ -1234,12 +1241,12 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
                             resid_plot(model2_new,sample=25000),
                             ncol=2)
     
-    
-    gridExtra::grid.arrange(residuals_binned(model1_old,bins=bins),
-                            residuals_binned(model1_new,bins=bins),
-                            residuals_binned(model2_old,bins=bins),
-                            residuals_binned(model2_new,bins=bins),
-                            ncol=2)
+    if(!"b_Term" %in% colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old))
+      gridExtra::grid.arrange(residuals_binned(model1_old,bins=bins),
+                              residuals_binned(model1_new,bins=bins),
+                              residuals_binned(model2_old,bins=bins),
+                              residuals_binned(model2_new,bins=bins),
+                              ncol=2)
     
     
     
@@ -1303,10 +1310,10 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
                             binned_fitted_versus_residuals(model1_new,bins=bins),
                             ncol=2)
     
-    # if(bins>=3)
-    gridExtra::grid.arrange(resid_plot(model1_old,sample=25000),
-                            resid_plot(model1_new,sample=25000),
-                            ncol=2)
+    if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old))
+      gridExtra::grid.arrange(resid_plot(model1_old,sample=25000),
+                              resid_plot(model1_new,sample=25000),
+                              ncol=2)
     
     gridExtra::grid.arrange(residuals_binned(model1_old,bins=bins),
                             residuals_binned(model1_new,bins=bins),
@@ -1362,11 +1369,15 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
     } 
     
     
-    # if(bins>=3)
-    gridExtra::grid.arrange(
+    if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old))
+      gridExtra::grid.arrange(
+        binned_fitted_versus_residuals(model1_old,bins=bins),
+        residuals_binned(model1_old,bins=bins),
+        resid_plot(model1_old,sample=25000)
+      )
+    else gridExtra::grid.arrange(
       binned_fitted_versus_residuals(model1_old,bins=bins),
-      residuals_binned(model1_old,bins=bins),
-      resid_plot(model1_old,sample=25000)
+      residuals_binned(model1_old,bins=bins)
     )
     # }
     # else{
