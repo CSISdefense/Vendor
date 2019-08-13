@@ -1221,9 +1221,15 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
     #All four passed
     if(!is.na(bins)){
       #Plot residuals versus fitted
+      if("cl_US6_avg_sal_lag1Const" %in% model_colnames(model1_old) &"cl_US6_avg_sal_lag1Const" %in% model_colnames(model1_new)) bins<-bins+5
+      if("cl_CFTE" %in% model_colnames(model1_old) &"cl_CFTE" %in% model_colnames(model1_new)) bins<-bins+5
+      if("pPBSC" %in% model_colnames(model1_old) &"pPBSC" %in% model_colnames(model1_new)) bins<-bins+5
+      if("pOffPSC" %in% model_colnames(model1_old) &"pOffPSC" %in% model_colnames(model1_new)) bins<-bins+5
+      if("pOffPSC" %in% model_colnames(model1_old) &"pOffPSC" %in% model_colnames(model1_new)) bins<-bins+5
       if("c_OffCri" %in% model_colnames(model1_old) &"c_OffCri" %in% model_colnames(model1_new)) bins<-bins+5
       if(("cl_Ceil" %in% model_colnames(model1_old) & "cl_Ceil" %in% model_colnames(model1_new))|
          ("cl_Ceil_Then_Year" %in% model_colnames(model1_old) & "cl_Ceil_Then_Year" %in% model_colnames(model1_new))) bins<-bins+10
+      
       if("cl_Days" %in% model_colnames(model1_old) & "cl_Days" %in% model_colnames(model1_new)) bins<-bins+5
       
     }      
@@ -1234,7 +1240,8 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
                             binned_fitted_versus_residuals(model2_new,bins=bins),
                             ncol=2)
     #This only works once you have some continuous variables or set a small bin count
-    # if(bins>=3)
+    
+    if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old))
     gridExtra::grid.arrange(resid_plot(model1_old,sample=25000),
                             resid_plot(model1_new,sample=25000),
                             resid_plot(model2_old,sample=25000),
@@ -1294,18 +1301,7 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
     
   } else if(!is.null(model1_new)){
     
-    #This only works once you have some continuous variables o
-    
-    if(!is.na(bins)){
-      #Plot residuals versus fitted
-      if("c_OffCri" %in% model_colnames(model1_old) & "c_OffCri" %in% model_colnames(model1_new)) bins<-bins+5
-      if(("cl_Ceil" %in% model_colnames(model1_old) & "cl_Ceil" %in% model_colnames(model1_new))|
-         ("cl_Ceil_Then_Year" %in% model_colnames(model1_old) & "cl_Ceil_Then_Year" %in% model_colnames(model1_new))) bins<-bins+10
-      if("cl_Days" %in% model_colnames(model1_old) & "cl_Days" %in% model_colnames(model1_new)) bins<-bins+5
-      
-      
-    } 
-    
+  
     gridExtra::grid.arrange(binned_fitted_versus_residuals(model1_old,bins=bins),
                             binned_fitted_versus_residuals(model1_new,bins=bins),
                             ncol=2)
@@ -1361,12 +1357,18 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
     
     if(!is.na(bins)){
       #Plot residuals versus fitted
+      if("cl_US6_avg_sal_lag1Const" %in% model_colnames(model1_old)) bins<-bins+5
+      if("cl_CFTE" %in% model_colnames(model1_old)) bins<-bins+5
+      if("pPBSC" %in% model_colnames(model1_old)) bins<-bins+5
+      if("pOffPSC" %in% model_colnames(model1_old)) bins<-bins+5
+      if("office_entity_numberofactions_1year" %in% model_colnames(model1_old)) bins<-bins+5
       if("c_OffCri" %in% model_colnames(model1_old)) bins<-bins+5
-      if("cl_Ceil" %in% model_colnames(model1_old) | "cl_Ceil_Then_Year" %in% model_colnames(model1_old)) bins<-bins+10
+      if(("cl_Ceil" %in% model_colnames(model1_old))|
+         ("cl_Ceil_Then_Year" %in% model_colnames(model1_old))) bins<-bins+10
+      
       if("cl_Days" %in% model_colnames(model1_old)) bins<-bins+5
       
-      
-    } 
+    }   
     
     
     if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old))
