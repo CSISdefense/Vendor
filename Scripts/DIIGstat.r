@@ -1282,8 +1282,7 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
       # min(m2t[ll==0])
       
       # min(m2t[ll==0])
-      output<-list(car::vif(model1_new),car::vif(model2_new),
-                   m1t[m1l==0],
+      output<-list(m1t[m1l==0],
                    m2t[m2l==0],
                    model1_new@optinfo$conv$lme4$messages,
                    model2_new@optinfo$conv$lme4$messages
@@ -1294,8 +1293,7 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
       output<-list(rbind(deviance_stats(model1_old,"model1_old"),
                          deviance_stats(model1_new,"model1_new"),
                          deviance_stats(model2_old,"model2_old"),
-                         deviance_stats(model2_new,"model2_new")),
-                   car::vif(model1_new),car::vif(model2_new)
+                         deviance_stats(model2_new,"model2_new"))
       )
     }
     
@@ -1338,15 +1336,13 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
       # min(m2t[ll==0])
       
       # min(m2t[ll==0])
-      output<-list(car::vif(model1_new),
-                   m1t[m1l==0],
+      output<-list(m1t[m1l==0],
                    model1_new@optinfo$conv$lme4$messages
       )
     } 
     else if (class(model1_new)!="glmerMod" & class(model1_old)!="glmerMod"){#First 2 passed
       output<-list(rbind(deviance_stats(model1_old,"model1_old"),
-                         deviance_stats(model1_new,"model1_new")),
-                   car::vif(model1_new)
+                         deviance_stats(model1_new,"model1_new"))
       )
     }
   } else{ #Only a single model
