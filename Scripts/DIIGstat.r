@@ -1214,25 +1214,26 @@ residual_compare<-function(model1_old,model1_new,model2_old,model2_new,col,x_axi
 
 summary_residual_compare<-function(model1_old,model1_new=NULL,
                                    model2_old=NULL,model2_new=NULL,
-                                   skip_vif=FALSE,bins=5){
+                                   skip_vif=TRUE,bins=5){
+  if(skip_vif==FALSE) warning("Deprecating VIF. Just use glmer_examine on the models")
   #Plot the fitted values vs actual results
-  
+  if(!is.na(bins)){
+    #Plot residuals versus fitted
+    if("cl_US6_avg_sal_lag1Const" %in% model_colnames(model1_old) &"cl_US6_avg_sal_lag1Const" %in% model_colnames(model1_new)) bins<-bins+5
+    if("cl_CFTE" %in% model_colnames(model1_old) &"cl_CFTE" %in% model_colnames(model1_new)) bins<-bins+5
+    if("c_pPBSC" %in% model_colnames(model1_old) &"c_pPBSC" %in% model_colnames(model1_new)) bins<-bins+5
+    if("c_pOffPSC" %in% model_colnames(model1_old) &"c_pOffPSC" %in% model_colnames(model1_new)) bins<-bins+5
+    if("cl_pairCA" %in% model_colnames(model1_old) &"cl_pairCA" %in% model_colnames(model1_new)) bins<-bins+5
+    if("c_OffCri" %in% model_colnames(model1_old) &"c_OffCri" %in% model_colnames(model1_new)) bins<-bins+5
+    if(("cl_Ceil" %in% model_colnames(model1_old) & "cl_Ceil" %in% model_colnames(model1_new))|
+       ("cl_Ceil_Then_Year" %in% model_colnames(model1_old) & "cl_Ceil_Then_Year" %in% model_colnames(model1_new))) bins<-bins+10
+    
+    if("cl_Days" %in% model_colnames(model1_old) & "cl_Days" %in% model_colnames(model1_new)) bins<-bins+5
+    
+  }   
   if(!is.null(model2_new)){
     #All four passed
-    if(!is.na(bins)){
-      #Plot residuals versus fitted
-      if("cl_US6_avg_sal_lag1Const" %in% model_colnames(model1_old) &"cl_US6_avg_sal_lag1Const" %in% model_colnames(model1_new)) bins<-bins+5
-      if("cl_CFTE" %in% model_colnames(model1_old) &"cl_CFTE" %in% model_colnames(model1_new)) bins<-bins+5
-      if("pPBSC" %in% model_colnames(model1_old) &"pPBSC" %in% model_colnames(model1_new)) bins<-bins+5
-      if("pOffPSC" %in% model_colnames(model1_old) &"pOffPSC" %in% model_colnames(model1_new)) bins<-bins+5
-      if("pOffPSC" %in% model_colnames(model1_old) &"pOffPSC" %in% model_colnames(model1_new)) bins<-bins+5
-      if("c_OffCri" %in% model_colnames(model1_old) &"c_OffCri" %in% model_colnames(model1_new)) bins<-bins+5
-      if(("cl_Ceil" %in% model_colnames(model1_old) & "cl_Ceil" %in% model_colnames(model1_new))|
-         ("cl_Ceil_Then_Year" %in% model_colnames(model1_old) & "cl_Ceil_Then_Year" %in% model_colnames(model1_new))) bins<-bins+10
-      
-      if("cl_Days" %in% model_colnames(model1_old) & "cl_Days" %in% model_colnames(model1_new)) bins<-bins+5
-      
-    }      
+     
     
     gridExtra::grid.arrange(binned_fitted_versus_residuals(model1_old,bins=bins),
                             binned_fitted_versus_residuals(model1_new,bins=bins),
@@ -1269,7 +1270,7 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
       residual_compare(model1_old,model1_new,model2_old,model2_new,"cl_Days","Centered Log(Days)",10)
     }
     output<-NULL
-    if(class(model1_new)=="glmerMod" & class(model2_new)=="glmerMod" & skip_vif==FALSE) 
+    if(class(model1_new)=="glmerMod" & class(model2_new)=="glmerMod") 
     { 
       # If the fit is singular or near-singular, there might be a higher chance of a false positive (we’re not necessarily screening out gradient and Hessian checking on singular directions properly); a higher chance that the model has actually misconverged (because the optimization problem is difficult on the boundary); and a reasonable argument that the random effects model should be simplified.
       # https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html
@@ -1289,8 +1290,7 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
       )
     } 
     else if ((class(model1_new)!="glmerMod" & class(model2_new)!="glmerMod") &
-             (class(model1_old)!="glmerMod" & class(model2_old)!="glmerMod") & 
-             skip_vif==FALSE){
+             (class(model1_old)!="glmerMod" & class(model2_old)!="glmerMod")){
       output<-list(rbind(deviance_stats(model1_old,"model1_old"),
                          deviance_stats(model1_new,"model1_new"),
                          deviance_stats(model2_old,"model2_old"),
@@ -1343,8 +1343,7 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
                    model1_new@optinfo$conv$lme4$messages
       )
     } 
-    else if (class(model1_new)!="glmerMod" & class(model1_old)!="glmerMod" &
-             skip_vif==FALSE){#First 2 passed
+    else if (class(model1_new)!="glmerMod" & class(model1_old)!="glmerMod"){#First 2 passed
       output<-list(rbind(deviance_stats(model1_old,"model1_old"),
                          deviance_stats(model1_new,"model1_new")),
                    car::vif(model1_new)
@@ -1359,9 +1358,9 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
       #Plot residuals versus fitted
       if("cl_US6_avg_sal_lag1Const" %in% model_colnames(model1_old)) bins<-bins+5
       if("cl_CFTE" %in% model_colnames(model1_old)) bins<-bins+5
-      if("pPBSC" %in% model_colnames(model1_old)) bins<-bins+5
-      if("pOffPSC" %in% model_colnames(model1_old)) bins<-bins+5
-      if("office_entity_numberofactions_1year" %in% model_colnames(model1_old)) bins<-bins+5
+      if("c_pPBSC" %in% model_colnames(model1_old)) bins<-bins+5
+      if("c_pOffPSC" %in% model_colnames(model1_old)) bins<-bins+5
+      if("cl_pairCA" %in% model_colnames(model1_old)) bins<-bins+5
       if("c_OffCri" %in% model_colnames(model1_old)) bins<-bins+5
       if(("cl_Ceil" %in% model_colnames(model1_old))|
          ("cl_Ceil_Then_Year" %in% model_colnames(model1_old))) bins<-bins+10
@@ -1412,15 +1411,12 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
     # min(m2t[ll==0])
     
     # min(m2t[ll==0])
-    output<-list(car::vif(model1_old),
-                 m1t[m1l==0],
+    output<-list(m1t[m1l==0],
                  model1_old@optinfo$conv$lme4$messages
     )
   } 
-  else if (class(model1_old)!="glmerMod" & class(model1_old)!="glmerMod" &
-           skip_vif==FALSE){
-    output<-list(deviance_stats(model1_old,"model1_old"),
-                 car::vif(model1_new)
+  else if (class(model1_old)!="glmerMod" & class(model1_old)!="glmerMod"){
+    output<-list(deviance_stats(model1_old,"model1_old")
     )
   }
 }
