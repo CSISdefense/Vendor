@@ -1289,7 +1289,8 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
       )
     } 
     else if ((class(model1_new)!="glmerMod" & class(model2_new)!="glmerMod") &
-             (class(model1_old)!="glmerMod" & class(model2_old)!="glmerMod")){
+             (class(model1_old)!="glmerMod" & class(model2_old)!="glmerMod")
+             ){
       output<-list(rbind(deviance_stats(model1_old,"model1_old"),
                          deviance_stats(model1_new,"model1_new"),
                          deviance_stats(model2_old,"model2_old"),
