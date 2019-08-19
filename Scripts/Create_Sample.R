@@ -27,13 +27,6 @@ if(!exists("def")) load("data/clean/transformed_def.Rdata")
 
 # load(file="../Data/Clean//def_sample.Rdata")
 
-if("cl_Ceil" %in% colnames(def)){
-  def$l_Ceil_Then_Year<-log(def$UnmodifiedCeiling_Then_Year)
-  def$l_Ceil_Then_Year[is.na(def$cl_Ceil)]<-NA
-  def$cl_Ceil_Then_Year<-arm::rescale(def$l_Ceil_Then_Year)
-  def<-def %>% dplyr::select(-c(cl_Ceil))
-  summary(def$cl_Ceil_Then_Year,l_Ceil_Then_Year)
-}
 
 
 #Output variables
