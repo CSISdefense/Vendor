@@ -339,7 +339,7 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
       some$output<-"P(Some Options)"
       all$output<-"P(All Options|Some Options)"
       data<-rbind(some,all)
-      data$output<-factor(data$output,c("Some Options","All Options"))  
+      data$output<-factor(data$output,c("P(Some Options)","P(All Options|Some Options)"))  
        
       
     }
