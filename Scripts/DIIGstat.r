@@ -215,13 +215,24 @@ summary_double_continuous<-function(data,x_col,y_col,bins=20){
 
 summary_discrete_plot<-function(data,x_col,group_col=NA,rotate_text=FALSE,metric="perform"){
   if(is.na(group_col)){
-    output<-list(table(unlist(data[,x_col])),
-                 table(unlist(data[,x_col]),data$CBre),
-                 table(unlist(data[,x_col]),data$Term))
+    if (metric=="opt")
+      output<-list(table(unlist(data[,x_col])),
+                   table(unlist(data[,x_col]),data$b_SomeOpt),
+                   table(unlist(data[,x_col]),data$b_AllOpt))
+    else
+      output<-list(table(unlist(data[,x_col])),
+                   table(unlist(data[,x_col]),data$CBre),
+                   table(unlist(data[,x_col]),data$Term))
+    
     
   }
   else{
     if(is.numeric(data[,x_col])) stop(paste(xcol," is numeric."))
+    if (metric=="opt")
+      output<-list(table(unlist(data[,x_col]),unlist(data[,group_col])),
+                   table(unlist(data[,x_col]),unlist(data[,group_col]),data$b_SomeOpt),
+                   table(unlist(data[,x_col]),unlist(data[,group_col]),data$b_AllOpt))  
+    else
     output<-list(table(unlist(data[,x_col]),unlist(data[,group_col])),
                  table(unlist(data[,x_col]),unlist(data[,group_col]),data$CBre),
                  table(unlist(data[,x_col]),unlist(data[,group_col]),data$Term))
@@ -319,6 +330,18 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
       cbre$output<-"Ceiling Breaches"
       data<-rbind(cbre,term)
       data$output<-factor(data$output,c("Ceiling Breaches","Terminations"))  
+    }
+    else if(metric=="opt"){
+      some<-data %>% summarise_ (   mean_y = "mean(b_SomeOpt)"   
+                                    , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+      all<-data %>% filter(b_SomeOpt==1) %>% summarise_ (   mean_y = "mean(b_AllOpt)"   
+                                    , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+      some$output<-"P(Some Options)"
+      all$output<-"P(All Options|Some Options)"
+      data<-rbind(some,all)
+      data$output<-factor(data$output,c("P(Some Options)","P(All Options|Some Options)"))  
+       
+      
     }
     else if (metric=="comp"){
       comp<-data %>% summarise_ (   mean_y = "mean(b_Comp)"   
@@ -581,6 +604,15 @@ discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,rot
       cbre$output<-"Ceiling Breaches"
       data<-rbind(cbre,term)
       data$output<-factor(data$output,c("Ceiling Breaches","Terminations"))  
+    }
+    
+    else if (metric=="opt"){
+      some<-data %>% summarise_ (   mean_y = "mean(b_SomeOpt)"   )
+      all<-data %>% filter(b_SomeOpt==1) %>% summarise_ (   mean_y = "mean(b_AllOpt)"   )
+      some$output<-"P(Some Options)"
+      all$output<-"P(All Options|Some Options)"
+      data<-rbind(some,all)
+      data$output<-factor(data$output,c("P(Some Options)","P(All Options|Some Options)"))  
     }
     else if (metric=="comp"){
       comp<-data %>% summarise_ (   mean_y = "mean(b_Comp)"   )  
@@ -893,6 +925,89 @@ binned_fitted_versus_term_residuals<-function(model,bins=20){
     labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 }
 
+
+
+binned_fitted_versus_SomeOpt_residuals<-function(model,bins=20){
+  
+  #Save this for a future GLM
+  # Term_data_01A<-data.frame(fitted=fitted(Term_01A),
+  #                        residuals=residuals(Term_01A),
+  #                        nTerm=Term_01A@frame$nTerm,
+  #                        cb_Comp=Term_01A@frame$cb_Comp
+  #                        )
+  
+  if(class(model)[1]=="glmerMod")
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_SomeOpt=model@frame$b_SomeOpt
+    )
+    
+  }
+  else
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_SomeOpt=model$model$b_SomeOpt
+    )
+  }
+  
+  data$bin_fitted<-bin_df(data,rank_col="fitted",bins=bins)
+  
+  data<-subset(data,!is.na(fitted) & !is.na(residuals) )
+  
+  ggplot(data= data %>% 
+           group_by(bin_fitted) %>% 
+           summarise (mean_SomeOpt = mean(b_SomeOpt),
+                      mean_fitted =mean(fitted)),
+         aes(y=mean_SomeOpt,x=mean_fitted))+geom_point() +
+    labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+}
+
+
+
+binned_fitted_versus_AllOpt_residuals<-function(model,bins=20){
+  
+  #Save this for a future GLM
+  # Term_data_01A<-data.frame(fitted=fitted(Term_01A),
+  #                        residuals=residuals(Term_01A),
+  #                        nTerm=Term_01A@frame$nTerm,
+  #                        cb_Comp=Term_01A@frame$cb_Comp
+  #                        )
+  
+  if(class(model)[1]=="glmerMod")
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_AllOpt=model@frame$b_AllOpt
+    )
+    
+  }
+  else
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_AllOpt=model$model$b_AllOpt
+    )
+  }
+  
+  data$bin_fitted<-bin_df(data,rank_col="fitted",bins=bins)
+  
+  data<-subset(data,!is.na(fitted) & !is.na(residuals) )
+  
+  ggplot(data= data %>% 
+           group_by(bin_fitted) %>% 
+           summarise (mean_AllOpt = mean(b_AllOpt),
+                      mean_fitted =mean(fitted)),
+         aes(y=mean_AllOpt,x=mean_fitted))+geom_point() +
+    labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+}
+
+
 binned_fitted_versus_lp_CBre_residuals<-function(model,bins=20){
   
   #Save this for a future GLM
@@ -983,6 +1098,10 @@ binned_fitted_versus_residuals<-function(model,bins=20){
       graph<-binned_fitted_versus_ln_CBre_residuals(model,bins)
     } else if(!is.null(model@frame$b_Term)){
       graph<-binned_fitted_versus_term_residuals(model,bins)
+    } else if(!is.null(model@frame$b_SomeOpt)){
+      graph<-binned_fitted_versus_SomeOpt_residuals(model,bins)
+    } else if(!is.null(model@frame$b_AllOpt)){
+      graph<-binned_fitted_versus_AllOpt_residuals(model,bins)
     } else if(!is.null(model@frame$l_Offr)){
       graph<-resid_plot(model,sample=25000)
     } else if(!is.null(model@frame$lp_OptGrowth)){
@@ -1002,6 +1121,10 @@ binned_fitted_versus_residuals<-function(model,bins=20){
       graph<-binned_fitted_versus_ln_CBre_residuals(model,bins)
     } else if(!is.null(model$model$b_Term)){
       graph<-binned_fitted_versus_term_residuals(model,bins)
+    } else if(!is.null(model$model$b_SomeOpt)){
+      graph<-binned_fitted_versus_SomeOpt_residuals(model,bins)
+    } else if(!is.null(model$model$b_AllOpt)){
+      graph<-binned_fitted_versus_AllOpt_residuals(model,bins)
     } else if(!is.null(model$model$l_Offr)){
       graph<-resid_plot(model,sample=25000)
     } else if(!is.null(model$model$lp_OptGrowth)){
@@ -1242,14 +1365,14 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
                             ncol=2)
     #This only works once you have some continuous variables or set a small bin count
     
-    if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old))
+    if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old) &
+       !"b_SomeOpt" %in% model_colnames(model1_old) & !"b_AllOpt" %in% model_colnames(model1_old))
     gridExtra::grid.arrange(resid_plot(model1_old,sample=25000),
                             resid_plot(model1_new,sample=25000),
                             resid_plot(model2_old,sample=25000),
                             resid_plot(model2_new,sample=25000),
                             ncol=2)
     
-    if(!"b_Term" %in% colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old))
       gridExtra::grid.arrange(residuals_binned(model1_old,bins=bins),
                               residuals_binned(model1_new,bins=bins),
                               residuals_binned(model2_old,bins=bins),
@@ -1305,7 +1428,9 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
                             binned_fitted_versus_residuals(model1_new,bins=bins),
                             ncol=2)
     
-    if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old))
+    if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old) &
+       !"b_SomeOpt" %in% model_colnames(model1_old) & !"b_AllOpt" %in% model_colnames(model1_old))
+      
       gridExtra::grid.arrange(resid_plot(model1_old,sample=25000),
                               resid_plot(model1_new,sample=25000),
                               ncol=2)
@@ -1367,7 +1492,9 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
     }   
     
     
-    if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old))
+    if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old) &
+       !"b_SomeOpt" %in% model_colnames(model1_old) & !"b_AllOpt" %in% model_colnames(model1_old))
+      
       gridExtra::grid.arrange(
         binned_fitted_versus_residuals(model1_old,bins=bins),
         residuals_binned(model1_old,bins=bins),
