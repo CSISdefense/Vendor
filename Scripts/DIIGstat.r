@@ -320,6 +320,16 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
       data<-rbind(cbre,term)
       data$output<-factor(data$output,c("Ceiling Breaches","Terminations"))  
     }
+    else if(metric=="opt"){
+      cbre<-data %>% summarise_ (   mean_y = "mean(b_SomeOpt)"   
+                                    , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+      term<-data %>% summarise_ (   mean_y = "mean(b_AllOpt)"   
+                                    , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
+      term$output<-"Some Options"
+      cbre$output<-"All Options"
+      data<-rbind(cbre,term)
+      data$output<-factor(data$output,c("Some Options","All Options"))  
+    }
     else if (metric=="comp"){
       comp<-data %>% summarise_ (   mean_y = "mean(b_Comp)"   
                                     , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
@@ -893,6 +903,89 @@ binned_fitted_versus_term_residuals<-function(model,bins=20){
     labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
 }
 
+
+
+binned_fitted_versus_SomeOpt_residuals<-function(model,bins=20){
+  
+  #Save this for a future GLM
+  # Term_data_01A<-data.frame(fitted=fitted(Term_01A),
+  #                        residuals=residuals(Term_01A),
+  #                        nTerm=Term_01A@frame$nTerm,
+  #                        cb_Comp=Term_01A@frame$cb_Comp
+  #                        )
+  
+  if(class(model)[1]=="glmerMod")
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_SomeOpt=model@frame$b_SomeOpt
+    )
+    
+  }
+  else
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_SomeOpt=model$model$b_SomeOpt
+    )
+  }
+  
+  data$bin_fitted<-bin_df(data,rank_col="fitted",bins=bins)
+  
+  data<-subset(data,!is.na(fitted) & !is.na(residuals) )
+  
+  ggplot(data= data %>% 
+           group_by(bin_fitted) %>% 
+           summarise (mean_SomeOpt = mean(b_SomeOpt),
+                      mean_fitted =mean(fitted)),
+         aes(y=mean_SomeOpt,x=mean_fitted))+geom_point() +
+    labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+}
+
+
+
+binned_fitted_versus_AllOpt_residuals<-function(model,bins=20){
+  
+  #Save this for a future GLM
+  # Term_data_01A<-data.frame(fitted=fitted(Term_01A),
+  #                        residuals=residuals(Term_01A),
+  #                        nTerm=Term_01A@frame$nTerm,
+  #                        cb_Comp=Term_01A@frame$cb_Comp
+  #                        )
+  
+  if(class(model)[1]=="glmerMod")
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_AllOpt=model@frame$b_AllOpt
+    )
+    
+  }
+  else
+  {
+    data <-data.frame(
+      fitted=fitted(model),
+      residuals=residuals(model),
+      b_AllOpt=model$model$b_AllOpt
+    )
+  }
+  
+  data$bin_fitted<-bin_df(data,rank_col="fitted",bins=bins)
+  
+  data<-subset(data,!is.na(fitted) & !is.na(residuals) )
+  
+  ggplot(data= data %>% 
+           group_by(bin_fitted) %>% 
+           summarise (mean_AllOpt = mean(b_AllOpt),
+                      mean_fitted =mean(fitted)),
+         aes(y=mean_AllOpt,x=mean_fitted))+geom_point() +
+    labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+}
+
+
 binned_fitted_versus_lp_CBre_residuals<-function(model,bins=20){
   
   #Save this for a future GLM
@@ -983,6 +1076,10 @@ binned_fitted_versus_residuals<-function(model,bins=20){
       graph<-binned_fitted_versus_ln_CBre_residuals(model,bins)
     } else if(!is.null(model@frame$b_Term)){
       graph<-binned_fitted_versus_term_residuals(model,bins)
+    } else if(!is.null(model@frame$b_SomeOpt)){
+      graph<-binned_fitted_versus_SomeOpt_residuals(model,bins)
+    } else if(!is.null(model@frame$b_AllOpt)){
+      graph<-binned_fitted_versus_AllOpt_residuals(model,bins)
     } else if(!is.null(model@frame$l_Offr)){
       graph<-resid_plot(model,sample=25000)
     } else if(!is.null(model@frame$lp_OptGrowth)){
@@ -1002,6 +1099,10 @@ binned_fitted_versus_residuals<-function(model,bins=20){
       graph<-binned_fitted_versus_ln_CBre_residuals(model,bins)
     } else if(!is.null(model$model$b_Term)){
       graph<-binned_fitted_versus_term_residuals(model,bins)
+    } else if(!is.null(model$model$b_SomeOpt)){
+      graph<-binned_fitted_versus_SomeOpt_residuals(model,bins)
+    } else if(!is.null(model$model$b_AllOpt)){
+      graph<-binned_fitted_versus_AllOpt_residuals(model,bins)
     } else if(!is.null(model$model$l_Offr)){
       graph<-resid_plot(model,sample=25000)
     } else if(!is.null(model$model$lp_OptGrowth)){
