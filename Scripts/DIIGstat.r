@@ -1343,14 +1343,14 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
                             ncol=2)
     #This only works once you have some continuous variables or set a small bin count
     
-    if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old))
+    if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old) &
+       !"b_SomeOpt" %in% model_colnames(model1_old) & !"b_AllOpt" %in% model_colnames(model1_old))
     gridExtra::grid.arrange(resid_plot(model1_old,sample=25000),
                             resid_plot(model1_new,sample=25000),
                             resid_plot(model2_old,sample=25000),
                             resid_plot(model2_new,sample=25000),
                             ncol=2)
     
-    if(!"b_Term" %in% colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old))
       gridExtra::grid.arrange(residuals_binned(model1_old,bins=bins),
                               residuals_binned(model1_new,bins=bins),
                               residuals_binned(model2_old,bins=bins),
@@ -1406,7 +1406,9 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
                             binned_fitted_versus_residuals(model1_new,bins=bins),
                             ncol=2)
     
-    if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old))
+    if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old) &
+       !"b_SomeOpt" %in% model_colnames(model1_old) & !"b_AllOpt" %in% model_colnames(model1_old))
+      
       gridExtra::grid.arrange(resid_plot(model1_old,sample=25000),
                               resid_plot(model1_new,sample=25000),
                               ncol=2)
@@ -1468,7 +1470,9 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
     }   
     
     
-    if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old))
+    if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old) &
+       !"b_SomeOpt" %in% model_colnames(model1_old) & !"b_AllOpt" %in% model_colnames(model1_old))
+      
       gridExtra::grid.arrange(
         binned_fitted_versus_residuals(model1_old,bins=bins),
         residuals_binned(model1_old,bins=bins),
