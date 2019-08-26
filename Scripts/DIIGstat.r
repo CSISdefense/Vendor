@@ -1725,23 +1725,45 @@ get_pars<-function(model){
   pars
 }
 
-get_study_variables_odds_ratio<-function(or.df){
-  or.df<-or.df[or.df$variable %in% c("cl_def3_HHI_lag1"    ,
-                                     "cl_def6_HHI_lag1" ,
-                                     "CompOffr1 offer" ,
-                                     "CompOffr2 offers",
-                                     "CompOffr3-4 offers",
-                                     "CompOffr5+ offers"
-                                     # "CompOffr1 offer:b_UCA",
-                                     # "CompOffr2 offers:b_UCA"   ,         
-                                     # "CompOffr3-4 offers:b_UCA",
-                                     # "CompOffr5+ offers:b_UCA",
-                                     # "cl_def6_HHI_lag1:b_UCA",
-                                     # "cl_def6_HHI_lag1:cl_def6_obl_lag1"
-  ),]
-  or.df$variable<-factor(or.df$variable)
-  
-  or.df<-or.df[,c("output" ,  "input"  ,  "variable",   "OR"  ,"2.5 %"  ,  "97.5 %" )]
+get_study_variables_odds_ratio<-function(or.df,study="monopoly"){
+  if(study=="monopoly"){
+    study_list<-c("cl_def3_HHI_lag1"    ,
+                  "cl_def6_HHI_lag1" ,
+                  "CompOffr1 offer" ,
+                  "CompOffr2 offers",
+                  "CompOffr3-4 offers",
+                  "CompOffr5+ offers"
+                  # "CompOffr1 offer:b_UCA",
+                  # "CompOffr2 offers:b_UCA"   ,         
+                  # "CompOffr3-4 offers:b_UCA",
+                  # "CompOffr5+ offers:b_UCA",
+                  # "cl_def6_HHI_lag1:b_UCA",
+                  # "cl_def6_HHI_lag1:cl_def6_obl_lag1"
+    )
+    study_coef_list<-list("Log(Subsector HHI)"=c("cl_def3_HHI_lag1"),
+                          "Log(Det. Ind. HHI)"=c("cl_def6_HHI_lag1"),
+                          "Comp=1 offer"=c("CompOffr1 offer"),
+                          "Comp=2 offers"=c("CompOffr2 offers"),
+                          "Comp=3-4 offers"=c("CompOffr3-4 offers"),
+                          "Comp=5+ offers"=c("CompOffr5+ offers")
+    )
+  } else if (study=="services"){
+    study_list<-c("cl_US6_avg_sal_lag1Const","Log(Det. Ind. Salary)",
+                  "cl_CFTE","Log(Service Invoice Rate)",
+                  "c_pPBSC","Office Perf.-Based %",
+                  "c_pOffPSC","Office Service Exp. %",
+                  "c_pairHist","Paired Years",
+                  "cl_pairCA","Log(Paired Actions)"
+    )
+    study_coef_list<-NA
+    
+  } else stop(paste("Unknown study: ",study, "available options: 'monopoly','services'"))
+  or.df<-or.df[or.df$variable %in% study_list,]
+
+    or.df$variable<-factor(or.df$variable)
+  column_order<-c("output" ,  "input"  ,  "variable",   "OR"  ,"2.5 %"  ,  "97.5 %" )
+  column_order<-column_order[column_order %in% colnames(or.df)]
+  or.df<-or.df[,column_order]
   or.df$OR<-round(or.df$OR,digits=2)
   or.df[["2.5 %"]]<-round(or.df[["2.5 %"]],digits=2)
   or.df[["97.5 %"]]<-round(or.df[["97.5 %"]],digits=2)
@@ -1751,30 +1773,36 @@ get_study_variables_odds_ratio<-function(or.df){
   colnames(or.df)[colnames(or.df)=="2.5 %"]<-"Lower Bound"
   colnames(or.df)[colnames(or.df)=="97.5 %"]<-"Upper Bound"
   colnames(or.df)[colnames(or.df)=="variable"]<-"Variable"
-  
-  levels(or.df$Variable)<- list("Log(Subsector HHI)"=c("cl_def3_HHI_lag1"),
-                                "Log(Det. Ind. HHI)"=c("cl_def6_HHI_lag1"),
-                                "Comp=1 offer"=c("CompOffr1 offer"),
-                                "Comp=2 offers"=c("CompOffr2 offers"),
-                                "Comp=3-4 offers"=c("CompOffr3-4 offers"),
-                                "Comp=5+ offers"=c("CompOffr5+ offers")
-  )
+
+  if(!is.na(study_coef_list))  
+    levels(or.df$Variable)<- study_coef_list
   or.df
 }
 
-odds_ratio<-function(FM,name,input=NA,output=NA,walds=FALSE){
+odds_ratio<-function(FM,name,input=NA,output=NA,walds=FALSE,rename_list=NA){
   OR <- exp(fixef(FM))
   if(walds==TRUE){
     CI <- exp(confint(FM,parm="beta_",method="Wald"))
   }
   else{
-    CI <- exp(confint(FM,parm="beta_")) # it can be slow (~ a few minutes). As alternative, the much faster but less precise Wald's method can be used: CI <- exp(confint(FM,parm="beta_",method="Wald"))
+    CI <- exp(confint(FM,parm="beta_")) # it can be slow (~ hours). As alternative, the much faster but less precise Wald's method can be used: CI <- exp(confint(FM,parm="beta_",method="Wald"))
   }
-  write.csv(cbind(OR,CI),file=paste("output//",name,"_odds_ratio.csv",sep=""))
   OR<-as.data.frame(cbind(OR,CI))
+  OR$variable<-factor(rownames(OR))
+  if(!is.na(rename_list)){ 
+    rename_list<-rename_list[names(rename_list)[names(rename_list) %in% OR$variable]]
+    if(any(!OR$variable %in% names(rename_list))) stop(paste("Missing values in renamelist",
+                                                      OR$variable[!OR$variable %in% names(rename_list)]))
+    OR$variable<-factor(OR$variable,
+      levels=names(rename_list),
+      labels=rename_list
+    )
+  }
+  OR<-OR[,c("variable","OR",	"2.5 %",	"97.5 %")]
+  write.csv(OR,file=paste("..//output//",name,"_odds_ratio",ifelse(walds==TRUE,"_wald",""),".csv",sep=""),row.names=FALSE)
   if(!is.na(output)) OR$output<-output
   if(!is.na(input)) OR$input<-input
-  OR$variable<-rownames(OR)
+  
   OR
 }
 
