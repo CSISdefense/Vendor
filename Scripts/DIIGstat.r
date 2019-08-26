@@ -215,13 +215,24 @@ summary_double_continuous<-function(data,x_col,y_col,bins=20){
 
 summary_discrete_plot<-function(data,x_col,group_col=NA,rotate_text=FALSE,metric="perform"){
   if(is.na(group_col)){
-    output<-list(table(unlist(data[,x_col])),
-                 table(unlist(data[,x_col]),data$CBre),
-                 table(unlist(data[,x_col]),data$Term))
+    if (metric=="opt")
+      output<-list(table(unlist(data[,x_col])),
+                   table(unlist(data[,x_col]),data$b_SomeOpt),
+                   table(unlist(data[,x_col]),data$b_AllOpt))
+    else
+      output<-list(table(unlist(data[,x_col])),
+                   table(unlist(data[,x_col]),data$CBre),
+                   table(unlist(data[,x_col]),data$Term))
+    
     
   }
   else{
     if(is.numeric(data[,x_col])) stop(paste(xcol," is numeric."))
+    if (metric=="opt")
+      output<-list(table(unlist(data[,x_col]),unlist(data[,group_col])),
+                   table(unlist(data[,x_col]),unlist(data[,group_col]),data$b_SomeOpt),
+                   table(unlist(data[,x_col]),unlist(data[,group_col]),data$b_AllOpt))  
+    else
     output<-list(table(unlist(data[,x_col]),unlist(data[,group_col])),
                  table(unlist(data[,x_col]),unlist(data[,group_col]),data$CBre),
                  table(unlist(data[,x_col]),unlist(data[,group_col]),data$Term))
@@ -321,14 +332,16 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
       data$output<-factor(data$output,c("Ceiling Breaches","Terminations"))  
     }
     else if(metric=="opt"){
-      cbre<-data %>% summarise_ (   mean_y = "mean(b_SomeOpt)"   
+      some<-data %>% summarise_ (   mean_y = "mean(b_SomeOpt)"   
                                     , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
-      term<-data %>% summarise_ (   mean_y = "mean(b_AllOpt)"   
+      all<-data %>% filter(b_SomeOpt==1) %>% summarise_ (   mean_y = "mean(b_AllOpt)"   
                                     , mean_x =  paste( "mean(" ,  x_col  ,")"  ))  
-      term$output<-"Some Options"
-      cbre$output<-"All Options"
-      data<-rbind(cbre,term)
+      some$output<-"P(Some Options)"
+      all$output<-"P(All Options|Some Options)"
+      data<-rbind(some,all)
       data$output<-factor(data$output,c("Some Options","All Options"))  
+       
+      
     }
     else if (metric=="comp"){
       comp<-data %>% summarise_ (   mean_y = "mean(b_Comp)"   
@@ -591,6 +604,15 @@ discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,rot
       cbre$output<-"Ceiling Breaches"
       data<-rbind(cbre,term)
       data$output<-factor(data$output,c("Ceiling Breaches","Terminations"))  
+    }
+    
+    else if (metric=="opt"){
+      some<-data %>% summarise_ (   mean_y = "mean(b_SomeOpt)"   )
+      all<-data %>% filter(b_SomeOpt==1) %>% summarise_ (   mean_y = "mean(b_AllOpt)"   )
+      some$output<-"P(Some Options)"
+      all$output<-"P(All Options|Some Options)"
+      data<-rbind(some,all)
+      data$output<-factor(data$output,c("P(Some Options)","P(All Options|Some Options)"))  
     }
     else if (metric=="comp"){
       comp<-data %>% summarise_ (   mean_y = "mean(b_Comp)"   )  
