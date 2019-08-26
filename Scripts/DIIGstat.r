@@ -1849,3 +1849,214 @@ swr <- function(string, nwrap=20) {
   paste(strwrap(string, width=nwrap), collapse="\n")
 }
 swr <- Vectorize(swr)
+
+
+
+
+transition_variable_names_service<-function(contract){
+  contract$cln_US6sal<-contract$cl_US6_avg_sal_lag1Const
+  contract$cln_PSCrate<-contract$cl_CFTE
+  contract$cp_OffPerf7<-contract$c_pPBSC
+  contract$cp_OffPSC7<-contract$c_pOffPSC
+  contract$cn_PairHist7<-contract$c_pairHist
+  contract$cln_PairCA<-contract$cl_PairCA
+  
+  contract$cln_OffObl7<-contract$cl_OffVol
+  contract$cp_PairObl7<-contract$c_pMarket
+  contract$cln_OffFocus<-contract$cl_office_naics_hhi_k
+  
+  
+  contract$cln_Def3HHI<-contract$cl_def3_HHI_lag1
+  contract$cln_Def6HHI<-contract$cl_def6_HHI_lag1
+  contract$clr_Def3toUS<-contract$cl_def3_ratio_lag1
+  contract$clr_Def6toUS<-contract$cl_def6_ratio_lag1
+  contract$cln_Def6Obl<-contract$cl_def6_obl_lag1
+  
+  
+  contract$Comp<-contract$Comp1or5
+  contract$Pricing<-contract$PricingUCA
+  
+  contract$cln_Base<-contract$cl_Base
+  contract$cln_Days<-contract$cl_Days
+  contract$clr_Ceil2Base<-contract$cln_Base2Ceil
+  
+  contract$NAICS6<-contract$NAICS
+  contract$ServArea<-contract$CrisisProductOrServiceArea
+  contract$Place<-contract$PlaceCountryISO3
+  contract
+}
+
+
+get_coef_list<-function(limit=NULL){
+  if(is.null(limit)) #All Variables
+    coef_list<-list("(Intercept)"="(Intercept)",
+                      "cl_US6_avg_sal_lag1Const"="Log(Det. Ind. Salary)",
+                      "cln_US6sal"="Log(Det. Ind. Salary)",
+                      "cl_CFTE"="Log(Serv. Code Invoice Rate)",
+                      "cln_PSCrate"="Log(Serv. Code Invoice Rate)",
+                      "c_pPBSC"="Office Perf.-Based %",
+                      "cp_OffPerf7"="Office Perf.-Based %",
+                      "c_pOffPSC"="Office Serv. Code Exp. %",
+                      "cp_OffPSC77"="Office Serv. Code Exp. %",
+                      "c_pairHist"="Paired Years",
+                      "cn_PairHist7"="Paired Years",
+                      "cl_pairCA"="Log(Paired Actions)",
+                      "cln_PairCA"="Log(Paired Actions)",
+                      
+                      #Contract Controls
+                      #Competition
+                      "Comp1or51 offer"="Comp=1 offer",
+                      "Comp1or52-4 offers"="Comp=2-4 offers",
+                      "Comp1or55+ offers"="Comp=5+ offers",
+                      
+                      "CompOffr1 offer"="Comp=1 offer",
+                      "CompOffr2 offers"="Comp=2 offers",
+                      "CompOffr3-4 offers"="Comp=3-4 offers",
+                      "CompOffr5+ offers"="Comp=5+ offers",
+                      
+                      "Comp1 offer"="Comp=1 offer",
+                      "Comp2-4 offers"="Comp=2-4 offers",
+                      "Comp5+ offers"="Comp=5+ offers",
+                      
+                      
+                      #Scope
+                      "cl_Ceil"="Log(Init. Ceiling)",
+                      "cl_Base"="Log(Init. Base)",
+                      "cl_Base2Ceil"="Log(Init. Ceiling:Base)",
+                      "capped_cl_Days"="Log(Planned Dur.)",
+                      "cl_Days"="Log(Planned Dur.)",
+                      "cln_Ceil"="Log(Init. Ceiling)",
+                      "cln_Base"="Log(Init. Base)",
+                      "clr_Ceil2Base"="Log(Init. Ceiling:Base)",
+                      "cln_Days"="Log(Planned Dur.)",
+                      
+                      
+                      #Vehicle
+                      "VehS-IDC"="Vehicle=S-IDC",
+                      "VehM-IDC"="Vehicle=M-IDC",
+                      "VehFSS/GWAC"="Vehicle=FSS/GWAC",
+                      "VehBPA/BOA"="Vehicle=BPA/BOA",
+                      #Pricing and UCA
+                      "PricingUCAFFP"="Pricing=FFP",
+                      "PricingUCAOther FP"="Pricing=Other Fixed-Price",
+                      "PricingUCAIncentive"="Pricing=Incentive Fee",
+                      "PricingUCACombination or Other"="Pricing=Comb. or Other",
+                      "PricingUCAOther CB"="Pricing=Other Cost-Based",
+                      "PricingUCAT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
+                      "PricingUCAUCA"="Pricing=UCA",
+                      
+                      "PricingFeeOther FP"="Pricing=Other Fixed-Price",
+                      "PricingFeeIncentive"="Pricing=Incentive Fee",
+                      "PricingFeeCombination or Other"="Pricing=Comb. or Other",
+                      "PricingFeeOther CB"="Pricing=Other Cost-Based",
+                      "PricingFeeT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
+                      "b_UCA"="UCA",
+                      "PricingFFP"="Pricing=FFP",
+                      "PricingOther FP"="Pricing=Other Fixed-Price",
+                      "PricingIncentive"="Pricing=Incentive Fee",
+                      "PricingCombination or Other"="Pricing=Comb. or Other",
+                      "PricingOther CB"="Pricing=Other Cost-Based",
+                      "PricingT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
+                      "PricingUCA"="Pricing=UCA",
+                      
+                      #Crisis and international
+                      "CrisisARRA"="Crisis=Recovery Act",
+                      "CrisisDis"="Crisis=Disaster",
+                      "CrisisOCO"="Crisis=OCO",
+                      "b_Intl"="Performed Abroad",
+                      
+                      #NAICS
+                      "cl_def3_HHI_lag1"="Log(Subsector HHI)",
+                      "cl_def6_HHI_lag1"="Log(Det. Ind. HHI)",
+                      "cl_def3_ratio_lag1"="Log(Subsector DoD:US)",
+                      "cl_def6_obl_lag1"="Log(Det. Ind. DoD Obl.)",
+                      "cl_def6_ratio_lag1"="Log(Det. Ind. DoD:US)",
+                      "cln_Def3HHI_lag1"="Log(Subsector HHI)",
+                      "cln_Def6HHI_lag1"="Log(Det. Ind. HHI)",
+                      "clr_Def3toUS_lag1"="Log(Subsector DoD:US)",
+                      "cln_Def6Obl"="Log(Det. Ind. DoD Obl.)",
+                      "clr_Def6toUS_lag1"="Log(Det. Ind. DoD:US)",
+                      
+                      #Office
+                      "c_pMarket"="Paired Share %",
+                      "cl_OffVol"="Office Obl.",
+                      "cl_office_naics_hhi_k"="Office Focus",
+                      "cp_PairObl7"="Paired Share %",
+                      "cln_OffObl"="Office Obl.",
+                      "cln_OffFocus"="Office Focus",
+                      
+                      
+                      #interations
+                      "cl_def6_HHI_lag1:capped_cl_Days"="Log(Det. Ind. HHI):Log(Planned Dur.)",
+                      "cl_def6_HHI_lag1:cl_def6_obl_lag1"="Log(Det. Ind. HHI):Log(Det. Ind. DoD Obl.)",
+                      "cl_def3_HHI_lag1:cl_def3_ratio_lag1"="Log(Subsector HHI):Log(Subsector DoD:US)",
+                      "cl_def6_HHI_lag1:b_UCA"="Log(Det. Ind. HHI):UCA",
+                      "cl_Ceil:b_UCA"="Log(Init. Ceiling):UCA",
+                      "CompOffr1 offer:b_UCA"="Comp=1 offer:UCA",
+                      "CompOffr2 offers:b_UCA"="Comp=2 offers:UCA",
+                      "CompOffr3-4 offers:b_UCA"="Comp=3-4 offers:UCA",
+                      "CompOffr5+ offers:b_UCA"="Comp=5+ offers:UCA",
+                      "VehS-IDC:b_Intl"="Vehicle=S-IDC:Performed Abroad",
+                      "VehM-IDC:b_Intl"="Vehicle=M-IDC:Performed Abroad",
+                      "VehFSS/GWAC:b_Intl"="Vehicle=FSS/GWAC:Performed Abroad",
+                      "VehBPA/BOA:b_Intl"="Vehicle=BPA/BOA:Performed Abroad",
+                      "cl_US6_avg_sal_lag1:PricingFeeOther FP"="Pricing=Other Fixed-Price:Log(Det. Ind. Salary)",
+                      "cl_US6_avg_sal_lag1:PricingFeeIncentive"="Pricing=Incentive Fee:Log(Det. Ind. Salary)",
+                      "cl_US6_avg_sal_lag1:PricingFeeCombination or Other"="Pricing=Comb./Other:Log(Det. Ind. Salary)",
+                      "cl_US6_avg_sal_lag1:PricingFeeOther CB"="Pricing=Other Cost-Based:Log(Det. Ind. Salary)",
+                      "cl_US6_avg_sal_lag1:PricingFeeT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE:Log(Det. Ind. Salary)",
+                      "cln_US6sal_lag1:PricingOther FP"="Pricing=Other Fixed-Price:Log(Det. Ind. Salary)",
+                      "cln_US6sal_lag1:PricingIncentive"="Pricing=Incentive Fee:Log(Det. Ind. Salary)",
+                      "cln_US6sal_lag1:PricingCombination or Other"="Pricing=Comb./Other:Log(Det. Ind. Salary)",
+                      "cln_US6sal_lag1:PricingOther CB"="Pricing=Other Cost-Based:Log(Det. Ind. Salary)",
+                      "cln_US6sal_lag1:PricingT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE:Log(Det. Ind. Salary)",
+                      
+                      "c_pairHist:PricingUCAOther FP"="Pricing=Other Fixed-Price:Log(Det. Ind. Salary)",
+                      "c_pairHist:PricingUCAT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE:Log(Det. Ind. Salary)",
+                      "c_pairHist:PricingUCAIncentive"="Pricing=Incentive Fee:Log(Det. Ind. Salary)",
+                      "c_pairHist:PricingUCAOther CB"="Pricing=Other Cost-Based:Log(Det. Ind. Salary)",
+                      "c_pairHist:PricingUCAUCA"="Pricing=UCA:Log(Det. Ind. Salary)",
+                      "c_pairHist:PricingUCACombination or Other"="Pricing=Comb./Other:Log(Det. Ind. Salary)",
+                      "cn_PairHist7:PricingOther FP"="Pricing=Other Fixed-Price:Log(Det. Ind. Salary)",
+                      "cn_PairHist7:PricingT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE:Log(Det. Ind. Salary)",
+                      "cn_PairHist7:PricingIncentive"="Pricing=Incentive Fee:Log(Det. Ind. Salary)",
+                      "cn_PairHist7:PricingOther CB"="Pricing=Other Cost-Based:Log(Det. Ind. Salary)",
+                      "cn_PairHist7:PricingUCA"="Pricing=UCA:Log(Det. Ind. Salary)",
+                      "cn_PairHist7:PricingCombination or Other"="Pricing=Comb./Other:Log(Det. Ind. Salary)",
+                      
+                      "cl_Ceil:cl_Base2Ceil"="Log(Init. Ceiling):Log(Init. Ceiling:Base)",
+                      "cln_Ceil:clr_Ceil2Base"="Log(Init. Ceiling):Log(Init. Ceiling:Base)",
+                      
+                      "c_pPBSC:cl_pairCA"="Office Perf.-Based %:Log(Paired Actions)",
+                      "cp_OffPerf7:cln_PairCA"="Office Perf.-Based %:Log(Paired Actions)",
+                      
+                      "c_pPBSC:c_pMarket"="Office Perf.-Based %:Paired Share %",
+                      "cp_OffPerf7:cp_PairObl7"="Office Perf.-Based %:Paired Share %",
+                      
+                      "c_pPBSC:cl_Days"="Office Perf.-Based %:Log(Planned Dur.)",
+                      "cp_OffPerf7:cln_Days"="Office Perf.-Based %:Log(Planned Dur.)",
+                      "cl_Base:cl_Base2Ceil"="Log(Init. Base):Log(Init. Ceiling:Base)",
+                      "cln_Base:clr_Ceil2Base"="Log(Init. Base):Log(Init. Ceiling:Base)"
+
+  )
+  else if (limit=="services"){
+    coef_list<-list("(Intercept)"="(Intercept)",
+                    "cl_US6_avg_sal_lag1Const"="Log(Det. Ind. Salary)",
+                    "cln_US6sal"="Log(Det. Ind. Salary)",
+                    "cl_CFTE"="Log(Serv. Code Invoice Rate)",
+                    "cln_PSCrate"="Log(Serv. Code Invoice Rate)",
+                    "c_pPBSC"="Office Perf.-Based %",
+                    "cp_OffPerf7"="Office Perf.-Based %",
+                    "c_pOffPSC"="Office Serv. Code Exp. %",
+                    "cp_OffPSC77"="Office Serv. Code Exp. %",
+                    "c_pairHist"="Paired Years",
+                    "cn_PairHist7"="Paired Years",
+                    "cl_pairCA"="Log(Paired Actions)",
+                    "cln_PairCA"="Log(Paired Actions)"
+    )
+    
+  }
+  else stop(paste("Do not know how to process limit:",limit))
+ 
+  return(coef_list) 
+}
