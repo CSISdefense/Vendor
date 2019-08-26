@@ -1882,6 +1882,8 @@ swr <- Vectorize(swr)
 
 
 transition_variable_names_service<-function(contract){
+  contract$ln_CBre<-contract$ln_CBre_OMB20_GDP18
+  
   contract$cln_US6sal<-contract$cl_US6_avg_sal_lag1Const
   contract$cln_PSCrate<-contract$cl_CFTE
   contract$cp_OffPerf7<-contract$c_pPBSC
