@@ -1859,7 +1859,7 @@ transition_variable_names_service<-function(contract){
   contract$cp_OffPerf7<-contract$c_pPBSC
   contract$cp_OffPSC7<-contract$c_pOffPSC
   contract$cn_PairHist7<-contract$c_pairHist
-  contract$cln_PairCA<-contract$cl_PairCA
+  contract$cln_PairCA<-contract$cl_pairCA
   
   contract$cln_OffObl7<-contract$cl_OffVol
   contract$cp_PairObl7<-contract$c_pMarket
@@ -1878,7 +1878,7 @@ transition_variable_names_service<-function(contract){
   
   contract$cln_Base<-contract$cl_Base
   contract$cln_Days<-contract$cl_Days
-  contract$clr_Ceil2Base<-contract$cln_Base2Ceil
+  contract$clr_Ceil2Base<-contract$cl_Base2Ceil
   
   contract$NAICS6<-contract$NAICS
   contract$ServArea<-contract$CrisisProductOrServiceArea
