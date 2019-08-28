@@ -2054,7 +2054,7 @@ get_coef_list<-function(limit=NULL){
                       "c_pPBSC"="Office Perf.-Based %",
                       "cp_OffPerf7"="Office Perf.-Based %",
                       "c_pOffPSC"="Office Serv. Code Exp. %",
-                      "cp_OffPSC77"="Office Serv. Code Exp. %",
+                      "cp_OffPSC7"="Office Serv. Code Exp. %",
                       "c_pairHist"="Paired Years",
                       "cn_PairHist7"="Paired Years",
                       "cl_pairCA"="Log(Paired Actions)",
@@ -2193,7 +2193,8 @@ get_coef_list<-function(limit=NULL){
                       "c_pPBSC:cl_Days"="Office Perf.-Based %:Log(Planned Dur.)",
                       "cp_OffPerf7:cln_Days"="Office Perf.-Based %:Log(Planned Dur.)",
                       "cl_Base:cl_Base2Ceil"="Log(Init. Base):Log(Init. Ceiling:Base)",
-                      "cln_Base:clr_Ceil2Base"="Log(Init. Base):Log(Init. Ceiling:Base)"
+                      "cln_Base:clr_Ceil2Base"="Log(Init. Base):Log(Init. Ceiling:Base)",
+                      "cln_OffObl7:pOffPSC" = "Log(Office Obligations):Office Perf.-Based %"
 
   )
   else if (limit=="services"){
