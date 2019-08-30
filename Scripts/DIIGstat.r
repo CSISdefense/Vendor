@@ -2202,8 +2202,12 @@ get_coef_list<-function(limit=NULL){
                       "cp_OffPerf7:cln_Days"="Office Perf.-Based %:Log(Planned Dur.)",
                       "cl_Base:cl_Base2Ceil"="Log(Init. Base):Log(Init. Ceiling:Base)",
                       "cln_Base:clr_Ceil2Base"="Log(Init. Base):Log(Init. Ceiling:Base)",
+<<<<<<< HEAD
                       "cln_OffObl7:pOffPSC" = "Log(Office Obligations):Office Serv. Code Exp. %",
                       "cln_OffFocus:pOffPSC" = "Office Focus:Office Serv. Code Exp. %"
+=======
+                      "cln_OffObl7:pOffPSC" = "Log(Office Obligations):Office Perf.-Based %"
+>>>>>>> master
 
   )
   else if (limit=="services"){
