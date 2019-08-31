@@ -171,7 +171,7 @@ summary_continuous_plot<-function(data,x_col,group_col=NA,bins=20,metric="perfor
 }
 
 
-summary_double_continuous<-function(data,x_col,y_col,bins=20){
+summary_double_continuous<-function(data,x_col,y_col,bins=20,metric="perform"){
   data<-data[!is.na(data[,y_col]),]
   data<-data[!is.na(data[,x_col]),]
   data<-as.data.frame(data)
@@ -189,21 +189,38 @@ summary_double_continuous<-function(data,x_col,y_col,bins=20){
   
   
   #First a quick scatter plot for terminations by duration and ceiling
-  gridExtra::grid.arrange(ggplot(data=data,
-                                 aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(CBre~.)+
-                            labs(title="Distribution by Breach",
-                                 caption="Source: FPDS, CSIS Analysis"),
-                          
-                          
-                          #First a quick scatter plot for terminations by duration and ceiling
-                          ggplot(data=data,
-                                 aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(Term~.)+
-                            labs(title="Distribution by Termination"),
-                          
-                          ncol=2
-  )
+  if(metric=="perform"){
+    gridExtra::grid.arrange(ggplot(data=data,
+                                   aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(CBre~.)+
+                              labs(title="Distribution by Breach",
+                                   caption="Source: FPDS, CSIS Analysis"),
+                            
+                            
+                            #First a quick scatter plot for terminations by duration and ceiling
+                            ggplot(data=data,
+                                   aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(Term~.)+
+                              labs(title="Distribution by Termination"),
+                            
+                            ncol=2
+                            
+    )
+  } else if (metric=="opt"){
+    gridExtra::grid.arrange(ggplot(data=data,
+                                   aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(b_SomeOpt~.)+
+                              labs(title="Distribution by Some Options",
+                                   caption="Source: FPDS, CSIS Analysis"),
+                            
+                            
+                            #First a quick scatter plot for terminations by duration and ceiling
+                            ggplot(data=data %>% filter(b_SomeOpt==1),
+                                   aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(b_AllOpt~.)+
+                              labs(title="Distribution by All Options"),
+                            
+                            ncol=2
+    )
+  } else stop(paste("Unknown metric:",metric))
   
-  binned_double_percent_plot(data,x_col,y_col,bins)
+  binned_double_percent_plot(data,x_col,y_col,bins,metric=metric)
   # min_i<-min(data[,"interaction"])
   # max_i<-max(data[,"interaction"])
   # 
@@ -445,34 +462,45 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
 }
 
 
-bin_group<-function(data,bin_col,bins=20){
+bin_group<-function(data,bin_col,bins=20,metric="perform"){
+  
   data$bin<-bin_df(data,rank_col=bin_col,bins=bins)
   data<-data %>%
     group_by(bin)
-  term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   
-                                , mean_x =  paste( "mean(" ,  bin_col  ,")"  ))  
-  cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   
-                                , mean_x =  paste( "mean(" ,  bin_col  ,")"  ))  
-  term$output<-"Term."
-  cbre$output<-"C. Bre."
-  data<-rbind(term,cbre)
+  if(metric=="perform"){
+    term<-data %>% summarise_ (   mean_y = "mean(b_Term)"   
+                                  , mean_x =  paste( "mean(" ,  bin_col  ,")"  ))  
+    cbre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   
+                                  , mean_x =  paste( "mean(" ,  bin_col  ,")"  ))  
+    term$output<-"Term."
+    cbre$output<-"C. Bre."
+    data<-rbind(term,cbre)
+  } else if (metric=="opt"){
+    SomeOpt<-data %>% summarise_ (   mean_y = "mean(b_SomeOpt)"   
+                                  , mean_x =  paste( "mean(" ,  bin_col  ,")"  ))  
+    AllOpt<-data %>% summarise_ (   mean_y = "mean(b_AllOpt)"   
+                                  , mean_x =  paste( "mean(" ,  bin_col  ,")"  ))  
+    SomeOpt$output<-"Some Opt."
+    AllOpt$output<-"All Opt."
+    data<-rbind(SomeOpt,AllOpt)
+  }
   data$bin_col<-bin_col
   data
 }
 
-binned_double_percent_plot<-function(data,x_col,y_col,bins=20,caption=TRUE){
+binned_double_percent_plot<-function(data,x_col,y_col,bins=20,caption=TRUE,metric="perform"){
   data<-data[!is.na(data[,x_col]),]
   data<-data[!is.na(data[,y_col]),]
   data<-as.data.frame(data)
   data$interaction<-data[,x_col]*data[,y_col]
-  data<-rbind(bin_group(data,x_col,bins),
-              bin_group(data,y_col,bins),
-              bin_group(data,"interaction",bins))
+  data<-rbind(bin_group(data,x_col,bins,metric=metric),
+              bin_group(data,y_col,bins,metric=metric),
+              bin_group(data,"interaction",bins,metric=metric))
   
   data$bin_col<-factor(data$bin_col,c(x_col,y_col,"interaction"))
   plot<-ggplot(data=data,
                aes(y=mean_y,x=mean_x))+
-    facet_grid(output~bin_col,scales="free_y")
+    facet_grid(output~bin_col,scales="free")
   
   if(caption==TRUE){
     plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
@@ -1204,11 +1232,20 @@ residuals_binned<-function(model,col="fitted",bins=40){
     if(!is.null(model@frame$b_CBre)){
       data$outcome<-model@frame$b_CBre
       data<-binned.resids (data[,col],
-                           data$fitted-data$b_CBre, nclass=bins)$binned
+                           data$fitted-data$outcome, nclass=bins)$binned
     } else if(!is.null(model@frame$b_Term)){
       data$outcome<-model@frame$b_Term
       data<-binned.resids (data[,col],
-                           data$fitted-data$b_Term, nclass=bins)$binned
+                           data$fitted-data$outcome, nclass=bins)$binned
+    } else if(!is.null(model@frame$b_SomeOpt)){
+      data$outcome<-model@frame$b_SomeOpt
+      data<-binned.resids (data[,col],
+                           data$fitted-data$outcome, nclass=bins)$binned
+    } else if(!is.null(model@frame$b_AllOpt)){
+      data$outcome<-model@frame$b_AllOpt
+      data<-binned.resids (data[,col],
+                           data$fitted-data$outcome, nclass=bins)$binned
+      
     } else if(!is.null(model@frame$lp_CBre)){
       data$outcome<-model@frame$lp_CBre
       data<-binned.resids (data[,col],
