@@ -1661,11 +1661,17 @@ get_pars<-function(model){
 get_value_col<-function(contract,
                         value_col=NULL){
   if(is.null(value_col)){
-    if("Action_Obligation.OMB20_GDP18" %in% colnames(contract)){
+    if("Action_Obligation_OMB20_GDP18" %in% colnames(contract)){
+      value_col<-"Action_Obligation_OMB20_GDP18"
+    }
+    else if("Action_Obligation.OMB20_GDP18" %in% colnames(contract)){
       value_col<-"Action_Obligation.OMB20_GDP18"
     }
     else if("Action_Obligation" %in% colnames(contract)){
       value_col<-"Action_Obligation"
+    }
+    else if("Action_Obligation.Then.Year" %in% colnames(contract)){
+      value_col<-"Action_Obligation.Then.Year"
     }
     else if("Action_Obligation.Then.Year" %in% colnames(contract)){
       value_col<-"Action_Obligation.Then.Year"
@@ -1700,7 +1706,7 @@ statsummary_discrete <- function(x,
     Percent_Records <- c(Percent_Records, percent(round(sum(is.na(contract[[x]]))/nrow(contract),5),accuracy = .01))
     Percent_Actions <- c(Percent_Actions, percent(round(sum(contract[[value_col]][is.na(contract[[x]])],na.rm = TRUE)/sum(contract[,value_col],na.rm = TRUE),5),accuracy = accuracy))
   }
-  name_categorical <- c(x,"%of records","% of $s")
+  name_categorical <- c(x,"% of records","% of $s")
   categories <- as.data.frame(cbind(categories,Percent_Records,Percent_Actions))
   colnames(categories) <- name_categorical
   return(categories)
