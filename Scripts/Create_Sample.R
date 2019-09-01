@@ -25,8 +25,15 @@ if(!exists("def")) load("data/clean/transformed_def.Rdata")
 ## Computational Sample Creation
 
 
-# load(file="../Data/Clean//def_sample.Rdata")
+# load(file="Data/Clean//def_sample.Rdata")
 
+# summary(def_breach$n_CBre_Then_Year)
+# def_breach$n_CBre_Then_Year<-def_breach$n_CBre_Then_Year-1
+# summary(def_breach$n_CBre_Then_Year)
+# summary(def_breach$ln_CBre_Then_Year)
+# def_breach$ln_CBre_Then_Year<-na_non_positive_log(def_breach$n_CBre_Then_Year)
+# summary(def_breach$ln_CBre_Then_Year)
+# def_breach<-def_breach %>% dplyr::select(-n_CBre_OMB20_GDP18,-ln_CBre_OMB20_GDP18)
 
 
 #Output variables
@@ -60,7 +67,7 @@ complete<-
   #Dependent Variables
   !is.na(def$b_Term)& #summary(def$b_Term)
   !is.na(def$b_CBre)&
-  !is.na(def$ln_CBre_Then_Year)&
+  # !is.na(def$ln_CBre_Then_Year)& NA when 0, but that's okay.r
   #Study Variables
   !is.na(def$CompOffr)&
   !is.na(def$cl_def3_HHI_lag1)&
