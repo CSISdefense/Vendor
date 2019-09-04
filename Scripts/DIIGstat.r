@@ -164,9 +164,10 @@ freq_discrete_plot<-function(data,x_col,
 
 
 summary_continuous_plot<-function(data,x_col,group_col=NA,bins=20,metric="perform", log=FALSE){
-  if (log==TRUE) data[,x_col]<-na_non_positive_log(data[,x_col])
-  gridExtra::grid.arrange(freq_continuous_plot(data,x_col,group_col,bins=bins,caption=FALSE),
-                          binned_percent_plot(data,x_col,group_col,caption=TRUE,metric=metric))
+  if(metric!="none")
+    gridExtra::grid.arrange(freq_continuous_plot(data,x_col,group_col,bins=bins,caption=FALSE,log),
+                          binned_percent_plot(data,x_col,group_col,caption=TRUE,metric=metric,log))
+  else freq_continuous_plot(data,x_col,group_col,bins=bins,caption=FALSE)
   
 }
 
@@ -218,7 +219,9 @@ summary_double_continuous<-function(data,x_col,y_col,bins=20,metric="perform"){
                             
                             ncol=2
     )
-  } else stop(paste("Unknown metric:",metric))
+  #If none, nothing else to add.
+    } else if (metric != "none") stop(paste("Unknown metric:",metric))
+  
   
   binned_double_percent_plot(data,x_col,y_col,bins,metric=metric)
   # min_i<-min(data[,"interaction"])
@@ -286,7 +289,7 @@ freq_continuous_term_plot<-function(data,x_col,group_col=NA,bins=20,
 }
 
 freq_continuous_plot<-function(data,x_col,group_col=NA,bins=20,
-                               caption=TRUE){
+                               caption=TRUE,log=FALSE){
   if(is.na(group_col)){
     plot<-ggplot(data=data,
                  aes_string(x=x_col))
@@ -301,6 +304,8 @@ freq_continuous_plot<-function(data,x_col,group_col=NA,bins=20,
   if(caption==TRUE){
     plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
   }
+  
+  if(log==TRUE) plot<-plot+scale_x_log10(labels = scales::comma)
   
   plot+labs(title="Frequency")+
     scale_y_continuous(labels = scales::comma) + 
@@ -456,6 +461,7 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
   if(caption==TRUE){
     plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
   }
+  if(log==TRUE) plot<-plot+scale_x_log10(labels = scales::comma)
   if(metric=="cbre") plot<-plot+geom_point(alpha=0.25)
   else plot<-plot+geom_point()
   plot
