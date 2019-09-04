@@ -289,7 +289,14 @@ freq_continuous_term_plot<-function(data,x_col,group_col=NA,bins=20,
 }
 
 freq_continuous_plot<-function(data,x_col,group_col=NA,bins=20,
-                               caption=TRUE,log=FALSE){
+                               caption=TRUE,log=FALSE, plus1=FALSE){
+  
+  #
+  if(plus1==TRUE){
+    if(log==FALSE) warning("The variable is not being logged. Are you sure you want to add one?")
+    data[,x_col]<-data[,x_col]+1
+  }
+    
   if(is.na(group_col)){
     plot<-ggplot(data=data,
                  aes_string(x=x_col))
@@ -305,7 +312,7 @@ freq_continuous_plot<-function(data,x_col,group_col=NA,bins=20,
     plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
   }
   
-  if(log==TRUE) plot<-plot+scale_x_log10(labels = scales::comma)
+  if(log==TRUE) plot<-plot+scale_x_log10()#labels = scales::comma
   
   plot+labs(title="Frequency")+
     scale_y_continuous(labels = scales::comma) + 
@@ -461,7 +468,7 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
   if(caption==TRUE){
     plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
   }
-  if(log==TRUE) plot<-plot+scale_x_log10(labels = scales::comma)
+  if(log==TRUE) plot<-plot+scale_x_log10()#labels = scales::comma
   if(metric=="cbre") plot<-plot+geom_point(alpha=0.25)
   else plot<-plot+geom_point()
   plot
@@ -1732,8 +1739,16 @@ statsummary_continuous <- function(x,
                                    contract,
                                    log=TRUE,
                                    digits=3,
-                                   value_col=NULL)
+                                   value_col=NULL,
+                                   plus1=FALSE)
   {       #input(x: namelist of all continuous variables contract: name of the data frame)
+  
+    #
+    if(plus1==TRUE){
+      if(log==FALSE) warning("The variable is not being logged. Are you sure you want to add one?")
+      contract[,x]<-contract[,x]+1
+    }
+  
   if(!x %in% colnames(contract)) stop(paste(x,"is not a column in contract."))
   value_col<-get_value_col(contract,value_col)
   continuous_Info <- data.frame(matrix(ncol = 9,nrow = 0))
