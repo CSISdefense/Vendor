@@ -19,7 +19,7 @@ library(foreign)
 library(stargazer)
 library(texreg)
 library(reshape2)
-source("DIIGstat.r")
+source("..\\scripts\\DIIGstat.r")
 
 axis.text.size<-10
 strip.text.size<-10
@@ -31,7 +31,7 @@ geom.text.size<-12
 main.text.size<-1
 note.text.size<-1.40
 
-
+load("..\\data\\clean\\transformed_def.Rdata")
 ```
 
 
@@ -47,7 +47,7 @@ First we load the data. The dataset used is a U.S. Defense Contracting dataset d
 
 ```{r NAICS3_Summary, fig.width=7.5 , fig.height=3}
 NAICS_summary<-def %>% group_by(NAICS3,StartCY,def3_HHI_lag1,def3_obl_lag1,def3_ratio_lag1,US3_avg_sal_lag1) %>%
-  dplyr::summarise(annual_action_obligation=sum(Action_Obligation),
+  dplyr::summarise(annual_action_obligation=sum(Action_Obligation_Then_Year),
                    annual_count=length(StartCY)) 
 
 top_NAICS <- NAICS_summary %>% group_by(NAICS3) %>% 
@@ -56,23 +56,24 @@ top_NAICS <- NAICS_summary %>% group_by(NAICS3) %>%
 top_NAICS$naics_dollar_rank<-rank(-top_NAICS$naics_action_obligation)
 top_NAICS$naics_count_rank<-rank(-top_NAICS$naics_count)
 
+#If statement there to prevent adding it a second time in  reruns.
+if(!"naics_dollar_rank" %in% colnames(NAICS_summary))
+  NAICS_summary<-left_join(NAICS_summary,top_NAICS, by="NAICS3")
 
-NAICS_summary<-left_join(NAICS_summary,top_NAICS, by="NAICS3")
 
-colnames(NAICS_summary)[colnames(NAICS_summary)=="NAICS3"]<-"principalnaicscode"
 
-NAICS_summary$principalnaicscode<-as.character(NAICS_summary$principalnaicscode)
+
 NAICS_summary<-as.data.frame(NAICS_summary)
-NAICS_summary<-csis360::read_and_join(NAICS_summary,
-                        lookup_file = "Lookup_PrincipalNAICScode.csv",
-                        path="",
-                        dir="Lookup\\",
-                        by="principalnaicscode",
-                        skip_check_var=c("principalnaicscodeText",
-"NAICS_shorthand",
-"principalNAICS4DigitCode")
-
-               )
+NAICS_summary$NAICS3<-as.character(NAICS_summary$NAICS3)
+NAICS_summary<-read_and_join_experiment(NAICS_summary,
+                                      lookup_file = "Lookup_PrincipalNAICScode.csv",
+                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                      dir="economic\\",
+                                      by=c("NAICS3"="principalnaicscode"),
+                                      skip_check_var=c("principalnaicscodeText",
+                                                       "NAICS_shorthand",
+                                                       "principalNAICS4DigitCode")
+                                      )
 
 # https://stackoverflow.com/questions/37174316/how-to-fit-long-text-into-ggplot2-facet-titles
 
@@ -126,7 +127,7 @@ ggsave(NAICS3top8_wide,file="..//Output\\NAICS3top8.png",width=9.5,height=4,dpi=
 ggsave(NAICS3top8_wide,file="..//Output\\NAICS3top8.eps",width=9.5,height=4,dpi=600)
 
 colnames(NAICS_summary)
-NAICS_long<-NAICS_summary[,colnames(NAICS_summary) %in% c( "principalnaicscode",
+NAICS_long<-NAICS_summary[,colnames(NAICS_summary) %in% c( "NAICS3",
                                                     "def3_HHI_lag1",
                                                     "def3_obl_lag1",
                                                     "def3_ratio_lag1",
@@ -136,7 +137,7 @@ NAICS_long<-NAICS_summary[,colnames(NAICS_summary) %in% c( "principalnaicscode",
                                                     "principalnaicscodeText",
                                                      "NAICS_shorthand",
                                                     "CY")]
-NAICS_long<-melt(NAICS_long, id=c("principalnaicscode","naics_dollar_rank","naics_count_rank","principalnaicscodeText","CY", "NAICS_shorthand"))
+NAICS_long<-melt(NAICS_long, id=c("NAICS3","naics_dollar_rank","naics_count_rank","principalnaicscodeText","CY", "NAICS_shorthand"))
 
 
 
@@ -185,15 +186,22 @@ NAICS_Freq_TOP20$Percent_Freq <- round(NAICS_Freq_TOP20$Freq/sum(NAICS_Freq$Freq
 colnames(NAICS_Freq_TOP20) <- c("NAICS_Code", "Count_Freq", "Percent_Freq")
 
 #Get detail description for each NAICS code
-NAICS_Lookup <- read.csv(file = "Lookup/Lookup_NAICS_code.csv")
-colnames(NAICS_Lookup) <- c("NAICS_Code", "NAICS_DESCRIPTION")
-NAICS_Freq_TOP20 <- left_join(NAICS_Freq_TOP20, NAICS_Lookup, by = "NAICS_Code")
+NAICS_Freq_TOP20<-read_and_join_experiment(NAICS_Freq_TOP20,
+                                           lookup_file = "Lookup_PrincipalNAICScode.csv",
+                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                      dir="economic\\",
+                                      by=c("NAICS_Code"="principalnaicscode")
+                                      )
+
+
+
+
 NAICS_Freq_TOP20 <- NAICS_Freq_TOP20[order(-NAICS_Freq_TOP20$Percent_Freq),]
-NAICS_Freq_TOP20$NAICS_DESCRIPTION <- factor(NAICS_Freq_TOP20$NAICS_DESCRIPTION, levels = rev(NAICS_Freq_TOP20$NAICS_DESCRIPTION))
+NAICS_Freq_TOP20$principalnaicscodeText <- factor(NAICS_Freq_TOP20$principalnaicscodeText, levels = rev(NAICS_Freq_TOP20$principalnaicscodeText))
 
 
 Frequency_Plot <- ggplot(data = NAICS_Freq_TOP20, 
-                         aes(x = NAICS_Freq_TOP20$NAICS_DESCRIPTION, 
+                         aes(x = NAICS_Freq_TOP20$principalnaicscodeText, 
                              y = NAICS_Freq_TOP20$Percent_Freq)) +
                   geom_bar(stat = "identity", position = "dodge", width = 0.8) + 
                   coord_flip() +
@@ -216,24 +224,29 @@ Frequency_Plot
 # colnames(NAICS_Freq) <- c("NAICS_Code", "Count_Freq", "Percent_Freq")
 # 
 # #Get detail description for each NAICS code
-# NAICS_Lookup <- read.csv(file = "Lookup/Lookup_NAICS_code.csv")
-# colnames(NAICS_Lookup) <- c("NAICS_Code", "NAICS_DESCRIPTION")
-# NAICS_Freq <- left_join(NAICS_Freq, NAICS_Lookup, by = "NAICS_Code")
+# NAICS_Freq<-read_and_join_experiment(NAICS_Freq,
+                                      #      lookup_file = "Lookup_PrincipalNAICScode.csv",
+                                      # path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                      # dir="economic\\",
+                                      # by=c("NAICS_Code"="principalnaicscode")
+#                                       )
+
+
 # NAICS_Freq <- NAICS_Freq[order(-NAICS_Freq$Percent_Freq),]
-# NAICS_Freq$NAICS_DESCRIPTION <- factor(NAICS_Freq$NAICS_DESCRIPTION, levels = rev(NAICS_Freq$NAICS_DESCRIPTION))
+# NAICS_Freq$principalnaicscodeText <- factor(NAICS_Freq$principalnaicscodeText, levels = rev(NAICS_Freq$principalnaicscodeText))
 # 
 # Percent_Obli <- c()
-# Total_Obli <- sum(def$Action_Obligation, na.rm = TRUE)
+# Total_Obli <- sum(def$Action_Obligation_Then_Year, na.rm = TRUE)
 # memory.limit(56000)
 # for (i in NAICS_Freq$NAICS_Code) {
-#   Percent_Obligation <- round(sum(def$Action_Obligation[def$NAICS == i], na.rm = TRUE)/Total_Obli,5)
+#   Percent_Obligation <- round(sum(def$Action_Obligation_Then_Year[def$NAICS == i], na.rm = TRUE)/Total_Obli,5)
 #   Percent_Obli <- c(Percent_Obli, Percent_Obligation)
 #   print(i)
 # }
 # NAICS_Freq$Percent_Obli <- Percent_Obli*100
 
 #The above code need more than 30 mins to run, so just load RData in practice
-load(file = "Data/NAICS_Freq_all.RData")
+load(file = "../Data/semi_clean/NAICS_Freq_all.RData")
 
 NAICS_Freq_top10Freq <- NAICS_Freq[order(-NAICS_Freq$Percent_Freq),]
 NAICS_Freq_top10Freq <- NAICS_Freq_top10Freq[1:10, ]
@@ -243,14 +256,14 @@ NAICS_Freq_top10Obli <- NAICS_Freq_top10Obli[1:10, ]
 NAICS_Freq_TOP <- rbind( NAICS_Freq_top10Obli, NAICS_Freq_top10Freq)
 NAICS_Freq_TOP <- unique(NAICS_Freq_TOP)  #18 records in total
 NAICS_Freq_TOP[,c(1,4)] <- lapply(NAICS_Freq_TOP[,c(1,4)], function(x) as.character(x))
-NAICS_Freq_TOP$NAICS_DESCRIPTION <- paste(NAICS_Freq_TOP$NAICS_Code, " - ", NAICS_Freq_TOP$NAICS_DESCRIPTION)
+NAICS_Freq_TOP$principalnaicscodeText <- paste(NAICS_Freq_TOP$NAICS_Code, " - ", NAICS_Freq_TOP$principalnaicscodeText)
 
-NAICS_Freq_TOP$NAICS_DESCRIPTION <- factor(NAICS_Freq_TOP$NAICS_DESCRIPTION, levels = rev(NAICS_Freq_TOP$NAICS_DESCRIPTION))
-NAICS_Freq_TOP <- melt(NAICS_Freq_TOP, id = c("NAICS_Code","Count_Freq","NAICS_DESCRIPTION"))
+NAICS_Freq_TOP$principalnaicscodeText <- factor(NAICS_Freq_TOP$principalnaicscodeText, levels = rev(NAICS_Freq_TOP$principalnaicscodeText))
+NAICS_Freq_TOP <- melt(NAICS_Freq_TOP, id = c("NAICS_Code","Count_Freq","principalnaicscodeText"))
 #NAICS_Freq_TOP <- merge(NAICS_Freq_top20Freq, NAICS_Freq_top20Obli, by= "NAICS_Code", all=TRUE)
 
 NAICS_barPlot <- ggplot(data = NAICS_Freq_TOP, 
-                         aes(x = NAICS_DESCRIPTION, 
+                         aes(x = principalnaicscodeText, 
                              y = value,
                              fill = factor(variable))) +
                   geom_bar(stat = "identity", position = "dodge", width = 0.8) + 
@@ -280,14 +293,20 @@ NAICS2_Freq$Percent_Freq <- round(NAICS2_Freq$Freq/sum(NAICS2_Freq$Freq),4)*100
 colnames(NAICS2_Freq) <- c("NAICS_Code", "Count_Freq", "Percent_Freq")
 
 #Get detail description for NAICS2 code
-NAICS_Lookup <- read.csv(file = "Lookup/Lookup_NAICS_code.csv")
-colnames(NAICS_Lookup) <- c("NAICS_Code", "NAICS_DESCRIPTION")
-NAICS2_Freq <- left_join(NAICS2_Freq, NAICS_Lookup, by = "NAICS_Code")
+debug(csis360::na_check)
+NAICS2_Freq<-read_and_join_experiment(NAICS2_Freq,
+                                           lookup_file = "Lookup_PrincipalNAICScode.csv",
+                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                      dir="economic\\",
+                                      by=c("NAICS_Code"="principalnaicscode"),
+                                      add_var="principalnaicscodeText"
+                                      )
+
 NAICS2_Freq <- NAICS2_Freq[order(-NAICS2_Freq$Percent_Freq),]
-NAICS2_Freq$NAICS_DESCRIPTION <- factor(NAICS2_Freq$NAICS_DESCRIPTION, levels = rev(NAICS2_Freq$NAICS_DESCRIPTION))
+NAICS2_Freq$principalnaicscodeText <- factor(NAICS2_Freq$principalnaicscodeText, levels = rev(NAICS2_Freq$principalnaicscodeText))
 
 Frequency_Plot2 <- ggplot(data = NAICS2_Freq,
-                          aes(x = NAICS2_Freq$NAICS_DESCRIPTION, 
+                          aes(x = NAICS2_Freq$principalnaicscodeText, 
                               y = NAICS2_Freq$Percent_Freq)) +
                    geom_bar(stat = "identity", position = "dodge", width = 0.8) + 
                    coord_flip() +
@@ -307,27 +326,31 @@ NAICS2_Freq$Percent_Freq <- round(NAICS2_Freq$Freq/sum(NAICS2_Freq$Freq),4)*100
 colnames(NAICS2_Freq) <- c("NAICS_Code", "Count_Freq", "Percent_Freq")
 
 #Get detail description for NAICS2 code
-NAICS_Lookup <- read.csv(file = "Lookup/Lookup_NAICS_code.csv")
-colnames(NAICS_Lookup) <- c("NAICS_Code", "NAICS_DESCRIPTION")
-NAICS2_Freq <- left_join(NAICS2_Freq, NAICS_Lookup, by = "NAICS_Code")
+NAICS2_Freq<-read_and_join_experiment(NAICS2_Freq,
+                                           lookup_file = "Lookup_PrincipalNAICScode.csv",
+                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                      dir="economic\\",
+                                      by=c("NAICS_Code"="principalnaicscode"),
+                                      add_var = "principalnaicscodeText"
+                                      )
 
 Percent_Obli <- c()
-Total_Obli <- sum(def$Action_Obligation, na.rm = TRUE)
+Total_Obli <- sum(def$Action_Obligation_Then_Year, na.rm = TRUE)
 for (i in NAICS2_Freq$NAICS_Code) {
-  Percent_Obligation <- round(sum(def$Action_Obligation[def$NAICS2 == i], na.rm = TRUE)/Total_Obli,5)
+  Percent_Obligation <- round(sum(def$Action_Obligation_Then_Year[def$NAICS2 == i], na.rm = TRUE)/Total_Obli,5)
   Percent_Obli <- c(Percent_Obli, Percent_Obligation)
 }
 
 NAICS2_Freq$Percent_Obli <- Percent_Obli * 100
 NAICS2_Freq <- NAICS2_Freq[order(-NAICS2_Freq$Percent_Obli),]
 NAICS2_Freq[,c(1,3)] <- lapply(NAICS2_Freq[,c(1,3)], function(x) as.character(x))
-NAICS2_Freq$NAICS_DESCRIPTION <- paste(NAICS2_Freq$NAICS_Code, " - ", NAICS2_Freq$NAICS_DESCRIPTION)
-NAICS2_Freq$NAICS_DESCRIPTION <- factor(NAICS2_Freq$NAICS_DESCRIPTION, levels = rev(NAICS2_Freq$NAICS_DESCRIPTION))
-NAICS2_Freq <- melt(NAICS2_Freq, id = c("NAICS_Code", "Count_Freq","NAICS_DESCRIPTION"))
+NAICS2_Freq$principalnaicscodeText <- paste(NAICS2_Freq$NAICS_Code, " - ", NAICS2_Freq$principalnaicscodeText)
+NAICS2_Freq$principalnaicscodeText <- factor(NAICS2_Freq$principalnaicscodeText, levels = rev(NAICS2_Freq$principalnaicscodeText))
+NAICS2_Freq <- melt(NAICS2_Freq, id = c("NAICS_Code", "Count_Freq","principalnaicscodeText"))
 NAICS2_Freq$value <- as.numeric(NAICS2_Freq$value)
 
 NAICS2_barplot <- ggplot(data = NAICS2_Freq,
-                          aes(x = NAICS_DESCRIPTION, 
+                          aes(x = principalnaicscodeText, 
                               y = value,
                               fill = factor(variable))) +
                    geom_bar(stat = "identity", 
@@ -355,16 +378,20 @@ Frequency[["Percent_Freq"]] <- round(Frequency[["Freq"]]/sum(Frequency[["Freq"]]
 colnames(Frequency) <- c("NAICS3", "Count_Freq", "Percent_Freq")
 Percent_Obli <- c()
 for (i in Frequency[["NAICS3"]]) {
-  Percent_Obligation <- round(sum(def[["Action_Obligation"]][def$NAICS3 == i], na.rm = TRUE)/sum(def[["Action_Obligation"]], na.rm = TRUE),5)
+  Percent_Obligation <- round(sum(def[["Action_Obligation_Then_Year"]][def$NAICS3 == i], na.rm = TRUE)/sum(def[["Action_Obligation_Then_Year"]], na.rm = TRUE),5)
     Percent_Obli <- c(Percent_Obli, Percent_Obligation)
   }
 Frequency[["Percent_Obli"]] <- Percent_Obli*100
 NAICS3_Freq <- Frequency
 
 #Add detail description to unique NAICS3 code
-NAICS_Lookup <- read.csv(file = "https://raw.githubusercontent.com/CSISdefense/Vendor/master/Lookup/Lookup_NAICS_code.csv")
-colnames(NAICS_Lookup) <- c("NAICS3", "Description")
-NAICS3_Freq <- left_join(NAICS3_Freq, NAICS_Lookup, by = "NAICS3")
+NAICS3_Freq<-read_and_join_experiment(NAICS3_Freq,
+                                           lookup_file = "Lookup_PrincipalNAICScode.csv",
+                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                      dir="economic\\",
+                                      by=c("NAICS_Code"="principalnaicscode")
+                                      )
+
 NAICS3_Freq$Description <- as.character(NAICS3_Freq$Description)
 NAICS3_Freq$Description <- paste(NAICS3_Freq$NAICS, " - ", NAICS3_Freq$Description)
 
@@ -390,10 +417,19 @@ part_grouped_barplot("NAICS3", NAICS3_Freq_TOP) + ggtitle("Top 15 of the most fr
 #grouped bar plot for variable Office
 #Perpare data for plot
 #get the detailed desceription for Office by AgencyID and OfficeID
-Office_Lookup <- read.delim("https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/office/Office.ContractingOfficeCode.txt")
 def_dup <- def
 memory.limit(56000)
-def_dup <- left_join(def_dup, Office_Lookup, by = c("Agency" = "AgencyID", "Office" = "ContractingOfficeCode"))
+
+def_dup<-read_and_join_experiment(def_dup,
+                                      lookup_file = "Office.ContractingOfficeCode.txt",
+                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                      dir="office/",
+                                      by=c("Agency"="AgencyID",
+                                       "Office"="ContractingOfficeCode"   
+                                      ))
+
+
+
 Office_Freq <- as.data.frame(table(def_dup$Office, def_dup$ContractingOfficeName))
 colnames(Office_Freq) <- c("OfficeID", "OfficeName","Count_Freq")
 Office_Freq$Percent_Freq <- round(Office_Freq$Count_Freq/sum(Office_Freq$Count_Freq),4)*100
@@ -403,9 +439,9 @@ Office_Freq$Office_Full <- ifelse(Office_Freq$OfficeName == "NULL", Office_Freq$
 
 
 Percent_Obli <- c()
-Total_Obli <- sum(def_dup$Action_Obligation, na.rm = TRUE)
+Total_Obli <- sum(def_dup$Action_Obligation_Then_Year, na.rm = TRUE)
 for (i in Office_Freq$OfficeID) {
-  Percent_Obligation <- round(sum(def_dup$Action_Obligation[def_dup$Office == i], na.rm = TRUE)/Total_Obli,5)
+  Percent_Obligation <- round(sum(def_dup$Action_Obligation_Then_Year[def_dup$Office == i], na.rm = TRUE)/Total_Obli,5)
   Percent_Obli <- c(Percent_Obli, Percent_Obligation)
 }
 Office_Freq$Percent_Obli <- Percent_Obli * 100
@@ -522,12 +558,12 @@ HH1plot
 ggsave(HH1plot,file="..//Output//HH1freq.png",width=5.5,height=5.5,dpi=600)
 ggsave(HH1plot,file="..//Output//HH1freq.eps",width=5.5,height=5.5,dpi=600)
 
-sum(def$Action_Obligation[def$EffComp=="No Comp."],na.rm=TRUE)/sum(def$Action_Obligation,na.rm=TRUE)
-sum(def$Action_Obligation[def$EffComp=="1 Offer"],na.rm=TRUE)/sum(def$Action_Obligation,na.rm=TRUE)
-sum(def$Action_Obligation[def$EffComp=="2+ Offers"],na.rm=TRUE)/sum(def$Action_Obligation,na.rm=TRUE)
+sum(def$Action_Obligation_Then_Year[def$EffComp=="No Comp."],na.rm=TRUE)/sum(def$Action_Obligation_Then_Year,na.rm=TRUE)
+sum(def$Action_Obligation_Then_Year[def$EffComp=="1 Offer"],na.rm=TRUE)/sum(def$Action_Obligation_Then_Year,na.rm=TRUE)
+sum(def$Action_Obligation_Then_Year[def$EffComp=="2+ Offers"],na.rm=TRUE)/sum(def$Action_Obligation_Then_Year,na.rm=TRUE)
 nrow(def[def$EffComp=="No Comp.",])/nrow(def)
 
-sum(def$Action_Obligation[is.na(def$EffComp)],na.rm=TRUE)/sum(def$Action_Obligation,na.rm=TRUE)
+sum(def$Action_Obligation_Then_Year[is.na(def$EffComp)],na.rm=TRUE)/sum(def$Action_Obligation_Then_Year,na.rm=TRUE)
 
 
 # Effplot<-freq_discrete_plot(subset(def,"EffComp"))
@@ -1034,7 +1070,7 @@ get_icc(Term_Cons_Comp_14C)
 
 # Tables for Paper
 ## Competition Model
-```{r Output-CBre}
+```{r Output-Comp}
 
 # texreg::htmlreg(list(Term_Cons_08A3,
 #                   CBre_Cons_08C),#CBre_Cons_08B2
@@ -1331,7 +1367,7 @@ gridExtra::grid.arrange(dotplot(ranef(CBre_Cons_13B.restart, condVar = T), strip
 
 
 ## Terminations Model
-```{r Output-CBre}
+```{r Output-Term}
 
 # texreg::htmlreg(list(Term_Cons_08A3,
 #                   CBre_Cons_08C),#CBre_Cons_08B2

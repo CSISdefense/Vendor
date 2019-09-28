@@ -289,12 +289,24 @@ freq_continuous_term_plot<-function(data,x_col,group_col=NA,bins=20,
 }
 
 freq_continuous_plot<-function(data,x_col,group_col=NA,bins=20,
-                               caption=TRUE,log=FALSE, plus1=FALSE){
+                               caption=TRUE, log=FALSE, denominator=NULL, plus1=FALSE,cap1=FALSE){
   
-  #
+  if(!x_col %in% colnames(data)) stop(paste(x_col,"is not found in data."))
+  
+  if(!is.null(denominator)){
+    if(!denominator %in% colnames(data)) stop(paste(denominator,"is not found in data."))
+    data$numerator<-data[,x_col]
+    data[,x_col]<-data[,x_col]/data[,denominator]
+    if(cap1==TRUE)
+      data[data[,x_col]>1 & !is.na(data[,x_col]),x_col]<-1
+  }
+  
   if(plus1==TRUE){
     if(log==FALSE) warning("The variable is not being logged. Are you sure you want to add one?")
     data[,x_col]<-data[,x_col]+1
+    if(!is.null(denominator)){
+      data$numerator<-data$numerator+1
+    }
   }
     
   if(is.na(group_col)){
@@ -312,11 +324,60 @@ freq_continuous_plot<-function(data,x_col,group_col=NA,bins=20,
     plot<-plot+labs(caption="Source: FPDS, CSIS Analysis")
   }
   
-  if(log==TRUE) plot<-plot+scale_x_log10()#labels = scales::comma
+  if(!is.null(denominator)){
+    if(is.na(group_col)){
+      numer_plot<-ggplot(data=data,
+                   aes_string(x="numerator"))
+    }
+    else{
+      numer_plot<-ggplot(data=data,
+                   aes_string(x="numerator"))+geom_histogram(bins=bins)+
+        facet_wrap(as.formula(paste("~",group_col)),scales="free_y")
+      
+    }
+    
+    if(caption==TRUE){
+      numer_plot<-numer_plot+labs(caption="Source: FPDS, CSIS Analysis")
+    }
+    
+    
+    
+  }
   
-  plot+labs(title="Frequency")+
+  plot<-plot+labs(title="Frequency")+
     scale_y_continuous(labels = scales::comma) + 
     geom_histogram(bins=bins) 
+  
+  
+  if(is.null(denominator)){
+    if(log==TRUE){
+      gridExtra::grid.arrange(plot,plot+scale_x_log10(),
+                              ncol=2)#labels = scales::comma
+    } else{ plot
+    }
+    
+  } else {
+    numer_plot<-numer_plot+
+      labs(title="Numerator Frequency")+
+      scale_y_continuous(labels = scales::comma) + 
+      geom_histogram(bins=bins)
+    plot<-plot+labs(title="Post-Division Frequency")
+    if(log==TRUE){
+    gridExtra::grid.arrange(
+                 numer_plot,numer_plot+scale_x_log10(),
+               plot ,plot+scale_x_log10() ,
+               ncol=2
+                 )
+    
+    }
+    else{
+      gridExtra::grid.arrange(
+        numer_plot,
+        plot 
+      )
+      
+    }
+  }
 }
 
 
