@@ -1393,10 +1393,11 @@ residuals_binned<-function(model,col="fitted",bins=40){
     geom_line(aes(y=se2),col="grey")+
     geom_line(aes(y=-se2),col="grey")+
     labs(title="Binned residual plot",
-         y="Average residual")
+         y="Average Residual")
   
   if (col=="fitted"){
     br<-br+labs(x="Estimated Pr(Termination)")
+    warning("Always uses Xlb Estimated Pr(Termination), should update.")
   }
   br
 }

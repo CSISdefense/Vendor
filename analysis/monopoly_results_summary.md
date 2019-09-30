@@ -193,6 +193,7 @@ date: "Wednesday, February 8, 2017"
 First we load the data. The dataset used is a U.S. Defense Contracting dataset derived from   FPDS.
 
 
+### Economic
 #### NAICS 2
 
 
@@ -269,9 +270,6 @@ NAICS2_barplot
 ```
 
 ![](monopoly_results_summary_files/figure-html/grouped percent frequency/obligation barplot for all NAICS2, 21 in total-1.png)<!-- -->
-
-
-
 
 #### NAICS 3
 
@@ -432,8 +430,8 @@ NAICS_long$high[NAICS_long$variable!="Herfindahl-\nHerschman Index"]<-NA
 NAICS_long$low<-1500
 NAICS_long$low[NAICS_long$variable!="Herfindahl-\nHerschman Index"]<-NA
 
-
-NAICS3long<-ggplot(subset(NAICS_long,naics_dollar_rank<=8),
+(
+NAICS3long_wide<-ggplot(subset(NAICS_long,naics_dollar_rank<=8),
        aes(x=CY,y=value))+#color=NAICS_Code
   geom_line()+
   scale_y_continuous(label=scales::comma)+ 
@@ -442,11 +440,20 @@ NAICS3long<-ggplot(subset(NAICS_long,naics_dollar_rank<=8),
   geom_hline(aes(
            yintercept=high),linetype="dotted")+
   geom_hline(aes(
-           yintercept=low),linetype="dotted")    
+           yintercept=low),linetype="dotted") + 
+  facet_grid(variable~NAICS_shorthand,scales="free_y")   
+)
+```
 
+```
+## Warning: Removed 128 rows containing missing values (geom_hline).
 
+## Warning: Removed 128 rows containing missing values (geom_hline).
+```
 
-NAICS3long_wide<-NAICS3long+ facet_grid(variable~NAICS_shorthand,scales="free_y")
+![](monopoly_results_summary_files/figure-html/NAICS3_Summary-2.png)<!-- -->
+
+```r
 ggsave(NAICS3long_wide,file="..//Output\\NAICS3long.png",width=9.5,height=5.5,dpi=600)
 ```
 
@@ -471,200 +478,206 @@ write.csv(NAICS_summary,file="..//Output/NAICS3_summary.csv",row.names = FALSE)
 ```
 
 
-```r
-Frequency <- as.data.frame(table(def$NAICS3))
-Frequency[["Percent_Freq"]] <- round(Frequency[["Freq"]]/sum(Frequency[["Freq"]]),4)*100
-colnames(Frequency) <- c("NAICS3", "Count_Freq", "Percent_Freq")
-Percent_Obli <- c()
-for (i in Frequency[["NAICS3"]]) {
-  Percent_Obligation <- round(sum(def[["Action_Obligation_Then_Year"]][def$NAICS3 == i], na.rm = TRUE)/sum(def[["Action_Obligation_Then_Year"]], na.rm = TRUE),5)
-    Percent_Obli <- c(Percent_Obli, Percent_Obligation)
-  }
-Frequency[["Percent_Obli"]] <- Percent_Obli*100
-NAICS3_Freq <- Frequency
 
-#Add detail description to unique NAICS3 code
-NAICS3_Freq<-read_and_join_experiment(NAICS3_Freq,
-                                           lookup_file = "Lookup_PrincipalNAICScode.csv",
-                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                                      dir="economic\\",
-                                      by=c("NAICS3"="principalnaicscode"),
-                                      add_var="principalnaicscodeText"
-                                      )
-```
 
-```
-## Parsed with column specification:
-## cols(
-##   principalnaicscode = col_character(),
-##   principalnaicscodeText = col_character(),
-##   principalNAICS2DigitCode = col_character(),
-##   principalNAICS3DigitCode = col_double(),
-##   principalNAICS4DigitCode = col_double(),
-##   NAICS_shorthand = col_character()
-## )
-```
 
-```
-## Warning: Column `NAICS3`/`principalnaicscode` joining factor and character
-## vector, coercing into character vector
-```
-
-```r
-NAICS3_Freq$principalnaicscodeText <- as.character(NAICS3_Freq$principalnaicscodeText)
-NAICS3_Freq$principalnaicscodeText <- paste(NAICS3_Freq$NAICS, " - ", NAICS3_Freq$principalnaicscodeText)
-
-#Get the top 15 most frequently appeared NAICS3
-NAICS3_Freq_top10Freq <- NAICS3_Freq[order(-NAICS3_Freq$Percent_Freq),]
-NAICS3_Freq_top10Freq <- NAICS3_Freq_top10Freq[1:10, ]   
-NAICS3_Freq_top10Obli <- NAICS3_Freq[order(-NAICS3_Freq$Percent_Obli),]
-NAICS3_Freq_top10Obli <- NAICS3_Freq_top10Obli[1:10, ]
-NAICS3_Freq_TOP <- rbind(NAICS3_Freq_top10Obli, NAICS3_Freq_top10Freq)
-NAICS3_Freq_TOP <- unique(NAICS3_Freq_TOP)  #15 records in total
-NAICS3_Freq_TOP <- NAICS3_Freq_TOP[order(-NAICS3_Freq_TOP$Percent_Obli),]
-NAICS3_Freq_TOP$principalnaicscodeText <- factor(NAICS3_Freq_TOP$principalnaicscodeText, rev(NAICS3_Freq_TOP$principalnaicscodeText))
-
-#Reshape the dataframe to long format for plot
-NAICS3_Freq_TOP <- melt(NAICS3_Freq_TOP, id = c("NAICS3", "Count_Freq", "principalnaicscodeText"))
-
-#Generate the plot and add title manually
-part_grouped_barplot("NAICS3", NAICS3_Freq_TOP,
-                     description_var="principalnaicscodeText") + ggtitle("Top 15 of the most frequently appeared NAICS3")
-```
-
-![](monopoly_results_summary_files/figure-html/grouped barplot for variable NAICS3-1.png)<!-- -->
 
 
 #### NAICS 6
 
 
-```r
-#Prepare dateframe for plot
-NAICS_Freq <- as.data.frame(table(def$NAICS))
-NAICS_Freq <- NAICS_Freq[order(-NAICS_Freq$Freq),]
-NAICS_Freq_TOP20 <- NAICS_Freq[1:20,]   #Get top 20 NAICS has largest frequency count
-NAICS_Freq_TOP20$Percent_Freq <- round(NAICS_Freq_TOP20$Freq/sum(NAICS_Freq$Freq),4)*100
-colnames(NAICS_Freq_TOP20) <- c("NAICS_Code", "Count_Freq", "Percent_Freq")
 
-#Get detail description for each NAICS code
-NAICS_Freq_TOP20<-read_and_join_experiment(NAICS_Freq_TOP20,
-                                           lookup_file = "Lookup_PrincipalNAICScode.csv",
-                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+
+```r
+NAICS_summary<-def %>% group_by(NAICS,StartCY,def6_HHI_lag1,def6_obl_lag1,def6_ratio_lag1,US6_avg_sal_lag1) %>%
+  dplyr::summarise(annual_action_obligation=sum(Action_Obligation_Then_Year),
+                   annual_count=length(StartCY)) 
+
+top_NAICS <- NAICS_summary %>% group_by(NAICS) %>% 
+  dplyr::summarise(naics_action_obligation=sum(annual_action_obligation),
+                   naics_count=sum(annual_count)) 
+top_NAICS$naics_dollar_rank<-rank(-top_NAICS$naics_action_obligation)
+top_NAICS$naics_count_rank<-rank(-top_NAICS$naics_count)
+
+
+NAICS_summary<-left_join(NAICS_summary,top_NAICS, by="NAICS")
+
+colnames(NAICS_summary)[colnames(NAICS_summary)=="NAICS"]<-"principalnaicscode"
+
+NAICS_summary$principalnaicscode<-as.character(NAICS_summary$principalnaicscode)
+NAICS_summary<-as.data.frame(NAICS_summary)
+
+NAICS_summary<-read_and_join(NAICS_summary,
+                        lookup_file = "Lookup_PrincipalNAICScode.csv",
+                        path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
                                       dir="economic\\",
-                                      by=c("NAICS_Code"="principalnaicscode")
-                                      )
+                        by="principalnaicscode",
+                        skip_check_var=c("principalnaicscodeText",
+                                         "NAICS_shorthand")
+               )
+
+
+
+
+summary(NAICS_summary$NAICS_shorthand)
 ```
 
 ```
-## Parsed with column specification:
-## cols(
-##   principalnaicscode = col_character(),
-##   principalnaicscodeText = col_character(),
-##   principalNAICS2DigitCode = col_character(),
-##   principalNAICS3DigitCode = col_double(),
-##   principalNAICS4DigitCode = col_double(),
-##   NAICS_shorthand = col_character()
-## )
-```
-
-```
-## Warning: Column `NAICS_Code`/`principalnaicscode` joining factor and
-## character vector, coercing into character vector
+##    Length     Class      Mode 
+##      8520 character character
 ```
 
 ```r
-NAICS_Freq_TOP20 <- NAICS_Freq_TOP20[order(-NAICS_Freq_TOP20$Percent_Freq),]
-NAICS_Freq_TOP20$principalnaicscodeText <- factor(NAICS_Freq_TOP20$principalnaicscodeText, levels = rev(NAICS_Freq_TOP20$principalnaicscodeText))
+# View(NAICS_summary)
+NAICS_summary$NAICS_shorthand<-swr(NAICS_summary$NAICS_shorthand,nwrap = 25)
+NAICS_summary$CY<-NAICS_summary$StartCY-1
+NAICS6top<-ggplot(subset(NAICS_summary,naics_dollar_rank<=4 |
+                          naics_count_rank<=4),
+       aes(x=CY,y=def6_HHI_lag1))+#color=NAICS_Code
+  geom_line()+
+  scale_y_continuous(label=scales::comma)+ 
+  # scale_x_continuous(breaks=c(2006,2009,2011,2014))+
+  labs(x="Calendar Year",y="Herfindahl-Herschman Index")+ 
+  geom_hline(yintercept=c(1500,2500),linetype="dotted")
 
-
-Frequency_Plot <- ggplot(data = NAICS_Freq_TOP20, 
-                         aes(x = NAICS_Freq_TOP20$principalnaicscodeText, 
-                             y = NAICS_Freq_TOP20$Percent_Freq)) +
-                  geom_bar(stat = "identity", position = "dodge", width = 0.8) + 
-                  coord_flip() +
-                  xlab("") + 
-                  ylab("Percent of Frequency") + 
-                  theme_grey() + 
-                  scale_fill_grey() + 
-                  ggtitle("Top 20 of the most frequently appeared NAICS") +
-                  theme(text = element_text(size = 10))
-Frequency_Plot
+(NAICS6top_paper<-NAICS6top+ facet_wrap(~NAICS_shorthand,ncol=2))
 ```
 
-![](monopoly_results_summary_files/figure-html/barplot for top 20 most frequently appeared NAICS-1.png)<!-- -->
-
+![](monopoly_results_summary_files/figure-html/NAICS6_Summary-1.png)<!-- -->
 
 ```r
-# #Percent frequency/obligation grouped bar plot for variable NAICS
-# #Prepare dateframe for plot
-# NAICS_Freq <- as.data.frame(table(def$NAICS))
-# # NAICS_Freq <- NAICS_Freq[order(-NAICS_Freq$Freq),]
-# # NAICS_Freq_TOP20 <- NAICS_Freq[1:20,]   #Get top 20 NAICS has largest frequency count
-# NAICS_Freq$Percent_Freq <- round(NAICS_Freq$Freq/sum(NAICS_Freq$Freq),4)*100
-# colnames(NAICS_Freq) <- c("NAICS_Code", "Count_Freq", "Percent_Freq")
-# 
-# #Get detail description for each NAICS code
-# NAICS_Freq<-read_and_join_experiment(NAICS_Freq,
-                                      #      lookup_file = "Lookup_PrincipalNAICScode.csv",
-                                      # path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                                      # dir="economic\\",
-                                      # by=c("NAICS_Code"="principalnaicscode")
-#                                       )
+ggsave(NAICS6top_paper,file="..//Output\\NAICS6top.png",width=4,height=8,dpi=600)
+ggsave(NAICS6top_paper,file="..//Output\\NAICS6top.eps",width=4,height=8,dpi=600)
 
-
-# NAICS_Freq <- NAICS_Freq[order(-NAICS_Freq$Percent_Freq),]
-# NAICS_Freq$principalnaicscodeText <- factor(NAICS_Freq$principalnaicscodeText, levels = rev(NAICS_Freq$principalnaicscodeText))
-# 
-# Percent_Obli <- c()
-# Total_Obli <- sum(def$Action_Obligation_Then_Year, na.rm = TRUE)
-
-# for (i in NAICS_Freq$NAICS_Code) {
-#   Percent_Obligation <- round(sum(def$Action_Obligation_Then_Year[def$NAICS == i], na.rm = TRUE)/Total_Obli,5)
-#   Percent_Obli <- c(Percent_Obli, Percent_Obligation)
-#   print(i)
-# }
-# NAICS_Freq$Percent_Obli <- Percent_Obli*100
-
-#The above code need more than 30 mins to run, so just load RData in practice
-load(file = "../Data/semi_clean/NAICS_Freq_all.RData")
-
-NAICS_Freq_top10Freq <- NAICS_Freq[order(-NAICS_Freq$Percent_Freq),]
-NAICS_Freq_top10Freq <- NAICS_Freq_top10Freq[1:10, ]
-NAICS_Freq_top10Obli <- NAICS_Freq[order(-NAICS_Freq$Percent_Obli),]
-NAICS_Freq_top10Obli <- NAICS_Freq_top10Obli[1:10, ]
-
-NAICS_Freq_TOP <- rbind( NAICS_Freq_top10Obli, NAICS_Freq_top10Freq)
-NAICS_Freq_TOP <- unique(NAICS_Freq_TOP)  #18 records in total
-NAICS_Freq_TOP[,c(1,4)] <- lapply(NAICS_Freq_TOP[,c(1,4)], function(x) as.character(x))
-NAICS_Freq_TOP$principalnaicscodeText <- paste(NAICS_Freq_TOP$NAICS_Code, " - ", NAICS_Freq_TOP$principalnaicscodeText)
-
-NAICS_Freq_TOP$principalnaicscodeText <- factor(NAICS_Freq_TOP$principalnaicscodeText, levels = rev(NAICS_Freq_TOP$principalnaicscodeText))
-NAICS_Freq_TOP <- melt(NAICS_Freq_TOP, id = c("NAICS_Code","Count_Freq","principalnaicscodeText"))
-#NAICS_Freq_TOP <- merge(NAICS_Freq_top20Freq, NAICS_Freq_top20Obli, by= "NAICS_Code", all=TRUE)
-
-NAICS_barPlot <- ggplot(data = NAICS_Freq_TOP, 
-                         aes(x = principalnaicscodeText, 
-                             y = value,
-                             fill = factor(variable))) +
-                  geom_bar(stat = "identity", position = "dodge", width = 0.8) + 
-                  coord_flip() +
-                  xlab("") + 
-                  ylab("") + 
-                  theme_grey() + 
-                  scale_fill_grey(labels = c("% records", "% obligation"),
-                                  guide = guide_legend(reverse = TRUE)) + 
-                  ggtitle("Top 18 of the most frequently appeared NAICS") +
-                  theme(text = element_text(size = 10),
-                        legend.title = element_blank(),
-                        legend.position = "bottom",
-                        legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit = "cm"),
-                        legend.text = element_text(margin = margin(r=0.5, unit = "cm")),
-                        plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm"))
-
-NAICS_barPlot
+(NAICS6top_pp<-NAICS6top+ facet_wrap(~NAICS_shorthand,ncol=4))
 ```
 
-![](monopoly_results_summary_files/figure-html/grouped barplot for NAICS most frequency appeared/has the largest percent obligation-1.png)<!-- -->
+![](monopoly_results_summary_files/figure-html/NAICS6_Summary-2.png)<!-- -->
+
+```r
+ggsave(NAICS6top_pp,file="..//Output\\NAICS6top_pp.png",width=10.5,height=5.5,dpi=600)
+ggsave(NAICS6top_pp,file="..//Output\\NAICS6top_pp.eps",width=10.5,height=5.5,dpi=600)
+
+summary(NAICS_summary$naics_count_rank)
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##     1.0   271.0   548.0   559.4   836.5  1252.0
+```
+
+```r
+NAICS_summary$NAICS_shorthand<-swr(NAICS_summary$NAICS_shorthand,nwrap = 16)
+# NAICS_summary$CY<-factor(paste("'",substring(as.character(NAICS_summary$CY),3,4),sep=""))
+
+NAICS6top8<-ggplot(subset(NAICS_summary,naics_dollar_rank<=8),
+       aes(x=CY,y=def6_HHI_lag1))+#color=NAICS_Code
+  geom_line()+
+  scale_y_continuous(label=scales::comma)+ 
+  scale_x_continuous(breaks=c(2007,2012))+
+  labs(x="Calendar Year",y="Herfindahl-Herschman Index")+ 
+  geom_hline(yintercept=c(1500,2500),linetype="dotted")
+
+NAICS6top8_wide<-NAICS6top8+ facet_grid(.~NAICS_shorthand)
+ggsave(NAICS6top8_wide,file="..//Output\\NAICS6top8.png",width=9.5,height=4,dpi=600)
+ggsave(NAICS6top8_wide,file="..//Output\\NAICS6top8.eps",width=9.5,height=4,dpi=600)
+
+
+colnames(NAICS_summary)
+```
+
+```
+##  [1] "principalnaicscode"       "StartCY"                 
+##  [3] "def6_HHI_lag1"            "def6_obl_lag1"           
+##  [5] "def6_ratio_lag1"          "US6_avg_sal_lag1"        
+##  [7] "annual_action_obligation" "annual_count"            
+##  [9] "naics_action_obligation"  "naics_count"             
+## [11] "naics_dollar_rank"        "naics_count_rank"        
+## [13] "principalnaicscodeText"   "principalNAICS2DigitCode"
+## [15] "principalNAICS3DigitCode" "principalNAICS4DigitCode"
+## [17] "NAICS_shorthand"          "CY"
+```
+
+```r
+NAICS_long<-NAICS_summary[,colnames(NAICS_summary) %in% c( "principalnaicscode",
+                                                    "def6_HHI_lag1",
+                                                    "def6_obl_lag1",
+                                                    "def6_ratio_lag1",
+                                                    # "US6_avg_sal_lag1",
+                                                    "naics_dollar_rank" ,
+                                                    "naics_count_rank",
+                                                    "principalnaicscodeText",
+                                                     "NAICS_shorthand",
+                                                    "CY")]
+NAICS_long<-melt(NAICS_long, id=c("principalnaicscode","naics_dollar_rank","naics_count_rank","principalnaicscodeText","CY", "NAICS_shorthand"))
+
+
+
+#Drop the ratios and average salaries w/ unique values
+# NAICS_long<-NAICS_long[NAICS_long$variable %in% c(),]
+
+
+levels(NAICS_long$variable)<- list("Herfindahl-\nHerschman Index"=c("def6_HHI_lag1"),
+                                   "Defense Obligations"=c("def6_obl_lag1"),
+                                   "Defense Obligations\nto U.S. Revenue Ratio"=c("def6_ratio_lag1"))
+
+NAICS_long$high<-2500
+NAICS_long$high[NAICS_long$variable!="Herfindahl-\nHerschman Index"]<-NA
+NAICS_long$low<-1500
+NAICS_long$low[NAICS_long$variable!="Herfindahl-\nHerschman Index"]<-NA
+
+(
+
+NAICS6long_wide<-ggplot(subset(NAICS_long,naics_dollar_rank<=8),
+       aes(x=CY,y=value))+#color=NAICS_Code
+  geom_line()+
+  scale_y_continuous(label=scales::comma)+ 
+  scale_x_continuous(breaks=c(2007,2012))+
+  labs(x="Calendar Year",y="Detailed Industry Metric")+
+  geom_hline(aes(
+           yintercept=high),linetype="dotted")+
+  geom_hline(aes(
+           yintercept=low),linetype="dotted")    + 
+    facet_grid(variable~NAICS_shorthand,scales="free_y")
+
+)
+```
+
+```
+## Warning: Removed 128 rows containing missing values (geom_hline).
+
+## Warning: Removed 128 rows containing missing values (geom_hline).
+```
+
+![](monopoly_results_summary_files/figure-html/NAICS6_Summary-3.png)<!-- -->
+
+```r
+ggsave(NAICS6long_wide,file="..//Output\\NAICS6long.png",width=9.5,height=5.5,dpi=600)
+```
+
+```
+## Warning: Removed 128 rows containing missing values (geom_hline).
+
+## Warning: Removed 128 rows containing missing values (geom_hline).
+```
+
+```r
+ggsave(NAICS6long_wide,file="..//Output\\NAICS6long.eps",width=9.5,height=5.5,dpi=600)
+```
+
+```
+## Warning: Removed 128 rows containing missing values (geom_hline).
+
+## Warning: Removed 128 rows containing missing values (geom_hline).
+```
+
+```r
+write.csv(NAICS_summary,file="..//Output/NAICS6_summary.csv",row.names = FALSE)
+```
+
+
+
+
 
 
 ### Office

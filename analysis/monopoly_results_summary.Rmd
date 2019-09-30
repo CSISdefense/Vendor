@@ -8,6 +8,9 @@ date: "Wednesday, February 8, 2017"
 ---
 
 #Setup
+First we load the data. The dataset used is a U.S. Defense Contracting dataset derived from   FPDS.
+
+
 ```{r Libraries, echo = FALSE}
 library(csis360)
 library(ggplot2)
@@ -38,9 +41,9 @@ memory.limit(56000)
 
 
 
-##Prepare Data
-First we load the data. The dataset used is a U.S. Defense Contracting dataset derived from   FPDS.
+## Data Exploration
 
+### Economic
 #### NAICS 2
 
 ```{r grouped percent frequency/obligation barplot for all NAICS2, 21 in total}
@@ -239,7 +242,7 @@ write.csv(NAICS_summary,file="..//Output/NAICS3_summary.csv",row.names = FALSE)
 
 ```{r NAICS6_Summary, fig.width=7.5 , fig.height=3}
 NAICS_summary<-def %>% group_by(NAICS,StartCY,def6_HHI_lag1,def6_obl_lag1,def6_ratio_lag1,US6_avg_sal_lag1) %>%
-  dplyr::summarise(annual_action_obligation=sum(Action_Obligation),
+  dplyr::summarise(annual_action_obligation=sum(Action_Obligation_Then_Year),
                    annual_count=length(StartCY)) 
 
 top_NAICS <- NAICS_summary %>% group_by(NAICS) %>% 
@@ -258,11 +261,11 @@ NAICS_summary<-as.data.frame(NAICS_summary)
 
 NAICS_summary<-read_and_join(NAICS_summary,
                         lookup_file = "Lookup_PrincipalNAICScode.csv",
-                        path="",
-                        dir="Lookup\\",
+                        path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                      dir="economic\\",
                         by="principalnaicscode",
                         skip_check_var=c("principalnaicscodeText",
-"NAICS_shorthand")
+                                         "NAICS_shorthand")
                )
 
 
@@ -282,12 +285,11 @@ NAICS6top<-ggplot(subset(NAICS_summary,naics_dollar_rank<=4 |
   labs(x="Calendar Year",y="Herfindahl-Herschman Index")+ 
   geom_hline(yintercept=c(1500,2500),linetype="dotted")
 
-NAICS6top_paper<-NAICS6top+ facet_wrap(~NAICS_shorthand,ncol=2)
+(NAICS6top_paper<-NAICS6top+ facet_wrap(~NAICS_shorthand,ncol=2))
 ggsave(NAICS6top_paper,file="..//Output\\NAICS6top.png",width=4,height=8,dpi=600)
 ggsave(NAICS6top_paper,file="..//Output\\NAICS6top.eps",width=4,height=8,dpi=600)
 
-NAICS6top_pp<-NAICS6top+ facet_wrap(~NAICS_shorthand,ncol=4)
-NAICS6top_pp
+(NAICS6top_pp<-NAICS6top+ facet_wrap(~NAICS_shorthand,ncol=4))
 ggsave(NAICS6top_pp,file="..//Output\\NAICS6top_pp.png",width=10.5,height=5.5,dpi=600)
 ggsave(NAICS6top_pp,file="..//Output\\NAICS6top_pp.eps",width=10.5,height=5.5,dpi=600)
 
@@ -338,8 +340,9 @@ NAICS_long$high[NAICS_long$variable!="Herfindahl-\nHerschman Index"]<-NA
 NAICS_long$low<-1500
 NAICS_long$low[NAICS_long$variable!="Herfindahl-\nHerschman Index"]<-NA
 
+(
 
-NAICS6long<-ggplot(subset(NAICS_long,naics_dollar_rank<=8),
+NAICS6long_wide<-ggplot(subset(NAICS_long,naics_dollar_rank<=8),
        aes(x=CY,y=value))+#color=NAICS_Code
   geom_line()+
   scale_y_continuous(label=scales::comma)+ 
@@ -348,11 +351,11 @@ NAICS6long<-ggplot(subset(NAICS_long,naics_dollar_rank<=8),
   geom_hline(aes(
            yintercept=high),linetype="dotted")+
   geom_hline(aes(
-           yintercept=low),linetype="dotted")    
+           yintercept=low),linetype="dotted")    + 
+    facet_grid(variable~NAICS_shorthand,scales="free_y")
 
+)
 
-
-NAICS6long_wide<-NAICS6long+ facet_grid(variable~NAICS_shorthand,scales="free_y")
 ggsave(NAICS6long_wide,file="..//Output\\NAICS6long.png",width=9.5,height=5.5,dpi=600)
 ggsave(NAICS6long_wide,file="..//Output\\NAICS6long.eps",width=9.5,height=5.5,dpi=600)
 
@@ -917,7 +920,9 @@ odds_ratio(Term_Comp_13F_1m,"Term_Comp_13F_1m",walds = TRUE)
 
 ```{r Both-Term}
 load(file="..//Output//Term_Cons_Comp_14C.rdata") 
-
+load(file="..//Output//Term_Cons_Comp_14B_1m.rdata") 
+stargazer(Term_Cons_Comp_14C_1m,type="text",
+                         digits=2)
 
 if(!exists("Term_Cons_Comp_14C_1m")){
   # Term_Cons_Comp_14C <- glmer (data=smp,
@@ -1247,8 +1252,8 @@ texreg::htmlreg(list(CBre_Cons_13B_1m,CBre_Comp_13C_1m,CBre_Cons_Comp_15A_1m),fi
                         stars=c(0.1,0.05,0.01,0.001),
                 groups = list("Study Variables" = 2:7,
                               "NAICS Characteristics" = 8:11,
-                              "Contract Characteristics"=12:24),
-# "Interactions" = 25:31),
+                              "Contract Characteristics"=12:24,
+                              "Interactions" = 25:31),
                 custom.coef.map=list("(Intercept)"="(Intercept)",
                 "cl_def3_HHI_lag1"="Log(Subsector HHI)",
 "cl_def6_HHI_lag1"="Log(Det. Ind. HHI)",
@@ -1278,6 +1283,7 @@ texreg::htmlreg(list(CBre_Cons_13B_1m,CBre_Comp_13C_1m,CBre_Cons_Comp_15A_1m),fi
 "cl_def6_HHI_lag1:cl_def6_obl_lag1"="Log(Det. Ind. HHI):Log(Det. Ind. DoD Obl.)",
 # "cl_def3_HHI_lag1:cl_def3_ratio_lag1"="Log(Subsector HHI):Log(Subsector Ratio)"),
 "cl_def6_HHI_lag1:b_UCA"="Log(Det. Ind. HHI):UCA",
+"cl_Ceil:b_UCA"="Log(Init. Ceiling):UCA",
 "cl_Ceil_Then_Year:b_UCA"="Log(Init. Ceiling):UCA",
 "CompOffr1 offer:b_UCA"="Comp=1 offer:UCA",
 "CompOffr2 offers:b_UCA"="Comp=2 offers:UCA",
@@ -1319,7 +1325,7 @@ get_icc(CBre_Cons_Comp_15A_1m)
 ```
 
 
- ## Terminations Model
+## Terminations Model
 ```{r Output-Term}
 
 # texreg::htmlreg(list(Term_Cons_08A3,
@@ -1406,7 +1412,7 @@ get_icc(CBre_Cons_Comp_15A_1m)
 #                                     "Competition",
 #                                     "Both",
 #                                     "Both 1m"
-texreg::htmlreg(list(Term_Cons_13E_1m,Term_Comp_13F_1m,Term_Cons_Comp_14C_1m),file="..//Output//Term_Model_1m.html",
+texreg::htmlreg(list(Term_Cons_13E_1m,Term_Comp_13F_1m,Term_Cons_Comp_14B_1m),file="..//Output//Term_Model_1m.html",
                 single.row = TRUE,
                 custom.model.name=c("Concentration",
                                     "Competition",
@@ -1559,7 +1565,7 @@ write.csv(get_study_variables_odds_ratio(subset(comp.or,!variable %in% c("cl_def
 # dotplot(ranef(Term_Cons_13E, condVar = T), strip = T, scales=list(relation='free'))$NAICS3
 ```
 
- ## Residuals Plot
+## Residuals Plot
 
 ```{r Residuals_1m, fig.width=7.5 , fig.height=8.5}
 
@@ -1567,16 +1573,19 @@ residual_cbre<-gridExtra::grid.arrange(
   binned_fitted_versus_residuals(CBre_Cons_13B_1m,bins=50)+
     labs(title="Concentration Binned Actuals",caption=NULL,
          x="Estimated Pr(Ceiling Breach)",y="Actual Pr(Ceiling Breach)"),
-  residuals_binned(CBre_Cons_13B_1m, bins=50)+labs(title="Concentration Binned Residual Plot"),
+  residuals_binned(CBre_Cons_13B_1m, bins=50)+labs(title="Concentration Binned Residual Plot")+
+    labs(y="Actual Pr(Ceiling Breach"),
   binned_fitted_versus_residuals(CBre_Comp_13C_1m,bins=50)+
     labs(title="Competition Binned Actuals Plot",caption=NULL,
          x="Estimated Pr(Ceiling Breach)",y="Actual Pr(Ceiling Breach)"),
-residuals_binned(CBre_Comp_13C_1m, bins=50)+labs(title="Competition Binned Residuals Plot"),
+residuals_binned(CBre_Comp_13C_1m, bins=50)+labs(title="Competition Binned Residuals Plot")+
+    labs(y="Actual Pr(Ceiling Breach"),
 binned_fitted_versus_residuals(CBre_Cons_Comp_15A_1m,bins=50)+
   labs(title="Both Binned Actuals",
        caption=NULL,
          x="Estimated Pr(Ceiling Breach)",y="Actual Pr(Ceiling Breach)"),
-residuals_binned(CBre_Cons_Comp_15A_1m, bins=50)+labs(title="Both Binned Residuals Plot"),ncol=2)
+residuals_binned(CBre_Cons_Comp_15A_1m, bins=50)+labs(title="Both Binned Residuals Plot")+
+    labs(y="Actual Pr(Ceiling Breach"),ncol=2)
 
 residual_cbre
 ggsave(residual_cbre,file="..//Output//residual_cbre_1m.png",width=7.5, height=8.5)
