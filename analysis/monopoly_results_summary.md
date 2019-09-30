@@ -1,0 +1,7402 @@
+---
+title: "Monopoly Results Summary"
+output:
+  html_document:
+    keep_md: yes
+    toc: yes
+date: "Wednesday, February 8, 2017"
+---
+
+#Setup
+
+```
+## Warning: replacing previous import 'Hmisc::summarize' by 'dplyr::summarize'
+## when loading 'csis360'
+```
+
+```
+## Warning: replacing previous import 'Hmisc::src' by 'dplyr::src' when
+## loading 'csis360'
+```
+
+```
+## Warning: replacing previous import 'dplyr::intersect' by
+## 'lubridate::intersect' when loading 'csis360'
+```
+
+```
+## Warning: replacing previous import 'dplyr::union' by 'lubridate::union'
+## when loading 'csis360'
+```
+
+```
+## Warning: replacing previous import 'dplyr::setdiff' by 'lubridate::setdiff'
+## when loading 'csis360'
+```
+
+```
+## 
+## Attaching package: 'dplyr'
+```
+
+```
+## The following objects are masked from 'package:stats':
+## 
+##     filter, lag
+```
+
+```
+## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union
+```
+
+```
+## Loading required package: MASS
+```
+
+```
+## 
+## Attaching package: 'MASS'
+```
+
+```
+## The following object is masked from 'package:dplyr':
+## 
+##     select
+```
+
+```
+## Loading required package: Matrix
+```
+
+```
+## Loading required package: lme4
+```
+
+```
+## 
+## arm (Version 1.10-1, built: 2018-4-12)
+```
+
+```
+## Working directory is C:/Users/gsand/Repositories/Vendor/analysis
+```
+
+```
+## Loading required package: coda
+```
+
+```
+## 
+## Attaching package: 'coda'
+```
+
+```
+## The following object is masked from 'package:arm':
+## 
+##     traceplot
+```
+
+```
+## Loading required package: boot
+```
+
+```
+## 
+## Attaching package: 'boot'
+```
+
+```
+## The following object is masked from 'package:arm':
+## 
+##     logit
+```
+
+```
+## 
+## Please cite as:
+```
+
+```
+##  Hlavac, Marek (2018). stargazer: Well-Formatted Regression and Summary Statistics Tables.
+```
+
+```
+##  R package version 5.2.2. https://CRAN.R-project.org/package=stargazer
+```
+
+```
+## Version:  1.36.23
+## Date:     2017-03-03
+## Author:   Philip Leifeld (University of Glasgow)
+## 
+## Please cite the JSS article in your publications -- see citation("texreg").
+```
+
+```
+## 
+## Attaching package: 'texreg'
+```
+
+```
+## The following object is masked from 'package:arm':
+## 
+##     coefplot
+```
+
+```
+## Loading required package: carData
+```
+
+```
+## 
+## Attaching package: 'car'
+```
+
+```
+## The following object is masked from 'package:boot':
+## 
+##     logit
+```
+
+```
+## The following object is masked from 'package:arm':
+## 
+##     logit
+```
+
+```
+## The following object is masked from 'package:dplyr':
+## 
+##     recode
+```
+
+```
+## 
+## Attaching package: 'scales'
+```
+
+```
+## The following object is masked from 'package:arm':
+## 
+##     rescale
+```
+
+```
+## [1] 56000
+```
+
+
+
+##Prepare Data
+First we load the data. The dataset used is a U.S. Defense Contracting dataset derived from   FPDS.
+
+
+#### NAICS 2
+
+
+```r
+#Prepare data for plot
+NAICS2_Freq <- as.data.frame(table(def$NAICS2))
+NAICS2_Freq$Percent_Freq <- round(NAICS2_Freq$Freq/sum(NAICS2_Freq$Freq),4)*100
+colnames(NAICS2_Freq) <- c("NAICS_Code", "Count_Freq", "Percent_Freq")
+
+#Get detail description for NAICS2 code
+NAICS2_Freq<-read_and_join_experiment(NAICS2_Freq,
+                                           lookup_file = "Lookup_PrincipalNAICScode.csv",
+                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                      dir="economic\\",
+                                      by=c("NAICS_Code"="principalnaicscode"),
+                                      add_var = "principalnaicscodeText"
+                                      )
+```
+
+```
+## Parsed with column specification:
+## cols(
+##   principalnaicscode = col_character(),
+##   principalnaicscodeText = col_character(),
+##   principalNAICS2DigitCode = col_character(),
+##   principalNAICS3DigitCode = col_double(),
+##   principalNAICS4DigitCode = col_double(),
+##   NAICS_shorthand = col_character()
+## )
+```
+
+```
+## Warning: Column `NAICS_Code`/`principalnaicscode` joining factor and
+## character vector, coercing into character vector
+```
+
+```r
+Percent_Obli <- c()
+Total_Obli <- sum(def$Action_Obligation_Then_Year, na.rm = TRUE)
+for (i in NAICS2_Freq$NAICS_Code) {
+  Percent_Obligation <- round(sum(def$Action_Obligation_Then_Year[def$NAICS2 == i], na.rm = TRUE)/Total_Obli,5)
+  Percent_Obli <- c(Percent_Obli, Percent_Obligation)
+}
+
+NAICS2_Freq$Percent_Obli <- Percent_Obli * 100
+NAICS2_Freq <- NAICS2_Freq[order(-NAICS2_Freq$Percent_Obli),]
+NAICS2_Freq[,c(1,3)] <- lapply(NAICS2_Freq[,c(1,3)], function(x) as.character(x))
+NAICS2_Freq$principalnaicscodeText <- paste(NAICS2_Freq$NAICS_Code, " - ", NAICS2_Freq$principalnaicscodeText)
+NAICS2_Freq$principalnaicscodeText <- factor(NAICS2_Freq$principalnaicscodeText, levels = rev(NAICS2_Freq$principalnaicscodeText))
+NAICS2_Freq <- melt(NAICS2_Freq, id = c("NAICS_Code", "Count_Freq","principalnaicscodeText"))
+NAICS2_Freq$value <- as.numeric(NAICS2_Freq$value)
+
+NAICS2_barplot <- ggplot(data = NAICS2_Freq,
+                          aes(x = principalnaicscodeText, 
+                              y = value,
+                              fill = factor(variable))) +
+                   geom_bar(stat = "identity", 
+                            position = "dodge", 
+                            width = 0.8) + 
+                   coord_flip() +
+                   xlab("") + 
+                   ylab("") + 
+                   theme_grey() + 
+                   scale_fill_grey(labels = c("% records", "% obligation"),
+                                  guide = guide_legend(reverse = TRUE)) + 
+                   ggtitle("Percent of Frequency and obligation for NAICS2") +
+                   theme(text = element_text(size = 10), 
+                         legend.title = element_blank(),
+                         legend.position = "bottom",
+                         legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit = "cm"),
+                         legend.text = element_text(margin = margin(r=0.5, unit = "cm")),
+                         plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm"))
+NAICS2_barplot
+```
+
+![](monopoly_results_summary_files/figure-html/grouped percent frequency/obligation barplot for all NAICS2, 21 in total-1.png)<!-- -->
+
+
+
+
+#### NAICS 3
+
+
+```r
+NAICS_summary<-def %>% group_by(NAICS3,StartCY,def3_HHI_lag1,def3_obl_lag1,def3_ratio_lag1,US3_avg_sal_lag1) %>%
+  dplyr::summarise(annual_action_obligation=sum(Action_Obligation_Then_Year),
+                   annual_count=length(StartCY)) 
+
+top_NAICS <- NAICS_summary %>% group_by(NAICS3) %>% 
+  dplyr::summarise(naics_action_obligation=sum(annual_action_obligation),
+                   naics_count=sum(annual_count)) 
+top_NAICS$naics_dollar_rank<-rank(-top_NAICS$naics_action_obligation)
+top_NAICS$naics_count_rank<-rank(-top_NAICS$naics_count)
+
+#If statement there to prevent adding it a second time in  reruns.
+if(!"naics_dollar_rank" %in% colnames(NAICS_summary))
+  NAICS_summary<-left_join(NAICS_summary,top_NAICS, by="NAICS3")
+
+
+
+
+NAICS_summary<-as.data.frame(NAICS_summary)
+NAICS_summary$NAICS3<-as.character(NAICS_summary$NAICS3)
+NAICS_summary<-read_and_join_experiment(NAICS_summary,
+                                      lookup_file = "Lookup_PrincipalNAICScode.csv",
+                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                      dir="economic\\",
+                                      by=c("NAICS3"="principalnaicscode"),
+                                      skip_check_var=c("principalnaicscodeText",
+                                                       "NAICS_shorthand",
+                                                       "principalNAICS4DigitCode")
+                                      )
+```
+
+```
+## Parsed with column specification:
+## cols(
+##   principalnaicscode = col_character(),
+##   principalnaicscodeText = col_character(),
+##   principalNAICS2DigitCode = col_character(),
+##   principalNAICS3DigitCode = col_double(),
+##   principalNAICS4DigitCode = col_double(),
+##   NAICS_shorthand = col_character()
+## )
+```
+
+```r
+# https://stackoverflow.com/questions/37174316/how-to-fit-long-text-into-ggplot2-facet-titles
+
+
+
+# Helper function for string wrapping. 
+#  20 character target width.
+swr <- function(string, nwrap=20) {
+  paste(strwrap(string, width=nwrap), collapse="\n")
+}
+swr <- Vectorize(swr)
+summary(NAICS_summary$NAICS_shorthand)
+```
+
+```
+##    Length     Class      Mode 
+##       828 character character
+```
+
+```r
+# View(NAICS_summary)
+NAICS_summary$NAICS_shorthand<-swr(NAICS_summary$NAICS_shorthand,nwrap = 25)
+NAICS_summary$CY<-NAICS_summary$StartCY-1
+NAICS3top<-ggplot(subset(NAICS_summary,naics_dollar_rank<=4 |
+                          naics_count_rank<=4),
+       aes(x=CY,y=def3_HHI_lag1))+#color=NAICS_Code
+  geom_line()+
+  scale_y_continuous(label=scales::comma)+ 
+  # scale_x_continuous(breaks=c(2006,2009,2011,2014))+
+  labs(x="Calendar Year",y="Herfindahl-Herschman Index")+ 
+  geom_hline(yintercept=c(1500,2500),linetype="dotted")
+
+NAICS3top_paper<-NAICS3top+ facet_wrap(~NAICS_shorthand,ncol=2)
+ggsave(NAICS3top_paper,file="..//Output\\NAICS3top.png",width=4,height=8,dpi=600)
+ggsave(NAICS3top_paper,file="..//Output\\NAICS3top.eps",width=4,height=8,dpi=600)
+
+NAICS3top_pp<-NAICS3top+ facet_wrap(~NAICS_shorthand,ncol=4)
+NAICS3top_pp
+```
+
+![](monopoly_results_summary_files/figure-html/NAICS3_Summary-1.png)<!-- -->
+
+```r
+ggsave(NAICS3top_pp,file="..//Output\\NAICS3top_pp.png",width=10.5,height=5.5,dpi=600)
+ggsave(NAICS3top_pp,file="..//Output\\NAICS3top_pp.eps",width=10.5,height=5.5,dpi=600)
+
+summary(NAICS_summary$naics_count_rank)
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##    1.00   26.00   52.00   52.47   78.00  109.00
+```
+
+```r
+NAICS_summary$NAICS_shorthand<-swr(NAICS_summary$NAICS_shorthand,nwrap = 16)
+# NAICS_summary$CY<-factor(paste("'",substring(as.character(NAICS_summary$CY),3,4),sep=""))
+
+NAICS3top8<-ggplot(subset(NAICS_summary,naics_dollar_rank<=8),
+       aes(x=CY,y=def3_HHI_lag1))+#color=NAICS_Code
+  geom_line()+
+  scale_y_continuous(label=scales::comma)+ 
+  scale_x_continuous(breaks=c(2007,2012))+
+  labs(x="Calendar Year",y="Herfindahl-Herschman Index")+ 
+  geom_hline(yintercept=c(1500,2500),linetype="dotted")
+
+NAICS3top8_wide<-NAICS3top8+ facet_grid(.~NAICS_shorthand)
+ggsave(NAICS3top8_wide,file="..//Output\\NAICS3top8.png",width=9.5,height=4,dpi=600)
+ggsave(NAICS3top8_wide,file="..//Output\\NAICS3top8.eps",width=9.5,height=4,dpi=600)
+
+colnames(NAICS_summary)
+```
+
+```
+##  [1] "NAICS3"                   "StartCY"                 
+##  [3] "def3_HHI_lag1"            "def3_obl_lag1"           
+##  [5] "def3_ratio_lag1"          "US3_avg_sal_lag1"        
+##  [7] "annual_action_obligation" "annual_count"            
+##  [9] "naics_action_obligation"  "naics_count"             
+## [11] "naics_dollar_rank"        "naics_count_rank"        
+## [13] "principalnaicscodeText"   "principalNAICS2DigitCode"
+## [15] "principalNAICS3DigitCode" "principalNAICS4DigitCode"
+## [17] "NAICS_shorthand"          "CY"
+```
+
+```r
+NAICS_long<-NAICS_summary[,colnames(NAICS_summary) %in% c( "NAICS3",
+                                                    "def3_HHI_lag1",
+                                                    "def3_obl_lag1",
+                                                    "def3_ratio_lag1",
+                                                    # "US3_avg_sal_lag1",
+                                                    "naics_dollar_rank" ,
+                                                    "naics_count_rank",
+                                                    "principalnaicscodeText",
+                                                     "NAICS_shorthand",
+                                                    "CY")]
+NAICS_long<-melt(NAICS_long, id=c("NAICS3","naics_dollar_rank","naics_count_rank","principalnaicscodeText","CY", "NAICS_shorthand"))
+
+
+
+#Drop the ratios and average salaries w/ unique values
+# NAICS_long<-NAICS_long[NAICS_long$variable %in% c(),]
+
+
+levels(NAICS_long$variable)<- list("Herfindahl-\nHerschman Index"=c("def3_HHI_lag1"),
+                                   "Defense Obligations"=c("def3_obl_lag1"),
+                                   "Defense Obligations\nto U.S. Revenue Ratio"=c("def3_ratio_lag1"))
+
+NAICS_long$high<-2500
+NAICS_long$high[NAICS_long$variable!="Herfindahl-\nHerschman Index"]<-NA
+NAICS_long$low<-1500
+NAICS_long$low[NAICS_long$variable!="Herfindahl-\nHerschman Index"]<-NA
+
+
+NAICS3long<-ggplot(subset(NAICS_long,naics_dollar_rank<=8),
+       aes(x=CY,y=value))+#color=NAICS_Code
+  geom_line()+
+  scale_y_continuous(label=scales::comma)+ 
+  scale_x_continuous(breaks=c(2007,2012))+
+  labs(x="Calendar Year",y="Detailed Industry Metric")+
+  geom_hline(aes(
+           yintercept=high),linetype="dotted")+
+  geom_hline(aes(
+           yintercept=low),linetype="dotted")    
+
+
+
+NAICS3long_wide<-NAICS3long+ facet_grid(variable~NAICS_shorthand,scales="free_y")
+ggsave(NAICS3long_wide,file="..//Output\\NAICS3long.png",width=9.5,height=5.5,dpi=600)
+```
+
+```
+## Warning: Removed 128 rows containing missing values (geom_hline).
+
+## Warning: Removed 128 rows containing missing values (geom_hline).
+```
+
+```r
+ggsave(NAICS3long_wide,file="..//Output\\NAICS3long.eps",width=9.5,height=5.5,dpi=600)
+```
+
+```
+## Warning: Removed 128 rows containing missing values (geom_hline).
+
+## Warning: Removed 128 rows containing missing values (geom_hline).
+```
+
+```r
+write.csv(NAICS_summary,file="..//Output/NAICS3_summary.csv",row.names = FALSE)
+```
+
+
+```r
+Frequency <- as.data.frame(table(def$NAICS3))
+Frequency[["Percent_Freq"]] <- round(Frequency[["Freq"]]/sum(Frequency[["Freq"]]),4)*100
+colnames(Frequency) <- c("NAICS3", "Count_Freq", "Percent_Freq")
+Percent_Obli <- c()
+for (i in Frequency[["NAICS3"]]) {
+  Percent_Obligation <- round(sum(def[["Action_Obligation_Then_Year"]][def$NAICS3 == i], na.rm = TRUE)/sum(def[["Action_Obligation_Then_Year"]], na.rm = TRUE),5)
+    Percent_Obli <- c(Percent_Obli, Percent_Obligation)
+  }
+Frequency[["Percent_Obli"]] <- Percent_Obli*100
+NAICS3_Freq <- Frequency
+
+#Add detail description to unique NAICS3 code
+NAICS3_Freq<-read_and_join_experiment(NAICS3_Freq,
+                                           lookup_file = "Lookup_PrincipalNAICScode.csv",
+                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                      dir="economic\\",
+                                      by=c("NAICS3"="principalnaicscode"),
+                                      add_var="principalnaicscodeText"
+                                      )
+```
+
+```
+## Parsed with column specification:
+## cols(
+##   principalnaicscode = col_character(),
+##   principalnaicscodeText = col_character(),
+##   principalNAICS2DigitCode = col_character(),
+##   principalNAICS3DigitCode = col_double(),
+##   principalNAICS4DigitCode = col_double(),
+##   NAICS_shorthand = col_character()
+## )
+```
+
+```
+## Warning: Column `NAICS3`/`principalnaicscode` joining factor and character
+## vector, coercing into character vector
+```
+
+```r
+NAICS3_Freq$principalnaicscodeText <- as.character(NAICS3_Freq$principalnaicscodeText)
+NAICS3_Freq$principalnaicscodeText <- paste(NAICS3_Freq$NAICS, " - ", NAICS3_Freq$principalnaicscodeText)
+
+#Get the top 15 most frequently appeared NAICS3
+NAICS3_Freq_top10Freq <- NAICS3_Freq[order(-NAICS3_Freq$Percent_Freq),]
+NAICS3_Freq_top10Freq <- NAICS3_Freq_top10Freq[1:10, ]   
+NAICS3_Freq_top10Obli <- NAICS3_Freq[order(-NAICS3_Freq$Percent_Obli),]
+NAICS3_Freq_top10Obli <- NAICS3_Freq_top10Obli[1:10, ]
+NAICS3_Freq_TOP <- rbind(NAICS3_Freq_top10Obli, NAICS3_Freq_top10Freq)
+NAICS3_Freq_TOP <- unique(NAICS3_Freq_TOP)  #15 records in total
+NAICS3_Freq_TOP <- NAICS3_Freq_TOP[order(-NAICS3_Freq_TOP$Percent_Obli),]
+NAICS3_Freq_TOP$principalnaicscodeText <- factor(NAICS3_Freq_TOP$principalnaicscodeText, rev(NAICS3_Freq_TOP$principalnaicscodeText))
+
+#Reshape the dataframe to long format for plot
+NAICS3_Freq_TOP <- melt(NAICS3_Freq_TOP, id = c("NAICS3", "Count_Freq", "principalnaicscodeText"))
+
+#Generate the plot and add title manually
+part_grouped_barplot("NAICS3", NAICS3_Freq_TOP,
+                     description_var="principalnaicscodeText") + ggtitle("Top 15 of the most frequently appeared NAICS3")
+```
+
+![](monopoly_results_summary_files/figure-html/grouped barplot for variable NAICS3-1.png)<!-- -->
+
+
+#### NAICS 6
+
+
+```r
+#Prepare dateframe for plot
+NAICS_Freq <- as.data.frame(table(def$NAICS))
+NAICS_Freq <- NAICS_Freq[order(-NAICS_Freq$Freq),]
+NAICS_Freq_TOP20 <- NAICS_Freq[1:20,]   #Get top 20 NAICS has largest frequency count
+NAICS_Freq_TOP20$Percent_Freq <- round(NAICS_Freq_TOP20$Freq/sum(NAICS_Freq$Freq),4)*100
+colnames(NAICS_Freq_TOP20) <- c("NAICS_Code", "Count_Freq", "Percent_Freq")
+
+#Get detail description for each NAICS code
+NAICS_Freq_TOP20<-read_and_join_experiment(NAICS_Freq_TOP20,
+                                           lookup_file = "Lookup_PrincipalNAICScode.csv",
+                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                      dir="economic\\",
+                                      by=c("NAICS_Code"="principalnaicscode")
+                                      )
+```
+
+```
+## Parsed with column specification:
+## cols(
+##   principalnaicscode = col_character(),
+##   principalnaicscodeText = col_character(),
+##   principalNAICS2DigitCode = col_character(),
+##   principalNAICS3DigitCode = col_double(),
+##   principalNAICS4DigitCode = col_double(),
+##   NAICS_shorthand = col_character()
+## )
+```
+
+```
+## Warning: Column `NAICS_Code`/`principalnaicscode` joining factor and
+## character vector, coercing into character vector
+```
+
+```r
+NAICS_Freq_TOP20 <- NAICS_Freq_TOP20[order(-NAICS_Freq_TOP20$Percent_Freq),]
+NAICS_Freq_TOP20$principalnaicscodeText <- factor(NAICS_Freq_TOP20$principalnaicscodeText, levels = rev(NAICS_Freq_TOP20$principalnaicscodeText))
+
+
+Frequency_Plot <- ggplot(data = NAICS_Freq_TOP20, 
+                         aes(x = NAICS_Freq_TOP20$principalnaicscodeText, 
+                             y = NAICS_Freq_TOP20$Percent_Freq)) +
+                  geom_bar(stat = "identity", position = "dodge", width = 0.8) + 
+                  coord_flip() +
+                  xlab("") + 
+                  ylab("Percent of Frequency") + 
+                  theme_grey() + 
+                  scale_fill_grey() + 
+                  ggtitle("Top 20 of the most frequently appeared NAICS") +
+                  theme(text = element_text(size = 10))
+Frequency_Plot
+```
+
+![](monopoly_results_summary_files/figure-html/barplot for top 20 most frequently appeared NAICS-1.png)<!-- -->
+
+
+```r
+# #Percent frequency/obligation grouped bar plot for variable NAICS
+# #Prepare dateframe for plot
+# NAICS_Freq <- as.data.frame(table(def$NAICS))
+# # NAICS_Freq <- NAICS_Freq[order(-NAICS_Freq$Freq),]
+# # NAICS_Freq_TOP20 <- NAICS_Freq[1:20,]   #Get top 20 NAICS has largest frequency count
+# NAICS_Freq$Percent_Freq <- round(NAICS_Freq$Freq/sum(NAICS_Freq$Freq),4)*100
+# colnames(NAICS_Freq) <- c("NAICS_Code", "Count_Freq", "Percent_Freq")
+# 
+# #Get detail description for each NAICS code
+# NAICS_Freq<-read_and_join_experiment(NAICS_Freq,
+                                      #      lookup_file = "Lookup_PrincipalNAICScode.csv",
+                                      # path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                      # dir="economic\\",
+                                      # by=c("NAICS_Code"="principalnaicscode")
+#                                       )
+
+
+# NAICS_Freq <- NAICS_Freq[order(-NAICS_Freq$Percent_Freq),]
+# NAICS_Freq$principalnaicscodeText <- factor(NAICS_Freq$principalnaicscodeText, levels = rev(NAICS_Freq$principalnaicscodeText))
+# 
+# Percent_Obli <- c()
+# Total_Obli <- sum(def$Action_Obligation_Then_Year, na.rm = TRUE)
+
+# for (i in NAICS_Freq$NAICS_Code) {
+#   Percent_Obligation <- round(sum(def$Action_Obligation_Then_Year[def$NAICS == i], na.rm = TRUE)/Total_Obli,5)
+#   Percent_Obli <- c(Percent_Obli, Percent_Obligation)
+#   print(i)
+# }
+# NAICS_Freq$Percent_Obli <- Percent_Obli*100
+
+#The above code need more than 30 mins to run, so just load RData in practice
+load(file = "../Data/semi_clean/NAICS_Freq_all.RData")
+
+NAICS_Freq_top10Freq <- NAICS_Freq[order(-NAICS_Freq$Percent_Freq),]
+NAICS_Freq_top10Freq <- NAICS_Freq_top10Freq[1:10, ]
+NAICS_Freq_top10Obli <- NAICS_Freq[order(-NAICS_Freq$Percent_Obli),]
+NAICS_Freq_top10Obli <- NAICS_Freq_top10Obli[1:10, ]
+
+NAICS_Freq_TOP <- rbind( NAICS_Freq_top10Obli, NAICS_Freq_top10Freq)
+NAICS_Freq_TOP <- unique(NAICS_Freq_TOP)  #18 records in total
+NAICS_Freq_TOP[,c(1,4)] <- lapply(NAICS_Freq_TOP[,c(1,4)], function(x) as.character(x))
+NAICS_Freq_TOP$principalnaicscodeText <- paste(NAICS_Freq_TOP$NAICS_Code, " - ", NAICS_Freq_TOP$principalnaicscodeText)
+
+NAICS_Freq_TOP$principalnaicscodeText <- factor(NAICS_Freq_TOP$principalnaicscodeText, levels = rev(NAICS_Freq_TOP$principalnaicscodeText))
+NAICS_Freq_TOP <- melt(NAICS_Freq_TOP, id = c("NAICS_Code","Count_Freq","principalnaicscodeText"))
+#NAICS_Freq_TOP <- merge(NAICS_Freq_top20Freq, NAICS_Freq_top20Obli, by= "NAICS_Code", all=TRUE)
+
+NAICS_barPlot <- ggplot(data = NAICS_Freq_TOP, 
+                         aes(x = principalnaicscodeText, 
+                             y = value,
+                             fill = factor(variable))) +
+                  geom_bar(stat = "identity", position = "dodge", width = 0.8) + 
+                  coord_flip() +
+                  xlab("") + 
+                  ylab("") + 
+                  theme_grey() + 
+                  scale_fill_grey(labels = c("% records", "% obligation"),
+                                  guide = guide_legend(reverse = TRUE)) + 
+                  ggtitle("Top 18 of the most frequently appeared NAICS") +
+                  theme(text = element_text(size = 10),
+                        legend.title = element_blank(),
+                        legend.position = "bottom",
+                        legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit = "cm"),
+                        legend.text = element_text(margin = margin(r=0.5, unit = "cm")),
+                        plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm"))
+
+NAICS_barPlot
+```
+
+![](monopoly_results_summary_files/figure-html/grouped barplot for NAICS most frequency appeared/has the largest percent obligation-1.png)<!-- -->
+
+
+### Office
+
+```r
+#grouped bar plot for variable Office
+#Perpare data for plot
+Office_Freq <- def %>% group_by(Agency, Office) %>%
+  dplyr::summarise(
+    Count_Freq=length(CSIScontractID),
+    Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE)
+  )
+```
+
+```
+## Warning: Factor `Agency` contains implicit NA, consider using
+## `forcats::fct_explicit_na`
+```
+
+```
+## Warning: Factor `Office` contains implicit NA, consider using
+## `forcats::fct_explicit_na`
+```
+
+```r
+Office_Freq$Percent_Obligation <- Office_Freq$Action_Obligation_Then_Year/
+                                          sum(Office_Freq$Action_Obligation_Then_Year,na.rm=TRUE)
+
+Office_Freq$Percent_Freq <- Office_Freq$Count_Freq/
+                                          sum(Office_Freq$Count_Freq,na.rm=TRUE)
+
+#get the detailed desceription for Office by AgencyID and OfficeID
+
+Office_Freq<-read_and_join_experiment(Office_Freq,
+                                      lookup_file = "Office.ContractingOfficeCode.txt",
+                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                      dir="office/",
+                                      by=c("Agency"="AgencyID",
+                                       "Office"="ContractingOfficeCode"   
+                                      ),
+                                      add_var = "ContractingOfficeName",
+                                      skip_check_var = "ContractingOfficeName")
+```
+
+```
+## Parsed with column specification:
+## cols(
+##   .default = col_character(),
+##   DepartmentID = col_double(),
+##   StartDate = col_datetime(format = ""),
+##   EndDate = col_datetime(format = ""),
+##   Depot = col_logical(),
+##   FISC = col_logical(),
+##   TFBSOrelated = col_datetime(format = ""),
+##   CSIScreatedDate = col_datetime(format = ""),
+##   OCOcrisisScore = col_double(),
+##   OCOcrisisPercent = col_double(),
+##   CrisisPercent = col_double(),
+##   PlaceIntlPercent = col_double()
+## )
+```
+
+```
+## See spec(...) for full column specifications.
+```
+
+```
+## Warning: 7 parsing failures.
+##   row          col               expected     actual                                                                                                         file
+##   979 NA           22 columns             21 columns 'https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/office/Office.ContractingOfficeCode.txt'
+## 10996 NA           22 columns             21 columns 'https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/office/Office.ContractingOfficeCode.txt'
+## 16006 DepartmentID no trailing characters AF         'https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/office/Office.ContractingOfficeCode.txt'
+## 16808 DepartmentID no trailing characters F          'https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/office/Office.ContractingOfficeCode.txt'
+## 46333 DepartmentID no trailing characters AF         'https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/office/Office.ContractingOfficeCode.txt'
+## ..... ............ ...................... .......... ............................................................................................................
+## See problems(...) for more details.
+```
+
+```
+## Warning: Factor `Agency` contains implicit NA, consider using
+## `forcats::fct_explicit_na`
+```
+
+```
+## Warning in read_and_join_experiment(Office_Freq, lookup_file =
+## "Office.ContractingOfficeCode.txt", : NAs found in by variable. Filtering
+## them out.
+```
+
+```
+## Warning: Column `Agency`/`AgencyID` joining factor and character vector,
+## coercing into character vector
+```
+
+```
+## Warning: Column `Office`/`ContractingOfficeCode` joining factor and
+## character vector, coercing into character vector
+```
+
+```r
+colnames(Office_Freq)[colnames(Office_Freq)=="ContractingOfficeName"] <- "OfficeName"
+
+# Office_Freq[,1:2] <- lapply(Office_Freq[,1:2], function(x) as.character(x))
+#Generate a new name column by Combining Office and officeName
+Office_Freq$Office_Full <- ifelse(is.na(Office_Freq$OfficeName), Office_Freq$Office, 
+                                  paste(Office_Freq$Office, 
+                                            sep=" - ", Office_Freq$OfficeName))
+
+
+# Office_Freq$Percent_Obli <- Percent_Obli * 100
+
+Office_Freq_top10Freq <- Office_Freq[order(-Office_Freq$Percent_Freq),]
+Office_Freq_top10Freq <- Office_Freq_top10Freq[1:10, ]  #including NULL category
+Office_Freq_top10Obli <- Office_Freq[order(-Office_Freq$Percent_Obligation),]
+Office_Freq_top10Obli <- Office_Freq_top10Obli[1:10, ]  #including NULL category
+
+Office_Freq_TOP <- rbind(Office_Freq_top10Obli, Office_Freq_top10Freq)
+Office_Freq_TOP <- unique(Office_Freq_TOP)  #17 records in total
+
+Office_Freq_TOP$Office_Full <- factor(Office_Freq_TOP$Office_Full, 
+                                      levels = rev(Office_Freq_TOP$Office_Full))
+Office_Freq_TOP <- melt(Office_Freq_TOP, 
+                        id = c("Agency","Office", "OfficeName", "Office_Full", "Count_Freq", "Action_Obligation_Then_Year"))
+
+Office_barplot <- ggplot(data = Office_Freq_TOP,
+                         aes(x = Office_Full, 
+                             y = value,
+                             fill = factor(variable))) +
+                  geom_bar(stat = "identity", 
+                  position = "dodge", 
+                  width = 0.8) + 
+                  coord_flip() +
+                  xlab("") + 
+                  ylab("") + 
+                  theme_grey() + 
+                  scale_fill_grey(labels = c("% of records", "% of obligation"),
+                                  guide = guide_legend(reverse = TRUE)) + 
+                  ggtitle("Percent of Frequency and obligation for Office") +
+                  theme(text = element_text(size = 10), 
+                        legend.title = element_blank(),
+                        legend.position = "bottom",
+                        legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit = "cm"),
+                        legend.text = element_text(margin = margin(r=0.5, unit = "cm")), 
+                        plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm"))
+Office_barplot
+```
+
+![](monopoly_results_summary_files/figure-html/grouped percent frequency/obligation barplot for all Office-1.png)<!-- -->
+
+
+### Platform Portfolio
+
+```r
+library(readr)
+```
+
+```
+## 
+## Attaching package: 'readr'
+```
+
+```
+## The following object is masked from 'package:scales':
+## 
+##     col_factor
+```
+
+```r
+annual_platform_summary<-read_csv(file="..//Output//annual_platform_summary.csv")
+```
+
+```
+## Warning: Missing column names filled in: 'X1' [1]
+```
+
+```
+## Parsed with column specification:
+## cols(
+##   X1 = col_double(),
+##   platformPortfolio = col_character(),
+##   Fiscal.Year = col_double(),
+##   Action.Obligation = col_double(),
+##   vendor_count = col_double(),
+##   hh_index = col_double(),
+##   top4 = col_double(),
+##   top8 = col_double(),
+##   top12 = col_double(),
+##   top20 = col_double(),
+##   top50 = col_double()
+## )
+```
+
+```r
+colnames(annual_platform_summary)[colnames(annual_platform_summary)=="platformPortfolio"]<-"PlatformPortfolio"
+
+platform_no_na<-subset(annual_platform_summary,!is.na(PlatformPortfolio))
+labels_and_colors<-csis360::prepare_labels_and_colors(platform_no_na,"PlatformPortfolio")
+```
+
+```
+## Parsed with column specification:
+## cols(
+##   column = col_character(),
+##   coloration.key = col_character(),
+##   title = col_character(),
+##   share.title = col_character(),
+##   period.title = col_logical(),
+##   is.colon.split = col_logical()
+## )
+```
+
+```r
+platform_no_na$plat_short <-swr(platform_no_na$PlatformPortfolio,nwrap = 21)
+platform_no_na<-subset(platform_no_na,Fiscal.Year>=2000 & Fiscal.Year<=2017)
+
+ 
+
+# plat<-ggplot(platform_no_na,
+#        aes(x=Fiscal.Year,y=hh_index))+#color=NAICS_Code
+#   geom_line()+
+#   scale_y_continuous(label=scales::comma)+ 
+#   # scale_x_continuous(breaks=c(2006,2009,2011,2014))+
+#   labs(x="Fiscal Year",y="Herfindahl-Herschman Index")+ 
+#   geom_hline(yintercept=c(1500,2500),linetype="dotted")+
+#   facet_wrap(~plat_short)
+# add_preassigned_scales(plat,labels_and_colors = labels_and_colors)
+
+# str(platform_no_na)
+# summary(platform_no_na$Fiscal.Year)
+#
+# undebug(add_preassigned_scales)
+plat<-build_plot(
+  data=platform_no_na,
+  chart_geom = "Line Chart",
+  share = FALSE,
+  x_var="Fiscal.Year",
+  y_var="hh_index", #Name of variable to plot on y-axis
+  color_var="PlatformPortfolio",       # name of coloration variable, as string
+  facet_var="PlatformPortfolio",        # name of facet variable, as string
+  legend=FALSE, #Include a legend
+  caption=FALSE, #Include a source caption
+  labels_and_colors=labels_and_colors,
+  column_key=NULL
+)
+
+
+# add_preassigned_scales(plat, labels_and_colors,  var="PlatformPortfolio"
+
+plat<-plat+geom_hline(yintercept=c(1500,2500),linetype="dotted")+
+  labs(x="Fiscal Year",y="Herfindahl-Herschman Indetx")
+plat
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family not found in Windows font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family not found in Windows font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family not found in Windows font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family not found in Windows font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family not found in Windows font database
+```
+
+![](monopoly_results_summary_files/figure-html/Platform-1.png)<!-- -->
+
+```r
+ggsave(plat+geom_line(aes(x=Fiscal.Year,y=hh_index,color=PlatformPortfolio),size=1),filename="..//Output//platform_hhi.png",height=3.25, width=6.5)
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family not found in Windows font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family not found in Windows font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family not found in Windows font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family not found in Windows font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family not found in Windows font database
+```
+
+```r
+ggsave(plat+geom_line(aes(x=Fiscal.Year,y=hh_index)),filename="..//Output//platform_hhi_bw.png",height=3.25, width=6.5)
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family not found in Windows font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family not found in Windows font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family not found in Windows font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family not found in Windows font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family not found in Windows font database
+```
+
+```r
+ggsave(plat+geom_line(aes(x=Fiscal.Year,y=hh_index,color=PlatformPortfolio),size=1),filename="..//Output//platform_hhi.eps",height=3.25, width=6.5)
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```r
+ggsave(plat+geom_line(aes(x=Fiscal.Year,y=hh_index)),filename="..//Output//platform_hhi_bw.eps",height=3.25, width=6.5)
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : family 'Open Sans' not included in postscript() device
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+## x$y, : font family 'Open Sans' not found in PostScript font database
+```
+
+### Variable examination
+
+```r
+HH1plot<-freq_continuous_plot(def,"def6_HHI_lag1",bins=50)
+HH1plot<-HH1plot+geom_vline(xintercept=c(1500,2500))+labs(x="Annual Herfindahl-Hirschman Index (HHI) for NAICS-6 Sector",y="Contract or Task Order Count")
+HH1plot
+```
+
+```
+## Warning: Removed 193733 rows containing non-finite values (stat_bin).
+```
+
+![](monopoly_results_summary_files/figure-html/VarGraph-1.png)<!-- -->
+
+```r
+ggsave(HH1plot,file="..//Output//HH1freq.png",width=5.5,height=5.5,dpi=600)
+```
+
+```
+## Warning: Removed 193733 rows containing non-finite values (stat_bin).
+```
+
+```r
+ggsave(HH1plot,file="..//Output//HH1freq.eps",width=5.5,height=5.5,dpi=600)
+```
+
+```
+## Warning: Removed 193733 rows containing non-finite values (stat_bin).
+```
+
+```r
+sum(def$Action_Obligation_Then_Year[def$EffComp=="No Comp."],na.rm=TRUE)/sum(def$Action_Obligation_Then_Year,na.rm=TRUE)
+```
+
+```
+## [1] 0.342629
+```
+
+```r
+sum(def$Action_Obligation_Then_Year[def$EffComp=="1 Offer"],na.rm=TRUE)/sum(def$Action_Obligation_Then_Year,na.rm=TRUE)
+```
+
+```
+## [1] 0.1180339
+```
+
+```r
+sum(def$Action_Obligation_Then_Year[def$EffComp=="2+ Offers"],na.rm=TRUE)/sum(def$Action_Obligation_Then_Year,na.rm=TRUE)
+```
+
+```
+## [1] 0.5297323
+```
+
+```r
+nrow(def[def$EffComp=="No Comp.",])/nrow(def)
+```
+
+```
+## [1] 0.1804076
+```
+
+```r
+sum(def$Action_Obligation_Then_Year[is.na(def$EffComp)],na.rm=TRUE)/sum(def$Action_Obligation_Then_Year,na.rm=TRUE)
+```
+
+```
+## [1] 0.009604821
+```
+
+```r
+# Effplot<-freq_discrete_plot(subset(def,"EffComp"))
+# Effplot<-Effplot+labs(x="Effective Competition",y="Contract or Task Order Count")
+# ggsave(Effplot,file="..//Output//EffFreq.png",width=5.5,height=5.5,dpi=600)
+```
+
+
+
+
+# Loading Models
+## Output: Offers
+
+### Consolidation and Number of Offers
+
+
+```r
+load("..//Output//Comp_Cons_15D.rdata")
+
+
+if(!exists("Comp_Cons_15D")){
+   
+     Comp_Cons_15D <- lmer (data=smp,
+                         l_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                         # cl_US3_avg_sal_lag1+
+                         cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                         cl_US6_avg_sal_lag1 + 
+                         cl_Ceil_Then_Year+cl_Days+
+                         Veh+
+                         PricingFee+UCA+
+                         b_Intl+
+                         b_UCA:cl_def6_HHI_lag1 +
+                         # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                         # cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                         b_Intl:Veh+
+                         # cl_Ceil_Then_Year:PricingFee+
+                         # cl_US6_avg_sal_lag1:PricingFee+
+                         # b_UCA:cl_Days+
+                         # b_UCA:cl_Ceil_Then_Year+
+                         (1 | NAICS3/NAICS) + (1 | Agency/Office) + (1 | StartCY),
+                         verbose=1)
+
+  # save(Comp_Cons_15D,file="..//Output//Comp_Cons_15D.rdata")
+  
+   Comp_Cons_15D_1m <- lmer (data=smp1m,
+                         l_Offr ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                         # cl_US3_avg_sal_lag1+
+                         cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+
+                         cl_US6_avg_sal_lag1 + 
+                         cl_Ceil_Then_Year+cl_Days+
+                         Veh+
+                         PricingFee+UCA+
+                         b_Intl+
+                         b_UCA:cl_def6_HHI_lag1 +
+                         # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                         # cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                         b_Intl:Veh+
+                         # cl_Ceil_Then_Year:PricingFee+
+                         # cl_US6_avg_sal_lag1:PricingFee+
+                         # b_UCA:cl_Days+
+                         # b_UCA:cl_Ceil_Then_Year+
+                         (1 | NAICS3/NAICS) + (1 | Agency/Office) + (1 | StartCY),
+                         verbose=1)
+   save(Comp_Cons_15D,Comp_Cons_15D_1m,file="..//Output//Comp_Cons_15D.rdata")
+
+}
+
+stargazer::stargazer(Comp_Cons_15D,Comp_Cons_15D_1m,type="text",
+                       digits=2)
+```
+
+```
+## 
+## ===========================================================
+##                                    Dependent variable:     
+##                                ----------------------------
+##                                           l_Offr           
+##                                     (1)            (2)     
+## -----------------------------------------------------------
+## cl_def3_HHI_lag1                  -0.13***      -0.14***   
+##                                    (0.01)        (0.004)   
+##                                                            
+## cl_def3_ratio_lag1                  0.02         -0.03**   
+##                                    (0.02)        (0.01)    
+##                                                            
+## cl_def6_HHI_lag1                  -0.0003         0.002    
+##                                    (0.01)        (0.004)   
+##                                                            
+## cl_def6_ratio_lag1                  0.02         0.03***   
+##                                    (0.01)        (0.01)    
+##                                                            
+## cl_def6_obl_lag1                  0.17***        0.21***   
+##                                    (0.01)        (0.01)    
+##                                                            
+## cl_US6_avg_sal_lag1               0.05***        0.10***   
+##                                    (0.02)        (0.01)    
+##                                                            
+## cl_Ceil                           -0.01***      -0.01***   
+##                                   (0.004)        (0.002)   
+##                                                            
+## cl_Days                           0.05***        0.04***   
+##                                   (0.005)        (0.002)   
+##                                                            
+## VehS-IDC                          -0.03***      -0.02***   
+##                                    (0.01)        (0.003)   
+##                                                            
+## VehM-IDC                          -0.05***      -0.06***   
+##                                    (0.01)        (0.01)    
+##                                                            
+## VehFSS/GWAC                        0.02*         0.02***   
+##                                    (0.01)        (0.005)   
+##                                                            
+## VehBPA/BOA                        -0.13***      -0.12***   
+##                                    (0.01)        (0.01)    
+##                                                            
+## PricingFeeOther FP                0.39***        0.38***   
+##                                    (0.01)        (0.004)   
+##                                                            
+## PricingFeeIncentive                -0.02        -0.05***   
+##                                    (0.03)        (0.01)    
+##                                                            
+## PricingFeeCombination or Other     -0.04        -0.05***   
+##                                    (0.02)        (0.01)    
+##                                                            
+## PricingFeeOther CB                -0.25***      -0.28***   
+##                                    (0.02)        (0.01)    
+##                                                            
+## PricingFeeT&M/LH/FPLOE             -0.03          -0.01    
+##                                    (0.02)        (0.01)    
+##                                                            
+## UCAUCA                            -0.18***      -0.18***   
+##                                    (0.02)        (0.01)    
+##                                                            
+## b_Intl                            -0.21***      -0.21***   
+##                                    (0.01)        (0.01)    
+##                                                            
+## cl_def6_HHI_lag1:b_UCA             -0.08        -0.10***   
+##                                    (0.05)        (0.03)    
+##                                                            
+## VehS-IDC:b_Intl                   0.29***        0.29***   
+##                                    (0.01)        (0.01)    
+##                                                            
+## VehM-IDC:b_Intl                   0.18***        0.17***   
+##                                    (0.03)        (0.02)    
+##                                                            
+## VehFSS/GWAC:b_Intl                 0.08**        0.05***   
+##                                    (0.03)        (0.02)    
+##                                                            
+## VehBPA/BOA:b_Intl                 0.14***        0.11***   
+##                                    (0.03)        (0.02)    
+##                                                            
+## Constant                          0.98***        1.03***   
+##                                    (0.09)        (0.08)    
+##                                                            
+## -----------------------------------------------------------
+## Observations                      250,000       1,000,000  
+## Log Likelihood                  -268,224.10   -1,065,589.00
+## Akaike Inf. Crit.                536,510.20   2,131,241.00 
+## Bayesian Inf. Crit.              536,833.60   2,131,607.00 
+## ===========================================================
+## Note:                           *p<0.1; **p<0.05; ***p<0.01
+```
+
+```r
+#Considering 
+write.csv(exp(summary(Comp_Cons_15D_1m)$coefficients[,1])-1,file="..//Output/exp_Comp_Cons_15D_1m.csv")
+# Comp_Cons_15D_exp<-log_analysis(Comp_Cons_15D)
+
+glmer_examine(Comp_Cons_15D,display=TRUE)
+```
+
+```
+## lmer(formula = l_Offr ~ cl_def3_HHI_lag1 + cl_def3_ratio_lag1 + 
+##     cl_def6_HHI_lag1 + cl_def6_ratio_lag1 + cl_def6_obl_lag1 + 
+##     cl_US6_avg_sal_lag1 + cl_Ceil + cl_Days + Veh + PricingFee + 
+##     UCA + b_Intl + b_UCA:cl_def6_HHI_lag1 + b_Intl:Veh + (1 | 
+##     NAICS3/NAICS) + (1 | Agency/Office) + (1 | StartCY), data = smp, 
+##     verbose = 1)
+##                                coef.est coef.se
+## (Intercept)                     0.98     0.09  
+## cl_def3_HHI_lag1               -0.13     0.01  
+## cl_def3_ratio_lag1              0.02     0.02  
+## cl_def6_HHI_lag1                0.00     0.01  
+## cl_def6_ratio_lag1              0.02     0.01  
+## cl_def6_obl_lag1                0.17     0.01  
+## cl_US6_avg_sal_lag1             0.05     0.02  
+## cl_Ceil                        -0.01     0.00  
+## cl_Days                         0.05     0.00  
+## VehS-IDC                       -0.03     0.01  
+## VehM-IDC                       -0.05     0.01  
+## VehFSS/GWAC                     0.02     0.01  
+## VehBPA/BOA                     -0.13     0.01  
+## PricingFeeOther FP              0.39     0.01  
+## PricingFeeIncentive            -0.02     0.03  
+## PricingFeeCombination or Other -0.04     0.02  
+## PricingFeeOther CB             -0.25     0.02  
+## PricingFeeT&M/LH/FPLOE         -0.03     0.02  
+## UCAUCA                         -0.18     0.02  
+## b_Intl                         -0.21     0.01  
+## cl_def6_HHI_lag1:b_UCA         -0.08     0.05  
+## VehS-IDC:b_Intl                 0.29     0.01  
+## VehM-IDC:b_Intl                 0.18     0.03  
+## VehFSS/GWAC:b_Intl              0.08     0.03  
+## VehBPA/BOA:b_Intl               0.14     0.03  
+## 
+## Error terms:
+##  Groups        Name        Std.Dev.
+##  Office:Agency (Intercept) 0.40    
+##  NAICS:NAICS3  (Intercept) 0.27    
+##  NAICS3        (Intercept) 0.16    
+##  Agency        (Intercept) 0.31    
+##  StartCY       (Intercept) 0.03    
+##  Residual                  0.70    
+## ---
+## number of obs: 250000, groups: Office:Agency, 1305; NAICS:NAICS3, 891; NAICS3, 80; Agency, 24; StartCY, 8
+## AIC = 536510, DIC = 536121.2
+## deviance = 536284.7
+```
+
+```
+##                            GVIF Df GVIF^(1/(2*Df))
+## cl_def3_HHI_lag1       1.136171  1        1.065913
+## cl_def3_ratio_lag1     1.022818  1        1.011344
+## cl_def6_HHI_lag1       1.149596  1        1.072192
+## cl_def6_ratio_lag1     1.039005  1        1.019316
+## cl_def6_obl_lag1       1.064695  1        1.031841
+## cl_US6_avg_sal_lag1    1.024444  1        1.012148
+## cl_Ceil                1.070559  1        1.034678
+## cl_Days                1.064248  1        1.031624
+## Veh                    1.475465  4        1.049823
+## PricingFee             1.057716  5        1.005627
+## UCA                    1.242781  1        1.114801
+## b_Intl                 2.480887  1        1.575083
+## cl_def6_HHI_lag1:b_UCA 1.243122  1        1.114954
+## Veh:b_Intl             3.367848  4        1.163909
+```
+
+```r
+get_icc(Comp_Cons_15D)
+```
+
+```
+## 
+## Intraclass Correlation Coefficient for Linear mixed model
+## 
+## Family : gaussian (identity)
+## Formula: l_Offr ~ cl_def3_HHI_lag1 + cl_def3_ratio_lag1 + cl_def6_HHI_lag1 + cl_def6_ratio_lag1 + cl_def6_obl_lag1 + cl_US6_avg_sal_lag1 + cl_Ceil + cl_Days + Veh + PricingFee + UCA + b_Intl + b_UCA:cl_def6_HHI_lag1 + b_Intl:Veh + (1 | NAICS3/NAICS) + (1 | Agency/Office) + (1 | StartCY)
+## 
+##   ICC (Office:Agency): 0.1896
+##    ICC (NAICS:NAICS3): 0.0870
+##          ICC (NAICS3): 0.0289
+##          ICC (Agency): 0.1116
+##         ICC (StartCY): 0.0009
+```
+No failure to converge.
+
+## Output: Ceiling Breach
+### Consolidation and Ceiling Breaches
+
+
+```r
+# load("..//Output//CBre_Cons_13B.rdata") Missing
+load("..//Output//CBre_Cons_13B_1m.rdata")
+
+if(!exists("CBre_Cons_13B_1m")){
+  CBre_Cons_13B_1m <- glmer (data=smp1m,
+                          b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                            #cl_US3_avg_sal_lag1+
+                            cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                            cl_US6_avg_sal_lag1+
+                            cl_Ceil_Then_Year + cl_Days+ 
+                            Veh +
+                            PricingFee + b_UCA +
+                            b_Intl+
+                            
+                            b_UCA:cl_def6_HHI_lag1 + 
+                            b_UCA:cl_Ceil_Then_Year+
+                            cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                            
+                            (1 | NAICS3/NAICS) + 
+                            (1 | Agency/Office), 
+                          
+                          family=binomial(link="logit"),
+                          verbose=1)
+  save(CBre_Cons_13B_1m,#CBre_Cons_13B,CBre_Cons_13B.restart,
+       file="..//Output//CBre_Cons_13B_1m.rdata")
+}
+
+# if(!exists("CBre_Cons_13B_1m_restart")){
+#   pars<-get_pars(CBre_Cons_13B_1m)
+#   CBre_Cons_13B_1m_restart <- update(CBre_Cons_13B_1m, 
+#                                      start=pars,
+#                                      verbose=1)
+#   save(CBre_Cons_13B,
+#        CBre_Cons_13B.restart,
+#        CBre_Cons_13B_1m,
+#        CBre_Cons_13B_1m_restart,
+#        file="..//Output//CBre_Cons_13B.rdata")
+# }
+# glmer_examine(CBre_Cons_13B_1m_restart)
+
+
+
+
+# save(CBre_Cons_13B,
+#      CBre_Cons_13B.devfun,
+#      CBre_Cons_13_scgrad,
+#      CBre_Cons_13B.restart,
+#      CBre_Comp_13B,
+#      CBre_Comp_13B.devfun,
+#      CBre_Comp_13B.restart,
+#      file="..//Output//CBre_Cons_13B.rdata")
+
+# source(system.file("utils", "allFit.R", package="lme4"))
+# CBre_Cons_13B.all <- allFit(CBre_Cons_13B)
+# CBre_Cons_13B_ss_cons <- summary(CBre_Cons_13B.all)
+
+
+
+
+
+vif(CBre_Cons_13B_1m)
+```
+
+```
+##                                       GVIF Df GVIF^(1/(2*Df))
+## cl_def3_HHI_lag1                  1.970736  1        1.403829
+## cl_def3_ratio_lag1                1.073270  1        1.035988
+## cl_def6_HHI_lag1                  1.567846  1        1.252137
+## cl_def6_obl_lag1                  1.153934  1        1.074213
+## cl_def6_ratio_lag1                1.095107  1        1.046473
+## cl_US6_avg_sal_lag1               1.114296  1        1.055602
+## cl_Ceil                           1.198614  1        1.094812
+## cl_Days                           1.145328  1        1.070200
+## Veh                               1.049107  4        1.006010
+## PricingFee                        1.047137  5        1.004617
+## b_UCA                             2.043947  1        1.429667
+## b_Intl                            1.005421  1        1.002707
+## cl_def6_HHI_lag1:b_UCA            1.207110  1        1.098686
+## cl_Ceil:b_UCA                     1.928775  1        1.388803
+## cl_def6_HHI_lag1:cl_def6_obl_lag1 1.371691  1        1.171192
+```
+
+```r
+stargazer::stargazer(CBre_Cons_13B_1m,type="text", #CBre_Cons_13B
+                       digits=2)
+```
+
+```
+## 
+## =============================================================
+##                                       Dependent variable:    
+##                                   ---------------------------
+##                                             b_CBre           
+## -------------------------------------------------------------
+## cl_def3_HHI_lag1                             -0.01           
+##                                             (0.05)           
+##                                                              
+## cl_def3_ratio_lag1                         -0.39***          
+##                                             (0.13)           
+##                                                              
+## cl_def6_HHI_lag1                             0.05            
+##                                             (0.04)           
+##                                                              
+## cl_def6_obl_lag1                             0.08            
+##                                             (0.05)           
+##                                                              
+## cl_def6_ratio_lag1                          -0.003           
+##                                             (0.03)           
+##                                                              
+## cl_US6_avg_sal_lag1                        -0.38***          
+##                                             (0.06)           
+##                                                              
+## cl_Ceil                                     1.39***          
+##                                             (0.03)           
+##                                                              
+## cl_Days                                     0.52***          
+##                                             (0.03)           
+##                                                              
+## VehS-IDC                                   -0.39***          
+##                                             (0.03)           
+##                                                              
+## VehM-IDC                                     -0.02           
+##                                             (0.04)           
+##                                                              
+## VehFSS/GWAC                                -0.24***          
+##                                             (0.05)           
+##                                                              
+## VehBPA/BOA                                 -0.47***          
+##                                             (0.07)           
+##                                                              
+## PricingFeeOther FP                           0.09            
+##                                             (0.14)           
+##                                                              
+## PricingFeeIncentive                         1.88***          
+##                                             (0.14)           
+##                                                              
+## PricingFeeCombination or Other              0.72***          
+##                                             (0.10)           
+##                                                              
+## PricingFeeOther CB                           0.13*           
+##                                             (0.07)           
+##                                                              
+## PricingFeeT&M/LH/FPLOE                      0.38***          
+##                                             (0.10)           
+##                                                              
+## b_UCA                                       1.71***          
+##                                             (0.09)           
+##                                                              
+## b_Intl                                       -0.01           
+##                                             (0.07)           
+##                                                              
+## cl_def6_HHI_lag1:b_UCA                      0.33**           
+##                                             (0.13)           
+##                                                              
+## cl_Ceil:b_UCA                              -1.34***          
+##                                             (0.13)           
+##                                                              
+## cl_def6_HHI_lag1:cl_def6_obl_lag1            0.04            
+##                                             (0.06)           
+##                                                              
+## Constant                                   -5.57***          
+##                                             (0.24)           
+##                                                              
+## -------------------------------------------------------------
+## Observations                               1,000,000         
+## Log Likelihood                            -40,169.06         
+## Akaike Inf. Crit.                          80,392.13         
+## Bayesian Inf. Crit.                        80,711.14         
+## =============================================================
+## Note:                             *p<0.1; **p<0.05; ***p<0.01
+```
+
+```r
+glmer_examine(CBre_Cons_13B_1m,display=TRUE)
+```
+
+```
+## glmer(formula = b_CBre ~ cl_def3_HHI_lag1 + cl_def3_ratio_lag1 + 
+##     cl_def6_HHI_lag1 + cl_def6_obl_lag1 + cl_def6_ratio_lag1 + 
+##     cl_US6_avg_sal_lag1 + cl_Ceil + cl_Days + Veh + PricingFee + 
+##     b_UCA + b_Intl + b_UCA:cl_def6_HHI_lag1 + b_UCA:cl_Ceil + 
+##     cl_def6_HHI_lag1:cl_def6_obl_lag1 + (1 | NAICS3/NAICS) + 
+##     (1 | Agency/Office), data = smp1m, family = binomial(link = "logit"), 
+##     verbose = 1)
+##                                   coef.est coef.se
+## (Intercept)                       -5.57     0.24  
+## cl_def3_HHI_lag1                  -0.01     0.05  
+## cl_def3_ratio_lag1                -0.39     0.13  
+## cl_def6_HHI_lag1                   0.05     0.04  
+## cl_def6_obl_lag1                   0.08     0.05  
+## cl_def6_ratio_lag1                 0.00     0.03  
+## cl_US6_avg_sal_lag1               -0.38     0.06  
+## cl_Ceil                            1.39     0.03  
+## cl_Days                            0.52     0.03  
+## VehS-IDC                          -0.39     0.03  
+## VehM-IDC                          -0.02     0.04  
+## VehFSS/GWAC                       -0.24     0.05  
+## VehBPA/BOA                        -0.47     0.07  
+## PricingFeeOther FP                 0.09     0.14  
+## PricingFeeIncentive                1.88     0.14  
+## PricingFeeCombination or Other     0.72     0.10  
+## PricingFeeOther CB                 0.13     0.07  
+## PricingFeeT&M/LH/FPLOE             0.38     0.10  
+## b_UCA                              1.71     0.09  
+## b_Intl                            -0.01     0.07  
+## cl_def6_HHI_lag1:b_UCA             0.33     0.13  
+## cl_Ceil:b_UCA                     -1.34     0.13  
+## cl_def6_HHI_lag1:cl_def6_obl_lag1  0.04     0.06  
+## 
+## Error terms:
+##  Groups        Name        Std.Dev.
+##  Office:Agency (Intercept) 1.22    
+##  NAICS:NAICS3  (Intercept) 0.42    
+##  NAICS3        (Intercept) 0.46    
+##  Agency        (Intercept) 0.77    
+##  Residual                  1.00    
+## ---
+## number of obs: 1000000, groups: Office:Agency, 1462; NAICS:NAICS3, 973; NAICS3, 82; Agency, 24
+## AIC = 80392.1, DIC = 74206
+## deviance = 77272.0
+```
+
+```
+## [[1]]
+##                                       GVIF Df GVIF^(1/(2*Df))
+## cl_def3_HHI_lag1                  1.970736  1        1.403829
+## cl_def3_ratio_lag1                1.073270  1        1.035988
+## cl_def6_HHI_lag1                  1.567846  1        1.252137
+## cl_def6_obl_lag1                  1.153934  1        1.074213
+## cl_def6_ratio_lag1                1.095107  1        1.046473
+## cl_US6_avg_sal_lag1               1.114296  1        1.055602
+## cl_Ceil                           1.198614  1        1.094812
+## cl_Days                           1.145328  1        1.070200
+## Veh                               1.049107  4        1.006010
+## PricingFee                        1.047137  5        1.004617
+## b_UCA                             2.043947  1        1.429667
+## b_Intl                            1.005421  1        1.002707
+## cl_def6_HHI_lag1:b_UCA            1.207110  1        1.098686
+## cl_Ceil:b_UCA                     1.928775  1        1.388803
+## cl_def6_HHI_lag1:cl_def6_obl_lag1 1.371691  1        1.171192
+## 
+## [[2]]
+## 
+## Intraclass Correlation Coefficient for Generalized linear mixed model
+## 
+## Family : binomial (logit)
+## Formula: b_CBre ~ cl_def3_HHI_lag1 + cl_def3_ratio_lag1 + cl_def6_HHI_lag1 + cl_def6_obl_lag1 + cl_def6_ratio_lag1 + cl_US6_avg_sal_lag1 + cl_Ceil + cl_Days + Veh + PricingFee + b_UCA + b_Intl + b_UCA:cl_def6_HHI_lag1 + b_UCA:cl_Ceil + cl_def6_HHI_lag1:cl_def6_obl_lag1 + (1 | NAICS3/NAICS) + (1 | Agency/Office)
+## 
+##   ICC (Office:Agency): 0.2596
+##    ICC (NAICS:NAICS3): 0.0308
+##          ICC (NAICS3): 0.0368
+##          ICC (Agency): 0.1032
+## 
+## 
+## [[3]]
+## [1] "Model failed to converge with max|grad| = 0.035645 (tol = 0.001, component 1)"
+## 
+## [[4]]
+## Office:Agency.(Intercept)  NAICS:NAICS3.(Intercept) 
+##                 1.2246421                 0.4220541 
+##        NAICS3.(Intercept)        Agency.(Intercept) 
+##                 0.4613598                 0.7719464
+```
+
+```r
+odds_ratio(CBre_Cons_13B_1m,"CBre_Cons_13B",walds = TRUE)
+```
+
+```
+##                                                            variable
+## (Intercept)                                             (Intercept)
+## cl_def3_HHI_lag1                                   cl_def3_HHI_lag1
+## cl_def3_ratio_lag1                               cl_def3_ratio_lag1
+## cl_def6_HHI_lag1                                   cl_def6_HHI_lag1
+## cl_def6_obl_lag1                                   cl_def6_obl_lag1
+## cl_def6_ratio_lag1                               cl_def6_ratio_lag1
+## cl_US6_avg_sal_lag1                             cl_US6_avg_sal_lag1
+## cl_Ceil                                                     cl_Ceil
+## cl_Days                                                     cl_Days
+## VehS-IDC                                                   VehS-IDC
+## VehM-IDC                                                   VehM-IDC
+## VehFSS/GWAC                                             VehFSS/GWAC
+## VehBPA/BOA                                               VehBPA/BOA
+## PricingFeeOther FP                               PricingFeeOther FP
+## PricingFeeIncentive                             PricingFeeIncentive
+## PricingFeeCombination or Other       PricingFeeCombination or Other
+## PricingFeeOther CB                               PricingFeeOther CB
+## PricingFeeT&M/LH/FPLOE                       PricingFeeT&M/LH/FPLOE
+## b_UCA                                                         b_UCA
+## b_Intl                                                       b_Intl
+## cl_def6_HHI_lag1:b_UCA                       cl_def6_HHI_lag1:b_UCA
+## cl_Ceil:b_UCA                                         cl_Ceil:b_UCA
+## cl_def6_HHI_lag1:cl_def6_obl_lag1 cl_def6_HHI_lag1:cl_def6_obl_lag1
+##                                            OR       2.5 %     97.5 %
+## (Intercept)                       0.003818274 0.002362446 0.00617124
+## cl_def3_HHI_lag1                  0.990707278 0.900108501 1.09042511
+## cl_def3_ratio_lag1                0.676042437 0.521864962 0.87576942
+## cl_def6_HHI_lag1                  1.050797468 0.962814160 1.14682081
+## cl_def6_obl_lag1                  1.086803887 0.979891879 1.20538063
+## cl_def6_ratio_lag1                0.996872250 0.937418622 1.06009659
+## cl_US6_avg_sal_lag1               0.684585557 0.604983839 0.77466100
+## cl_Ceil                           4.025168188 3.784922793 4.28066300
+## cl_Days                           1.677742025 1.567989812 1.79517640
+## VehS-IDC                          0.675198479 0.637234420 0.71542430
+## VehM-IDC                          0.976704365 0.903412769 1.05594192
+## VehFSS/GWAC                       0.783031445 0.710034041 0.86353359
+## VehBPA/BOA                        0.623778295 0.543834117 0.71547435
+## PricingFeeOther FP                1.095446697 0.833462084 1.43978171
+## PricingFeeIncentive               6.568687930 4.951430000 8.71418179
+## PricingFeeCombination or Other    2.045343763 1.686896175 2.47995767
+## PricingFeeOther CB                1.140161625 0.999447233 1.30068751
+## PricingFeeT&M/LH/FPLOE            1.458004398 1.199737533 1.77186824
+## b_UCA                             5.512524995 4.596762423 6.61072490
+## b_Intl                            0.988729142 0.866530331 1.12816053
+## cl_def6_HHI_lag1:b_UCA            1.390943009 1.069553240 1.80890710
+## cl_Ceil:b_UCA                     0.262132045 0.201933654 0.34027616
+## cl_def6_HHI_lag1:cl_def6_obl_lag1 1.041443979 0.928558079 1.16805355
+```
+"Model failed to converge with max|grad| = 0.00750942 (tol = 0.001, component 1)"
+
+
+### Competition and Ceiling Breach
+
+```r
+load(file="..//Output//CBre_Comp_13C.rdata")
+
+glmer_examine(CBre_Comp_13C)
+```
+
+```
+## [[1]]
+##                         GVIF Df GVIF^(1/(2*Df))
+## CompOffr            1.144020  4        1.016961
+## cl_def3_ratio_lag1  1.048055  1        1.023746
+## cl_def6_ratio_lag1  1.776298  1        1.332778
+## cl_def6_obl_lag1    1.118263  1        1.057480
+## cl_US6_avg_sal_lag1 1.813120  1        1.346521
+## cl_Ceil             1.217525  1        1.103415
+## cl_Days             1.158463  1        1.076319
+## Veh                 1.116577  4        1.013879
+## PricingFee          1.056910  5        1.005550
+## b_UCA               2.271457  1        1.507135
+## b_Intl              1.017144  1        1.008536
+## CompOffr:b_UCA      1.487295  4        1.050872
+## cl_Ceil:b_UCA       1.919182  1        1.385345
+## 
+## [[2]]
+## 
+## Intraclass Correlation Coefficient for Generalized linear mixed model
+## 
+## Family : binomial (logit)
+## Formula: b_CBre ~ CompOffr + cl_def3_ratio_lag1 + cl_def6_ratio_lag1 + cl_def6_obl_lag1 + cl_US6_avg_sal_lag1 + cl_Ceil + cl_Days + Veh + PricingFee + b_UCA + b_Intl + b_UCA:CompOffr + b_UCA:cl_Ceil + (1 | NAICS3/NAICS) + (1 | Agency/Office)
+## 
+##   ICC (Office:Agency): 0.1945
+##    ICC (NAICS:NAICS3): 0.0532
+##          ICC (NAICS3): 0.0444
+##          ICC (Agency): 0.1161
+## 
+## 
+## [[3]]
+## [1] "Model failed to converge with max|grad| = 0.0209168 (tol = 0.001, component 1)"
+## 
+## [[4]]
+## Office:Agency.(Intercept)  NAICS:NAICS3.(Intercept) 
+##                 1.0399275                 0.5440344 
+##        NAICS3.(Intercept)        Agency.(Intercept) 
+##                 0.4969990                 0.8034998
+```
+
+```r
+## Not Done
+if(!exists("CBre_Comp_13C")){
+  CBre_Comp_13C <- glmer (data=smp,
+                          b_CBre ~CompOffr+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                            cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                            cl_Ceil_Then_Year + cl_Days+
+                            Veh  +
+                            PricingFee+
+                            b_UCA +
+                            b_Intl+
+                            
+                            b_UCA:CompOffr +
+                            b_UCA:cl_Ceil_Then_Year+
+                            
+                            (1 | NAICS3/NAICS) + (1 | Agency/Office),
+                          family=binomial(link="logit"),
+                          verbose=1)
+  
+   CBre_Comp_13C_1m <- glmer (data=smp1m,
+                          b_CBre ~CompOffr+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                            cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                            cl_Ceil_Then_Year + cl_Days+
+                            Veh  +
+                            PricingFee+
+                            b_UCA +
+                            b_Intl+
+                            
+                            b_UCA:CompOffr +
+                            b_UCA:cl_Ceil_Then_Year+
+                            
+                            (1 | NAICS3/NAICS) + (1 | Agency/Office),
+                          family=binomial(link="logit"),
+                          verbose=1)
+  
+  save(CBre_Comp_13C,CBre_Comp_13C_1m,file="..//Output//CBre_Comp_13C.rdata")
+  stargazer::stargazer(CBre_Comp_13C,CBre_Comp_13C_1m,type="text",
+                       digits=2)
+}
+
+glmer_examine(CBre_Comp_13C,display=TRUE)
+```
+
+```
+## glmer(formula = b_CBre ~ CompOffr + cl_def3_ratio_lag1 + cl_def6_ratio_lag1 + 
+##     cl_def6_obl_lag1 + cl_US6_avg_sal_lag1 + cl_Ceil + cl_Days + 
+##     Veh + PricingFee + b_UCA + b_Intl + b_UCA:CompOffr + b_UCA:cl_Ceil + 
+##     (1 | NAICS3/NAICS) + (1 | Agency/Office), data = smp, family = binomial(link = "logit"), 
+##     verbose = 1)
+##                                coef.est coef.se
+## (Intercept)                    -5.24     0.27  
+## CompOffr1 offer                -0.27     0.08  
+## CompOffr2 offers               -0.02     0.08  
+## CompOffr3-4 offers             -0.09     0.07  
+## CompOffr5+ offers              -0.01     0.07  
+## cl_def3_ratio_lag1             -0.49     0.20  
+## cl_def6_ratio_lag1             -0.02     0.04  
+## cl_def6_obl_lag1                0.20     0.09  
+## cl_US6_avg_sal_lag1            -0.16     0.07  
+## cl_Ceil                         1.44     0.07  
+## cl_Days                         0.49     0.07  
+## VehS-IDC                       -0.30     0.06  
+## VehM-IDC                        0.08     0.08  
+## VehFSS/GWAC                    -0.15     0.10  
+## VehBPA/BOA                     -0.42     0.14  
+## PricingFeeOther FP             -0.17     0.27  
+## PricingFeeIncentive             2.27     0.30  
+## PricingFeeCombination or Other  0.60     0.21  
+## PricingFeeOther CB             -0.09     0.15  
+## PricingFeeT&M/LH/FPLOE         -0.08     0.23  
+## b_UCA                           2.47     0.22  
+## b_Intl                         -0.18     0.12  
+## CompOffr1 offer:b_UCA          -0.58     0.43  
+## CompOffr2 offers:b_UCA         -2.28     1.00  
+## CompOffr3-4 offers:b_UCA       -0.99     0.46  
+## CompOffr5+ offers:b_UCA        -2.08     0.74  
+## cl_Ceil:b_UCA                  -1.87     0.32  
+## 
+## Error terms:
+##  Groups        Name        Std.Dev.
+##  Office:Agency (Intercept) 1.04    
+##  NAICS:NAICS3  (Intercept) 0.54    
+##  NAICS3        (Intercept) 0.50    
+##  Agency        (Intercept) 0.80    
+##  Residual                  1.00    
+## ---
+## number of obs: 249855, groups: Office:Agency, 1296; NAICS:NAICS3, 886; NAICS3, 79; Agency, 24
+## AIC = 18121.5, DIC = 14982.5
+## deviance = 16521.0
+```
+
+```
+## [[1]]
+##                         GVIF Df GVIF^(1/(2*Df))
+## CompOffr            1.144020  4        1.016961
+## cl_def3_ratio_lag1  1.048055  1        1.023746
+## cl_def6_ratio_lag1  1.776298  1        1.332778
+## cl_def6_obl_lag1    1.118263  1        1.057480
+## cl_US6_avg_sal_lag1 1.813120  1        1.346521
+## cl_Ceil             1.217525  1        1.103415
+## cl_Days             1.158463  1        1.076319
+## Veh                 1.116577  4        1.013879
+## PricingFee          1.056910  5        1.005550
+## b_UCA               2.271457  1        1.507135
+## b_Intl              1.017144  1        1.008536
+## CompOffr:b_UCA      1.487295  4        1.050872
+## cl_Ceil:b_UCA       1.919182  1        1.385345
+## 
+## [[2]]
+## 
+## Intraclass Correlation Coefficient for Generalized linear mixed model
+## 
+## Family : binomial (logit)
+## Formula: b_CBre ~ CompOffr + cl_def3_ratio_lag1 + cl_def6_ratio_lag1 + cl_def6_obl_lag1 + cl_US6_avg_sal_lag1 + cl_Ceil + cl_Days + Veh + PricingFee + b_UCA + b_Intl + b_UCA:CompOffr + b_UCA:cl_Ceil + (1 | NAICS3/NAICS) + (1 | Agency/Office)
+## 
+##   ICC (Office:Agency): 0.1945
+##    ICC (NAICS:NAICS3): 0.0532
+##          ICC (NAICS3): 0.0444
+##          ICC (Agency): 0.1161
+## 
+## 
+## [[3]]
+## [1] "Model failed to converge with max|grad| = 0.0209168 (tol = 0.001, component 1)"
+## 
+## [[4]]
+## Office:Agency.(Intercept)  NAICS:NAICS3.(Intercept) 
+##                 1.0399275                 0.5440344 
+##        NAICS3.(Intercept)        Agency.(Intercept) 
+##                 0.4969990                 0.8034998
+```
+
+```r
+glmer_examine(CBre_Comp_13C_1m,display=TRUE)
+```
+
+```
+## glmer(formula = b_CBre ~ CompOffr + cl_def3_ratio_lag1 + cl_def6_ratio_lag1 + 
+##     cl_def6_obl_lag1 + cl_US6_avg_sal_lag1 + cl_Ceil + cl_Days + 
+##     Veh + PricingFee + b_UCA + b_Intl + b_UCA:CompOffr + b_UCA:cl_Ceil + 
+##     (1 | NAICS3/NAICS) + (1 | Agency/Office), data = smp1m, family = binomial(link = "logit"), 
+##     verbose = 1)
+##                                coef.est coef.se
+## (Intercept)                    -5.55     0.25  
+## CompOffr1 offer                -0.13     0.04  
+## CompOffr2 offers               -0.02     0.04  
+## CompOffr3-4 offers              0.02     0.03  
+## CompOffr5+ offers               0.08     0.03  
+## cl_def3_ratio_lag1             -0.43     0.13  
+## cl_def6_ratio_lag1             -0.01     0.03  
+## cl_def6_obl_lag1                0.10     0.05  
+## cl_US6_avg_sal_lag1            -0.39     0.06  
+## cl_Ceil                         1.38     0.03  
+## cl_Days                         0.51     0.03  
+## VehS-IDC                       -0.41     0.03  
+## VehM-IDC                       -0.01     0.04  
+## VehFSS/GWAC                    -0.23     0.05  
+## VehBPA/BOA                     -0.46     0.07  
+## PricingFeeOther FP              0.11     0.14  
+## PricingFeeIncentive             1.88     0.14  
+## PricingFeeCombination or Other  0.72     0.10  
+## PricingFeeOther CB              0.15     0.07  
+## PricingFeeT&M/LH/FPLOE          0.39     0.10  
+## b_UCA                           1.97     0.10  
+## b_Intl                         -0.01     0.07  
+## CompOffr1 offer:b_UCA          -0.79     0.20  
+## CompOffr2 offers:b_UCA         -0.74     0.25  
+## CompOffr3-4 offers:b_UCA       -1.26     0.24  
+## CompOffr5+ offers:b_UCA        -1.19     0.24  
+## cl_Ceil:b_UCA                  -1.16     0.13  
+## 
+## Error terms:
+##  Groups        Name        Std.Dev.
+##  Office:Agency (Intercept) 1.22    
+##  NAICS:NAICS3  (Intercept) 0.43    
+##  NAICS3        (Intercept) 0.46    
+##  Agency        (Intercept) 0.78    
+##  Residual                  1.00    
+## ---
+## number of obs: 1000000, groups: Office:Agency, 1462; NAICS:NAICS3, 973; NAICS3, 82; Agency, 24
+## AIC = 80316.5, DIC = 74129.6
+## deviance = 77192.1
+```
+
+```
+## [[1]]
+##                         GVIF Df GVIF^(1/(2*Df))
+## CompOffr            1.143548  4        1.016908
+## cl_def3_ratio_lag1  1.070496  1        1.034648
+## cl_def6_ratio_lag1  1.090891  1        1.044457
+## cl_def6_obl_lag1    1.123922  1        1.060152
+## cl_US6_avg_sal_lag1 1.111335  1        1.054199
+## cl_Ceil             1.204158  1        1.097341
+## cl_Days             1.148349  1        1.071610
+## Veh                 1.103762  4        1.012417
+## PricingFee          1.051352  5        1.005020
+## b_UCA               2.301659  1        1.517122
+## b_Intl              1.007280  1        1.003633
+## CompOffr:b_UCA      1.700285  4        1.068600
+## cl_Ceil:b_UCA       1.977556  1        1.406256
+## 
+## [[2]]
+## 
+## Intraclass Correlation Coefficient for Generalized linear mixed model
+## 
+## Family : binomial (logit)
+## Formula: b_CBre ~ CompOffr + cl_def3_ratio_lag1 + cl_def6_ratio_lag1 + cl_def6_obl_lag1 + cl_US6_avg_sal_lag1 + cl_Ceil + cl_Days + Veh + PricingFee + b_UCA + b_Intl + b_UCA:CompOffr + b_UCA:cl_Ceil + (1 | NAICS3/NAICS) + (1 | Agency/Office)
+## 
+##   ICC (Office:Agency): 0.2571
+##    ICC (NAICS:NAICS3): 0.0314
+##          ICC (NAICS3): 0.0366
+##          ICC (Agency): 0.1049
+## 
+## 
+## [[3]]
+## [1] "Model failed to converge with max|grad| = 0.0104685 (tol = 0.001, component 1)"
+## 
+## [[4]]
+## Office:Agency.(Intercept)  NAICS:NAICS3.(Intercept) 
+##                 1.2183842                 0.4259300 
+##        NAICS3.(Intercept)        Agency.(Intercept) 
+##                 0.4599183                 0.7783819
+```
+
+```r
+odds_ratio(CBre_Comp_13C,"CBre_Comp_13C",walds = TRUE)
+```
+
+```
+##                                                      variable           OR
+## (Intercept)                                       (Intercept)  0.005324614
+## CompOffr1 offer                               CompOffr1 offer  0.762438156
+## CompOffr2 offers                             CompOffr2 offers  0.977313767
+## CompOffr3-4 offers                         CompOffr3-4 offers  0.917085389
+## CompOffr5+ offers                           CompOffr5+ offers  0.989769877
+## cl_def3_ratio_lag1                         cl_def3_ratio_lag1  0.614426926
+## cl_def6_ratio_lag1                         cl_def6_ratio_lag1  0.981453962
+## cl_def6_obl_lag1                             cl_def6_obl_lag1  1.215460793
+## cl_US6_avg_sal_lag1                       cl_US6_avg_sal_lag1  0.854350890
+## cl_Ceil                                               cl_Ceil  4.225186884
+## cl_Days                                               cl_Days  1.627976292
+## VehS-IDC                                             VehS-IDC  0.740984492
+## VehM-IDC                                             VehM-IDC  1.079825213
+## VehFSS/GWAC                                       VehFSS/GWAC  0.864172340
+## VehBPA/BOA                                         VehBPA/BOA  0.657009605
+## PricingFeeOther FP                         PricingFeeOther FP  0.840740968
+## PricingFeeIncentive                       PricingFeeIncentive  9.659617192
+## PricingFeeCombination or Other PricingFeeCombination or Other  1.814338691
+## PricingFeeOther CB                         PricingFeeOther CB  0.909868337
+## PricingFeeT&M/LH/FPLOE                 PricingFeeT&M/LH/FPLOE  0.921511278
+## b_UCA                                                   b_UCA 11.795668995
+## b_Intl                                                 b_Intl  0.832621628
+## CompOffr1 offer:b_UCA                   CompOffr1 offer:b_UCA  0.557991533
+## CompOffr2 offers:b_UCA                 CompOffr2 offers:b_UCA  0.102536509
+## CompOffr3-4 offers:b_UCA             CompOffr3-4 offers:b_UCA  0.371186305
+## CompOffr5+ offers:b_UCA               CompOffr5+ offers:b_UCA  0.125400943
+## cl_Ceil:b_UCA                                   cl_Ceil:b_UCA  0.153519807
+##                                      2.5 %       97.5 %
+## (Intercept)                    0.003108188  0.009121555
+## CompOffr1 offer                0.655124621  0.887330322
+## CompOffr2 offers               0.843293460  1.132633234
+## CompOffr3-4 offers             0.804393850  1.045564447
+## CompOffr5+ offers              0.867547943  1.129210688
+## cl_def3_ratio_lag1             0.415551137  0.908481325
+## cl_def6_ratio_lag1             0.911062481  1.057284104
+## cl_def6_obl_lag1               1.027801049  1.437384153
+## cl_US6_avg_sal_lag1            0.744354291  0.980602184
+## cl_Ceil                        3.697141221  4.828650878
+## cl_Days                        1.421354440  1.864634698
+## VehS-IDC                       0.656726653  0.836052587
+## VehM-IDC                       0.915846804  1.273163247
+## VehFSS/GWAC                    0.712512676  1.048113050
+## VehBPA/BOA                     0.497180522  0.868219091
+## PricingFeeOther FP             0.495167467  1.427487511
+## PricingFeeIncentive            5.393166877 17.301189901
+## PricingFeeCombination or Other 1.196791494  2.750541679
+## PricingFeeOther CB             0.677451134  1.222022299
+## PricingFeeT&M/LH/FPLOE         0.589501088  1.440511397
+## b_UCA                          7.645684321 18.198214995
+## b_Intl                         0.663251554  1.045242595
+## CompOffr1 offer:b_UCA          0.241863341  1.287316008
+## CompOffr2 offers:b_UCA         0.014434544  0.728373250
+## CompOffr3-4 offers:b_UCA       0.150187316  0.917382883
+## CompOffr5+ offers:b_UCA        0.029691903  0.529619019
+## cl_Ceil:b_UCA                  0.081848448  0.287950862
+```
+"Model failed to converge with max|grad| = 0.0209168 (tol = 0.001, component 1)"
+No restart yet.
+### Both and Ceiling Breach
+
+```r
+load("..//Output//CBre_Cons_Comp_15A.rdata")
+
+stargazer::stargazer(CBre_Cons_Comp_15A,type="text",
+                       digits=2)
+```
+
+```
+## 
+## =============================================================
+##                                       Dependent variable:    
+##                                   ---------------------------
+##                                             b_CBre           
+## -------------------------------------------------------------
+## cl_def3_HHI_lag1                           -0.38***          
+##                                             (0.10)           
+##                                                              
+## cl_def3_ratio_lag1                          -0.51**          
+##                                             (0.20)           
+##                                                              
+## cl_def6_HHI_lag1                            0.20**           
+##                                             (0.08)           
+##                                                              
+## cl_def6_obl_lag1                            0.18**           
+##                                             (0.09)           
+##                                                              
+## cl_def6_ratio_lag1                           -0.02           
+##                                             (0.04)           
+##                                                              
+## cl_US6_avg_sal_lag1                         -0.15**          
+##                                             (0.07)           
+##                                                              
+## CompOffr1 offer                            -0.27***          
+##                                             (0.08)           
+##                                                              
+## CompOffr2 offers                             -0.02           
+##                                             (0.08)           
+##                                                              
+## CompOffr3-4 offers                           -0.09           
+##                                             (0.07)           
+##                                                              
+## CompOffr5+ offers                            -0.01           
+##                                             (0.07)           
+##                                                              
+## cl_Ceil                                     1.44***          
+##                                             (0.07)           
+##                                                              
+## cl_Days                                     0.48***          
+##                                             (0.07)           
+##                                                              
+## VehS-IDC                                   -0.30***          
+##                                             (0.06)           
+##                                                              
+## VehM-IDC                                     0.08            
+##                                             (0.08)           
+##                                                              
+## VehFSS/GWAC                                  -0.14           
+##                                             (0.10)           
+##                                                              
+## VehBPA/BOA                                 -0.39***          
+##                                             (0.14)           
+##                                                              
+## PricingFeeOther FP                           -0.15           
+##                                             (0.27)           
+##                                                              
+## PricingFeeIncentive                         2.27***          
+##                                             (0.30)           
+##                                                              
+## PricingFeeCombination or Other              0.59***          
+##                                             (0.21)           
+##                                                              
+## PricingFeeOther CB                           -0.09           
+##                                             (0.15)           
+##                                                              
+## PricingFeeT&M/LH/FPLOE                       -0.08           
+##                                             (0.23)           
+##                                                              
+## b_UCA                                       2.58***          
+##                                             (0.23)           
+##                                                              
+## b_Intl                                      -0.19*           
+##                                             (0.12)           
+##                                                              
+## CompOffr1 offer:b_UCA                        -0.64           
+##                                             (0.43)           
+##                                                              
+## CompOffr2 offers:b_UCA                      -2.11**          
+##                                             (0.99)           
+##                                                              
+## CompOffr3-4 offers:b_UCA                    -0.91**          
+##                                             (0.46)           
+##                                                              
+## CompOffr5+ offers:b_UCA                    -1.96***          
+##                                             (0.74)           
+##                                                              
+## cl_def6_HHI_lag1:b_UCA                      0.65**           
+##                                             (0.31)           
+##                                                              
+## cl_Ceil:b_UCA                              -1.95***          
+##                                             (0.32)           
+##                                                              
+## cl_def6_HHI_lag1:cl_def6_obl_lag1           0.26**           
+##                                             (0.11)           
+##                                                              
+## Constant                                   -5.26***          
+##                                             (0.27)           
+##                                                              
+## -------------------------------------------------------------
+## Observations                                249,855          
+## Log Likelihood                             -9,020.06         
+## Akaike Inf. Crit.                          18,110.13         
+## Bayesian Inf. Crit.                        18,475.13         
+## =============================================================
+## Note:                             *p<0.1; **p<0.05; ***p<0.01
+```
+
+```r
+if(!exists("CBre_Cons_Comp_15A")){
+  CBre_Cons_Comp_15A <- glmer (data=smp,
+                               b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                                 #cl_US3_avg_sal_lag1+
+                                 cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                                 cl_US6_avg_sal_lag1+
+                                 CompOffr+
+                                   cl_Ceil_Then_Year + cl_Days+ 
+                                 Veh +
+                                 PricingFee + b_UCA +
+                                 b_Intl+
+                                 
+                                 
+                                 
+                                 b_UCA:CompOffr +
+                                 b_UCA:cl_def6_HHI_lag1 + 
+                                 b_UCA:cl_Ceil_Then_Year+
+                                 cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                                 
+                                 (1 | NAICS3/NAICS) + 
+                                 (1 | Agency/Office) ,
+                               family=binomial(link="logit"),
+                               verbose=1)
+  
+  CBre_Cons_Comp_15A_1m <- glmer (data=smp1m,
+                               b_CBre ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                                 #cl_US3_avg_sal_lag1+
+                                 cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                                 cl_US6_avg_sal_lag1+
+                                 CompOffr+
+                                 cl_Ceil_Then_Year + cl_Days+ 
+                                 Veh +
+                                 PricingFee + b_UCA +
+                                 b_Intl+
+                                 
+                                 
+                                 
+                                 b_UCA:CompOffr +
+                                 b_UCA:cl_def6_HHI_lag1 + 
+                                 b_UCA:cl_Ceil_Then_Year+
+                                 cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                                 
+                                 (1 | NAICS3/NAICS) + 
+                                 (1 | Agency/Office) ,
+                               family=binomial(link="logit"),
+                               verbose=1)
+  
+  save(CBre_Cons_Comp_15A,CBre_Cons_Comp_15A_1m,file="..//Output//CBre_Cons_Comp_15A.rdata")
+}
+
+
+# source(system.file("utils", "allFit.R", package="lme4"))
+# CBre_Cons_Comp_15A_1m.all <- allFit(CBre_Cons_Comp_15A_1m)
+# CBre_Cons_Comp_15A_1m_ss_cons <- summary(CBre_Cons_Comp_15A_1m.all)
+
+
+glmer_examine(CBre_Cons_Comp_15A,display=TRUE)
+```
+
+```
+## glmer(formula = b_CBre ~ cl_def3_HHI_lag1 + cl_def3_ratio_lag1 + 
+##     cl_def6_HHI_lag1 + cl_def6_obl_lag1 + cl_def6_ratio_lag1 + 
+##     cl_US6_avg_sal_lag1 + CompOffr + cl_Ceil + cl_Days + Veh + 
+##     PricingFee + b_UCA + b_Intl + b_UCA:CompOffr + b_UCA:cl_def6_HHI_lag1 + 
+##     b_UCA:cl_Ceil + cl_def6_HHI_lag1:cl_def6_obl_lag1 + (1 | 
+##     NAICS3/NAICS) + (1 | Agency/Office), data = smp, family = binomial(link = "logit"), 
+##     verbose = 1)
+##                                   coef.est coef.se
+## (Intercept)                       -5.26     0.27  
+## cl_def3_HHI_lag1                  -0.38     0.10  
+## cl_def3_ratio_lag1                -0.51     0.20  
+## cl_def6_HHI_lag1                   0.20     0.08  
+## cl_def6_obl_lag1                   0.18     0.09  
+## cl_def6_ratio_lag1                -0.02     0.04  
+## cl_US6_avg_sal_lag1               -0.15     0.07  
+## CompOffr1 offer                   -0.27     0.08  
+## CompOffr2 offers                  -0.02     0.08  
+## CompOffr3-4 offers                -0.09     0.07  
+## CompOffr5+ offers                 -0.01     0.07  
+## cl_Ceil                            1.44     0.07  
+## cl_Days                            0.48     0.07  
+## VehS-IDC                          -0.30     0.06  
+## VehM-IDC                           0.08     0.08  
+## VehFSS/GWAC                       -0.14     0.10  
+## VehBPA/BOA                        -0.39     0.14  
+## PricingFeeOther FP                -0.15     0.27  
+## PricingFeeIncentive                2.27     0.30  
+## PricingFeeCombination or Other     0.59     0.21  
+## PricingFeeOther CB                -0.09     0.15  
+## PricingFeeT&M/LH/FPLOE            -0.08     0.23  
+## b_UCA                              2.58     0.23  
+## b_Intl                            -0.19     0.12  
+## CompOffr1 offer:b_UCA             -0.64     0.43  
+## CompOffr2 offers:b_UCA            -2.11     0.99  
+## CompOffr3-4 offers:b_UCA          -0.91     0.46  
+## CompOffr5+ offers:b_UCA           -1.96     0.74  
+## cl_def6_HHI_lag1:b_UCA             0.65     0.31  
+## cl_Ceil:b_UCA                     -1.95     0.32  
+## cl_def6_HHI_lag1:cl_def6_obl_lag1  0.26     0.11  
+## 
+## Error terms:
+##  Groups        Name        Std.Dev.
+##  Office:Agency (Intercept) 1.04    
+##  NAICS:NAICS3  (Intercept) 0.53    
+##  NAICS3        (Intercept) 0.50    
+##  Agency        (Intercept) 0.80    
+##  Residual                  1.00    
+## ---
+## number of obs: 249855, groups: Office:Agency, 1296; NAICS:NAICS3, 886; NAICS3, 79; Agency, 24
+## AIC = 18110.1, DIC = 14993.7
+## deviance = 16516.9
+```
+
+```
+## [[1]]
+##                                       GVIF Df GVIF^(1/(2*Df))
+## cl_def3_HHI_lag1                  1.774075  1        1.331944
+## cl_def3_ratio_lag1                1.053815  1        1.026555
+## cl_def6_HHI_lag1                  1.505934  1        1.227165
+## cl_def6_obl_lag1                  1.128201  1        1.062168
+## cl_def6_ratio_lag1                1.778203  1        1.333493
+## cl_US6_avg_sal_lag1               1.825486  1        1.351105
+## CompOffr                          1.143343  4        1.016886
+## cl_Ceil                           1.217919  1        1.103594
+## cl_Days                           1.159567  1        1.076832
+## Veh                               1.122515  4        1.014551
+## PricingFee                        1.061122  5        1.005950
+## b_UCA                             2.364622  1        1.537733
+## b_Intl                            1.018264  1        1.009091
+## CompOffr:b_UCA                    1.503960  4        1.052336
+## cl_def6_HHI_lag1:b_UCA            1.093578  1        1.045743
+## cl_Ceil:b_UCA                     1.934971  1        1.391032
+## cl_def6_HHI_lag1:cl_def6_obl_lag1 1.258269  1        1.121726
+## 
+## [[2]]
+## 
+## Intraclass Correlation Coefficient for Generalized linear mixed model
+## 
+## Family : binomial (logit)
+## Formula: b_CBre ~ cl_def3_HHI_lag1 + cl_def3_ratio_lag1 + cl_def6_HHI_lag1 + cl_def6_obl_lag1 + cl_def6_ratio_lag1 + cl_US6_avg_sal_lag1 + CompOffr + cl_Ceil + cl_Days + Veh + PricingFee + b_UCA + b_Intl + b_UCA:CompOffr + b_UCA:cl_def6_HHI_lag1 + b_UCA:cl_Ceil + cl_def6_HHI_lag1:cl_def6_obl_lag1 + (1 | NAICS3/NAICS) + (1 | Agency/Office)
+## 
+##   ICC (Office:Agency): 0.1946
+##    ICC (NAICS:NAICS3): 0.0503
+##          ICC (NAICS3): 0.0444
+##          ICC (Agency): 0.1167
+## 
+## 
+## [[3]]
+## [1] "Model failed to converge with max|grad| = 0.0395392 (tol = 0.001, component 1)"
+## 
+## [[4]]
+## Office:Agency.(Intercept)  NAICS:NAICS3.(Intercept) 
+##                 1.0382243                 0.5280538 
+##        NAICS3.(Intercept)        Agency.(Intercept) 
+##                 0.4957848                 0.8038860
+```
+
+```r
+CBre_Cons_Comp_15A_odds_ratio<-odds_ratio(CBre_Cons_Comp_15A,"CBre_Cons_Comp_15A",walds = TRUE)
+get_icc(CBre_Cons_Comp_15A)
+```
+
+```
+## [[1]]
+## 
+## Intraclass Correlation Coefficient for Generalized linear mixed model
+## 
+## Family : binomial (logit)
+## Formula: b_CBre ~ cl_def3_HHI_lag1 + cl_def3_ratio_lag1 + cl_def6_HHI_lag1 + cl_def6_obl_lag1 + cl_def6_ratio_lag1 + cl_US6_avg_sal_lag1 + CompOffr + cl_Ceil + cl_Days + Veh + PricingFee + b_UCA + b_Intl + b_UCA:CompOffr + b_UCA:cl_def6_HHI_lag1 + b_UCA:cl_Ceil + cl_def6_HHI_lag1:cl_def6_obl_lag1 + (1 | NAICS3/NAICS) + (1 | Agency/Office)
+## 
+##   ICC (Office:Agency): 0.1946
+##    ICC (NAICS:NAICS3): 0.0503
+##          ICC (NAICS3): 0.0444
+##          ICC (Agency): 0.1167
+## 
+## 
+## [[2]]
+## [1] "Model failed to converge with max|grad| = 0.0395392 (tol = 0.001, component 1)"
+```
+[1] "Model failed to converge with max|grad| = 0.0395392 (tol = 0.001, component 1)"
+
+failure to converge in 10000 evaluationsModel failed to converge with max|grad| = 0.00901903 (tol = 0.001, component 1)
+
+## Output: Termination
+
+### Consolidation and Termination
+
+
+```r
+load("..//Output//Term_Cons_13E.rdata")
+
+
+if(!exists("Term_Cons_13E_1m")){
+  
+  Term_Cons_13F <- glmer (data=smp,
+                          b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                            #cl_US3_avg_sal_lag1+
+                            cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                            cl_US6_avg_sal_lag1+
+                            cl_Ceil_Then_Year + cl_Days+ 
+                            Veh +
+                            PricingFee + b_UCA +
+                            b_Intl+
+                            
+                            # b_UCA:cl_def6_HHI_lag1 + 
+                            b_UCA:cl_Ceil_Then_Year+
+                            cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                            
+                               cl_def3_HHI_lag1:cl_def3_ratio_lag1+  
+                            (1 | NAICS3/NAICS) + 
+                            (1 | Agency/Office), 
+                          family=binomial(link="logit"),
+                          verbose=1)
+  
+  
+  # save(Term_Cons_13E,file="..//Output//Term_Cons_13E.rdata")
+  
+   
+    Term_Cons_13F_1m <- glmer (data=smp1m,
+                          b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                            #cl_US3_avg_sal_lag1+
+                            cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                            cl_US6_avg_sal_lag1+
+                            cl_Ceil_Then_Year + cl_Days+ 
+                            Veh +
+                            PricingFee + b_UCA +
+                            b_Intl+
+                            
+                            # b_UCA:cl_def6_HHI_lag1 + 
+                            b_UCA:cl_Ceil_Then_Year+
+                            cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                            
+                               cl_def3_HHI_lag1:cl_def3_ratio_lag1+  
+                            (1 | NAICS3/NAICS) + 
+                            (1 | Agency/Office), 
+                          family=binomial(link="logit"),
+                          verbose=1)
+    
+    save(Term_Cons_13E,Term_Cons_13E_1m,file="..//Output//Term_Cons_13E.rdata")
+  
+}
+
+
+glmer_examine(Term_Cons_13E_1m,display=TRUE)
+```
+
+```
+## glmer(formula = b_Term ~ cl_def3_HHI_lag1 + cl_def3_ratio_lag1 + 
+##     cl_def6_HHI_lag1 + cl_def6_obl_lag1 + cl_def6_ratio_lag1 + 
+##     cl_US6_avg_sal_lag1 + cl_Ceil + cl_Days + Veh + PricingFee + 
+##     b_UCA + b_Intl + b_UCA:cl_Ceil + cl_def6_HHI_lag1:cl_def6_obl_lag1 + 
+##     cl_def3_HHI_lag1:cl_def3_ratio_lag1 + (1 | NAICS3/NAICS) + 
+##     (1 | Agency/Office), data = smp1m, family = binomial(link = "logit"), 
+##     verbose = 1)
+##                                     coef.est coef.se
+## (Intercept)                         -5.04     0.12  
+## cl_def3_HHI_lag1                     0.18     0.05  
+## cl_def3_ratio_lag1                  -0.06     0.11  
+## cl_def6_HHI_lag1                     0.00     0.05  
+## cl_def6_obl_lag1                    -0.07     0.05  
+## cl_def6_ratio_lag1                  -0.07     0.05  
+## cl_US6_avg_sal_lag1                 -0.01     0.06  
+## cl_Ceil                              0.57     0.03  
+## cl_Days                              0.94     0.04  
+## VehS-IDC                            -0.59     0.03  
+## VehM-IDC                            -0.43     0.06  
+## VehFSS/GWAC                         -0.19     0.05  
+## VehBPA/BOA                          -0.68     0.08  
+## PricingFeeOther FP                  -1.19     0.08  
+## PricingFeeIncentive                  0.06     0.22  
+## PricingFeeCombination or Other      -0.49     0.21  
+## PricingFeeOther CB                  -0.79     0.15  
+## PricingFeeT&M/LH/FPLOE              -0.95     0.22  
+## b_UCA                                0.96     0.09  
+## b_Intl                               0.08     0.06  
+## cl_Ceil:b_UCA                       -0.75     0.19  
+## cl_def6_HHI_lag1:cl_def6_obl_lag1    0.11     0.07  
+## cl_def3_HHI_lag1:cl_def3_ratio_lag1  0.56     0.15  
+## 
+## Error terms:
+##  Groups        Name        Std.Dev.
+##  Office:Agency (Intercept) 0.84    
+##  NAICS:NAICS3  (Intercept) 0.37    
+##  NAICS3        (Intercept) 0.31    
+##  Agency        (Intercept) 0.23    
+##  Residual                  1.00    
+## ---
+## number of obs: 1000000, groups: Office:Agency, 1450; NAICS:NAICS3, 968; NAICS3, 81; Agency, 25
+## AIC = 95675.4, DIC = 90417.6
+## deviance = 93019.5
+```
+
+```
+## [[1]]
+##                                         GVIF Df GVIF^(1/(2*Df))
+## cl_def3_HHI_lag1                    1.357886  1        1.165284
+## cl_def3_ratio_lag1                  1.428151  1        1.195053
+## cl_def6_HHI_lag1                    1.462860  1        1.209488
+## cl_def6_obl_lag1                    1.209995  1        1.099998
+## cl_def6_ratio_lag1                  1.168277  1        1.080869
+## cl_US6_avg_sal_lag1                 1.115059  1        1.055964
+## cl_Ceil                             1.151618  1        1.073135
+## cl_Days                             1.119493  1        1.058061
+## Veh                                 1.058165  4        1.007092
+## PricingFee                          1.027781  5        1.002744
+## b_UCA                               1.485825  1        1.218944
+## b_Intl                              1.003829  1        1.001913
+## cl_Ceil:b_UCA                       1.500221  1        1.224835
+## cl_def6_HHI_lag1:cl_def6_obl_lag1   1.376524  1        1.173254
+## cl_def3_HHI_lag1:cl_def3_ratio_lag1 1.456382  1        1.206807
+## 
+## [[2]]
+## 
+## Intraclass Correlation Coefficient for Generalized linear mixed model
+## 
+## Family : binomial (logit)
+## Formula: b_Term ~ cl_def3_HHI_lag1 + cl_def3_ratio_lag1 + cl_def6_HHI_lag1 + cl_def6_obl_lag1 + cl_def6_ratio_lag1 + cl_US6_avg_sal_lag1 + cl_Ceil + cl_Days + Veh + PricingFee + b_UCA + b_Intl + b_UCA:cl_Ceil + cl_def6_HHI_lag1:cl_def6_obl_lag1 + cl_def3_HHI_lag1:cl_def3_ratio_lag1 + (1 | NAICS3/NAICS) + (1 | Agency/Office)
+## 
+##   ICC (Office:Agency): 0.1646
+##    ICC (NAICS:NAICS3): 0.0328
+##          ICC (NAICS3): 0.0217
+##          ICC (Agency): 0.0128
+## 
+## 
+## [[3]]
+## [1] "Model failed to converge with max|grad| = 0.137428 (tol = 0.001, component 1)"
+## 
+## [[4]]
+## Office:Agency.(Intercept)  NAICS:NAICS3.(Intercept) 
+##                 0.8398231                 0.3749798 
+##        NAICS3.(Intercept)        Agency.(Intercept) 
+##                 0.3051601                 0.2342423
+```
+
+```r
+odds_ratio(Term_Cons_13E_1m,"Term_Cons_13E",walds = TRUE)
+```
+
+```
+##                                                                variable
+## (Intercept)                                                 (Intercept)
+## cl_def3_HHI_lag1                                       cl_def3_HHI_lag1
+## cl_def3_ratio_lag1                                   cl_def3_ratio_lag1
+## cl_def6_HHI_lag1                                       cl_def6_HHI_lag1
+## cl_def6_obl_lag1                                       cl_def6_obl_lag1
+## cl_def6_ratio_lag1                                   cl_def6_ratio_lag1
+## cl_US6_avg_sal_lag1                                 cl_US6_avg_sal_lag1
+## cl_Ceil                                                         cl_Ceil
+## cl_Days                                                         cl_Days
+## VehS-IDC                                                       VehS-IDC
+## VehM-IDC                                                       VehM-IDC
+## VehFSS/GWAC                                                 VehFSS/GWAC
+## VehBPA/BOA                                                   VehBPA/BOA
+## PricingFeeOther FP                                   PricingFeeOther FP
+## PricingFeeIncentive                                 PricingFeeIncentive
+## PricingFeeCombination or Other           PricingFeeCombination or Other
+## PricingFeeOther CB                                   PricingFeeOther CB
+## PricingFeeT&M/LH/FPLOE                           PricingFeeT&M/LH/FPLOE
+## b_UCA                                                             b_UCA
+## b_Intl                                                           b_Intl
+## cl_Ceil:b_UCA                                             cl_Ceil:b_UCA
+## cl_def6_HHI_lag1:cl_def6_obl_lag1     cl_def6_HHI_lag1:cl_def6_obl_lag1
+## cl_def3_HHI_lag1:cl_def3_ratio_lag1 cl_def3_HHI_lag1:cl_def3_ratio_lag1
+##                                              OR      2.5 %     97.5 %
+## (Intercept)                         0.006475146 0.00510033 0.00822055
+## cl_def3_HHI_lag1                    1.194893899 1.07680077 1.32593834
+## cl_def3_ratio_lag1                  0.942171964 0.75585321 1.17441851
+## cl_def6_HHI_lag1                    1.002788484 0.91763479 1.09584418
+## cl_def6_obl_lag1                    0.935766838 0.84900525 1.03139477
+## cl_def6_ratio_lag1                  0.929034837 0.84552150 1.02079691
+## cl_US6_avg_sal_lag1                 0.990336735 0.88067090 1.11365875
+## cl_Ceil                             1.768933080 1.66094980 1.88393668
+## cl_Days                             2.569881792 2.39226940 2.76068089
+## VehS-IDC                            0.552605378 0.51799922 0.58952348
+## VehM-IDC                            0.648312465 0.57815614 0.72698190
+## VehFSS/GWAC                         0.826498041 0.74496104 0.91695938
+## VehBPA/BOA                          0.505895876 0.43450970 0.58901019
+## PricingFeeOther FP                  0.304943620 0.25826801 0.36005470
+## PricingFeeIncentive                 1.064388475 0.69271014 1.63549334
+## PricingFeeCombination or Other      0.613875094 0.40827238 0.92301769
+## PricingFeeOther CB                  0.454664751 0.33849834 0.61069733
+## PricingFeeT&M/LH/FPLOE              0.385410257 0.25185641 0.58978472
+## b_UCA                               2.619295418 2.21142029 3.10239917
+## b_Intl                              1.088004770 0.97023983 1.22006368
+## cl_Ceil:b_UCA                       0.472540142 0.32839885 0.67994813
+## cl_def6_HHI_lag1:cl_def6_obl_lag1   1.120309320 0.97932307 1.28159237
+## cl_def3_HHI_lag1:cl_def3_ratio_lag1 1.747557264 1.29953607 2.35003587
+```
+
+"Model failed to converge with max|grad| = 0.0498057 (tol = 0.001, component 1)"
+
+### Competition and Terminations
+
+
+```r
+load(file="..//Output//Term_Comp_13F.rdata")
+
+if(!exists("Term_Comp_13F_1m")){
+  Term_Comp_13F <- glmer (data=smp,
+                          b_Term ~CompOffr+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                            cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                            cl_Ceil_Then_Year + cl_Days+
+                            Veh  +
+                            PricingFee+
+                            b_UCA +
+                            b_Intl+
+                            
+                            # b_UCA:CompOffr +
+                            b_UCA:cl_Ceil_Then_Year+
+                            
+                            (1 | NAICS3/NAICS) + (1 | Agency/Office),
+                          family=binomial(link="logit"),
+                          verbose=1)
+  
+  
+summary(Term_Comp_13E_1m)
+  
+  
+    Term_Comp_13F_1m <- glmer (data=smp1m,
+                          b_Term ~CompOffr+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
+                            cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                            cl_Ceil_Then_Year + cl_Days+
+                            Veh  +
+                            PricingFee+
+                            b_UCA +
+                            b_Intl+
+                            
+                            # b_UCA:CompOffr +
+                            b_UCA:cl_Ceil_Then_Year+
+                            
+                            (1 | NAICS3/NAICS) + (1 | Agency/Office),
+                          family=binomial(link="logit"),
+                          verbose=1)
+  
+  Term_Comp_13F<-Term_Comp_13E2
+  save(Term_Comp_13F,Term_Comp_13F_1m,file="..//Output//Term_Comp_13F.rdata")
+}
+stargazer::stargazer(Term_Comp_13F_1m,type="text",
+                       digits=2)
+```
+
+```
+## 
+## ==========================================================
+##                                    Dependent variable:    
+##                                ---------------------------
+##                                          b_Term           
+## ----------------------------------------------------------
+## CompOffr1 offer                          0.17***          
+##                                          (0.04)           
+##                                                           
+## CompOffr2 offers                         0.26***          
+##                                          (0.04)           
+##                                                           
+## CompOffr3-4 offers                       0.47***          
+##                                          (0.04)           
+##                                                           
+## CompOffr5+ offers                        0.85***          
+##                                          (0.04)           
+##                                                           
+## cl_def3_ratio_lag1                        0.14            
+##                                          (0.10)           
+##                                                           
+## cl_def6_ratio_lag1                        -0.07           
+##                                          (0.05)           
+##                                                           
+## cl_def6_obl_lag1                         -0.09*           
+##                                          (0.05)           
+##                                                           
+## cl_US6_avg_sal_lag1                       0.03            
+##                                          (0.06)           
+##                                                           
+## cl_Ceil                                  0.55***          
+##                                          (0.03)           
+##                                                           
+## cl_Days                                  0.93***          
+##                                          (0.04)           
+##                                                           
+## VehS-IDC                                -0.64***          
+##                                          (0.03)           
+##                                                           
+## VehM-IDC                                -0.48***          
+##                                          (0.06)           
+##                                                           
+## VehFSS/GWAC                             -0.24***          
+##                                          (0.05)           
+##                                                           
+## VehBPA/BOA                              -0.64***          
+##                                          (0.08)           
+##                                                           
+## PricingFeeOther FP                      -1.16***          
+##                                          (0.09)           
+##                                                           
+## PricingFeeIncentive                       0.14            
+##                                          (0.22)           
+##                                                           
+## PricingFeeCombination or Other           -0.42**          
+##                                          (0.21)           
+##                                                           
+## PricingFeeOther CB                      -0.75***          
+##                                          (0.15)           
+##                                                           
+## PricingFeeT&M/LH/FPLOE                  -0.92***          
+##                                          (0.22)           
+##                                                           
+## b_UCA                                    1.13***          
+##                                          (0.09)           
+##                                                           
+## b_Intl                                   0.12**           
+##                                          (0.06)           
+##                                                           
+## cl_Ceil:b_UCA                           -0.84***          
+##                                          (0.18)           
+##                                                           
+## Constant                                -5.37***          
+##                                          (0.12)           
+##                                                           
+## ----------------------------------------------------------
+## Observations                            1,000,000         
+## Log Likelihood                         -47,461.01         
+## Akaike Inf. Crit.                       94,976.02         
+## Bayesian Inf. Crit.                     95,295.04         
+## ==========================================================
+## Note:                          *p<0.1; **p<0.05; ***p<0.01
+```
+
+```r
+glmer_examine(Term_Comp_13F_1m,display=TRUE)
+```
+
+```
+## glmer(formula = b_Term ~ CompOffr + cl_def3_ratio_lag1 + cl_def6_ratio_lag1 + 
+##     cl_def6_obl_lag1 + cl_US6_avg_sal_lag1 + cl_Ceil + cl_Days + 
+##     Veh + PricingFee + b_UCA + b_Intl + b_UCA:cl_Ceil + (1 | 
+##     NAICS3/NAICS) + (1 | Agency/Office), data = smp1m, family = binomial(link = "logit"), 
+##     verbose = 1)
+##                                coef.est coef.se
+## (Intercept)                    -5.37     0.12  
+## CompOffr1 offer                 0.17     0.04  
+## CompOffr2 offers                0.26     0.04  
+## CompOffr3-4 offers              0.47     0.04  
+## CompOffr5+ offers               0.85     0.04  
+## cl_def3_ratio_lag1              0.14     0.10  
+## cl_def6_ratio_lag1             -0.07     0.05  
+## cl_def6_obl_lag1               -0.09     0.05  
+## cl_US6_avg_sal_lag1             0.03     0.06  
+## cl_Ceil                         0.55     0.03  
+## cl_Days                         0.93     0.04  
+## VehS-IDC                       -0.64     0.03  
+## VehM-IDC                       -0.48     0.06  
+## VehFSS/GWAC                    -0.24     0.05  
+## VehBPA/BOA                     -0.64     0.08  
+## PricingFeeOther FP             -1.16     0.09  
+## PricingFeeIncentive             0.14     0.22  
+## PricingFeeCombination or Other -0.42     0.21  
+## PricingFeeOther CB             -0.75     0.15  
+## PricingFeeT&M/LH/FPLOE         -0.92     0.22  
+## b_UCA                           1.13     0.09  
+## b_Intl                          0.12     0.06  
+## cl_Ceil:b_UCA                  -0.84     0.18  
+## 
+## Error terms:
+##  Groups        Name        Std.Dev.
+##  Office:Agency (Intercept) 0.85    
+##  NAICS:NAICS3  (Intercept) 0.37    
+##  NAICS3        (Intercept) 0.33    
+##  Agency        (Intercept) 0.21    
+##  Residual                  1.00    
+## ---
+## number of obs: 1000000, groups: Office:Agency, 1450; NAICS:NAICS3, 968; NAICS3, 81; Agency, 25
+## AIC = 94976, DIC = 89720.2
+## deviance = 92321.1
+```
+
+```
+## [[1]]
+##                         GVIF Df GVIF^(1/(2*Df))
+## CompOffr            1.052237  4        1.006385
+## cl_def3_ratio_lag1  1.072413  1        1.035574
+## cl_def6_ratio_lag1  1.149281  1        1.072045
+## cl_def6_obl_lag1    1.182221  1        1.087300
+## cl_US6_avg_sal_lag1 1.087696  1        1.042927
+## cl_Ceil             1.151630  1        1.073140
+## cl_Days             1.117913  1        1.057314
+## Veh                 1.065194  4        1.007926
+## PricingFee          1.026811  5        1.002649
+## b_UCA               1.500859  1        1.225095
+## b_Intl              1.005563  1        1.002778
+## cl_Ceil:b_UCA       1.484406  1        1.218362
+## 
+## [[2]]
+## 
+## Intraclass Correlation Coefficient for Generalized linear mixed model
+## 
+## Family : binomial (logit)
+## Formula: b_Term ~ CompOffr + cl_def3_ratio_lag1 + cl_def6_ratio_lag1 + cl_def6_obl_lag1 + cl_US6_avg_sal_lag1 + cl_Ceil + cl_Days + Veh + PricingFee + b_UCA + b_Intl + b_UCA:cl_Ceil + (1 | NAICS3/NAICS) + (1 | Agency/Office)
+## 
+##   ICC (Office:Agency): 0.1668
+##    ICC (NAICS:NAICS3): 0.0312
+##          ICC (NAICS3): 0.0261
+##          ICC (Agency): 0.0100
+## 
+## 
+## [[3]]
+## [1] "Model failed to converge with max|grad| = 0.0604188 (tol = 0.001, component 1)"
+## 
+## [[4]]
+## Office:Agency.(Intercept)  NAICS:NAICS3.(Intercept) 
+##                 0.8465418                 0.3661465 
+##        NAICS3.(Intercept)        Agency.(Intercept) 
+##                 0.3345942                 0.2073031
+```
+
+```r
+odds_ratio(Term_Comp_13F_1m,"Term_Comp_13F_1m",walds = TRUE)
+```
+
+```
+##                                                      variable          OR
+## (Intercept)                                       (Intercept) 0.004646987
+## CompOffr1 offer                               CompOffr1 offer 1.181519943
+## CompOffr2 offers                             CompOffr2 offers 1.302472672
+## CompOffr3-4 offers                         CompOffr3-4 offers 1.606325068
+## CompOffr5+ offers                           CompOffr5+ offers 2.333363134
+## cl_def3_ratio_lag1                         cl_def3_ratio_lag1 1.153567468
+## cl_def6_ratio_lag1                         cl_def6_ratio_lag1 0.931243757
+## cl_def6_obl_lag1                             cl_def6_obl_lag1 0.911853474
+## cl_US6_avg_sal_lag1                       cl_US6_avg_sal_lag1 1.031409172
+## cl_Ceil                                               cl_Ceil 1.740324926
+## cl_Days                                               cl_Days 2.528716881
+## VehS-IDC                                             VehS-IDC 0.527937441
+## VehM-IDC                                             VehM-IDC 0.620053859
+## VehFSS/GWAC                                       VehFSS/GWAC 0.789908170
+## VehBPA/BOA                                         VehBPA/BOA 0.528276614
+## PricingFeeOther FP                         PricingFeeOther FP 0.315040922
+## PricingFeeIncentive                       PricingFeeIncentive 1.146361935
+## PricingFeeCombination or Other PricingFeeCombination or Other 0.657992042
+## PricingFeeOther CB                         PricingFeeOther CB 0.474642692
+## PricingFeeT&M/LH/FPLOE                 PricingFeeT&M/LH/FPLOE 0.396672110
+## b_UCA                                                   b_UCA 3.110532222
+## b_Intl                                                 b_Intl 1.130091796
+## cl_Ceil:b_UCA                                   cl_Ceil:b_UCA 0.433779905
+##                                      2.5 %      97.5 %
+## (Intercept)                    0.003679032 0.005869611
+## CompOffr1 offer                1.096293055 1.273372452
+## CompOffr2 offers               1.201612297 1.411799018
+## CompOffr3-4 offers             1.492130231 1.729259397
+## CompOffr5+ offers              2.175377166 2.502822775
+## cl_def3_ratio_lag1             0.945399274 1.407572377
+## cl_def6_ratio_lag1             0.847332730 1.023464460
+## cl_def6_obl_lag1               0.828217954 1.003934718
+## cl_US6_avg_sal_lag1            0.916526383 1.160692044
+## cl_Ceil                        1.633171602 1.854508640
+## cl_Days                        2.351182605 2.719656504
+## VehS-IDC                       0.494275368 0.563892032
+## VehM-IDC                       0.552198986 0.696246821
+## VehFSS/GWAC                    0.711441351 0.877029309
+## VehBPA/BOA                     0.453307472 0.615644344
+## PricingFeeOther FP             0.265964207 0.373173458
+## PricingFeeIncentive            0.749391610 1.753616760
+## PricingFeeCombination or Other 0.439182606 0.985816654
+## PricingFeeOther CB             0.354732989 0.635085237
+## PricingFeeT&M/LH/FPLOE         0.259127071 0.607226264
+## b_UCA                          2.624325108 3.686818631
+## b_Intl                         1.006395808 1.268991242
+## cl_Ceil:b_UCA                  0.301928066 0.623211378
+```
+
+[1] "Model failed to converge with max|grad| = 0.046442 (tol = 0.001, component 1)"
+
+
+### Both and Terminations
+
+
+```r
+load(file="..//Output//Term_Cons_Comp_14C.rdata") 
+
+
+if(!exists("Term_Cons_Comp_14C_1m")){
+  # Term_Cons_Comp_14C <- glmer (data=smp,
+  #                              b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+  #                                #cl_US3_avg_sal_lag1+
+  #                                cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+  #                                cl_US6_avg_sal_lag1+
+  #                                CompOffr+
+  #                                cl_Ceil_Then_Year + cl_Days+ 
+  #                                Veh +
+  #                                PricingFee + b_UCA +
+  #                                b_Intl+
+  #                                
+  #                                # cl_def6_HHI_lag1:cl_Days+
+  #                                b_UCA:cl_Ceil_Then_Year+
+  #                                # b_UCA:cl_def6_HHI_lag1 +
+  #                                # PricingFee:cl_US6_avg_sal_lag1+
+  #                                cl_def6_HHI_lag1:cl_def6_obl_lag1  +
+  #                                # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+  #                                cl_def3_HHI_lag1:cl_def3_ratio_lag1+  
+  #                                
+  #                                (1 | NAICS3/NAICS) + (1 | Agency/Office)
+  #                              , family=binomial(link="logit"),verbose=1)
+  
+  
+  Term_Cons_Comp_14C_1m <- glmer (data=smp1m,
+                                  b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                                    #cl_US3_avg_sal_lag1+
+                                    cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                                    cl_US6_avg_sal_lag1+
+                                    CompOffr+
+                                    cl_Ceil_Then_Year + cl_Days+ 
+                                    Veh +
+                                    PricingFee + b_UCA +
+                                    b_Intl+
+                                    
+                                    # cl_def6_HHI_lag1:cl_Days+
+                                    # b_UCA:cl_Ceil_Then_Year+
+                                    # b_UCA:cl_def6_HHI_lag1 +
+                                    # PricingFee:cl_US6_avg_sal_lag1+
+                                    cl_def6_HHI_lag1:cl_def6_obl_lag1  +
+                                    # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                                    cl_def3_HHI_lag1:cl_def3_ratio_lag1+  
+                                    
+                                    (1 | NAICS3/NAICS) + (1 | Agency/Office)
+                                  , family=binomial(link="logit"),verbose=1)
+  
+  
+  
+  save(Term_Cons_Comp_14B_1m,file="..//Output//Term_Cons_Comp_14B2_1m.rdata")
+  source(system.file("utils", "allFit.R", package="lme4"))
+  Term_Cons_Comp_14B_1m.all <- allFit(Term_Cons_Comp_14B_1m)
+  Term_Cons_Comp_14B_1m_ss_cons <- summary(Term_Cons_Comp_14B_1m.all)
+  
+  Term_Cons_Comp_14C_1m <- glmer (data=smp1m,
+                                  b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                                    #cl_US3_avg_sal_lag1+
+                                    cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                                    cl_US6_avg_sal_lag1+
+                                    CompOffr+
+                                    cl_Ceil_Then_Year + cl_Days+ 
+                                    Veh +
+                                    PricingFee + b_UCA +
+                                    b_Intl+
+                                    
+                                    # cl_def6_HHI_lag1:cl_Days+
+                                    b_UCA:cl_Ceil_Then_Year+
+                                    # b_UCA:cl_def6_HHI_lag1 +
+                                    # PricingFee:cl_US6_avg_sal_lag1+
+                                    cl_def6_HHI_lag1:cl_def6_obl_lag1  +
+                                    # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                                    cl_def3_HHI_lag1:cl_def3_ratio_lag1+  
+                                    
+                                    (1 | NAICS3/NAICS) + (1 | Agency/Office)
+                                  , family=binomial(link="logit"),verbose=1)
+  
+  
+  
+  stargazer::stargazer(Term_Cons_Comp_14B_1m,type="text",
+                       digits=2)
+  
+  # Term_Cons_Comp_14B_1m <- update(Term_Cons_Comp_14B_1m, . ~ . + b_UCA:cl_Ceil_Then_Year - cl_def6_HHI_lag1:cl_Days)
+  
+  # save(Term_Cons_Comp_14B_1m,Term_Cons_Comp_14B2_1m,file="..//Output//Term_Cons_Comp_14B_1m.rdata")
+  
+  
+  save(Term_Cons_Comp_14C_1m,file="..//Output//Term_Cons_Comp_14C.rdata")
+  
+}
+glmer_examine(Term_Cons_Comp_14C_1m)
+```
+
+```
+## [[1]]
+##                                         GVIF Df GVIF^(1/(2*Df))
+## cl_def3_HHI_lag1                    1.343166  1        1.158950
+## cl_def3_ratio_lag1                  1.419937  1        1.191611
+## cl_def6_HHI_lag1                    1.460191  1        1.208383
+## cl_def6_obl_lag1                    1.219199  1        1.104173
+## cl_def6_ratio_lag1                  1.173450  1        1.083259
+## cl_US6_avg_sal_lag1                 1.114300  1        1.055604
+## CompOffr                            1.047296  4        1.005793
+## cl_Ceil                             1.155656  1        1.075014
+## cl_Days                             1.118653  1        1.057664
+## Veh                                 1.073295  4        1.008881
+## PricingFee                          1.032110  5        1.003165
+## b_UCA                               1.492410  1        1.221642
+## b_Intl                              1.005538  1        1.002765
+## cl_def6_HHI_lag1:cl_def6_obl_lag1   1.385793  1        1.177197
+## cl_def3_HHI_lag1:cl_def3_ratio_lag1 1.459262  1        1.207999
+## cl_Ceil:b_UCA                       1.477495  1        1.215523
+## 
+## [[2]]
+## 
+## Intraclass Correlation Coefficient for Generalized linear mixed model
+## 
+## Family : binomial (logit)
+## Formula: b_Term ~ cl_def3_HHI_lag1 + cl_def3_ratio_lag1 + cl_def6_HHI_lag1 + cl_def6_obl_lag1 + cl_def6_ratio_lag1 + cl_US6_avg_sal_lag1 + CompOffr + cl_Ceil + cl_Days + Veh + PricingFee + b_UCA + b_Intl + (1 | NAICS3/NAICS) + (1 | Agency/Office) + cl_def6_HHI_lag1:cl_def6_obl_lag1 + cl_def3_HHI_lag1:cl_def3_ratio_lag1 + cl_Ceil:b_UCA
+## 
+##   ICC (Office:Agency): 0.1799
+##    ICC (NAICS:NAICS3): 0.0295
+##          ICC (NAICS3): 0.0175
+##          ICC (Agency): 0.0146
+## 
+## 
+## [[3]]
+## [1] "Model failed to converge with max|grad| = 0.109529 (tol = 0.001, component 1)"
+## 
+## [[4]]
+## Office:Agency.(Intercept)  NAICS:NAICS3.(Intercept) 
+##                 0.8834713                 0.3578768 
+##        NAICS3.(Intercept)        Agency.(Intercept) 
+##                 0.2754281                 0.2517187
+```
+
+```r
+odds_ratio(Term_Cons_Comp_14C_1m,"Term_Cons_Comp_14C_1m",walds = TRUE)
+```
+
+```
+##                                                                variable
+## (Intercept)                                                 (Intercept)
+## cl_def3_HHI_lag1                                       cl_def3_HHI_lag1
+## cl_def3_ratio_lag1                                   cl_def3_ratio_lag1
+## cl_def6_HHI_lag1                                       cl_def6_HHI_lag1
+## cl_def6_obl_lag1                                       cl_def6_obl_lag1
+## cl_def6_ratio_lag1                                   cl_def6_ratio_lag1
+## cl_US6_avg_sal_lag1                                 cl_US6_avg_sal_lag1
+## CompOffr1 offer                                         CompOffr1 offer
+## CompOffr2 offers                                       CompOffr2 offers
+## CompOffr3-4 offers                                   CompOffr3-4 offers
+## CompOffr5+ offers                                     CompOffr5+ offers
+## cl_Ceil                                                         cl_Ceil
+## cl_Days                                                         cl_Days
+## VehS-IDC                                                       VehS-IDC
+## VehM-IDC                                                       VehM-IDC
+## VehFSS/GWAC                                                 VehFSS/GWAC
+## VehBPA/BOA                                                   VehBPA/BOA
+## PricingFeeOther FP                                   PricingFeeOther FP
+## PricingFeeIncentive                                 PricingFeeIncentive
+## PricingFeeCombination or Other           PricingFeeCombination or Other
+## PricingFeeOther CB                                   PricingFeeOther CB
+## PricingFeeT&M/LH/FPLOE                           PricingFeeT&M/LH/FPLOE
+## b_UCA                                                             b_UCA
+## b_Intl                                                           b_Intl
+## cl_def6_HHI_lag1:cl_def6_obl_lag1     cl_def6_HHI_lag1:cl_def6_obl_lag1
+## cl_def3_HHI_lag1:cl_def3_ratio_lag1 cl_def3_HHI_lag1:cl_def3_ratio_lag1
+## cl_Ceil:b_UCA                                             cl_Ceil:b_UCA
+##                                              OR       2.5 %      97.5 %
+## (Intercept)                         0.004656415 0.003379238 0.006416299
+## cl_def3_HHI_lag1                    1.277113382 1.151468526 1.416468236
+## cl_def3_ratio_lag1                  0.907279194 0.729574264 1.128268329
+## cl_def6_HHI_lag1                    0.994917777 0.910032096 1.087721398
+## cl_def6_obl_lag1                    0.948964236 0.861858668 1.044873312
+## cl_def6_ratio_lag1                  0.930769455 0.849835085 1.019411641
+## cl_US6_avg_sal_lag1                 0.972018430 0.867087179 1.089648021
+## CompOffr1 offer                     1.072911972 0.995402739 1.156456631
+## CompOffr2 offers                    1.229555483 1.134878076 1.332131370
+## CompOffr3-4 offers                  1.483318568 1.378541649 1.596059123
+## CompOffr5+ offers                   2.079703688 1.939151136 2.230443697
+## cl_Ceil                             1.864910232 1.749752839 1.987646539
+## cl_Days                             2.281063173 2.119922281 2.454452809
+## VehS-IDC                            0.525577737 0.491635107 0.561863775
+## VehM-IDC                            0.683111496 0.609565895 0.765530552
+## VehFSS/GWAC                         0.738797629 0.664897631 0.820911237
+## VehBPA/BOA                          0.530439594 0.454951695 0.618452828
+## PricingFeeOther FP                  0.387061749 0.328867504 0.455553668
+## PricingFeeIncentive                 0.853599962 0.554954529 1.312959633
+## PricingFeeCombination or Other      0.520281336 0.336619015 0.804151447
+## PricingFeeOther CB                  0.520729178 0.397358625 0.682403401
+## PricingFeeT&M/LH/FPLOE              0.365475080 0.233787526 0.571339441
+## b_UCA                               2.979620750 2.499437663 3.552054906
+## b_Intl                              1.122208980 0.999156447 1.260416223
+## cl_def6_HHI_lag1:cl_def6_obl_lag1   1.126887040 0.983540936 1.291125113
+## cl_def3_HHI_lag1:cl_def3_ratio_lag1 1.785141205 1.324728405 2.405571670
+## cl_Ceil:b_UCA                       0.332084677 0.225201507 0.489695803
+```
+
+```r
+get_icc(Term_Cons_Comp_14C_1m)
+```
+
+```
+## [[1]]
+## 
+## Intraclass Correlation Coefficient for Generalized linear mixed model
+## 
+## Family : binomial (logit)
+## Formula: b_Term ~ cl_def3_HHI_lag1 + cl_def3_ratio_lag1 + cl_def6_HHI_lag1 + cl_def6_obl_lag1 + cl_def6_ratio_lag1 + cl_US6_avg_sal_lag1 + CompOffr + cl_Ceil + cl_Days + Veh + PricingFee + b_UCA + b_Intl + (1 | NAICS3/NAICS) + (1 | Agency/Office) + cl_def6_HHI_lag1:cl_def6_obl_lag1 + cl_def3_HHI_lag1:cl_def3_ratio_lag1 + cl_Ceil:b_UCA
+## 
+##   ICC (Office:Agency): 0.1799
+##    ICC (NAICS:NAICS3): 0.0295
+##          ICC (NAICS3): 0.0175
+##          ICC (Agency): 0.0146
+## 
+## 
+## [[2]]
+## [1] "Model failed to converge with max|grad| = 0.109529 (tol = 0.001, component 1)"
+```
+[1] "Model failed to converge with max|grad| = 0.0782055 (tol = 0.001, component 1)"
+
+# Tables for Paper
+## Competition Model
+
+```r
+# texreg::htmlreg(list(Term_Cons_08A3,
+#                   CBre_Cons_08C),#CBre_Cons_08B2
+#                 file="..//Output//ConsModel.html",single.row = TRUE,
+#                 custom.model.name=c("Termination",
+#                                     "Ceiling Breach"),
+#                         stars=c(0.05))
+
+
+
+
+# texreg::htmlreg(list(Comp_Cons_15D),file="..//Output//Offr_Model.html",
+#                 single.row = TRUE,
+#                 custom.model.name=c("Concentration"),
+#                 stars=c(0.1,0.05,0.01,0.001),
+#                 groups = list("Study Variables" = 2:3,
+#                               "NAICS Characteristics" =4:7,
+#                               "Contract Characteristics"=8:19,
+#                               "Interactions" = 20:24),
+#                 custom.coef.map=list("(Intercept)"="(Intercept)",
+#                                      "cl_def3_HHI_lag1"="Log(Subsector HHI)",
+#                                      "cl_def6_HHI_lag1"="Log(Det. Ind. HHI)",
+#                                      "CompOffr1 offer"="Comp=1 offer",
+#                                      "CompOffr2 offers"="Comp=2 offers",
+#                                      "CompOffr3-4 offers"="Comp=3-4 offers",
+#                                      "CompOffr5+ offers"="Comp=5+ offers",
+#                                      "cl_def3_ratio_lag1"="Log(Subsector Ratio)",
+#                                      "cl_def6_obl_lag1"="Log(Det. Ind. DoD Obl.)",
+#                                      "cl_def6_ratio_lag1"="Log(Det. Ind. Ratio)",
+#                                      "cl_US6_avg_sal_lag1"="Log(Det. Ind. U.S. Avg. Salary)",
+#                                      "cl_Ceil"="Log(Init. Ceiling)",
+#                                      "cl_Ceil_Then_Year"="Log(Init. Ceiling)",
+#                                      "cl_Days"="Log(Init. Days)",
+#                                      "VehS-IDC"="Vehicle=S-IDC",
+#                                      "VehM-IDC"="Vehicle=M-IDC",
+#                                      "VehFSS/GWAC"="Vehicle=FSS/GWAC",
+#                                      "VehBPA/BOA"="Vehicle=BPA/BOA",
+#                                      "PricingFeeOther FP"="Pricing=Other FP",
+#                                      "PricingFeeIncentive"="Pricing=Incentive Fee",
+#                                      "PricingFeeCombination or Other"="Pricing=Combination or Other",
+#                                      "PricingFeeOther CB"="Pricing=Other CB",
+#                                      "PricingFeeT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
+#                                      "b_UCA"="UCA",
+#                                      "b_Intl"="Performed Abroad",
+#                                      # # "cl_def6_HHI_lag1:cl_Days"="Log(Det. Ind. HHI):Log(Init. Days)",
+#                                      # "cl_def6_HHI_lag1:cl_def6_obl_lag1"="Log(Det. Ind. HHI):Log(Det. Ind. DoD Obl.)",
+#                                      # # "cl_def3_HHI_lag1:cl_def3_ratio_lag1"="Log(Subsector HHI):Log(Subsector Ratio)"),
+#                                      "cl_def6_HHI_lag1:b_UCA"="Log(Det. Ind. HHI):UCA",
+#                                      # "cl_Ceil:b_UCA"="Log(Init. Ceiling):UCA",
+#                                      # "cl_Ceil_Then_Year:b_UCA"="Log(Init. Ceiling):UCA",
+#                                      # "CompOffr1 offer:b_UCA"="Comp=1 offer:UCA",
+#                                      # "CompOffr2 offers:b_UCA"="Comp=2 offers:UCA",
+#                                      # "CompOffr3-4 offers:b_UCA"="Comp=3-4 offers:UCA",
+#                                      # "CompOffr5+ offers:b_UCA"="Comp=5+ offers:UCA"
+#                                      "VehS-IDC:b_Intl"="Vehicle=S-IDC:Performed Abroad",
+#                                      "VehM-IDC:b_Intl"="Vehicle=M-IDC:Performed Abroad",
+#                                      "VehFSS/GWAC:b_Intl"="Vehicle=FSS/GWAC:Performed Abroad",
+#                                      "VehBPA/BOA:b_Intl"="Vehicle=BPA/BOA:Performed Abroad",
+#                                      "cl_US6_avg_sal_lag1:PricingFeeOther FP"="Pricing=Other FP:Log(Det. Ind. U.S. Avg. Salary)",
+#                                      "cl_US6_avg_sal_lag1:PricingFeeIncentive"="Pricing=Incentive Fee:Log(Det. Ind. U.S. Avg. Salary)",
+#                                      "cl_US6_avg_sal_lag1:PricingFeeCombination or Other"="Pricing=Comb./or Other:Log(Det. Ind. U.S. Avg. Salary)",
+#                                      "cl_US6_avg_sal_lag1:PricingFeeOther CB"="Pricing=Other CB:Log(Det. Ind. U.S. Avg. Salary)",
+#                                      "cl_US6_avg_sal_lag1:PricingFeeT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE:Log(Det. Ind. U.S. Avg. Salary)"
+#                                      
+#                 ),
+#                 bold=0.05,
+#                 custom.note="%stars. Logged inputs are rescaled. For this model, sole source contracts and task orders are treated as having 1 offer.",
+#                 caption="Table 1: Regression Model of Log(Number of Offfers)",
+#                 caption.above=TRUE)
+
+
+texreg::htmlreg(list(Comp_Cons_15D_1m),file="..//Output//Offr_Model_1m.html",
+                single.row = TRUE,
+                custom.model.name=c("Concentration"),
+                stars=c(0.1,0.05,0.01,0.001),
+                groups = list("Study Variables" = 2:3,
+                              "NAICS Characteristics" =4:7,
+                              "Contract Characteristics"=8:20,
+                              "Interactions" = 21:25),
+                custom.coef.map=list("(Intercept)"="(Intercept)",
+                                     "cl_def3_HHI_lag1"="Log(Subsector HHI)",
+                                     "cl_def6_HHI_lag1"="Log(Det. Ind. HHI)",
+                                     "CompOffr1 offer"="Comp=1 offer",
+                                     "CompOffr2 offers"="Comp=2 offers",
+                                     "CompOffr3-4 offers"="Comp=3-4 offers",
+                                     "CompOffr5+ offers"="Comp=5+ offers",
+                                     "cl_def3_ratio_lag1"="Log(Subsector Ratio)",
+                                     "cl_def6_obl_lag1"="Log(Det. Ind. DoD Obl.)",
+                                     "cl_def6_ratio_lag1"="Log(Det. Ind. Ratio)",
+                                     "cl_US6_avg_sal_lag1"="Log(Det. Ind. U.S. Avg. Salary)",
+                                     "cl_Ceil"="Log(Init. Ceiling)",
+                                     "cl_Ceil_Then_Year"="Log(Init. Ceiling)",
+                                     "cl_Days"="Log(Init. Days)",
+                                     "VehS-IDC"="Vehicle=S-IDC",
+                                     "VehM-IDC"="Vehicle=M-IDC",
+                                     "VehFSS/GWAC"="Vehicle=FSS/GWAC",
+                                     "VehBPA/BOA"="Vehicle=BPA/BOA",
+                                     "PricingFeeOther FP"="Pricing=Other FP",
+                                     "PricingFeeIncentive"="Pricing=Incentive Fee",
+                                     "PricingFeeCombination or Other"="Pricing=Combination or Other",
+                                     "PricingFeeOther CB"="Pricing=Other CB",
+                                     "PricingFeeT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
+                                     "b_UCA"="UCA",
+                                     "UCAUCA"="UCA",
+                                     "b_Intl"="Performed Abroad",
+                                     # # "cl_def6_HHI_lag1:cl_Days"="Log(Det. Ind. HHI):Log(Init. Days)",
+                                     # "cl_def6_HHI_lag1:cl_def6_obl_lag1"="Log(Det. Ind. HHI):Log(Det. Ind. DoD Obl.)",
+                                     # # "cl_def3_HHI_lag1:cl_def3_ratio_lag1"="Log(Subsector HHI):Log(Subsector Ratio)"),
+                                     "cl_def6_HHI_lag1:b_UCA"="Log(Det. Ind. HHI):UCA",
+                                     # "cl_Ceil:b_UCA"="Log(Init. Ceiling):UCA",                                     
+                                     # "cl_Ceil_Then_Year:b_UCA"="Log(Init. Ceiling):UCA",
+                                     # "CompOffr1 offer:b_UCA"="Comp=1 offer:UCA",
+                                     # "CompOffr2 offers:b_UCA"="Comp=2 offers:UCA",
+                                     # "CompOffr3-4 offers:b_UCA"="Comp=3-4 offers:UCA",
+                                     # "CompOffr5+ offers:b_UCA"="Comp=5+ offers:UCA"
+                                     "VehS-IDC:b_Intl"="Vehicle=S-IDC:Performed Abroad",
+                                     "VehM-IDC:b_Intl"="Vehicle=M-IDC:Performed Abroad",
+                                     "VehFSS/GWAC:b_Intl"="Vehicle=FSS/GWAC:Performed Abroad",
+                                     "VehBPA/BOA:b_Intl"="Vehicle=BPA/BOA:Performed Abroad",
+                                     "cl_US6_avg_sal_lag1:PricingFeeOther FP"="Pricing=Other FP:Log(Det. Ind. U.S. Avg. Salary)",
+                                     "cl_US6_avg_sal_lag1:PricingFeeIncentive"="Pricing=Incentive Fee:Log(Det. Ind. U.S. Avg. Salary)",
+                                     "cl_US6_avg_sal_lag1:PricingFeeCombination or Other"="Pricing=Comb./or Other:Log(Det. Ind. U.S. Avg. Salary)",
+                                     "cl_US6_avg_sal_lag1:PricingFeeOther CB"="Pricing=Other CB:Log(Det. Ind. U.S. Avg. Salary)",
+                                     "cl_US6_avg_sal_lag1:PricingFeeT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE:Log(Det. Ind. U.S. Avg. Salary)"
+                                     
+                ),
+                bold=0.05,
+                custom.note="%stars. Logged inputs are rescaled. For this model, sole source contracts and task orders are treated as having 1 offer.",
+                caption="Table 1: Regression Model of Log(Number of Offfers)",
+                caption.above=TRUE)
+```
+
+```
+## The table was written to the file '..//Output//Offr_Model_1m.html'.
+```
+
+```r
+get_icc(Comp_Cons_15D_1m)
+```
+
+```
+## 
+## Intraclass Correlation Coefficient for Linear mixed model
+## 
+## Family : gaussian (identity)
+## Formula: l_Offr ~ cl_def3_HHI_lag1 + cl_def3_ratio_lag1 + cl_def6_HHI_lag1 + cl_def6_ratio_lag1 + cl_def6_obl_lag1 + cl_US6_avg_sal_lag1 + cl_Ceil + cl_Days + Veh + PricingFee + UCA + b_Intl + b_UCA:cl_def6_HHI_lag1 + b_Intl:Veh + (1 | NAICS3/NAICS) + (1 | Agency/Office) + (1 | StartCY)
+## 
+##   ICC (Office:Agency): 0.1957
+##    ICC (NAICS:NAICS3): 0.0944
+##          ICC (NAICS3): 0.0299
+##          ICC (Agency): 0.1104
+##         ICC (StartCY): 0.0011
+```
+
+```r
+# OR_m1SD <- exp(fixef(FM_m1SD))
+# CI_m1SD <- exp(confint(FM_m1SD,parm="beta_")) 
+# 
+# OR_p1SD <- exp(fixef(FM_p1SD))
+# CI_p1SD <- exp(confint(FM_p1SD,parm="beta_")) 
+# 
+# OR.CI<-rbind(cbind(OR,CI), cbind(OR_m1SD,CI_m1SD)[3,], cbind(OR_p1SD,CI_p1SD)[3,])
+# rownames(OR.CI)<-c(rownames(cbind(OR,CI)), "teacher_fan_c_m1SD", "teacher_fan_c_p1SD")
+# OR.CI
+
+
+# gridExtra::grid.arrange(dotplot(ranef(Comp_Cons_15D, condVar = T), strip = T, scales=list(relation='free'))$Agency,
+#                         nrow=1)
+```
+
+## Ceiling Breach Model
+
+```r
+stargazer::stargazer(CBre_Cons_13B_1m,CBre_Comp_13C_1m,CBre_Cons_Comp_15A_1m,type="text",
+                       digits=2)
+```
+
+```
+## 
+## ==================================================================
+##                                         Dependent variable:       
+##                                   --------------------------------
+##                                                b_CBre             
+##                                      (1)        (2)        (3)    
+## ------------------------------------------------------------------
+## cl_def3_HHI_lag1                    -0.01                 -0.01   
+##                                     (0.05)                (0.05)  
+##                                                                   
+## CompOffr1 offer                               -0.13***   -0.13*** 
+##                                                (0.04)     (0.04)  
+##                                                                   
+## CompOffr2 offers                               -0.02      -0.02   
+##                                                (0.04)     (0.04)  
+##                                                                   
+## CompOffr3-4 offers                              0.02       0.02   
+##                                                (0.03)     (0.03)  
+##                                                                   
+## CompOffr5+ offers                              0.08**     0.08**  
+##                                                (0.03)     (0.03)  
+##                                                                   
+## cl_def3_ratio_lag1                 -0.39***   -0.43***   -0.41*** 
+##                                     (0.13)     (0.13)     (0.13)  
+##                                                                   
+## cl_def6_HHI_lag1                     0.05                  0.06   
+##                                     (0.04)                (0.04)  
+##                                                                   
+## cl_def6_obl_lag1                     0.08      0.10*      0.09*   
+##                                     (0.05)     (0.05)     (0.05)  
+##                                                                   
+## cl_def6_ratio_lag1                  -0.003     -0.01      -0.01   
+##                                     (0.03)     (0.03)     (0.03)  
+##                                                                   
+## cl_US6_avg_sal_lag1                -0.38***   -0.39***   -0.38*** 
+##                                     (0.06)     (0.06)     (0.06)  
+##                                                                   
+## cl_Ceil                            1.39***    1.38***    1.38***  
+##                                     (0.03)     (0.03)     (0.03)  
+##                                                                   
+## cl_Days                            0.52***    0.51***    0.51***  
+##                                     (0.03)     (0.03)     (0.03)  
+##                                                                   
+## VehS-IDC                           -0.39***   -0.41***   -0.41*** 
+##                                     (0.03)     (0.03)     (0.03)  
+##                                                                   
+## VehM-IDC                            -0.02      -0.01      -0.01   
+##                                     (0.04)     (0.04)     (0.04)  
+##                                                                   
+## VehFSS/GWAC                        -0.24***   -0.23***   -0.23*** 
+##                                     (0.05)     (0.05)     (0.05)  
+##                                                                   
+## VehBPA/BOA                         -0.47***   -0.46***   -0.46*** 
+##                                     (0.07)     (0.07)     (0.07)  
+##                                                                   
+## PricingFeeOther FP                   0.09       0.11       0.11   
+##                                     (0.14)     (0.14)     (0.14)  
+##                                                                   
+## PricingFeeIncentive                1.88***    1.88***    1.88***  
+##                                     (0.14)     (0.14)     (0.14)  
+##                                                                   
+## PricingFeeCombination or Other     0.72***    0.72***    0.72***  
+##                                     (0.10)     (0.10)     (0.10)  
+##                                                                   
+## PricingFeeOther CB                  0.13*      0.15**     0.15**  
+##                                     (0.07)     (0.07)     (0.07)  
+##                                                                   
+## PricingFeeT&M/LH/FPLOE             0.38***    0.39***    0.38***  
+##                                     (0.10)     (0.10)     (0.10)  
+##                                                                   
+## b_UCA                              1.71***    1.97***    1.99***  
+##                                     (0.09)     (0.10)     (0.10)  
+##                                                                   
+## b_Intl                              -0.01      -0.01      -0.01   
+##                                     (0.07)     (0.07)     (0.07)  
+##                                                                   
+## cl_def6_HHI_lag1:b_UCA              0.33**                 0.13   
+##                                     (0.13)                (0.14)  
+##                                                                   
+## CompOffr1 offer:b_UCA                         -0.79***   -0.80*** 
+##                                                (0.20)     (0.20)  
+##                                                                   
+## CompOffr2 offers:b_UCA                        -0.74***   -0.70*** 
+##                                                (0.25)     (0.25)  
+##                                                                   
+## CompOffr3-4 offers:b_UCA                      -1.26***   -1.25*** 
+##                                                (0.24)     (0.25)  
+##                                                                   
+## CompOffr5+ offers:b_UCA                       -1.19***   -1.15*** 
+##                                                (0.24)     (0.24)  
+##                                                                   
+## cl_Ceil:b_UCA                      -1.34***   -1.16***   -1.16*** 
+##                                     (0.13)     (0.13)     (0.13)  
+##                                                                   
+## cl_def6_HHI_lag1:cl_def6_obl_lag1    0.04                  0.05   
+##                                     (0.06)                (0.06)  
+##                                                                   
+## Constant                           -5.57***   -5.55***   -5.55*** 
+##                                     (0.24)     (0.25)     (0.24)  
+##                                                                   
+## ------------------------------------------------------------------
+## Observations                      1,000,000  1,000,000   999,993  
+## Log Likelihood                    -40,169.06 -40,127.25 -40,124.91
+## Akaike Inf. Crit.                 80,392.13  80,316.50  80,319.82 
+## Bayesian Inf. Crit.               80,711.14  80,682.78  80,733.36 
+## ==================================================================
+## Note:                                  *p<0.1; **p<0.05; ***p<0.01
+```
+
+```r
+# texreg::htmlreg(list(Term_Cons_08A3,
+#                   CBre_Cons_08C),#CBre_Cons_08B2
+#                 file="..//Output//ConsModel.html",single.row = TRUE,
+#                 custom.model.name=c("Termination",
+#                                     "Ceiling Breach"),
+#                         stars=c(0.05))
+
+
+# texreg::htmlreg(list(CBre_Cons_13B,CBre_Comp_13C,CBre_Cons_Comp_15A),file="..//Output//CBre_Model.html",single.row = TRUE,
+#                 custom.model.name=c("Consolidation",
+#                                     "Competition",
+#                                     "Both"),
+#                         stars=c(0.05,0.01,0.001))
+
+
+# texreg::htmlreg(list(CBre_Cons_13B.restart,CBre_Comp_13C,CBre_Cons_Comp_15A),file="..//Output//CBre_Model.html",
+#                 single.row = TRUE,
+#                 custom.model.name=c("Concentration",
+#                                     "Competition",
+#                                     "Both"),
+#                         stars=c(0.1,0.05,0.01,0.001),
+#                 groups = list("Study Variables" = 2:7,
+#                               "NAICS Characteristics" = 8:11,
+#                               "Contract Characteristics"=12:24,
+# "Interactions" = 25:31),
+#                 custom.coef.map=list("(Intercept)"="(Intercept)",
+#                 "cl_def3_HHI_lag1"="Log(Subsector HHI)",
+# "cl_def6_HHI_lag1"="Log(Det. Ind. HHI)",
+# "CompOffr1 offer"="Comp=1 offer",
+# "CompOffr2 offers"="Comp=2 offers",
+# "CompOffr3-4 offers"="Comp=3-4 offers",
+# "CompOffr5+ offers"="Comp=5+ offers",
+# "cl_def3_ratio_lag1"="Log(Subsector Ratio)",
+# "cl_def6_obl_lag1"="Log(Det. Ind. DoD Obl.)",
+# "cl_def6_ratio_lag1"="Log(Det. Ind. Ratio)",
+# "cl_US6_avg_sal_lag1"="Log(Det. Ind. U.S. Avg. Salary)",
+# "cl_Ceil"="Log(Init. Ceiling)",
+# "cl_Ceil_Then_Year"="Log(Init. Ceiling)",
+# "cl_Days"="Log(Init. Days)",
+# "VehS-IDC"="Vehicle=S-IDC",
+# "VehM-IDC"="Vehicle=M-IDC",
+# "VehFSS/GWAC"="Vehicle=FSS/GWAC",
+# "VehBPA/BOA"="Vehicle=BPA/BOA",
+# "PricingFeeOther FP"="Pricing=Other FP",
+# "PricingFeeIncentive"="Pricing=Incentive Fee",
+# "PricingFeeCombination or Other"="Pricing=Combination or Other",
+# "PricingFeeOther CB"="Pricing=Other CB",
+# "PricingFeeT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
+# "b_UCA"="UCA",
+# "b_Intl"="Performed Abroad",
+# # "cl_def6_HHI_lag1:cl_Days"="Log(Det. Ind. HHI):Log(Init. Days)",
+# "cl_def6_HHI_lag1:cl_def6_obl_lag1"="Log(Det. Ind. HHI):Log(Det. Ind. DoD Obl.)",
+# # "cl_def3_HHI_lag1:cl_def3_ratio_lag1"="Log(Subsector HHI):Log(Subsector Ratio)"),
+# "cl_def6_HHI_lag1:b_UCA"="Log(Det. Ind. HHI):UCA",
+# "cl_Ceil:b_UCA"="Log(Init. Ceiling):UCA",
+# "cl_Ceil_Then_Year:b_UCA"="Log(Init. Ceiling):UCA",
+# "CompOffr1 offer:b_UCA"="Comp=1 offer:UCA",
+# "CompOffr2 offers:b_UCA"="Comp=2 offers:UCA",
+# "CompOffr3-4 offers:b_UCA"="Comp=3-4 offers:UCA",
+# "CompOffr5+ offers:b_UCA"="Comp=5+ offers:UCA"
+# ),
+#                 bold=0.05,
+# custom.note="%stars. Logged inputs are rescaled.",
+# caption="Table 2: Logit Model Results for Ceiling Breaches",
+# caption.above=TRUE)
+
+
+
+texreg::htmlreg(list(CBre_Cons_13B_1m,CBre_Comp_13C_1m,CBre_Cons_Comp_15A_1m),file="..//Output//CBre_Model_1m.html",
+                single.row = TRUE,
+                custom.model.name=c("Concentration",
+                                    "Competition",
+                                    "Both"),
+                        stars=c(0.1,0.05,0.01,0.001),
+                groups = list("Study Variables" = 2:7,
+                              "NAICS Characteristics" = 8:11,
+                              "Contract Characteristics"=12:24),
+# "Interactions" = 25:31),
+                custom.coef.map=list("(Intercept)"="(Intercept)",
+                "cl_def3_HHI_lag1"="Log(Subsector HHI)",
+"cl_def6_HHI_lag1"="Log(Det. Ind. HHI)",
+"CompOffr1 offer"="Comp=1 offer",
+"CompOffr2 offers"="Comp=2 offers",
+"CompOffr3-4 offers"="Comp=3-4 offers",
+"CompOffr5+ offers"="Comp=5+ offers",
+"cl_def3_ratio_lag1"="Log(Subsector Ratio)",
+"cl_def6_obl_lag1"="Log(Det. Ind. DoD Obl.)",
+"cl_def6_ratio_lag1"="Log(Det. Ind. Ratio)",
+"cl_US6_avg_sal_lag1"="Log(Det. Ind. U.S. Avg. Salary)",
+"cl_Ceil"="Log(Init. Ceiling)",
+"cl_Ceil_Then_Year"="Log(Init. Ceiling)",
+"cl_Days"="Log(Init. Days)",
+"VehS-IDC"="Vehicle=S-IDC",
+"VehM-IDC"="Vehicle=M-IDC",
+"VehFSS/GWAC"="Vehicle=FSS/GWAC",
+"VehBPA/BOA"="Vehicle=BPA/BOA",
+"PricingFeeOther FP"="Pricing=Other FP",
+"PricingFeeIncentive"="Pricing=Incentive Fee",
+"PricingFeeCombination or Other"="Pricing=Combination or Other",
+"PricingFeeOther CB"="Pricing=Other CB",
+"PricingFeeT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
+"b_UCA"="UCA",
+"b_Intl"="Performed Abroad",
+# "cl_def6_HHI_lag1:cl_Days"="Log(Det. Ind. HHI):Log(Init. Days)",
+"cl_def6_HHI_lag1:cl_def6_obl_lag1"="Log(Det. Ind. HHI):Log(Det. Ind. DoD Obl.)",
+# "cl_def3_HHI_lag1:cl_def3_ratio_lag1"="Log(Subsector HHI):Log(Subsector Ratio)"),
+"cl_def6_HHI_lag1:b_UCA"="Log(Det. Ind. HHI):UCA",
+"cl_Ceil_Then_Year:b_UCA"="Log(Init. Ceiling):UCA",
+"CompOffr1 offer:b_UCA"="Comp=1 offer:UCA",
+"CompOffr2 offers:b_UCA"="Comp=2 offers:UCA",
+"CompOffr3-4 offers:b_UCA"="Comp=3-4 offers:UCA",
+"CompOffr5+ offers:b_UCA"="Comp=5+ offers:UCA"
+),
+                bold=0.05,
+custom.note="%stars. Logged inputs are rescaled.",
+caption="Table 2: Logit Model Results for Ceiling Breaches",
+caption.above=TRUE)
+```
+
+```
+## The table was written to the file '..//Output//CBre_Model_1m.html'.
+```
+
+```r
+# or1<-odds_ratio(CBre_Cons_13B.restart,"CBre_Cons_13B","Concentration","Ceiling Breaches",walds = TRUE)
+# or2<-odds_ratio(CBre_Comp_13C,"CBre_Comp_13C","Competition","Ceiling Breaches",walds = TRUE)
+# or3<-odds_ratio(CBre_Cons_Comp_15A,"CBre_Cons_Comp_15A","Both","Ceiling Breaches",walds = TRUE)
+# comp.or<-rbind(or1,or2,or3)
+
+# write.csv(get_study_variables_odds_ratio(comp.or),file="..//Output//ceiling_breach_study_odds_ratio.csv",row.names=FALSE)
+
+
+
+or1<-odds_ratio(CBre_Cons_13B_1m,"CBre_Cons_13B_1m","Concentration","Ceiling Breaches",walds = TRUE)
+or2<-odds_ratio(CBre_Comp_13C_1m,"CBre_Comp_13C_1m","Competition","Ceiling Breaches",walds = TRUE)
+or3<-odds_ratio(CBre_Cons_Comp_15A_1m,"CBre_Cons_Comp_15A_1m","Both","Ceiling Breaches",walds = TRUE)
+comp.or<-rbind(or1,or2,or3)
+
+write.csv(get_study_variables_odds_ratio(comp.or),file="..//Output//ceiling_breach_study_odds_ratio_1m.csv",row.names=FALSE)
+```
+
+```
+## Warning in if (!is.na(study_coef_list)) levels(or.df$Variable) <-
+## study_coef_list: the condition has length > 1 and only the first element
+## will be used
+```
+
+```r
+get_icc(CBre_Cons_Comp_15A_1m)
+```
+
+```
+## [[1]]
+## 
+## Intraclass Correlation Coefficient for Generalized linear mixed model
+## 
+## Family : binomial (logit)
+## Formula: b_CBre ~ cl_def3_HHI_lag1 + cl_def3_ratio_lag1 + cl_def6_HHI_lag1 + cl_def6_obl_lag1 + cl_def6_ratio_lag1 + cl_US6_avg_sal_lag1 + CompOffr + cl_Ceil + cl_Days + Veh + PricingFee + b_UCA + b_Intl + b_UCA:CompOffr + b_UCA:cl_def6_HHI_lag1 + b_UCA:cl_Ceil + cl_def6_HHI_lag1:cl_def6_obl_lag1 + (1 | NAICS3/NAICS) + (1 | Agency/Office)
+## 
+##   ICC (Office:Agency): 0.2573
+##    ICC (NAICS:NAICS3): 0.0308
+##          ICC (NAICS3): 0.0372
+##          ICC (Agency): 0.1052
+## 
+## 
+## [[2]]
+## [1] "Model failed to converge with max|grad| = 0.00901903 (tol = 0.001, component 1)"
+```
+
+```r
+#https://www.lcampanelli.org/mixed-effects-modeling-lme4/
+# gridExtra::grid.arrange(dotplot(ranef(CBre_Cons_13B.restart, condVar = T), strip = T, scales=list(relation='free'))$Agency,
+#              dotplot(ranef(CBre_Comp_13C, condVar = T), strip = T, scales=list(relation='free'))$Agency,
+#              dotplot(ranef(CBre_Cons_Comp_15A, condVar = T), strip = T, scales=list(relation='free'))$Agency,
+#              nrow=1)
+```
+
+
+ ## Terminations Model
+
+```r
+# texreg::htmlreg(list(Term_Cons_08A3,
+#                   CBre_Cons_08C),#CBre_Cons_08B2
+#                 file="..//Output//ConsModel.html",single.row = TRUE,
+#                 custom.model.name=c("Termination",
+#                                     "Ceiling Breach"),
+#                         stars=c(0.05))
+
+
+
+# texreg::htmlreg(list(Term_Cons_13E,Term_Comp_13F,Term_Cons_Comp_14C),file="..//Output//Term_Model.html",
+#                 single.row = TRUE,
+#                 custom.model.name=c("Concentration",
+#                                     "Competition",
+#                                     "Both"
+#                 ),
+#                 stars=c(0.1,0.05,0.01,0.001),
+#                 groups = list("Study Variables" = 2:7,
+#                               "NAICS Characteristics" = 8:11,
+#                               "Contract Characteristics"=12:24,
+#                               # "Contract Initial Scope" = 12:13,
+#                               # "Contract Vehicle (Baseline=Def. Award" = 14:18,
+#                               # "Contract Pricing (Baseline=FFP)" = 19:24,
+#                               # "Place of Performance" = 25,
+#                               "Interactions" = 25:27),
+#                 custom.coef.map=list(
+#                   "(Intercept)"="(Intercept)",
+#                   
+#                   "cl_def3_HHI_lag1"="Log(Subsector HHI)",
+#                   "cl_def6_HHI_lag1"="Log(Det. Ind. HHI)",
+#                   
+#                   "CompOffr1 offer"="Comp=1 offer",
+#                   "CompOffr2 offers"="Comp=2 offers",
+#                   "CompOffr3-4 offers"="Comp=3-4 offers",
+#                   "CompOffr5+ offers"="Comp=5+ offers",
+#                   "cl_def3_ratio_lag1"="Log(Subsector Ratio)",
+#                   "cl_def6_obl_lag1"="Log(Det. Ind. DoD Obl.)",
+#                   "cl_def6_ratio_lag1"="Log(Det. Ind. Ratio)",
+#                   "cl_US6_avg_sal_lag1"="Log(Det. Ind. U.S. Avg. Salary)",
+#                   "cl_Ceil"="Log(Init. Ceiling)",
+#                   "cl_Ceil_Then_Year"="Log(Init. Ceiling)",
+#                   "cl_Days"="Log(Init. Days)",
+#                   "VehS-IDC"="Vehicle=S-IDC",
+#                   "VehM-IDC"="Vehicle=M-IDC",
+#                   "VehFSS/GWAC"="Vehicle=FSS/GWAC",
+#                   "VehBPA/BOA"="Vehicle=BPA/BOA",
+#                   "PricingFeeOther FP"="Pricing=Other FP",
+#                   "PricingFeeIncentive"="Pricing=Incentive Fee",
+#                   "PricingFeeCombination or Other"="Pricing=Combination or Other",
+#                   "PricingFeeOther CB"="Pricing=Other CB",
+#                   "PricingFeeT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
+#                   "b_UCA"="UCA",
+#                   "b_Intl"="Performed Abroad",
+#                   "cl_def6_HHI_lag1:b_UCA"="Log(Det. Ind. HHI):UCA",
+#                   "cl_Ceil:b_UCA"="Log(Init. Ceiling):UCA",
+#                   "cl_Ceil_Then_Year:b_UCA"="Log(Init. Ceiling):UCA",
+#                   "cl_def6_HHI_lag1:cl_Days"="Log(Det. Ind. HHI):Log(Init. Days)",
+#                   "cl_def6_HHI_lag1:cl_def6_obl_lag1"="Log(Det. Ind. HHI):Log(Det. Ind. DoD Obl.)",
+#                   "cl_def3_HHI_lag1:cl_def3_ratio_lag1"="Log(Subsector HHI):Log(Subsector Ratio)",
+#                   "cl_def6_HHI_lag1:cl_def6_ratio_lag1"="Log(Det. Ind. HHI):Log(Det. Ind. Ratio)",
+#                   "cl_US6_avg_sal_lag1:PricingFeeOther FP"="Pricing=Other FP:Log(Det. Ind. U.S. Avg. Salary)",
+#                   "cl_US6_avg_sal_lag1:PricingFeeIncentive"="Pricing=Incentive Fee:Log(Det. Ind. U.S. Avg. Salary)",
+#                   "cl_US6_avg_sal_lag1:PricingFeeCombination or Other"=
+#                     "Pricing=Comb./or Other:Log(Det. Ind. U.S. Avg. Salary)",
+#                   "cl_US6_avg_sal_lag1:PricingFeeOther CB"="Pricing=Other CB:Log(Det. Ind. U.S. Avg. Salary)",
+#                   "cl_US6_avg_sal_lag1:PricingFeeT&M/LH/FPLOE"=
+#                     "Pricing=T&M/LH/FP:LoE:Log(Det. Ind. U.S. Avg. Salary)"
+#                   
+#                 ),
+#                 bold=0.05,
+#                 custom.note="%stars. Logged inputs are rescaled.",
+#                 caption="Table 3: Logit Model Results for Terminations",
+#                 caption.above=TRUE)
+
+                       #  b_UCA:cl_Ceil_Then_Year+
+                       #  b_UCA:cl_def6_HHI_lag1 +
+                       # PricingFee:cl_US6_avg_sal_lag1+
+
+
+# texreg::htmlreg(list(Term_Cons_13E,Term_Comp_13E2,Term_Cons_Comp_14C,Term_Cons_Comp_14C_1m),file="..//Output//Term_Model_1m.html",
+#                 single.row = TRUE,
+#                 custom.model.name=c("Concentration",
+#                                     "Competition",
+#                                     "Both",
+#                                     "Both 1m"
+texreg::htmlreg(list(Term_Cons_13E_1m,Term_Comp_13F_1m,Term_Cons_Comp_14C_1m),file="..//Output//Term_Model_1m.html",
+                single.row = TRUE,
+                custom.model.name=c("Concentration",
+                                    "Competition",
+                                    "Both"
+                ),
+                stars=c(0.1,0.05,0.01,0.001),
+                groups = list("Study Variables" = 2:7,
+                              "NAICS Characteristics" = 8:11,
+                              "Contract Characteristics"=12:24,
+                              # "Contract Initial Scope" = 12:13,
+                              # "Contract Vehicle (Baseline=Def. Award" = 14:18,
+                              # "Contract Pricing (Baseline=FFP)" = 19:24,
+                              # "Place of Performance" = 25,
+                              "Interactions" = 25:27),
+                custom.coef.map=list(
+                  "(Intercept)"="(Intercept)",
+                  
+                  "cl_def3_HHI_lag1"="Log(Subsector HHI)",
+                  "cl_def6_HHI_lag1"="Log(Det. Ind. HHI)",
+                  
+                  "CompOffr1 offer"="Comp=1 offer",
+                  "CompOffr2 offers"="Comp=2 offers",
+                  "CompOffr3-4 offers"="Comp=3-4 offers",
+                  "CompOffr5+ offers"="Comp=5+ offers",
+                  "cl_def3_ratio_lag1"="Log(Subsector Ratio)",
+                  "cl_def6_obl_lag1"="Log(Det. Ind. DoD Obl.)",
+                  "cl_def6_ratio_lag1"="Log(Det. Ind. Ratio)",
+                  "cl_US6_avg_sal_lag1"="Log(Det. Ind. U.S. Avg. Salary)",
+                  "cl_Ceil"="Log(Init. Ceiling)",
+                  "cl_Ceil_Then_Year"="Log(Init. Ceiling)",
+                  "cl_Days"="Log(Init. Days)",
+                  "VehS-IDC"="Vehicle=S-IDC",
+                  "VehM-IDC"="Vehicle=M-IDC",
+                  "VehFSS/GWAC"="Vehicle=FSS/GWAC",
+                  "VehBPA/BOA"="Vehicle=BPA/BOA",
+                  "PricingFeeOther FP"="Pricing=Other FP",
+                  "PricingFeeIncentive"="Pricing=Incentive Fee",
+                  "PricingFeeCombination or Other"="Pricing=Combination or Other",
+                  "PricingFeeOther CB"="Pricing=Other CB",
+                  "PricingFeeT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
+                  "b_UCA"="UCA",
+                  "b_Intl"="Performed Abroad",
+                  "cl_def6_HHI_lag1:b_UCA"="Log(Det. Ind. HHI):UCA",
+                  "cl_Ceil:b_UCA"="Log(Init. Ceiling):UCA",
+                  "cl_Ceil_Then_Year:b_UCA"="Log(Init. Ceiling):UCA",
+                  "cl_def6_HHI_lag1:cl_Days"="Log(Det. Ind. HHI):Log(Init. Days)",
+                  "cl_def6_HHI_lag1:cl_def6_obl_lag1"="Log(Det. Ind. HHI):Log(Det. Ind. DoD Obl.)",
+                  "cl_def3_HHI_lag1:cl_def3_ratio_lag1"="Log(Subsector HHI):Log(Subsector Ratio)",
+                  "cl_def6_HHI_lag1:cl_def6_ratio_lag1"="Log(Det. Ind. HHI):Log(Det. Ind. Ratio)",
+                  "cl_US6_avg_sal_lag1:PricingFeeOther FP"="Pricing=Other FP:Log(Det. Ind. U.S. Avg. Salary)",
+                  "cl_US6_avg_sal_lag1:PricingFeeIncentive"="Pricing=Incentive Fee:Log(Det. Ind. U.S. Avg. Salary)",
+                  "cl_US6_avg_sal_lag1:PricingFeeCombination or Other"=
+                    "Pricing=Comb./or Other:Log(Det. Ind. U.S. Avg. Salary)",
+                  "cl_US6_avg_sal_lag1:PricingFeeOther CB"="Pricing=Other CB:Log(Det. Ind. U.S. Avg. Salary)",
+                  "cl_US6_avg_sal_lag1:PricingFeeT&M/LH/FPLOE"=
+                    "Pricing=T&M/LH/FP:LoE:Log(Det. Ind. U.S. Avg. Salary)"
+                  
+                ),
+                bold=0.05,
+                custom.note="%stars. Logged inputs are rescaled.",
+                caption="Table 3: Logit Model Results for Terminations",
+                caption.above=TRUE)
+```
+
+```
+## The table was written to the file '..//Output//Term_Model_1m.html'.
+```
+
+```r
+                       #  b_UCA:cl_Ceil_Then_Year+
+                       #  b_UCA:cl_def6_HHI_lag1 +
+                       # PricingFee:cl_US6_avg_sal_lag1+
+
+
+# gridExtra::grid.arrange(dotplot(ranef(Term_Cons_13E, condVar = T), strip = T, scales=list(relation='free'))$Agency,
+#              dotplot(ranef(Term_Comp_13E2, condVar = T), strip = T, scales=list(relation='free'))$Agency,
+#              dotplot(ranef(Term_Cons_Comp_14A, condVar = T), strip = T, scales=list(relation='free'))$Agency,
+#              nrow=1)
+# dotplot(ranef(Term_Cons_13E, condVar = T), strip = T, scales=list(relation='free'))$NAICS3
+
+
+# or1<-odds_ratio(Term_Cons_13E,"Term_Cons_13E","Concentration","Ceiling Breaches",walds = TRUE)
+# or2<-odds_ratio(Term_Comp_13E2,"Term_Comp_13E2","Competition","Ceiling Breaches",walds = TRUE)
+# or3<-odds_ratio(Term_Cons_Comp_14C,"Term_Cons_Comp_14C","Both","Ceiling Breaches",walds = TRUE)
+# term.or<-rbind(or1,or2,or3)
+
+# write.csv(get_study_variables_odds_ratio(term.or),file="..//Output//termination_study_odds_ratio.csv",row.names=FALSE)
+
+or1<-odds_ratio(Term_Cons_13E_1m,"Term_Cons_13E_1m","Concentration","Ceiling Breaches",walds = TRUE)
+or2<-odds_ratio(Term_Comp_13F_1m,"Term_Comp_13F_1m","Competition","Ceiling Breaches",walds = TRUE)
+or3<-odds_ratio(Term_Cons_Comp_14C_1m,"Term_Cons_Comp_14C_1m","Both","Ceiling Breaches",walds = TRUE)
+term.or<-rbind(or1,or2,or3)
+
+write.csv(get_study_variables_odds_ratio(term.or),file="..//Output//termination_study_odds_ratio_1m.csv",row.names=FALSE)
+```
+
+```
+## Warning in if (!is.na(study_coef_list)) levels(or.df$Variable) <-
+## study_coef_list: the condition has length > 1 and only the first element
+## will be used
+```
+
+## Consolidation Odds Ratios
+
+
+```r
+# or_ceil<-odds_ratio(CBre_Cons_Comp_15A,"CBre_Cons_Comp_15A","Both","Ceiling Breaches",walds = TRUE)
+# or_term<-odds_ratio(Term_Cons_Comp_14B,"Term_Cons_Comp_14B","Both","Terminations",walds = TRUE)
+# 
+# cons.or<-rbind(or_ceil,or_term)
+# 
+# write.csv(get_study_variables_odds_ratio(subset(cons.or,variable %in% c("cl_def3_HHI_lag1","cl_def6_HHI_lag1"))),
+#           file="..//Output//consolidation_odds_ratio.csv",row.names=FALSE)
+
+
+or_ceil<-odds_ratio(CBre_Cons_Comp_15A_1m,"CBre_Cons_Comp_15A_1m","Both","Ceiling Breaches",walds = TRUE)
+or_term<-odds_ratio(Term_Cons_Comp_14C_1m,"Term_Cons_Comp_14C_1m","Both","Terminations",walds = TRUE)
+
+cons.or<-rbind(or_ceil,or_term)
+
+write.csv(get_study_variables_odds_ratio(subset(cons.or,variable %in% c("cl_def3_HHI_lag1","cl_def6_HHI_lag1"))),
+          file="..//Output//consolidation_odds_ratio_1m.csv",row.names=FALSE)
+```
+
+```
+## Warning in if (!is.na(study_coef_list)) levels(or.df$Variable) <-
+## study_coef_list: the condition has length > 1 and only the first element
+## will be used
+```
+
+```r
+# centered_description(smp1m$def6_HHI_lag1,"subsector HHI score")
+# centered_log_description(smp1m$l_def6_HHI_lag1,"detailed industrial HHI score")
+# 
+# 
+# centered_description(smp1m$def3_HHI_lag1,"subsector HHI score")
+# centered_log_description(smp1m$l_def3_HHI_lag1,"detailed industrial HHI score")
+```
+
+## Competition Odds Ratios
+
+```r
+# or_ceil<-odds_ratio(CBre_Cons_Comp_15A,"CBre_Cons_Comp_15A","Both","Ceiling Breaches",walds = TRUE)
+# or_term<-odds_ratio(Term_Cons_Comp_14B,"CBre_Cons_Comp_15A","Both","Terminations",walds = TRUE)
+# 
+# comp.or<-rbind(or_ceil,or_term)
+# 
+# write.csv(get_study_variables_odds_ratio(subset(comp.or,!variable %in% c("cl_def3_HHI_lag1","cl_def6_HHI_lag1")),walds = TRUE),
+#           file="..//Output//competition_odds_ratio.csv",row.names=FALSE)
+
+
+
+or_ceil<-odds_ratio(CBre_Cons_Comp_15A_1m,"CBre_Cons_Comp_15A_1m","Both","Ceiling Breaches",walds = TRUE)
+or_term<-odds_ratio(Term_Cons_Comp_14C_1m,"CBre_Cons_Comp_15A_1m","Both","Terminations",walds = TRUE)
+
+comp.or<-rbind(or_ceil,or_term)
+
+write.csv(get_study_variables_odds_ratio(subset(comp.or,!variable %in% c("cl_def3_HHI_lag1","cl_def6_HHI_lag1"))),
+          file="..//Output//competition_odds_ratio_1m.csv",row.names=FALSE)
+```
+
+```
+## Warning in if (!is.na(study_coef_list)) levels(or.df$Variable) <-
+## study_coef_list: the condition has length > 1 and only the first element
+## will be used
+```
+
+```r
+# dotplot(ranef(Term_Cons_13E, condVar = T), strip = T, scales=list(relation='free'))$NAICS3
+```
+
+ ## Residuals Plot
+
+
+```r
+residual_cbre<-gridExtra::grid.arrange(
+  binned_fitted_versus_residuals(CBre_Cons_13B_1m,bins=50)+
+    labs(title="Concentration Binned Actuals",caption=NULL,
+         x="Estimated Pr(Ceiling Breach)",y="Actual Pr(Ceiling Breach)"),
+  residuals_binned(CBre_Cons_13B_1m, bins=50)+labs(title="Concentration Binned Residual Plot"),
+  binned_fitted_versus_residuals(CBre_Comp_13C_1m,bins=50)+
+    labs(title="Competition Binned Actuals Plot",caption=NULL,
+         x="Estimated Pr(Ceiling Breach)",y="Actual Pr(Ceiling Breach)"),
+residuals_binned(CBre_Comp_13C_1m, bins=50)+labs(title="Competition Binned Residuals Plot"),
+binned_fitted_versus_residuals(CBre_Cons_Comp_15A_1m,bins=50)+
+  labs(title="Both Binned Actuals",
+       caption=NULL,
+         x="Estimated Pr(Ceiling Breach)",y="Actual Pr(Ceiling Breach)"),
+residuals_binned(CBre_Cons_Comp_15A_1m, bins=50)+labs(title="Both Binned Residuals Plot"),ncol=2)
+```
+
+![](monopoly_results_summary_files/figure-html/Residuals_1m-1.png)<!-- -->
+
+```r
+residual_cbre
+```
+
+```
+## TableGrob (3 x 2) "arrange": 6 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]
+## 3 3 (2-2,1-1) arrange gtable[layout]
+## 4 4 (2-2,2-2) arrange gtable[layout]
+## 5 5 (3-3,1-1) arrange gtable[layout]
+## 6 6 (3-3,2-2) arrange gtable[layout]
+```
+
+```r
+ggsave(residual_cbre,file="..//Output//residual_cbre_1m.png",width=7.5, height=8.5)
+ggsave(residual_cbre,file="..//Output//residual_cbre_1m.eps",width=7.5, height=8.5)
+
+residual_term<-gridExtra::grid.arrange(
+  binned_fitted_versus_residuals(Term_Cons_13E_1m,bins=50)+
+    labs(title="Concentration Binned Actuals",caption=NULL,
+         x="Estimated Pr(Termination)",y="Actual Pr(Termination)"),
+  residuals_binned(Term_Cons_13E_1m, bins=50)+labs(title="Binned Residual Plot"),
+  binned_fitted_versus_residuals(Term_Comp_13F_1m,bins=50)+
+    labs(title="Competition Binned Actuals Plot",caption=NULL,
+         x="Estimated Pr(Termination)",y="Actual Pr(Termination)"),
+residuals_binned(Term_Comp_13F_1m, bins=50)+labs(title="Binned Residuals Plot"),
+binned_fitted_versus_residuals(Term_Cons_Comp_14C_1m,bins=50)+
+  labs(title="Both Binned Actuals",
+       caption=NULL,
+         x="Estimated Pr(Termination)",y="Actual Pr(Termination)"),
+residuals_binned(Term_Cons_Comp_14C_1m, bins=50)+labs(title="Binned Residuals Plot"),ncol=2)
+```
+
+![](monopoly_results_summary_files/figure-html/Residuals_1m-2.png)<!-- -->
+
+```r
+residual_term
+```
+
+```
+## TableGrob (3 x 2) "arrange": 6 grobs
+##   z     cells    name           grob
+## 1 1 (1-1,1-1) arrange gtable[layout]
+## 2 2 (1-1,2-2) arrange gtable[layout]
+## 3 3 (2-2,1-1) arrange gtable[layout]
+## 4 4 (2-2,2-2) arrange gtable[layout]
+## 5 5 (3-3,1-1) arrange gtable[layout]
+## 6 6 (3-3,2-2) arrange gtable[layout]
+```
+
+```r
+ggsave(residual_term,file="..//Output//residual_term_1m.png",width=7.5, height=8.5)
+ggsave(residual_term,file="..//Output//residual_term_1m.eps",width=7.5, height=8.5)
+
+
+# debug(residuals_binned)
+# gridExtra::grid.arrange(residuals_binned(Term_Cons_13E, bins=50)+labs(title="Concentration Binned Residuals Plot"),
+# residuals_binned(Term_Comp_13E2, bins=50)+labs(title="Competition Binned Residuals Plot"),
+# residuals_binned(Term_Cons_Comp_14B, bins=50)+labs(title="Both Binned Residuals Plot"),ncol=1)
+```

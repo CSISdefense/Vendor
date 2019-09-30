@@ -1941,7 +1941,10 @@ freq_table <- function(x, contract){
 }
 
 #generate barplot according to frequency information table for categorical variables                                 
-part_grouped_barplot <- function(name, frequency_Info){
+part_grouped_barplot <- function(name, 
+                                 frequency_Info,
+                                 description_var="Description"){
+  if(description_var!="Description") frequency_Info$Description<-frequency_Info[,description_var]
   part_barplot <- ggplot(data = frequency_Info, 
                          aes(x = Description, 
                              y = value, 
