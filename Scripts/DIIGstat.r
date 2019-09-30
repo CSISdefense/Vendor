@@ -893,7 +893,7 @@ NA_stats<-function(data,col,exclude_before_2008=TRUE,value_col=NULL){
 
 
 deviance_stats<-function(model,model_name){
-  # if(class(model)[1]=="glmerMod")
+  # if(class(model)[1] %in% c("glmerMod","lmerMod"))
   # { 
   #   getME(model,"devcom")$dev
   #   output<-data.frame(model=model_name,
@@ -914,7 +914,7 @@ deviance_stats<-function(model,model_name){
 }
 
 model_colnames<-function(model){
-  if(class(model)[1]=="glmerMod")
+  if(class(model)[1] %in% c("glmerMod","lmerMod"))
   { 
     output<-colnames(model@frame)
     
@@ -958,7 +958,7 @@ binned_fitted_versus_cbre_residuals<-function(model,bins=20){
   #                        cb_Comp=CBre_01A@frame$cb_Comp
   #                        )
   
-  if(class(model)[1]=="glmerMod")
+  if(class(model)[1] %in% c("glmerMod","lmerMod"))
   {
     data <-data.frame(
       fitted=fitted(model),
@@ -997,7 +997,7 @@ binned_fitted_versus_term_residuals<-function(model,bins=20){
   #                        cb_Comp=Term_01A@frame$cb_Comp
   #                        )
   
-  if(class(model)[1]=="glmerMod")
+  if(class(model)[1] %in% c("glmerMod","lmerMod"))
   {
     data <-data.frame(
       fitted=fitted(model),
@@ -1038,7 +1038,7 @@ binned_fitted_versus_SomeOpt_residuals<-function(model,bins=20){
   #                        cb_Comp=Term_01A@frame$cb_Comp
   #                        )
   
-  if(class(model)[1]=="glmerMod")
+  if(class(model)[1] %in% c("glmerMod","lmerMod"))
   {
     data <-data.frame(
       fitted=fitted(model),
@@ -1079,7 +1079,7 @@ binned_fitted_versus_AllOpt_residuals<-function(model,bins=20){
   #                        cb_Comp=Term_01A@frame$cb_Comp
   #                        )
   
-  if(class(model)[1]=="glmerMod")
+  if(class(model)[1] %in% c("glmerMod","lmerMod"))
   {
     data <-data.frame(
       fitted=fitted(model),
@@ -1119,7 +1119,7 @@ binned_fitted_versus_lp_CBre_residuals<-function(model,bins=20){
   #                        cb_Comp=CBre_01A@frame$cb_Comp
   #                        )
   
-  if(class(model)[1]=="glmerMod")
+  if(class(model)[1] %in% c("glmerMod","lmerMod"))
   {
     data <-data.frame(
       fitted=fitted(model),
@@ -1159,7 +1159,7 @@ binned_fitted_versus_ln_CBre_residuals<-function(model,bins=20){
   #                        cb_Comp=CBre_01A@frame$cb_Comp
   #                        )
   
-  if(class(model)[1]=="glmerMod")
+  if(class(model)[1] %in% c("glmerMod","lmerMod"))
   {
     data <-data.frame(
       fitted=fitted(model),
@@ -1190,7 +1190,7 @@ binned_fitted_versus_ln_CBre_residuals<-function(model,bins=20){
 }
 
 binned_fitted_versus_residuals<-function(model,bins=20){
-  if(class(model)[1]=="glmerMod")
+  if(class(model)[1] %in% c("glmerMod","lmerMod"))
   {
     if(!is.null(model@frame$b_CBre)){
       graph<-binned_fitted_versus_cbre_residuals(model,bins)
@@ -1274,7 +1274,7 @@ binned.resids <- function (x, y, nclass=sqrt(length(x))){
 }
 
 residuals_binned<-function(model,col="fitted",bins=40){
-  if(class(model)[1]=="glmerMod")
+  if(class(model)[1] %in% c("glmerMod","lmerMod"))
   {
     data <-data.frame(
       fitted=fitted(model),
@@ -1301,7 +1301,7 @@ residuals_binned<-function(model,col="fitted",bins=40){
   
   #Safety measure for missing output variables.
   graph<-NULL
-  if(class(model)[1]=="glmerMod")
+  if(class(model)[1] %in% c("glmerMod","lmerMod"))
   {
     if(!is.null(model@frame$b_CBre)){
       data$outcome<-model@frame$b_CBre
@@ -1665,7 +1665,7 @@ output
 glmer_examine<-function(model,display=FALSE){
   if(display==TRUE) display(model)
   output<-car::vif(model)
-  if(class(model)[1]=="glmerMod") 
+  if(class(model)[1] %in% c("glmerMod","lmerMod")) 
   { 
     
     # If the fit is singular or near-singular, there might be a higher chance of a false positive (we’re not necessarily screening out gradient and Hessian checking on singular directions properly); a higher chance that the model has actually misconverged (because the optimization problem is difficult on the boundary); and a reasonable argument that the random effects model should be simplified.
@@ -2004,13 +2004,9 @@ get_study_variables_odds_ratio<-function(or.df,study="monopoly"){
                           "Comp=5+ offers"=c("CompOffr5+ offers")
     )
   } else if (study=="services"){
-    study_list<-c("cl_US6_avg_sal_lag1Const","Log(Det. Ind. Salary)",
-                  "cl_CFTE","Log(Service Invoice Rate)",
-                  "c_pPBSC","Office Perf.-Based %",
-                  "c_pOffPSC","Office Service Exp. %",
-                  "c_pairHist","Paired Years",
-                  "cl_pairCA","Log(Paired Actions)"
-    )
+    study_list<-get_coef_list(limit="services")
+    study_list<-c(names(study_list),study_list)
+    study_list<-study_list[-which(study_list=="(Intercept)")]
     study_coef_list<-NA
     
   } else stop(paste("Unknown study: ",study, "available options: 'monopoly','services'"))
@@ -2183,7 +2179,7 @@ get_coef_list<-function(limit=NULL){
                     "c_pPBSC"="Office Perf.-Based %",
                     "cp_OffPerf7"="Office Perf.-Based %",
                     "c_pOffPSC"="Office Serv. Code Exp. %",
-                    "pOffPSC"="Office Serv. Code Exp. %",
+                    "pOffPSC"="ERROR, UNCENTERED Office Serv. Code Exp. %",
                     "cp_OffPSC7"="Office Serv. Code Exp. %",
                     "c_pairHist"="Paired Years",
                     "cn_PairHist7"="Paired Years",
@@ -2315,12 +2311,21 @@ get_coef_list<-function(limit=NULL){
                     "cln_US6sal_lag1:PricingOther CB"="Pricing=Log(Det. Ind. Salary):Other Cost-Based",
                     "cln_US6sal_lag1:PricingT&M/LH/FPLOE"="Log(Det. Ind. Salary):Pricing=T&M/LH/FP:LoE",
                   
+                    "cln_PSCrate:PricingOther FP"="Log(Serv. Code Invoice Rate):Pricing=Other Fixed-Price",
+                    "cln_PSCrate:PricingT&M/LH/FPLOE"="Log(Serv. Code Invoice Rate):Pricing=T&M/LH/FP:LoE",
+                    "cln_PSCrate:PricingIncentive"="Log(Serv. Code Invoice Rate):Pricing=Incentive Fee",
+                    "cln_PSCrate:PricingOther CB"="Log(Serv. Code Invoice Rate):Pricing=Other Cost-Based",
+                    "cln_PSCrate:PricingUCA"="Log(Serv. Code Invoice Rate):Pricing=UCA",
+                    "cln_PSCrate:PricingCombination or Other"="Log(Serv. Code Invoice Rate):Pricing=Comb./Other",
+                    
                     
                     #Office Capability
-                    "cln_OffObl7:pOffPSC" = "Office Serv. Code Exp. %:Log(Office Obl.)",
+                    "cln_OffObl7:pOffPSC" = "ERROR UNCENTERED Office Serv. Code Exp. %:Log(Office Obl.)",
                     "cln_OffObl7:cp_OffPSC7" = "Office Serv. Code Exp. %:Log(Office Obl.)",
-                    "cln_OffFocus:pOffPSC" = "Office Serv. Code Exp. %:Log(Office Focus)",
+                    "cp_OffPSC7:cln_OffObl7" = "Office Serv. Code Exp. %:Log(Office Obl.)",
+                    "cln_OffFocus:pOffPSC" = "ERROR UNCENTERED Office Serv. Code Exp. %:Log(Office Focus)",
                     "cln_OffFocus:cp_OffPSC7" = "Office Serv. Code Exp. %:Log(Office Focus)",
+                    "cp_OffPSC7:cln_OffFocus"="Office Serv. Code Exp. %:Log(Office Focus)",
                     "c_pPBSC:cl_pairCA"="Office Perf.-Based %:Log(Paired Actions)",
                     "cp_OffPerf7:cln_PairCA"="Office Perf.-Based %:Log(Paired Actions)",
                     "cp_OffPerf7:cln_Days"="Office Perf.-Based %:Log(Planned Dur.)",
@@ -2328,7 +2333,8 @@ get_coef_list<-function(limit=NULL){
                     "c_pPBSC:c_pMarket"="Office Perf.-Based %:Log(Paired Share %)",
                     "cp_OffPerf7:cp_PairObl7"="Office Perf.-Based %:Log(Paired Share %)",
                     
-                    #Paired Experience
+                    
+                    #Paired Relationship
                     "c_pairHist:PricingUCAOther FP"="Paired Years:Pricing=Other Fixed-Price",
                     "c_pairHist:PricingUCAT&M/LH/FPLOE"="Paired Years:Pricing=T&M/LH/FP:LoE",
                     "c_pairHist:PricingUCAIncentive"="Paired Years:Pricing=Incentive Fee",
@@ -2342,6 +2348,7 @@ get_coef_list<-function(limit=NULL){
                     "cn_PairHist7:PricingUCA"="Paired Years:Pricing=UCA",
                     "cn_PairHist7:PricingCombination or Other"="Paired Years:Pricing=Comb./Other",
                     
+                    
                     #Non-Study Variale interactions
                     "VehS-IDC:b_Intl"="Vehicle=S-IDC:Performed Abroad",
                     "VehM-IDC:b_Intl"="Vehicle=M-IDC:Performed Abroad",
@@ -2352,8 +2359,8 @@ get_coef_list<-function(limit=NULL){
                     "cln_Base:clr_Ceil2Base"="Log(Init. Base):Log(Init. Ceiling:Base)",
                     "cl_Ceil:cl_Base2Ceil"="Log(Init. Ceiling):Log(Init. Ceiling:Base)",
                     "cln_Ceil:clr_Ceil2Base"="Log(Init. Ceiling):Log(Init. Ceiling:Base)",
-                    "cp_PairObl7:cln_OffObl7"="Paired Share %:Log(Office Obligations)"
-                    
+                    "cp_PairObl7:cln_OffObl7"="Paired Share %:Log(Office Obligations)",
+                    "cln_OffObl7:cln_OffFocus" = "Log(Office Obligations):Log(Office Focus)"
                     
     )
   else if (limit=="services"){
@@ -2365,7 +2372,8 @@ get_coef_list<-function(limit=NULL){
                     "c_pPBSC"="Office Perf.-Based %",
                     "cp_OffPerf7"="Office Perf.-Based %",
                     "c_pOffPSC"="Office Serv. Code Exp. %",
-                    "cp_OffPSC77"="Office Serv. Code Exp. %",
+                    "pOffPSC"="ERROR, UNCENTERED Office Serv. Code Exp. %",
+                    "cp_OffPSC7"="Office Serv. Code Exp. %",
                     "c_pairHist"="Paired Years",
                     "cn_PairHist7"="Paired Years",
                     "cl_pairCA"="Log(Paired Actions)",
