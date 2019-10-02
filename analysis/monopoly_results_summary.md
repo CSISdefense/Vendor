@@ -8,6 +8,9 @@ date: "Wednesday, February 8, 2017"
 ---
 
 #Setup
+First we load the data. The dataset used is a U.S. Defense Contracting dataset derived from   FPDS.
+
+
 
 ```
 ## Warning: replacing previous import 'Hmisc::summarize' by 'dplyr::summarize'
@@ -189,9 +192,7 @@ date: "Wednesday, February 8, 2017"
 
 
 
-##Prepare Data
-First we load the data. The dataset used is a U.S. Defense Contracting dataset derived from   FPDS.
-
+## Data Exploration
 
 ### Economic
 #### NAICS 2
@@ -4887,6 +4888,7 @@ glmer_examine(Comp_Cons_15D,display=TRUE)
 ```
 
 ```
+## [[1]]
 ##                            GVIF Df GVIF^(1/(2*Df))
 ## cl_def3_HHI_lag1       1.136171  1        1.065913
 ## cl_def3_ratio_lag1     1.022818  1        1.011344
@@ -4902,6 +4904,28 @@ glmer_examine(Comp_Cons_15D,display=TRUE)
 ## b_Intl                 2.480887  1        1.575083
 ## cl_def6_HHI_lag1:b_UCA 1.243122  1        1.114954
 ## Veh:b_Intl             3.367848  4        1.163909
+## 
+## [[2]]
+## 
+## Intraclass Correlation Coefficient for Linear mixed model
+## 
+## Family : gaussian (identity)
+## Formula: l_Offr ~ cl_def3_HHI_lag1 + cl_def3_ratio_lag1 + cl_def6_HHI_lag1 + cl_def6_ratio_lag1 + cl_def6_obl_lag1 + cl_US6_avg_sal_lag1 + cl_Ceil + cl_Days + Veh + PricingFee + UCA + b_Intl + b_UCA:cl_def6_HHI_lag1 + b_Intl:Veh + (1 | NAICS3/NAICS) + (1 | Agency/Office) + (1 | StartCY)
+## 
+##   ICC (Office:Agency): 0.1896
+##    ICC (NAICS:NAICS3): 0.0870
+##          ICC (NAICS3): 0.0289
+##          ICC (Agency): 0.1116
+##         ICC (StartCY): 0.0009
+## 
+## 
+## [[3]]
+## Office:Agency.(Intercept)  NAICS:NAICS3.(Intercept) 
+##                0.57086823                0.38670319 
+##        NAICS3.(Intercept)        Agency.(Intercept) 
+##                0.22299373                0.43798210 
+##       StartCY.(Intercept) 
+##                0.03866773
 ```
 
 ```r
@@ -5191,61 +5215,6 @@ glmer_examine(CBre_Cons_13B_1m,display=TRUE)
 ##        NAICS3.(Intercept)        Agency.(Intercept) 
 ##                 0.4613598                 0.7719464
 ```
-
-```r
-odds_ratio(CBre_Cons_13B_1m,"CBre_Cons_13B",walds = TRUE)
-```
-
-```
-##                                                            variable
-## (Intercept)                                             (Intercept)
-## cl_def3_HHI_lag1                                   cl_def3_HHI_lag1
-## cl_def3_ratio_lag1                               cl_def3_ratio_lag1
-## cl_def6_HHI_lag1                                   cl_def6_HHI_lag1
-## cl_def6_obl_lag1                                   cl_def6_obl_lag1
-## cl_def6_ratio_lag1                               cl_def6_ratio_lag1
-## cl_US6_avg_sal_lag1                             cl_US6_avg_sal_lag1
-## cl_Ceil                                                     cl_Ceil
-## cl_Days                                                     cl_Days
-## VehS-IDC                                                   VehS-IDC
-## VehM-IDC                                                   VehM-IDC
-## VehFSS/GWAC                                             VehFSS/GWAC
-## VehBPA/BOA                                               VehBPA/BOA
-## PricingFeeOther FP                               PricingFeeOther FP
-## PricingFeeIncentive                             PricingFeeIncentive
-## PricingFeeCombination or Other       PricingFeeCombination or Other
-## PricingFeeOther CB                               PricingFeeOther CB
-## PricingFeeT&M/LH/FPLOE                       PricingFeeT&M/LH/FPLOE
-## b_UCA                                                         b_UCA
-## b_Intl                                                       b_Intl
-## cl_def6_HHI_lag1:b_UCA                       cl_def6_HHI_lag1:b_UCA
-## cl_Ceil:b_UCA                                         cl_Ceil:b_UCA
-## cl_def6_HHI_lag1:cl_def6_obl_lag1 cl_def6_HHI_lag1:cl_def6_obl_lag1
-##                                            OR       2.5 %     97.5 %
-## (Intercept)                       0.003818274 0.002362446 0.00617124
-## cl_def3_HHI_lag1                  0.990707278 0.900108501 1.09042511
-## cl_def3_ratio_lag1                0.676042437 0.521864962 0.87576942
-## cl_def6_HHI_lag1                  1.050797468 0.962814160 1.14682081
-## cl_def6_obl_lag1                  1.086803887 0.979891879 1.20538063
-## cl_def6_ratio_lag1                0.996872250 0.937418622 1.06009659
-## cl_US6_avg_sal_lag1               0.684585557 0.604983839 0.77466100
-## cl_Ceil                           4.025168188 3.784922793 4.28066300
-## cl_Days                           1.677742025 1.567989812 1.79517640
-## VehS-IDC                          0.675198479 0.637234420 0.71542430
-## VehM-IDC                          0.976704365 0.903412769 1.05594192
-## VehFSS/GWAC                       0.783031445 0.710034041 0.86353359
-## VehBPA/BOA                        0.623778295 0.543834117 0.71547435
-## PricingFeeOther FP                1.095446697 0.833462084 1.43978171
-## PricingFeeIncentive               6.568687930 4.951430000 8.71418179
-## PricingFeeCombination or Other    2.045343763 1.686896175 2.47995767
-## PricingFeeOther CB                1.140161625 0.999447233 1.30068751
-## PricingFeeT&M/LH/FPLOE            1.458004398 1.199737533 1.77186824
-## b_UCA                             5.512524995 4.596762423 6.61072490
-## b_Intl                            0.988729142 0.866530331 1.12816053
-## cl_def6_HHI_lag1:b_UCA            1.390943009 1.069553240 1.80890710
-## cl_Ceil:b_UCA                     0.262132045 0.201933654 0.34027616
-## cl_def6_HHI_lag1:cl_def6_obl_lag1 1.041443979 0.928558079 1.16805355
-```
 "Model failed to converge with max|grad| = 0.00750942 (tol = 0.001, component 1)"
 
 
@@ -5518,69 +5487,6 @@ glmer_examine(CBre_Comp_13C_1m,display=TRUE)
 ##                 1.2183842                 0.4259300 
 ##        NAICS3.(Intercept)        Agency.(Intercept) 
 ##                 0.4599183                 0.7783819
-```
-
-```r
-odds_ratio(CBre_Comp_13C,"CBre_Comp_13C",walds = TRUE)
-```
-
-```
-##                                                      variable           OR
-## (Intercept)                                       (Intercept)  0.005324614
-## CompOffr1 offer                               CompOffr1 offer  0.762438156
-## CompOffr2 offers                             CompOffr2 offers  0.977313767
-## CompOffr3-4 offers                         CompOffr3-4 offers  0.917085389
-## CompOffr5+ offers                           CompOffr5+ offers  0.989769877
-## cl_def3_ratio_lag1                         cl_def3_ratio_lag1  0.614426926
-## cl_def6_ratio_lag1                         cl_def6_ratio_lag1  0.981453962
-## cl_def6_obl_lag1                             cl_def6_obl_lag1  1.215460793
-## cl_US6_avg_sal_lag1                       cl_US6_avg_sal_lag1  0.854350890
-## cl_Ceil                                               cl_Ceil  4.225186884
-## cl_Days                                               cl_Days  1.627976292
-## VehS-IDC                                             VehS-IDC  0.740984492
-## VehM-IDC                                             VehM-IDC  1.079825213
-## VehFSS/GWAC                                       VehFSS/GWAC  0.864172340
-## VehBPA/BOA                                         VehBPA/BOA  0.657009605
-## PricingFeeOther FP                         PricingFeeOther FP  0.840740968
-## PricingFeeIncentive                       PricingFeeIncentive  9.659617192
-## PricingFeeCombination or Other PricingFeeCombination or Other  1.814338691
-## PricingFeeOther CB                         PricingFeeOther CB  0.909868337
-## PricingFeeT&M/LH/FPLOE                 PricingFeeT&M/LH/FPLOE  0.921511278
-## b_UCA                                                   b_UCA 11.795668995
-## b_Intl                                                 b_Intl  0.832621628
-## CompOffr1 offer:b_UCA                   CompOffr1 offer:b_UCA  0.557991533
-## CompOffr2 offers:b_UCA                 CompOffr2 offers:b_UCA  0.102536509
-## CompOffr3-4 offers:b_UCA             CompOffr3-4 offers:b_UCA  0.371186305
-## CompOffr5+ offers:b_UCA               CompOffr5+ offers:b_UCA  0.125400943
-## cl_Ceil:b_UCA                                   cl_Ceil:b_UCA  0.153519807
-##                                      2.5 %       97.5 %
-## (Intercept)                    0.003108188  0.009121555
-## CompOffr1 offer                0.655124621  0.887330322
-## CompOffr2 offers               0.843293460  1.132633234
-## CompOffr3-4 offers             0.804393850  1.045564447
-## CompOffr5+ offers              0.867547943  1.129210688
-## cl_def3_ratio_lag1             0.415551137  0.908481325
-## cl_def6_ratio_lag1             0.911062481  1.057284104
-## cl_def6_obl_lag1               1.027801049  1.437384153
-## cl_US6_avg_sal_lag1            0.744354291  0.980602184
-## cl_Ceil                        3.697141221  4.828650878
-## cl_Days                        1.421354440  1.864634698
-## VehS-IDC                       0.656726653  0.836052587
-## VehM-IDC                       0.915846804  1.273163247
-## VehFSS/GWAC                    0.712512676  1.048113050
-## VehBPA/BOA                     0.497180522  0.868219091
-## PricingFeeOther FP             0.495167467  1.427487511
-## PricingFeeIncentive            5.393166877 17.301189901
-## PricingFeeCombination or Other 1.196791494  2.750541679
-## PricingFeeOther CB             0.677451134  1.222022299
-## PricingFeeT&M/LH/FPLOE         0.589501088  1.440511397
-## b_UCA                          7.645684321 18.198214995
-## b_Intl                         0.663251554  1.045242595
-## CompOffr1 offer:b_UCA          0.241863341  1.287316008
-## CompOffr2 offers:b_UCA         0.014434544  0.728373250
-## CompOffr3-4 offers:b_UCA       0.150187316  0.917382883
-## CompOffr5+ offers:b_UCA        0.029691903  0.529619019
-## cl_Ceil:b_UCA                  0.081848448  0.287950862
 ```
 "Model failed to converge with max|grad| = 0.0209168 (tol = 0.001, component 1)"
 No restart yet.
@@ -5885,6 +5791,481 @@ get_icc(CBre_Cons_Comp_15A)
 [1] "Model failed to converge with max|grad| = 0.0395392 (tol = 0.001, component 1)"
 
 failure to converge in 10000 evaluationsModel failed to converge with max|grad| = 0.00901903 (tol = 0.001, component 1)
+
+## Output Size Of Breach
+
+### Organially Developed
+
+```r
+if(file.exists("..//Output//ln_CBre_15A.rdata")) load(file="..//Output//ln_CBre_15A.rdata")
+
+if(!exists("ln_CBre_Cons_15A"))
+  ln_CBre_Cons_15A <- lmer (data=def_breach,
+                            ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                              cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                              cl_Ceil_Then_Year+ cl_Days+
+                              Veh+
+                              PricingFee+b_UCA+
+                              b_Intl +
+                              b_UCA:cl_def6_HHI_lag1+
+                              cl_US6_avg_sal_lag1:PricingFee+
+                              (1 | NAICS3/NAICS) + 
+                              (1 | Agency/Office),
+                            verbose=TRUE)
+glmer_examine(ln_CBre_Cons_15A)
+```
+
+```
+## [[1]]
+##                                    GVIF Df GVIF^(1/(2*Df))
+## cl_def6_HHI_lag1               1.866188  1        1.366085
+## cl_def6_ratio_lag1             1.093662  1        1.045783
+## cl_def6_obl_lag1               1.116152  1        1.056481
+## cl_US6_avg_sal_lag1            1.098176  1        1.047939
+## cl_def3_HHI_lag1               1.843232  1        1.357657
+## cl_def3_ratio_lag1             1.102737  1        1.050113
+## cl_Ceil_Then_Year              1.190223  1        1.090973
+## cl_Days                        1.165671  1        1.079662
+## Veh                            1.062913  4        1.007656
+## PricingFee                     2.358044  5        1.089570
+## b_UCA                          1.193423  1        1.092439
+## b_Intl                         1.004197  1        1.002096
+## cl_def6_HHI_lag1:b_UCA         1.201556  1        1.096155
+## cl_US6_avg_sal_lag1:PricingFee 2.303291  5        1.087013
+## 
+## [[2]]
+## 
+## Intraclass Correlation Coefficient for Linear mixed model
+## 
+## Family : gaussian (identity)
+## Formula: ln_CBre_Then_Year ~ cl_def6_HHI_lag1 + cl_def6_ratio_lag1 + cl_def6_obl_lag1 + cl_US6_avg_sal_lag1 + cl_def3_HHI_lag1 + cl_def3_ratio_lag1 + cl_Ceil_Then_Year + cl_Days + Veh + PricingFee + b_UCA + b_Intl + b_UCA:cl_def6_HHI_lag1 + cl_US6_avg_sal_lag1:PricingFee + (1 | NAICS3/NAICS) + (1 | Agency/Office)
+## 
+##   ICC (Office:Agency): 0.0645
+##    ICC (NAICS:NAICS3): 0.0499
+##          ICC (NAICS3): 0.0285
+##          ICC (Agency): 0.0176
+## 
+## 
+## [[3]]
+## Office:Agency.(Intercept)  NAICS:NAICS3.(Intercept) 
+##                 0.2772078                 0.2437307 
+##        NAICS3.(Intercept)        Agency.(Intercept) 
+##                 0.1842569                 0.1446188
+```
+
+```r
+if(!exists("ln_CBre_Comp_15A"))
+  ln_CBre_Comp_15A <- lmer (data=def_breach,
+                            ln_CBre_Then_Year ~CompOffr+
+                              cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                              cl_def3_ratio_lag1+
+                              cl_Ceil_Then_Year+ cl_Days+
+                              Veh+
+                              PricingFee+b_UCA+
+                              b_Intl +
+                              b_UCA:CompOffr+
+                              cl_US6_avg_sal_lag1:PricingFee+
+                              (1 | NAICS3/NAICS) + 
+                              (1 | Agency/Office),
+                              verbose=TRUE)
+glmer_examine(ln_CBre_Comp_15A)
+```
+
+```
+## [[1]]
+##                                    GVIF Df GVIF^(1/(2*Df))
+## CompOffr                       1.144301  4        1.016992
+## cl_def6_ratio_lag1             1.093292  1        1.045606
+## cl_def6_obl_lag1               1.090491  1        1.044266
+## cl_US6_avg_sal_lag1            1.098979  1        1.048322
+## cl_def3_ratio_lag1             1.098380  1        1.048036
+## cl_Ceil_Then_Year              1.197962  1        1.094515
+## cl_Days                        1.166709  1        1.080143
+## Veh                            1.130828  4        1.015487
+## PricingFee                     2.362965  5        1.089797
+## b_UCA                          1.646713  1        1.283243
+## b_Intl                         1.006676  1        1.003332
+## CompOffr:b_UCA                 1.735993  4        1.071380
+## cl_US6_avg_sal_lag1:PricingFee 2.306915  5        1.087184
+## 
+## [[2]]
+## 
+## Intraclass Correlation Coefficient for Linear mixed model
+## 
+## Family : gaussian (identity)
+## Formula: ln_CBre_Then_Year ~ CompOffr + cl_def6_ratio_lag1 + cl_def6_obl_lag1 + cl_US6_avg_sal_lag1 + cl_def3_ratio_lag1 + cl_Ceil_Then_Year + cl_Days + Veh + PricingFee + b_UCA + b_Intl + b_UCA:CompOffr + cl_US6_avg_sal_lag1:PricingFee + (1 | NAICS3/NAICS) + (1 | Agency/Office)
+## 
+##   ICC (Office:Agency): 0.0635
+##    ICC (NAICS:NAICS3): 0.0485
+##          ICC (NAICS3): 0.0266
+##          ICC (Agency): 0.0175
+## 
+## 
+## [[3]]
+## Office:Agency.(Intercept)  NAICS:NAICS3.(Intercept) 
+##                 0.2744023                 0.2396891 
+##        NAICS3.(Intercept)        Agency.(Intercept) 
+##                 0.1776295                 0.1438226
+```
+
+```r
+if(!exists("ln_CBre_Cons_Comp_15A"))
+  ln_CBre_Cons_Comp_15A <- lmer (data=def_breach,
+                                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                                   cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                                   cl_Ceil_Then_Year+ cl_Days+
+                                   Veh+
+                                   PricingFee+b_UCA+
+                                   b_Intl +
+                                   b_UCA:CompOffr+
+                                   b_UCA:cl_def6_HHI_lag1+
+                                   cl_US6_avg_sal_lag1:PricingFee+
+                                   (1 | NAICS3/NAICS) + 
+                                   (1 | Agency/Office),
+                                 verbose=TRUE)
+glmer_examine(ln_CBre_Cons_Comp_15A)
+```
+
+```
+## [[1]]
+##                                    GVIF Df GVIF^(1/(2*Df))
+## CompOffr                       1.145524  4        1.017128
+## cl_def6_HHI_lag1               1.865011  1        1.365654
+## cl_def6_ratio_lag1             1.093869  1        1.045882
+## cl_def6_obl_lag1               1.118126  1        1.057415
+## cl_US6_avg_sal_lag1            1.099372  1        1.048510
+## cl_def3_HHI_lag1               1.840475  1        1.356641
+## cl_def3_ratio_lag1             1.102823  1        1.050154
+## cl_Ceil_Then_Year              1.198355  1        1.094694
+## cl_Days                        1.168233  1        1.080848
+## Veh                            1.133983  4        1.015841
+## PricingFee                     2.368683  5        1.090061
+## b_UCA                          1.725890  1        1.313731
+## b_Intl                         1.006784  1        1.003386
+## CompOffr:b_UCA                 1.938951  4        1.086290
+## cl_def6_HHI_lag1:b_UCA         1.341044  1        1.158034
+## cl_US6_avg_sal_lag1:PricingFee 2.309086  5        1.087287
+## 
+## [[2]]
+## 
+## Intraclass Correlation Coefficient for Linear mixed model
+## 
+## Family : gaussian (identity)
+## Formula: ln_CBre_Then_Year ~ CompOffr + cl_def6_HHI_lag1 + cl_def6_ratio_lag1 + cl_def6_obl_lag1 + cl_US6_avg_sal_lag1 + cl_def3_HHI_lag1 + cl_def3_ratio_lag1 + cl_Ceil_Then_Year + cl_Days + Veh + PricingFee + b_UCA + b_Intl + b_UCA:CompOffr + b_UCA:cl_def6_HHI_lag1 + cl_US6_avg_sal_lag1:PricingFee + (1 | NAICS3/NAICS) + (1 | Agency/Office)
+## 
+##   ICC (Office:Agency): 0.0634
+##    ICC (NAICS:NAICS3): 0.0486
+##          ICC (NAICS3): 0.0276
+##          ICC (Agency): 0.0172
+## 
+## 
+## [[3]]
+## Office:Agency.(Intercept)  NAICS:NAICS3.(Intercept) 
+##                 0.2741146                 0.2399769 
+##        NAICS3.(Intercept)        Agency.(Intercept) 
+##                 0.1809029                 0.1429476
+```
+
+### Logit Match
+Second model, exactly matching the model used in ceiling breach logit.
+
+
+```r
+if(file.exists("..//Output//ln_CBre_15B.rdata")) load(file="..//Output//ln_CBre_15B.rdata")
+
+if(!exists("ln_CBre_Cons_15B"))
+  ln_CBre_Cons_15B <- lmer (data=def_breach,
+                            ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                              cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                              cl_Ceil_Then_Year+ cl_Days+
+                              Veh+
+                              PricingFee+b_UCA+
+                              b_Intl +
+                              b_UCA:cl_def6_HHI_lag1+
+                              b_UCA:cl_Ceil_Then_Year+
+                              cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                              (1 | NAICS3/NAICS) + 
+                              (1 | Agency/Office),
+                            verbose=TRUE)
+glmer_examine(ln_CBre_Cons_15B)
+```
+
+```
+## [[1]]
+##                                       GVIF Df GVIF^(1/(2*Df))
+## cl_def6_HHI_lag1                  1.868937  1        1.367091
+## cl_def6_ratio_lag1                1.093987  1        1.045938
+## cl_def6_obl_lag1                  1.152979  1        1.073768
+## cl_US6_avg_sal_lag1               1.097368  1        1.047553
+## cl_def3_HHI_lag1                  2.459544  1        1.568293
+## cl_def3_ratio_lag1                1.101310  1        1.049433
+## cl_Ceil_Then_Year                 1.202628  1        1.096644
+## cl_Days                           1.165087  1        1.079392
+## Veh                               1.059687  4        1.007273
+## PricingFee                        1.039840  5        1.003914
+## b_UCA                             1.988647  1        1.410194
+## b_Intl                            1.003874  1        1.001935
+## cl_def6_HHI_lag1:b_UCA            1.218896  1        1.104036
+## cl_Ceil_Then_Year:b_UCA           1.933976  1        1.390675
+## cl_def6_HHI_lag1:cl_def6_obl_lag1 1.599268  1        1.264622
+## 
+## [[2]]
+## 
+## Intraclass Correlation Coefficient for Linear mixed model
+## 
+## Family : gaussian (identity)
+## Formula: ln_CBre_Then_Year ~ cl_def6_HHI_lag1 + cl_def6_ratio_lag1 + cl_def6_obl_lag1 + cl_US6_avg_sal_lag1 + cl_def3_HHI_lag1 + cl_def3_ratio_lag1 + cl_Ceil_Then_Year + cl_Days + Veh + PricingFee + b_UCA + b_Intl + b_UCA:cl_def6_HHI_lag1 + b_UCA:cl_Ceil_Then_Year + cl_def6_HHI_lag1:cl_def6_obl_lag1 + (1 | NAICS3/NAICS) + (1 | Agency/Office)
+## 
+##   ICC (Office:Agency): 0.0628
+##    ICC (NAICS:NAICS3): 0.0473
+##          ICC (NAICS3): 0.0290
+##          ICC (Agency): 0.0166
+## 
+## 
+## [[3]]
+## Office:Agency.(Intercept)  NAICS:NAICS3.(Intercept) 
+##                 0.2727158                 0.2366370 
+##        NAICS3.(Intercept)        Agency.(Intercept) 
+##                 0.1853797                 0.1403704
+```
+
+```r
+if(!exists("ln_CBre_Comp_15B"))
+  ln_CBre_Comp_15B <- lmer (data=def_breach,
+                            ln_CBre_Then_Year ~CompOffr+
+                              cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                              cl_def3_ratio_lag1+
+                              cl_Ceil_Then_Year+ cl_Days+
+                              Veh+
+                              PricingFee+b_UCA+
+                              b_Intl +
+                              b_UCA:CompOffr+
+                              b_UCA:cl_Ceil_Then_Year+
+                              (1 | NAICS3/NAICS) + 
+                              (1 | Agency/Office),
+                              verbose=TRUE)
+glmer_examine(ln_CBre_Comp_15B)
+```
+
+```
+## [[1]]
+##                             GVIF Df GVIF^(1/(2*Df))
+## CompOffr                1.143269  4        1.016877
+## cl_def6_ratio_lag1      1.092462  1        1.045209
+## cl_def6_obl_lag1        1.092019  1        1.044997
+## cl_US6_avg_sal_lag1     1.095268  1        1.046550
+## cl_def3_ratio_lag1      1.096865  1        1.047313
+## cl_Ceil_Then_Year       1.213547  1        1.101611
+## cl_Days                 1.166144  1        1.079881
+## Veh                     1.126111  4        1.014957
+## PricingFee              1.042483  5        1.004169
+## b_UCA                   2.189198  1        1.479594
+## b_Intl                  1.006283  1        1.003137
+## CompOffr:b_UCA          1.998390  4        1.090398
+## cl_Ceil_Then_Year:b_UCA 2.194605  1        1.481420
+## 
+## [[2]]
+## 
+## Intraclass Correlation Coefficient for Linear mixed model
+## 
+## Family : gaussian (identity)
+## Formula: ln_CBre_Then_Year ~ CompOffr + cl_def6_ratio_lag1 + cl_def6_obl_lag1 + cl_US6_avg_sal_lag1 + cl_def3_ratio_lag1 + cl_Ceil_Then_Year + cl_Days + Veh + PricingFee + b_UCA + b_Intl + b_UCA:CompOffr + b_UCA:cl_Ceil_Then_Year + (1 | NAICS3/NAICS) + (1 | Agency/Office)
+## 
+##   ICC (Office:Agency): 0.0618
+##    ICC (NAICS:NAICS3): 0.0466
+##          ICC (NAICS3): 0.0266
+##          ICC (Agency): 0.0166
+## 
+## 
+## [[3]]
+## [1] "Model failed to converge with max|grad| = 0.00219261 (tol = 0.002, component 1)"
+## 
+## [[4]]
+## Office:Agency.(Intercept)  NAICS:NAICS3.(Intercept) 
+##                 0.2697888                 0.2342975 
+##        NAICS3.(Intercept)        Agency.(Intercept) 
+##                 0.1771768                 0.1399361
+```
+
+```r
+if(!exists("ln_CBre_Cons_Comp_15B"))
+  ln_CBre_Cons_Comp_15B <- lmer (data=def_breach,
+                                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                                   cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                                   cl_Ceil_Then_Year+ cl_Days+
+                                   Veh+
+                                   PricingFee+b_UCA+
+                                   b_Intl +
+                                   b_UCA:CompOffr+
+                                   b_UCA:cl_def6_HHI_lag1+
+                                   b_UCA:cl_Ceil_Then_Year+
+                                   cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                                   (1 | NAICS3/NAICS) + 
+                                   (1 | Agency/Office),
+                                 verbose=TRUE)
+glmer_examine(ln_CBre_Cons_Comp_15B)
+```
+
+```
+## [[1]]
+##                                       GVIF Df GVIF^(1/(2*Df))
+## CompOffr                          1.145053  4        1.017076
+## cl_def6_HHI_lag1                  1.868056  1        1.366768
+## cl_def6_ratio_lag1                1.094300  1        1.046088
+## cl_def6_obl_lag1                  1.155284  1        1.074841
+## cl_US6_avg_sal_lag1               1.098517  1        1.048102
+## cl_def3_HHI_lag1                  2.454163  1        1.566577
+## cl_def3_ratio_lag1                1.101475  1        1.049512
+## cl_Ceil_Then_Year                 1.213931  1        1.101786
+## cl_Days                           1.167679  1        1.080592
+## Veh                               1.130075  4        1.015403
+## PricingFee                        1.045147  5        1.004425
+## b_UCA                             2.263016  1        1.504333
+## b_Intl                            1.006513  1        1.003251
+## CompOffr:b_UCA                    2.200087  4        1.103583
+## cl_def6_HHI_lag1:b_UCA            1.340832  1        1.157943
+## cl_Ceil_Then_Year:b_UCA           2.195518  1        1.481728
+## cl_def6_HHI_lag1:cl_def6_obl_lag1 1.596331  1        1.263460
+## 
+## [[2]]
+## 
+## Intraclass Correlation Coefficient for Linear mixed model
+## 
+## Family : gaussian (identity)
+## Formula: ln_CBre_Then_Year ~ CompOffr + cl_def6_HHI_lag1 + cl_def6_ratio_lag1 + cl_def6_obl_lag1 + cl_US6_avg_sal_lag1 + cl_def3_HHI_lag1 + cl_def3_ratio_lag1 + cl_Ceil_Then_Year + cl_Days + Veh + PricingFee + b_UCA + b_Intl + b_UCA:CompOffr + b_UCA:cl_def6_HHI_lag1 + b_UCA:cl_Ceil_Then_Year + cl_def6_HHI_lag1:cl_def6_obl_lag1 + (1 | NAICS3/NAICS) + (1 | Agency/Office)
+## 
+##   ICC (Office:Agency): 0.0617
+##    ICC (NAICS:NAICS3): 0.0461
+##          ICC (NAICS3): 0.0280
+##          ICC (Agency): 0.0164
+## 
+## 
+## [[3]]
+## Office:Agency.(Intercept)  NAICS:NAICS3.(Intercept) 
+##                 0.2698308                 0.2333137 
+##        NAICS3.(Intercept)        Agency.(Intercept) 
+##                 0.1817460                 0.1390986
+```
+
+```r
+stargazer::stargazer(ln_CBre_Cons_15B,ln_CBre_Comp_15B,ln_CBre_Cons_Comp_15B,type="text",
+                       digits=2)
+```
+
+```
+## 
+## =====================================================================
+##                                           Dependent variable:        
+##                                   -----------------------------------
+##                                            ln_CBre_Then_Year         
+##                                       (1)         (2)         (3)    
+## ---------------------------------------------------------------------
+## cl_def6_HHI_lag1                     -0.03                   -0.03   
+##                                     (0.03)                  (0.03)   
+##                                                                      
+## CompOffr1 offer                                -0.08***    -0.08***  
+##                                                 (0.02)      (0.02)   
+##                                                                      
+## CompOffr2 offers                               -0.09***    -0.09***  
+##                                                 (0.02)      (0.02)   
+##                                                                      
+## CompOffr3-4 offers                             -0.20***    -0.21***  
+##                                                 (0.02)      (0.02)   
+##                                                                      
+## CompOffr5+ offers                              -0.13***    -0.13***  
+##                                                 (0.02)      (0.02)   
+##                                                                      
+## cl_def6_ratio_lag1                   -0.02       -0.01       -0.01   
+##                                     (0.03)      (0.03)      (0.03)   
+##                                                                      
+## cl_def6_obl_lag1                    0.16***     0.16***     0.16***  
+##                                     (0.04)      (0.04)      (0.04)   
+##                                                                      
+## cl_US6_avg_sal_lag1                -0.16***    -0.16***    -0.16***  
+##                                     (0.05)      (0.05)      (0.05)   
+##                                                                      
+## cl_def3_HHI_lag1                    0.08**                  0.08***  
+##                                     (0.03)                  (0.03)   
+##                                                                      
+## cl_def3_ratio_lag1                   0.08        0.08        0.09    
+##                                     (0.09)      (0.09)      (0.09)   
+##                                                                      
+## cl_Ceil_Then_Year                   3.07***     3.08***     3.08***  
+##                                     (0.02)      (0.02)      (0.02)   
+##                                                                      
+## cl_Days                             0.19***     0.19***     0.19***  
+##                                     (0.02)      (0.02)      (0.02)   
+##                                                                      
+## VehS-IDC                            0.11***     0.12***     0.12***  
+##                                     (0.02)      (0.02)      (0.02)   
+##                                                                      
+## VehM-IDC                            0.07***     0.10***     0.10***  
+##                                     (0.02)      (0.02)      (0.02)   
+##                                                                      
+## VehFSS/GWAC                         -0.07*       -0.05       -0.05   
+##                                     (0.03)      (0.03)      (0.03)   
+##                                                                      
+## VehBPA/BOA                           -0.03       -0.01       -0.01   
+##                                     (0.05)      (0.05)      (0.05)   
+##                                                                      
+## PricingFeeOther FP                   -0.10       -0.12       -0.12   
+##                                     (0.10)      (0.10)      (0.10)   
+##                                                                      
+## PricingFeeIncentive                 0.76***     0.77***     0.77***  
+##                                     (0.10)      (0.10)      (0.10)   
+##                                                                      
+## PricingFeeCombination or Other      0.46***     0.46***     0.46***  
+##                                     (0.06)      (0.06)      (0.06)   
+##                                                                      
+## PricingFeeOther CB                  0.83***     0.83***     0.83***  
+##                                     (0.04)      (0.04)      (0.04)   
+##                                                                      
+## PricingFeeT&M/LH/FPLOE              0.74***     0.73***     0.74***  
+##                                     (0.06)      (0.06)      (0.06)   
+##                                                                      
+## b_UCA                                0.12*       0.04        0.06    
+##                                     (0.06)      (0.07)      (0.07)   
+##                                                                      
+## b_Intl                               0.08*      0.09**      0.09**   
+##                                     (0.04)      (0.04)      (0.04)   
+##                                                                      
+## cl_def6_HHI_lag1:b_UCA               0.17*                  0.20**   
+##                                     (0.09)                  (0.09)   
+##                                                                      
+## CompOffr1 offer:b_UCA                            0.17        0.16    
+##                                                 (0.12)      (0.12)   
+##                                                                      
+## CompOffr2 offers:b_UCA                           -0.13       -0.08   
+##                                                 (0.18)      (0.18)   
+##                                                                      
+## CompOffr3-4 offers:b_UCA                        0.57***     0.62***  
+##                                                 (0.15)      (0.15)   
+##                                                                      
+## CompOffr5+ offers:b_UCA                          0.05        0.13    
+##                                                 (0.15)      (0.15)   
+##                                                                      
+## cl_Ceil_Then_Year:b_UCA              -0.04       -0.11       -0.11   
+##                                     (0.07)      (0.08)      (0.08)   
+##                                                                      
+## cl_def6_HHI_lag1:cl_def6_obl_lag1   -0.06*                   -0.06   
+##                                     (0.04)                  (0.04)   
+##                                                                      
+## Constant                            7.35***     7.44***     7.43***  
+##                                     (0.10)      (0.10)      (0.10)   
+##                                                                      
+## ---------------------------------------------------------------------
+## Observations                        83,706      83,706      83,706   
+## Log Likelihood                    -167,511.50 -167,464.30 -167,467.70
+## Akaike Inf. Crit.                 335,079.00  334,992.60  335,007.50 
+## Bayesian Inf. Crit.               335,340.30  335,291.30  335,343.50 
+## =====================================================================
+## Note:                                     *p<0.1; **p<0.05; ***p<0.01
+```
+
+```r
+# save(ln_CBre_Cons_15B,ln_CBre_Comp_15B,ln_CBre_Cons_Comp_15B,file="..//Output//ln_CBre_15B.rdata")```
+```
+
 
 ## Output: Termination
 
@@ -6379,8 +6760,109 @@ odds_ratio(Term_Comp_13F_1m,"Term_Comp_13F_1m",walds = TRUE)
 
 ```r
 load(file="..//Output//Term_Cons_Comp_14C.rdata") 
+load(file="..//Output//Term_Cons_Comp_14B_1m.rdata") 
+stargazer(Term_Cons_Comp_14C_1m,type="text",
+                         digits=2)
+```
 
+```
+## 
+## ===============================================================
+##                                         Dependent variable:    
+##                                     ---------------------------
+##                                               b_Term           
+## ---------------------------------------------------------------
+## cl_def3_HHI_lag1                              0.24***          
+##                                               (0.05)           
+##                                                                
+## cl_def3_ratio_lag1                             -0.10           
+##                                               (0.11)           
+##                                                                
+## cl_def6_HHI_lag1                               -0.01           
+##                                               (0.05)           
+##                                                                
+## cl_def6_obl_lag1                               -0.05           
+##                                               (0.05)           
+##                                                                
+## cl_def6_ratio_lag1                             -0.07           
+##                                               (0.05)           
+##                                                                
+## cl_US6_avg_sal_lag1                            -0.03           
+##                                               (0.06)           
+##                                                                
+## CompOffr1 offer                                0.07*           
+##                                               (0.04)           
+##                                                                
+## CompOffr2 offers                              0.21***          
+##                                               (0.04)           
+##                                                                
+## CompOffr3-4 offers                            0.39***          
+##                                               (0.04)           
+##                                                                
+## CompOffr5+ offers                             0.73***          
+##                                               (0.04)           
+##                                                                
+## cl_Ceil                                       0.62***          
+##                                               (0.03)           
+##                                                                
+## cl_Days                                       0.82***          
+##                                               (0.04)           
+##                                                                
+## VehS-IDC                                     -0.64***          
+##                                               (0.03)           
+##                                                                
+## VehM-IDC                                     -0.38***          
+##                                               (0.06)           
+##                                                                
+## VehFSS/GWAC                                  -0.30***          
+##                                               (0.05)           
+##                                                                
+## VehBPA/BOA                                   -0.63***          
+##                                               (0.08)           
+##                                                                
+## PricingFeeOther FP                           -0.95***          
+##                                               (0.08)           
+##                                                                
+## PricingFeeIncentive                            -0.16           
+##                                               (0.22)           
+##                                                                
+## PricingFeeCombination or Other               -0.65***          
+##                                               (0.22)           
+##                                                                
+## PricingFeeOther CB                           -0.65***          
+##                                               (0.14)           
+##                                                                
+## PricingFeeT&M/LH/FPLOE                       -1.01***          
+##                                               (0.23)           
+##                                                                
+## b_UCA                                         1.09***          
+##                                               (0.09)           
+##                                                                
+## b_Intl                                         0.12*           
+##                                               (0.06)           
+##                                                                
+## cl_def6_HHI_lag1:cl_def6_obl_lag1              0.12*           
+##                                               (0.07)           
+##                                                                
+## cl_def3_HHI_lag1:cl_def3_ratio_lag1           0.58***          
+##                                               (0.15)           
+##                                                                
+## cl_Ceil:b_UCA                                -1.10***          
+##                                               (0.20)           
+##                                                                
+## Constant                                     -5.37***          
+##                                               (0.16)           
+##                                                                
+## ---------------------------------------------------------------
+## Observations                                 1,000,000         
+## Log Likelihood                              -47,123.20         
+## Akaike Inf. Crit.                            94,308.40         
+## Bayesian Inf. Crit.                          94,674.68         
+## ===============================================================
+## Note:                               *p<0.1; **p<0.05; ***p<0.01
+```
 
+```r
 if(!exists("Term_Cons_Comp_14C_1m")){
   # Term_Cons_Comp_14C <- glmer (data=smp,
   #                              b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
@@ -6602,7 +7084,9 @@ get_icc(Term_Cons_Comp_14C_1m)
 [1] "Model failed to converge with max|grad| = 0.0782055 (tol = 0.001, component 1)"
 
 # Tables for Paper
-## Competition Model
+
+## Models and Dep Var OR
+### Competition Model
 
 ```r
 # texreg::htmlreg(list(Term_Cons_08A3,
@@ -6774,7 +7258,7 @@ get_icc(Comp_Cons_15D_1m)
 #                         nrow=1)
 ```
 
-## Ceiling Breach Model
+### Likelihood Ceiling Breach Model
 
 ```r
 stargazer::stargazer(CBre_Cons_13B_1m,CBre_Comp_13C_1m,CBre_Cons_Comp_15A_1m,type="text",
@@ -6968,8 +7452,8 @@ texreg::htmlreg(list(CBre_Cons_13B_1m,CBre_Comp_13C_1m,CBre_Cons_Comp_15A_1m),fi
                         stars=c(0.1,0.05,0.01,0.001),
                 groups = list("Study Variables" = 2:7,
                               "NAICS Characteristics" = 8:11,
-                              "Contract Characteristics"=12:24),
-# "Interactions" = 25:31),
+                              "Contract Characteristics"=12:24,
+                              "Interactions" = 25:31),
                 custom.coef.map=list("(Intercept)"="(Intercept)",
                 "cl_def3_HHI_lag1"="Log(Subsector HHI)",
 "cl_def6_HHI_lag1"="Log(Det. Ind. HHI)",
@@ -6999,6 +7483,7 @@ texreg::htmlreg(list(CBre_Cons_13B_1m,CBre_Comp_13C_1m,CBre_Cons_Comp_15A_1m),fi
 "cl_def6_HHI_lag1:cl_def6_obl_lag1"="Log(Det. Ind. HHI):Log(Det. Ind. DoD Obl.)",
 # "cl_def3_HHI_lag1:cl_def3_ratio_lag1"="Log(Subsector HHI):Log(Subsector Ratio)"),
 "cl_def6_HHI_lag1:b_UCA"="Log(Det. Ind. HHI):UCA",
+"cl_Ceil:b_UCA"="Log(Init. Ceiling):UCA",
 "cl_Ceil_Then_Year:b_UCA"="Log(Init. Ceiling):UCA",
 "CompOffr1 offer:b_UCA"="Comp=1 offer:UCA",
 "CompOffr2 offers:b_UCA"="Comp=2 offers:UCA",
@@ -7069,8 +7554,381 @@ get_icc(CBre_Cons_Comp_15A_1m)
 #              nrow=1)
 ```
 
+texreg::htmlreg(list(ln_CBre_Cons_15B,ln_CBre_Comp_15B,ln_CBre_Cons_Comp_15B),file="..//Output//Breach_Contract_Model_15B.html",
+                single.row = TRUE)
 
- ## Terminations Model
+### Size Ceiling Breach Model
+
+```r
+stargazer::stargazer(ln_CBre_Cons_15A,ln_CBre_Comp_15A,ln_CBre_Cons_Comp_15A,type="text",
+                       digits=2)
+```
+
+```
+## 
+## ======================================================================================
+##                                                            Dependent variable:        
+##                                                    -----------------------------------
+##                                                             ln_CBre_Then_Year         
+##                                                        (1)         (2)         (3)    
+## --------------------------------------------------------------------------------------
+## cl_def6_HHI_lag1                                      -0.02                   -0.02   
+##                                                      (0.03)                  (0.03)   
+##                                                                                       
+## CompOffr1 offer                                                 -0.08***    -0.08***  
+##                                                                  (0.02)      (0.02)   
+##                                                                                       
+## CompOffr2 offers                                                -0.08***    -0.09***  
+##                                                                  (0.02)      (0.02)   
+##                                                                                       
+## CompOffr3-4 offers                                              -0.20***    -0.21***  
+##                                                                  (0.02)      (0.02)   
+##                                                                                       
+## CompOffr5+ offers                                               -0.13***    -0.13***  
+##                                                                  (0.02)      (0.02)   
+##                                                                                       
+## cl_def6_ratio_lag1                                    -0.01       -0.01       -0.01   
+##                                                      (0.03)      (0.03)      (0.03)   
+##                                                                                       
+## cl_def6_obl_lag1                                     0.15***     0.16***     0.15***  
+##                                                      (0.04)      (0.04)      (0.04)   
+##                                                                                       
+## cl_US6_avg_sal_lag1                                 -0.13***    -0.13***    -0.13***  
+##                                                      (0.05)      (0.05)      (0.05)   
+##                                                                                       
+## cl_def3_HHI_lag1                                     0.05**                  0.06**   
+##                                                      (0.03)                  (0.03)   
+##                                                                                       
+## cl_def3_ratio_lag1                                    0.08        0.08        0.08    
+##                                                      (0.09)      (0.09)      (0.09)   
+##                                                                                       
+## cl_Ceil_Then_Year                                    3.06***     3.06***     3.06***  
+##                                                      (0.02)      (0.02)      (0.02)   
+##                                                                                       
+## cl_Days                                              0.19***     0.19***     0.19***  
+##                                                      (0.02)      (0.02)      (0.02)   
+##                                                                                       
+## VehS-IDC                                             0.10***     0.12***     0.12***  
+##                                                      (0.02)      (0.02)      (0.02)   
+##                                                                                       
+## VehM-IDC                                             0.07***     0.09***     0.10***  
+##                                                      (0.02)      (0.02)      (0.02)   
+##                                                                                       
+## VehFSS/GWAC                                          -0.07**     -0.06*      -0.06*   
+##                                                      (0.03)      (0.03)      (0.03)   
+##                                                                                       
+## VehBPA/BOA                                            -0.03       -0.01       -0.01   
+##                                                      (0.05)      (0.05)      (0.05)   
+##                                                                                       
+## PricingFeeOther FP                                    -0.03       -0.05       -0.05   
+##                                                      (0.11)      (0.11)      (0.11)   
+##                                                                                       
+## PricingFeeIncentive                                  0.91***     0.91***     0.91***  
+##                                                      (0.13)      (0.13)      (0.13)   
+##                                                                                       
+## PricingFeeCombination or Other                       0.42***     0.42***     0.41***  
+##                                                      (0.06)      (0.06)      (0.06)   
+##                                                                                       
+## PricingFeeOther CB                                   0.89***     0.89***     0.89***  
+##                                                      (0.04)      (0.04)      (0.04)   
+##                                                                                       
+## PricingFeeT&M/LH/FPLOE                               0.73***     0.73***     0.73***  
+##                                                      (0.06)      (0.06)      (0.06)   
+##                                                                                       
+## b_UCA                                                 0.09*       -0.01       0.01    
+##                                                      (0.05)      (0.06)      (0.06)   
+##                                                                                       
+## b_Intl                                               0.08**      0.09**      0.09**   
+##                                                      (0.04)      (0.04)      (0.04)   
+##                                                                                       
+## cl_def6_HHI_lag1:b_UCA                                0.15*                  0.18**   
+##                                                      (0.09)                  (0.09)   
+##                                                                                       
+## CompOffr1 offer:b_UCA                                             0.14        0.13    
+##                                                                  (0.12)      (0.12)   
+##                                                                                       
+## CompOffr2 offers:b_UCA                                            -0.19       -0.14   
+##                                                                  (0.18)      (0.18)   
+##                                                                                       
+## CompOffr3-4 offers:b_UCA                                         0.51***     0.55***  
+##                                                                  (0.14)      (0.14)   
+##                                                                                       
+## CompOffr5+ offers:b_UCA                                           -0.02       0.06    
+##                                                                  (0.14)      (0.14)   
+##                                                                                       
+## cl_US6_avg_sal_lag1:PricingFeeOther FP                0.34*       0.34*       0.33*   
+##                                                      (0.20)      (0.20)      (0.20)   
+##                                                                                       
+## cl_US6_avg_sal_lag1:PricingFeeIncentive             -0.94***    -0.92***    -0.92***  
+##                                                      (0.33)      (0.33)      (0.33)   
+##                                                                                       
+## cl_US6_avg_sal_lag1:PricingFeeCombination or Other  -0.32***    -0.33***    -0.33***  
+##                                                      (0.11)      (0.11)      (0.11)   
+##                                                                                       
+## cl_US6_avg_sal_lag1:PricingFeeOther CB              -0.56***    -0.58***    -0.58***  
+##                                                      (0.10)      (0.10)      (0.10)   
+##                                                                                       
+## cl_US6_avg_sal_lag1:PricingFeeT&M/LH/FPLOE          -0.39***    -0.41***    -0.41***  
+##                                                      (0.12)      (0.12)      (0.12)   
+##                                                                                       
+## Constant                                             7.38***     7.47***     7.46***  
+##                                                      (0.10)      (0.10)      (0.10)   
+##                                                                                       
+## --------------------------------------------------------------------------------------
+## Observations                                         83,706      83,706      83,706   
+## Log Likelihood                                     -165,715.30 -165,666.80 -165,669.50
+## Akaike Inf. Crit.                                  331,492.70  331,405.50  331,416.90 
+## Bayesian Inf. Crit.                                331,782.10  331,741.60  331,781.00 
+## ======================================================================================
+## Note:                                                      *p<0.1; **p<0.05; ***p<0.01
+```
+
+```r
+stargazer::stargazer(ln_CBre_Cons_15B,ln_CBre_Comp_15B,ln_CBre_Cons_Comp_15B,type="text",
+                       digits=2)
+```
+
+```
+## 
+## =====================================================================
+##                                           Dependent variable:        
+##                                   -----------------------------------
+##                                            ln_CBre_Then_Year         
+##                                       (1)         (2)         (3)    
+## ---------------------------------------------------------------------
+## cl_def6_HHI_lag1                     -0.03                   -0.03   
+##                                     (0.03)                  (0.03)   
+##                                                                      
+## CompOffr1 offer                                -0.08***    -0.08***  
+##                                                 (0.02)      (0.02)   
+##                                                                      
+## CompOffr2 offers                               -0.09***    -0.09***  
+##                                                 (0.02)      (0.02)   
+##                                                                      
+## CompOffr3-4 offers                             -0.20***    -0.21***  
+##                                                 (0.02)      (0.02)   
+##                                                                      
+## CompOffr5+ offers                              -0.13***    -0.13***  
+##                                                 (0.02)      (0.02)   
+##                                                                      
+## cl_def6_ratio_lag1                   -0.02       -0.01       -0.01   
+##                                     (0.03)      (0.03)      (0.03)   
+##                                                                      
+## cl_def6_obl_lag1                    0.16***     0.16***     0.16***  
+##                                     (0.04)      (0.04)      (0.04)   
+##                                                                      
+## cl_US6_avg_sal_lag1                -0.16***    -0.16***    -0.16***  
+##                                     (0.05)      (0.05)      (0.05)   
+##                                                                      
+## cl_def3_HHI_lag1                    0.08**                  0.08***  
+##                                     (0.03)                  (0.03)   
+##                                                                      
+## cl_def3_ratio_lag1                   0.08        0.08        0.09    
+##                                     (0.09)      (0.09)      (0.09)   
+##                                                                      
+## cl_Ceil_Then_Year                   3.07***     3.08***     3.08***  
+##                                     (0.02)      (0.02)      (0.02)   
+##                                                                      
+## cl_Days                             0.19***     0.19***     0.19***  
+##                                     (0.02)      (0.02)      (0.02)   
+##                                                                      
+## VehS-IDC                            0.11***     0.12***     0.12***  
+##                                     (0.02)      (0.02)      (0.02)   
+##                                                                      
+## VehM-IDC                            0.07***     0.10***     0.10***  
+##                                     (0.02)      (0.02)      (0.02)   
+##                                                                      
+## VehFSS/GWAC                         -0.07*       -0.05       -0.05   
+##                                     (0.03)      (0.03)      (0.03)   
+##                                                                      
+## VehBPA/BOA                           -0.03       -0.01       -0.01   
+##                                     (0.05)      (0.05)      (0.05)   
+##                                                                      
+## PricingFeeOther FP                   -0.10       -0.12       -0.12   
+##                                     (0.10)      (0.10)      (0.10)   
+##                                                                      
+## PricingFeeIncentive                 0.76***     0.77***     0.77***  
+##                                     (0.10)      (0.10)      (0.10)   
+##                                                                      
+## PricingFeeCombination or Other      0.46***     0.46***     0.46***  
+##                                     (0.06)      (0.06)      (0.06)   
+##                                                                      
+## PricingFeeOther CB                  0.83***     0.83***     0.83***  
+##                                     (0.04)      (0.04)      (0.04)   
+##                                                                      
+## PricingFeeT&M/LH/FPLOE              0.74***     0.73***     0.74***  
+##                                     (0.06)      (0.06)      (0.06)   
+##                                                                      
+## b_UCA                                0.12*       0.04        0.06    
+##                                     (0.06)      (0.07)      (0.07)   
+##                                                                      
+## b_Intl                               0.08*      0.09**      0.09**   
+##                                     (0.04)      (0.04)      (0.04)   
+##                                                                      
+## cl_def6_HHI_lag1:b_UCA               0.17*                  0.20**   
+##                                     (0.09)                  (0.09)   
+##                                                                      
+## CompOffr1 offer:b_UCA                            0.17        0.16    
+##                                                 (0.12)      (0.12)   
+##                                                                      
+## CompOffr2 offers:b_UCA                           -0.13       -0.08   
+##                                                 (0.18)      (0.18)   
+##                                                                      
+## CompOffr3-4 offers:b_UCA                        0.57***     0.62***  
+##                                                 (0.15)      (0.15)   
+##                                                                      
+## CompOffr5+ offers:b_UCA                          0.05        0.13    
+##                                                 (0.15)      (0.15)   
+##                                                                      
+## cl_Ceil_Then_Year:b_UCA              -0.04       -0.11       -0.11   
+##                                     (0.07)      (0.08)      (0.08)   
+##                                                                      
+## cl_def6_HHI_lag1:cl_def6_obl_lag1   -0.06*                   -0.06   
+##                                     (0.04)                  (0.04)   
+##                                                                      
+## Constant                            7.35***     7.44***     7.43***  
+##                                     (0.10)      (0.10)      (0.10)   
+##                                                                      
+## ---------------------------------------------------------------------
+## Observations                        83,706      83,706      83,706   
+## Log Likelihood                    -167,511.50 -167,464.30 -167,467.70
+## Akaike Inf. Crit.                 335,079.00  334,992.60  335,007.50 
+## Bayesian Inf. Crit.               335,340.30  335,291.30  335,343.50 
+## =====================================================================
+## Note:                                     *p<0.1; **p<0.05; ***p<0.01
+```
+
+```r
+texreg::htmlreg(list(ln_CBre_Cons_15A,ln_CBre_Comp_15A,ln_CBre_Cons_Comp_15A),file="..//Output//Breach_Contract_Model_15A.html",
+                single.row = TRUE,
+                custom.model.name=c("Concentration",
+                                    "Competition",
+                                    "Both"),
+                        stars=c(0.1,0.05,0.01,0.001),
+                groups = list("Study Variables" = 2:7,
+                              "NAICS Characteristics" = 8:11,
+                              "Contract Characteristics"=12:24,
+                              "Interactions" = 25:34),
+                custom.coef.map=list("(Intercept)"="(Intercept)",
+                "cl_def3_HHI_lag1"="Log(Subsector HHI)",
+"cl_def6_HHI_lag1"="Log(Det. Ind. HHI)",
+"CompOffr1 offer"="Comp=1 offer",
+"CompOffr2 offers"="Comp=2 offers",
+"CompOffr3-4 offers"="Comp=3-4 offers",
+"CompOffr5+ offers"="Comp=5+ offers",
+"cl_def3_ratio_lag1"="Log(Subsector Ratio)",
+"cl_def6_obl_lag1"="Log(Det. Ind. DoD Obl.)",
+"cl_def6_ratio_lag1"="Log(Det. Ind. Ratio)",
+"cl_US6_avg_sal_lag1"="Log(Det. Ind. U.S. Avg. Salary)",
+"cl_Ceil"="Log(Init. Ceiling)",
+"cl_Ceil_Then_Year"="Log(Init. Ceiling)",
+"cl_Days"="Log(Init. Days)",
+"VehS-IDC"="Vehicle=S-IDC",
+"VehM-IDC"="Vehicle=M-IDC",
+"VehFSS/GWAC"="Vehicle=FSS/GWAC",
+"VehBPA/BOA"="Vehicle=BPA/BOA",
+"PricingFeeOther FP"="Pricing=Other FP",
+"PricingFeeIncentive"="Pricing=Incentive Fee",
+"PricingFeeCombination or Other"="Pricing=Combination or Other",
+"PricingFeeOther CB"="Pricing=Other CB",
+"PricingFeeT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
+"b_UCA"="UCA",
+"b_Intl"="Performed Abroad",
+# "cl_def6_HHI_lag1:cl_Days"="Log(Det. Ind. HHI):Log(Init. Days)",
+"cl_def6_HHI_lag1:cl_def6_obl_lag1"="Log(Det. Ind. HHI):Log(Det. Ind. DoD Obl.)",
+# "cl_def3_HHI_lag1:cl_def3_ratio_lag1"="Log(Subsector HHI):Log(Subsector Ratio)"),
+"cl_def6_HHI_lag1:b_UCA"="Log(Det. Ind. HHI):UCA",
+"cl_Ceil:b_UCA"="Log(Init. Ceiling):UCA",
+"cl_Ceil_Then_Year:b_UCA"="Log(Init. Ceiling):UCA",
+"CompOffr1 offer:b_UCA"="Comp=1 offer:UCA",
+"CompOffr2 offers:b_UCA"="Comp=2 offers:UCA",
+"CompOffr3-4 offers:b_UCA"="Comp=3-4 offers:UCA",
+"CompOffr5+ offers:b_UCA"="Comp=5+ offers:UCA",
+"cl_US6_avg_sal_lag1:PricingFeeOther FP"="Pricing=Other FP:Log(Det. Ind. U.S. Avg. Salary)",
+"cl_US6_avg_sal_lag1:PricingFeeIncentive"="Pricing=Incentive Fee:Log(Det. Ind. U.S. Avg. Salary)",
+"cl_US6_avg_sal_lag1:PricingFeeCombination or Other"=
+"Pricing=Comb./or Other:Log(Det. Ind. U.S. Avg. Salary)",
+"cl_US6_avg_sal_lag1:PricingFeeOther CB"="Pricing=Other CB:Log(Det. Ind. U.S. Avg. Salary)",
+"cl_US6_avg_sal_lag1:PricingFeeT&M/LH/FPLOE"=
+"Pricing=T&M/LH/FP:LoE:Log(Det. Ind. U.S. Avg. Salary)"
+
+),
+                bold=0.05,
+custom.note="%stars. Logged inputs are rescaled.",
+caption="Table 2: Logit Model Results for Ceiling Breaches",
+caption.above=TRUE)
+```
+
+```
+## The table was written to the file '..//Output//Breach_Contract_Model_15A.html'.
+```
+
+```r
+texreg::htmlreg(list(ln_CBre_Cons_15B,ln_CBre_Comp_15B,ln_CBre_Cons_Comp_15B),file="..//Output//Breach_Contract_Model_15B.html",
+                single.row = TRUE,
+                custom.model.name=c("Concentration",
+                                    "Competition",
+                                    "Both"),
+                        stars=c(0.1,0.05,0.01,0.001),
+                groups = list("Study Variables" = 2:7,
+                              "NAICS Characteristics" = 8:11,
+                              "Contract Characteristics"=12:24,
+                              "Interactions" = 25:31),
+                custom.coef.map=list("(Intercept)"="(Intercept)",
+                "cl_def3_HHI_lag1"="Log(Subsector HHI)",
+"cl_def6_HHI_lag1"="Log(Det. Ind. HHI)",
+"CompOffr1 offer"="Comp=1 offer",
+"CompOffr2 offers"="Comp=2 offers",
+"CompOffr3-4 offers"="Comp=3-4 offers",
+"CompOffr5+ offers"="Comp=5+ offers",
+"cl_def3_ratio_lag1"="Log(Subsector Ratio)",
+"cl_def6_obl_lag1"="Log(Det. Ind. DoD Obl.)",
+"cl_def6_ratio_lag1"="Log(Det. Ind. Ratio)",
+"cl_US6_avg_sal_lag1"="Log(Det. Ind. U.S. Avg. Salary)",
+"cl_Ceil"="Log(Init. Ceiling)",
+"cl_Ceil_Then_Year"="Log(Init. Ceiling)",
+"cl_Days"="Log(Init. Days)",
+"VehS-IDC"="Vehicle=S-IDC",
+"VehM-IDC"="Vehicle=M-IDC",
+"VehFSS/GWAC"="Vehicle=FSS/GWAC",
+"VehBPA/BOA"="Vehicle=BPA/BOA",
+"PricingFeeOther FP"="Pricing=Other FP",
+"PricingFeeIncentive"="Pricing=Incentive Fee",
+"PricingFeeCombination or Other"="Pricing=Combination or Other",
+"PricingFeeOther CB"="Pricing=Other CB",
+"PricingFeeT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
+"b_UCA"="UCA",
+"b_Intl"="Performed Abroad",
+# "cl_def6_HHI_lag1:cl_Days"="Log(Det. Ind. HHI):Log(Init. Days)",
+"cl_def6_HHI_lag1:cl_def6_obl_lag1"="Log(Det. Ind. HHI):Log(Det. Ind. DoD Obl.)",
+# "cl_def3_HHI_lag1:cl_def3_ratio_lag1"="Log(Subsector HHI):Log(Subsector Ratio)"),
+"cl_def6_HHI_lag1:b_UCA"="Log(Det. Ind. HHI):UCA",
+"cl_Ceil:b_UCA"="Log(Init. Ceiling):UCA",
+"cl_Ceil_Then_Year:b_UCA"="Log(Init. Ceiling):UCA",
+"CompOffr1 offer:b_UCA"="Comp=1 offer:UCA",
+"CompOffr2 offers:b_UCA"="Comp=2 offers:UCA",
+"CompOffr3-4 offers:b_UCA"="Comp=3-4 offers:UCA",
+"CompOffr5+ offers:b_UCA"="Comp=5+ offers:UCA"
+),
+                bold=0.05,
+custom.note="%stars. Logged inputs are rescaled.",
+caption="Table 2: Logit Model Results for Ceiling Breaches",
+caption.above=TRUE)
+```
+
+```
+## The table was written to the file '..//Output//Breach_Contract_Model_15B.html'.
+```
+
+```r
+#https://www.lcampanelli.org/mixed-effects-modeling-lme4/
+# gridExtra::grid.arrange(dotplot(ranef(CBre_Cons_13B.restart, condVar = T), strip = T, scales=list(relation='free'))$Agency,
+#              dotplot(ranef(CBre_Comp_13C, condVar = T), strip = T, scales=list(relation='free'))$Agency,
+#              dotplot(ranef(CBre_Cons_Comp_15A, condVar = T), strip = T, scales=list(relation='free'))$Agency,
+#              nrow=1)
+```
+
+### Terminations Model
 
 ```r
 # texreg::htmlreg(list(Term_Cons_08A3,
@@ -7157,7 +8015,7 @@ get_icc(CBre_Cons_Comp_15A_1m)
 #                                     "Competition",
 #                                     "Both",
 #                                     "Both 1m"
-texreg::htmlreg(list(Term_Cons_13E_1m,Term_Comp_13F_1m,Term_Cons_Comp_14C_1m),file="..//Output//Term_Model_1m.html",
+texreg::htmlreg(list(Term_Cons_13E_1m,Term_Comp_13F_1m,Term_Cons_Comp_14B_1m),file="..//Output//Term_Model_1m.html",
                 single.row = TRUE,
                 custom.model.name=c("Concentration",
                                     "Competition",
@@ -7259,8 +8117,8 @@ write.csv(get_study_variables_odds_ratio(term.or),file="..//Output//termination_
 ## study_coef_list: the condition has length > 1 and only the first element
 ## will be used
 ```
-
-## Consolidation Odds Ratios
+## Odds Ratios by Hypothesis
+### Consolidation Odds Ratios
 
 
 ```r
@@ -7297,7 +8155,47 @@ write.csv(get_study_variables_odds_ratio(subset(cons.or,variable %in% c("cl_def3
 # centered_log_description(smp1m$l_def3_HHI_lag1,"detailed industrial HHI score")
 ```
 
-## Competition Odds Ratios
+
+### Competition Odds Ratios
+
+```r
+# or_ceil<-odds_ratio(CBre_Cons_Comp_15A,"CBre_Cons_Comp_15A","Both","Ceiling Breaches",walds = TRUE)
+# or_term<-odds_ratio(Term_Cons_Comp_14B,"Term_Cons_Comp_14B","Both","Terminations",walds = TRUE)
+# 
+# cons.or<-rbind(or_ceil,or_term)
+# 
+# write.csv(get_study_variables_odds_ratio(subset(cons.or,variable %in% c("cl_def3_HHI_lag1","cl_def6_HHI_lag1"))),
+#           file="..//Output//consolidation_odds_ratio.csv",row.names=FALSE)
+
+
+or_ceil<-odds_ratio(CBre_Cons_Comp_15A_1m,"CBre_Cons_Comp_15A_1m","Both","Ceiling Breaches",walds = TRUE)
+or_term<-odds_ratio(Term_Cons_Comp_14C_1m,"Term_Cons_Comp_14C_1m","Both","Terminations",walds = TRUE)
+
+cons.or<-rbind(or_ceil,or_term)
+
+write.csv(get_study_variables_odds_ratio(subset(cons.or,variable %in% c("CompOffr1 offer",
+                                                                        "CompOffr2 offers",
+                                                                        "CompOffr3-4 offers",
+                                                                        "CompOffr5+ offers"))),
+          file="..//Output//competition_odds_ratio_1m.csv",row.names=FALSE)
+```
+
+```
+## Warning in if (!is.na(study_coef_list)) levels(or.df$Variable) <-
+## study_coef_list: the condition has length > 1 and only the first element
+## will be used
+```
+
+```r
+# centered_description(smp1m$def6_HHI_lag1,"subsector HHI score")
+# centered_log_description(smp1m$l_def6_HHI_lag1,"detailed industrial HHI score")
+# 
+# 
+# centered_description(smp1m$def3_HHI_lag1,"subsector HHI score")
+# centered_log_description(smp1m$l_def3_HHI_lag1,"detailed industrial HHI score")
+```
+
+### Both Odds Ratios
 
 ```r
 # or_ceil<-odds_ratio(CBre_Cons_Comp_15A,"CBre_Cons_Comp_15A","Both","Ceiling Breaches",walds = TRUE)
@@ -7315,7 +8213,11 @@ or_term<-odds_ratio(Term_Cons_Comp_14C_1m,"CBre_Cons_Comp_15A_1m","Both","Termin
 
 comp.or<-rbind(or_ceil,or_term)
 
-write.csv(get_study_variables_odds_ratio(subset(comp.or,!variable %in% c("cl_def3_HHI_lag1","cl_def6_HHI_lag1"))),
+write.csv(get_study_variables_odds_ratio(subset(comp.or,!variable %in% c("cl_def3_HHI_lag1","cl_def6_HHI_lag1",
+                                                                         "CompOffr1 offer",
+                                                                        "CompOffr2 offers",
+                                                                        "CompOffr3-4 offers",
+                                                                        "CompOffr5+ offers"))),
           file="..//Output//competition_odds_ratio_1m.csv",row.names=FALSE)
 ```
 
@@ -7329,27 +8231,47 @@ write.csv(get_study_variables_odds_ratio(subset(comp.or,!variable %in% c("cl_def
 # dotplot(ranef(Term_Cons_13E, condVar = T), strip = T, scales=list(relation='free'))$NAICS3
 ```
 
- ## Residuals Plot
+## Residuals Plot
 
+
+### Breach Likelihood
 
 ```r
 residual_cbre<-gridExtra::grid.arrange(
   binned_fitted_versus_residuals(CBre_Cons_13B_1m,bins=50)+
     labs(title="Concentration Binned Actuals",caption=NULL,
          x="Estimated Pr(Ceiling Breach)",y="Actual Pr(Ceiling Breach)"),
-  residuals_binned(CBre_Cons_13B_1m, bins=50)+labs(title="Concentration Binned Residual Plot"),
+  residuals_binned(CBre_Cons_13B_1m, bins=50)+labs(title="Concentration Binned Residual Plot",
+                                                   x="Estimated Pr(Ceiling Breach)"),
   binned_fitted_versus_residuals(CBre_Comp_13C_1m,bins=50)+
     labs(title="Competition Binned Actuals Plot",caption=NULL,
          x="Estimated Pr(Ceiling Breach)",y="Actual Pr(Ceiling Breach)"),
-residuals_binned(CBre_Comp_13C_1m, bins=50)+labs(title="Competition Binned Residuals Plot"),
+residuals_binned(CBre_Comp_13C_1m, bins=50)+labs(title="Competition Binned Residuals Plot",
+                                                 x="Estimated Pr(Ceiling Breach)"),
 binned_fitted_versus_residuals(CBre_Cons_Comp_15A_1m,bins=50)+
   labs(title="Both Binned Actuals",
        caption=NULL,
          x="Estimated Pr(Ceiling Breach)",y="Actual Pr(Ceiling Breach)"),
-residuals_binned(CBre_Cons_Comp_15A_1m, bins=50)+labs(title="Both Binned Residuals Plot"),ncol=2)
+residuals_binned(CBre_Cons_Comp_15A_1m, bins=50)+labs(title="Both Binned Residuals Plot",
+                                                      x="Estimated Pr(Ceiling Breach)"),ncol=2)
 ```
 
-![](monopoly_results_summary_files/figure-html/Residuals_1m-1.png)<!-- -->
+```
+## Warning in residuals_binned(CBre_Cons_13B_1m, bins = 50): Always uses Xlb
+## Estimated Pr(Termination), should update.
+```
+
+```
+## Warning in residuals_binned(CBre_Comp_13C_1m, bins = 50): Always uses Xlb
+## Estimated Pr(Termination), should update.
+```
+
+```
+## Warning in residuals_binned(CBre_Cons_Comp_15A_1m, bins = 50): Always uses
+## Xlb Estimated Pr(Termination), should update.
+```
+
+![](monopoly_results_summary_files/figure-html/b_CBre_Residuals_1m-1.png)<!-- -->
 
 ```r
 residual_cbre
@@ -7369,7 +8291,53 @@ residual_cbre
 ```r
 ggsave(residual_cbre,file="..//Output//residual_cbre_1m.png",width=7.5, height=8.5)
 ggsave(residual_cbre,file="..//Output//residual_cbre_1m.eps",width=7.5, height=8.5)
+```
 
+
+### Breach Size
+
+```r
+if(file.exists("..//Output//residual_l_cbre.rdata")) load("..//Output//residual_l_cbre.rdata")
+
+residual_l_cbre<-gridExtra::grid.arrange(
+    binned_fitted_versus_residuals(ln_CBre_Cons_15A,bins=50)+
+    labs(title="Concentration Binned Actuals",caption=NULL,
+           x="Estimated Mean(Log(Breach Size) | Breach)",y="Actual Mean(Log(Breach Size) | Breach)"),
+    resid_plot(ln_CBre_Cons_15A,sample=25000)+labs(title="Sample of 25,000 Breach Size Residuals",
+                                            x="Estimated Log(Breach Size) | Breach"),
+    
+    binned_fitted_versus_residuals(ln_CBre_Comp_15A,bins=50)+
+    labs(title="Competition Binned Actuals Plot",caption=NULL,
+           x="Estimated Mean(Log(Breach Size) | Breach)",y="Actual Mean(Log(Breach Size) | Breach)"),
+    resid_plot(ln_CBre_Comp_15A,sample=25000)+labs(title="Sample of 25,000 Breach Size Residuals",
+                                            x="Estimated Log(Breach Size) | Breach"),
+    
+    binned_fitted_versus_residuals(ln_CBre_Cons_Comp_15A,bins=50)+
+    labs(title="Both Binned Actuals Plot",caption=NULL,
+           x="Estimated Mean(Log(Breach Size) | Breach)",y="Actual Mean(Log(Breach Size) | Breach)"),
+    resid_plot(ln_CBre_Cons_Comp_15A,sample=25000)+labs(title="Sample of 25,000 Breach Size Residuals",
+                                            x="Estimated Log(Breach Size) | Breach")
+
+
+)
+```
+
+![](monopoly_results_summary_files/figure-html/l_CBre_Residual-1.png)<!-- -->
+
+```r
+save(residual_l_cbre,file="..//Output//residual_l_cbre.rdata")
+ggsave(residual_l_cbre,file="..//Output//residual_l_cbre_1m.png",width=7.5, height=8.5)
+ggsave(residual_l_cbre,file="..//Output//residual_l_cbre_1m.eps",width=7.5, height=8.5)
+```
+
+```
+## Warning in grid.Call.graphics(C_polygon, x$x, x$y, index): semi-
+## transparency is not supported on this device: reported only once per page
+```
+
+### Term Residual
+
+```r
 residual_term<-gridExtra::grid.arrange(
   binned_fitted_versus_residuals(Term_Cons_13E_1m,bins=50)+
     labs(title="Concentration Binned Actuals",caption=NULL,
@@ -7386,7 +8354,22 @@ binned_fitted_versus_residuals(Term_Cons_Comp_14C_1m,bins=50)+
 residuals_binned(Term_Cons_Comp_14C_1m, bins=50)+labs(title="Binned Residuals Plot"),ncol=2)
 ```
 
-![](monopoly_results_summary_files/figure-html/Residuals_1m-2.png)<!-- -->
+```
+## Warning in residuals_binned(Term_Cons_13E_1m, bins = 50): Always uses Xlb
+## Estimated Pr(Termination), should update.
+```
+
+```
+## Warning in residuals_binned(Term_Comp_13F_1m, bins = 50): Always uses Xlb
+## Estimated Pr(Termination), should update.
+```
+
+```
+## Warning in residuals_binned(Term_Cons_Comp_14C_1m, bins = 50): Always uses
+## Xlb Estimated Pr(Termination), should update.
+```
+
+![](monopoly_results_summary_files/figure-html/Term_Residual-1.png)<!-- -->
 
 ```r
 residual_term
