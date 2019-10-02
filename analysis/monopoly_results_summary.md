@@ -373,7 +373,7 @@ summary(NAICS_summary$naics_count_rank)
 ```
 
 ```r
-NAICS_summary$NAICS_shorthand<-swr(NAICS_summary$NAICS_shorthand,nwrap = 16)
+NAICS_summary$NAICS_shorthand<-swr(NAICS_summary$NAICS_shorthand,nwrap = 14)
 # NAICS_summary$CY<-factor(paste("'",substring(as.character(NAICS_summary$CY),3,4),sep=""))
 
 NAICS3top8<-ggplot(subset(NAICS_summary,naics_dollar_rank<=8),
@@ -421,10 +421,12 @@ NAICS_long<-melt(NAICS_long, id=c("NAICS3","naics_dollar_rank","naics_count_rank
 #Drop the ratios and average salaries w/ unique values
 # NAICS_long<-NAICS_long[NAICS_long$variable %in% c(),]
 
+NAICS_long$value[NAICS_long$variable=="def3_obl_lag1"]<-NAICS_long$value[NAICS_long$variable=="def3_obl_lag1"]/1e9
+NAICS_long$value[NAICS_long$variable=="def3_ratio_lag1"]<-NAICS_long$value[NAICS_long$variable=="def3_ratio_lag1"]*1e2
 
 levels(NAICS_long$variable)<- list("Herfindahl-\nHerschman Index"=c("def3_HHI_lag1"),
-                                   "Defense Obligations"=c("def3_obl_lag1"),
-                                   "Defense Obligations\nto U.S. Revenue Ratio"=c("def3_ratio_lag1"))
+                                   "Defense Obligations\n(Billions)"=c("def3_obl_lag1"),
+                                   "Def. Obligations to\nU.S. Revenue Ratio\n(Percent)"=c("def3_ratio_lag1"))
 
 NAICS_long$high<-2500
 NAICS_long$high[NAICS_long$variable!="Herfindahl-\nHerschman Index"]<-NA
@@ -455,7 +457,7 @@ NAICS3long_wide<-ggplot(subset(NAICS_long,naics_dollar_rank<=8),
 ![](monopoly_results_summary_files/figure-html/NAICS3_Summary-2.png)<!-- -->
 
 ```r
-ggsave(NAICS3long_wide,file="..//Output\\NAICS3long.png",width=9.5,height=5.5,dpi=600)
+ggsave(NAICS3long_wide+theme(text=element_text(size=13)),file="..//Output\\JSCAN\\Figure 2.png",width=9.5,height=6,dpi=600)
 ```
 
 ```
@@ -465,7 +467,7 @@ ggsave(NAICS3long_wide,file="..//Output\\NAICS3long.png",width=9.5,height=5.5,dp
 ```
 
 ```r
-ggsave(NAICS3long_wide,file="..//Output\\NAICS3long.eps",width=9.5,height=5.5,dpi=600)
+ggsave(NAICS3long_wide+theme(text=element_text(size=13)),file="..//Output\\JSCAN\\Figure 2.eps",width=9.5,height=6,dpi=600)
 ```
 
 ```
@@ -568,7 +570,7 @@ summary(NAICS_summary$naics_count_rank)
 ```
 
 ```r
-NAICS_summary$NAICS_shorthand<-swr(NAICS_summary$NAICS_shorthand,nwrap = 16)
+NAICS_summary$NAICS_shorthand<-swr(NAICS_summary$NAICS_shorthand,nwrap = 14)
 # NAICS_summary$CY<-factor(paste("'",substring(as.character(NAICS_summary$CY),3,4),sep=""))
 
 NAICS6top8<-ggplot(subset(NAICS_summary,naics_dollar_rank<=8),
@@ -616,11 +618,13 @@ NAICS_long<-melt(NAICS_long, id=c("principalnaicscode","naics_dollar_rank","naic
 
 #Drop the ratios and average salaries w/ unique values
 # NAICS_long<-NAICS_long[NAICS_long$variable %in% c(),]
+NAICS_long$value[NAICS_long$variable=="def6_obl_lag1"]<-NAICS_long$value[NAICS_long$variable=="def6_obl_lag1"]/1e9
+NAICS_long$value[NAICS_long$variable=="def6_ratio_lag1"]<-NAICS_long$value[NAICS_long$variable=="def6_ratio_lag1"]*1e2
 
 
 levels(NAICS_long$variable)<- list("Herfindahl-\nHerschman Index"=c("def6_HHI_lag1"),
-                                   "Defense Obligations"=c("def6_obl_lag1"),
-                                   "Defense Obligations\nto U.S. Revenue Ratio"=c("def6_ratio_lag1"))
+                                   "Defense Obligations\n(Billions)"=c("def6_obl_lag1"),
+                                   "Def. Obligations to\nU.S. Revenue Ratio\n(Percent)"=c("def6_ratio_lag1"))
 
 NAICS_long$high<-2500
 NAICS_long$high[NAICS_long$variable!="Herfindahl-\nHerschman Index"]<-NA
@@ -653,7 +657,7 @@ NAICS6long_wide<-ggplot(subset(NAICS_long,naics_dollar_rank<=8),
 ![](monopoly_results_summary_files/figure-html/NAICS6_Summary-3.png)<!-- -->
 
 ```r
-ggsave(NAICS6long_wide,file="..//Output\\NAICS6long.png",width=9.5,height=5.5,dpi=600)
+ggsave(NAICS6long_wide+theme(text=element_text(size=13)),file="..//Output\\JSCAN\\Figure 3.png",width=9.5,height=6,dpi=600)
 ```
 
 ```
@@ -663,7 +667,7 @@ ggsave(NAICS6long_wide,file="..//Output\\NAICS6long.png",width=9.5,height=5.5,dp
 ```
 
 ```r
-ggsave(NAICS6long_wide,file="..//Output\\NAICS6long.eps",width=9.5,height=5.5,dpi=600)
+ggsave(NAICS6long_wide+theme(text=element_text(size=13)),file="..//Output\\JSCAN\\Figure 3.eps",width=9.5,height=6,dpi=600)
 ```
 
 ```
@@ -8322,17 +8326,23 @@ residual_l_cbre<-gridExtra::grid.arrange(
 )
 ```
 
+```
+## Warning: Computation failed in `stat_smooth()`:
+## 'Calloc' could not allocate memory (937768800 of 8 bytes)
+
+## Warning: Computation failed in `stat_smooth()`:
+## 'Calloc' could not allocate memory (937768800 of 8 bytes)
+
+## Warning: Computation failed in `stat_smooth()`:
+## 'Calloc' could not allocate memory (937768800 of 8 bytes)
+```
+
 ![](monopoly_results_summary_files/figure-html/l_CBre_Residual-1.png)<!-- -->
 
 ```r
 save(residual_l_cbre,file="..//Output//residual_l_cbre.rdata")
 ggsave(residual_l_cbre,file="..//Output//residual_l_cbre_1m.png",width=7.5, height=8.5)
 ggsave(residual_l_cbre,file="..//Output//residual_l_cbre_1m.eps",width=7.5, height=8.5)
-```
-
-```
-## Warning in grid.Call.graphics(C_polygon, x$x, x$y, index): semi-
-## transparency is not supported on this device: reported only once per page
 ```
 
 ### Term Residual
