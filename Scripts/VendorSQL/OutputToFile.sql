@@ -87,6 +87,8 @@ EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCus
 		@PlatformPortfolio =NULL
 
 
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
 
 DECLARE	@return_value int
 
@@ -96,6 +98,18 @@ EXEC	@return_value = [Vendor].SP_EntityIDhistoryCalendar
 		@Customer = 'Defense'
 		
 --SELECT	'Return Value' = @return_value
+
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+
+DECLARE	@return_value int
+
+EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
+		@Customer = NULL
+		
+--SELECT	'Return Value' = @return_value
+
 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
