@@ -1,9 +1,11 @@
-/****** Object:  View [Vendor].[VendorHistoryNaicsPlatformSubCustomer]    Script Date: 4/26/2019 12:24:46 PM ******/
+/****** Object:  View [Vendor].[VendorHistoryNaicsPlatformSubCustomer]    Script Date: 10/7/2019 6:45:10 AM ******/
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
 GO
+
+
 
 
 
@@ -103,7 +105,7 @@ FROM Contract.FPDS as C
 		on c.principalnaicscode=n.principalNAICScode
 	--Vendor specific things
 		left outer join contract.UnlabeledDunsnumberCSIStransactionIDentityID u
-		on u.CSIStransactionID=c.CSISCreatedDate
+		on u.CSIStransactionID=c.CSIStransactionID
 	
 			LEFT OUTER JOIN Contractor.Dunsnumber as DUNS
 			ON DUNS.Dunsnumber=DtPCH.Dunsnumber
