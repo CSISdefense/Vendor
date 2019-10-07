@@ -5,11 +5,12 @@ output: html_document
 #Equation 3 Combined Industrial Concentration and Competition and Terminations
 # The formula created for this code is made using the Mathematics in R Markdown. For more about Mathematics formatting in R Markdown, see my "Mathematics Formatting in R Markdown" file.
 library(lme4)
-load(file="..//Output//Term_Cons_Comp_14B_1m.rdata") 
+library(car)
 load(file="..//Output//Term_Cons_Comp_14C.rdata") 
 library(stargazer)
 
 if(!exists("Term_Cons_Comp_14C_1m")){
+  
   Term_Cons_Comp_14C_1m <- glmer (data=smp1m,
                                   b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                                     #cl_US3_avg_sal_lag1+
@@ -22,7 +23,7 @@ if(!exists("Term_Cons_Comp_14C_1m")){
                                     b_Intl+
                                     
                                     # cl_def6_HHI_lag1:cl_Days+
-                                    # b_UCA:cl_Ceil_Then_Year+
+                                    b_UCA:cl_Ceil_Then_Year+
                                     # b_UCA:cl_def6_HHI_lag1 +
                                     # PricingFee:cl_US6_avg_sal_lag1+
                                     cl_def6_HHI_lag1:cl_def6_obl_lag1  +
@@ -31,26 +32,27 @@ if(!exists("Term_Cons_Comp_14C_1m")){
                                     
                                     (1 | NAICS3/NAICS) + (1 | Agency/Office)
                                   , family=binomial(link="logit"),verbose=1)
-  save(Term_Cons_Comp_14B_1m,file="..//Output//Term_Cons_Comp_14B2_1m.rdata")
-}
   
+}
+# summary(Term_Cons_Comp_14C_1m)
+# car::vif(Term_Cons_Comp_14C_1m)
 ```
 
 $Probability~of~Termination~(y_i = 1) =$
 
 $Logit^{-1}(α~+~α^{NAICS3}_{j[i]}~+~α^{NAICS6}_{k[i]}~+~α^{Agency}_{l[i]}~+~α^{Office}_{m[i]}~+~β_{1}cl\_def3\_HHI\_lag1_{i}~+$
 
-$~β_{2}cl\_def6\_HHI\_lag1_{i}~+~β_{3}CompOff1~+~β_{4}CompOff2~+~β_{5}CompOff3–4_{i}+~β_{6}CompOff5plus_{i}~+$
+$~β_{2}cl\_def6\_HHI\_lag1_{i}~+~β_{3}Comp1Offr~+~β_{4}Comp2Offr~+~β_{5}Comp3–4Offr_{i}+~β_{6}Comp5plusOffr_{i}~+$
 
 $β_{7}cl\_def3\_ratio\_lag1_{i}~+~β_8cl\_def6\_obl\_lag1_{i}~+~β_9cl\_def6\_ratio\_lag1_{i}+~β_{10}cl\_US6\_avg\_sal\_lag1_{i}~+$
 
-$β_{11}cl\_Ceil_{i}~+~β_{12}cl\_Days_{i}~+~β_{13}SIDV_{i}~+~β_{14}MIDV_{i}+~β_{15}FSS–GWAC_{i}+~β_{16}BPA–BOA_{i}~+$
+$β_{11}cl\_Ceil\_Then\_Year_{i}~+~β_{12}cl\_Days_{i}~+~β_{13}SIDC_{i}~+~β_{14}MIDC_{i}+~β_{15}FSS–GWAC_{i}+~β_{16}BPA–BOA_{i}~+$
 
 $β_{17}Other\_FP_{i}~+~β_{18}Incentive_{i}~+~β_{19}Comb–Other_{i}~+~β_{20}Other\_CB_{i}~+~β_{21}TM–LH–FPLOE_{i}~+$
 
-$β_{22}UCA_{i}~+~β_{23}b\_Intl_{i}~+~β_{24}cl\_Ceil_{i}·UCA_{i}~+~cl\_def6\_HHI\_lag1l_{i}·cl\_def6\_obl\_lag1_{i}~+$
+$β_{22}b\_UCA_{i}~+~β_{23}b\_Intl_{i}~+~β_{24}cl\_Ceil\_Then\_Year_{i}·b\_UCA_{i}~+~cl\_def6\_HHI\_lag1l_{i}·cl\_def6\_obl\_lag1_{i}~+$
 
-$β_{25}β_{26}cl\_def3\_HHI\_lag1_{i}·cl\_def3\_ratio\_lag1_{i}~+~ε_{i}),~for~i=1~to~1,000,000$$
+$β_{25}β_{26}cl\_def3\_HHI\_lag1_{i}·cl\_def3\_ratio\_lag1_{i}~+~ε_{i}),~for~i=1~to~1,000,000$
 
-$$a^{NAICS3}_{j}\sim~N(μ_{α},σ^{2}_{α}),~for~j= 1~to~82;~~~~ a^{NAICS3:NAICS6}_{k}\sim~N(μ_{α},σ^{2}_{α}),~for~k= 1~to~973;$$
-$$a^{Agency}_{l}\sim~N(μ_{α},σ^{2}_{α}),~for~l= 1~to~24; ~~~~a^{Agency:Office}_{m}\sim~N(μ_{α},σ^{2}_{α}),~for~m= 1~to~1,462$$
+$$a^{NAICS3}_{j}\sim~N(μ_{α},σ^{2}_{α}),~for~j= 1~to~82;~~~~ a^{NAICS6:NAICS3}_{k}\sim~N(μ_{α},σ^{2}_{α}),~for~k= 1~to~973;$$
+$$a^{Agency}_{l}\sim~N(μ_{α},σ^{2}_{α}),~for~l= 1~to~24; ~~~~a^{Office:Agency}_{m}\sim~N(μ_{α},σ^{2}_{α}),~for~m= 1~to~1,462$$
