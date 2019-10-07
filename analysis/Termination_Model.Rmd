@@ -19,8 +19,8 @@ library(arm)
 library(R2WinBUGS)
 library(Hmisc)
 library(sjstats)
-source("DIIGstat.r")
-source("NAICS.r")
+source("..\\scripts\\DIIGstat.r")
+source("..\\scripts\\NAICS.r")
 
 axis.text.size<-10
 strip.text.size<-10
@@ -5164,8 +5164,10 @@ save(Term_Comp_13D,file="Output//Term_Cons_13D.rdata")
 ### Model 13E:
 ```{r 13E_Interactions}
 
-load("Output//Term_Cons_13E.rdata")
-if(!exists("Term_Cons_13E")){
+load("..//Output//Term_Cons_13E.rdata")
+load("..//Output//Term_Comp_13E.rdata")
+
+if(!exists("Term_Cons_13E_1m")){
   Term_Cons_13E <- glmer (data=smp,
                           b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
                             #cl_US3_avg_sal_lag1+
@@ -5203,9 +5205,11 @@ if(!exists("Term_Cons_13E")){
                                (1 | Agency/Office), 
                              family=binomial(link="logit"),
                              verbose=1)
+}
+
+if(!exists("Term_Cons_13F_1m")){
   
-  
-    Term_Comp_13E <- glmer (data=smp,
+  Term_Comp_13E <- glmer (data=smp,
                           b_Term ~CompOffr+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                             cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
                             cl_Ceil + cl_Days+
@@ -5226,37 +5230,40 @@ if(!exists("Term_Cons_13E")){
   save(Term_Cons_13E,Term_Cons_13E_1m,file="Output//Term_Cons_13E.Rdata")
 }
 
-glmer_examine(Term_Comp_13E)
+summary(Term_Comp_13E)
+summary(Term_Comp_13E2)
+glmer_examine(Term_Cons_13E_1m)
+
 
 ```
 
 
 ### Model 13F:
 ```{r 13F_Interactions}
+load(file="..//Output//Term_Comp_15A.rdata")
 
+load(file="..//Output//Term_Comp_13F.rdata")
+
+if(!exists("Term_Cons_13F_1m")){
   Term_Cons_13F_1m <- glmer (data=smp1m,
-                          b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
-                            #cl_US3_avg_sal_lag1+
-                            cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
-                            cl_US6_avg_sal_lag1+
-                            cl_Ceil + cl_Days+ 
-                            Veh +
-                            PricingFee + b_UCA +
-                            b_Intl+
-                            
-                            # b_UCA:cl_def6_HHI_lag1 + 
-                            # b_UCA:cl_Ceil+
-                            cl_def6_HHI_lag1:cl_def6_obl_lag1+
-                                   cl_def3_HHI_lag1:cl_def3_ratio_lag1+
-                            (1 | NAICS3/NAICS) + 
-                            (1 | Agency/Office), 
-                          family=binomial(link="logit"),
-                          verbose=1)
-save(Term_Cons_13E,file="Output//Term_Cons_13D")
-
-
-
-
+                             b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                               #cl_US3_avg_sal_lag1+
+                               cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                               cl_US6_avg_sal_lag1+
+                               cl_Ceil + cl_Days+ 
+                               Veh +
+                               PricingFee + b_UCA +
+                               b_Intl+
+                               
+                               # b_UCA:cl_def6_HHI_lag1 + 
+                               # b_UCA:cl_Ceil+
+                               cl_def6_HHI_lag1:cl_def6_obl_lag1+
+                               cl_def3_HHI_lag1:cl_def3_ratio_lag1+
+                               (1 | NAICS3/NAICS) + 
+                               (1 | Agency/Office), 
+                             family=binomial(link="logit"),
+                             verbose=1)
+  
   Term_Comp_13F <- glmer (data=smp,
                           b_Term ~CompOffr+cl_def3_ratio_lag1+#cl_US3_avg_sal_lag1+#cl_def3_obl_lag1+
                             cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
@@ -5271,12 +5278,136 @@ save(Term_Cons_13E,file="Output//Term_Cons_13D")
                             (1 | NAICS3/NAICS) + (1 | Agency/Office),
                           family=binomial(link="logit"),
                           verbose=1)
+  
+  
+  
+  save(Term_Comp_13F,Term_Cons_13F_1m,file="Output//Term_Cons_13D.rdata")
+}
 
-
-glmer_examine(Term_Comp_13D)
-save(Term_Comp_13D,file="Output//Term_Cons_13D.rdata")
+glmer_examine(Term_Comp_13F_1m)
 
 ```
+## Comp and Cbre
+### Model 14B
+```{r 14B}
+load(file="..//Output//Term_Cons_Comp_14B_1m.rdata") 
+stargazer(Term_Cons_Comp_14B_1m,type="text",
+                         digits=2)
+
+if(!exists("Term_Cons_Comp_14B_1m")){
+
+  
+  Term_Cons_Comp_14B_1m <- glmer (data=smp1m,
+                                  b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                                    #cl_US3_avg_sal_lag1+
+                                    cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                                    cl_US6_avg_sal_lag1+
+                                    CompOffr+
+                                    cl_Ceil_Then_Year + cl_Days+ 
+                                    Veh +
+                                    PricingFee + b_UCA +
+                                    b_Intl+
+                                    
+                                    # cl_def6_HHI_lag1:cl_Days+
+                                    # b_UCA:cl_Ceil_Then_Year+
+                                    b_UCA:cl_def6_HHI_lag1 +
+                                    # PricingFee:cl_US6_avg_sal_lag1+
+                                    cl_def6_HHI_lag1:cl_def6_obl_lag1  +
+                                    # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                                    cl_def3_HHI_lag1:cl_def3_ratio_lag1+  
+                                    
+                                    (1 | NAICS3/NAICS) + (1 | Agency/Office)
+                                  , family=binomial(link="logit"),verbose=1)
+  
+  
+  
+  save(Term_Cons_Comp_14B_1m,file="..//Output//Term_Cons_Comp_14B2_1m.rdata")
+  source(system.file("utils", "allFit.R", package="lme4"))
+  Term_Cons_Comp_14B_1m.all <- allFit(Term_Cons_Comp_14B_1m)
+  Term_Cons_Comp_14B_1m_ss_cons <- summary(Term_Cons_Comp_14B_1m.all)
+  
+  stargazer::stargazer(Term_Cons_Comp_14B_1m,type="text",
+                       digits=2)
+  
+  # Term_Cons_Comp_14B_1m <- update(Term_Cons_Comp_14B_1m, . ~ . + b_UCA:cl_Ceil_Then_Year - cl_def6_HHI_lag1:cl_Days)
+  
+  # save(Term_Cons_Comp_14B_1m,Term_Cons_Comp_14B2_1m,file="..//Output//Term_Cons_Comp_14B_1m.rdata")
+  
+  
+
+}
+
+```
+
+
+###Model 14C
+```{r 14C}
+load(file="..//Output//Term_Cons_Comp_14C.rdata") 
+stargazer(Term_Cons_Comp_14B_1m,
+          Term_Cons_Comp_14C_1m,type="text",
+                         digits=2)
+
+if(!exists("Term_Cons_Comp_14C_1m")){
+  Term_Cons_Comp_14C <- glmer (data=smp,
+                               b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                                 #cl_US3_avg_sal_lag1+
+                                 cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                                 cl_US6_avg_sal_lag1+
+                                 CompOffr+
+                                 cl_Ceil_Then_Year + cl_Days+
+                                 Veh +
+                                 PricingFee + b_UCA +
+                                 b_Intl+
+
+                                 # cl_def6_HHI_lag1:cl_Days+
+                                 b_UCA:cl_Ceil_Then_Year+
+                                 # b_UCA:cl_def6_HHI_lag1 +
+                                 # PricingFee:cl_US6_avg_sal_lag1+
+                                 cl_def6_HHI_lag1:cl_def6_obl_lag1  +
+                                 # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                                 cl_def3_HHI_lag1:cl_def3_ratio_lag1+
+
+                                 (1 | NAICS3/NAICS) + (1 | Agency/Office)
+                               , family=binomial(link="logit"),verbose=1)
+
+  
+  Term_Cons_Comp_14C_1m <- glmer (data=smp1m,
+                                  b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                                    #cl_US3_avg_sal_lag1+
+                                    cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                                    cl_US6_avg_sal_lag1+
+                                    CompOffr+
+                                    cl_Ceil_Then_Year + cl_Days+ 
+                                    Veh +
+                                    PricingFee + b_UCA +
+                                    b_Intl+
+                                    
+                                    # cl_def6_HHI_lag1:cl_Days+
+                                    b_UCA:cl_Ceil_Then_Year+
+                                    # b_UCA:cl_def6_HHI_lag1 +
+                                    # PricingFee:cl_US6_avg_sal_lag1+
+                                    cl_def6_HHI_lag1:cl_def6_obl_lag1  +
+                                    # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                                    cl_def3_HHI_lag1:cl_def3_ratio_lag1+  
+                                    
+                                    (1 | NAICS3/NAICS) + (1 | Agency/Office)
+                                  , family=binomial(link="logit"),verbose=1)
+  
+  
+  
+  
+  save(Term_Cons_Comp_14C_1m,file="..//Output//Term_Cons_Comp_14C.rdata")
+  
+}
+
+  source(system.file("utils", "allFit.R", package="lme4"))
+  
+glmer_examine(Term_Cons_Comp_14C_1m)
+odds_ratio(Term_Cons_Comp_14C_1m,"Term_Cons_Comp_14C_1m",walds = TRUE)
+get_icc(Term_Cons_Comp_14C_1m)
+
+```
+
 
 ## Rare Events Logit
 
