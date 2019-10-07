@@ -1,4 +1,4 @@
-/****** Object:  StoredProcedure [Vendor].[SP_DunsnumberNewEntrants]    Script Date: 5/1/2018 10:25:22 AM ******/
+/****** Object:  StoredProcedure [Vendor].[SP_DunsnumberNewEntrants]    Script Date: 10/7/2019 6:41:20 AM ******/
 SET ANSI_NULLS ON
 GO
 
@@ -9,10 +9,11 @@ GO
 
 
 
+
 ALTER PROCEDURE [Vendor].[SP_DunsnumberNewEntrants]
 
 @Customer VARCHAR(255)
-,@IsSAMduns bit
+--,@IsSAMduns bit
 AS
 
 IF (@Customer is not null) --Begin sub path where all product and services but only one Customer will be returned
@@ -28,6 +29,7 @@ IF (@Customer is not null) --Begin sub path where all product and services but o
 				--,c.Small as CSISsmall
 				,C.DirectCOBSD
 				,C.NAICS2
+				,c.platformPortfolio
 				, c.veteranownedflag
 , c.minorityownedbusinessflag
 , c.womenownedflag
@@ -35,14 +37,15 @@ IF (@Customer is not null) --Begin sub path where all product and services but o
 --, c.csiscontractid
 , c.OriginIsInternational
 , c.VendorIsInternational
-,c.IsSAMduns
+--,c.IsSAMduns
 				,max(c.SignedDate) as AnnualMaxOfSignedDate
+								,min(c.SignedDate) as AnnualMinOfSignedDate
 				,Sum(C.obligatedAmount) AS obligatedAmount
 			,Sum(C.numberOfActions) AS numberOfActions
 			,count(c.csistransactionID) as TransactionCount 
 			FROM [Vendor].[VendorHistoryNaicsPlatformSubCustomer] as C
 		--Here's the where clause for @IsService is null and Customer is not null
-		WHERE C.Customer=@Customer   and (@IsSamDuns is null or @IsSamDUns=IsSamDuns)
+		WHERE C.Customer=@Customer  -- and (@IsSamDuns is null or @IsSamDUns=IsSamDuns)
 		--Copy the end of your query here
 		GROUP BY 
 			C.fiscal_year
@@ -54,8 +57,9 @@ IF (@Customer is not null) --Begin sub path where all product and services but o
 				,c.Small
 				,C.DirectCOBSD
 				,C.NAICS2
+				,c.platformPortfolio
 				, c.veteranownedflag
-				,c.IsSAMduns
+				--,c.IsSAMduns
 , c.minorityownedbusinessflag
 , c.womenownedflag
 , c.isforeigngovernment
@@ -74,48 +78,49 @@ ELSE --Begin sub path where all products and services amd all Customers will be 
 	SELECT 
 			C.fiscal_year
 			,c.Dunsnumber
-				--,c.UnknownCompany
-				--,C.EntityID
-				--,C.parentid
+				,c.UnknownCompany
+				,C.EntityID
+				,C.parentid
 				,C.customer
-				--,c.Small as CSISsmall
+				,c.Small as CSISsmall
 				,C.DirectCOBSD
 				,C.NAICS2
 				, c.veteranownedflag
 , c.minorityownedbusinessflag
 , c.womenownedflag
 , c.isforeigngovernment
---, c.csiscontractid
+, c.csiscontractid
 , c.OriginIsInternational
 , c.VendorIsInternational
-,c.IsSAMduns
+--,c.IsSAMduns
 				,max(c.SignedDate) as AnnualMaxOfSignedDate
+												,min(c.SignedDate) as AnnualMinOfSignedDate
 				,Sum(C.obligatedAmount) AS obligatedAmount
 			,Sum(C.numberOfActions) AS numberOfActions
 			,count(c.csistransactionID) as TransactionCount 
 			FROM [Vendor].[VendorHistoryNaicsPlatformSubCustomer] as C
 		--No clause for Customer is null
-		where  (@IsSamDuns is null or @IsSamDUns=IsSamDuns)
+		--where  (@IsSamDuns is null or @IsSamDUns=IsSamDuns)
 		--Copy the end of your query here
 		GROUP BY 
 			C.fiscal_year
 			,c.Dunsnumber
-				--,c.UnknownCompany
-				--,C.EntityID
-				--,C.parentid
+				,c.UnknownCompany
+				,C.EntityID
+				,C.parentid
 				,C.customer
-				--,c.Small
+				,c.Small
 				,C.DirectCOBSD
 				,C.NAICS2
 				, c.veteranownedflag
 , c.minorityownedbusinessflag
 , c.womenownedflag
 , c.isforeigngovernment
---, c.csiscontractid
+, c.csiscontractid
 , c.typeofsetaside
 , c.OriginIsInternational
 , c.VendorIsInternational
-,c.IsSAMduns
+--,c.IsSAMduns
 		order by
 				C.Dunsnumber
 				,c.Fiscal_year

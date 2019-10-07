@@ -46,10 +46,10 @@ if(!exists("def_all")) def_all<-NULL
 def_all<-input_sample_criteria(def_all,  
                                dir="..\\data\\semi_clean\\",
                       file="Defense_Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
-                      last_date=as.Date("2016-12-31"),
+                      last_date=as.Date("2017-12-31"),
                       drop_incomplete=FALSE)
 
-def_all<-def_all %>% filter(StartFiscal_Year<2018 & StartFiscal_Year>=2007)
+def_all<-def_all %>% filter(StartFiscal_Year<2018 & StartFiscal_Year>=2007 & Customer=="Defense")
   
 #I'm intending to eventually incorporate this into sample criteria
 #Although maybe it's faster to keep it as a tiny stand alone file.
@@ -77,20 +77,20 @@ def_all<-input_contract_psc_office_naics(def_all,
                                          file="Contract.SP_ContractTopPSCofficeNAICS.txt")
 
 
-def_all$AgencyID<-def_all$topContractingOfficeAgencyID
-def_all<-read_and_join_experiment(def_all,
-                                         "Agency_AgencyID.csv",
-                                         by="AgencyID",
-                                         # replace_na_var="AgencyID",
-                                         add_var=c("Customer","SubCustomer"),
-                                  skip_check_var = "SubCustomer",
-                                         path = "https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                                         directory = ""
-)
+if(!"Customer" %in% colnames(data))
+  debug(read_and_join_experiment)
+  def_all<-read_and_join_experiment(def_all,
+                                    "Agency_AgencyID.csv",
+                                    by=c("topContractingOfficeAgencyID"="AgencyID"),
+                                    # replace_na_var="AgencyID",
+                                    add_var=c("Customer","SubCustomer"),
+                                    skip_check_var = "SubCustomer",
+                                    path = "https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                    directory = ""
+  )
 # def_all<- subset(def_all,Customer=="Defense")
 save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 
-summary(factor(def_all$AgencyID))
 summary(factor(def_all$topContractingOfficeAgencyID))
 summary(factor(def_all$topPrincipalNAICScode))
 
@@ -104,15 +104,10 @@ summary(factor(def_all$StartFiscal_Year))
 ```{r Scope}
 # load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
 # undebug(input_initial_scope)
+debug(input_initial_scope)
 def_all<-input_initial_scope(def_all,
                              file="Contract.SP_ContractUnmodifiedScope.txt")
-def_all<-def_all[,-c(31)]
-colnames(def_all)[22:24]
 
-
-
-def_detail<-input_contract_ceiling_breach(def_detail,
-             file="Contract.SP_ContractCeilingBreachCustomer.txt")
 
 save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 ```
