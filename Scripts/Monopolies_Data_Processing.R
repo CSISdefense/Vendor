@@ -13,14 +13,14 @@ source("DIIGstat.r")
 source("NAICS.r")
 Path<-"https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/"
 
-file<-unz("Data\\Defense_Vendor.SP_EntityIDhistoryNAICS.zip",
+file<-unz("Data\\semi_clean\\Defense_Vendor.SP_EntityIDhistoryNAICS.zip",
           filename="Defense_Vendor.SP_EntityIDhistoryNAICS.txt")
  # defense_naics_vendor <- read_tsv(file,
  #                           col_names = TRUE,
  #                           NA = c("","NA","NULL"))
 
 #Import Defense vendor list by NAICS.
-defense_naics_vendor <- read_delim("Data\\Defense_Vendor.SP_EntityIDhistoryNAICS.txt",
+defense_naics_vendor <- read_delim("Data\\semi_clean\\Defense_Vendor.SP_EntityIDhistoryNAICS.txt",
                            # header = TRUE,
                            na = c("","NA","NULL"),
                            # quote="\"",#Necessary because there are some 's in the names.
