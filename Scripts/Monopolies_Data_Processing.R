@@ -23,9 +23,9 @@ file<-unz("Data\\semi_clean\\Defense_Vendor.SP_EntityIDhistoryNAICS.zip",
 defense_naics_vendor <- read_delim("Data\\semi_clean\\Defense_Vendor.SP_EntityIDhistoryNAICS.txt",
                            # header = TRUE,
                            na = c("","NA","NULL"),
-                           quote="\"",#Necessary because there are some 's in the names.
+                           quote="\'",#Necessary because there are some "s in the names.
                            delim = "\t",
-                           col_types="iiiicccccccc"
+                           col_types="iicicccccccc"
                            )
 
 problems(defense_naics_vendor)
