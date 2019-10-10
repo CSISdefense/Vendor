@@ -9,29 +9,27 @@ library(readr)
 library(csis360)
 
 source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/lookups.r")
-source("scripts//DIIGstat.r")
-source("scripts//NAICS.r")
+source("DIIGstat.r")
+source("NAICS.r")
 Path<-"https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/"
 
-file<-unz("Data\\semi_clean\\Defense_Vendor.SP_EntityIDhistoryNAICS.zip",
+file<-unz("Data\\Defense_Vendor.SP_EntityIDhistoryNAICS.zip",
           filename="Defense_Vendor.SP_EntityIDhistoryNAICS.txt")
  # defense_naics_vendor <- read_tsv(file,
  #                           col_names = TRUE,
  #                           NA = c("","NA","NULL"))
 
 #Import Defense vendor list by NAICS.
-defense_naics_vendor <- read_delim("Data\\semi_clean\\Defense_Vendor.SP_EntityIDhistoryNAICS.txt",
+defense_naics_vendor <- read_delim("Data\\Defense_Vendor.SP_EntityIDhistoryNAICS.txt",
                            # header = TRUE,
                            na = c("","NA","NULL"),
-                           quote="\'",#Necessary because there are some "s in the names.
-                           delim = "\t",
-                           col_types="iicicccccccc"
-                           )
+                           # quote="\"",#Necessary because there are some 's in the names.
+                           delim = "\t")
 
 problems(defense_naics_vendor)
 
 #Import Defense vendor list by platform
-defense_platform_vendor <- read_delim("Data\\semi_clean\\Defense_Vendor.SP_EntityIDhistoryPlatform.txt",
+defense_platform_vendor <- read_delim("Data\\Defense_Vendor.SP_EntityIDhistoryPlatform.txt",
                                    # header = TRUE,
                                    na = c("","NA","NULL"),
                                    # quote="\"",#Necessary because there are some 's in the names.
@@ -40,7 +38,7 @@ defense_platform_vendor <- read_delim("Data\\semi_clean\\Defense_Vendor.SP_Entit
 problems(defense_platform_vendor)
 
 #Import Defense Vendor list.
-file<-unz("Data\\semi_clean\\Defense_Vendor.SP_EntityIDhistoryCalendar.zip",
+file<-unz("Data\\Defense_Vendor.SP_EntityIDhistoryCalendar.zip",
           filename="Defense_Vendor.SP_EntityIDhistoryCalendar.txt")
 
 defense_vendor <- read.table(file,
