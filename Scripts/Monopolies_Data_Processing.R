@@ -66,10 +66,10 @@ defense_vendor<-defense_vendor %>% group_by(CalendarYear)
 
 defense_vendor<-defense_vendor %>%
   dplyr::mutate(
-    pos = rank(-Action.Obligation,
+    pos = rank(-Action_Obligation,
                ties.method ="min"),
-    pct = ifelse(Action.Obligation>0,
-                 Action.Obligation / sum(Action.Obligation[Action.Obligation>0]),
+    pct = ifelse(Action_Obligation>0,
+                 Action_Obligation / sum(Action_Obligation[Action_Obligation>0]),
                  NA
     )
   )
@@ -77,8 +77,8 @@ defense_vendor<-defense_vendor %>%
 
 annual_summary<-defense_vendor %>%
   dplyr::summarize(
-  Action.Obligation = sum(Action.Obligation),
-  # Obligation.2016 = sum(Action.Obligation.2016),
+  Action_Obligation = sum(Action_Obligation),
+  # Obligation.2016 = sum(Action_Obligation.2016),
   vendor_count=length(CalendarYear),
   hh_index=sum((pct*100)^2,na.rm=TRUE),
   top4=sum(ifelse(pos<=4,pct,NA),na.rm=TRUE),
@@ -94,10 +94,10 @@ defense_platform_vendor<-defense_platform_vendor %>% group_by(platformPortfolio,
 
 defense_platform_vendor<-defense_platform_vendor %>%
   dplyr::mutate(
-    pos = rank(-Action.Obligation,
+    pos = rank(-Action_Obligation,
                ties.method ="min"),
-    pct = ifelse(Action.Obligation>0,
-                 Action.Obligation / sum(Action.Obligation[Action.Obligation>0]),
+    pct = ifelse(Action_Obligation>0,
+                 Action_Obligation / sum(Action_Obligation[Action_Obligation>0]),
                  NA
     )
   )
@@ -105,8 +105,8 @@ defense_platform_vendor<-defense_platform_vendor %>%
 
 annual_platform_summary<-defense_platform_vendor %>%
   dplyr::summarize(
-    Action.Obligation = sum(Action.Obligation),
-    # Obligation.2016 = sum(Action.Obligation.2016),
+    Action_Obligation = sum(Action_Obligation),
+    # Obligation.2016 = sum(Action_Obligation.2016),
     vendor_count=length(Fiscal.Year),
     hh_index=sum((pct*100)^2,na.rm=TRUE),
     top4=sum(ifelse(pos<=4,pct,NA),na.rm=TRUE),
@@ -133,7 +133,7 @@ defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54
   
   
   #*********************Read in Core US data************************************
-  path<-"Data\\Economic\\Comparative Statistics for the United States and the States"
+  path<-"Data_Raw\\Economic\\Comparative Statistics for the United States and the States"
   core<-readr::read_csv(file.path(path,"ECN_2012_US_00CCOMP1_with_ann.csv"))
   core<-core[!core$GEO.id=="Geographic identifier code",]
   if(all(!is.na(core$GEO.id2))){
@@ -241,6 +241,7 @@ defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54
 
 # View()
 # debug(join_economic)
+  
 annual_naics2_summary<-join_economic(annual_naics2_summary,core,2)
 annual_naics3_summary<-join_economic(annual_naics3_summary,core,3)
 annual_naics4_summary<-join_economic(annual_naics4_summary,core,4)
@@ -261,14 +262,17 @@ save(defense_naics_vendor,
      core,
      file="data//defense_naics_vendor.Rdata")
 
-write.csv(defense_naics_vendor,"data//defense_naics_vendor.csv")
-write.csv(defense_vendor,"output//defense_vendor.csv")
-write.csv(annual_platform_summary,"output//annual_platform_summary.csv")
-write.csv(annual_naics2_summary,"output//annual_naics2_summary.csv")
-write.csv(annual_naics3_summary,"output//annual_naics3_summary.csv")
-write.csv(annual_naics4_summary,"output//annual_naics4_summary.csv")
-write.csv(annual_naics5_summary,"output//annual_naics5_summary.csv")
-write.csv(annual_naics6_summary,"output//annual_naics6_summary.csv")
+
+
+
+write.csv(defense_naics_vendor,"data//defense_naics_vendor.csv",row.names = FALSE)
+write.csv(defense_vendor,"output//defense_vendor.csv",row.names = FALSE)
+write.csv(annual_platform_summary,"output//annual_platform_summary.csv",row.names = FALSE)
+write.csv(annual_naics2_summary,"output//annual_naics2_summary.csv",row.names = FALSE)
+write.csv(annual_naics3_summary,"output//annual_naics3_summary.csv",row.names = FALSE)
+write.csv(annual_naics4_summary,"output//annual_naics4_summary.csv",row.names = FALSE)
+write.csv(annual_naics5_summary,"output//annual_naics5_summary.csv",row.names = FALSE)
+write.csv(annual_naics6_summary,"output//annual_naics6_summary.csv",row.names = FALSE)
 # write.csv(annual_summary,"data//annual_summary.csv")
 
 
