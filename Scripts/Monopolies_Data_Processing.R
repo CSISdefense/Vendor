@@ -260,7 +260,7 @@ save(defense_naics_vendor,
      annual_naics3_summary,
      annual_naics2_summary,
      core,
-     file="data//defense_naics_vendor.Rdata")
+     file="data//clean//defense_naics_vendor.Rdata")
 
 
 
@@ -276,7 +276,7 @@ write.csv(annual_naics6_summary,"output//annual_naics6_summary.csv",row.names = 
 # write.csv(annual_summary,"data//annual_summary.csv")
 
 
-load("data//defense_naics_vendor.Rdata")
+load("data//clean//defense_naics_vendor.Rdata")
 
 
 levels(factor(defense_platform_vendor$platformPortfolio))
