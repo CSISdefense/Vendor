@@ -13,7 +13,7 @@ library(ggplot2)
 library(ggrepel)
 library(plyr)
 library(lubridate)
-load(file="data//defense_naics_vendor.Rdata")
+load(file="..//data//clean//defense_naics_vendor.Rdata")
 
 ```
 
@@ -39,9 +39,9 @@ names[toupper(names) %in% toupper(c(
 ##Prepare 206 data
 
 ```{r Key Vendors, echo=TRUE}
-# Filter defense_naics_vendor to only include fical year ranging from 2009 to 2016
+# Filter defense_naics_vendor to only include calendar years ranging from 2009 to 2016
 
-key_vendor<-subset(defense_vendor, Fiscal.Year >=as.Date("2009-01-01")&
+key_vendor<-subset(defense_vendor, CalendarYear >=2009 & #as.Date("2009-01-01")&
   (pos<=8 |
          toupper(ParentID) %in% toupper(c("MDA",  #Check
        "DigitalGlobe", #Check
@@ -53,11 +53,11 @@ key_vendor<-subset(defense_vendor, Fiscal.Year >=as.Date("2009-01-01")&
        "Aurora Flight Sciences" #Check but redownload
 ))))
 
+key_vendor$CalendarYear
 
-
-updated_vendor<-subset(key_vendor,Fiscal.Year==as.Date("2016-01-01"))
-key_vendor$Sample<-year(key_vendor$Fiscal.Year)
-vendor_2016<-subset(key_vendor,Fiscal.Year==as.Date("2016-01-01"))
+updated_vendor<-subset(key_vendor,CalendarYear==2016)#as.Date("2016-01-01"))
+key_vendor$Sample<-as.character(key_vendor$CalendarYear)#year(key_vendor$CalendarYear)
+vendor_2016<-subset(key_vendor,CalendarYear==2016)#as.Date("2016-01-01"))
 updated_vendor$Sample<-"Merged"
 
 key_vendor$line_type<-"Actual"
@@ -84,7 +84,7 @@ updated_vendor$VendorName[toupper(updated_vendor$ParentID)==
 # MDA buying Digital Globe, UTC buying Collins, Northrop buying Orbital, and Boeing buying Aurora
 
 updated_vendor<-ddply(updated_vendor,
-                           .(Fiscal.Year,VendorName,Sample, line_type),
+                           .(CalendarYear,VendorName,Sample, line_type),
                            transform, 
                       Merged.2016 = sum(Obligation.2016),
                       Merged.pct= sum(pct)

@@ -37,7 +37,7 @@ create_naics2<-function(NAICS){
 clean_entity<-function(data){
   data<-standardize_variable_names(data)
   # data<-deflate(data, #Not compatible with calendar year
-  #                               money_var = "Action.Obligation",
+  #                               money_var = "Action_Obligation",
   #                               deflator_var="Deflator.2016"
   # )
   # data<-csis360::read_and_join(data,
@@ -155,12 +155,12 @@ summarize_annual_naics<-function(data,naics_level=6){
   
   data<-data %>% group_by(CalendarYear,exclude,NAICS_Code)
   
-  data<-data %>% #filter(Action.Obligation>0) %>%
+  data<-data %>% #filter(Action_Obligation>0) %>%
     dplyr::mutate(
-      pos = rank(-Action.Obligation,
+      pos = rank(-Action_Obligation,
                  ties.method ="min"),
-      pct = ifelse(Action.Obligation>0,
-                   Action.Obligation / sum(Action.Obligation[Action.Obligation>0]),
+      pct = ifelse(Action_Obligation>0,
+                   Action_Obligation / sum(Action_Obligation[Action_Obligation>0]),
                    NA
       )
     )
@@ -171,8 +171,8 @@ summarize_annual_naics<-function(data,naics_level=6){
   output<-data %>% group_by(CalendarYear,exclude,NAICS_Code) %>%
     dplyr::summarize( 
       naics_text=ifelse(naics_level==6, max(naics_text,na.rm=TRUE),NA),
-      obl = sum(Action.Obligation),#Action.Obligation.Then.Year
-      # Obligation.2016 = sum(Action.Obligation.2016),
+      obl = sum(Action_Obligation),#Action_Obligation.Then.Year
+      # Obligation.2016 = sum(Action_Obligation.2016),
       cont_count=length(CalendarYear),
       hh_index=sum((pct*100)^2,na.rm=TRUE),
       pct_sum_check=sum(pct,na.rm=TRUE),
@@ -267,14 +267,16 @@ join_economic<-function(data,core,naics_level){
   
     
   data<-left_join(data,core,by=c("census_period"="census_period","NAICS_Code"="NAICS_Code"))
-  data<-csis360::read_and_join(data,
-                               lookup_file = "Lookup_NAICS_code.csv",
-                               path="",
-                               dir="Lookup\\",
-                               by="NAICS_Code",
-                               skip_check_var="NAICS_DESCRIPTION"
+  data<-read_and_join_experiment(data,
+                                          lookup_file = "Lookup_PrincipalNAICScode.csv",
+                                          path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                          dir="economic\\",
+                               by=c("NAICS_Code"="principalnaicscode"),
+                               add_var=c("principalnaicscodeText","NAICS_shorthand"),
+                               skip_check_var=c("principalnaicscodeText","NAICS_shorthand")
+                               
   )
-  data$naics_text[is.na(data$naics_text)]<-data$NAICS_DESCRIPTION[is.na(data$naics_text)]
+  data$naics_text[is.na(data$naics_text)]<-data$principalnaicscodeText[is.na(data$naics_text)]
   
   
   

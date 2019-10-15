@@ -9,8 +9,8 @@ library(readr)
 library(csis360)
 
 source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/lookups.r")
-source("DIIGstat.r")
-source("NAICS.r")
+source("scripts\\DIIGstat.r")
+source("scripts\\NAICS.r")
 Path<-"https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/"
 
 file<-unz("Data\\Defense_Vendor.SP_EntityIDhistoryNAICS.zip",
@@ -20,25 +20,27 @@ file<-unz("Data\\Defense_Vendor.SP_EntityIDhistoryNAICS.zip",
  #                           NA = c("","NA","NULL"))
 
 #Import Defense vendor list by NAICS.
-defense_naics_vendor <- read_delim("Data\\Defense_Vendor.SP_EntityIDhistoryNAICS.txt",
+defense_naics_vendor <- read_delim("Data\\semi_clean\\Defense_Vendor.SP_EntityIDhistoryNAICS.txt",
                            # header = TRUE,
                            na = c("","NA","NULL"),
-                           # quote="\"",#Necessary because there are some 's in the names.
+                           quote="\'",#Necessary because there are some 's in the names.
+                           guess_max=1000000,
                            delim = "\t")
 
 problems(defense_naics_vendor)
 
 #Import Defense vendor list by platform
-defense_platform_vendor <- read_delim("Data\\Defense_Vendor.SP_EntityIDhistoryPlatform.txt",
+defense_platform_vendor <- read_delim("Data\\semi_clean\\Defense_Vendor.SP_EntityIDhistoryPlatform.txt",
                                    # header = TRUE,
                                    na = c("","NA","NULL"),
-                                   # quote="\"",#Necessary because there are some 's in the names.
+                                   quote="\"",#Necessary because there are some 's in the names.
+                                   guess_max=1000000,
                                    delim = "\t")
 
 problems(defense_platform_vendor)
 
 #Import Defense Vendor list.
-file<-unz("Data\\Defense_Vendor.SP_EntityIDhistoryCalendar.zip",
+file<-unz("Data\\semi_clean\\Defense_Vendor.SP_EntityIDhistoryCalendar.zip",
           filename="Defense_Vendor.SP_EntityIDhistoryCalendar.txt")
 
 defense_vendor <- read.table(file,
@@ -64,10 +66,10 @@ defense_vendor<-defense_vendor %>% group_by(CalendarYear)
 
 defense_vendor<-defense_vendor %>%
   dplyr::mutate(
-    pos = rank(-Action.Obligation,
+    pos = rank(-Action_Obligation,
                ties.method ="min"),
-    pct = ifelse(Action.Obligation>0,
-                 Action.Obligation / sum(Action.Obligation[Action.Obligation>0]),
+    pct = ifelse(Action_Obligation>0,
+                 Action_Obligation / sum(Action_Obligation[Action_Obligation>0]),
                  NA
     )
   )
@@ -75,8 +77,8 @@ defense_vendor<-defense_vendor %>%
 
 annual_summary<-defense_vendor %>%
   dplyr::summarize(
-  Action.Obligation = sum(Action.Obligation),
-  # Obligation.2016 = sum(Action.Obligation.2016),
+  Action_Obligation = sum(Action_Obligation),
+  # Obligation.2016 = sum(Action_Obligation.2016),
   vendor_count=length(CalendarYear),
   hh_index=sum((pct*100)^2,na.rm=TRUE),
   top4=sum(ifelse(pos<=4,pct,NA),na.rm=TRUE),
@@ -92,10 +94,10 @@ defense_platform_vendor<-defense_platform_vendor %>% group_by(platformPortfolio,
 
 defense_platform_vendor<-defense_platform_vendor %>%
   dplyr::mutate(
-    pos = rank(-Action.Obligation,
+    pos = rank(-Action_Obligation,
                ties.method ="min"),
-    pct = ifelse(Action.Obligation>0,
-                 Action.Obligation / sum(Action.Obligation[Action.Obligation>0]),
+    pct = ifelse(Action_Obligation>0,
+                 Action_Obligation / sum(Action_Obligation[Action_Obligation>0]),
                  NA
     )
   )
@@ -103,8 +105,8 @@ defense_platform_vendor<-defense_platform_vendor %>%
 
 annual_platform_summary<-defense_platform_vendor %>%
   dplyr::summarize(
-    Action.Obligation = sum(Action.Obligation),
-    # Obligation.2016 = sum(Action.Obligation.2016),
+    Action_Obligation = sum(Action_Obligation),
+    # Obligation.2016 = sum(Action_Obligation.2016),
     vendor_count=length(Fiscal.Year),
     hh_index=sum((pct*100)^2,na.rm=TRUE),
     top4=sum(ifelse(pos<=4,pct,NA),na.rm=TRUE),
@@ -131,7 +133,7 @@ defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54
   
   
   #*********************Read in Core US data************************************
-  path<-"Data\\Economic\\Comparative Statistics for the United States and the States"
+  path<-"Data_Raw\\Economic\\Comparative Statistics for the United States and the States"
   core<-readr::read_csv(file.path(path,"ECN_2012_US_00CCOMP1_with_ann.csv"))
   core<-core[!core$GEO.id=="Geographic identifier code",]
   if(all(!is.na(core$GEO.id2))){
@@ -239,6 +241,7 @@ defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54
 
 # View()
 # debug(join_economic)
+  
 annual_naics2_summary<-join_economic(annual_naics2_summary,core,2)
 annual_naics3_summary<-join_economic(annual_naics3_summary,core,3)
 annual_naics4_summary<-join_economic(annual_naics4_summary,core,4)
@@ -257,20 +260,23 @@ save(defense_naics_vendor,
      annual_naics3_summary,
      annual_naics2_summary,
      core,
-     file="data//defense_naics_vendor.Rdata")
+     file="data//clean//defense_naics_vendor.Rdata")
 
-write.csv(defense_naics_vendor,"data//defense_naics_vendor.csv")
-write.csv(defense_vendor,"output//defense_vendor.csv")
-write.csv(annual_platform_summary,"output//annual_platform_summary.csv")
-write.csv(annual_naics2_summary,"output//annual_naics2_summary.csv")
-write.csv(annual_naics3_summary,"output//annual_naics3_summary.csv")
-write.csv(annual_naics4_summary,"output//annual_naics4_summary.csv")
-write.csv(annual_naics5_summary,"output//annual_naics5_summary.csv")
-write.csv(annual_naics6_summary,"output//annual_naics6_summary.csv")
+
+
+
+write.csv(defense_naics_vendor,"data//defense_naics_vendor.csv",row.names = FALSE)
+write.csv(defense_vendor,"output//defense_vendor.csv",row.names = FALSE)
+write.csv(annual_platform_summary,"output//annual_platform_summary.csv",row.names = FALSE)
+write.csv(annual_naics2_summary,"output//annual_naics2_summary.csv",row.names = FALSE)
+write.csv(annual_naics3_summary,"output//annual_naics3_summary.csv",row.names = FALSE)
+write.csv(annual_naics4_summary,"output//annual_naics4_summary.csv",row.names = FALSE)
+write.csv(annual_naics5_summary,"output//annual_naics5_summary.csv",row.names = FALSE)
+write.csv(annual_naics6_summary,"output//annual_naics6_summary.csv",row.names = FALSE)
 # write.csv(annual_summary,"data//annual_summary.csv")
 
 
-load("data//defense_naics_vendor.Rdata")
+load("data//clean//defense_naics_vendor.Rdata")
 
 
 levels(factor(defense_platform_vendor$platformPortfolio))
