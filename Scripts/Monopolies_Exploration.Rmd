@@ -13,7 +13,7 @@ library(tidyverse)
 library(csis360)
 library(dplyr)
 library(gridExtra)
-library(hexbin)
+# library(hexbin)
 library(ggplot2)
 
 load("..//data//clean//defense_naics_vendor.Rdata")
@@ -370,13 +370,15 @@ max(subset(annual_naics2_summary,!is.na(NAICS_Code))$def2_obl,na.rm=TRUE)
 #,y=def2_obl
 
 # debug(read_and_join)
- annual_naics2_summary<-csis360::read_and_join(annual_naics2_summary,
-                        lookup_file = "Lookup_NAICS_code.csv",
-                        path="",
-                        dir="Lookup\\",
-                        by="NAICS_Code",
-                        skip_check_var="NAICS_DESCRIPTION"
-               )
+annual_naics2_summary<-read_and_join_experiment(annual_naics2_summary,
+                                           lookup_file = "Lookup_PrincipalNAICScode.csv",
+                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                      dir="economic\\",
+                                      by=c("NAICS_Code"="principalnaicscode"),
+                                      add_var = "principalnaicscodeText"
+                                      )
+
+
 
 ggplot(annual_naics2_summary,aes(x=CalendarYear,weight=def2_obl))+
   geom_bar()+facet_wrap(~NAICS_Code)
@@ -386,7 +388,7 @@ ggplot(annual_naics2_summary,aes(x=CalendarYear,weight=def2_obl))+
 annual_naics6_summary$NAICS2<-substring(annual_naics6_summary$NAICS_Code,1,2)
 
 annual_naics2_summary$NAICS_label<-paste(annual_naics2_summary$NAICS_Code,
-                             annual_naics2_summary$NAICS_DESCRIPTION)
+                             annual_naics2_summary$principalnaicscodeText)
 
 annual_naics2_summary$NAICS_label[
   annual_naics2_summary$NAICS_label==
@@ -579,11 +581,6 @@ grid.arrange(top4_hh_scat,
 
 ```
 
-
-# Examining 
-```{r }
-
-```
 
 
 # Output
