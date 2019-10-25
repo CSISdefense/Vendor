@@ -2159,6 +2159,7 @@ transition_variable_names_service<-function(contract){
   contract$Pricing<-contract$PricingUCA
   
   contract$cln_Base<-contract$cl_Base
+  colnames(contract)[colnames(contract)=="capped_cl_Days"]<-"cln_Days"
   contract$cln_Days<-contract$cl_Days
   contract$clr_Ceil2Base<-contract$cl_Base2Ceil
   
