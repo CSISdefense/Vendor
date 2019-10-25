@@ -2159,12 +2159,125 @@ transition_variable_names_service<-function(contract){
   contract$Pricing<-contract$PricingUCA
   
   contract$cln_Base<-contract$cl_Base
+  colnames(contract)[colnames(contract)=="capped_cl_Days"]<-"cln_Days"
   contract$cln_Days<-contract$cl_Days
   contract$clr_Ceil2Base<-contract$cl_Base2Ceil
   
   contract$NAICS6<-contract$NAICS
   contract$ServArea<-contract$CrisisProductOrServiceArea
   contract$Place<-contract$PlaceCountryISO3
+  contract
+}
+
+transition_variable_names_FMS<-function(contract){
+  #Dropping Redundant
+  
+  for(i in 1:ncol(contract)){
+    if(is.character(contract[,i])){
+      print(colnames(contract)[i])
+      contract[,i]<-factor(contract[,i])
+    } 
+  }
+  
+  contract<-contract[,!colnames(contract) %in% c("n_Comp","cb_Comp",
+                                                 "cn_Offr","cl_Offr",
+                                                 "nq_Offr","NAICS5",
+                                                 "NAICS4")]
+  if("cln_days" %in% colnames(def))
+    contract<-contract[,!colnames(contract) %in% c("capped_cl_Days")]
+  
+  if("Agency" %in% colnames(def))
+    contract<-contract[,!colnames(contract) %in% c("AgencyID")]
+  
+  
+  if("ProductServiceOrRnDarea" %in% colnames(contract))
+    contract<-contract[,!colnames(contract) %in% c("ProductsCategory",#"ProductOrServiceArea",
+                                              "ServicesCategory", "ProductOrServiceCode1L", "ProductOrServiceCode2L", "ProductOrServiceCode2R", 
+                                              "ProductOrServiceCode1L1R", #"Simple", "HostNation3Category",
+                                              "Unseperated", "IsService", 
+                                              "IsCatchAllCode", "DoDportfolioGroup", "DoDportfolio", "DoDportfolioCategory", 
+                                              "DoDportfolioSubCategory", "PlatformPortfolio", "isRnD1to5", "PBLscore", 
+                                              "IsPossibleReclassification", "IsPossibleSoftwareEngineering", "RnD_BudgetActivity", 
+                                              "ProductServiceOrRnDarea", "CanadaSector", "VAPortfolio", "ServArea", "IsRnDdefenseSystem", 
+                                              "Level1_Code", "Level1_Category", "Level2_Code", "Level2_Category" #"CrisisProductOrServiceArea",
+                                              )]
+  
+  
+  if("Office" %in% colnames(contract))  
+    contract<-contract[,!colnames(contract) %in% c(#"DepartmentID", "AgencyID", "ContractingOfficeName", 
+                                              "StartDate", "EndDate", "AddressLine1", "AddressLine2", 
+                                              "AddressLine3", "AddressCity", "AddressState", "ZipCode", 
+                                              "CountryCode", "Depot", "FISC", "TFBSOrelated",
+                                              "CSIScreatedDate", "CSISmodifieddDate", "OCOcrisisScore"
+                                              )
+                         ]
+  
+  if("Veh" %in% colnames(contract))
+    contract<-contract[,!colnames(contract) %in% c("SIDV","MIDV","FSSGWAC","BPABOA")]
+  
+  #Text search, note we need the if any because if no results, then it gets rid of all columns
+  if(any(grep("def[4-5]",colnames(contract))))
+     contract<-contract[,-grep("def[4-5]",colnames(contract))]
+  if(any(grep("US[4-5]",colnames(contract))))
+    contract<-contract[,-grep("US[4-5]",colnames(contract))]
+  
+  #Using new naming scheme
+  
+      colnames(contract)[colnames(contract)=="cl_US6_avg_sal_lag1Const"]<-"cln_US6sal"
+    colnames(contract)[colnames(contract)=="cln_PSCrate"]<-"cl_CFTE"
+    colnames(contract)[colnames(contract) %in% c("cn_pairHist7","c_pairHist","cn_pairHist")]<-"cn_PairHist7"
+    colnames(contract)[colnames(contract)=="c_pOffPSC"]<-"cp_OffPSC7"
+    colnames(contract)[colnames(contract)=="cl_pairCA"]<-"cln_PairCA"
+    colnames(contract)[colnames(contract)=="office_entity_obligatedamount_7yearConst"]<-"cln_PairOBL"
+    
+    colnames(contract)[colnames(contract)=="cl_OffVol"]<-"cln_OffObl7"
+    colnames(contract)[colnames(contract)=="cl_OffVol"]<-"cln_OffObl7"
+    colnames(contract)[colnames(contract)=="c_pMarket"]<-"cp_PairObl7"
+    colnames(contract)[colnames(contract)=="cl_office_naics_hhi_k"]<-"cln_OffFocus"
+  
+    
+  
+    colnames(contract)[colnames(contract)=="cl_def3_HHI_lag1"]<-"cln_Def3HHI"
+    colnames(contract)[colnames(contract)=="cl_def6_HHI_lag1"]<-"cln_Def6HHI"
+    colnames(contract)[colnames(contract)=="cl_def3_ratio_lag1"]<-"clr_Def3toUS"
+    colnames(contract)[colnames(contract)=="cl_def6_ratio_lag1"]<-"clr_Def6toUS"
+    colnames(contract)[colnames(contract)=="cl_def3_obl_lag1Const"]<-"cln_Def3Obl"
+    colnames(contract)[colnames(contract)=="cl_def6_obl_lag1Const"]<-"cln_Def6Obl"
+    
+    
+    
+    colnames(contract)[colnames(contract)=="cl_Base"]<-"cln_Base"
+    colnames(contract)[colnames(contract)=="cl_Ceil"]<-"cln_Ceil"
+    colnames(contract)[colnames(contract)=="cl_Base2Ceil"]<-"clr_Ceil2Base"
+    colnames(contract)[colnames(contract) %in% c("cl_Days","cl_Days_Capped")]<-"cln_Days"
+    
+    
+    
+    colnames(contract)[colnames(contract)=="NAICS"]<-"NAICS6"
+    colnames(contract)[colnames(contract)=="CrisisProductOrServiceArea"]<-"ServArea"
+    colnames(contract)[colnames(contract)=="PlaceCountryISO3"]<-"Place"
+    
+    if(any(duplicated(colnames(contract)))) stop("Duplicate Contract Name")
+    
+    
+    #Picking versions of variabls for this model
+    if("ln_CBre_OMB20_GDP18" %in% colnames(contract)){
+      contract<-contract[,  !colnames(contract) %in% c("ln_Cbre")]
+      colnames(contract)[colnames(contract)=="ln_CBre_OMB20_GDP18"]<-"ln_CBre"
+    }
+    
+    
+    if("Comp1or5" %in% colnames(contract)){
+      contract<-contract[, !colnames(contract) %in% c("Comp") ]
+      colnames(contract)[colnames(contract)=="Comp1or5"]<-"Comp"
+    }
+    
+  
+    if("PricingUCA" %in% colnames(contract)){
+      contract<-contract[,!colnames(contract) %in% c("Pricing")]
+      colnames(contract)[colnames(contract)=="PricingUCA"]<-"Pricing"
+    }
+  
   contract
 }
 

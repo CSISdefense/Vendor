@@ -265,7 +265,7 @@ save(defense_naics_vendor,
 
 
 
-write.csv(defense_naics_vendor,"data//defense_naics_vendor.csv",row.names = FALSE)
+write.csv(defense_naics_vendor,"data//clean//defense_naics_vendor.csv",row.names = FALSE)
 write.csv(defense_vendor,"output//defense_vendor.csv",row.names = FALSE)
 write.csv(annual_platform_summary,"output//annual_platform_summary.csv",row.names = FALSE)
 write.csv(annual_naics2_summary,"output//annual_naics2_summary.csv",row.names = FALSE)

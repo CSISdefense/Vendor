@@ -738,7 +738,8 @@ save(file="..\\data\\clean\\defense_contract_complete_detail.Rdata",def_detail)
 
 ##BucketPlatform
 ```{r BucketPlatform}
-# load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
+if(!exists("def_detail")) load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
+
 #Note to identify is.defense here.
 def_detail<-read_and_join_experiment(data=def_detail
   ,"Contract.SP_ContractBucketPlatformCustomer.txt"
@@ -746,7 +747,7 @@ def_detail<-read_and_join_experiment(data=def_detail
   ,dir="data/semi_clean/"
   ,by="CSIScontractID"
   ,new_var_checked=FALSE
-  
+  # ,col_types = "dccdddcccc"
   ,create_lookup_rdata=TRUE
 )
 # 
@@ -903,7 +904,7 @@ save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
 
 #Hitting errors, but nothing vital
-debug(apply_lookups)
+# debug(apply_lookups)
 def_detail<-apply_lookups(Path,def_detail)
 save(file="..\\data\\clean\\defense_contract_complete_detail.Rdata",def_detail)
 
@@ -961,7 +962,7 @@ In this step the datset is pruned and transformed for use in the Monopolies anal
 
 ###Data Transformations and Summary
 load(file="../data/clean/defense_contract_complete.RData")
-def<-def[def$MinOfSignedDate>=as.Date("2008-01-01") & def$MinOfSignedDate<=as.Date("2015-12-31"),]
+def<-def %>% dplyr::filter(MinOfSignedDate>=as.Date("2008-01-01") & MinOfSignedDate<=as.Date("2015-12-31"))
 # debug(transform_contract)
 memory.limit(36000)
 # debug(deflate)
@@ -969,15 +970,12 @@ def<-transform_contract(def)
 
 
 
-def$l_Ceil<-na_non_positive_log(def$UnmodifiedCeiling_Then_Year)
-def$cl_Ceil<-arm::rescale(def$l_Ceil)
-def$l_def6_obl_lag1<-na_non_positive_log(def$def6_obl_lag1)
-def$cl_def6_obl_lag1<-arm::rescale(def$l_def6_obl_lag1)
-def$l_US6_avg_sal_lag1<-na_non_positive_log(def$US6_avg_sal_lag1)
-def$cl_US6_avg_sal_lag1<-arm::rescale(def$l_US6_avg_sal_lag1)
-
-def<-def[!colnames(def) %in% colnames(def)[grep("^l_",colnames(def))]]
-def<-def[!colnames(def) %in% colnames(def)[grep("^capped_l_",colnames(def))]]
+def$cl_Ceil<-arm::rescale(
+  na_non_positive_log(def$UnmodifiedCeiling_Then_Year))
+def$cl_def6_obl_lag1<-arm::rescale(
+  na_non_positive_log(def$def6_obl_lag1))
+def$cl_US6_avg_sal_lag1<-arm::rescale(
+  na_non_positive_log(def$US6_avg_sal_lag1))
 
 
 #l_Offr
