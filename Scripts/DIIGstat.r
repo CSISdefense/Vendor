@@ -166,7 +166,7 @@ freq_discrete_plot<-function(data,x_col,
 summary_continuous_plot<-function(data,x_col,group_col=NA,bins=20,metric="perform", log=FALSE){
   if(metric!="none")
     gridExtra::grid.arrange(freq_continuous_plot(data,x_col,group_col,bins=bins,caption=FALSE,log),
-                          binned_percent_plot(data,x_col,group_col,caption=TRUE,metric=metric,log))
+                          binned_percent_plot(data,x_col=x_col,group_col=group_col,bins=bins,caption=TRUE,metric=metric,log=log))
   else freq_continuous_plot(data,x_col,group_col,bins=bins,caption=FALSE)
   
 }
@@ -404,7 +404,7 @@ freq_continuous_cbre_plot<-function(data,x_col,group_col=NA,bins=20,
 }
 
 
-binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metric="perform"){
+binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metric="perform",log=FALSE){
   data<-data[!is.na(data[,x_col]),]
   if(is.na(group_col)){
     data$bin_x<-bin_df(data,x_col,bins=bins)
@@ -446,10 +446,10 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
     else if (metric=="cbre"){
       b_CBre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"
                                     , mean_x =  paste( "mean(" ,  x_col  ,")"  ))
-      ln_CBre<-data %>% summarise_ (   mean_y = "mean(ln_CBre_OMB20_GDP18,na.rm=TRUE)"
+      ln_CBre<-data %>% summarise_ (   mean_y = get_n_CBre_mean(data) 
                                      , mean_x =  paste( "mean(" ,  x_col  ,")"  ))
-      scatter_CBre<-data[data$b_CBre==1,colnames(data) %in% c("ln_CBre_OMB20_GDP18",x_col)]
-      colnames(scatter_CBre)[colnames(scatter_CBre)=="ln_CBre_OMB20_GDP18"]<-"mean_y"
+      scatter_CBre<-data[data$b_CBre==1,colnames(data) %in% c("ln_CBre","ln_CBre_OMB20_GDP18",x_col)]
+      colnames(scatter_CBre)[colnames(scatter_CBre) %in% c("ln_CBre","ln_CBre_OMB20_GDP18")]<-"mean_y"
       colnames(scatter_CBre)[colnames(scatter_CBre)==x_col]<-"mean_x"
       scatter_CBre$bin_x<-0
       b_CBre$output<-"Breach Occured"
@@ -500,10 +500,10 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
       
       b_CBre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"
                                       , mean_x =  paste( "mean(" ,  x_col  ,")"  ))
-      ln_CBre<-data %>% summarise_ (   mean_y = "mean(ln_CBre_OMB20_GDP18,na.rm=TRUE)"
+      ln_CBre<-data %>% summarise_ (   mean_y = get_n_CBre_mean(data) 
                                        , mean_x =  paste( "mean(" ,  x_col  ,")"  ))
-      scatter_CBre<-data[data$b_CBre==1,colnames(data) %in% c("ln_CBre_OMB20_GDP18",x_col,group_col)]
-      colnames(scatter_CBre)[colnames(scatter_CBre)=="ln_CBre_OMB20_GDP18"]<-"mean_y"
+      scatter_CBre<-data[data$b_CBre==1,colnames(data) %in% c("ln_CBre","ln_CBre_OMB20_GDP18",x_col,group_col)]
+      colnames(scatter_CBre)[colnames(scatter_CBre) %in% c("ln_CBre","ln_CBre_OMB20_GDP18")]<-"mean_y"
       colnames(scatter_CBre)[colnames(scatter_CBre)==x_col]<-"mean_x"
       b_CBre<-as.data.frame(b_CBre)
       ln_CBre<-as.data.frame(ln_CBre)
@@ -691,6 +691,15 @@ discrete_percent_cbre_plot<-function(data,x_col,group_col=NA,caption=TRUE){
   
 }
 
+get_n_CBre_mean<-function(data){
+  cbre_var<-"ln_CBre"
+  if(!cbre_var %in% colnames(data)){
+    if("ln_CBre_OMB20_GDP18" %in% colnames(data)) cbre_var<-"ln_CBre_OMB20_GDP18"
+    else stop("ln_CBre is missing")
+  }
+  return(paste("mean(",cbre_var,",na.rm=TRUE)"))
+}
+
 discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,rotate_text=FALSE,metric="perform"){
   data<-data[!is.na(data[,x_col]),]
   if(is.na(group_col)){
@@ -726,7 +735,7 @@ discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,rot
     }
     else if (metric=="cbre"){
       b_CBre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   )  
-      ln_CBre<-data %>% summarise_ (   mean_y = "mean(ln_CBre_OMB20_GDP18,na.rm=TRUE)"   )  
+      ln_CBre<-data %>% summarise_ (   mean_y =  get_n_CBre_mean(data)  )  
       b_CBre$output<-"Breach Occured"
       ln_CBre$output<-"Breach Size (logged)"
       #For the def_breach dataset, there are no unbreached contracts, making this graph unhelpful.
@@ -765,7 +774,7 @@ discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,rot
     }
     else if (metric=="cbre"){
       b_CBre<-data %>% summarise_ (   mean_y = "mean(b_CBre)"   )  
-      ln_CBre<-data %>% summarise_ (   mean_y = "mean(ln_CBre_OMB20_GDP18)"   )  
+      ln_CBre<-data %>% summarise_ (   mean_y = get_n_CBre_mean(data)    )  
       b_CBre$output<-"Breach Occured"
       ln_CBre$output<-"Breach Size (logged)"
       #For the def_breach dataset, there are no unbreached contracts, making this graph unhelpful.
