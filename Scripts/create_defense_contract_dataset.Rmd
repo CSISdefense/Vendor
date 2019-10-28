@@ -665,11 +665,11 @@ def_detail<-read_and_join_experiment(data=def_detail
   ,new_var_checked=FALSE
   ,add_var=c("UnmodifiedIsUCA","IsUCA")
   ,create_lookup_rdata=TRUE
-  ,col_types = "dcccdddccc"
+  # ,col_types = "dcccdddccc"
 )
 
 
-#Impute UCA unmodified values when consistent for the remainder of the vehicle
+#Impute UCA unmodified values when consistent for the remainder of the contract
 def_detail$UnmodifiedIsUCA[is.na(def_detail$UnmodifiedIsUCA)&
   !is.na(def_detail$IsUCA)]<-
   def_detail$IsUCA[is.na(def_detail$UnmodifiedIsUCA)&
@@ -855,6 +855,14 @@ def_detail$SimpleArea[NASimpleArea]<-def_detail$UnmodifiedSimpleArea[NASimpleAre
 
 def_detail$PlatformPortfolio<-factor(def_detail$PlatformPortfolio)
 def_detail$UnmodifiedPlatformPortfolio<-factor(def_detail$UnmodifiedPlatformPortfolio)
+def_detail$PlatformPortfolio[def_detail$PlatformPortfolio=="Unlabeled"]<-NA
+
+#Impute UCA unmodified values when consistent for the remainder of the contract
+def_detail$UnmodifiedPlatformPortfolio[is.na(def_detail$UnmodifiedPlatformPortfolio)&
+  !is.na(def_detail$PlatformPortfolio)]<-
+  def_detail$PlatformPortfolio[is.na(def_detail$UnmodifiedPlatformPortfolio)&
+  !is.na(def_detail$PlatformPortfolio)]
+
 
 def_detail$ProductOrServiceArea<-factor(def_detail$ProductOrServiceArea)
 def_detail$UnmodifiedProductOrServiceArea<-factor(def_detail$UnmodifiedProductOrServiceArea)
@@ -867,6 +875,7 @@ def_detail<-def_detail[,!colnames(def_detail) %in% c(
   # "UnmodifiedSimpleArea",
   # "SimpleArea",
   "MaxOfIsPossibleSoftwareEngineering",
+  "Platform.Labeled",
   # "ObligatedAmountIsProducts",
   # "ObligatedAmountIsServices",
   # "ObligatedAmountIsRnD",
@@ -962,7 +971,7 @@ In this step the datset is pruned and transformed for use in the Monopolies anal
 
 ###Data Transformations and Summary
 load(file="../data/clean/defense_contract_complete.RData")
-def<-def %>% dplyr::filter(MinOfSignedDate>=as.Date("2008-01-01") & MinOfSignedDate<=as.Date("2016-12-31"))
+def<-def %>% dplyr::filter(MinOfSignedDate>=as.Date("2008-01-01") & MinOfSignedDate<=as.Date("2015-12-31"))
 # debug(transform_contract)
 memory.limit(36000)
 # debug(deflate)
@@ -970,15 +979,12 @@ def<-transform_contract(def)
 
 
 
-def$l_Ceil<-na_non_positive_log(def$UnmodifiedCeiling_Then_Year)
-def$cl_Ceil<-arm::rescale(def$l_Ceil)
-def$l_def6_obl_lag1<-na_non_positive_log(def$def6_obl_lag1)
-def$cl_def6_obl_lag1<-arm::rescale(def$l_def6_obl_lag1)
-def$l_US6_avg_sal_lag1<-na_non_positive_log(def$US6_avg_sal_lag1)
-def$cl_US6_avg_sal_lag1<-arm::rescale(def$l_US6_avg_sal_lag1)
-
-def<-def[!colnames(def) %in% colnames(def)[grep("^l_",colnames(def))]]
-def<-def[!colnames(def) %in% colnames(def)[grep("^capped_l_",colnames(def))]]
+def$cl_Ceil<-arm::rescale(
+  na_non_positive_log(def$UnmodifiedCeiling_Then_Year))
+def$cl_def6_obl_lag1<-arm::rescale(
+  na_non_positive_log(def$def6_obl_lag1))
+def$cl_US6_avg_sal_lag1<-arm::rescale(
+  na_non_positive_log(def$US6_avg_sal_lag1))
 
 
 #l_Offr
