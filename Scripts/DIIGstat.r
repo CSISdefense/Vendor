@@ -2182,7 +2182,53 @@ transition_variable_names_FMS<-function(contract){
   contract<-contract[,!colnames(contract) %in% c("n_Comp","cb_Comp",
                                                  "cn_Offr","cl_Offr",
                                                  "nq_Offr","NAICS5",
-                                                 "NAICS4")]
+                                                 "NAICS4","SteadyScopeOptionGrowthAlone" ,
+                                                 "SteadyScopeOptionGrowthMixed",
+                                                 "ChangeOrderCeilingGrowth",
+                                                 "SteadyScopeOptionRescision",
+                                                 "AdminOptionModification",
+                                                 "ChangeOrderOptionModification",
+                                                 "EndingOptionModification",
+                                                 "OtherOptionModification", "override_unmodified_ceiling",
+                                                 "override_unmodified_base",
+                                                 "override_change_order_growth",
+                                                 "override_exercised_growth",
+                                                 "j_Term",
+                                                 "j_CBre",
+                                                 "ln_CBre_Then_Year",
+                                                 "n_Fixed",
+                                                 "n_Incent",
+                                                 "n_Nofee",
+                                                 "UnmodifiedYearsFloat",
+                                                 "b_ODoD",
+                                                 "ODoD"
+                                                 )]
+  
+  contract<-contract[,!colnames(contract) %in% c( "l_US6_avg_sal_lag1Const",
+                                                  "l_def6_obl_lag1Const" ,
+                                                  "l_def3_obl_lag1Const",
+                                                  "capped_def6_ratio_lag1"  ,
+                                                  "capped_def3_ratio_lag1"  ,
+                                                  "lp_OptGrowth",
+                                                  "capped_cl_Days",
+                                                  "lp_CBre" 
+  )]
+  
+  #Services variables not using
+  contract<-contract[,!colnames(contract) %in% c( "office_PBSCobligated_1year",
+                                                  "office_numberofactions_1year",
+                                                  "office_obligatedamount_7year"  ,
+                                                  "pPBSC" ,
+                                                  "cl_OffCA"
+  )]
+  
+  #Crisis vriables not using
+  contract<-contract[,!colnames(contract) %in% c( "OffCri",
+                                                  "c_OffCri" 
+  )]
+  
+                                           
+  
   if("cln_days" %in% colnames(def))
     contract<-contract[,!colnames(contract) %in% c("capped_cl_Days")]
   
@@ -2216,10 +2262,10 @@ transition_variable_names_FMS<-function(contract){
     contract<-contract[,!colnames(contract) %in% c("SIDV","MIDV","FSSGWAC","BPABOA")]
   
   #Text search, note we need the if any because if no results, then it gets rid of all columns
-  if(any(grep("def[4-5]",colnames(contract))))
-     contract<-contract[,-grep("def[4-5]",colnames(contract))]
-  if(any(grep("US[4-5]",colnames(contract))))
-    contract<-contract[,-grep("US[4-5]",colnames(contract))]
+  if(any(grep("def[2,4-5]",colnames(contract))))
+     contract<-contract[,-grep("def[2,4-5]",colnames(contract))]
+  if(any(grep("US[2,4-5]",colnames(contract))))
+    contract<-contract[,-grep("US[2,4-5]",colnames(contract))]
   
   #Using new naming scheme
   
