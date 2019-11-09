@@ -2504,11 +2504,11 @@ get_coef_list<-function(limit=NULL){
                     "PricingUCA:cln_US6sal"="Log(Det. Ind. Salary):Pricing=UCA",
                     
                     "cln_PSCrate:PricingOther FP"="Log(Serv. Code Invoice Rate):Pricing=Other Fixed-Price",
-                    "cln_PSCrate:PricingT&M/LH/FPLOE"="Log(Serv. Code Invoice Rate):Pricing=T&M/LH/FP:LoE",
                     "cln_PSCrate:PricingIncentive"="Log(Serv. Code Invoice Rate):Pricing=Incentive Fee",
-                    "cln_PSCrate:PricingOther CB"="Log(Serv. Code Invoice Rate):Pricing=Other Cost-Based",
-                    "cln_PSCrate:PricingUCA"="Log(Serv. Code Invoice Rate):Pricing=UCA",
                     "cln_PSCrate:PricingCombination or Other"="Log(Serv. Code Invoice Rate):Pricing=Comb./Other",
+                    "cln_PSCrate:PricingOther CB"="Log(Serv. Code Invoice Rate):Pricing=Other Cost-Based",
+                    "cln_PSCrate:PricingT&M/LH/FPLOE"="Log(Serv. Code Invoice Rate):Pricing=T&M/LH/FP:LoE",
+                    "cln_PSCrate:PricingUCA"="Log(Serv. Code Invoice Rate):Pricing=UCA",
                     
                     
                     #Office Capability
@@ -2528,17 +2528,17 @@ get_coef_list<-function(limit=NULL){
                     
                     #Paired Relationship
                     "c_pairHist:PricingUCAOther FP"="Paired Years:Pricing=Other Fixed-Price",
-                    "c_pairHist:PricingUCAT&M/LH/FPLOE"="Paired Years:Pricing=T&M/LH/FP:LoE",
                     "c_pairHist:PricingUCAIncentive"="Paired Years:Pricing=Incentive Fee",
-                    "c_pairHist:PricingUCAOther CB"="Paired Years:Pricing=Other Cost-Based",
-                    "c_pairHist:PricingUCAUCA"="Paired Years:Pricing=UCA",
                     "c_pairHist:PricingUCACombination or Other"="Paired Years:Pricing=Comb./Other",
+                    "c_pairHist:PricingUCAOther CB"="Paired Years:Pricing=Other Cost-Based",
+                    "c_pairHist:PricingUCAT&M/LH/FPLOE"="Paired Years:Pricing=T&M/LH/FP:LoE",
+                    "c_pairHist:PricingUCAUCA"="Paired Years:Pricing=UCA",
                     "cn_PairHist7:PricingOther FP"="Paired Years:Pricing=Other Fixed-Price",
-                    "cn_PairHist7:PricingT&M/LH/FPLOE"="Paired Years:Pricing=T&M/LH/FP:LoE",
                     "cn_PairHist7:PricingIncentive"="Paired Years:Pricing=Incentive Fee",
-                    "cn_PairHist7:PricingOther CB"="Paired Years:Pricing=Other Cost-Based",
-                    "cn_PairHist7:PricingUCA"="Paired Years:Pricing=UCA",
                     "cn_PairHist7:PricingCombination or Other"="Paired Years:Pricing=Comb./Other",
+                    "cn_PairHist7:PricingOther CB"="Paired Years:Pricing=Other Cost-Based",
+                    "cn_PairHist7:PricingT&M/LH/FPLOE"="Paired Years:Pricing=T&M/LH/FP:LoE",
+                    "cn_PairHist7:PricingUCA"="Paired Years:Pricing=UCA",
                     
                     
                     #Non-Study Variale interactions
@@ -2700,11 +2700,11 @@ get_coef_list<-function(limit=NULL){
                     "cln_US6sal_lag1:PricingT&M/LH/FPLOE"="Log(Det. Ind. Salary):Pricing=T&M/LH/FP:LoE",
                   
                     "cln_PSCrate:PricingOther FP"="Log(Serv. Code Invoice Rate):Pricing=Other Fixed-Price",
-                    "cln_PSCrate:PricingT&M/LH/FPLOE"="Log(Serv. Code Invoice Rate):Pricing=T&M/LH/FP:LoE",
                     "cln_PSCrate:PricingIncentive"="Log(Serv. Code Invoice Rate):Pricing=Incentive Fee",
+                    "cln_PSCrate:PricingCombination or Other"="Log(Serv. Code Invoice Rate):Pricing=Comb./Other",                    
                     "cln_PSCrate:PricingOther CB"="Log(Serv. Code Invoice Rate):Pricing=Other Cost-Based",
+                    "cln_PSCrate:PricingT&M/LH/FPLOE"="Log(Serv. Code Invoice Rate):Pricing=T&M/LH/FP:LoE",
                     "cln_PSCrate:PricingUCA"="Log(Serv. Code Invoice Rate):Pricing=UCA",
-                    "cln_PSCrate:PricingCombination or Other"="Log(Serv. Code Invoice Rate):Pricing=Comb./Other",
                     
                     
                     #Office Capability
@@ -2724,17 +2724,17 @@ get_coef_list<-function(limit=NULL){
                     
                     #Paired Relationship
                     "c_pairHist:PricingUCAOther FP"="Paired Years:Pricing=Other Fixed-Price",
-                    "c_pairHist:PricingUCAT&M/LH/FPLOE"="Paired Years:Pricing=T&M/LH/FP:LoE",
                     "c_pairHist:PricingUCAIncentive"="Paired Years:Pricing=Incentive Fee",
-                    "c_pairHist:PricingUCAOther CB"="Paired Years:Pricing=Other Cost-Based",
-                    "c_pairHist:PricingUCAUCA"="Paired Years:Pricing=UCA",
                     "c_pairHist:PricingUCACombination or Other"="Paired Years:Pricing=Comb./Other",
+                    "c_pairHist:PricingUCAOther CB"="Paired Years:Pricing=Other Cost-Based",
+                    "c_pairHist:PricingUCAT&M/LH/FPLOE"="Paired Years:Pricing=T&M/LH/FP:LoE",
+                    "c_pairHist:PricingUCAUCA"="Paired Years:Pricing=UCA",
                     "cn_PairHist7:PricingOther FP"="Paired Years:Pricing=Other Fixed-Price",
-                    "cn_PairHist7:PricingT&M/LH/FPLOE"="Paired Years:Pricing=T&M/LH/FP:LoE",
                     "cn_PairHist7:PricingIncentive"="Paired Years:Pricing=Incentive Fee",
-                    "cn_PairHist7:PricingOther CB"="Paired Years:Pricing=Other Cost-Based",
-                    "cn_PairHist7:PricingUCA"="Paired Years:Pricing=UCA",
                     "cn_PairHist7:PricingCombination or Other"="Paired Years:Pricing=Comb./Other",
+                    "cn_PairHist7:PricingOther CB"="Paired Years:Pricing=Other Cost-Based",
+                    "cn_PairHist7:PricingT&M/LH/FPLOE"="Paired Years:Pricing=T&M/LH/FP:LoE",
+                    "cn_PairHist7:PricingUCA"="Paired Years:Pricing=UCA",
                     
                     
                     #Non-Study Variale interactions
