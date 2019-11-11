@@ -247,7 +247,7 @@ summary_discrete_plot<-function(data,x_col,group_col=NA,rotate_text=FALSE,metric
     
   }
   else{
-    if(is.numeric(data[,x_col])) stop(paste(x_col," is numeric."))
+    if(is.numeric(data[,x_col])& length(unique(data[,x_col]))>=10) stop(paste(x_col," is numeric."))
     if (metric=="opt")
       output<-list(table(unlist(data[,x_col]),unlist(data[,group_col])),
                    table(unlist(data[,x_col]),unlist(data[,group_col]),data$b_SomeOpt),
