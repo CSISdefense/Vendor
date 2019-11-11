@@ -1514,7 +1514,7 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
       residual_compare(model1_old,model1_new,model2_old,model2_new,"cl_Days","Centered Log(Days)",10)
     }
     output<-NULL
-    if(class(model1_new)%in% c("glmerMod","lme4") & class(model2_new)%in% c("glmerMod","lme4")) 
+    if(class(model1_new)%in% c("glmerMod","lme4","lmerMod") & class(model2_new)%in% c("glmerMod","lme4","lmerMod")) 
     { 
       # If the fit is singular or near-singular, there might be a higher chance of a false positive (we’re not necessarily screening out gradient and Hessian checking on singular directions properly); a higher chance that the model has actually misconverged (because the optimization problem is difficult on the boundary); and a reasonable argument that the random effects model should be simplified.
       # https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html
@@ -1532,8 +1532,8 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
                    model2_new@optinfo$conv$lme4$messages
       )
     } 
-    else if ((!class(model1_new)%in% c("glmerMod","lme4") & !class(model2_new)%in% c("glmerMod","lme4")) &
-             (!class(model1_old)%in% c("glmerMod","lme4") & !class(model2_old)%in% c("glmerMod","lme4"))
+    else if ((!class(model1_new)%in% c("glmerMod","lme4","lmerMod") & !class(model2_new)%in% c("glmerMod","lme4","lmerMod")) &
+             (!class(model1_old)%in% c("glmerMod","lme4","lmerMod") & !class(model2_old)%in% c("glmerMod","lme4","lmerMod"))
              ){
       output<-list(rbind(deviance_stats(model1_old,"model1_old"),
                          deviance_stats(model1_new,"model1_new"),
@@ -1573,7 +1573,7 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
     #   residual_compare(model1_old,model1_new,model2_old,model2_new,"cl_Days","Centered Log(Days)",10)
     # }
     output<-NULL
-    if(class(model1_new)%in% c("glmerMod","lme4")) 
+    if(class(model1_new)%in% c("glmerMod","lme4","lmerMod")) 
     { 
       # If the fit is singular or near-singular, there might be a higher chance of a false positive (we’re not necessarily screening out gradient and Hessian checking on singular directions properly); a higher chance that the model has actually misconverged (because the optimization problem is difficult on the boundary); and a reasonable argument that the random effects model should be simplified.
       # https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html
@@ -1587,7 +1587,7 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
                    model1_new@optinfo$conv$lme4$messages
       )
     } 
-    else if (!class(model1_new)%in% c("glmerMod","lme4") & !class(model1_old)%in% c("glmerMod","lme4")){#First 2 passed
+    else if (!class(model1_new)%in% c("glmerMod","lme4","lmerMod") & !class(model1_old)%in% c("glmerMod","lme4","lmerMod")){#First 2 passed
       output<-list(rbind(deviance_stats(model1_old,"model1_old"),
                          deviance_stats(model1_new,"model1_new"))
       )
@@ -1646,7 +1646,7 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
   #   residual_compare(model1_old,model1_old,model2_old,model2_new,"cl_Days","Centered Log(Days)",10)
   # }
   output<-NULL
-  if(class(model1_old)%in% c("glmerMod","lme4")) 
+  if(class(model1_old)%in% c("glmerMod","lme4","lmerMod")) 
   { 
     # If the fit is singular or near-singular, there might be a higher chance of a false positive (we’re not necessarily screening out gradient and Hessian checking on singular directions properly); a higher chance that the model has actually misconverged (because the optimization problem is difficult on the boundary); and a reasonable argument that the random effects model should be simplified.
     # https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html
@@ -1660,7 +1660,7 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
                  model1_old@optinfo$conv$lme4$messages
     )
   } 
-  else if (!class(model1_old)%in% c("glmerMod","lme4") & !class(model1_old)%in% c("glmerMod","lme4")){
+  else if (!class(model1_old)%in% c("glmerMod","lme4","lmerMod") & !class(model1_old)%in% c("glmerMod","lme4","lmerMod")){
     output<-list(deviance_stats(model1_old,"model1_old")
     )
   }
