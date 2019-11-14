@@ -2708,18 +2708,21 @@ get_coef_list<-function(limit=NULL){
                     
                     
                     #Office Capability
+                    
+                    "cp_OffPerf7:cln_PairCA"="Office Perf.-Based %:Log(Paired Actions)",
+                    "c_pPBSC:cl_pairCA"="Office Perf.-Based %:Log(Paired Actions)",
+                    "cp_OffPerf7:cln_Days"="Office Perf.-Based %:Log(Planned Dur.)",
+                    "c_pPBSC:cl_Days"="Office Perf.-Based %:Log(Planned Dur.)",
+                    "cp_OffPerf7:cp_PairObl7"="Office Perf.-Based %:Log(Paired Share %)",
+                    "c_pPBSC:c_pMarket"="Office Perf.-Based %:Log(Paired Share %)",
+                    
                     "cln_OffObl7:pOffPSC" = "ERROR UNCENTERED Office Serv. Code Exp. %:Log(Office Obl.)",
                     "cln_OffObl7:cp_OffPSC7" = "Office Serv. Code Exp. %:Log(Office Obl.)",
                     "cp_OffPSC7:cln_OffObl7" = "Office Serv. Code Exp. %:Log(Office Obl.)",
                     "cln_OffFocus:pOffPSC" = "ERROR UNCENTERED Office Serv. Code Exp. %:Log(Office Focus)",
                     "cln_OffFocus:cp_OffPSC7" = "Office Serv. Code Exp. %:Log(Office Focus)",
                     "cp_OffPSC7:cln_OffFocus"="Office Serv. Code Exp. %:Log(Office Focus)",
-                    "c_pPBSC:cl_pairCA"="Office Perf.-Based %:Log(Paired Actions)",
-                    "cp_OffPerf7:cln_PairCA"="Office Perf.-Based %:Log(Paired Actions)",
-                    "cp_OffPerf7:cln_Days"="Office Perf.-Based %:Log(Planned Dur.)",
-                    "c_pPBSC:cl_Days"="Office Perf.-Based %:Log(Planned Dur.)",
-                    "c_pPBSC:c_pMarket"="Office Perf.-Based %:Log(Paired Share %)",
-                    "cp_OffPerf7:cp_PairObl7"="Office Perf.-Based %:Log(Paired Share %)",
+                    
                     
                     
                     #Paired Relationship
