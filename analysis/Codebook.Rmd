@@ -730,16 +730,16 @@ NA_stats(def,"NAICS")`
 def$NAICS_Code<-def$NAICS2
 
 
-def<-csis360::read_and_join(def,
-                            lookup_file = "Lookup_NAICS_code.csv",
-                            path="",
-                            dir="Lookup\\",
-                            by="NAICS_Code",
-                            skip_check_var="NAICS_DESCRIPTION"
+def<-csis360::read_and_join_experiment(def,
+                            lookup_file = "Lookup_PrincipalNAICScode.csv",
+                            path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                            dir="economic/",
+                            by=c("NAICS_Code"="principalnaicscode"),
+                            add_var="principalnaicscodeText"
 )
 
 def$NAICS2_label<-paste(def$NAICS_Code,
-                             def$NAICS_DESCRIPTION)
+                             def$principalnaicscodeText)
 
 def$NAICS2_label[
   def$NAICS2_label==
@@ -764,35 +764,6 @@ ggsave(NAICS2digit,file="..//Output\\NAICS2digitCount.eps",width=10,height=6,dpi
 ```
 
 
-```{r barplot for all NAICS2, 21 in total}
-
-#Get detail description for NAICS2 code
-# debug(csis360::na_check)
-NAICS2_Freq<-read_and_join_experiment(NAICS2_Freq,
-                                           lookup_file = "Lookup_PrincipalNAICScode.csv",
-                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                                      dir="economic\\",
-                                      by=c("NAICS_Code"="principalnaicscode"),
-                                      add_var="principalnaicscodeText"
-                                      )
-
-NAICS2_Freq <- NAICS2_Freq[order(-NAICS2_Freq$Percent_Freq),]
-NAICS2_Freq$principalnaicscodeText <- factor(NAICS2_Freq$principalnaicscodeText, levels = rev(NAICS2_Freq$principalnaicscodeText))
-
-Frequency_Plot2 <- ggplot(data = NAICS2_Freq,
-                          aes(x = NAICS2_Freq$principalnaicscodeText, 
-                              y = NAICS2_Freq$Percent_Freq)) +
-                   geom_bar(stat = "identity", position = "dodge", width = 0.8) + 
-                   coord_flip() +
-                   xlab("") + 
-                   ylab("Percent of Frequency") + 
-                   theme_grey() + 
-                   scale_fill_grey() + 
-                   ggtitle("Percent of Frequency for NAICS2") +
-                   theme(text = element_text(size = 10))
-Frequency_Plot2
-```
-
 ```{r grouped percent frequency/obligation barplot for all NAICS2, 21 in total}
 #Prepare data for plot
 NAICS2_Freq <- as.data.frame(table(def$NAICS2))
@@ -800,7 +771,14 @@ NAICS2_Freq$Percent_Freq <- round(NAICS2_Freq$Freq/sum(NAICS2_Freq$Freq),4)*100
 colnames(NAICS2_Freq) <- c("NAICS_Code", "Count_Freq", "Percent_Freq")
 
 #Get detail description for NAICS2 code
-NAICS2_Freq <- left_join(NAICS2_Freq, NAICS_Lookup, by = "NAICS_Code")
+NAICS2_Freq<-csis360::read_and_join_experiment(NAICS2_Freq,
+                            lookup_file = "Lookup_PrincipalNAICScode.csv",
+                            path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                            dir="economic/",
+                            by=c("NAICS_Code"="principalnaicscode"),
+                            add_var="principalnaicscodeText"
+)
+
 
 Percent_Obli <- c()
 Total_Obli <- sum(def$Action_Obligation.OMB20_GDP18, na.rm = TRUE)
@@ -812,13 +790,13 @@ for (i in NAICS2_Freq$NAICS_Code) {
 NAICS2_Freq$Percent_Obli <- Percent_Obli * 100
 NAICS2_Freq <- NAICS2_Freq[order(-NAICS2_Freq$Percent_Obli),]
 NAICS2_Freq[,c(1,3)] <- lapply(NAICS2_Freq[,c(1,3)], function(x) as.character(x))
-NAICS2_Freq$NAICS_DESCRIPTION <- paste(NAICS2_Freq$NAICS_Code, " - ", NAICS2_Freq$NAICS_DESCRIPTION)
-NAICS2_Freq$NAICS_DESCRIPTION <- factor(NAICS2_Freq$NAICS_DESCRIPTION, levels = rev(NAICS2_Freq$NAICS_DESCRIPTION))
-NAICS2_Freq <- melt(NAICS2_Freq, id = c("NAICS_Code", "Count_Freq","NAICS_DESCRIPTION"))
+NAICS2_Freq$principalnaicscodeText <- paste(NAICS2_Freq$NAICS_Code, " - ", NAICS2_Freq$principalnaicscodeText)
+NAICS2_Freq$principalnaicscodeText <- factor(NAICS2_Freq$principalnaicscodeText, levels = rev(NAICS2_Freq$principalnaicscodeText))
+NAICS2_Freq <- melt(NAICS2_Freq, id = c("NAICS_Code", "Count_Freq","principalnaicscodeText"))
 NAICS2_Freq$value <- as.numeric(NAICS2_Freq$value)
 
 NAICS2_barplot <- ggplot(data = NAICS2_Freq,
-                          aes(x = NAICS_DESCRIPTION, 
+                          aes(x = principalnaicscodeText, 
                               y = value,
                               fill = factor(variable))) +
                    geom_bar(stat = "identity", 
@@ -1044,11 +1022,11 @@ colnames(NAICS_Freq_TOP20) <- c("NAICS_Code", "Count_Freq", "Percent_Freq")
 #Get detail description for each NAICS code
 NAICS_Freq_TOP20 <- left_join(NAICS_Freq_TOP20, NAICS_Lookup, by = "NAICS_Code")
 NAICS_Freq_TOP20 <- NAICS_Freq_TOP20[order(-NAICS_Freq_TOP20$Percent_Freq),]
-NAICS_Freq_TOP20$NAICS_DESCRIPTION <- factor(NAICS_Freq_TOP20$NAICS_DESCRIPTION, levels = rev(NAICS_Freq_TOP20$NAICS_DESCRIPTION))
+NAICS_Freq_TOP20$principalnaicscodeText <- factor(NAICS_Freq_TOP20$principalnaicscodeText, levels = rev(NAICS_Freq_TOP20$principalnaicscodeText))
 
 
 Frequency_Plot <- ggplot(data = NAICS_Freq_TOP20, 
-                         aes(x = NAICS_Freq_TOP20$NAICS_DESCRIPTION, 
+                         aes(x = NAICS_Freq_TOP20$principalnaicscodeText, 
                              y = NAICS_Freq_TOP20$Percent_Freq)) +
                   geom_bar(stat = "identity", position = "dodge", width = 0.8) + 
                   coord_flip() +
