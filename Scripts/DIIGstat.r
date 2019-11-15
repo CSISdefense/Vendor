@@ -887,8 +887,9 @@ centered_description<-function(x,units=NA){
 NA_stats<-function(data,col,exclude_before_2008=TRUE,value_col=NULL){
   value_col<-get_value_col(data,value_col)
   if(exclude_before_2008==TRUE) before2008<-data$StartCY<2008
+  else before2008<-FALSE
   paste("Data is missing for ",
-        format(sum(is.na(data[!before2008,col]))/nrow(data[!before2008,col]),digits=3),
+        format(sum(is.na(data[!before2008,col]))/length(data[!before2008,col]),digits=3),
         " of records and ",
         format(sum(data[[value_col]][is.na(data[!before2008,col])],na.rm=TRUE)/
                  sum(data[[value_col]][!before2008],na.rm=TRUE),digits=3),
