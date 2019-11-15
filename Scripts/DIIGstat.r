@@ -1898,7 +1898,8 @@ name_categorical <- c("CompOffr","Veh","PricingFee","UCA","Intl","Term",
 #Input(x: name of the categorical variable needs plot; contract: name of the dataframe)
 #Output: grouped bar plot for the selected variable;
 grouped_barplot <- function(x, contract,
-                            value_col=NULL) {
+                            value_col=NULL,
+                            top_rank=NULL) {
   if(!x %in% colnames(contract)) stop(paste(x,"is not a column in contract."))
   value_col<-get_value_col(contract,value_col)
   
