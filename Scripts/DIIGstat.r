@@ -1777,10 +1777,13 @@ get_value_col<-function(contract,
 
 statsummary_discrete <- function(x, 
                                  contract,accuracy=0.01,
-                                 value_col=NULL){      #input(x: name of the discrete variable, contract：name of the dataframe)
+                                 value_col=NULL,
+                                 top_rank=NULL){      #input(x: name of the discrete variable, contract：name of the dataframe)
   value_col<-get_value_col(contract,value_col)
+  
   if(!x %in% colnames(contract)) stop(paste(x,"is not a column in contract."))
   if(!is.factor(contract[[x]])) contract[[x]]<-factor(contract[[x]])
+  
   unique_value_list <- levels(contract[[x]])
   categories <- c(unique_value_list)
   Percent_Actions <- c()
@@ -1905,7 +1908,11 @@ grouped_barplot <- function(x, contract,
   
   memory.limit(56000)
   #perparing data for ploting
-  name_Info <- statsummary_discrete(x, contract,value_col=value_col)
+  name_Info <- statsummary_discrete(x, 
+                                    contract,
+                                    value_col=value_col,
+                                    top_rank=top_rank)
+  
   name_Info_noNAN <- subset(name_Info, name_Info[, 1] != "NA")
   name_Info_noNAN[, 1] <- factor(name_Info_noNAN[, 1], droplevels(name_Info_noNAN[, 1]))
   
