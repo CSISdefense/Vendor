@@ -1754,14 +1754,17 @@ get_value_col<-function(contract,
     else if("Action_Obligation" %in% colnames(contract)){
       value_col<-"Action_Obligation"
     }
-    else if("Action_Obligation.Then.Year" %in% colnames(contract)){
-      value_col<-"Action_Obligation.Then.Year"
-    }
-    else if("Action_Obligation.Then.Year" %in% colnames(contract)){
-      value_col<-"Action_Obligation.Then.Year"
-    }
     else if("Action.Obligation" %in% colnames(contract)){
       value_col<-"Action.Obligation"
+    }
+    else if("Action_Obligation.Then.Year" %in% colnames(contract)){
+      value_col<-"Action_Obligation.Then.Year"
+    }
+    else if("Action_Obligation.Then.Year" %in% colnames(contract)){
+      value_col<-"Action_Obligation.Then.Year"
+    }
+    else if("Action_Obligation_Then_Year" %in% colnames(contract)){
+      value_col<-"Action_Obligation_Then_Year"
     }
     else stop("No standard value column in dataset, pass the desired column to oolumn_name.")
   }
