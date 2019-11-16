@@ -1784,23 +1784,49 @@ statsummary_discrete <- function(x,
   if(!x %in% colnames(contract)) stop(paste(x,"is not a column in contract."))
   if(!is.factor(contract[[x]])) contract[[x]]<-factor(contract[[x]])
   
-  unique_value_list <- levels(contract[[x]])
-  categories <- c(unique_value_list)
-  Percent_Actions <- c()
-  Percent_Records <- c()
-  for (i in 1:length(unique_value_list)){
-    Percent_Records <- c(Percent_Records, percent(round(sum(contract[[x]] == unique_value_list[i],na.rm = TRUE)/nrow(contract),5),accuracy = accuracy))
-    Percent_Actions <- c(Percent_Actions, percent(round(sum(contract[contract[[x]] == unique_value_list[i],value_col],na.rm = TRUE)/sum(contract[,value_col],na.rm = TRUE),5),accuracy = accuracy))    
+  
+  # unique_value_list <- levels(contract[[x]])
+  # categories <- c(unique_value_list)
+  # Percent_Actions <- c()
+  # Percent_Records <- c()
+
+  Percent_Actions <- contract %>% group_by(!!sym(x)) %>%
+    dplyr::summarise(
+      Records=length(!!sym(x)),
+      Value=sum(!!sym(value_col),na.rm=TRUE)
+    ) 
+  
+  if(!is.null(top_rank)){
+    # Percent_Actions[[x]]<-as.character(Percent_Actions[[x]])
+    Percent_Actions <- Percent_Actions %>% 
+      mutate(Top=ifelse(rank(-Value)>top_rank,"All Other",as.character(!!sym(x))))
+    Percent_Actions$Top[is.na(Percent_Actions[[x]])]<-NA
+    Percent_Actions[[x]]<-Percent_Actions$Top
+    Percent_Actions<-Percent_Actions %>% group_by(!!sym(x)) %>%
+      dplyr::summarise(
+        Records=sum(Records,na.rm=TRUE),
+        Value=sum(Value)
+      )
   }
-  if(sum(is.na(contract[[x]]))>1){#If any NA}
-    categories <- c(unique_value_list,"NA")
-    Percent_Records <- c(Percent_Records, percent(round(sum(is.na(contract[[x]]))/nrow(contract),5),accuracy = .01))
-    Percent_Actions <- c(Percent_Actions, percent(round(sum(contract[[value_col]][is.na(contract[[x]])],na.rm = TRUE)/sum(contract[,value_col],na.rm = TRUE),5),accuracy = accuracy))
-  }
+  # Percent_Actions <- Percent_Actions %>% group_by() %>%
+  #   dplyr::mutate(
+  #     Records=percent(round(Records/sum(Records,na.rm=TRUE)),accuracy=accuracy),
+  #     Value=percent(round(Value/sum(Value,na.rm=TRUE)),accuracy=accuracy)
+  #   ) 
+  
+  # for (i in 1:length(unique_value_list)){
+  #   Percent_Records <- c(Percent_Records, percent(round(sum(contract[[x]] == unique_value_list[i],na.rm = TRUE)/nrow(contract),5),accuracy = accuracy))
+  #   Percent_Actions <- c(Percent_Actions, percent(round(sum(contract[contract[[x]] == unique_value_list[i],value_col],na.rm = TRUE)/sum(contract[,value_col],na.rm = TRUE),5),accuracy = accuracy))    
+  # }
+  # if(sum(is.na(contract[[x]]))>1){#If any NA}
+  #   categories <- c(unique_value_list,"NA")
+  #   Percent_Records <- c(Percent_Records, percent(round(sum(is.na(contract[[x]]))/nrow(contract),5),accuracy = .01))
+  #   Percent_Actions <- c(Percent_Actions, percent(round(sum(contract[[value_col]][is.na(contract[[x]])],na.rm = TRUE)/sum(contract[,value_col],na.rm = TRUE),5),accuracy = accuracy))
+  # }
   name_categorical <- c(x,"% of records","% of $s")
-  categories <- as.data.frame(cbind(categories,Percent_Records,Percent_Actions))
-  colnames(categories) <- name_categorical
-  return(categories)
+  # categories <- as.data.frame(cbind(categories,Percent_Records,Percent_Actions))
+  colnames(Percent_Actions) <- name_categorical
+  return(Percent_Actions)
 }
 
 #Extract statistic information of the 26 continuous variables and generate dataframe      
@@ -1921,7 +1947,7 @@ grouped_barplot <- function(x, contract,
   levels(name_Info$variable)[levels(name_Info$variable)=="%of records"] = "% of records"
   levels(name_Info$variable)[levels(name_Info$variable)=="% of $s"] = "% of obligations"
   name_Info$variable <- factor(name_Info$variable, rev(levels(name_Info$variable)))
-  if(any(name_Info[, 1]=="NA"))
+  if(any(is.na(name_Info[, 1])))
     limits<-rev(c(levels(name_Info_noNAN[ ,1]),"NA"))
   else
     limits<-rev(levels(name_Info_noNAN[ ,1]))
