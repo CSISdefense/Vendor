@@ -1779,6 +1779,7 @@ statsummary_discrete <- function(x,
                                  contract,accuracy=0.01,
                                  value_col=NULL,
                                  top_rank=NULL){      #input(x: name of the discrete variable, contract：name of the dataframe)
+  if(is.data.frame(x)) stop("Pass the data frame as the second parameter")
   value_col<-get_value_col(contract,value_col)
   
   if(!x %in% colnames(contract)) stop(paste(x,"is not a column in contract."))
@@ -1855,7 +1856,7 @@ statsummary_continuous <- function(x,
                                    value_col=NULL,
                                    plus1=FALSE)
   {       #input(x: namelist of all continuous variables contract: name of the data frame)
-  
+    if(is.data.frame(x)) stop("Pass the data frame as the second parameter")
     #
     if(plus1==TRUE){
       if(log==FALSE) warning("The variable is not being logged. Are you sure you want to add one?")
