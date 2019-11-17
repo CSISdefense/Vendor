@@ -1799,7 +1799,9 @@ statsummary_discrete <- function(x,
   if(!is.null(top_rank)){
     # Percent_Actions[[x]]<-as.character(Percent_Actions[[x]])
     Percent_Actions <- Percent_Actions %>% 
-      mutate(Top=ifelse(rank(-Value)>top_rank,"All Other",as.character(!!sym(x))))
+      mutate(Top=ifelse(rank(-Value)>top_rank & 
+                          rank(-Records)>top_rank 
+                          ,"All Other",as.character(!!sym(x))))
     Percent_Actions$Top[is.na(Percent_Actions[[x]])]<-NA
     Percent_Actions[[x]]<-Percent_Actions$Top
     Percent_Actions<-Percent_Actions %>% group_by(!!sym(x)) %>%
@@ -1808,11 +1810,11 @@ statsummary_discrete <- function(x,
         Value=sum(Value)
       )
   }
-  # Percent_Actions <- Percent_Actions %>% group_by() %>%
-  #   dplyr::mutate(
-  #     Records=percent(round(Records/sum(Records,na.rm=TRUE)),accuracy=accuracy),
-  #     Value=percent(round(Value/sum(Value,na.rm=TRUE)),accuracy=accuracy)
-  #   ) 
+  Percent_Actions <- Percent_Actions %>% group_by() %>%
+    dplyr::mutate(
+      Records=percent(Records/sum(Records,na.rm=TRUE),accuracy=accuracy),
+      Value=percent(Value/sum(Value,na.rm=TRUE),accuracy=accuracy)
+    )
   
   # for (i in 1:length(unique_value_list)){
   #   Percent_Records <- c(Percent_Records, percent(round(sum(contract[[x]] == unique_value_list[i],na.rm = TRUE)/nrow(contract),5),accuracy = accuracy))
@@ -1823,7 +1825,7 @@ statsummary_discrete <- function(x,
   #   Percent_Records <- c(Percent_Records, percent(round(sum(is.na(contract[[x]]))/nrow(contract),5),accuracy = .01))
   #   Percent_Actions <- c(Percent_Actions, percent(round(sum(contract[[value_col]][is.na(contract[[x]])],na.rm = TRUE)/sum(contract[,value_col],na.rm = TRUE),5),accuracy = accuracy))
   # }
-  name_categorical <- c(x,"% of records","% of $s")
+  name_categorical <- c(x,"% of Records","% of $s")
   # categories <- as.data.frame(cbind(categories,Percent_Records,Percent_Actions))
   colnames(Percent_Actions) <- name_categorical
   return(Percent_Actions)
@@ -1932,19 +1934,17 @@ grouped_barplot <- function(x, contract,
   if(!x %in% colnames(contract)) stop(paste(x,"is not a column in contract."))
   value_col<-get_value_col(contract,value_col)
   
-  memory.limit(56000)
   #perparing data for ploting
   name_Info <- statsummary_discrete(x, 
                                     contract,
                                     value_col=value_col,
                                     top_rank=top_rank)
   
-  name_Info_noNAN <- subset(name_Info, name_Info[, 1] != "NA")
-  name_Info_noNAN[, 1] <- factor(name_Info_noNAN[, 1], droplevels(name_Info_noNAN[, 1]))
+  name_Info_noNAN <- name_Info[!is.na(name_Info[, 1]),]
+  name_Info_noNAN[, 1] <-droplevels(factor(name_Info_noNAN[,1]))
   
   name_Info[, -1] <- lapply(name_Info[, -1], function(x) as.numeric(gsub("%","",x)))
   name_Info <- reshape2::melt(name_Info, id = x)
-  levels(name_Info$variable)[levels(name_Info$variable)=="%of records"] = "% of records"
   levels(name_Info$variable)[levels(name_Info$variable)=="% of $s"] = "% of obligations"
   name_Info$variable <- factor(name_Info$variable, rev(levels(name_Info$variable)))
   if(any(is.na(name_Info[, 1])))
@@ -2004,7 +2004,7 @@ part_grouped_barplot <- function(name,
     ylab("") + 
     coord_flip() + 
     theme_grey() +
-    scale_fill_grey(labels = c("% of records", "% of obligations"),
+    scale_fill_grey(labels = c("% of Records", "% of obligations"),
                     guide = guide_legend(reverse = TRUE)) +
     theme(legend.title = element_blank(),
           legend.position = "bottom",
