@@ -1808,12 +1808,19 @@ statsummary_discrete <- function(x,
         Value=sum(Value)
       )
   }
-  # Percent_Actions <- Percent_Actions %>% group_by() %>%
-  #   dplyr::mutate(
-  #     Records=percent(round(Records/sum(Records,na.rm=TRUE)),accuracy=accuracy),
-  #     Value=percent(round(Value/sum(Value,na.rm=TRUE)),accuracy=accuracy)
-  #   ) 
+  Percent_Actions <- Percent_Actions %>% group_by() %>%
+    dplyr::mutate(
+      Records=Records/sum(Records,na.rm=TRUE),
+      Value=Value/sum(Value,na.rm=TRUE)
+    )
   
+  if(!is.null(accuracy)){
+    Percent_Actions<-Percent_Actions %>% mutate(
+      Records=percent(Records,accuracy=accuracy),
+      Value=percent(Value,accuracy=accuracy)
+    )
+    
+  }
   # for (i in 1:length(unique_value_list)){
   #   Percent_Records <- c(Percent_Records, percent(round(sum(contract[[x]] == unique_value_list[i],na.rm = TRUE)/nrow(contract),5),accuracy = accuracy))
   #   Percent_Actions <- c(Percent_Actions, percent(round(sum(contract[contract[[x]] == unique_value_list[i],value_col],na.rm = TRUE)/sum(contract[,value_col],na.rm = TRUE),5),accuracy = accuracy))    
@@ -1937,6 +1944,7 @@ grouped_barplot <- function(x, contract,
   name_Info <- statsummary_discrete(x, 
                                     contract,
                                     value_col=value_col,
+                                    accuracy=NULL,#Skips formatting that adds %
                                     top_rank=top_rank)
   
   name_Info_noNAN <- subset(name_Info, name_Info[, 1] != "NA")
