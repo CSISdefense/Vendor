@@ -1942,23 +1942,25 @@ grouped_barplot <- function(x, contract,
   value_col<-get_value_col(contract,value_col)
   
   #perparing data for ploting
-  name_Info <- statsummary_discrete(x, 
+  name_Info <- as.data.frame(statsummary_discrete(x, 
                                     contract,
                                     value_col=value_col,
                                     accuracy=NULL,#Skips formatting that adds %
                                     top_rank=top_rank)
+  )
   
-  name_Info_noNAN <- name_Info[!is.na(name_Info[, 1]),]
-  name_Info_noNAN[, 1] <-droplevels(factor(name_Info_noNAN[,1]))
+    
+  name_Info_noNAN <-levels(droplevels(
+    factor(name_Info[!is.na(name_Info[, 1]),1])))
   
-  name_Info[, -1] <- lapply(name_Info[, -1], function(x) as.numeric(gsub("%","",x)))
+  # name_Info[, -1] <- lapply(name_Info[, -1], function(x) as.numeric(gsub("%","",x)))
   name_Info <- reshape2::melt(name_Info, id = x)
-  levels(name_Info$variable)[levels(name_Info$variable)=="% of $s"] = "% of obligations"
+  levels(name_Info$variable)[levels(name_Info$variable)=="% of $s"] = "% of Obligations"
   name_Info$variable <- factor(name_Info$variable, rev(levels(name_Info$variable)))
   if(any(is.na(name_Info[, 1])))
-    limits<-rev(c(levels(name_Info_noNAN[ ,1]),"NA"))
+    limits<-rev(c(name_Info_noNAN,"NA"))
   else
-    limits<-rev(levels(name_Info_noNAN[ ,1]))
+    limits<-rev(name_Info_noNAN)
   basicplot <- ggplot(data = name_Info, 
                       aes(x = name_Info[, 1], 
                           y = name_Info[, 3], 
