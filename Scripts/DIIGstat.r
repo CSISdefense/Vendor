@@ -2502,8 +2502,8 @@ get_coef_list<-function(limit=NULL){
                     "cln_OffFocus"="Log(Office Focus)",
                     "cl_office_naics_hhi_k"="Log(Office Focus)",
                     
-                    "cp_PairObl7"="Log(Paired Share %)",
-                    "c_pMarket"="Log(Paired Share %)",
+                    "cp_PairObl7"="Paired Share %",
+                    "c_pMarket"="Paired Share %",
                     
                     #interations
                     
@@ -2553,8 +2553,8 @@ get_coef_list<-function(limit=NULL){
                     "cp_OffPerf7:cln_PairCA"="Office Perf.-Based %:Log(Paired Actions)",
                     "cp_OffPerf7:cln_Days"="Office Perf.-Based %:Log(Planned Dur.)",
                     "c_pPBSC:cl_Days"="Office Perf.-Based %:Log(Planned Dur.)",
-                    "c_pPBSC:c_pMarket"="Office Perf.-Based %:Log(Paired Share %)",
-                    "cp_OffPerf7:cp_PairObl7"="Office Perf.-Based %:Log(Paired Share %)",
+                    "c_pPBSC:c_pMarket"="Office Perf.-Based %:Paired Share %",
+                    "cp_OffPerf7:cp_PairObl7"="Office Perf.-Based %:Paired Share %",
                     
                     
                     #Paired Relationship
@@ -2706,8 +2706,8 @@ get_coef_list<-function(limit=NULL){
                     "cln_PairCA"="Log(Paired Actions)",
                     "cln_PairObl7"="Log(Paired Obl.)",
                     
-                    "cp_PairObl7"="Log(Paired Share %)",
-                    "c_pMarket"="Log(Paired Share %)",
+                    "cp_PairObl7"="Paired Share %",
+                    "c_pMarket"="Paired Share %",
                     
                     
                     
@@ -2762,8 +2762,8 @@ get_coef_list<-function(limit=NULL){
                     "c_pPBSC:cl_pairCA"="Office Perf.-Based %:Log(Paired Actions)",
                     "cp_OffPerf7:cln_Days"="Office Perf.-Based %:Log(Planned Dur.)",
                     "c_pPBSC:cl_Days"="Office Perf.-Based %:Log(Planned Dur.)",
-                    "cp_OffPerf7:cp_PairObl7"="Office Perf.-Based %:Log(Paired Share %)",
-                    "c_pPBSC:c_pMarket"="Office Perf.-Based %:Log(Paired Share %)",
+                    "cp_OffPerf7:cp_PairObl7"="Office Perf.-Based %:Paired Share %",
+                    "c_pPBSC:c_pMarket"="Office Perf.-Based %:Paired Share %",
                     
                     "cln_OffObl7:pOffPSC" = "ERROR UNCENTERED Office Serv. Code Exp. %:Log(Office Obl.)",
                     "cln_OffObl7:cp_OffPSC7" = "Office Serv. Code Exp. %:Log(Office Obl.)",
