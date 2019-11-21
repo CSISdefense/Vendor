@@ -17,8 +17,8 @@ Annual Outcome
 ```{r InputFiles, echo = TRUE}
 source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/helper.r")
 source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/lookups.r")
-source("DIIGstat.r")
-source("https://raw.githubusercontent.com/CSISdefense/Crisis-Funding/master/ContractCleanup.r")
+source("../scripts/DIIGstat.r")
+source("https://raw.githubusercontent.com/CSISdefense/Crisis-Funding/master/Scripts/ContractCleanup.r")
 
 library(csis360)
 library(ggplot2)
@@ -51,20 +51,23 @@ main.text.size<-1
 note.text.size<-1.40
 
 all_labeled<-function(data){
-  subset(data,
+  data<-data %>% dplyr::filter(
                                         !is.na(qDuration) & 
                !is.na(Ceil) &
-               !is.na(CRai) & 
+               !is.na(p_CBre) & 
            !is.na(Term))
 }
 
+
 only_complete<-function(data){
-  data<-all_labeled(data)
-  subset(data,(LastCurrentCompletionDate<=as.Date("2017-09-30") |
+  data<-all_labeled(data) %>%
+    dplyr::filter((LastCurrentCompletionDate<=as.Date("2018-09-30") |
               IsClosed==1) &
-           UnmodifiedCurrentCompletionDate<as.Date("2017-09-30"))
+           UnmodifiedCurrentCompletionDate<as.Date("2018-09-30"))
 }
 
+
+memory.limit(30000)
 ```
 
 
@@ -73,26 +76,27 @@ Contracts are classified using a mix of numerical and categorical variables. Whi
 ## Read in data
 ```{r ReadInData, echo = TRUE}
 
-load(file="Data/defense_contract_all.RData")
+load(file="../data/clean/defense_contract_all_detail.RData")
 # debug(transform_contract)
 # undebug(transform_contract)
 
-memory.limit(30000)
-def_all<-subset(def_all,  StartFY>=2007 & 
-                                               StartFY<=2016 
-)                
+def_all<-def_all %>%
+  dplyr::filter(StartFiscal_Year>=2007 & 
+                  StartFiscal_Year<=2017 
+  )                
 
+if(any(duplicated(colnames(def_all)))) stop("Duplicate Contract Name")
 
+debug(rename_dataset)
+def_all<-rename_dataset(def_all)
 def_all<-transform_contract(def_all)
 
-def_all<-rename_dataset(def_all)
+
 def_all<-FormatContractModel(def_all)
 
 head(def_all)
 
 write.csv(subset(def_all,Term=="Terminated"),"Terminated.csv")
-
-
 
 ```
 
@@ -713,64 +717,64 @@ summary(def_all$Dur.Simple)
 #     )
 # 
 # def_all$Dur.Simple<-factor(factor(def_all$Dur.Simple))
-summary(TerminatedSDurSCeilStatCount$Ceil.Simple)
-summary(def_all$Ceil.Simple)
-summary(def_all$Ceil)
+# summary(TerminatedSDurSCeilStatCount$Ceil.Simple)
+# summary(def_all$Ceil.Simple)
+# summary(def_all$Ceil)
+# 
+# View(TerminatedSDurSCeilStatCount)
+# write.csv(TerminatedSDurSCeilStatCount,"TerminatedSDurSCeilStatCount.csv")
 
-View(TerminatedSDurSCeilStatCount)
-write.csv(TerminatedSDurSCeilStatCount,"TerminatedSDurSCeilStatCount.csv")
-
-summary(def_all$qHighCeiling)
-if (all(levels(def_all$qHighCeiling)==c("[0.00e+00,1.50e+04)",
-                                             "[1.50e+04,1.00e+05)",
-                                             "[1.00e+05,1.00e+06)",
-                                             "[1.00e+06,1.00e+07)",
-                                             "[1.00e+07,7.50e+07)",
-                                             "[7.50e+07,3.36e+12]"))){
-      def_all$qHighCeiling<-factor(def_all$qHighCeiling,
-
-                                    levels=c("[0.00e+00,1.50e+04)",
-                                             "[1.50e+04,1.00e+05)",
-                                             "[1.00e+05,1.00e+06)",
-                                             "[1.00e+06,1.00e+07)",
-                                             "[1.00e+07,7.50e+07)",
-                                             "[7.50e+07,3.36e+12]"),
-                                    labels=c("[0,15k)",
-                                             "[15k,100k)",
-                                             "[100k,1m)",
-                                             "[1m,10m)",
-                                             "[10m,75m)",
-                                             "[75m+]"),
-                                    ordered=TRUE
-      )
-    }
-
-
-
- if (identical(levels(def_all$qHighCeiling),c("[0,15k)",
-                                                  "[15k,100k)",
-                                                  "[100k,1m)",
-                                                  "[1m,10m)",
-                                                  "[10m,75m)",
-                                                  "[75m+]"
-    ))){
-      def_all$Ceil.Simple<-def_all$qHighCeiling
-      levels(def_all$Ceil.Simple)<- list("0k - <100k"=c("[15k,100k)",
-                                                         "[0,15k)"),
-                                          "100k - <10m"=c("[1m,10m)",
-                                                          "[100k,1m)"),
-                                          "10m+"=c("[75m+]",
-                                                   "[10m,75m)"))
-
-      def_all$Ceil.Big<-def_all$Ceil
-      levels(def_all$Ceil.Big)<- list("0k - <100k"=c("[15k,100k)",
-                                                      "[0,15k)"),
-                                       "100k - <10m"=c("[1m,10m)",
-                                                       "[100k,1m)"),
-                                       "10m - <75m"=c("[10m,75m)"),
-                                       "75m+"=c("[75m+]"))
-}
-summary(def_all$Ceil.Simple)
+# summary(def_all$qHighCeiling)
+# if (all(levels(def_all$qHighCeiling)==c("[0.00e+00,1.50e+04)",
+#                                              "[1.50e+04,1.00e+05)",
+#                                              "[1.00e+05,1.00e+06)",
+#                                              "[1.00e+06,1.00e+07)",
+#                                              "[1.00e+07,7.50e+07)",
+#                                              "[7.50e+07,3.36e+12]"))){
+#       def_all$qHighCeiling<-factor(def_all$qHighCeiling,
+# 
+#                                     levels=c("[0.00e+00,1.50e+04)",
+#                                              "[1.50e+04,1.00e+05)",
+#                                              "[1.00e+05,1.00e+06)",
+#                                              "[1.00e+06,1.00e+07)",
+#                                              "[1.00e+07,7.50e+07)",
+#                                              "[7.50e+07,3.36e+12]"),
+#                                     labels=c("[0,15k)",
+#                                              "[15k,100k)",
+#                                              "[100k,1m)",
+#                                              "[1m,10m)",
+#                                              "[10m,75m)",
+#                                              "[75m+]"),
+#                                     ordered=TRUE
+#       )
+#     }
+# 
+# 
+# 
+#  if (identical(levels(def_all$qHighCeiling),c("[0,15k)",
+#                                                   "[15k,100k)",
+#                                                   "[100k,1m)",
+#                                                   "[1m,10m)",
+#                                                   "[10m,75m)",
+#                                                   "[75m+]"
+#     ))){
+#       def_all$Ceil.Simple<-def_all$qHighCeiling
+#       levels(def_all$Ceil.Simple)<- list("0k - <100k"=c("[15k,100k)",
+#                                                          "[0,15k)"),
+#                                           "100k - <10m"=c("[1m,10m)",
+#                                                           "[100k,1m)"),
+#                                           "10m+"=c("[75m+]",
+#                                                    "[10m,75m)"))
+# 
+#       def_all$Ceil.Big<-def_all$Ceil
+#       levels(def_all$Ceil.Big)<- list("0k - <100k"=c("[15k,100k)",
+#                                                       "[0,15k)"),
+#                                        "100k - <10m"=c("[1m,10m)",
+#                                                        "[100k,1m)"),
+#                                        "10m - <75m"=c("[10m,75m)"),
+#                                        "75m+"=c("[75m+]"))
+# }
+# summary(def_all$Ceil.Simple)
 
 TerminatedSDurSCeilStatCount<-
   only_complete(def_all) %>%
@@ -1353,7 +1357,7 @@ The % Growth in Base and All Options Value Amount form Change Orders is calculat
 # pChgCeil$pTotalObligation<-pChgCeil$Action.Obligation/sum(NChgCeil$Action.Obligation,na.rm=TRUE)
 # pChgCeil$pTotalContract<-pChgCeil$ContractCount/sum(NChgCeil$ContractCount,na.rm=TRUE)
 # 
-# pChgCeil$CRai <- cut2(
+# pChgCeil$p_CBre <- cut2(
 #     pChgCeil$pChange3Sig,c(
 #                                               -0.001,
 #                                               0.001,
@@ -1437,7 +1441,7 @@ The % Growth in Base and All Options Value Amount form Change Orders is calculat
 # # Percent of Contracts breakdown by Ceiling
 # ggplot(
 #   data = subset(pChgCeil,pChange3Sig!=0),
-#   aes_string(x = "pChange3Sig",weight="pContractByCeil",fill="CRai")#
+#   aes_string(x = "pChange3Sig",weight="pContractByCeil",fill="p_CBre")#
 #   )+ geom_histogram(binwidth=0.05)+
 # #     scale_x_continuous("Percentage of Cost-Ceiling-Raising Change Orders by\nInitial Cost Ceiling (Current $ Value)")
 #     scale_y_continuous("Percent of Contracts", labels=percent)+
@@ -1453,7 +1457,7 @@ The % Growth in Base and All Options Value Amount form Change Orders is calculat
 # #Percent of obligations breakdown
 # ggplot(
 #   data = subset(pChgCeil,pChange3Sig!=0),
-#   aes_string(x = "pChange3Sig",weight="pTotalObligation",fill="CRai")#
+#   aes_string(x = "pChange3Sig",weight="pTotalObligation",fill="p_CBre")#
 #   )+ geom_bar(binwidth=0.01)+
 # #     scale_x_continuous("Percentage of Obligations  by\nInitial Cost Ceiling (Current $ Value)")
 #     scale_y_continuous("Percent of Completed Contracts\n(Weighted by Current $ Obligations)", labels=percent)+
@@ -1463,7 +1467,7 @@ The % Growth in Base and All Options Value Amount form Change Orders is calculat
 #     scale_fill_discrete(name="Extent of Ceiling Breach")
 # 
 # 
-# tapply(pChgCeil$CRai, pChgCeil$Ceil, summary)
+# tapply(pChgCeil$p_CBre, pChgCeil$Ceil, summary)
 # 
 # 
 # sum(subset(pChgCeil,pChange3Sig>0)$pTotalObligation)
@@ -1480,7 +1484,7 @@ The % Growth in Base and All Options Value Amount form Change Orders is calculat
 #                      .(Ceil,
 #                        pChange3Sig,
 #                        SumOfisChangeOrder,
-#                        CRai,
+#                        p_CBre,
 #                        Term),
 #                      summarise,
 #                      pContractByCeil=sum(pContractByCeil),
@@ -1489,7 +1493,7 @@ The % Growth in Base and All Options Value Amount form Change Orders is calculat
 # 
 # 
 # 
-# ddply(pChgCeil,.(Term,CRai),
+# ddply(pChgCeil,.(Term,p_CBre),
 #                      summarise,
 #                      pTotalObligation=sum(pTotalObligation))
 
@@ -1572,7 +1576,7 @@ View(subset(def_all,Ceil.Big=="0k - <100k" & Dur.Simple=="(~2 years+]"))
 ## Ceiling Breach Quantile
 ```{r Quantile , fig.width=9,fig.height=9, dpi=600}
 
-df.QCrai<-only_complete(def_all)%>%
+df.Qn_CBre<-only_complete(def_all)%>%
       group_by(StartFY,
                Ceil,
                qDuration)%>%
