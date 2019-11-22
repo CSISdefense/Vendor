@@ -52,12 +52,25 @@ note.text.size<-1.40
 
 all_labeled<-function(data){
   data<-data %>% dplyr::filter(
-                                        !is.na(qDuration) & 
-               !is.na(Ceil) &
+                                        !is.na(UnmodifiedDays) & 
+               !is.na(UnmodifiedCeiling_OMB20_GDP18) &
                !is.na(p_CBre) & 
            !is.na(Term))
 }
 
+missing_caption<-function(data){
+  data<-data %>% dplyr::filter(
+                                        is.na(UnmodifiedDays) |
+               is.na(UnmodifiedCeiling_OMB20_GDP18) |
+               is.na(p_CBre) |
+           is.na(Term))
+  
+  paste("Missing: Count:Data is missing for",prettyNum(nrow(data),big.mark=","),"contracts accounting for",
+        round(sum(data$Action_Obligation_OMB20_GDP18)/1000000000,1),"B","in obligations.")
+}
+
+# FacetCount=paste("Count:",prettyNum(sum(Count),big.mark=",")),
+#     FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action_Obligation_OMB20_GDP18)/1000000000,1),"B",sep="")
 
 only_complete<-function(data){
   data<-all_labeled(data) %>%
@@ -83,11 +96,30 @@ load(file="../data/clean/defense_contract_all_detail.RData")
 def_all<-def_all %>%
   dplyr::filter(StartFiscal_Year>=2007 & 
                   StartFiscal_Year<=2017 
-  )                
+  ) %>% dplyr::select(CSIScontractID,
+                      IsTerminated,
+                      IsClosed,
+                      IsComplete,
+                      pChangeOrderUnmodifiedBaseAndAll,
+                      n_CBre,
+                      Action_Obligation,
+                      UnmodifiedDays,
+                      qHighCeiling,
+                      qLowCeiling,
+                      UnmodifiedCeiling,
+                      StartFiscal_Year,
+                      LastCurrentCompletionDate,
+                      UnmodifiedCurrentCompletionDate,
+                      CBre
+                      )
+
+
+
+#Unknown or uninitialised column: 'qCRais'.Unknown or uninitialised column: 'qNChg'.> 
+
 
 if(any(duplicated(colnames(def_all)))) stop("Duplicate Contract Name")
 
-debug(rename_dataset)
 def_all<-rename_dataset(def_all)
 def_all<-transform_contract(def_all)
 
@@ -96,7 +128,15 @@ def_all<-FormatContractModel(def_all)
 
 head(def_all)
 
-write.csv(subset(def_all,Term=="Terminated"),"Terminated.csv")
+# write.csv(subset(def_all,Term=="Terminated"),"Terminated.csv")
+
+colnames(def_all)[colnames(def_all)=="pChangeOrderUnmodifiedBaseAndAll"]<-"p_CBre"
+
+
+
+    
+
+   
 
 ```
 
@@ -113,7 +153,7 @@ write.csv(subset(def_all,Term=="Terminated"),"Terminated.csv")
 #                               Term
 #                             ),
 #                             dplyr::summarise,
-#                             Action.Obligation=sum(Action.Obligation),
+#                             Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                             Count=length(CSIScontractID)
 #                   )
 # 
@@ -123,7 +163,7 @@ write.csv(subset(def_all,Term=="Terminated"),"Terminated.csv")
 #                                              StartFY
 #                                              ),transform,
 #                       pContractCeilDurStart=Count/sum(Count),
-#                       pObligationCeilDurStart=Action.Obligation/sum(Action.Obligation)
+#                       pObligationCeilDurStart=Action_Obligation_OMB20_GDP18/sum(Action_Obligation_OMB20_GDP18)
 #       )
 # 
 # 
@@ -169,7 +209,7 @@ write.csv(subset(def_all,Term=="Terminated"),"Terminated.csv")
 # 
 # ggplot(
 #   data = subset(TerminatedEndSummary,Term=="Terminated"),
-#   aes(x = Ceil,weight=Action.Obligation/1000000000)
+#   aes(x = Ceil,weight=Action_Obligation_OMB20_GDP18/1000000000)
 #   )+ geom_bar()+
 #     scale_x_discrete("Original Ceiling (Current $ Value)")+scale_y_continuous("Obligations to Partially or Completely\nTerminated Contracts (Current $ Billions)",labels = comma)+theme(axis.text.x=element_text(angle=90,size=12))
 # 
@@ -212,7 +252,6 @@ write.csv(subset(def_all,Term=="Terminated"),"Terminated.csv")
 # #                 space = "free_y") 
 # # 
 
-head(def_all)
 ```
 
 
@@ -243,7 +282,7 @@ head(def_all)
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID),
 #                          mean = mean(TermNum),
 #                          sd   = NA ,# sd(TermNum),
@@ -266,7 +305,7 @@ head(def_all)
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID),
 #                          mean = wtd.mean(TermNum,ObligationWT),
 #                          sd   = NA ,# sd(TermNum),
@@ -288,7 +327,7 @@ head(def_all)
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID),
 #                          mean = wtd.mean(TermNum,UnmodifiedContractBaseAndAllOptionsValue),
 #                          sd   = NA ,# sd(TermNum),
@@ -312,7 +351,7 @@ head(def_all)
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID),
 #                          mean = wtd.mean(TermNum,ceil.median.wt),
 #                          sd   = NA ,# sd(TermNum),
@@ -352,7 +391,7 @@ head(def_all)
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID),
 #                          mean = mean(TermNum),
 #                          sd   = sd(TermNum),
@@ -375,7 +414,7 @@ head(def_all)
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID),
 #                          mean = wtd.mean(TermNum,ObligationWT),
 #                          sd   = sqrt(wtd.var(TermNum,ObligationWT)) ,
@@ -397,7 +436,7 @@ head(def_all)
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID),
 #                          mean = wtd.mean(TermNum,UnmodifiedContractBaseAndAllOptionsValue),
 #                          sd   = sqrt(wtd.var(TermNum,UnmodifiedContractBaseAndAllOptionsValue)) ,
@@ -422,7 +461,7 @@ head(def_all)
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID),
 #                          mean = wtd.mean(TermNum,ceil.median.wt),
 #                          sd   = sqrt(wtd.var(TermNum,ceil.median.wt)) ,
@@ -476,7 +515,7 @@ head(def_all)
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID)
 # )
 # 
@@ -509,7 +548,7 @@ head(def_all)
 #       .(qDuration),
 #       dplyr::summarise,
 #       Count=sum(Count),
-#       Action.Obligation=sum(Action.Obligation))
+#       Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18))
 # 
 # 
 # 
@@ -524,7 +563,7 @@ head(def_all)
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID),
 #                          mean = mean(TermNum),
 #                          sd   = sd(TermNum),
@@ -547,7 +586,7 @@ head(def_all)
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID),
 #                          mean = wtd.mean(TermNum,ObligationWT),
 #                          sd   = sqrt(wtd.var(TermNum,ObligationWT)) ,
@@ -569,7 +608,7 @@ head(def_all)
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID),
 #                          mean = wtd.mean(TermNum,UnmodifiedContractBaseAndAllOptionsValue),
 #                          sd   = sqrt(wtd.var(TermNum,UnmodifiedContractBaseAndAllOptionsValue)) ,
@@ -594,7 +633,7 @@ head(def_all)
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID),
 #                          mean = wtd.mean(TermNum,ceil.median.wt),
 #                          sd   = sqrt(wtd.var(TermNum,ceil.median.wt)) ,
@@ -649,7 +688,7 @@ head(def_all)
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID)
 # )
 # 
@@ -701,6 +740,10 @@ These four catetegories and the "Close Out" category are used to mark a contract
 # 
 summary(def_all$qDuration)
 summary(def_all$Dur.Simple)
+
+
+
+summary((def_all %>% dplyr::filter(is.na(Dur.Simple)))$UnmodifiedDays)
 # def_all$Dur.Simple<-def_all$qDuration
 # 
 # 
@@ -784,7 +827,7 @@ TerminatedSDurSCeilStatCount<-
       Term
     ) %>%
     dplyr::summarise(
-    Action.Obligation=sum(Action.Obligation),
+    Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
     Count=length(CSIScontractID),
     metric="Contracts within Period"
 )
@@ -799,7 +842,7 @@ TerminatedSDurSCeilStatCount<-rbind(TerminatedSDurSCeilStatCount,
                                       Term
                                     ) %>%
                                     dplyr::summarise(
-                                    Action.Obligation=sum(Action.Obligation),
+                                    Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
                                     Count=length(CSIScontractID),
                                     metric="Early Results for All Contracts"
 ))
@@ -822,13 +865,13 @@ TerminatedSDurSCeilLabels<-
     group_by(Dur.Simple,Ceil.Simple) %>%
     dplyr::summarise(
     FacetCount=paste("Count:",prettyNum(sum(Count),big.mark=",")),
-    FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action.Obligation)/1000000000,1),"B",sep="")
+    FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action_Obligation_OMB20_GDP18)/1000000000,1),"B",sep="")
     )
 
 Ypos<-max(TerminatedSDurSCeilStatCount$Count)
 
-
-ggplot(TerminatedSDurSCeilStatCount,
+(
+Term_Plot<-ggplot(TerminatedSDurSCeilStatCount,
        aes(x=StartFY,y=Count,color=Term))+
     geom_line(aes(linetype=metric))+
     geom_point(aes(shape=Term))+
@@ -845,12 +888,18 @@ ggplot(TerminatedSDurSCeilStatCount,
     scale_shape_discrete("Status")+
     scale_y_log10("Number of Contracts (Logorithmic Scale)",label=scales::comma)+
     # geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.1)+
-    theme(legend.position="bottom") #, position=pd
-summary(def_all$StartFY
-        )
+    theme(legend.position="bottom")+ #, position=pd
+    title(caption=paste("Source: FPDS and CSIS Analysis",missing_caption(def_all)))
+)
+
+  # View(def_all %>% filter(is.na(Ceil.Simple)))
+
+summary(def_all$StartFY        )
 
 ggplot(def_all,aes(x=na_non_positive_log(UnmodifiedDays)))+geom_histogram()
 ggplot(subset(def_all,UnmodifiedDays<1),aes(x=UnmodifiedDays))+geom_histogram()
+
+missing_captiom(def_all)
 
 ```
 
@@ -872,7 +921,7 @@ ggplot(subset(def_all,UnmodifiedDays<1),aes(x=UnmodifiedDays))+geom_histogram()
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID),
 #                          mean = mean(TermNum),
 #                          sd   = sd(TermNum),
@@ -898,7 +947,7 @@ ggplot(subset(def_all,UnmodifiedDays<1),aes(x=UnmodifiedDays))+geom_histogram()
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID),
 #                          mean = wtd.mean(TermNum,ObligationWT),
 #                          sd   = sqrt(wtd.var(TermNum,ObligationWT)) ,
@@ -922,7 +971,7 @@ ggplot(subset(def_all,UnmodifiedDays<1),aes(x=UnmodifiedDays))+geom_histogram()
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID),
 #                          mean = wtd.mean(TermNum,UnmodifiedContractBaseAndAllOptionsValue),
 #                          sd   = sqrt(wtd.var(TermNum,UnmodifiedContractBaseAndAllOptionsValue)) ,
@@ -949,7 +998,7 @@ ggplot(subset(def_all,UnmodifiedDays<1),aes(x=UnmodifiedDays))+geom_histogram()
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID),
 #                          mean = wtd.mean(TermNum,ceil.median.wt),
 #                          sd   = sqrt(wtd.var(TermNum,ceil.median.wt)) ,
@@ -971,7 +1020,7 @@ ggplot(subset(def_all,UnmodifiedDays<1),aes(x=UnmodifiedDays))+geom_histogram()
 #         metric),
 #       dplyr::summarise,
 #       Count=sum(Count),
-#       Action.Obligation=sum(Action.Obligation))
+#       Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18))
 # 
 # TermLabels<-ddply(
 #     subset(TerminatedDur.SimpleIntlStat,
@@ -980,7 +1029,7 @@ ggplot(subset(def_all,UnmodifiedDays<1),aes(x=UnmodifiedDays))+geom_histogram()
 #     .(Dur.Simple,Intl,metric),
 #     dplyr::summarise,
 #     FacetCount=paste("Count:",prettyNum(sum(Count),big.mark=",")),
-#     FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action.Obligation)/1000000000,1),"B",sep=""),
+#     FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action_Obligation_OMB20_GDP18)/1000000000,1),"B",sep=""),
 #     FacetY=max(mean+se))
 # 
 # TermLabels<-ddply(TermLabels,
@@ -1042,7 +1091,7 @@ ggplot(subset(def_all,UnmodifiedDays<1),aes(x=UnmodifiedDays))+geom_histogram()
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID),
 #                          N    = length(TermNum),
 #                          mean = mean(TermNum),
@@ -1106,7 +1155,7 @@ ggplot(subset(def_all,UnmodifiedDays<1),aes(x=UnmodifiedDays))+geom_histogram()
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID),
 #                          mean = mean(TermNum),
 #                          sd   = sd(TermNum),
@@ -1129,7 +1178,7 @@ ggplot(subset(def_all,UnmodifiedDays<1),aes(x=UnmodifiedDays))+geom_histogram()
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID),
 #                          mean = wtd.mean(TermNum,ObligationWT),
 #                          sd   = sqrt(wtd.var(TermNum,ObligationWT)) ,
@@ -1151,7 +1200,7 @@ ggplot(subset(def_all,UnmodifiedDays<1),aes(x=UnmodifiedDays))+geom_histogram()
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID),
 #                          mean = wtd.mean(TermNum,UnmodifiedContractBaseAndAllOptionsValue),
 #                          sd   = sqrt(wtd.var(TermNum,UnmodifiedContractBaseAndAllOptionsValue)) ,
@@ -1176,7 +1225,7 @@ ggplot(subset(def_all,UnmodifiedDays<1),aes(x=UnmodifiedDays))+geom_histogram()
 #                          ),
 #                          
 #                          dplyr::summarise,
-#                          Action.Obligation=sum(Action.Obligation),
+#                          Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
 #                          Count=length(CSIScontractID),
 #                          mean = wtd.mean(TermNum,ceil.median.wt),
 #                          sd   = sqrt(wtd.var(TermNum,ceil.median.wt)) ,
@@ -1241,15 +1290,15 @@ In addition, there are a number of other modifications that may be undertaken ba
                  Ceil),
                plyr::summarise,
                ContractCount=length(CSIScontractID),
-               Action.Obligation=sum(Action.Obligation))
+               Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18))
 
 NChgCeil<-ddply(NChgCeil, 
                 .(Ceil), 
                 transform, 
                 pContractByCeil=ContractCount/sum(ContractCount),
-                pObligationByCeil=Action.Obligation/sum(Action.Obligation))
+                pObligationByCeil=Action_Obligation_OMB20_GDP18/sum(Action_Obligation_OMB20_GDP18))
 
-NChgCeil$pTotalObligation<-NChgCeil$Action.Obligation/sum(NChgCeil$Action.Obligation,na.rm=TRUE)
+NChgCeil$pTotalObligation<-NChgCeil$Action_Obligation_OMB20_GDP18/sum(NChgCeil$Action_Obligation_OMB20_GDP18,na.rm=TRUE)
 NChgCeil$pTotalContract<-NChgCeil$ContractCount/sum(NChgCeil$ContractCount,na.rm=TRUE)
 
 ```
@@ -1291,7 +1340,7 @@ NChgCeil$pTotalContract<-NChgCeil$ContractCount/sum(NChgCeil$ContractCount,na.rm
 # 
 # ggplot(
 #   data = subset(NChgCeil,SumOfisChangeOrder>0),
-#   aes_string(x = "Ceil",weight="Action.Obligation")
+#   aes_string(x = "Ceil",weight="Action_Obligation_OMB20_GDP18")
 #   )+ geom_bar()+
 #     scale_x_discrete("Initial Cost Ceiling (Current $ Value)")+scale_y_continuous("Total Obligated Value of Contracts with Change Orders")+theme(axis.text.x=element_text(angle=90))
 # 
@@ -1326,19 +1375,19 @@ The % Growth in Base and All Options Value Amount form Change Orders is calculat
 #                Ceil),
 #              plyr::summarise,
 #              ContractCount=length(CSIScontractID),
-#              Action.Obligation=sum(Action.Obligation))
+#              Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18))
 # 
 # pChgCeil<-ddply(pChgCeil, 
 #                 .(Ceil), 
 #                 transform, 
 #                 pContractByCeil=ContractCount/sum(ContractCount),
-#                 pObligationByCeil=Action.Obligation/sum(Action.Obligation))
+#                 pObligationByCeil=Action_Obligation_OMB20_GDP18/sum(Action_Obligation_OMB20_GDP18))
 # 
 # pChgCeil<-ddply(pChgCeil, 
 #                 .(StartFY), 
 #                 transform, 
 #                 pContractByFYear=ContractCount/sum(ContractCount),
-#                 pObligationByFYear=Action.Obligation/sum(Action.Obligation))
+#                 pObligationByFYear=Action_Obligation_OMB20_GDP18/sum(Action_Obligation_OMB20_GDP18))
 # 
 # pChgCeil$pChange3Sig[pChgCeil$pChange3Sig==-Inf]<-NA
 # pChgCeil$pChange3Sig[pChgCeil$pChange3Sig==Inf]<-NA
@@ -1354,7 +1403,7 @@ The % Growth in Base and All Options Value Amount form Change Orders is calculat
 # 
 # 
 # 
-# pChgCeil$pTotalObligation<-pChgCeil$Action.Obligation/sum(NChgCeil$Action.Obligation,na.rm=TRUE)
+# pChgCeil$pTotalObligation<-pChgCeil$Action_Obligation_OMB20_GDP18/sum(NChgCeil$Action_Obligation_OMB20_GDP18,na.rm=TRUE)
 # pChgCeil$pTotalContract<-pChgCeil$ContractCount/sum(NChgCeil$ContractCount,na.rm=TRUE)
 # 
 # pChgCeil$p_CBre <- cut2(
@@ -1513,7 +1562,7 @@ BreachedSDurSCeilStatCount<-
       CBre
     ) %>%
     dplyr::summarise(
-    Action.Obligation=sum(Action.Obligation),
+    Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
     Count=length(CSIScontractID),
     metric="Contracts within Period"
 )
@@ -1526,7 +1575,7 @@ BreachedSDurSCeilStatCount<-rbind(BreachedSDurSCeilStatCount,
                                       CBre
                                     ) %>%
                                     dplyr::summarise(
-                                    Action.Obligation=sum(Action.Obligation),
+                                    Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
                                     Count=length(CSIScontractID),
                                     metric="Early Results for All Contracts"
 ))
@@ -1541,7 +1590,7 @@ BreachedSDurSCeilLabels<-
     group_by(Dur.Simple,Ceil.Big) %>%
     dplyr::summarise(
     FacetCount=paste("Count:",prettyNum(sum(Count),big.mark=",")),
-    FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action.Obligation)/1000000000,1),"B",sep="")
+    FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action_Obligation_OMB20_GDP18)/1000000000,1),"B",sep="")
     )
 
 Ypos<-max(BreachedSDurSCeilStatCount$Count)
@@ -1568,27 +1617,26 @@ ggplot(BreachedSDurSCeilStatCount,
 summary(def_all$StartFY
         )
 
-ggplot(def_all,aes(x=l_Days))+geom_histogram()
+ggplot(def_all,aes(x=log(UnmodifiedDays)))+geom_histogram()
 ggplot(subset(def_all,UnmodifiedDays<1),aes(x=UnmodifiedDays))+geom_histogram()
 View(subset(def_all,Ceil.Big=="0k - <100k" & Dur.Simple=="(~2 years+]"))
 ```
 
 ## Ceiling Breach Quantile
 ```{r Quantile , fig.width=9,fig.height=9, dpi=600}
-
-df.Qn_CBre<-only_complete(def_all)%>%
+df.QCrai<-only_complete(def_all)%>%
       group_by(StartFY,
                Ceil,
                qDuration)%>%
       dplyr::summarise(
-      X50 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.5,na.rm=TRUE),
-      X75 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.75,na.rm=TRUE), 
-      X80 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.80,na.rm=TRUE), 
-      X90 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.90,na.rm=TRUE), 
-      X95 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.95,na.rm=TRUE),
-      X99 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.99,na.rm=TRUE),
+      X50 = quantile(p_CBre, probs = 0.5,na.rm=TRUE),
+      X75 = quantile(p_CBre, probs = 0.75,na.rm=TRUE), 
+      X80 = quantile(p_CBre, probs = 0.80,na.rm=TRUE), 
+      X90 = quantile(p_CBre, probs = 0.90,na.rm=TRUE), 
+      X95 = quantile(p_CBre, probs = 0.95,na.rm=TRUE),
+      X99 = quantile(p_CBre, probs = 0.99,na.rm=TRUE),
       ContractCount=length(CSIScontractID),
-             Action.Obligation=sum(Action.Obligation),
+             Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
       metric="Contracts within Period")
 
 
@@ -1624,14 +1672,14 @@ df.ecdf<-def_all %>%
       group_by(Ceil,
                qDuration)%>%
       dplyr::summarise(
-      r001 = ecdf(pChangeOrderUnmodifiedBaseAndAll)(0.001),
-      r01 = ecdf(pChangeOrderUnmodifiedBaseAndAll)(0.01),
-      r05 = ecdf(pChangeOrderUnmodifiedBaseAndAll)(0.01)
+      r001 = ecdf(p_CBre)(0.001),
+      r01 = ecdf(p_CBre)(0.01),
+      r05 = ecdf(p_CBre)(0.01)
 )
 
 # df.ecdf<-subset(df.ecdf,StartFY>=2007&StartFY<=2014)
 
-# test<-tapply(def_all, pChangeOrderUnmodifiedBaseAndAll, ecdf)
+# test<-tapply(def_all, p_CBre, ecdf)
 ```
 ## Simple.Dur / Ceiling.Big
 
@@ -1641,14 +1689,14 @@ df.QCrai.SDur<-only_complete(def_all) %>%
                Ceil.Big,
                Dur.Simple) %>%
       dplyr::summarise(
-      X50 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.5,na.rm=TRUE),
-      X75 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.75,na.rm=TRUE), 
-      X80 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.80,na.rm=TRUE), 
-      X90 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.90,na.rm=TRUE), 
-      X95 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.95,na.rm=TRUE),
-      X99 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.99,na.rm=TRUE),
+      X50 = quantile(p_CBre, probs = 0.5,na.rm=TRUE),
+      X75 = quantile(p_CBre, probs = 0.75,na.rm=TRUE), 
+      X80 = quantile(p_CBre, probs = 0.80,na.rm=TRUE), 
+      X90 = quantile(p_CBre, probs = 0.90,na.rm=TRUE), 
+      X95 = quantile(p_CBre, probs = 0.95,na.rm=TRUE),
+      X99 = quantile(p_CBre, probs = 0.99,na.rm=TRUE),
       ContractCount=length(CSIScontractID),
-             Action.Obligation=sum(Action.Obligation),
+             Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
       metric="Contracts within Period")
 
 
@@ -1659,14 +1707,14 @@ df.QCrai.SDur<-rbind(df.QCrai.SDur,
                Ceil.Big,
                Dur.Simple)%>%
       dplyr::summarise( 
-      X50 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.5,na.rm=TRUE),
-      X75 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.75,na.rm=TRUE), 
-      X80 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.80,na.rm=TRUE), 
-      X90 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.90,na.rm=TRUE), 
-      X95 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.95,na.rm=TRUE),
-      X99 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.99,na.rm=TRUE),
+      X50 = quantile(p_CBre, probs = 0.5,na.rm=TRUE),
+      X75 = quantile(p_CBre, probs = 0.75,na.rm=TRUE), 
+      X80 = quantile(p_CBre, probs = 0.80,na.rm=TRUE), 
+      X90 = quantile(p_CBre, probs = 0.90,na.rm=TRUE), 
+      X95 = quantile(p_CBre, probs = 0.95,na.rm=TRUE),
+      X99 = quantile(p_CBre, probs = 0.99,na.rm=TRUE),
       ContractCount=length(CSIScontractID),
-             Action.Obligation=sum(Action.Obligation),
+             Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
       metric="Early Results for All Contracts")
 )
 
@@ -1702,7 +1750,7 @@ CRaiSDurCeilLabels<-ddply(
     .(Dur.Simple,Ceil.Big),
     plyr::summarise,
     FacetCount=paste("Count:",prettyNum(sum(ContractCount),big.mark=",")),
-    FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action.Obligation)/1000000000,1),"B",sep="")
+    FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action_Obligation_OMB20_GDP18)/1000000000,1),"B",sep="")
     )
 
 Ypos<-max(subset(df.QCrai.SDur,
@@ -1754,9 +1802,9 @@ df.ecdf<-ddply(def_all,
       .(Ceil.Big,
                Dur.Simple),
       summarise, 
-      r001 = ecdf(pChangeOrderUnmodifiedBaseAndAll)(0.001),
-      r01 = ecdf(pChangeOrderUnmodifiedBaseAndAll)(0.01),
-      r05 = ecdf(pChangeOrderUnmodifiedBaseAndAll)(0.01)
+      r001 = ecdf(p_CBre)(0.001),
+      r01 = ecdf(p_CBre)(0.01),
+      r05 = ecdf(p_CBre)(0.01)
 )
 
 # df.ecdf<-subset(df.ecdf,StartFY>=2007&StartFY<=2014)
@@ -1768,7 +1816,7 @@ CRaiSDurCeilFYearSummary<-ddply(
     .(Dur.Simple,Ceil.Big,StartFY),
     plyr::summarise,
     FacetCount=paste("Count:",prettyNum(sum(ContractCount),big.mark=",")),
-    FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action.Obligation)/1000000000,1),"B",sep="")
+    FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action_Obligation_OMB20_GDP18)/1000000000,1),"B",sep="")
     )
 
 DurBoundary<-subset(def_all,Ceil=="75m+"&
@@ -1785,14 +1833,14 @@ df.QCrai.SDur<-only_complete(def_all) %>%
                Ceil.Simple,
                Dur.Simple) %>%
       dplyr::summarise(
-      X50 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.5,na.rm=TRUE),
-      X75 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.75,na.rm=TRUE), 
-      X80 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.80,na.rm=TRUE), 
-      X90 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.90,na.rm=TRUE), 
-      X95 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.95,na.rm=TRUE),
-      X99 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.99,na.rm=TRUE),
+      X50 = quantile(p_CBre, probs = 0.5,na.rm=TRUE),
+      X75 = quantile(p_CBre, probs = 0.75,na.rm=TRUE), 
+      X80 = quantile(p_CBre, probs = 0.80,na.rm=TRUE), 
+      X90 = quantile(p_CBre, probs = 0.90,na.rm=TRUE), 
+      X95 = quantile(p_CBre, probs = 0.95,na.rm=TRUE),
+      X99 = quantile(p_CBre, probs = 0.99,na.rm=TRUE),
       ContractCount=length(CSIScontractID),
-             Action.Obligation=sum(Action.Obligation),
+             Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
       metric="Contracts within Period")
 
 
@@ -1803,14 +1851,14 @@ df.QCrai.SDur<-rbind(df.QCrai.SDur,
                Ceil.Simple,
                Dur.Simple)%>%
       dplyr::summarise( 
-      X50 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.5,na.rm=TRUE),
-      X75 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.75,na.rm=TRUE), 
-      X80 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.80,na.rm=TRUE), 
-      X90 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.90,na.rm=TRUE), 
-      X95 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.95,na.rm=TRUE),
-      X99 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.99,na.rm=TRUE),
+      X50 = quantile(p_CBre, probs = 0.5,na.rm=TRUE),
+      X75 = quantile(p_CBre, probs = 0.75,na.rm=TRUE), 
+      X80 = quantile(p_CBre, probs = 0.80,na.rm=TRUE), 
+      X90 = quantile(p_CBre, probs = 0.90,na.rm=TRUE), 
+      X95 = quantile(p_CBre, probs = 0.95,na.rm=TRUE),
+      X99 = quantile(p_CBre, probs = 0.99,na.rm=TRUE),
       ContractCount=length(CSIScontractID),
-             Action.Obligation=sum(Action.Obligation),
+             Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
       metric="Early Results for All Contracts")
 )
 write.csv(df.QCrai.SDur,"df.QCrai.SDur.csv")
@@ -1847,7 +1895,7 @@ CRaiSDurCeilLabels<-ddply(
     .(Dur.Simple,Ceil.Simple),
     plyr::summarise,
     FacetCount=paste("Count:",prettyNum(sum(ContractCount),big.mark=",")),
-    FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action.Obligation)/1000000000,1),"B",sep="")
+    FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action_Obligation_OMB20_GDP18)/1000000000,1),"B",sep="")
     )
 
 Ypos<-max(subset(df.QCrai.SDur,
@@ -1899,9 +1947,9 @@ df.ecdf<-ddply(def_all,
       .(Ceil.Simple,
                Dur.Simple),
       summarise, 
-      r001 = ecdf(pChangeOrderUnmodifiedBaseAndAll)(0.001),
-      r01 = ecdf(pChangeOrderUnmodifiedBaseAndAll)(0.01),
-      r05 = ecdf(pChangeOrderUnmodifiedBaseAndAll)(0.01)
+      r001 = ecdf(p_CBre)(0.001),
+      r01 = ecdf(p_CBre)(0.01),
+      r05 = ecdf(p_CBre)(0.01)
 )
 
 # df.ecdf<-subset(df.ecdf,StartFY>=2007&StartFY<=2014)
@@ -1913,7 +1961,7 @@ CRaiSDurCeilFYearSummary<-ddply(
     .(Dur.Simple,Ceil.Simple,StartFY),
     plyr::summarise,
     FacetCount=paste("Count:",prettyNum(sum(ContractCount),big.mark=",")),
-    FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action.Obligation)/1000000000,1),"B",sep="")
+    FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action_Obligation_OMB20_GDP18)/1000000000,1),"B",sep="")
     )
 
 DurBoundary<-subset(def_all,Ceil=="75m+"&
@@ -1935,14 +1983,14 @@ df.QCrai.SDur<-only_complete(def_all) %>%
                Ceil.1m,
                Dur.Simple) %>%
       dplyr::summarise(
-      X50 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.5,na.rm=TRUE),
-      X75 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.75,na.rm=TRUE), 
-      X80 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.80,na.rm=TRUE), 
-      X90 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.90,na.rm=TRUE), 
-      X95 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.95,na.rm=TRUE),
-      X99 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.99,na.rm=TRUE),
+      X50 = quantile(p_CBre, probs = 0.5,na.rm=TRUE),
+      X75 = quantile(p_CBre, probs = 0.75,na.rm=TRUE), 
+      X80 = quantile(p_CBre, probs = 0.80,na.rm=TRUE), 
+      X90 = quantile(p_CBre, probs = 0.90,na.rm=TRUE), 
+      X95 = quantile(p_CBre, probs = 0.95,na.rm=TRUE),
+      X99 = quantile(p_CBre, probs = 0.99,na.rm=TRUE),
       ContractCount=length(CSIScontractID),
-             Action.Obligation=sum(Action.Obligation),
+             Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
       metric="Contracts within Period")
 
 
@@ -1953,14 +2001,14 @@ df.QCrai.SDur<-rbind(df.QCrai.SDur,
                Ceil.1m,
                Dur.Simple)%>%
       dplyr::summarise( 
-      X50 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.5,na.rm=TRUE),
-      X75 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.75,na.rm=TRUE), 
-      X80 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.80,na.rm=TRUE), 
-      X90 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.90,na.rm=TRUE), 
-      X95 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.95,na.rm=TRUE),
-      X99 = quantile(pChangeOrderUnmodifiedBaseAndAll, probs = 0.99,na.rm=TRUE),
+      X50 = quantile(p_CBre, probs = 0.5,na.rm=TRUE),
+      X75 = quantile(p_CBre, probs = 0.75,na.rm=TRUE), 
+      X80 = quantile(p_CBre, probs = 0.80,na.rm=TRUE), 
+      X90 = quantile(p_CBre, probs = 0.90,na.rm=TRUE), 
+      X95 = quantile(p_CBre, probs = 0.95,na.rm=TRUE),
+      X99 = quantile(p_CBre, probs = 0.99,na.rm=TRUE),
       ContractCount=length(CSIScontractID),
-             Action.Obligation=sum(Action.Obligation),
+             Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18),
       metric="Early Results for All Contracts")
 )
 
@@ -1996,7 +2044,7 @@ CRaiSDurCeilLabels<-ddply(
     .(Dur.Simple,Ceil.1m),
     plyr::summarise,
     FacetCount=paste("Count:",prettyNum(sum(ContractCount),big.mark=",")),
-    FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action.Obligation)/1000000000,1),"B",sep="")
+    FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action_Obligation_OMB20_GDP18)/1000000000,1),"B",sep="")
     )
 
 Ypos<-max(subset(df.QCrai.SDur,
@@ -2048,9 +2096,9 @@ df.ecdf<-ddply(def_all,
       .(Ceil.1m,
                Dur.Simple),
       summarise, 
-      r001 = ecdf(pChangeOrderUnmodifiedBaseAndAll)(0.001),
-      r01 = ecdf(pChangeOrderUnmodifiedBaseAndAll)(0.01),
-      r05 = ecdf(pChangeOrderUnmodifiedBaseAndAll)(0.01)
+      r001 = ecdf(p_CBre)(0.001),
+      r01 = ecdf(p_CBre)(0.01),
+      r05 = ecdf(p_CBre)(0.01)
 )
 
 # df.ecdf<-subset(df.ecdf,StartFY>=2007&StartFY<=2014)
@@ -2062,7 +2110,7 @@ CRaiSDurCeilFYearSummary<-ddply(
     .(Dur.Simple,Ceil.1m,StartFY),
     plyr::summarise,
     FacetCount=paste("Count:",prettyNum(sum(ContractCount),big.mark=",")),
-    FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action.Obligation)/1000000000,1),"B",sep="")
+    FacetValue=paste(FacetCount,"\nObligated: $",round(sum(Action_Obligation_OMB20_GDP18)/1000000000,1),"B",sep="")
     )
 
 DurBoundary<-subset(def_all,Ceil=="75m+"&
