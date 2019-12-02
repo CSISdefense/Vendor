@@ -77,10 +77,8 @@ where ctid.csiscontractid in (
 )
 )
 
-
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
-
 
 DECLARE	@return_value int
 
@@ -113,6 +111,18 @@ DECLARE	@return_value int
 EXEC	@return_value = [Vendor].SP_EntityIDhistoryCalendar
 --EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
 		@Customer = 'Defense'
+		
+
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+
+DECLARE	@return_value int
+
+--EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
+EXEC	@return_value = [Contract].[SP_UnmodifiedScopeHistory]
+--EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
+		@IsDefense =1
 		
 --SELECT	'Return Value' = @return_value
 
