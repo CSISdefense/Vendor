@@ -83,6 +83,18 @@ SET NOCOUNT ON;
 DECLARE	@return_value int
 
 --EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
+EXEC	@return_value = Contract.SP_ContractUnmodifiedScope
+--EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
+		@IsDefense = 1
+
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+
+
+DECLARE	@return_value int
+
+--EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
 EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer
 --EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
 		@Customer = 'Defense',
