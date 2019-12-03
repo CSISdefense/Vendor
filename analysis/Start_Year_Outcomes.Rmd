@@ -1,5 +1,5 @@
 ---
-title: "ContractTermination"
+title: "Start Year Performance"
 author: "Greg Sanders"
 date: "Wednesday, February 8, 2017"
 output:
@@ -82,14 +82,6 @@ only_complete<-function(data){
 }
 
 
-memory.limit(30000)
-```
-
-
-Contracts are classified using a mix of numerical and categorical variables. While the changes in numerical variables are easy to grasp and summarize, a contract may have one line item that is competed and another that is not. As is detailed in the exploration on R&D, we are only considering information available prior to contract start. The percentage of contract obligations that were competed is a valuable benchmark, but is highly influenced by factors that occured after contract start..
-
-## Read in data
-```{r ReadInData, echo = TRUE}
 
 load(file="../data/clean/defense_contract_all_detail.RData")
 # debug(transform_contract)
@@ -112,7 +104,8 @@ def_all<-def_all %>%
                       StartFiscal_Year,
                       LastCurrentCompletionDate,
                       UnmodifiedCurrentCompletionDate,
-                      CBre
+                      CBre,
+                      SumOfisChangeOrder
                       )
 
 
@@ -135,12 +128,15 @@ head(def_all)
 colnames(def_all)[colnames(def_all)=="pChangeOrderUnmodifiedBaseAndAll"]<-"p_CBre"
 
 
-
+memory.limit(30000)
     
 
    
-
 ```
+
+
+Contracts are classified using a mix of numerical and categorical variables. While the changes in numerical variables are easy to grasp and summarize, a contract may have one line item that is competed and another that is not. As is detailed in the exploration on R&D, we are only considering information available prior to contract start. The percentage of contract obligations that were competed is a valuable benchmark, but is highly influenced by factors that occured after contract start..
+
 
 **A Histogram of the IsTerminated data** showing the distribution of whether or not a contract was terminated each year from 2007.  
 
@@ -890,8 +886,8 @@ Term_Plot<-ggplot(TerminatedSDurSCeilStatCount,
     scale_shape_discrete("Status")+
     scale_y_log10("Number of Contracts (Logorithmic Scale)",label=scales::comma)+
     # geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.1)+
-    theme(legend.position="bottom")#+ #, position=pd
-    # title(caption=paste("Source: FPDS and CSIS Analysis",missing_caption(def_all)))
+    theme(legend.position="bottom")+ #, position=pd
+    labs(caption=paste("Source: FPDS and CSIS Analysis",missing_caption(def_all)))
 )
 ggsave(Term_Plot,file="Term_Plot.png",width=9,height=9, dpi=600)
   # View(def_all %>% filter(is.na(Ceil.Simple)))
@@ -905,7 +901,6 @@ summary(def_all$StartFY        )
 ggplot(def_all,aes(x=na_non_positive_log(UnmodifiedDays)))+geom_histogram()
 ggplot(subset(def_all,UnmodifiedDays<1),aes(x=UnmodifiedDays))+geom_histogram()
 
-missing_captiom(def_all)
 
 
 
@@ -1985,9 +1980,9 @@ DurBoundary<-subset(def_all,Ceil=="75m+"&
 levels(def_all$Ceil.Simple)
 def_all$StartFY
 summary(def_all$qCRais[def_all$Dur.Simple=="(~2 years+]" & def_all$StartFY==2015 & def_all$Ceil.Simple=="0k - <100k"])
-def_all[def_all$Dur.Simple=="(~2 years+]" & def_all$StartFY==2015 & def_all$Ceil.Simple=="0k - <100k"]
+# def_all[def_all$Dur.Simple=="(~2 years+]" & def_all$StartFY==2015 & def_all$Ceil.Simple=="0k - <100k"]
 write.csv(def_all[def_all$Dur.Simple=="(~2 years+]" & def_all$StartFY==2015 & def_all$Ceil.Simple=="0k - <100k",],"cbre_weird.csv")
-862/6000
+
 ```
 ## Dur.Simple / Ceiling.1m
 ```{r QuantileSimpleDurCeil.1m, fig.width=9,fig.height=9, dpi=600}
@@ -2139,6 +2134,67 @@ DurBoundary<-subset(def_all,Ceil=="75m+"&
 
 
 # Time
+
+## Completion Year
+```{r}
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+load(file="../data/clean/defense_contract_all_detail.RData")
+# debug(transform_contract)
+# undebug(transform_contract)
+
+def_end<-def_all %>%
+  dplyr::filter(#StartFiscal_Year>=2007 &
+                LastCurrentCompletionDate<as.Date("2017-10-01")) %>%
+  dplyr::select(CSIScontractID,
+                      IsTerminated,
+                      IsClosed,
+                      IsComplete,
+                      # pChangeOrderUnmodifiedBaseAndAll,
+                      # n_CBre,
+                      Action_Obligation,
+                      # UnmodifiedDays,
+                      # qHighCeiling,
+                      # qLowCeiling,
+                      # UnmodifiedCeiling,
+                      StartFiscal_Year,
+                      LastCurrentCompletionDate,
+                      # UnmodifiedCurrentCompletionDate,
+                      # CBre,
+                      # SumOfisChangeOrder
+                      )
+
+def_end$LastCurrentCompletionYear<-lubridate::year(def_end$LastCurrentCompletionDate)+ifelse(lubridate::month(def_end$LastCurrentCompletionDate)>=10,1,0)
+
+def_end$StartFiscal_Year<-factor(def_end$StartFiscal_Year,levels=c(2007:2017))
+
+def_end %>% dplyr::filter(IsComplete==1) %>% group_by(StartFiscal_Year,LastCurrentCompletionYear) %>%
+  dplyr::summarise(Action_Obligation=sum(Action_Obligation,na.rm=TRUE)) %>%
+  ggplot(aes(fill=factor(StartFiscal_Year),x=LastCurrentCompletionYear,y=Action_Obligation))+geom_col()
+
+
+def_end$StartFiscal_Year<-factor(def_end$StartFiscal_Year,levels=c(2017:2007))
+
+def_end %>% group_by(IsComplete,StartFiscal_Year,LastCurrentCompletionYear) %>%
+  dplyr::summarise(Action_Obligation=sum(Action_Obligation,na.rm=TRUE)) %>%
+  ggplot(aes(fill=factor(StartFiscal_Year),x=LastCurrentCompletionYear,y=Action_Obligation))+geom_col()+facet_wrap(IsComplete~.,ncol=1)
+
+
+
+  Completion<-ddply(def_all,
+               .(SumOfisChangeOrder,
+                 StartFY,
+                 Ceil),
+               plyr::summarise,
+               ContractCount=length(CSIScontractID),
+               Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18))
+
+
+
+```
+
+
 
 ## Initial Duration and Year
 ```{r StartYearDur}
