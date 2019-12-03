@@ -25,6 +25,8 @@ library(ggplot2)
 library(scales)
 library(Hmisc)
 library(dplyr)
+library(readr)
+library(tidyverse)
 # Coloration<-read.csv(
 #     paste(Path,"Lookups\\","lookup_coloration.csv",sep=""),
 #     header=TRUE, sep=",", na.strings="", dec=".", strip.white=TRUE, 
@@ -887,13 +889,19 @@ Term_Plot<-ggplot(TerminatedSDurSCeilStatCount,
     theme(legend.position="bottom")+ #, position=pd
     labs(caption=paste("Source: FPDS and CSIS Analysis",missing_caption(def_all)))
 )
-
+ggsave(Term_Plot,file="Term_Plot.png",width=9,height=9, dpi=600)
   # View(def_all %>% filter(is.na(Ceil.Simple)))
+
+write.csv(Term_Plot$data,# %>%
+            # spread(key=Fiscal.Year, value=amount_OMB19_19),
+          file="../output/Term_Plot.csv",row.names = FALSE)
 
 summary(def_all$StartFY        )
 
 ggplot(def_all,aes(x=na_non_positive_log(UnmodifiedDays)))+geom_histogram()
 ggplot(subset(def_all,UnmodifiedDays<1),aes(x=UnmodifiedDays))+geom_histogram()
+
+
 
 
 ```
@@ -1638,7 +1646,6 @@ df.QCrai<-only_complete(def_all)%>%
 df.QCrai<-melt(df.QCrai,variable.name="Quantile",value.name="pCRai",measure.vars=c(
   "X50",
   "X75",
-  "X80",
   "X90",
   "X95",
   "X99")
@@ -1773,11 +1780,17 @@ CRaiOutput<-ggplot(subset(df.QCrai.SDur,
   theme(legend.position="bottom") #, position=pd
 
 CRaiOutput
-ggsave("CRaiOutput.png",
+ggsave("../output/CRaiOutput.png",
        CRaiOutput,
        width=8,
        height=7,
        dpi=600)
+
+write.csv(CRaiOutput$data,# %>%
+            # spread(key=Fiscal.Year, value=amount_OMB19_19),
+          file="../output/CRaiOutput.csv",row.names = FALSE)
+
+
 
 ggplot(subset(df.QCrai.SDur,
                 # !Quantile %in% c("99th Percentile")
@@ -2117,4 +2130,136 @@ DurBoundary<-subset(def_all,Ceil=="75m+"&
 # View(subset(def_all,Ceil.Big=="75m+" & Dur.Simple=="(~2 years+]" & StartFY==2014))
 
 # write.csv(subset(def_all,Ceil.Big=="75m+" & Dur.Simple=="(~2 years+]" & StartFY==2014),"Long2014.csv")
+```
+
+
+# Time
+
+## Initial Duration and Year
+```{r StartYearDur}
+if(!file.exists("../data/semi_clean/Contract.SP_UnmodifiedScopeHistory.rda")){
+  unmod_scope<-read_delim("../data/semi_clean/Contract.SP_UnmodifiedScopeHistory.txt",delim="\t", na=c("NA","NULL"))
+  
+  unmod_scope$UnmodifiedDays[unmod_scope$UnmodifiedDays <0]<-NA
+  if(min(unmod_scope$UnmodifiedDays,na.rm=TRUE)==0)
+    unmod_scope$UnmodifiedDays<-unmod_scope$UnmodifiedDays+1
+  
+  unmod_scope<-standardize_variable_names(unmod_scope)
+  
+  unmod_scope<-deflate(unmod_scope,
+                        money_var = "obligatedamount",
+                        # deflator_var="OMB.2019",
+                        fy_var="fiscal_year"
+      )
+  unmod_scope$capped_UnmodifiedDays <- ifelse(unmod_scope$UnmodifiedDays > 3650, 3650, unmod_scope$UnmodifiedDays)
+  
+  unmod_scope$FirstYear<-NA
+  unmod_scope$FirstYear[unmod_scope$StartFiscal_Year==unmod_scope$Fiscal.Year]<-"First Year"
+  unmod_scope$FirstYear[unmod_scope$StartFiscal_Year<unmod_scope$Fiscal.Year]<-"Prior Year Start"
+  unmod_scope$FirstYear<-factor(unmod_scope$FirstYear,c("First Year","Prior Year Start"))
+  sumary()
+  if (!"Dur" %in% colnames(unmod_scope)){
+    
+    unmod_scope$Dur<-Hmisc::cut2(unmod_scope$UnmodifiedDays,cuts=c(61,214,366,732))
+  }
+  
+  if (levels(unmod_scope$Dur)[[2]] %in% c("[   61,  214)","[     61,    214)")){
+    levels(unmod_scope$Dur)<- list(
+      "[0 months,~2 months)"=c("[    0,   61)","[    1,   61)","[      1,     61)"),
+      "[~2 months,~7 months)"=c("[   61,  214)","[     61,    214)"),
+      "[~7 months-~1 year]"=c("[  214,  366)","[    214,    366)"),
+      "(~1 year,~2 years]"=c("[  366,  732)","[    366,    732)"),
+      "(~2 years+]"=levels(unmod_scope$Dur)[5])
+  }
+  
+  unmod_scope<-standardize_variable_names(unmod_scope)
+  unmod_scope<-rename_dataset(unmod_scope)
+  unmod_scope<-replace_nas_with_unlabeled(unmod_scope,"Dur")
+  save(unmod_scope,file="../data/semi_clean/Contract.SP_UnmodifiedScopeHistory.rda")
+} else load(file="../data/semi_clean/Contract.SP_UnmodifiedScopeHistory.rda")
+  # full_data$StateRegionSwr<-factor(full_data$StateRegion,
+  #                                  levels=levels(full_data$StateRegion),
+  #                                    swr(levels(full_data$StateRegion),10))
+
+
+scope_labels_and_colors<-prepare_labels_and_colors(unmod_scope)
+scope_column_key<-get_column_key(unmod_scope)
+
+(gradiant_duration<-ggplot(unmod_scope %>%
+                              dplyr::filter(Fiscal.Year>=2007 &
+                                              !is.na(UnmodifiedDays)&
+                                              !is.na(FirstYear)) %>%  
+         group_by(Fiscal.Year,FirstYear,capped_UnmodifiedDays) %>% #,StateRegionSwr,Source
+         dplyr::summarise(obligatedamount_OMB20_GDP18=sum(obligatedamount_OMB20_GDP18))%>%
+           group_by(Fiscal.Year,FirstYear) %>% mutate(pObligatedamount=obligatedamount_OMB20_GDP18/
+                                              sum(obligatedamount_OMB20_GDP18,na.rm=TRUE)),
+       aes(x=Fiscal.Year,y=obligatedamount_OMB20_GDP18, fill=capped_UnmodifiedDays))+
+  geom_col()+#facet_grid(Source~StateRegionSwr)+
+   scale_fill_gradient2(trans = "log",low = muted("blue"), 
+                        mid = "yellow",
+                        high = muted("red"), midpoint = log(365))+scale_y_reverse()+
+    facet_grid(FirstYear ~.)
+)
+
+(gradiant_duration_share<-ggplot(unmod_scope %>%
+                              dplyr::filter(Fiscal.Year>=2007 &
+                                              !is.na(UnmodifiedDays)&
+                                              !is.na(FirstYear)) %>%  
+         group_by(Fiscal.Year,FirstYear,capped_UnmodifiedDays) %>% #,StateRegionSwr,Source
+         dplyr::summarise(obligatedamount_OMB20_GDP18=sum(obligatedamount_OMB20_GDP18))%>%
+           group_by(Fiscal.Year,FirstYear) %>% mutate(pObligatedamount=obligatedamount_OMB20_GDP18/
+                                              sum(obligatedamount_OMB20_GDP18,na.rm=TRUE)),
+       aes(x=Fiscal.Year,y=pObligatedamount, fill=capped_UnmodifiedDays))+
+  geom_col()+#facet_grid(Source~StateRegionSwr)+
+   scale_fill_gradient2(trans = "log",low = muted("blue"), 
+                        mid = "yellow",
+                        high = muted("red"), midpoint = log(365))+scale_y_reverse()+
+    facet_grid(FirstYear ~.)
+)
+
+
+
+(staked_duration <-  build_plot(data=unmod_scope %>% filter(Fiscal.Year>=2007&
+                                                                    !is.na(FirstYear)&
+                                                                    !is.na(Dur)),
+                            chart_geom="Bar Chart",
+                            share=FALSE,
+                            x_var="Fiscal.Year",
+                            y_var="obligatedamount_OMB20_GDP18",
+                            color_var="Dur",
+                            facet_var="FirstYear",
+                            # second_var="dtDelivYear_fac",
+                            labels_and_colors=scope_labels_and_colors,
+                            column_key=scope_column_key,
+                            legend=TRUE,
+                            caption=FALSE,
+                        format=TRUE)+#facet_grid(Source ~ dtDelivYear_fac, scales="free_y")+ scale_x_continuous("Corruption Perceptions Index Score", c(0, 25, 50, 75, 100)) + 
+ labs(#x="Corruption Perceptions Index Score",
+       #y="Delivery Value (Metric Varies by Source)"),
+    caption="Contracts that started before 2000 or with unlabeled durations are not shown. Source: FPDS; CSIS Analysis")
+)
+
+
+
+(staked_duration_share <-  build_plot(data=unmod_scope %>% filter(Fiscal.Year>=2007&
+                                                                    !is.na(FirstYear)&
+                                                                    !is.na(Dur)),
+                            chart_geom="Bar Chart",
+                            share=TRUE,
+                            x_var="Fiscal.Year",
+                            y_var="obligatedamount_OMB20_GDP18",
+                            color_var="Dur",
+                            facet_var="FirstYear",
+                            # second_var="dtDelivYear_fac",
+                            labels_and_colors=scope_labels_and_colors,
+                            column_key=scope_column_key,
+                            legend=TRUE,
+                            caption=FALSE,
+                        format=TRUE)+
+    #facet_grid(Source ~ dtDelivYear_fac, scales="free_y")+ scale_x_continuous("Corruption Perceptions Index Score", c(0, 25, 50, 75, 100)) + 
+  labs(#x="Corruption Perceptions Index Score",
+       #y="Delivery Value (Metric Varies by Source)"),
+    caption="Contracts that started before 2000 or with unlabeled durations are not shown. Source: FPDS; CSIS Analysis")
+)
+
 ```

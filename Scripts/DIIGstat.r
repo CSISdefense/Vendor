@@ -2531,7 +2531,7 @@ get_coef_list<-function(limit=NULL){
                     "cln_US6sal_lag1:PricingOther FP"="Log(Det. Ind. Salary):Pricing=Other Fixed-Price",
                     "cln_US6sal_lag1:PricingIncentive"="Log(Det. Ind. Salary):Pricing=Incentive Fee",
                     "cln_US6sal_lag1:PricingCombination or Other"="Log(Det. Ind. Salary):Pricing=Comb./Other",
-                    "cln_US6sal_lag1:PricingOther CB"="Pricing=Log(Det. Ind. Salary):Other Cost-Based",
+                    "cln_US6sal_lag1:PricingOther CB"="Log(Det. Ind. Salary):Pricing=Other Cost-Based",
                     "cln_US6sal_lag1:PricingT&M/LH/FPLOE"="Log(Det. Ind. Salary):Pricing=T&M/LH/FP:LoE",
                     
                     "cln_PSCrate:PricingOther FP"="Log(Serv. Code Invoice Rate):Pricing=Other Fixed-Price",
@@ -2583,7 +2583,15 @@ get_coef_list<-function(limit=NULL){
                     "cl_Ceil:cl_Base2Ceil"="Log(Init. Ceiling):Log(Init. Ceiling:Base)",
                     "cln_Ceil:clr_Ceil2Base"="Log(Init. Ceiling):Log(Init. Ceiling:Base)",
                     "cp_PairObl7:cln_OffObl7"="Paired Share %:Log(Office Obligations)",
-                    "cln_OffObl7:cln_OffFocus" = "Log(Office Obligations):Log(Office Focus)"
+                    "cln_OffObl7:cln_OffFocus" = "Log(Office Obligations):Log(Office Focus)",
+                    
+                    "FMSAlways"="FMS=Always",
+                    "FMSPost-Start"="FMS=Post-Start",
+                    
+                    
+                    "FMSAlways:cln_Base"="FMS=Always:Log(Init. Base)",  
+                    "FMSPost-Start:cln_Base"="FMS=Post-Start:Log(Init. Base)",
+                    "FMSFMS post-start:cln_Base"="FMS=Post-Start:Log(Init. Base)"
                     
     ) else if(limit=="FMS_all"){
     coef_list<-list("(Intercept)"="(Intercept)",
@@ -2737,14 +2745,14 @@ get_coef_list<-function(limit=NULL){
                     "cln_US6sal_lag1:PricingOther FP"="Log(Det. Ind. Salary):Pricing=Other Fixed-Price",
                     "cln_US6sal_lag1:PricingIncentive"="Log(Det. Ind. Salary):Pricing=Incentive Fee",
                     "cln_US6sal_lag1:PricingCombination or Other"="Log(Det. Ind. Salary):Pricing=Comb./Other",
-                    "cln_US6sal_lag1:PricingOther CB"="Pricing=Log(Det. Ind. Salary):Other Cost-Based",
+                    "cln_US6sal_lag1:PricingOther CB"="Log(Det. Ind. Salary):Pricing=Other Cost-Based",
                     "cln_US6sal_lag1:PricingT&M/LH/FPLOE"="Log(Det. Ind. Salary):Pricing=T&M/LH/FP:LoE",
                     
                     
                     "PricingOther FP:cln_US6sal"="Log(Det. Ind. Salary):Pricing=Other Fixed-Price",
                     "PricingIncentive:cln_US6sal"="Log(Det. Ind. Salary):Pricing=Incentive Fee",
                     "PricingCombination or Other:cln_US6sal"="Log(Det. Ind. Salary):Pricing=Comb./Other",
-                    "PricingOther CB:cln_US6sal"="Pricing=Log(Det. Ind. Salary):Other Cost-Based",
+                    "PricingOther CB:cln_US6sal"="Log(Det. Ind. Salary):Pricing=Other Cost-Based",
                     "PricingT&M/LH/FPLOE:cln_US6sal"="Log(Det. Ind. Salary):Pricing=T&M/LH/FP:LoE",
                     "PricingUCA:cln_US6sal"="Log(Det. Ind. Salary):Pricing=UCA",
                     
@@ -2800,7 +2808,12 @@ get_coef_list<-function(limit=NULL){
                     "cl_Ceil:cl_Base2Ceil"="Log(Init. Ceiling):Log(Init. Ceiling:Base)",
                     "cln_Ceil:clr_Ceil2Base"="Log(Init. Ceiling):Log(Init. Ceiling:Base)",
                     "cp_PairObl7:cln_OffObl7"="Paired Share %:Log(Office Obligations)",
-                    "cln_OffObl7:cln_OffFocus" = "Log(Office Obligations):Log(Office Focus)"
+                    "cln_OffObl7:cln_OffFocus" = "Log(Office Obligations):Log(Office Focus)",
+                    
+                    
+                    "FMSAlways:cln_Base"="FMS=Always:Log(Init. Base)",  
+                    "FMSPost-Start:cln_Base"="FMS=Post-Start:Log(Init. Base)",
+                    "FMSFMS post-start:cln_Base"="FMS=Post-Start:Log(Init. Base)"
     )
   } else if (limit=="services"){
     coef_list<-list("(Intercept)"="(Intercept)",
