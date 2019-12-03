@@ -2135,6 +2135,67 @@ DurBoundary<-subset(def_all,Ceil=="75m+"&
 
 # Time
 
+## Completion Year
+```{r}
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+load(file="../data/clean/defense_contract_all_detail.RData")
+# debug(transform_contract)
+# undebug(transform_contract)
+
+def_end<-def_all %>%
+  dplyr::filter(#StartFiscal_Year>=2007 &
+                LastCurrentCompletionDate<as.Date("2017-10-01")) %>%
+  dplyr::select(CSIScontractID,
+                      IsTerminated,
+                      IsClosed,
+                      IsComplete,
+                      # pChangeOrderUnmodifiedBaseAndAll,
+                      # n_CBre,
+                      Action_Obligation,
+                      # UnmodifiedDays,
+                      # qHighCeiling,
+                      # qLowCeiling,
+                      # UnmodifiedCeiling,
+                      StartFiscal_Year,
+                      LastCurrentCompletionDate,
+                      # UnmodifiedCurrentCompletionDate,
+                      # CBre,
+                      # SumOfisChangeOrder
+                      )
+
+def_end$LastCurrentCompletionYear<-lubridate::year(def_end$LastCurrentCompletionDate)+ifelse(lubridate::month(def_end$LastCurrentCompletionDate)>=10,1,0)
+
+def_end$StartFiscal_Year<-factor(def_end$StartFiscal_Year,levels=c(2007:2017))
+
+def_end %>% dplyr::filter(IsComplete==1) %>% group_by(StartFiscal_Year,LastCurrentCompletionYear) %>%
+  dplyr::summarise(Action_Obligation=sum(Action_Obligation,na.rm=TRUE)) %>%
+  ggplot(aes(fill=factor(StartFiscal_Year),x=LastCurrentCompletionYear,y=Action_Obligation))+geom_col()
+
+
+def_end$StartFiscal_Year<-factor(def_end$StartFiscal_Year,levels=c(2017:2007))
+
+def_end %>% dplyr::filter(IsComplete==1) %>% group_by(StartFiscal_Year,LastCurrentCompletionYear) %>%
+  dplyr::summarise(Action_Obligation=sum(Action_Obligation,na.rm=TRUE)) %>%
+  ggplot(aes(fill=factor(StartFiscal_Year),x=LastCurrentCompletionYear,y=Action_Obligation))+geom_col()
+
+
+
+  Completion<-ddply(def_all,
+               .(SumOfisChangeOrder,
+                 StartFY,
+                 Ceil),
+               plyr::summarise,
+               ContractCount=length(CSIScontractID),
+               Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18))
+
+
+
+```
+
+
+
 ## Initial Duration and Year
 ```{r StartYearDur}
 if(!file.exists("../data/semi_clean/Contract.SP_UnmodifiedScopeHistory.rda")){
