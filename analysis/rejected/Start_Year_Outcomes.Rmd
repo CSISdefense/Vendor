@@ -2135,7 +2135,7 @@ DurBoundary<-subset(def_all,Ceil=="75m+"&
 
 # Time
 
-## Start Year
+## Completion Year
 ```{r}
 library(tidyr)
 library(dplyr)
@@ -2144,9 +2144,9 @@ load(file="../data/clean/defense_contract_all_detail.RData")
 # debug(transform_contract)
 # undebug(transform_contract)
 
-def_dur<-def_all %>%
-  # dplyr::filter(#StartFiscal_Year>=2007 &
-                # LastCurrentCompletionDate<as.Date("2017-10-01")) %>%
+def_end<-def_all %>%
+  dplyr::filter(#StartFiscal_Year>=2007 &
+                LastCurrentCompletionDate<as.Date("2017-10-01")) %>%
   dplyr::select(CSIScontractID,
                       IsTerminated,
                       IsClosed,
@@ -2159,21 +2159,38 @@ def_dur<-def_all %>%
                       # qLowCeiling,
                       # UnmodifiedCeiling,
                       StartFiscal_Year,
-                      LastCurrentCompletionDate
+                      LastCurrentCompletionDate,
                       # UnmodifiedCurrentCompletionDate,
                       # CBre,
                       # SumOfisChangeOrder
                       )
 
-def_dur$LastCurrentCompletionYear<-
-  as.character(lubridate::year(def_dur$LastCurrentCompletionDate)+ifelse(lubridate::month(def_dur$LastCurrentCompletionDate)>=10,1,0))
-def_dur$LastCurrentCompletionYear[def_dur$IsComplete==0 | is.na(def_dur$IsComplete)]<-"Active in 2018"
+def_end$LastCurrentCompletionYear<-lubridate::year(def_end$LastCurrentCompletionDate)+ifelse(lubridate::month(def_end$LastCurrentCompletionDate)>=10,1,0)
 
-def_dur$LastCurrentCompletionYear<-factor(def_dur$LastCurrentCompletionYear,levels=c("Active in 2018",2017:2007))
+def_end$StartFiscal_Year<-factor(def_end$StartFiscal_Year,levels=c(2007:2017))
 
-def_dur %>% group_by(IsComplete,StartFiscal_Year,LastCurrentCompletionYear) %>%
+def_end %>% dplyr::filter(IsComplete==1) %>% group_by(StartFiscal_Year,LastCurrentCompletionYear) %>%
   dplyr::summarise(Action_Obligation=sum(Action_Obligation,na.rm=TRUE)) %>%
-  ggplot(aes(fill=factor(LastCurrentCompletionYear),x=StartFiscal_Year,y=Action_Obligation))+geom_col()#+facet_wrap(IsComplete~.,ncol=1)
+  ggplot(aes(fill=factor(StartFiscal_Year),x=LastCurrentCompletionYear,y=Action_Obligation))+geom_col()
+
+
+def_end$StartFiscal_Year<-factor(def_end$StartFiscal_Year,levels=c(2017:2007))
+
+def_end %>% group_by(IsComplete,StartFiscal_Year,LastCurrentCompletionYear) %>%
+  dplyr::summarise(Action_Obligation=sum(Action_Obligation,na.rm=TRUE)) %>%
+  ggplot(aes(fill=factor(StartFiscal_Year),x=LastCurrentCompletionYear,y=Action_Obligation))+geom_col()+facet_wrap(IsComplete~.,ncol=1)
+
+
+
+  Completion<-ddply(def_all,
+               .(SumOfisChangeOrder,
+                 StartFY,
+                 Ceil),
+               plyr::summarise,
+               ContractCount=length(CSIScontractID),
+               Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18))
+
+
 
 ```
 
