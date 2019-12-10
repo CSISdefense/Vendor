@@ -2585,9 +2585,7 @@ get_coef_list<-function(limit=NULL){
                     "cp_PairObl7:cln_OffObl7"="Paired Share %:Log(Office Obligations)",
                     "cln_OffObl7:cln_OffFocus" = "Log(Office Obligations):Log(Office Focus)",
                     
-                    "FMSAlways"="FMS=Always",
-                    "FMSPost-Start"="FMS=Post-Start",
-                    
+
                     
                     "FMSAlways:cln_Base"="FMS=Always:Log(Init. Base)",  
                     "FMSPost-Start:cln_Base"="FMS=Post-Start:Log(Init. Base)",
