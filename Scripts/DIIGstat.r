@@ -2216,7 +2216,7 @@ transition_variable_names_service<-function(contract){
   
   
   contract$Comp<-contract$Comp1or5
-  contract$Pricing<-contract$PricingUCA
+  # contract$Pricing<-contract$PricingUCA
   
   contract$cln_Base<-contract$cl_Base
   colnames(contract)[colnames(contract)=="capped_cl_Days"]<-"cln_Days"
@@ -2435,6 +2435,9 @@ get_coef_list<-function(limit=NULL){
                     "Comp2-4 offers"="Comp=2-4 offers",
                     "Comp5+ offers"="Comp=5+ offers",
                     
+                    "Comp1 Offer"="Comp=1 offer",
+                    "Comp2-4 Offers"="Comp=2-4 offers",
+                    "Comp5+ Offers"="Comp=5+ offers",
                     
                     
                     
