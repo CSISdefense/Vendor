@@ -2141,7 +2141,7 @@ library(tidyr)
 library(dplyr)
 library(ggplot2)
 library(csis360)
-load(file="../data/clean/defense_contract_all_detail.RData")
+if(!exists("def_all")) load(file="../data/clean/defense_contract_all_detail.RData")
 # debug(transform_contract)
 # undebug(transform_contract)
 
@@ -2160,7 +2160,8 @@ def_dur<-def_all %>%
                       # qLowCeiling,
                       # UnmodifiedCeiling,
                       StartFiscal_Year,
-                      LastCurrentCompletionDate
+                      LastCurrentCompletionDate,
+                MinOfSignedDate,
                       # UnmodifiedCurrentCompletionDate,
                       # CBre,
                       # SumOfisChangeOrder
@@ -2180,7 +2181,32 @@ def_dur<-deflate(def_dur,
                         # deflator_var="OMB.2019",
                         fy_var="StartFiscal_Year"
 )
+
+def_dur <- def_dur %>% group_by(
+                      IsTerminated,
+                      IsClosed,
+                      IsComplete,
+                      # pChangeOrderUnmodifiedBaseAndAll,
+                      # n_CBre,
+                      Action_Obligation,
+                      UnmodifiedDays,
+                      # qHighCeiling,
+                      # qLowCeiling,
+                      # UnmodifiedCeiling,
+                      StartFiscal_Year,
+                      LastCurrentCompletionDate,
+                MinOfSignedDate,
+                      # UnmodifiedCurrentCompletionDate,
+                      # CBre,
+                      # SumOfisChangeOrder
+                      ) %>%
+  summarise(Action_Obligation_OMB20_GDP18=sum(na.rm=TRUE),
+            kcount=length(CSIScontractID))
+
+
+
   
+ 
   if (!"Dur" %in% colnames(def_dur)){
     def_dur$Dur<-Hmisc::cut2(def_dur$UnmodifiedDays,cuts=c(61,214,366,732))
   }
@@ -2195,35 +2221,80 @@ def_dur<-deflate(def_dur,
   }
   
   def_dur<-replace_nas_with_unlabeled(def_dur,"Dur")
+  
+#Estimated End Date
+  
+  
+  
+#Actual Duration
+if (!"ActualDays" %in% colnames(def_dur)){
+  def_dur$ActualDays<-as.numeric(
+    difftime(strptime(def_dur$LastCurrentCompletionDate,"%Y-%m-%d")
+             , strptime(def_dur$MinOfSignedDate,"%Y-%m-%d")
+             , unit="days"
+    ))+1
+}
+  def_dur$ActualDays[def_dur$ActualDays<1]<-NA
+  
+  
+  
+  
+  
+  if (!"ActualDur" %in% colnames(def_dur)){
+  def_dur$ActualDur<-Hmisc::cut2(def_dur$ActualDays,cuts=c(61,214,366,732))
+  }
+  levels(def_dur$ActualDur)<-gsub(" ","",levels(def_dur$ActualDur))
+  if (levels(def_dur$ActualDur)[[2]] %in% c("[61,214)")){
+    levels(def_dur$ActualDur)<- list(
+      "[0 months,~2 months)"=c("[1,61)","[0,61)"),
+      "[~2 months,~7 months)"=c("[61,214)"),
+      "[~7 months-~1 year]"=c("[214,366)"),
+      "(~1 year,~2 years]"=c("[366,732)","[366,732)"),
+      "(~2 years+]"=levels(def_dur$ActualDur)[5])
+  }
+  
+  def_dur<-replace_nas_with_unlabeled(def_dur,"ActualDur")
 
+  
+  
 dur_labels_and_colors<-prepare_labels_and_colors(def_dur)
 dur_column_key<-get_column_key(def_dur)
 
 
 ```
-
+### Stacked Last Year
 ```{r StackedLastYear}
 def_dur %>% group_by(IsComplete,StartFiscal_Year,LastCurrentCompletionYear) %>%
-  dplyr::summarise(Action_Obligation=sum(Action_Obligation,na.rm=TRUE)) %>%
-  ggplot(aes(fill=factor(LastCurrentCompletionYear),x=StartFiscal_Year,y=Action_Obligation))+geom_col()#+facet_wrap(IsComplete~.,ncol=1)
+  dplyr::summarise(Action_Obligation=sum(Action_Obligation_OMB20_GDP18,na.rm=TRUE)) %>%
+  ggplot(aes(fill=factor(LastCurrentCompletionYear),x=StartFiscal_Year,y=Action_Obligation))+
+  geom_col()#+facet_wrap(IsComplete~.,ncol=1)
 
 
 ```
 
+### Initial vs. Actual
+```{r StackedLastYear}
+def_dur %>% group_by(IsComplete,StartFiscal_Year,ActualDur,Dur) %>%
+  dplyr::summarise(Action_Obligation=sum(Action_Obligation_OMB20_GDP18,na.rm=TRUE)) %>%
+  ggplot(aes(fill=ActualDur,x=StartFiscal_Year,y=Action_Obligation))+
+  geom_col()+facet_wrap(Dur~.)
 
+
+```
+### Stacked Duration
 ```{r StackedDur}
 (staked_duration_share <-  build_plot(data=def_dur,# %>% filter(Fiscal.Year>=2007&
                                                                     # !is.na(FirstYear)&
                                                                     # !is.na(Dur)),
                             chart_geom="Bar Chart",
-                            share=TRUE,
-                            x_var="Fiscal.Year",
-                            y_var="obligatedamount_OMB20_GDP18",
+                            share=FALSE,
+                            x_var="StartFiscal_Year",
+                            y_var="Action_Obligation_OMB20_GDP18",
                             color_var="Dur",
-                            facet_var="FirstYear",
+                            # facet_var="FirstYear",
                             # second_var="dtDelivYear_fac",
-                            labels_and_colors=scope_labels_and_colors,
-                            column_key=scope_column_key,
+                            labels_and_colors=dur_labels_and_colors,
+                            column_key=dur_column_key,
                             legend=TRUE,
                             caption=FALSE,
                         format=TRUE)+
@@ -2232,6 +2303,8 @@ def_dur %>% group_by(IsComplete,StartFiscal_Year,LastCurrentCompletionYear) %>%
        #y="Delivery Value (Metric Varies by Source)"),
     caption="Contracts that started before 2000 or with unlabeled durations are not shown. Source: FPDS; CSIS Analysis")
 )
+
+
 
 ```
 
