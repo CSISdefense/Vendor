@@ -2140,6 +2140,7 @@ DurBoundary<-subset(def_all,Ceil=="75m+"&
 library(tidyr)
 library(dplyr)
 library(ggplot2)
+library(csis360)
 load(file="../data/clean/defense_contract_all_detail.RData")
 # debug(transform_contract)
 # undebug(transform_contract)
@@ -2154,7 +2155,7 @@ def_dur<-def_all %>%
                       # pChangeOrderUnmodifiedBaseAndAll,
                       # n_CBre,
                       Action_Obligation,
-                      # UnmodifiedDays,
+                      UnmodifiedDays,
                       # qHighCeiling,
                       # qLowCeiling,
                       # UnmodifiedCeiling,
@@ -2165,140 +2166,55 @@ def_dur<-def_all %>%
                       # SumOfisChangeOrder
                       )
 
+#Last CurrentCompletion Yer
 def_dur$LastCurrentCompletionYear<-
   as.character(lubridate::year(def_dur$LastCurrentCompletionDate)+ifelse(lubridate::month(def_dur$LastCurrentCompletionDate)>=10,1,0))
 def_dur$LastCurrentCompletionYear[def_dur$IsComplete==0 | is.na(def_dur$IsComplete)]<-"Active in 2018"
 
 def_dur$LastCurrentCompletionYear<-factor(def_dur$LastCurrentCompletionYear,levels=c("Active in 2018",2017:2007))
 
-def_dur %>% group_by(IsComplete,StartFiscal_Year,LastCurrentCompletionYear) %>%
-  dplyr::summarise(Action_Obligation=sum(Action_Obligation,na.rm=TRUE)) %>%
-  ggplot(aes(fill=factor(LastCurrentCompletionYear),x=StartFiscal_Year,y=Action_Obligation))+geom_col()#+facet_wrap(IsComplete~.,ncol=1)
-
-```
 
 
-
-## Initial Duration and Year
-```{r StartYearDur}
-if(!file.exists("../data/semi_clean/Defense_Contract.SP_UnmodifiedScopeHistory.rda")){
-  unmod_scope<-read_delim("../data/semi_clean/Defense_Contract.SP_UnmodifiedScopeHistory.txt",delim="\t", na=c("NA","NULL"))
-  
-  unmod_scope$UnmodifiedDays[unmod_scope$UnmodifiedDays <0]<-NA
-  if(min(unmod_scope$UnmodifiedDays,na.rm=TRUE)==0)
-    unmod_scope$UnmodifiedDays<-unmod_scope$UnmodifiedDays+1
-  
-  unmod_scope<-standardize_variable_names(unmod_scope)
-  
-  unmod_scope<-deflate(unmod_scope,
-                        money_var = "obligatedamount",
+def_dur<-deflate(def_dur,
+                        money_var = "Action_Obligation",
                         # deflator_var="OMB.2019",
-                        fy_var="fiscal_year"
-      )
-  unmod_scope$capped_UnmodifiedDays <- ifelse(unmod_scope$UnmodifiedDays > 3650, 3650, unmod_scope$UnmodifiedDays)
+                        fy_var="StartFiscal_Year"
+)
   
-  unmod_scope$FirstYear<-NA
-  unmod_scope$FirstYear[unmod_scope$StartFiscal_Year==unmod_scope$Fiscal.Year]<-"First Year"
-  unmod_scope$FirstYear[unmod_scope$StartFiscal_Year<unmod_scope$Fiscal.Year]<-"Prior Year Start"
-  unmod_scope$FirstYear<-factor(unmod_scope$FirstYear,c("First Year","Prior Year Start"))
-  sumary()
-  if (!"Dur" %in% colnames(unmod_scope)){
-    
-    unmod_scope$Dur<-Hmisc::cut2(unmod_scope$UnmodifiedDays,cuts=c(61,214,366,732))
+  if (!"Dur" %in% colnames(def_dur)){
+    def_dur$Dur<-Hmisc::cut2(def_dur$UnmodifiedDays,cuts=c(61,214,366,732))
   }
-  
-  if (levels(unmod_scope$Dur)[[2]] %in% c("[   61,  214)","[     61,    214)")){
-    levels(unmod_scope$Dur)<- list(
+    
+  if (levels(def_dur$Dur)[[2]] %in% c("[   61,  214)","[     61,    214)")){
+    levels(def_dur$Dur)<- list(
       "[0 months,~2 months)"=c("[    0,   61)","[    1,   61)","[      1,     61)"),
       "[~2 months,~7 months)"=c("[   61,  214)","[     61,    214)"),
       "[~7 months-~1 year]"=c("[  214,  366)","[    214,    366)"),
       "(~1 year,~2 years]"=c("[  366,  732)","[    366,    732)"),
-      "(~2 years+]"=levels(unmod_scope$Dur)[5])
+      "(~2 years+]"=levels(def_dur$Dur)[5])
   }
   
-  unmod_scope<-standardize_variable_names(unmod_scope)
-  unmod_scope<-rename_dataset(unmod_scope)
-  unmod_scope<-replace_nas_with_unlabeled(unmod_scope,"Dur")
-  save(unmod_scope,file="../data/semi_clean/Contract.SP_UnmodifiedScopeHistory.rda")
-} else load(file="../data/semi_clean/Defense_Contract.SP_UnmodifiedScopeHistory.rda")
-  # full_data$StateRegionSwr<-factor(full_data$StateRegion,
-  #                                  levels=levels(full_data$StateRegion),
-  #                                    swr(levels(full_data$StateRegion),10))
+  def_dur<-replace_nas_with_unlabeled(def_dur,"Dur")
+
+dur_labels_and_colors<-prepare_labels_and_colors(def_dur)
+dur_column_key<-get_column_key(def_dur)
 
 
-scope_labels_and_colors<-prepare_labels_and_colors(unmod_scope)
-scope_column_key<-get_column_key(unmod_scope)
-```
-### Gradiant
-```{r DurGradiant}
-(gradiant_duration<-ggplot(unmod_scope %>%
-                              dplyr::filter(Fiscal.Year>=2007 &
-                                              !is.na(UnmodifiedDays)&
-                                              !is.na(FirstYear)) %>%  
-         group_by(Fiscal.Year,FirstYear,capped_UnmodifiedDays) %>% #,StateRegionSwr,Source
-         dplyr::summarise(obligatedamount_OMB20_GDP18=sum(obligatedamount_OMB20_GDP18))%>%
-           group_by(Fiscal.Year,FirstYear) %>% mutate(pObligatedamount=obligatedamount_OMB20_GDP18/
-                                              sum(obligatedamount_OMB20_GDP18,na.rm=TRUE)),
-       aes(x=Fiscal.Year,y=obligatedamount_OMB20_GDP18, fill=capped_UnmodifiedDays))+
-  geom_col()+#facet_grid(Source~StateRegionSwr)+
-   scale_fill_gradient2(trans = "log",low = muted("blue"), 
-                        mid = "yellow",
-                        high = muted("red"), midpoint = log(365))+scale_y_reverse()+
-    facet_grid(FirstYear ~.)
-)
-
-(gradiant_duration_share<-ggplot(unmod_scope %>%
-                              dplyr::filter(Fiscal.Year>=2007 &
-                                              !is.na(UnmodifiedDays)&
-                                              !is.na(FirstYear)) %>%  
-         group_by(Fiscal.Year,FirstYear,capped_UnmodifiedDays) %>% #,StateRegionSwr,Source
-         dplyr::summarise(obligatedamount_OMB20_GDP18=sum(obligatedamount_OMB20_GDP18))%>%
-           group_by(Fiscal.Year,FirstYear) %>% mutate(pObligatedamount=obligatedamount_OMB20_GDP18/
-                                              sum(obligatedamount_OMB20_GDP18,na.rm=TRUE)),
-       aes(x=Fiscal.Year,y=pObligatedamount, fill=capped_UnmodifiedDays))+
-  geom_col()+#facet_grid(Source~StateRegionSwr)+
-   scale_fill_gradient2(trans = "log",low = muted("blue"), 
-                        mid = "yellow",
-                        high = muted("red"), midpoint = log(365))+scale_y_reverse()+
-    facet_grid(FirstYear ~.)
-)
 ```
 
-```{r Stacked}
+```{r StackedLastYear}
+def_dur %>% group_by(IsComplete,StartFiscal_Year,LastCurrentCompletionYear) %>%
+  dplyr::summarise(Action_Obligation=sum(Action_Obligation,na.rm=TRUE)) %>%
+  ggplot(aes(fill=factor(LastCurrentCompletionYear),x=StartFiscal_Year,y=Action_Obligation))+geom_col()#+facet_wrap(IsComplete~.,ncol=1)
 
 
-
-### Stacked
-```{r Stacked}
+```
 
 
-
-
-(staked_duration <-  build_plot(data=unmod_scope %>% filter(Fiscal.Year>=2007&
-                                                                    !is.na(FirstYear)&
-                                                                    !is.na(Dur)),
-                            chart_geom="Bar Chart",
-                            share=FALSE,
-                            x_var="Fiscal.Year",
-                            y_var="obligatedamount_OMB20_GDP18",
-                            color_var="Dur",
-                            facet_var="FirstYear",
-                            # second_var="dtDelivYear_fac",
-                            labels_and_colors=scope_labels_and_colors,
-                            column_key=scope_column_key,
-                            legend=TRUE,
-                            caption=FALSE,
-                        format=TRUE)+#facet_grid(Source ~ dtDelivYear_fac, scales="free_y")+ scale_x_continuous("Corruption Perceptions Index Score", c(0, 25, 50, 75, 100)) + 
- labs(#x="Corruption Perceptions Index Score",
-       #y="Delivery Value (Metric Varies by Source)"),
-    caption="Contracts that started before 2000 or with unlabeled durations are not shown. Source: FPDS; CSIS Analysis")
-)
-
-
-
-(staked_duration_share <-  build_plot(data=unmod_scope %>% filter(Fiscal.Year>=2007&
-                                                                    !is.na(FirstYear)&
-                                                                    !is.na(Dur)),
+```{r StackedDur}
+(staked_duration_share <-  build_plot(data=def_dur,# %>% filter(Fiscal.Year>=2007&
+                                                                    # !is.na(FirstYear)&
+                                                                    # !is.na(Dur)),
                             chart_geom="Bar Chart",
                             share=TRUE,
                             x_var="Fiscal.Year",
@@ -2318,3 +2234,43 @@ scope_column_key<-get_column_key(unmod_scope)
 )
 
 ```
+
+
+
+### Gradiant
+```{r DurGradiant}
+(gradiant_duration<-ggplot(def_dur %>%
+                              dplyr::filter(Fiscal.Year>=2007 &
+                                              !is.na(UnmodifiedDays)&
+                                              !is.na(FirstYear)) %>%  
+         group_by(Fiscal.Year,FirstYear,capped_UnmodifiedDays) %>% #,StateRegionSwr,Source
+         dplyr::summarise(obligatedamount_OMB20_GDP18=sum(obligatedamount_OMB20_GDP18))%>%
+           group_by(Fiscal.Year,FirstYear) %>% mutate(pObligatedamount=obligatedamount_OMB20_GDP18/
+                                              sum(obligatedamount_OMB20_GDP18,na.rm=TRUE)),
+       aes(x=Fiscal.Year,y=obligatedamount_OMB20_GDP18, fill=capped_UnmodifiedDays))+
+  geom_col()+#facet_grid(Source~StateRegionSwr)+
+   scale_fill_gradient2(trans = "log",low = muted("blue"), 
+                        mid = "yellow",
+                        high = muted("red"), midpoint = log(365))+scale_y_reverse()+
+    facet_grid(FirstYear ~.)
+)
+
+(gradiant_duration_share<-ggplot(def_dur %>%
+                              dplyr::filter(Fiscal.Year>=2007 &
+                                              !is.na(UnmodifiedDays)&
+                                              !is.na(FirstYear)) %>%  
+         group_by(Fiscal.Year,FirstYear,capped_UnmodifiedDays) %>% #,StateRegionSwr,Source
+         dplyr::summarise(obligatedamount_OMB20_GDP18=sum(obligatedamount_OMB20_GDP18))%>%
+           group_by(Fiscal.Year,FirstYear) %>% mutate(pObligatedamount=obligatedamount_OMB20_GDP18/
+                                              sum(obligatedamount_OMB20_GDP18,na.rm=TRUE)),
+       aes(x=Fiscal.Year,y=pObligatedamount, fill=capped_UnmodifiedDays))+
+  geom_col()+#facet_grid(Source~StateRegionSwr)+
+   scale_fill_gradient2(trans = "log",low = muted("blue"), 
+                        mid = "yellow",
+                        high = muted("red"), midpoint = log(365))+scale_y_reverse()+
+    facet_grid(FirstYear ~.)
+)
+```
+
+
+
