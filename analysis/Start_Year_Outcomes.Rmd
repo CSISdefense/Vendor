@@ -2145,12 +2145,24 @@ if(!exists("def_all")) load(file="../data/clean/defense_contract_all_detail.RDat
 # debug(transform_contract)
 # undebug(transform_contract)
 
+if(!"Action_Obligation_OMB20_GDP18" %in% colnames(def_all))
+  def_all<-deflate(def_all,
+                   money_var = "Action_Obligation",
+                   # deflator_var="OMB.2019",
+                   fy_var="StartFiscal_Year"
+  )
 
-def_all<-deflate(def_all,
-                        money_var = "Action_Obligation",
-                        # deflator_var="OMB.2019",
-                        fy_var="StartFiscal_Year"
-)
+# Contract.SP_ContractTerminationExamination.txt
+# 
+# def_all<-csis360::read_and_join_experiment(data=def_all,
+#                                              lookup_file="Defense_Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
+#                                             path="",
+#                                             dir="..\\data\\semi_clean\\",
+#                                             by="CSIScontractID",
+#                                             new_var_checked=FALSE,
+#                                              add_var="MaxBoostDate"
+# )
+
 
 def_dur<-def_all %>%
   # dplyr::filter(#StartFiscal_Year>=2007 &
@@ -2172,7 +2184,7 @@ def_dur<-def_all %>%
                       # CBre,
                       # SumOfisChangeOrder
                       ) %>%
-  summarise(Action_Obligation_OMB20_GDP18=sum(na.rm=TRUE),
+  summarise(Action_Obligation_OMB20_GDP18=sum(Action_Obligation_OMB20_GDP18,na.rm=TRUE),
             kcount=length(CSIScontractID))
 
 
@@ -2180,19 +2192,24 @@ def_dur<-def_all %>%
 def_dur$LastCurrentCompletionYear<-get_fiscal_year(def_dur$LastCurrentCompletionDate)
 
 #Oh we're missing MaxBoostDate
-def_dur$LastCurrentCompletionYear[def_dur$IsComplete==1 & !is.na(def_dur$IsComplete) &
-                                    def_dur$LastCurrentCompletionYear>2018]<-"Ambiguous Ending"
+def_dur$LastCurrentCompletionYear[(def_dur$IsComplete==1 & !is.na(def_dur$IsComplete) &
+                                    def_dur$LastCurrentCompletionYear>2018) |
+                                  def_dur$LastCurrentCompletionYear<def_dur$StartFiscal_Year]<-"Unlabeled"
 
 def_dur$LastCurrentCompletionYear[def_dur$IsComplete==0 | is.na(def_dur$IsComplete)]<-"Active in 2018"
 
-def_dur$LastCurrentCompletionYear<-factor(def_dur$LastCurrentCompletionYear,levels=c("Active in 2018","Ambiguous Ending",2017:2007))
+def_dur$LastCurrentCompletionYear<-factor(def_dur$LastCurrentCompletionYear,
+                                          levels=c("Unlabeled","Active in 2018",2017:2007))
+
+
+def_dur<-replace_nas_with_unlabeled(def_dur,"LastCurrentCompletionYear")
 
 def_dur<-replace_nas_with_unlabeled(def_dur,"qDuration")
 
 #Estimated End Date
 
-  
-  
+
+
 #Actual Duration
 if (!"ActualDays" %in% colnames(def_dur)){
   def_dur$ActualDays<-as.numeric(
@@ -2201,26 +2218,40 @@ if (!"ActualDays" %in% colnames(def_dur)){
              , unit="days"
     ))+1
 }
-  def_dur$ActualDays[def_dur$ActualDays<1]<-NA
-  
-  
-  
-  
-  
-  if (!"ActualDur" %in% colnames(def_dur)){
+def_dur$ActualDays[def_dur$ActualDays<1]<-NA
+
+
+
+if (!"ActualDur" %in% colnames(def_dur)){
   def_dur$ActualDur<-Hmisc::cut2(def_dur$ActualDays,cuts=c(61,214,366,732))
-  }
-  levels(def_dur$ActualDur)<-gsub(" ","",levels(def_dur$ActualDur))
-  if (levels(def_dur$ActualDur)[[2]] %in% c("[61,214)")){
-    levels(def_dur$ActualDur)<- list(
-      "[0 months,~2 months)"=c("[1,61)","[0,61)"),
-      "[~2 months,~7 months)"=c("[61,214)"),
-      "[~7 months-~1 year]"=c("[214,366)"),
-      "(~1 year,~2 years]"=c("[366,732)","[366,732)"),
-      "(~2 years+]"=levels(def_dur$ActualDur)[5])
-  }
+}
+levels(def_dur$ActualDur)<-gsub(" ","",levels(def_dur$ActualDur))
+if (levels(def_dur$ActualDur)[[2]] %in% c("[61,214)")){
+  levels(def_dur$ActualDur)<- list(
+    "[0 months,~2 months)"=c("[1,61)","[0,61)"),
+    "[~2 months,~7 months)"=c("[61,214)"),
+    "[~7 months-~1 year]"=c("[214,366)"),
+    "(~1 year,~2 years]"=c("[366,732)","[366,732)"),
+    "(~2 years+]"=levels(def_dur$ActualDur)[5],
+    "Active in 2018"="Active in 2018")
+}
+def_dur$ActualDur[def_dur$IsComplete==0 | is.na(def_dur$IsComplete)]<-"Active in 2018"
+
+def_dur$ActualDur[(def_dur$IsComplete==1 & !is.na(def_dur$IsComplete) &
+                                    def_dur$LastCurrentCompletionYear>2018) |
+                                  def_dur$LastCurrentCompletionYear<def_dur$StartFiscal_Year]<-"Unlabeled"
+
+def_dur$ActualDur<-factor(def_dur$ActualDur,c(
+  "Active in 2018",
+    "(~2 years+]",
+    "(~1 year,~2 years]",
+    "[~7 months-~1 year]",
+    "[~2 months,~7 months)",
+  "[0 months,~2 months)"
+    ))
   
-  def_dur<-replace_nas_with_unlabeled(def_dur,"ActualDur")
+  
+def_dur<-replace_nas_with_unlabeled(def_dur,"ActualDur")
 
   
   
@@ -2235,6 +2266,11 @@ def_dur %>% group_by(IsComplete,StartFiscal_Year,LastCurrentCompletionYear) %>%
   dplyr::summarise(Action_Obligation=sum(Action_Obligation_OMB20_GDP18,na.rm=TRUE)) %>%
   ggplot(aes(fill=factor(LastCurrentCompletionYear),x=StartFiscal_Year,y=Action_Obligation))+
   geom_col()#+facet_wrap(IsComplete~.,ncol=1)
+
+
+summary(def_dur$IsComplete)
+summary(def_dur$StartFiscal_Year)
+summary(def_dur$Action_Obligation_OMB20_GDP18)
 
 
 ```
