@@ -2135,7 +2135,7 @@ DurBoundary<-subset(def_all,Ceil=="75m+"&
 
 # Time
 
-## Start Year
+## Start Year Dur Prep
 ```{r}
 library(tidyr)
 library(dplyr)
@@ -2163,6 +2163,9 @@ if(!"Action_Obligation_OMB20_GDP18" %in% colnames(def_all))
 #                                              add_var="MaxBoostDate"
 # )
 
+```
+
+```{r }
 
 def_dur<-def_all %>%
   # dplyr::filter(#StartFiscal_Year>=2007 &
@@ -2179,7 +2182,7 @@ def_dur<-def_all %>%
                       StartFiscal_Year,
                       LastCurrentCompletionDate,
                 MinOfSignedDate,
-                qDuration
+                qDuration,
                       # UnmodifiedCurrentCompletionDate,
                       # CBre,
                       # SumOfisChangeOrder
@@ -2225,6 +2228,9 @@ def_dur$ActualDays[def_dur$ActualDays<1]<-NA
 if (!"ActualDur" %in% colnames(def_dur)){
   def_dur$ActualDur<-Hmisc::cut2(def_dur$ActualDays,cuts=c(61,214,366,732))
 }
+
+
+
 levels(def_dur$ActualDur)<-gsub(" ","",levels(def_dur$ActualDur))
 if (levels(def_dur$ActualDur)[[2]] %in% c("[61,214)")){
   levels(def_dur$ActualDur)<- list(
@@ -2235,32 +2241,61 @@ if (levels(def_dur$ActualDur)[[2]] %in% c("[61,214)")){
     "(~2 years+]"=levels(def_dur$ActualDur)[5],
     "Active in 2018"="Active in 2018")
 }
+def_dur$ActualDur<-as.character(def_dur$ActualDur)
+
+
+
+
+
+
+#Longer dur
+def_dur$ActualYears<-ceiling(lubridate::time_length(difftime(strptime(def_dur$LastCurrentCompletionDate,"%Y-%m-%d"),
+                                           strptime(def_dur$MinOfSignedDate,"%Y-%m-%d")),"years"))
+
+year_plus<-def_dur$ActualYears>1&!is.na(def_dur$ActualYears)
+def_dur$ActualDur[year_plus]<-
+  paste("(~",def_dur$ActualYears[year_plus]-1,
+        " year,~",def_dur$ActualYears[year_plus]," years]",sep="")
+  
+#Cleanup
+
+
+
 def_dur$ActualDur[def_dur$IsComplete==0 | is.na(def_dur$IsComplete)]<-"Active in 2018"
+
 
 def_dur$ActualDur[(def_dur$IsComplete==1 & !is.na(def_dur$IsComplete) &
                                     def_dur$LastCurrentCompletionYear>2018) |
                                   def_dur$LastCurrentCompletionYear<def_dur$StartFiscal_Year]<-"Unlabeled"
 
-def_dur$ActualDur<-factor(def_dur$ActualDur,c(
-  "Active in 2018",
-    "(~2 years+]",
-    "(~1 year,~2 years]",
-    "[~7 months-~1 year]",
-    "[~2 months,~7 months)",
-  "[0 months,~2 months)"
-    ))
+# def_dur$ActualDur<-factor(def_dur$ActualDur,c(
+#   "Active in 2018",
+#     "(~2 years+]",
+#     "(~1 year,~2 years]",
+#     "[~7 months-~1 year]",
+#     "[~2 months,~7 months)",
+#   "[0 months,~2 months)"
+#     ))
   
   
 def_dur<-replace_nas_with_unlabeled(def_dur,"ActualDur")
 
-  
-  
+def_dur$ActualDur<-droplevels(def_dur$ActualDur)
+
+def_dur %>% group_by(ActualDur,IsComplete) %>%
+  summarise(MinActualDays=min(ActualDays,na.rm=TRUE),
+            MaxActualDays=max(ActualDays,na.rm=TRUE),
+            MinLastYear=min(LastCurrentCompletionYear),
+            MaxLastYear=max(LastCurrentCompletionYear),
+            kcount=sum(kcount))
+
+
 dur_labels_and_colors<-prepare_labels_and_colors(def_dur)
 dur_column_key<-get_column_key(def_dur)
 
 
 ```
-### Stacked Start Year
+### Colored by End Year
 ```{r StackedLastYear}
 def_dur %>% group_by(IsComplete,StartFiscal_Year,LastCurrentCompletionYear) %>%
   dplyr::summarise(Action_Obligation=sum(Action_Obligation_OMB20_GDP18,na.rm=TRUE)) %>%
@@ -2269,30 +2304,13 @@ def_dur %>% group_by(IsComplete,StartFiscal_Year,LastCurrentCompletionYear) %>%
 
 
 
-def_dur %>% group_by(IsComplete,StartFiscal_Year,ActualDur) %>%
-  dplyr::summarise(Action_Obligation=sum(Action_Obligation_OMB20_GDP18,na.rm=TRUE)) %>%
-  ggplot(aes(fill=factor(ActualDur),x=StartFiscal_Year,y=Action_Obligation))+
-  geom_col()#+facet_wrap(IsComplete~.,ncol=1)
-
-
-
 summary(def_dur$IsComplete)
 summary(def_dur$StartFiscal_Year)
 summary(def_dur$Action_Obligation_OMB20_GDP18)
 
-
 ```
 
-### Initial vs. Actual
-```{r StackedLastYear}
-def_dur %>% group_by(IsComplete,StartFiscal_Year,ActualDur,qDuration) %>%
-  dplyr::summarise(Action_Obligation=sum(Action_Obligation_OMB20_GDP18,na.rm=TRUE)) %>%
-  ggplot(aes(fill=ActualDur,x=StartFiscal_Year,y=Action_Obligation))+
-  geom_col()+facet_wrap(qDuration~.)
-
-
-```
-### Stacked Duration
+### Actual Duration
 ```{r StackedDur}
 # undebug(build_plot)
 (staked_duration_share <-  build_plot(data=def_dur,# %>% filter(Fiscal.Year>=2007&
@@ -2314,25 +2332,25 @@ def_dur %>% group_by(IsComplete,StartFiscal_Year,ActualDur,qDuration) %>%
   labs(#x="Corruption Perceptions Index Score",
        #y="Delivery Value (Metric Varies by Source)"),
     caption="Contracts that started before 2000 or with unlabeled durations are not shown. Source: FPDS; CSIS Analysis")
-)
-
+)+theme(legend.position = "right")
 
 
 ```
 
 
 
-```{r Pricing}
-# undebug(build_plot)
-(dur_pricing <-  build_plot(data=def_dur,# %>% filter(Fiscal.Year>=2007&
+#### Initial vs. Actual
+```{r StackedLastYear}
+
+(staked_duration_share <-  build_plot(data=def_dur,# %>% filter(Fiscal.Year>=2007&
                                                                     # !is.na(FirstYear)&
                                                                     # !is.na(qDuration)),
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="StartFiscal_Year",
                             y_var="Action_Obligation_OMB20_GDP18",
-                            color_var="qDuration",
-                            facet_var="PricingUCA",
+                            color_var="ActualDur",
+                            facet_var="qDuration",
                             # second_var="dtDelivYear_fac",
                             labels_and_colors=dur_labels_and_colors,
                             column_key=dur_column_key,
@@ -2345,10 +2363,7 @@ def_dur %>% group_by(IsComplete,StartFiscal_Year,ActualDur,qDuration) %>%
     caption="Contracts that started before 2000 or with unlabeled durations are not shown. Source: FPDS; CSIS Analysis")
 )
 
-
-
 ```
-
 
 ### Gradiant
 ```{r DurGradiant}
