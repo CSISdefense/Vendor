@@ -2260,12 +2260,20 @@ dur_column_key<-get_column_key(def_dur)
 
 
 ```
-### Stacked Last Year
+### Stacked Start Year
 ```{r StackedLastYear}
 def_dur %>% group_by(IsComplete,StartFiscal_Year,LastCurrentCompletionYear) %>%
   dplyr::summarise(Action_Obligation=sum(Action_Obligation_OMB20_GDP18,na.rm=TRUE)) %>%
   ggplot(aes(fill=factor(LastCurrentCompletionYear),x=StartFiscal_Year,y=Action_Obligation))+
   geom_col()#+facet_wrap(IsComplete~.,ncol=1)
+
+
+
+def_dur %>% group_by(IsComplete,StartFiscal_Year,ActualDur) %>%
+  dplyr::summarise(Action_Obligation=sum(Action_Obligation_OMB20_GDP18,na.rm=TRUE)) %>%
+  ggplot(aes(fill=factor(ActualDur),x=StartFiscal_Year,y=Action_Obligation))+
+  geom_col()#+facet_wrap(IsComplete~.,ncol=1)
+
 
 
 summary(def_dur$IsComplete)
@@ -2286,6 +2294,7 @@ def_dur %>% group_by(IsComplete,StartFiscal_Year,ActualDur,qDuration) %>%
 ```
 ### Stacked Duration
 ```{r StackedDur}
+# undebug(build_plot)
 (staked_duration_share <-  build_plot(data=def_dur,# %>% filter(Fiscal.Year>=2007&
                                                                     # !is.na(FirstYear)&
                                                                     # !is.na(qDuration)),
@@ -2293,7 +2302,7 @@ def_dur %>% group_by(IsComplete,StartFiscal_Year,ActualDur,qDuration) %>%
                             share=FALSE,
                             x_var="StartFiscal_Year",
                             y_var="Action_Obligation_OMB20_GDP18",
-                            color_var="qDuration",
+                            color_var="ActualDur",
                             # facet_var="FirstYear",
                             # second_var="dtDelivYear_fac",
                             labels_and_colors=dur_labels_and_colors,
@@ -2311,6 +2320,34 @@ def_dur %>% group_by(IsComplete,StartFiscal_Year,ActualDur,qDuration) %>%
 
 ```
 
+
+
+```{r Pricing}
+# undebug(build_plot)
+(dur_pricing <-  build_plot(data=def_dur,# %>% filter(Fiscal.Year>=2007&
+                                                                    # !is.na(FirstYear)&
+                                                                    # !is.na(qDuration)),
+                            chart_geom="Bar Chart",
+                            share=FALSE,
+                            x_var="StartFiscal_Year",
+                            y_var="Action_Obligation_OMB20_GDP18",
+                            color_var="qDuration",
+                            facet_var="PricingUCA",
+                            # second_var="dtDelivYear_fac",
+                            labels_and_colors=dur_labels_and_colors,
+                            column_key=dur_column_key,
+                            legend=TRUE,
+                            caption=FALSE,
+                        format=TRUE)+
+    #facet_grid(Source ~ dtDelivYear_fac, scales="free_y")+ scale_x_continuous("Corruption Perceptions Index Score", c(0, 25, 50, 75, 100)) + 
+  labs(#x="Corruption Perceptions Index Score",
+       #y="Delivery Value (Metric Varies by Source)"),
+    caption="Contracts that started before 2000 or with unlabeled durations are not shown. Source: FPDS; CSIS Analysis")
+)
+
+
+
+```
 
 
 ### Gradiant
