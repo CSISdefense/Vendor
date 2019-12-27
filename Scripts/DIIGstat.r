@@ -2398,8 +2398,8 @@ get_coef_list<-function(limit=NULL){
                     "cln_US6sal"="Log(Det. Ind. Salary)",
                     "cl_CFTE"="Log(Serv. Code Invoice Rate)",
                     "cln_PSCrate"="Log(Serv. Code Invoice Rate)",
-                    "c_pPBSC"="Office Perf.-Based %",
-                    "cp_OffPerf7"="Office Perf.-Based %",
+                    "c_pPBSC"="Office PBSA Prop.",
+                    "cp_OffPerf7"="Office PBSA Prop.",
                     "c_pOffPSC"="Office Serv. Code Exp. %",
                     "pOffPSC"="ERROR, UNCENTERED Office Serv. Code Exp. %",
                     "cp_OffPSC7"="Office Serv. Code Exp. %",
@@ -2451,21 +2451,21 @@ get_coef_list<-function(limit=NULL){
                     "PricingUCAFFP"="Pricing=FFP",
                     "PricingUCAOther FP"="Pricing=Other Fixed-Price",
                     "PricingUCAIncentive"="Pricing=Incentive Fee",
-                    "PricingUCACombination or Other"="Pricing=Comb. or Other",
+                    "PricingUCACombination or Other"="Pricing=Comb./Other",
                     "PricingUCAOther CB"="Pricing=Other Cost-Based",
                     "PricingUCAT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
                     "PricingUCAUCA"="Pricing=UCA",
                     
                     "PricingFeeOther FP"="Pricing=Other Fixed-Price",
                     "PricingFeeIncentive"="Pricing=Incentive Fee",
-                    "PricingFeeCombination or Other"="Pricing=Comb. or Other",
+                    "PricingFeeCombination or Other"="Pricing=Comb./Other",
                     "PricingFeeOther CB"="Pricing=Other Cost-Based",
                     "PricingFeeT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
                     "b_UCA"="UCA",
                     "PricingFFP"="Pricing=FFP",
                     "PricingOther FP"="Pricing=Other Fixed-Price",
                     "PricingIncentive"="Pricing=Incentive Fee",
-                    "PricingCombination or Other"="Pricing=Comb. or Other",
+                    "PricingCombination or Other"="Pricing=Comb./Other",
                     "PricingOther CB"="Pricing=Other Cost-Based",
                     "PricingT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
                     "PricingUCA"="Pricing=UCA",
@@ -2481,17 +2481,17 @@ get_coef_list<-function(limit=NULL){
                     "cln_Def3HHI_lag1"="Log(Subsector HHI)",
                     "cln_Def3HHI" = "Log(Subsector HHI)",
                     
-                    "cl_def3_ratio_lag1"="Log(Subsector DoD:US)",
-                    "clr_Def3toUS_lag1"="Log(Subsector DoD:US)",
-                    "clr_Def3toUS" = "Log(Subsector DoD:US)",
+                    "cl_def3_ratio_lag1"="Log(Subsector DoD:U.S.)",
+                    "clr_Def3toUS_lag1"="Log(Subsector DoD:U.S.)",
+                    "clr_Def3toUS" = "Log(Subsector DoD:U.S.)",
                     
                     "cl_def6_HHI_lag1"="Log(Det. Ind. HHI)",
                     "cln_Def6HHI" = "Log(Det. Ind. HHI)",
                     "cln_Def6HHI_lag1"="Log(Det. Ind. HHI)",
                     
-                    "cl_def6_ratio_lag1"="Log(Det. Ind. DoD:US)",
-                    "clr_Def6toUS_lag1"="Log(Det. Ind. DoD:US)",
-                    "clr_Def6toUS" = "Log(Det. Ind. DoD:US)",
+                    "cl_def6_ratio_lag1"="Log(Det. Ind. DoD:U.S.)",
+                    "clr_Def6toUS_lag1"="Log(Det. Ind. DoD:U.S.)",
+                    "clr_Def6toUS" = "Log(Det. Ind. DoD:U.S.)",
                     
                     "cl_def6_obl_lag1"="Log(Det. Ind. DoD Obl.)",
                     "cln_Def6Obl"="Log(Det. Ind. DoD Obl.)",
@@ -2513,7 +2513,7 @@ get_coef_list<-function(limit=NULL){
                     #Consolidation
                     "cl_def6_HHI_lag1:capped_cl_Days"="Log(Det. Ind. HHI):Log(Planned Dur.)",
                     "cl_def6_HHI_lag1:cl_def6_obl_lag1"="Log(Det. Ind. HHI):Log(Det. Ind. DoD Obl.)",
-                    "cl_def3_HHI_lag1:cl_def3_ratio_lag1"="Log(Subsector HHI):Log(Subsector DoD:US)",
+                    "cl_def3_HHI_lag1:cl_def3_ratio_lag1"="Log(Subsector HHI):Log(Subsector DoD:U.S.)",
                     "cl_def6_HHI_lag1:b_UCA"="Log(Det. Ind. HHI):UCA",
                     "cl_Ceil:b_UCA"="Log(Init. Ceiling):UCA",
                     
@@ -2552,12 +2552,12 @@ get_coef_list<-function(limit=NULL){
                     "cln_OffFocus:pOffPSC" = "ERROR UNCENTERED Office Serv. Code Exp. %:Log(Office Focus)",
                     "cln_OffFocus:cp_OffPSC7" = "Office Serv. Code Exp. %:Log(Office Focus)",
                     "cp_OffPSC7:cln_OffFocus"="Office Serv. Code Exp. %:Log(Office Focus)",
-                    "c_pPBSC:cl_pairCA"="Office Perf.-Based %:Log(Paired Actions)",
-                    "cp_OffPerf7:cln_PairCA"="Office Perf.-Based %:Log(Paired Actions)",
-                    "cp_OffPerf7:cln_Days"="Office Perf.-Based %:Log(Planned Dur.)",
-                    "c_pPBSC:cl_Days"="Office Perf.-Based %:Log(Planned Dur.)",
-                    "c_pPBSC:c_pMarket"="Office Perf.-Based %:Paired Share %",
-                    "cp_OffPerf7:cp_PairObl7"="Office Perf.-Based %:Paired Share %",
+                    "c_pPBSC:cl_pairCA"="Office PBSA Prop.:Log(Paired Actions)",
+                    "cp_OffPerf7:cln_PairCA"="Office PBSA Prop.:Log(Paired Actions)",
+                    "cp_OffPerf7:cln_Days"="Office PBSA Prop.:Log(Planned Dur.)",
+                    "c_pPBSC:cl_Days"="Office PBSA Prop.:Log(Planned Dur.)",
+                    "c_pPBSC:c_pMarket"="Office PBSA Prop.:Paired Share %",
+                    "cp_OffPerf7:cp_PairObl7"="Office PBSA Prop.:Paired Share %",
                     
                     
                     #Paired Relationship
@@ -2591,8 +2591,8 @@ get_coef_list<-function(limit=NULL){
                     "cln_Base:clr_Ceil2Base"="Log(Init. Base):Log(Init. Ceiling:Base)",
                     "cl_Ceil:cl_Base2Ceil"="Log(Init. Ceiling):Log(Init. Ceiling:Base)",
                     "cln_Ceil:clr_Ceil2Base"="Log(Init. Ceiling):Log(Init. Ceiling:Base)",
-                    "cp_PairObl7:cln_OffObl7"="Paired Share %:Log(Office Obligations)",
-                    "cln_OffObl7:cln_OffFocus" = "Log(Office Obligations):Log(Office Focus)",
+                    "cp_PairObl7:cln_OffObl7"="Paired Share %:Log(Office Obligations+1)",
+                    "cln_OffObl7:cln_OffFocus" = "Log(Office Obligations+1):Log(Office Focus)",
                     
                     
                     "FMSAlways:cln_Base"="FMS=Always:Log(Init. Base)",  
@@ -2646,21 +2646,21 @@ get_coef_list<-function(limit=NULL){
                     "PricingUCAFFP"="Pricing=FFP",
                     "PricingUCAOther FP"="Pricing=Other Fixed-Price",
                     "PricingUCAIncentive"="Pricing=Incentive Fee",
-                    "PricingUCACombination or Other"="Pricing=Comb. or Other",
+                    "PricingUCACombination or Other"="Pricing=Comb./Other",
                     "PricingUCAOther CB"="Pricing=Other Cost-Based",
                     "PricingUCAT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
                     "PricingUCAUCA"="Pricing=UCA",
                     
                     "PricingFeeOther FP"="Pricing=Other Fixed-Price",
                     "PricingFeeIncentive"="Pricing=Incentive Fee",
-                    "PricingFeeCombination or Other"="Pricing=Comb. or Other",
+                    "PricingFeeCombination or Other"="Pricing=Comb./Other",
                     "PricingFeeOther CB"="Pricing=Other Cost-Based",
                     "PricingFeeT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
                     "b_UCA"="UCA",
                     "PricingFFP"="Pricing=FFP",
                     "PricingOther FP"="Pricing=Other Fixed-Price",
                     "PricingIncentive"="Pricing=Incentive Fee",
-                    "PricingCombination or Other"="Pricing=Comb. or Other",
+                    "PricingCombination or Other"="Pricing=Comb./Other",
                     "PricingOther CB"="Pricing=Other Cost-Based",
                     "PricingT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
                     "PricingUCA"="Pricing=UCA",
@@ -2680,17 +2680,17 @@ get_coef_list<-function(limit=NULL){
                     "cln_Def3HHI_lag1"="Log(Subsector HHI)",
                     "cln_Def3HHI" = "Log(Subsector HHI)",
                     
-                    "cl_def3_ratio_lag1"="Log(Subsector DoD:US)",
-                    "clr_Def3toUS_lag1"="Log(Subsector DoD:US)",
-                    "clr_Def3toUS" = "Log(Subsector DoD:US)",
+                    "cl_def3_ratio_lag1"="Log(Subsector DoD:U.S.)",
+                    "clr_Def3toUS_lag1"="Log(Subsector DoD:U.S.)",
+                    "clr_Def3toUS" = "Log(Subsector DoD:U.S.)",
                     
                     "cl_def6_HHI_lag1"="Log(Det. Ind. HHI)",
                     "cln_Def6HHI" = "Log(Det. Ind. HHI)",
                     "cln_Def6HHI_lag1"="Log(Det. Ind. HHI)",
                     
-                    "cl_def6_ratio_lag1"="Log(Det. Ind. DoD:US)",
-                    "clr_Def6toUS_lag1"="Log(Det. Ind. DoD:US)",
-                    "clr_Def6toUS" = "Log(Det. Ind. DoD:US)",
+                    "cl_def6_ratio_lag1"="Log(Det. Ind. DoD:U.S.)",
+                    "clr_Def6toUS_lag1"="Log(Det. Ind. DoD:U.S.)",
+                    "clr_Def6toUS" = "Log(Det. Ind. DoD:U.S.)",
                     
                     "cl_def6_obl_lag1"="Log(Det. Ind. DoD Obl.)",
                     "cln_Def6Obl"="Log(Det. Ind. DoD Obl.)",
@@ -2700,8 +2700,8 @@ get_coef_list<-function(limit=NULL){
                     
                     
                     #Office
-                    "c_pPBSC"="Office Perf.-Based %",
-                    "cp_OffPerf7"="Office Perf.-Based %",
+                    "c_pPBSC"="Office PBSA Prop.",
+                    "cp_OffPerf7"="Office PBSA Prop.",
                     "c_pOffPSC"="Office Serv. Code Exp. %",
                     "pOffPSC"="ERROR, UNCENTERED Office Serv. Code Exp. %",
                     "cp_OffPSC7"="Office Serv. Code Exp. %",
@@ -2730,7 +2730,7 @@ get_coef_list<-function(limit=NULL){
                     #Consolidation
                     "cl_def6_HHI_lag1:capped_cl_Days"="Log(Det. Ind. HHI):Log(Planned Dur.)",
                     "cl_def6_HHI_lag1:cl_def6_obl_lag1"="Log(Det. Ind. HHI):Log(Det. Ind. DoD Obl.)",
-                    "cl_def3_HHI_lag1:cl_def3_ratio_lag1"="Log(Subsector HHI):Log(Subsector DoD:US)",
+                    "cl_def3_HHI_lag1:cl_def3_ratio_lag1"="Log(Subsector HHI):Log(Subsector DoD:U.S.)",
                     "cl_def6_HHI_lag1:b_UCA"="Log(Det. Ind. HHI):UCA",
                     "cl_Ceil:b_UCA"="Log(Init. Ceiling):UCA",
                     
@@ -2772,12 +2772,12 @@ get_coef_list<-function(limit=NULL){
                     
                     #Office Capability
                     
-                    "cp_OffPerf7:cln_PairCA"="Office Perf.-Based %:Log(Paired Actions)",
-                    "c_pPBSC:cl_pairCA"="Office Perf.-Based %:Log(Paired Actions)",
-                    "cp_OffPerf7:cln_Days"="Office Perf.-Based %:Log(Planned Dur.)",
-                    "c_pPBSC:cl_Days"="Office Perf.-Based %:Log(Planned Dur.)",
-                    "cp_OffPerf7:cp_PairObl7"="Office Perf.-Based %:Paired Share %",
-                    "c_pPBSC:c_pMarket"="Office Perf.-Based %:Paired Share %",
+                    "cp_OffPerf7:cln_PairCA"="Office PBSA Prop.:Log(Paired Actions)",
+                    "c_pPBSC:cl_pairCA"="Office PBSA Prop.:Log(Paired Actions)",
+                    "cp_OffPerf7:cln_Days"="Office PBSA Prop.:Log(Planned Dur.)",
+                    "c_pPBSC:cl_Days"="Office PBSA Prop.:Log(Planned Dur.)",
+                    "cp_OffPerf7:cp_PairObl7"="Office PBSA Prop.:Paired Share %",
+                    "c_pPBSC:c_pMarket"="Office PBSA Prop.:Paired Share %",
                     
                     "cln_OffObl7:pOffPSC" = "ERROR UNCENTERED Office Serv. Code Exp. %:Log(Office Obl.)",
                     "cln_OffObl7:cp_OffPSC7" = "Office Serv. Code Exp. %:Log(Office Obl.)",
@@ -2819,8 +2819,8 @@ get_coef_list<-function(limit=NULL){
                     "cln_Base:clr_Ceil2Base"="Log(Init. Base):Log(Init. Ceiling:Base)",
                     "cl_Ceil:cl_Base2Ceil"="Log(Init. Ceiling):Log(Init. Ceiling:Base)",
                     "cln_Ceil:clr_Ceil2Base"="Log(Init. Ceiling):Log(Init. Ceiling:Base)",
-                    "cp_PairObl7:cln_OffObl7"="Paired Share %:Log(Office Obligations)",
-                    "cln_OffObl7:cln_OffFocus" = "Log(Office Obligations):Log(Office Focus)",
+                    "cp_PairObl7:cln_OffObl7"="Paired Share %:Log(Office Obligations+1)",
+                    "cln_OffObl7:cln_OffFocus" = "Log(Office Obligations+1):Log(Office Focus)",
                     
                     
                     "FMSAlways:cln_Base"="FMS=Always:Log(Init. Base)",  
@@ -2833,8 +2833,8 @@ get_coef_list<-function(limit=NULL){
                     "cln_US6sal"="Log(Det. Ind. Salary)",
                     "cl_CFTE"="Log(Serv. Code Invoice Rate)",
                     "cln_PSCrate"="Log(Serv. Code Invoice Rate)",
-                    "c_pPBSC"="Office Perf.-Based %",
-                    "cp_OffPerf7"="Office Perf.-Based %",
+                    "c_pPBSC"="Office PBSA Prop.",
+                    "cp_OffPerf7"="Office PBSA Prop.",
                     "c_pOffPSC"="Office Serv. Code Exp. %",
                     "pOffPSC"="ERROR, UNCENTERED Office Serv. Code Exp. %",
                     "cp_OffPSC7"="Office Serv. Code Exp. %",
