@@ -2536,6 +2536,7 @@ get_coef_list<-function(limit=NULL){
                     "cln_US6sal_lag1:PricingCombination or Other"="Log(Det. Ind. Salary):Pricing=Comb./Other",
                     "cln_US6sal_lag1:PricingOther CB"="Log(Det. Ind. Salary):Pricing=Other Cost-Based",
                     "cln_US6sal_lag1:PricingT&M/LH/FPLOE"="Log(Det. Ind. Salary):Pricing=T&M/LH/FP:LoE",
+
                     
                     "cln_PSCrate:PricingOther FP"="Log(Serv. Code Invoice Rate):Pricing=Other Fixed-Price",
                     "cln_PSCrate:PricingIncentive"="Log(Serv. Code Invoice Rate):Pricing=Incentive Fee",
@@ -2544,20 +2545,32 @@ get_coef_list<-function(limit=NULL){
                     "cln_PSCrate:PricingT&M/LH/FPLOE"="Log(Serv. Code Invoice Rate):Pricing=T&M/LH/FP:LoE",
                     "cln_PSCrate:PricingUCA"="Log(Serv. Code Invoice Rate):Pricing=UCA",
                     
+                    "cln_PSCrate:PricingUCAOther FP"="Log(Serv. Code Invoice Rate):Pricing=Other Fixed-Price",
+                    "cln_PSCrate:PricingUCAIncentive"="Log(Serv. Code Invoice Rate):Pricing=Incentive Fee",
+                    "cln_PSCrate:PricingUCACombination or Other"="Log(Serv. Code Invoice Rate):Pricing=Comb./Other",                    
+                    "cln_PSCrate:PricingUCAOther CB"="Log(Serv. Code Invoice Rate):Pricing=Other Cost-Based",
+                    "cln_PSCrate:PricingUCAT&M/LH/FPLOE"="Log(Serv. Code Invoice Rate):Pricing=T&M/LH/FP:LoE",
+                    "cln_PSCrate:PricingUCAUCA"="Log(Serv. Code Invoice Rate):Pricing=UCA",
+                    
+                    
                     
                     #Office Capability
-                    "cln_OffObl7:pOffPSC" = "ERROR UNCENTERED Office Serv. Code Exp. %:Log(Office Obl.)",
-                    "cln_OffObl7:cp_OffPSC7" = "Office Serv. Code Exp. %:Log(Office Obl.)",
-                    "cp_OffPSC7:cln_OffObl7" = "Office Serv. Code Exp. %:Log(Office Obl.)",
-                    "cln_OffFocus:pOffPSC" = "ERROR UNCENTERED Office Serv. Code Exp. %:Log(Office Focus)",
-                    "cln_OffFocus:cp_OffPSC7" = "Office Serv. Code Exp. %:Log(Office Focus)",
-                    "cp_OffPSC7:cln_OffFocus"="Office Serv. Code Exp. %:Log(Office Focus)",
                     "c_pPBSC:cl_pairCA"="Office PBSA Prop.:Log(Paired Actions)",
                     "cp_OffPerf7:cln_PairCA"="Office PBSA Prop.:Log(Paired Actions)",
                     "cp_OffPerf7:cln_Days"="Office PBSA Prop.:Log(Planned Dur.)",
                     "c_pPBSC:cl_Days"="Office PBSA Prop.:Log(Planned Dur.)",
                     "c_pPBSC:c_pMarket"="Office PBSA Prop.:Paired Share %",
                     "cp_OffPerf7:cp_PairObl7"="Office PBSA Prop.:Paired Share %",
+                    
+                    "cln_OffObl7:pOffPSC" = "ERROR UNCENTERED Office Serv. Code Exp. %:Log(Office Obl.)",
+                    "cln_OffObl7:cp_OffPSC7" = "Office Serv. Code Exp. %:Log(Office Obl.)",
+                    "cp_OffPSC7:cln_OffObl7" = "Office Serv. Code Exp. %:Log(Office Obl.)",
+                    "cln_OffFocus:pOffPSC" = "ERROR UNCENTERED Office Serv. Code Exp. %:Log(Office Focus)",
+                    "cln_OffFocus:cp_OffPSC7" = "Office Serv. Code Exp. %:Log(Office Focus)",
+                    "cp_OffPSC7:cln_OffFocus"="Office Serv. Code Exp. %:Log(Office Focus)",
+                    
+                    
+                    
                     
                     
                     #Paired Relationship
@@ -2579,14 +2592,6 @@ get_coef_list<-function(limit=NULL){
                     "cn_PairHist7:PricingOther CB"="Paired Years:Pricing=Other Cost-Based",
                     "cn_PairHist7:PricingT&M/LH/FPLOE"="Paired Years:Pricing=T&M/LH/FP:LoE",
                     "cn_PairHist7:PricingUCA"="Paired Years:Pricing=UCA",
-                    
-                    "cln_PSCrate:PricingUCAOther FP"="Log(Serv. Code Invoice Rate):Pricing=Other Fixed-Price",
-                    "cln_PSCrate:PricingUCAIncentive"="Log(Serv. Code Invoice Rate):Pricing=Incentive Fee",
-                    "cln_PSCrate:PricingUCACombination or Other"="Log(Serv. Code Invoice Rate):Pricing=Comb./Other",                    
-                    "cln_PSCrate:PricingUCAOther CB"="Log(Serv. Code Invoice Rate):Pricing=Other Cost-Based",
-                    "cln_PSCrate:PricingUCAT&M/LH/FPLOE"="Log(Serv. Code Invoice Rate):Pricing=T&M/LH/FP:LoE",
-                    "cln_PSCrate:PricingUCAUCA"="Log(Serv. Code Invoice Rate):Pricing=UCA",
-                    
                     
                     #Non-Study Variale interactions
                     "VehS-IDC:b_Intl"="Vehicle=S-IDC:Performed Abroad",
