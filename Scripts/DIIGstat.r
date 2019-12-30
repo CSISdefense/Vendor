@@ -2580,6 +2580,13 @@ get_coef_list<-function(limit=NULL){
                     "cn_PairHist7:PricingT&M/LH/FPLOE"="Paired Years:Pricing=T&M/LH/FP:LoE",
                     "cn_PairHist7:PricingUCA"="Paired Years:Pricing=UCA",
                     
+                    "cln_PSCrate:PricingUCAOther FP"="Log(Serv. Code Invoice Rate):Pricing=Other Fixed-Price",
+                    "cln_PSCrate:PricingUCAIncentive"="Log(Serv. Code Invoice Rate):Pricing=Incentive Fee",
+                    "cln_PSCrate:PricingUCACombination or Other"="Log(Serv. Code Invoice Rate):Pricing=Comb./Other",                    
+                    "cln_PSCrate:PricingUCAOther CB"="Log(Serv. Code Invoice Rate):Pricing=Other Cost-Based",
+                    "cln_PSCrate:PricingUCAT&M/LH/FPLOE"="Log(Serv. Code Invoice Rate):Pricing=T&M/LH/FP:LoE",
+                    "cln_PSCrate:PricingUCAUCA"="Log(Serv. Code Invoice Rate):Pricing=UCA",
+                    
                     
                     #Non-Study Variale interactions
                     "VehS-IDC:b_Intl"="Vehicle=S-IDC:Performed Abroad",
@@ -2769,6 +2776,12 @@ get_coef_list<-function(limit=NULL){
                     "cln_PSCrate:PricingT&M/LH/FPLOE"="Log(Serv. Code Invoice Rate):Pricing=T&M/LH/FP:LoE",
                     "cln_PSCrate:PricingUCA"="Log(Serv. Code Invoice Rate):Pricing=UCA",
                     
+                    "cln_PSCrate:PricingUCAOther FP"="Log(Serv. Code Invoice Rate):Pricing=Other Fixed-Price",
+                    "cln_PSCrate:PricingUCAIncentive"="Log(Serv. Code Invoice Rate):Pricing=Incentive Fee",
+                    "cln_PSCrate:PricingUCACombination or Other"="Log(Serv. Code Invoice Rate):Pricing=Comb./Other",                    
+                    "cln_PSCrate:PricingUCAOther CB"="Log(Serv. Code Invoice Rate):Pricing=Other Cost-Based",
+                    "cln_PSCrate:PricingUCAT&M/LH/FPLOE"="Log(Serv. Code Invoice Rate):Pricing=T&M/LH/FP:LoE",
+                    "cln_PSCrate:PricingUCAUCA"="Log(Serv. Code Invoice Rate):Pricing=UCA",
                     
                     #Office Capability
                     
