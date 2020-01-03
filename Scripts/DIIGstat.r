@@ -1852,7 +1852,7 @@ name_Continuous <- c("Action_Obligation","UnmodifiedContractBaseAndAllOptionsVal
 statsummary_continuous <- function(x, 
                                    contract,
                                    log=TRUE,
-                                   digits=3,
+                                   digits=2,
                                    value_col=NULL,
                                    plus1=FALSE)
   {       #input(x: namelist of all continuous variables contract: name of the data frame)
@@ -1873,44 +1873,45 @@ statsummary_continuous <- function(x,
   if(log==FALSE)
     colnames(continuous_Info)[colnames(continuous_Info)=="Logarithmic Mean"]<-"Arithmatic Mean"  
   for (i in x){
-    Percent_NA <- round(sum(is.na(contract[[i]]))/nrow(contract),5)
-    Percent_Ob <- round(sum(contract[[value_col]][is.na(contract[[i]])],na.rm = TRUE)/sum(contract[[value_col]],na.rm = TRUE),5)
-    transformed_i<-contract[[i]]
-    transformed_i[transformed_i==0] <- NA
-    transformed_i <- log(contract[[i]])
+    if(log==TRUE) contract[[i]][contract[[i]]<=0]<-NA
+      
     maxval <- round(max(contract[[i]],na.rm = TRUE), digits)
     medianval <- round(median(contract[[i]],na.rm = TRUE), digits)
     minval <- round(min(contract[[i]],na.rm = TRUE), digits)
-    meanval <- round(mean(contract[[i]],na.rm = TRUE), digits)
-    meanlog <- round(exp(mean(transformed_i,na.rm = TRUE)), digits)
-    sdval <- sd(contract[[i]],na.rm = TRUE)
-    sdlog <- sd(transformed_i,na.rm = TRUE)
-    unitaboveval <- round(mean(contract[[i]],na.rm = TRUE)+2*sdval,digits)
-    unitbelowval <- round(mean(contract[[i]],na.rm = TRUE)-2*sdval,digits)
-    unitabovelog <- round(exp(mean(transformed_i,na.rm = TRUE)+2*sdlog),digits)
-    unitbelowlog <- round(exp(mean(transformed_i,na.rm = TRUE)-2*sdlog),digits)
     Percent_NA <- round(sum(is.na(contract[[i]]))/nrow(contract),5)
     Percent_Ob <- round(sum(contract[[value_col]][is.na(contract[[i]])],na.rm = TRUE)/sum(contract[[value_col]],na.rm = TRUE),5)
-    if(log==TRUE)
+    
+    if(log==TRUE){
+      transformed_i <- log(contract[[i]])
+      meanlog <- round(exp(mean(transformed_i,na.rm = TRUE)), digits)
+      sdlog <- sd(transformed_i,na.rm = TRUE)
+      unitabovelog <- round(exp(mean(transformed_i,na.rm = TRUE)+2*sdlog),digits)
+      unitbelowlog <- round(exp(mean(transformed_i,na.rm = TRUE)-2*sdlog),digits)
       newrow <- c(i, minval, maxval, medianval, meanlog, unitbelowlog, unitabovelog,
                   Percent_NA, Percent_Ob)
-    else 
+    }
+    else {
+      meanval <- round(mean(contract[[i]],na.rm = TRUE), digits)
+      sdval <- sd(contract[[i]],na.rm = TRUE)
+      unitaboveval <- round(mean(contract[[i]],na.rm = TRUE)+2*sdval,digits)
+      unitbelowval <- round(mean(contract[[i]],na.rm = TRUE)-2*sdval,digits)
       newrow <- c(i, minval, maxval, medianval, meanval, unitbelowval, unitaboveval,
                   Percent_NA, Percent_Ob)
+    }
     continuous_Info[nrow(continuous_Info)+1,] <- newrow
   }
   # formating
   continuous_Info[,-1] <- lapply(continuous_Info[,-1], function(x) as.numeric(x))
-  continuous_Info$aboveMax[continuous_Info$Max < continuous_Info$`1 unit above`] <- " * "
-  continuous_Info$belowMin[continuous_Info$Min > continuous_Info$`1 unit below`] <- " * "
+  continuous_Info$aboveMax[continuous_Info$Max < continuous_Info$`1 unit above`] <- "*"
+  continuous_Info$belowMin[continuous_Info$Min > continuous_Info$`1 unit below`] <- "*"
   # editing percentage values
   continuous_Info[,8:9] <- lapply(continuous_Info[,8:9], function(x) percent(x))#, accuracy = .01))
-  continuous_Info[,2:7] <- lapply(continuous_Info[,2:7], function(x) comma_format(accuracy = .001)(x))#big.mark = ',',
+  continuous_Info[,2:7] <- lapply(continuous_Info[,2:7], function(x) comma_format(accuracy = 10^-digits)(x))#big.mark = ',',
   continuous_Info$`% of Obligations to NA records`[continuous_Info$`% of Obligations to NA records`=="NA%"] <- NA
   
-  continuous_Info$`1 unit below` <- paste(continuous_Info$`1 unit below`,continuous_Info$belowMin)
+  continuous_Info$`1 unit below` <- paste(continuous_Info$`1 unit below`,continuous_Info$belowMin,sep="")
   continuous_Info$`1 unit below` <- gsub("NA","",continuous_Info$`1 unit below`)
-  continuous_Info$`1 unit above` <- paste(continuous_Info$`1 unit above`,continuous_Info$aboveMax)
+  continuous_Info$`1 unit above` <- paste(continuous_Info$`1 unit above`,continuous_Info$aboveMax,sep="")
   continuous_Info$`1 unit above` <- gsub("NA","",continuous_Info$`1 unit above`)
   continuous_Info[,c("belowMin","aboveMax")] <- NULL
   return(continuous_Info)
@@ -2194,38 +2195,59 @@ swr <- Vectorize(swr)
 
 
 transition_variable_names_service<-function(contract){
+  
+  # if(!"ln_CBre" %in% colnames(contract))
   contract$ln_CBre<-contract$ln_CBre_OMB20_GDP18
   
-  contract$cln_US6sal<-contract$cl_US6_avg_sal_lag1Const
-  contract$cln_PSCrate<-contract$cl_CFTE
-  contract$cp_OffPerf7<-contract$c_pPBSC
-  contract$cp_OffPSC7<-contract$c_pOffPSC
-  contract$cn_PairHist7<-contract$c_pairHist
-  contract$cln_PairCA<-contract$cl_pairCA
+  if(!"cln_US6sal" %in% colnames(contract))
+    contract$cln_US6sal<-contract$cl_US6_avg_sal_lag1Const
+  if(!"cln_PSCrate" %in% colnames(contract))
+    contract$cln_PSCrate<-contract$cl_CFTE
+  if(!"cp_OffPerf7" %in% colnames(contract))
+    contract$cp_OffPerf7<-contract$c_pPBSC
+  if(!"cp_OffPSC7" %in% colnames(contract))
+    contract$cp_OffPSC7<-contract$c_pOffPSC
+  if(!"cn_PairHist7" %in% colnames(contract))
+    contract$cn_PairHist7<-contract$c_pairHist
+  if(!"cln_PairCA" %in% colnames(contract))
+    contract$cln_PairCA<-contract$cl_pairCA
   
-  contract$cln_OffObl7<-contract$cl_OffVol
-  contract$cp_PairObl7<-contract$c_pMarket
-  contract$cln_OffFocus<-contract$cl_office_naics_hhi_k
+  if(!"cln_OffObl7" %in% colnames(contract))
+    contract$cln_OffObl7<-contract$cl_OffVol
+  if(!"cp_PairObl7" %in% colnames(contract))
+    contract$cp_PairObl7<-contract$c_pMarket
+  if(!"cln_OffFocus" %in% colnames(contract))
+    contract$cln_OffFocus<-contract$cl_office_naics_hhi_k
   
+  if(!"cln_Def3HHI" %in% colnames(contract))
+    contract$cln_Def3HHI<-contract$cl_def3_HHI_lag1
+  if(!"cln_Def6HHI" %in% colnames(contract))
+    contract$cln_Def6HHI<-contract$cl_def6_HHI_lag1
+  if(!"clr_Def3toUS" %in% colnames(contract))
+    contract$clr_Def3toUS<-contract$cl_def3_ratio_lag1
+  if(!"clr_Def6toUS" %in% colnames(contract))
+    contract$clr_Def6toUS<-contract$cl_def6_ratio_lag1
+  if(!"cln_Def6Obl" %in% colnames(contract))
+    contract$cln_Def6Obl<-contract$cl_def6_obl_lag1
   
-  contract$cln_Def3HHI<-contract$cl_def3_HHI_lag1
-  contract$cln_Def6HHI<-contract$cl_def6_HHI_lag1
-  contract$clr_Def3toUS<-contract$cl_def3_ratio_lag1
-  contract$clr_Def6toUS<-contract$cl_def6_ratio_lag1
-  contract$cln_Def6Obl<-contract$cl_def6_obl_lag1
-  
-  
-  contract$Comp<-contract$Comp1or5
+  if(!"Comp" %in% colnames(contract))
+    contract$Comp<-contract$Comp1or5
   # contract$Pricing<-contract$PricingUCA
   
-  contract$cln_Base<-contract$cl_Base
-  colnames(contract)[colnames(contract)=="capped_cl_Days"]<-"cln_Days"
-  contract$cln_Days<-contract$cl_Days
-  contract$clr_Ceil2Base<-contract$cl_Base2Ceil
-  
-  contract$NAICS6<-contract$NAICS
-  contract$ServArea<-contract$CrisisProductOrServiceArea
-  contract$Place<-contract$PlaceCountryISO3
+  if(!"cln_Base" %in% colnames(contract))
+    contract$cln_Base<-contract$cl_Base
+  if(!"cln_Days" %in% colnames(contract))
+    colnames(contract)[colnames(contract)=="capped_cl_Days"]<-"cln_Days"
+  if(!"cln_Days" %in% colnames(contract))
+    contract$cln_Days<-contract$cl_Days
+  if(!"clr_Ceil2Base" %in% colnames(contract))
+    contract$clr_Ceil2Base<-contract$cl_Base2Ceil
+  if(!"NAICS6" %in% colnames(contract))
+    contract$NAICS6<-contract$NAICS
+  if(!"ServArea" %in% colnames(contract))
+    contract$ServArea<-contract$CrisisProductOrServiceArea
+  if(!"Place" %in% colnames(contract))
+    contract$Place<-contract$PlaceCountryISO3
   contract
 }
 
