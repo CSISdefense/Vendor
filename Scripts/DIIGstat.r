@@ -2110,6 +2110,7 @@ odds_ratio<-function(FM,name,input=NA,output=NA,walds=FALSE,rename_list=NA){
       levels=names(rename_list),
       labels=rename_list
     )
+    OR<-OR[order(OR$variable),]
   }
   OR<-OR[,c("variable","OR",	"2.5 %",	"97.5 %")]
   write.csv(OR,file=paste("..//output//",name,"_odds_ratio",ifelse(walds==TRUE,"_wald",""),".csv",sep=""),row.names=FALSE)
