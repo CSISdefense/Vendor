@@ -2290,8 +2290,8 @@ transition_variable_names_FMS<-function(contract){
   contract<-contract[,!colnames(contract) %in% c( "l_US6_avg_sal_lag1Const",
                                                   "l_def6_obl_lag1Const" ,
                                                   "l_def3_obl_lag1Const",
-                                                  "capped_def6_ratio_lag1"  ,
-                                                  "capped_def3_ratio_lag1"  ,
+                                                  # "capped_def6_ratio_lag1"  ,
+                                                  # "capped_def3_ratio_lag1"  ,
                                                   "lp_OptGrowth",
                                                   "capped_cl_Days",
                                                   "lp_CBre" 
