@@ -1857,7 +1857,8 @@ verify_transform<-function(x,
                            log=TRUE,
                            rescale=TRUE,
                            cap_value=NULL,
-                           plus1=FALSE){
+                           plus1=FALSE,
+                           just_check_na=FALSE){
   
   cap<-function(column,cap){
     column[column>cap]<-cap
@@ -1886,12 +1887,24 @@ verify_transform<-function(x,
   
   match<-all(is.na(x[,original_col])==is.na(x[,transformed_col]))
   
-  if(match){
+  if(!match) stop(paste("NA mismatch for",original_col,"and",transformed_col))
+  
+  if(!just_check_na){
     match<-all(x[!is.na(x[,original_col]),original_col]==x[!is.na(x[,transformed_col]),transformed_col])
-    if(!match) warning("Values mismatch")
+    if(!match) stop(paste("Values mismatch for",original_col,"and",transformed_col))
   }
-  else(warning("NA mismatch"))
   return(match)
+}
+
+contract_transform_verify<-function(contract,just_check_na=FALSE){
+  verify_transform(contract,"UnmodifiedBase_OMB20_GDP18","cln_Base",just_check_na=just_check_na)
+  verify_transform(contract,"Ceil2Base","clr_Ceil2Base",just_check_na=just_check_na)
+  verify_transform(contract,"UnmodifiedDays","cln_Days",cap_value=3650,just_check_na=just_check_na) 
+  verify_transform(contract,"def3_HHI_lag1","cln_Def3HHI",just_check_na=just_check_na)
+  verify_transform(contract,"def3_ratio_lag1","clr_Def3toUS",cap_value=1,just_check_na=just_check_na)
+  verify_transform(contract,"def6_HHI_lag1","cln_Def6HHI",just_check_na=just_check_na)
+  verify_transform(contract,"def6_ratio_lag1","clr_Def6toUS",cap_value=1,just_check_na=just_check_na)
+  verify_transform(contract,"office_naics_hhi_k","cln_OffFocus",just_check_na=just_check_na)
 }
 
 
@@ -1962,6 +1975,7 @@ statsummary_continuous <- function(x,
   continuous_Info[,c("belowMin","aboveMax")] <- NULL
   return(continuous_Info)
 }
+
 
 
 
