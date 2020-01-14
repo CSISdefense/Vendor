@@ -1891,6 +1891,11 @@ verify_transform<-function(x,
   
   if(!just_check_na){
     match<-all(x[!is.na(x[,original_col]),original_col]==x[!is.na(x[,transformed_col]),transformed_col])
+    if(!match)
+      match<-all(abs(x[!is.na(x[,original_col]),original_col]-
+                       x[!is.na(x[,transformed_col]),transformed_col]) <1e-10
+      )
+    
     if(!match) stop(paste("Values mismatch for",original_col,"and",transformed_col))
   }
   return(match)
