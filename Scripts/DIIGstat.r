@@ -1849,6 +1849,52 @@ name_Continuous <- c("Action_Obligation","UnmodifiedContractBaseAndAllOptionsVal
                      "US6_avg_sal_lag1","US5_avg_sal_lag1","US4_avg_sal_lag1","US3_avg_sal_lag1","US2_avg_sal_lag1"
 )
 
+
+
+verify_transform<-function(x,
+                           original_col,
+                           transformed_col,
+                           log=TRUE,
+                           rescale=TRUE,
+                           cap_value=NULL,
+                           plus1=FALSE){
+  
+  cap<-function(column,cap){
+    column[column>cap]<-cap
+    column
+  }
+  
+  if(!original_col %in% colnames(x))
+    stop("original_col is missing")
+  
+  if(!transformed_col %in% colnames(x))
+    stop("transformed_col is missing")
+  
+  
+  if(plus1)  
+    x[,original_col]<-x[,original_col]+1
+  
+  if(!is.null(cap_value))
+    x[,original_col]<-cap(x[,original_col],cap_value)
+  
+  if(log)
+    x[,original_col]<-na_non_positive_log(x[,original_col])
+  
+  if(rescale)
+    x[,original_col]<-arm::rescale(x[,original_col])
+  
+  
+  match<-all(is.na(x[,original_col])==is.na(x[,transformed_col]))
+  
+  if(match){
+    match<-all(x[!is.na(x[,original_col]),original_col]==x[!is.na(x[,transformed_col]),transformed_col])
+    if(!match) warning("Values mismatch")
+  }
+  else(warning("NA mismatch"))
+  return(match)
+}
+
+
 statsummary_continuous <- function(x, 
                                    contract,
                                    log=TRUE,
