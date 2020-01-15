@@ -1902,13 +1902,22 @@ verify_transform<-function(x,
 }
 
 contract_transform_verify<-function(contract,just_check_na=FALSE){
+  #Outcome
+  verify_transform(def,"n_CBre_OMB20_GDP18","ln_CBre",rescale=FALSE)
+  
+  #Scope
   verify_transform(contract,"UnmodifiedBase_OMB20_GDP18","cln_Base",just_check_na=just_check_na)
   verify_transform(contract,"Ceil2Base","clr_Ceil2Base",just_check_na=just_check_na)
   verify_transform(contract,"UnmodifiedDays","cln_Days",cap_value=3650,just_check_na=just_check_na) 
+  #NAICS
   verify_transform(contract,"def3_HHI_lag1","cln_Def3HHI",just_check_na=just_check_na)
   verify_transform(contract,"def3_ratio_lag1","clr_Def3toUS",cap_value=1,just_check_na=just_check_na)
   verify_transform(contract,"def6_HHI_lag1","cln_Def6HHI",just_check_na=just_check_na)
   verify_transform(contract,"def6_ratio_lag1","clr_Def6toUS",cap_value=1,just_check_na=just_check_na)
+  verify_transform(contract,"US6_avg_sal_lag1Const","cln_US6sal")
+  verify_transform(contract,"def6_obl_lag1Const","cln_Def6Obl")
+  
+  #Office
   verify_transform(contract,"office_naics_hhi_k","cln_OffFocus",just_check_na=just_check_na)
 }
 
