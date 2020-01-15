@@ -1919,6 +1919,7 @@ contract_transform_verify<-function(contract,just_check_na=FALSE){
   
   #Office
   verify_transform(contract,"office_naics_hhi_k","cln_OffFocus",just_check_na=just_check_na)
+  verify_transform(contract,"pMarket","cp_PairObl7",log=FALSE,just_check_na=just_check_na)
 }
 
 
