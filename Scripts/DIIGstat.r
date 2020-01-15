@@ -1903,7 +1903,7 @@ verify_transform<-function(x,
 
 contract_transform_verify<-function(contract,just_check_na=FALSE){
   #Outcome
-  verify_transform(def,"n_CBre_OMB20_GDP18","ln_CBre",rescale=FALSE)
+  verify_transform(contract,"n_CBre_OMB20_GDP18","ln_CBre",rescale=FALSE)
   
   #Scope
   verify_transform(contract,"UnmodifiedBase_OMB20_GDP18","cln_Base",just_check_na=just_check_na)
