@@ -1914,8 +1914,8 @@ contract_transform_verify<-function(contract,just_check_na=FALSE){
   verify_transform(contract,"def3_ratio_lag1","clr_Def3toUS",cap_value=1,just_check_na=just_check_na)
   verify_transform(contract,"def6_HHI_lag1","cln_Def6HHI",just_check_na=just_check_na)
   verify_transform(contract,"def6_ratio_lag1","clr_Def6toUS",cap_value=1,just_check_na=just_check_na)
-  verify_transform(contract,"US6_avg_sal_lag1Const","cln_US6sal")
-  verify_transform(contract,"def6_obl_lag1Const","cln_Def6Obl")
+  verify_transform(contract,"US6_avg_sal_lag1Const","cln_US6sal",just_check_na=just_check_na)
+  verify_transform(contract,"def6_obl_lag1Const","cln_Def6Obl",just_check_na=just_check_na)
   
   #Office
   verify_transform(contract,"office_naics_hhi_k","cln_OffFocus",just_check_na=just_check_na)
