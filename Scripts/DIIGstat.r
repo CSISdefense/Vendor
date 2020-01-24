@@ -2312,10 +2312,10 @@ transition_variable_names_FMS<-function(contract){
   
                                            
   
-  if("cln_days" %in% colnames(def))
+  if("cln_days" %in% colnames(contract))
     contract<-contract[,!colnames(contract) %in% c("capped_cl_Days")]
   
-  if("Agency" %in% colnames(def))
+  if("Agency" %in% colnames(contract))
     contract<-contract[,!colnames(contract) %in% c("AgencyID")]
   
   
