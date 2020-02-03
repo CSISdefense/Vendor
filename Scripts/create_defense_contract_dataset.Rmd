@@ -977,28 +977,34 @@ memory.limit(36000)
 # debug(deflate)
 def<-transform_contract(def)
 
+#l_Offr
+def$l_Offr<-na_non_positive_log(def$UnmodifiedNumberOfOffersReceived)
+
+#Renamed Variables
+colnames(def)[colnames(def)=="clr_Def6toUS"]<-"cl_def6_ratio_lag1"
+colnames(def)[colnames(def)=="clr_Def3toUS"]<-"cl_def3_ratio_lag1"
+colnames(def)[colnames(def)=="cln_Def6HHI"]<-"cl_def6_HHI_lag1"
+colnames(def)[colnames(def)=="cln_Def3HHI"]<-"cl_def3_HHI_lag1"
 
 
+#Then Year rescaled  variables
 def$cl_Ceil<-arm::rescale(
   na_non_positive_log(def$UnmodifiedCeiling_Then_Year))
 def$cl_def6_obl_lag1<-arm::rescale(
   na_non_positive_log(def$def6_obl_lag1))
 def$cl_US6_avg_sal_lag1<-arm::rescale(
   na_non_positive_log(def$US6_avg_sal_lag1))
+def$cl_Days<-arm::rescale(
+  na_non_positive_log(def$UnmodifiedDays)
+)
+if("UnmodifiedBase_Then_Year" %in%colnames(def))
+  def$cln_Base_Then_Year<-arm::rescale(na_non_positive_log(def$UnmodifiedBase_Then_Year))
 
-
-#l_Offr
-def$l_Offr<-na_non_positive_log(def$UnmodifiedNumberOfOffersReceived)
 #ObligationWT
 if("Action_Obligation_Then_Year" %in% colnames(def)){
   def$ObligationWT_Then_Year<-def$Action_Obligation_Then_Year
   def$ObligationWT_Then_Year[def$ObligationWT_Then_Year<0]<-NA
 }
-
-# # head(def)
-# debug(transform_contract)
-# 
-# 
 
 # load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
 # def_update<-def_all
@@ -1050,7 +1056,6 @@ str(def[,100:ncol(def)])
 def$NAICS2<-factor(def$NAICS2)
 def$PlaceCountryISO3<-factor(def$PlaceCountryISO3)
 def$CSIS_inspection<-factor(def$CSIS_inspection)
-def$CSIS_inspection<-factor(def$CSIS_inspection)
 def$ProductOrServiceCode<-factor(def$ProductOrServiceCode)
 object.size(def)
 def<-def[,!colnames(def) %in% c("SIDV","MIDV","FSSGWAC","BPABOA",
@@ -1080,26 +1085,21 @@ def<-def[,!colnames(def) %in% c("StartDate",
 
 #Not using constant dollars in this study, so dropping to avoid confusion.
 def<-def[,!colnames(def) %in% c("n_CBre_OMB20_GDP18",
+                                "cln_Ceil",
                                 "Action_Obligation_OMB20_GDP18",
                                 "UnmodifiedBase_OMB20_GDP18",
                                 "UnmodifiedCeiling_OMB20_GDP18",
-                                "ln_CBre_OMB20_GDP18")]
+                                "ln_CBre_OMB20_GDP18",
+                                "cln_Def6Obl")]
+
+#Dropping the capped cln_days,  as vendor uses uncapped.
+def<-def[,!colnames(def) %in% c("cln_Days")]
 
 
 #Duplicated columns
 if("Where" %in% colnames(def)) def<-def[,!colnames(def) %in% c("PlaceCountryISO3")]
 
-
-
-if("cl_Ceil" %in% colnames(def)){
-  def$l_Ceil_Then_Year<-log(def$UnmodifiedCeiling_Then_Year)
-  def$l_Ceil_Then_Year[is.na(def$cl_Ceil)]<-NA
-  def$cl_Ceil_Then_Year<-arm::rescale(def$l_Ceil_Then_Year)
-  def<-def %>% dplyr::select(-c(cl_Ceil))
-  summary(def$cl_Ceil_Then_Year,l_Ceil_Then_Year)
-}
-
-
+contract_transform_verify(def,dollars_suffix="Then_Year")
 
 save(file="../data/clean/transformed_def.Rdata",def)
 
