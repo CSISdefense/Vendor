@@ -1864,12 +1864,12 @@ verify_transform<-function(x,
     column[column>cap]<-cap
     column
   }
-  
+  x<-as.data.frame(x)
   if(!original_col %in% colnames(x))
-    stop("original_col is missing")
+    stop(paste("original_col",original_col,"is missing"))
   
   if(!transformed_col %in% colnames(x))
-    stop("transformed_col is missing")
+    stop(paste("transformed_col,",transformed_col,"is missing"))
   
   
   if(plus1)  
@@ -1889,37 +1889,105 @@ verify_transform<-function(x,
   
   if(!match) stop(paste("NA mismatch for",original_col,"and",transformed_col))
   
-  if(!just_check_na){
-    match<-all(x[!is.na(x[,original_col]),original_col]==x[!is.na(x[,transformed_col]),transformed_col])
-    if(!match)
-      match<-all(abs(x[!is.na(x[,original_col]),original_col]-
-                       x[!is.na(x[,transformed_col]),transformed_col]) <1e-10
-      )
-    
-    if(!match) stop(paste("Values mismatch for",original_col,"and",transformed_col))
-  }
+  if(just_check_na) 
+    x[,transformed_col]<-arm::rescale(x[,transformed_col])
+  
+  match<-all(x[!is.na(x[,original_col]),original_col]==x[!is.na(x[,transformed_col]),transformed_col])
+  if(!match)
+    match<-all(abs(x[!is.na(x[,original_col]),original_col]-
+                     x[!is.na(x[,transformed_col]),transformed_col]) <1e-10
+    )
+  
+  if(!match) stop(paste("Values mismatch for",original_col,"and",transformed_col))
+  #}
   return(match)
 }
 
-contract_transform_verify<-function(contract,just_check_na=FALSE){
+contract_transform_verify<-function(contract,just_check_na=FALSE,dollars_suffix="OMB20_GDP18",unlogged_ratio=FALSE){
   #Outcome
-  verify_transform(contract,"n_CBre_OMB20_GDP18","ln_CBre",rescale=FALSE)
-  
+  if(dollars_suffix=="Then_Year")
+    verify_transform(contract,paste("n_CBre",dollars_suffix,sep="_"),
+                     paste("ln_CBre",dollars_suffix,sep="_"),rescale=FALSE)
+  else
+    verify_transform(contract,paste("n_CBre",dollars_suffix,sep="_"),
+                     "ln_CBre",rescale=FALSE)
   #Scope
-  verify_transform(contract,"UnmodifiedBase_OMB20_GDP18","cln_Base",just_check_na=just_check_na)
-  verify_transform(contract,"Ceil2Base","clr_Ceil2Base",just_check_na=just_check_na)
-  verify_transform(contract,"UnmodifiedDays","cln_Days",cap_value=3650,just_check_na=just_check_na) 
+  if(dollars_suffix=="Then_Year" & paste("cln_Base",dollars_suffix,sep="_") %in% colnames(contract))
+    verify_transform(contract,paste("UnmodifiedBase",dollars_suffix,sep="_"),
+                   paste("cln_Base",dollars_suffix,sep="_"),just_check_na=just_check_na)
+  else if ("cln_Base" %in% colnames(contract))
+    verify_transform(contract,paste("UnmodifiedBase",dollars_suffix,sep="_"),
+                     "cln_Base",just_check_na=just_check_na)
+  
+  if ("clr_Ceil2Base" %in% colnames(contract))
+    verify_transform(contract,"Ceil2Base","clr_Ceil2Base",just_check_na=just_check_na)
+  
+  if("cln_Ceil" %in% colnames(contract)) 
+    verify_transform(contract,paste("UnmodifiedCeiling",dollars_suffix,sep="_"),
+                     "cln_Ceil",just_check_na=just_check_na)
+  if("cl_Ceil" %in% colnames(contract)) #Legacy Monopolies Name
+    verify_transform(contract,paste("UnmodifiedCeiling",dollars_suffix,sep="_"),
+                     "cl_Ceil",just_check_na=just_check_na)
+    
+  
+  if("cln_Days" %in% colnames(contract)) 
+    verify_transform(contract,"UnmodifiedDays","cln_Days",cap_value=3650,just_check_na=just_check_na) 
+  
+  
+  if("cl_Days" %in% colnames(contract)) #Legacy Monopolies
+    verify_transform(contract,"UnmodifiedDays","cl_Days",just_check_na=just_check_na) 
+  
   #NAICS
-  verify_transform(contract,"def3_HHI_lag1","cln_Def3HHI",just_check_na=just_check_na)
-  verify_transform(contract,"def3_ratio_lag1","clr_Def3toUS",cap_value=1,just_check_na=just_check_na)
-  verify_transform(contract,"def6_HHI_lag1","cln_Def6HHI",just_check_na=just_check_na)
-  verify_transform(contract,"def6_ratio_lag1","clr_Def6toUS",cap_value=1,just_check_na=just_check_na)
-  verify_transform(contract,"US6_avg_sal_lag1Const","cln_US6sal",just_check_na=just_check_na)
-  verify_transform(contract,"def6_obl_lag1Const","cln_Def6Obl",just_check_na=just_check_na)
+  
+  #cln_Def3HHI
+  if("cln_Def3HHI" %in% colnames(contract))
+    verify_transform(contract,"def3_HHI_lag1","cln_Def3HHI",just_check_na=just_check_na)
+  if("cl_def3_HHI_lag1" %in% colnames(contract)) #Legacy Monopolies Name
+    verify_transform(contract,"def3_HHI_lag1","cl_def3_HHI_lag1",just_check_na=just_check_na)
+  
+  
+  #cln_Def6HHI
+  if("cln_Def6HHI" %in% colnames(contract))
+    verify_transform(contract,"def6_HHI_lag1","cln_Def6HHI",just_check_na=just_check_na)
+  if("cl_def6_HHI_lag1" %in% colnames(contract))
+    verify_transform(contract,"def6_HHI_lag1","cl_def6_HHI_lag1",just_check_na=just_check_na)
+  
+  
+  
+  #clr_Def3toUS
+  if("clr_Def3toUS" %in% colnames(contract))
+    verify_transform(contract,"def3_ratio_lag1","clr_Def3toUS",cap_value=1,just_check_na=just_check_na)
+  if("cl_def3_ratio_lag1" %in% colnames(contract)) #Legacy Monopolies Name
+    verify_transform(contract,"def3_ratio_lag1","cl_def3_ratio_lag1",cap_value=1,just_check_na=just_check_na)
+  if("c_def3_ratio_lag1" %in% colnames(contract)) #Legacy Monopolies Name / Accidental Unlogged
+    verify_transform(contract,"def3_ratio_lag1","c_def3_ratio_lag1",log=FALSE,just_check_na=just_check_na)
+  
+  #clr_Def6toUS
+  if("clr_Def6toUS" %in% colnames(contract))
+    verify_transform(contract,"def6_ratio_lag1","clr_Def6toUS",cap_value=1,just_check_na=just_check_na)
+  if("cl_def6_ratio_lag1" %in% colnames(contract)) #Legacy Monopolies Name
+    verify_transform(contract,"def6_ratio_lag1","cl_def6_ratio_lag1",cap_value=1,just_check_na=just_check_na)
+  if("c_def6_ratio_lag1" %in% colnames(contract)) #Legacy Monopolies Name / Accidental Unlogged
+    verify_transform(contract,"def6_ratio_lag1","c_def6_ratio_lag1",log=FALSE,just_check_na=just_check_na)
+  
+  #cln_US6sal
+  if("cln_US6sal" %in% colnames(contract))
+    verify_transform(contract,"US6_avg_sal_lag1Const","cln_US6sal",just_check_na=just_check_na)
+  if("cl_US6_avg_sal_lag1" %in% colnames(contract))
+    verify_transform(contract,"US6_avg_sal_lag1","cl_US6_avg_sal_lag1",just_check_na=just_check_na)
+  
+  #cln_Def6Obl
+  if("cln_Def6Obl" %in% colnames(contract))
+    verify_transform(contract,"def6_obl_lag1Const","cln_Def6Obl",just_check_na=just_check_na)
+  if("cl_def6_obl_lag1" %in% colnames(contract))
+    verify_transform(contract,"def6_obl_lag1","cl_def6_obl_lag1",just_check_na=just_check_na)
   
   #Office
-  verify_transform(contract,"office_naics_hhi_k","cln_OffFocus",just_check_na=just_check_na)
-  verify_transform(contract,"pMarket","cp_PairObl7",log=FALSE,just_check_na=just_check_na)
+  if("cln_OffFocus" %in% colnames(contract))
+    verify_transform(contract,"office_naics_hhi_k","cln_OffFocus",just_check_na=just_check_na)
+  
+  if("cp_PairObl7" %in% colnames(contract))
+    verify_transform(contract,"pMarket","cp_PairObl7",log=FALSE,just_check_na=just_check_na)
 }
 
 
