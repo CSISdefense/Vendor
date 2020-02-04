@@ -11,6 +11,12 @@ Modeling Size f  Contract Breaches for those Contracts that Breached
 ============================================================================
 
 #Setup
+
+First we load the data. The dataset used is a U.S. Defense Contracting dataset derived from FPDS.
+
+The final sample uses 1 million rows of data, but as a computation shortcut, only a subset of the data is needed to allow for processing of models in minutes rather than hours.
+
+
 ```{r Libraries, echo = FALSE}
 library(csis360)
 library(ggplot2)
@@ -31,19 +37,14 @@ geom.text.size<-12
 main.text.size<-1
 note.text.size<-1.40
 
+load(file="..//data//clean//def_sample.Rdata")
+
+contract_transform_verify(def_breach,dollars_suffix="Then_Year",just_check_na=TRUE)
 ```
 
 Contracts are classified using a mix of numerical and categorical variables. While the changes in numerical variables are easy to grasp and summarize, a contract may have one line item that is competed and another that is not. As is detailed in the exploration on R&D, we are only considering information available prior to contract start. The percentage of contract obligations that were competed is a valuable benchmark, but is highly influenced by factors that occured after contract start.
 
 ##Prepare Data
-
-First we load the data. The dataset used is a U.S. Defense Contracting dataset derived from FPDS.
-
-The final sample uses 1 million rows of data, but as a computation shortcut, only a subset of the data is needed to allow for processing of models in minutes rather than hours.
-
-```{r ReadInData, echo = TRUE}
-load(file="..//data//clean//def_sample.Rdata")
-```
 
 ### Contract Ceiling Breaches
 
@@ -1795,7 +1796,7 @@ summary_residual_compare(ln_CBre_Cons_Comp_10D_NCS6,ln_CBre_Cons_Comp_11F,bins=5
 First run using the model developed in prior steps.
 
 ```{r Model15A}
-if(file.exists("..//Output//ln_CBre_Cons_15A.rdata")) load(file="..//Output//ln_CBre_Cons_15A.rdata")
+if(file.exists("..//Output//2019_Models//Archives//ln_CBre_Cons_15A.rdata")) load(file="..//Output//Archives//2019_Models//ln_CBre_15A.rdata")
 
 if(!exists("ln_CBre_Cons_15A"))
   ln_CBre_Cons_15A <- lmer (data=def_breach,
@@ -1862,8 +1863,9 @@ texreg::htmlreg(list(ln_CBre_Cons_15A,ln_CBre_Comp_15A,ln_CBre_Cons_Comp_15A),fi
 
 summary_residual_compare(ln_CBre_Cons_Comp_11F,ln_CBre_Cons_Comp_15A,bins=50)
 
-save(ln_CBre_Cons_15A,ln_CBre_Comp_15A,ln_CBre_Cons_Comp_15A,file="..//Output//ln_CBre_15A.rdata")
+save(ln_CBre_Cons_15A,ln_CBre_Comp_15A,ln_CBre_Cons_Comp_15A,file="..//Output//2019_Models//ln_CBre_15A.rdata")
 ```
+
 
 
 ### Model 15B: Logit Match
@@ -1937,4 +1939,81 @@ summary_residual_compare(ln_CBre_Cons_Comp_15A,ln_CBre_Cons_Comp_155,bins=50)
 
 save(ln_CBre_Cons_15B,ln_CBre_Comp_15B,ln_CBre_Cons_Comp_15B,
      file="..//Output//ln_CBre_15B.rdata")
+```
+
+###Model 15C: Rerun after UCA, ratio, and construction fixes
+First run using the model developed in prior steps.
+
+```{r Model15C}
+if(file.exists("..//Output//ln_CBre_Cons_15C.rdata")) load(file="..//Output//ln_CBre_Cons_15C.rdata")
+
+if(!exists("ln_CBre_Cons_15C"))
+  ln_CBre_Cons_15C <- lmer (data=def_breach,
+                            ln_CBre_Then_Year ~cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                              cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                              cl_Ceil_Then_Year+ cl_Days+
+                              Veh+
+                              PricingFee+b_UCA+
+                              b_Intl +
+                              b_UCA:cl_def6_HHI_lag1+
+                              cl_US6_avg_sal_lag1:PricingFee+
+                              (1 | NAICS3/NAICS) + 
+                              (1 | Agency/Office),
+                            verbose=TRUE)
+glmer_examine(ln_CBre_Cons_15C)
+
+
+if(!exists("ln_CBre_Comp_15C"))
+  ln_CBre_Comp_15C <- lmer (data=def_breach,
+                            ln_CBre_Then_Year ~CompOffr+
+                              cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                              cl_def3_ratio_lag1+
+                              cl_Ceil_Then_Year+ cl_Days+
+                              Veh+
+                              PricingFee+b_UCA+
+                              b_Intl +
+                              b_UCA:CompOffr+
+                              cl_US6_avg_sal_lag1:PricingFee+
+                              (1 | NAICS3/NAICS) + 
+                              (1 | Agency/Office),
+                              verbose=TRUE)
+glmer_examine(ln_CBre_Comp_15C)
+
+if(!exists("ln_CBre_Cons_Comp_15C"))
+  ln_CBre_Cons_Comp_15C <- lmer (data=def_breach,
+                                 ln_CBre_Then_Year ~CompOffr+cl_def6_HHI_lag1+cl_def6_ratio_lag1+cl_def6_obl_lag1+cl_US6_avg_sal_lag1+
+                                   cl_def3_HHI_lag1+cl_def3_ratio_lag1+
+                                   cl_Ceil_Then_Year+ cl_Days+
+                                   Veh+
+                                   PricingFee+b_UCA+
+                                   b_Intl +
+                                   b_UCA:CompOffr+
+                                   b_UCA:cl_def6_HHI_lag1+
+                                   cl_US6_avg_sal_lag1:PricingFee+
+                                   (1 | NAICS3/NAICS) + 
+                                   (1 | Agency/Office),
+                                 verbose=TRUE)
+glmer_examine(ln_CBre_Cons_Comp_15C)
+
+
+
+stargazer::stargazer(ln_CBre_Comp_11F,ln_CBre_Comp_15A,ln_CBre_Comp_15C,
+                       ln_CBre_Cons_11F,ln_CBre_Cons_15A,ln_CBre_Cons_15C,
+                       ln_CBre_Cons_Comp_11F,ln_CBre_Cons_Comp_15A,ln_CBre_Cons_Comp_15C,type="text",
+                         digits=2)
+
+
+summary_residual_compare(ln_CBre_Comp_11F,ln_CBre_Comp_15C,
+                       ln_CBre_Cons_11F,ln_CBre_Cons_15C,bins=50)
+
+summary_residual_compare(ln_CBre_Cons_Comp_11F,ln_CBre_Cons_Comp_15C,bins=50)
+
+
+
+summary_residual_compare(ln_CBre_Comp_15A,ln_CBre_Comp_15C,
+                       ln_CBre_Cons_15A,ln_CBre_Cons_15C,bins=50)
+
+summary_residual_compare(ln_CBre_Cons_Comp_15A,ln_CBre_Cons_Comp_15C,bins=50)
+
+save(ln_CBre_Cons_15C,ln_CBre_Comp_15C,ln_CBre_Cons_Comp_15C,file="..//Output//ln_CBre_15C.rdata")
 ```
