@@ -1864,12 +1864,12 @@ verify_transform<-function(x,
     column[column>cap]<-cap
     column
   }
-  
+  x<-as.data.frame(x)
   if(!original_col %in% colnames(x))
-    stop("original_col is missing")
+    stop(paste("original_col",original_col,"is missing"))
   
   if(!transformed_col %in% colnames(x))
-    stop("transformed_col is missing")
+    stop(paste("transformed_col,",transformed_col,"is missing"))
   
   
   if(plus1)  
@@ -1889,37 +1889,105 @@ verify_transform<-function(x,
   
   if(!match) stop(paste("NA mismatch for",original_col,"and",transformed_col))
   
-  if(!just_check_na){
-    match<-all(x[!is.na(x[,original_col]),original_col]==x[!is.na(x[,transformed_col]),transformed_col])
-    if(!match)
-      match<-all(abs(x[!is.na(x[,original_col]),original_col]-
-                       x[!is.na(x[,transformed_col]),transformed_col]) <1e-10
-      )
-    
-    if(!match) stop(paste("Values mismatch for",original_col,"and",transformed_col))
-  }
+  if(just_check_na) 
+    x[,transformed_col]<-arm::rescale(x[,transformed_col])
+  
+  match<-all(x[!is.na(x[,original_col]),original_col]==x[!is.na(x[,transformed_col]),transformed_col])
+  if(!match)
+    match<-all(abs(x[!is.na(x[,original_col]),original_col]-
+                     x[!is.na(x[,transformed_col]),transformed_col]) <1e-10
+    )
+  
+  if(!match) stop(paste("Values mismatch for",original_col,"and",transformed_col))
+  #}
   return(match)
 }
 
-contract_transform_verify<-function(contract,just_check_na=FALSE){
+contract_transform_verify<-function(contract,just_check_na=FALSE,dollars_suffix="OMB20_GDP18",unlogged_ratio=FALSE){
   #Outcome
-  verify_transform(contract,"n_CBre_OMB20_GDP18","ln_CBre",rescale=FALSE)
-  
+  if(dollars_suffix=="Then_Year")
+    verify_transform(contract,paste("n_CBre",dollars_suffix,sep="_"),
+                     paste("ln_CBre",dollars_suffix,sep="_"),rescale=FALSE)
+  else
+    verify_transform(contract,paste("n_CBre",dollars_suffix,sep="_"),
+                     "ln_CBre",rescale=FALSE)
   #Scope
-  verify_transform(contract,"UnmodifiedBase_OMB20_GDP18","cln_Base",just_check_na=just_check_na)
-  verify_transform(contract,"Ceil2Base","clr_Ceil2Base",just_check_na=just_check_na)
-  verify_transform(contract,"UnmodifiedDays","cln_Days",cap_value=3650,just_check_na=just_check_na) 
+  if(dollars_suffix=="Then_Year" & paste("cln_Base",dollars_suffix,sep="_") %in% colnames(contract))
+    verify_transform(contract,paste("UnmodifiedBase",dollars_suffix,sep="_"),
+                   paste("cln_Base",dollars_suffix,sep="_"),just_check_na=just_check_na)
+  else if ("cln_Base" %in% colnames(contract))
+    verify_transform(contract,paste("UnmodifiedBase",dollars_suffix,sep="_"),
+                     "cln_Base",just_check_na=just_check_na)
+  
+  if ("clr_Ceil2Base" %in% colnames(contract))
+    verify_transform(contract,"Ceil2Base","clr_Ceil2Base",just_check_na=just_check_na)
+  
+  if("cln_Ceil" %in% colnames(contract)) 
+    verify_transform(contract,paste("UnmodifiedCeiling",dollars_suffix,sep="_"),
+                     "cln_Ceil",just_check_na=just_check_na)
+  if("cl_Ceil" %in% colnames(contract)) #Legacy Monopolies Name
+    verify_transform(contract,paste("UnmodifiedCeiling",dollars_suffix,sep="_"),
+                     "cl_Ceil",just_check_na=just_check_na)
+    
+  
+  if("cln_Days" %in% colnames(contract)) 
+    verify_transform(contract,"UnmodifiedDays","cln_Days",cap_value=3650,just_check_na=just_check_na) 
+  
+  
+  if("cl_Days" %in% colnames(contract)) #Legacy Monopolies
+    verify_transform(contract,"UnmodifiedDays","cl_Days",just_check_na=just_check_na) 
+  
   #NAICS
-  verify_transform(contract,"def3_HHI_lag1","cln_Def3HHI",just_check_na=just_check_na)
-  verify_transform(contract,"def3_ratio_lag1","clr_Def3toUS",cap_value=1,just_check_na=just_check_na)
-  verify_transform(contract,"def6_HHI_lag1","cln_Def6HHI",just_check_na=just_check_na)
-  verify_transform(contract,"def6_ratio_lag1","clr_Def6toUS",cap_value=1,just_check_na=just_check_na)
-  verify_transform(contract,"US6_avg_sal_lag1Const","cln_US6sal",just_check_na=just_check_na)
-  verify_transform(contract,"def6_obl_lag1Const","cln_Def6Obl",just_check_na=just_check_na)
+  
+  #cln_Def3HHI
+  if("cln_Def3HHI" %in% colnames(contract))
+    verify_transform(contract,"def3_HHI_lag1","cln_Def3HHI",just_check_na=just_check_na)
+  if("cl_def3_HHI_lag1" %in% colnames(contract)) #Legacy Monopolies Name
+    verify_transform(contract,"def3_HHI_lag1","cl_def3_HHI_lag1",just_check_na=just_check_na)
+  
+  
+  #cln_Def6HHI
+  if("cln_Def6HHI" %in% colnames(contract))
+    verify_transform(contract,"def6_HHI_lag1","cln_Def6HHI",just_check_na=just_check_na)
+  if("cl_def6_HHI_lag1" %in% colnames(contract))
+    verify_transform(contract,"def6_HHI_lag1","cl_def6_HHI_lag1",just_check_na=just_check_na)
+  
+  
+  
+  #clr_Def3toUS
+  if("clr_Def3toUS" %in% colnames(contract))
+    verify_transform(contract,"def3_ratio_lag1","clr_Def3toUS",cap_value=1,just_check_na=just_check_na)
+  if("cl_def3_ratio_lag1" %in% colnames(contract)) #Legacy Monopolies Name
+    verify_transform(contract,"def3_ratio_lag1","cl_def3_ratio_lag1",cap_value=1,just_check_na=just_check_na)
+  if("c_def3_ratio_lag1" %in% colnames(contract)) #Legacy Monopolies Name / Accidental Unlogged
+    verify_transform(contract,"def3_ratio_lag1","c_def3_ratio_lag1",log=FALSE,just_check_na=just_check_na)
+  
+  #clr_Def6toUS
+  if("clr_Def6toUS" %in% colnames(contract))
+    verify_transform(contract,"def6_ratio_lag1","clr_Def6toUS",cap_value=1,just_check_na=just_check_na)
+  if("cl_def6_ratio_lag1" %in% colnames(contract)) #Legacy Monopolies Name
+    verify_transform(contract,"def6_ratio_lag1","cl_def6_ratio_lag1",cap_value=1,just_check_na=just_check_na)
+  if("c_def6_ratio_lag1" %in% colnames(contract)) #Legacy Monopolies Name / Accidental Unlogged
+    verify_transform(contract,"def6_ratio_lag1","c_def6_ratio_lag1",log=FALSE,just_check_na=just_check_na)
+  
+  #cln_US6sal
+  if("cln_US6sal" %in% colnames(contract))
+    verify_transform(contract,"US6_avg_sal_lag1Const","cln_US6sal",just_check_na=just_check_na)
+  if("cl_US6_avg_sal_lag1" %in% colnames(contract))
+    verify_transform(contract,"US6_avg_sal_lag1","cl_US6_avg_sal_lag1",just_check_na=just_check_na)
+  
+  #cln_Def6Obl
+  if("cln_Def6Obl" %in% colnames(contract))
+    verify_transform(contract,"def6_obl_lag1Const","cln_Def6Obl",just_check_na=just_check_na)
+  if("cl_def6_obl_lag1" %in% colnames(contract))
+    verify_transform(contract,"def6_obl_lag1","cl_def6_obl_lag1",just_check_na=just_check_na)
   
   #Office
-  verify_transform(contract,"office_naics_hhi_k","cln_OffFocus",just_check_na=just_check_na)
-  verify_transform(contract,"pMarket","cp_PairObl7",log=FALSE,just_check_na=just_check_na)
+  if("cln_OffFocus" %in% colnames(contract))
+    verify_transform(contract,"office_naics_hhi_k","cln_OffFocus",just_check_na=just_check_na)
+  
+  if("cp_PairObl7" %in% colnames(contract))
+    verify_transform(contract,"pMarket","cp_PairObl7",log=FALSE,just_check_na=just_check_na)
 }
 
 
@@ -2132,10 +2200,10 @@ get_study_variables_odds_ratio<-function(or.df,study="monopoly"){
     )
     study_coef_list<-list("Log(Subsector HHI)"=c("cl_def3_HHI_lag1"),
                           "Log(Det. Ind. HHI)"=c("cl_def6_HHI_lag1"),
-                          "Comp=1 offer"=c("CompOffr1 offer"),
-                          "Comp=2 offers"=c("CompOffr2 offers"),
-                          "Comp=3-4 offers"=c("CompOffr3-4 offers"),
-                          "Comp=5+ offers"=c("CompOffr5+ offers")
+                          "Comp. w/ 1 Offer"=c("CompOffr1 offer"),
+                          "2 offers"=c("CompOffr2 offers"),
+                          "3-4 offers"=c("CompOffr3-4 offers"),
+                          "Comp. w/ 5+ Offers"=c("CompOffr5+ offers")
     )
   } else if (study=="services"){
     study_list<-get_coef_list(limit="services")
@@ -2387,10 +2455,10 @@ transition_variable_names_FMS<-function(contract){
   
                                            
   
-  if("cln_days" %in% colnames(def))
+  if("cln_days" %in% colnames(contract))
     contract<-contract[,!colnames(contract) %in% c("capped_cl_Days")]
   
-  if("Agency" %in% colnames(def))
+  if("Agency" %in% colnames(contract))
     contract<-contract[,!colnames(contract) %in% c("AgencyID")]
   
   
@@ -2489,9 +2557,9 @@ transition_variable_names_FMS<-function(contract){
 get_coef_list<-function(limit=NULL){
   if(is.null(limit)) #All Variables
     coef_list<-list("(Intercept)"="(Intercept)",
-                    "FMSAlways"="FMS=Always",
-                    "FMSPost-Start"="FMS=Post-Start",
-                    "FMSFMS post-start"="FMS=Post-Start",
+                    "FMSAlways"="Initial FMS",
+                    "FMSPost-Start"="Post-Start FMS",
+                    "FMSFMS post-start"="Post-Start FMS",
                     "cl_US6_avg_sal_lag1Const"="Log(Det. Ind. Salary)",
                     "cln_US6sal"="Log(Det. Ind. Salary)",
                     "cl_CFTE"="Log(Serv. Code Invoice Rate)",
@@ -2520,53 +2588,53 @@ get_coef_list<-function(limit=NULL){
                     "cln_Days"="Log(Planned Dur.)",
                     
                     #Competition
-                    "Comp1or51 offer"="Comp=1 offer",
-                    "Comp1or52-4 offers"="Comp=2-4 offers",
-                    "Comp1or55+ offers"="Comp=5+ offers",
+                    "Comp1or51 offer"="Comp. w/ 1 Offer",
+                    "Comp1or52-4 offers"="Comp. w/ 2-4 Offers",
+                    "Comp1or55+ offers"="Comp. w/ 5+ Offers",
                     
-                    "CompOffr1 offer"="Comp=1 offer",
-                    "CompOffr2 offers"="Comp=2 offers",
-                    "CompOffr3-4 offers"="Comp=3-4 offers",
-                    "CompOffr5+ offers"="Comp=5+ offers",
+                    "CompOffr1 offer"="Comp. w/ 1 Offer",
+                    "CompOffr2 offers"="2 offers",
+                    "CompOffr3-4 offers"="3-4 offers",
+                    "CompOffr5+ offers"="Comp. w/ 5+ Offers",
                     
-                    "Comp1 offer"="Comp=1 offer",
-                    "Comp2-4 offers"="Comp=2-4 offers",
-                    "Comp5+ offers"="Comp=5+ offers",
+                    "Comp1 offer"="Comp. w/ 1 Offer",
+                    "Comp2-4 offers"="Comp. w/ 2-4 Offers",
+                    "Comp5+ offers"="Comp. w/ 5+ Offers",
                     
-                    "Comp1 Offer"="Comp=1 offer",
-                    "Comp2-4 Offers"="Comp=2-4 offers",
-                    "Comp5+ Offers"="Comp=5+ offers",
+                    "Comp1 Offer"="Comp. w/ 1 Offer",
+                    "Comp2-4 Offers"="Comp. w/ 2-4 Offers",
+                    "Comp5+ Offers"="Comp. w/ 5+ Offers",
                     
                     
                     
                     
                     #Vehicle
-                    "VehS-IDC"="Vehicle=S-IDC",
-                    "VehM-IDC"="Vehicle=M-IDC",
-                    "VehFSS/GWAC"="Vehicle=FSS/GWAC",
-                    "VehBPA/BOA"="Vehicle=BPA/BOA",
+                    "VehS-IDC"="S-IDC",
+                    "VehM-IDC"="M-IDC",
+                    "VehFSS/GWAC"="FSS/GWAC",
+                    "VehBPA/BOA"="BPA/BOA",
                     #Pricing and UCA
-                    "PricingUCAFFP"="Pricing=FFP",
-                    "PricingUCAOther FP"="Pricing=Other Fixed-Price",
-                    "PricingUCAIncentive"="Pricing=Incentive Fee",
-                    "PricingUCACombination or Other"="Pricing=Comb./Other",
-                    "PricingUCAOther CB"="Pricing=Other Cost-Based",
-                    "PricingUCAT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
-                    "PricingUCAUCA"="Pricing=UCA",
+                    "PricingUCAFFP"="FFP",
+                    "PricingUCAOther FP"="Other Fixed-Price",
+                    "PricingUCAIncentive"="Incentive Fee",
+                    "PricingUCACombination or Other"="Comb./Other",
+                    "PricingUCAOther CB"="Other Cost-Based",
+                    "PricingUCAT&M/LH/FPLOE"="T&M/LH/FP:LoE",
+                    "PricingUCAUCA"="UCA",
                     
-                    "PricingFeeOther FP"="Pricing=Other Fixed-Price",
-                    "PricingFeeIncentive"="Pricing=Incentive Fee",
-                    "PricingFeeCombination or Other"="Pricing=Comb./Other",
-                    "PricingFeeOther CB"="Pricing=Other Cost-Based",
-                    "PricingFeeT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
+                    "PricingFeeOther FP"="Other Fixed-Price",
+                    "PricingFeeIncentive"="Incentive Fee",
+                    "PricingFeeCombination or Other"="Comb./Other",
+                    "PricingFeeOther CB"="Other Cost-Based",
+                    "PricingFeeT&M/LH/FPLOE"="T&M/LH/FP:LoE",
                     "b_UCA"="UCA",
-                    "PricingFFP"="Pricing=FFP",
-                    "PricingOther FP"="Pricing=Other Fixed-Price",
-                    "PricingIncentive"="Pricing=Incentive Fee",
-                    "PricingCombination or Other"="Pricing=Comb./Other",
-                    "PricingOther CB"="Pricing=Other Cost-Based",
-                    "PricingT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
-                    "PricingUCA"="Pricing=UCA",
+                    "PricingFFP"="FFP",
+                    "PricingOther FP"="Other Fixed-Price",
+                    "PricingIncentive"="Incentive Fee",
+                    "PricingCombination or Other"="Comb./Other",
+                    "PricingOther CB"="Other Cost-Based",
+                    "PricingT&M/LH/FPLOE"="T&M/LH/FP:LoE",
+                    "PricingUCA"="UCA",
                     
                     #Crisis and international
                     "CrisisARRA"="Crisis=Recovery Act",
@@ -2616,39 +2684,39 @@ get_coef_list<-function(limit=NULL){
                     "cl_Ceil:b_UCA"="Log(Init. Ceiling):UCA",
                     
                     #Competition
-                    "CompOffr1 offer:b_UCA"="Comp=1 offer:UCA",
-                    "CompOffr2 offers:b_UCA"="Comp=2 offers:UCA",
-                    "CompOffr3-4 offers:b_UCA"="Comp=3-4 offers:UCA",
-                    "CompOffr5+ offers:b_UCA"="Comp=5+ offers:UCA",
+                    "CompOffr1 offer:b_UCA"="1 offer:UCA",
+                    "CompOffr2 offers:b_UCA"="2 offers:UCA",
+                    "CompOffr3-4 offers:b_UCA"="3-4 offers:UCA",
+                    "CompOffr5+ offers:b_UCA"="5+ offers:UCA",
                     
                     
                     
                     #Service Complexity
-                    "cl_US6_avg_sal_lag1:PricingFeeOther FP"="Log(Det. Ind. Salary):Pricing=Other Fixed-Price",
-                    "cl_US6_avg_sal_lag1:PricingFeeIncentive"="Log(Det. Ind. Salary):Pricing=Incentive Fee",
-                    "cl_US6_avg_sal_lag1:PricingFeeCombination or Other"="Log(Det. Ind. Salary):Pricing=Comb./Other",
-                    "cl_US6_avg_sal_lag1:PricingFeeOther CB"="Log(Det. Ind. Salary):Pricing=Other Cost-Based",
-                    "cl_US6_avg_sal_lag1:PricingFeeT&M/LH/FPLOE"="Log(Det. Ind. Salary):Pricing=T&M/LH/FP:LoE",
-                    "cln_US6sal_lag1:PricingOther FP"="Log(Det. Ind. Salary):Pricing=Other Fixed-Price",
-                    "cln_US6sal_lag1:PricingIncentive"="Log(Det. Ind. Salary):Pricing=Incentive Fee",
-                    "cln_US6sal_lag1:PricingCombination or Other"="Log(Det. Ind. Salary):Pricing=Comb./Other",
-                    "cln_US6sal_lag1:PricingOther CB"="Log(Det. Ind. Salary):Pricing=Other Cost-Based",
-                    "cln_US6sal_lag1:PricingT&M/LH/FPLOE"="Log(Det. Ind. Salary):Pricing=T&M/LH/FP:LoE",
+                    "cl_US6_avg_sal_lag1:PricingFeeOther FP"="Log(Det. Ind. Salary):Other Fixed-Price",
+                    "cl_US6_avg_sal_lag1:PricingFeeIncentive"="Log(Det. Ind. Salary):Incentive Fee",
+                    "cl_US6_avg_sal_lag1:PricingFeeCombination or Other"="Log(Det. Ind. Salary):Comb./Other",
+                    "cl_US6_avg_sal_lag1:PricingFeeOther CB"="Log(Det. Ind. Salary):Other Cost-Based",
+                    "cl_US6_avg_sal_lag1:PricingFeeT&M/LH/FPLOE"="Log(Det. Ind. Salary):T&M/LH/FP:LoE",
+                    "cln_US6sal_lag1:PricingOther FP"="Log(Det. Ind. Salary):Other Fixed-Price",
+                    "cln_US6sal_lag1:PricingIncentive"="Log(Det. Ind. Salary):Incentive Fee",
+                    "cln_US6sal_lag1:PricingCombination or Other"="Log(Det. Ind. Salary):Comb./Other",
+                    "cln_US6sal_lag1:PricingOther CB"="Log(Det. Ind. Salary):Other Cost-Based",
+                    "cln_US6sal_lag1:PricingT&M/LH/FPLOE"="Log(Det. Ind. Salary):T&M/LH/FP:LoE",
 
                     
-                    "cln_PSCrate:PricingOther FP"="Log(Serv. Code Invoice Rate):Pricing=Other Fixed-Price",
-                    "cln_PSCrate:PricingIncentive"="Log(Serv. Code Invoice Rate):Pricing=Incentive Fee",
-                    "cln_PSCrate:PricingCombination or Other"="Log(Serv. Code Invoice Rate):Pricing=Comb./Other",                    
-                    "cln_PSCrate:PricingOther CB"="Log(Serv. Code Invoice Rate):Pricing=Other Cost-Based",
-                    "cln_PSCrate:PricingT&M/LH/FPLOE"="Log(Serv. Code Invoice Rate):Pricing=T&M/LH/FP:LoE",
-                    "cln_PSCrate:PricingUCA"="Log(Serv. Code Invoice Rate):Pricing=UCA",
+                    "cln_PSCrate:PricingOther FP"="Log(Serv. Code Invoice Rate):Other Fixed-Price",
+                    "cln_PSCrate:PricingIncentive"="Log(Serv. Code Invoice Rate):Incentive Fee",
+                    "cln_PSCrate:PricingCombination or Other"="Log(Serv. Code Invoice Rate):Comb./Other",                    
+                    "cln_PSCrate:PricingOther CB"="Log(Serv. Code Invoice Rate):Other Cost-Based",
+                    "cln_PSCrate:PricingT&M/LH/FPLOE"="Log(Serv. Code Invoice Rate):T&M/LH/FP:LoE",
+                    "cln_PSCrate:PricingUCA"="Log(Serv. Code Invoice Rate):UCA",
                     
-                    "cln_PSCrate:PricingUCAOther FP"="Log(Serv. Code Invoice Rate):Pricing=Other Fixed-Price",
-                    "cln_PSCrate:PricingUCAIncentive"="Log(Serv. Code Invoice Rate):Pricing=Incentive Fee",
-                    "cln_PSCrate:PricingUCACombination or Other"="Log(Serv. Code Invoice Rate):Pricing=Comb./Other",                    
-                    "cln_PSCrate:PricingUCAOther CB"="Log(Serv. Code Invoice Rate):Pricing=Other Cost-Based",
-                    "cln_PSCrate:PricingUCAT&M/LH/FPLOE"="Log(Serv. Code Invoice Rate):Pricing=T&M/LH/FP:LoE",
-                    "cln_PSCrate:PricingUCAUCA"="Log(Serv. Code Invoice Rate):Pricing=UCA",
+                    "cln_PSCrate:PricingUCAOther FP"="Log(Serv. Code Invoice Rate):Other Fixed-Price",
+                    "cln_PSCrate:PricingUCAIncentive"="Log(Serv. Code Invoice Rate):Incentive Fee",
+                    "cln_PSCrate:PricingUCACombination or Other"="Log(Serv. Code Invoice Rate):Comb./Other",                    
+                    "cln_PSCrate:PricingUCAOther CB"="Log(Serv. Code Invoice Rate):Other Cost-Based",
+                    "cln_PSCrate:PricingUCAT&M/LH/FPLOE"="Log(Serv. Code Invoice Rate):T&M/LH/FP:LoE",
+                    "cln_PSCrate:PricingUCAUCA"="Log(Serv. Code Invoice Rate):UCA",
                     
                     
                     
@@ -2672,30 +2740,30 @@ get_coef_list<-function(limit=NULL){
                     
                     
                     #Paired Relationship
-                    "c_pairHist:PricingUCAOther FP"="Paired Years:Pricing=Other Fixed-Price",
-                    "c_pairHist:PricingUCAIncentive"="Paired Years:Pricing=Incentive Fee",
-                    "c_pairHist:PricingUCACombination or Other"="Paired Years:Pricing=Comb./Other",
-                    "c_pairHist:PricingUCAOther CB"="Paired Years:Pricing=Other Cost-Based",
-                    "c_pairHist:PricingUCAT&M/LH/FPLOE"="Paired Years:Pricing=T&M/LH/FP:LoE",
-                    "c_pairHist:PricingUCAUCA"="Paired Years:Pricing=UCA",
-                    "cn_PairHist7:PricingUCAOther FP"="Paired Years:Pricing=Other Fixed-Price",
-                    "cn_PairHist7:PricingUCAIncentive"="Paired Years:Pricing=Incentive Fee",
-                    "cn_PairHist7:PricingUCACombination or Other"="Paired Years:Pricing=Comb./Other",
-                    "cn_PairHist7:PricingUCAOther CB"="Paired Years:Pricing=Other Cost-Based",
-                    "cn_PairHist7:PricingUCAT&M/LH/FPLOE"="Paired Years:Pricing=T&M/LH/FP:LoE",
-                    "cn_PairHist7:PricingUCAUCA"="Paired Years:Pricing=UCA",
-                    "cn_PairHist7:PricingOther FP"="Paired Years:Pricing=Other Fixed-Price",
-                    "cn_PairHist7:PricingIncentive"="Paired Years:Pricing=Incentive Fee",
-                    "cn_PairHist7:PricingCombination or Other"="Paired Years:Pricing=Comb./Other",
-                    "cn_PairHist7:PricingOther CB"="Paired Years:Pricing=Other Cost-Based",
-                    "cn_PairHist7:PricingT&M/LH/FPLOE"="Paired Years:Pricing=T&M/LH/FP:LoE",
-                    "cn_PairHist7:PricingUCA"="Paired Years:Pricing=UCA",
+                    "c_pairHist:PricingUCAOther FP"="Paired Years:Other Fixed-Price",
+                    "c_pairHist:PricingUCAIncentive"="Paired Years:Incentive Fee",
+                    "c_pairHist:PricingUCACombination or Other"="Paired Years:Comb./Other",
+                    "c_pairHist:PricingUCAOther CB"="Paired Years:Other Cost-Based",
+                    "c_pairHist:PricingUCAT&M/LH/FPLOE"="Paired Years:T&M/LH/FP:LoE",
+                    "c_pairHist:PricingUCAUCA"="Paired Years:UCA",
+                    "cn_PairHist7:PricingUCAOther FP"="Paired Years:Other Fixed-Price",
+                    "cn_PairHist7:PricingUCAIncentive"="Paired Years:Incentive Fee",
+                    "cn_PairHist7:PricingUCACombination or Other"="Paired Years:Comb./Other",
+                    "cn_PairHist7:PricingUCAOther CB"="Paired Years:Other Cost-Based",
+                    "cn_PairHist7:PricingUCAT&M/LH/FPLOE"="Paired Years:T&M/LH/FP:LoE",
+                    "cn_PairHist7:PricingUCAUCA"="Paired Years:UCA",
+                    "cn_PairHist7:PricingOther FP"="Paired Years:Other Fixed-Price",
+                    "cn_PairHist7:PricingIncentive"="Paired Years:Incentive Fee",
+                    "cn_PairHist7:PricingCombination or Other"="Paired Years:Comb./Other",
+                    "cn_PairHist7:PricingOther CB"="Paired Years:Other Cost-Based",
+                    "cn_PairHist7:PricingT&M/LH/FPLOE"="Paired Years:T&M/LH/FP:LoE",
+                    "cn_PairHist7:PricingUCA"="Paired Years:UCA",
                     
                     #Non-Study Variale interactions
-                    "VehS-IDC:b_Intl"="Vehicle=S-IDC:Performed Abroad",
-                    "VehM-IDC:b_Intl"="Vehicle=M-IDC:Performed Abroad",
-                    "VehFSS/GWAC:b_Intl"="Vehicle=FSS/GWAC:Performed Abroad",
-                    "VehBPA/BOA:b_Intl"="Vehicle=BPA/BOA:Performed Abroad",
+                    "VehS-IDC:b_Intl"="S-IDC:Performed Abroad",
+                    "VehM-IDC:b_Intl"="M-IDC:Performed Abroad",
+                    "VehFSS/GWAC:b_Intl"="FSS/GWAC:Performed Abroad",
+                    "VehBPA/BOA:b_Intl"="BPA/BOA:Performed Abroad",
                     
                     "cl_Base:cl_Base2Ceil"="Log(Init. Base):Log(Init. Ceiling:Base)",
                     "cln_Base:clr_Ceil2Base"="Log(Init. Base):Log(Init. Ceiling:Base)",
@@ -2705,16 +2773,16 @@ get_coef_list<-function(limit=NULL){
                     "cln_OffObl7:cln_OffFocus" = "Log(Office Obligations+1):Log(Office Focus)",
                     
                     
-                    "FMSAlways:cln_Base"="FMS=Always:Log(Init. Base)",  
-                    "FMSPost-Start:cln_Base"="FMS=Post-Start:Log(Init. Base)",
-                    "FMSFMS post-start:cln_Base"="FMS=Post-Start:Log(Init. Base)"
+                    "FMSAlways:cln_Base"="Initial FMS:Log(Init. Base)",  
+                    "FMSPost-Start:cln_Base"="Post-Start FMS:Log(Init. Base)",
+                    "FMSFMS post-start:cln_Base"="Post-Start FMS:Log(Init. Base)"
                     
     ) else if(limit=="FMS_all"){
     coef_list<-list("(Intercept)"="(Intercept)",
-                    "FMSAlways"="FMS=Always",
-                    "FMSAlways FMS"="FMS=Always",
-                    "FMSPost-Start"="FMS=Post-Start",
-                    "FMSFMS post-start"="FMS=Post-Start",
+                    "FMSAlways"="Initial FMS",
+                    "FMSAlways FMS"="Initial FMS",
+                    "FMSPost-Start"="Post-Start FMS",
+                    "FMSFMS post-start"="Post-Start FMS",
                     
                     
                     #Contract Controls
@@ -2730,50 +2798,50 @@ get_coef_list<-function(limit=NULL){
                     "cln_Days"="Log(Planned Dur.)",
                     
                     #Competition
-                    "Comp1or51 offer"="Comp=1 offer",
-                    "Comp1or52-4 offers"="Comp=2-4 offers",
-                    "Comp1or55+ offers"="Comp=5+ offers",
+                    "Comp1or51 offer"="Comp. w/ 1 Offer",
+                    "Comp1or52-4 offers"="Comp. w/ 2-4 Offers",
+                    "Comp1or55+ offers"="Comp. w/ 5+ Offers",
                     
-                    "CompOffr1 offer"="Comp=1 offer",
-                    "CompOffr2 offers"="Comp=2 offers",
-                    "CompOffr3-4 offers"="Comp=3-4 offers",
-                    "CompOffr5+ offers"="Comp=5+ offers",
+                    "CompOffr1 offer"="Comp. w/ 1 Offer",
+                    "CompOffr2 offers"="2 offers",
+                    "CompOffr3-4 offers"="3-4 offers",
+                    "CompOffr5+ offers"="Comp. w/ 5+ Offers",
                     
-                    "Comp1 offer"="Comp=1 offer",
-                    "Comp2-4 offers"="Comp=2-4 offers",
-                    "Comp5+ offers"="Comp=5+ offers",
+                    "Comp1 offer"="Comp. w/ 1 Offer",
+                    "Comp2-4 offers"="Comp. w/ 2-4 Offers",
+                    "Comp5+ offers"="Comp. w/ 5+ Offers",
                     
                     
                     
                     
                     
                     #Vehicle
-                    "VehS-IDC"="Vehicle=S-IDC",
-                    "VehM-IDC"="Vehicle=M-IDC",
-                    "VehFSS/GWAC"="Vehicle=FSS/GWAC",
-                    "VehBPA/BOA"="Vehicle=BPA/BOA",
+                    "VehS-IDC"="S-IDC",
+                    "VehM-IDC"="M-IDC",
+                    "VehFSS/GWAC"="FSS/GWAC",
+                    "VehBPA/BOA"="BPA/BOA",
                     #Pricing and UCA
-                    "PricingUCAFFP"="Pricing=FFP",
-                    "PricingUCAOther FP"="Pricing=Other Fixed-Price",
-                    "PricingUCAIncentive"="Pricing=Incentive Fee",
-                    "PricingUCACombination or Other"="Pricing=Comb./Other",
-                    "PricingUCAOther CB"="Pricing=Other Cost-Based",
-                    "PricingUCAT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
-                    "PricingUCAUCA"="Pricing=UCA",
+                    "PricingUCAFFP"="FFP",
+                    "PricingUCAOther FP"="Other Fixed-Price",
+                    "PricingUCAIncentive"="Incentive Fee",
+                    "PricingUCACombination or Other"="Comb./Other",
+                    "PricingUCAOther CB"="Other Cost-Based",
+                    "PricingUCAT&M/LH/FPLOE"="T&M/LH/FP:LoE",
+                    "PricingUCAUCA"="UCA",
                     
-                    "PricingFeeOther FP"="Pricing=Other Fixed-Price",
-                    "PricingFeeIncentive"="Pricing=Incentive Fee",
-                    "PricingFeeCombination or Other"="Pricing=Comb./Other",
-                    "PricingFeeOther CB"="Pricing=Other Cost-Based",
-                    "PricingFeeT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
+                    "PricingFeeOther FP"="Other Fixed-Price",
+                    "PricingFeeIncentive"="Incentive Fee",
+                    "PricingFeeCombination or Other"="Comb./Other",
+                    "PricingFeeOther CB"="Other Cost-Based",
+                    "PricingFeeT&M/LH/FPLOE"="T&M/LH/FP:LoE",
                     "b_UCA"="UCA",
-                    "PricingFFP"="Pricing=FFP",
-                    "PricingOther FP"="Pricing=Other Fixed-Price",
-                    "PricingIncentive"="Pricing=Incentive Fee",
-                    "PricingCombination or Other"="Pricing=Comb./Other",
-                    "PricingOther CB"="Pricing=Other Cost-Based",
-                    "PricingT&M/LH/FPLOE"="Pricing=T&M/LH/FP:LoE",
-                    "PricingUCA"="Pricing=UCA",
+                    "PricingFFP"="FFP",
+                    "PricingOther FP"="Other Fixed-Price",
+                    "PricingIncentive"="Incentive Fee",
+                    "PricingCombination or Other"="Comb./Other",
+                    "PricingOther CB"="Other Cost-Based",
+                    "PricingT&M/LH/FPLOE"="T&M/LH/FP:LoE",
+                    "PricingUCA"="UCA",
                     
                     #Crisis and international
                     "CrisisARRA"="Crisis=Recovery Act",
@@ -2845,46 +2913,46 @@ get_coef_list<-function(limit=NULL){
                     "cl_Ceil:b_UCA"="Log(Init. Ceiling):UCA",
                     
                     #Competition
-                    "CompOffr1 offer:b_UCA"="Comp=1 offer:UCA",
-                    "CompOffr2 offers:b_UCA"="Comp=2 offers:UCA",
-                    "CompOffr3-4 offers:b_UCA"="Comp=3-4 offers:UCA",
-                    "CompOffr5+ offers:b_UCA"="Comp=5+ offers:UCA",
+                    "CompOffr1 offer:b_UCA"="1 offer:UCA",
+                    "CompOffr2 offers:b_UCA"="2 offers:UCA",
+                    "CompOffr3-4 offers:b_UCA"="3-4 offers:UCA",
+                    "CompOffr5+ offers:b_UCA"="5+ offers:UCA",
                     
                     
                     
                     #Service Complexity
-                    "cl_US6_avg_sal_lag1:PricingFeeOther FP"="Log(Det. Ind. Salary):Pricing=Other Fixed-Price",
-                    "cl_US6_avg_sal_lag1:PricingFeeIncentive"="Log(Det. Ind. Salary):Pricing=Incentive Fee",
-                    "cl_US6_avg_sal_lag1:PricingFeeCombination or Other"="Log(Det. Ind. Salary):Pricing=Comb./Other",
-                    "cl_US6_avg_sal_lag1:PricingFeeOther CB"="Log(Det. Ind. Salary):Pricing=Other Cost-Based",
-                    "cl_US6_avg_sal_lag1:PricingFeeT&M/LH/FPLOE"="Log(Det. Ind. Salary):Pricing=T&M/LH/FP:LoE",
-                    "cln_US6sal_lag1:PricingOther FP"="Log(Det. Ind. Salary):Pricing=Other Fixed-Price",
-                    "cln_US6sal_lag1:PricingIncentive"="Log(Det. Ind. Salary):Pricing=Incentive Fee",
-                    "cln_US6sal_lag1:PricingCombination or Other"="Log(Det. Ind. Salary):Pricing=Comb./Other",
-                    "cln_US6sal_lag1:PricingOther CB"="Log(Det. Ind. Salary):Pricing=Other Cost-Based",
-                    "cln_US6sal_lag1:PricingT&M/LH/FPLOE"="Log(Det. Ind. Salary):Pricing=T&M/LH/FP:LoE",
+                    "cl_US6_avg_sal_lag1:PricingFeeOther FP"="Log(Det. Ind. Salary):Other Fixed-Price",
+                    "cl_US6_avg_sal_lag1:PricingFeeIncentive"="Log(Det. Ind. Salary):Incentive Fee",
+                    "cl_US6_avg_sal_lag1:PricingFeeCombination or Other"="Log(Det. Ind. Salary):Comb./Other",
+                    "cl_US6_avg_sal_lag1:PricingFeeOther CB"="Log(Det. Ind. Salary):Other Cost-Based",
+                    "cl_US6_avg_sal_lag1:PricingFeeT&M/LH/FPLOE"="Log(Det. Ind. Salary):T&M/LH/FP:LoE",
+                    "cln_US6sal_lag1:PricingOther FP"="Log(Det. Ind. Salary):Other Fixed-Price",
+                    "cln_US6sal_lag1:PricingIncentive"="Log(Det. Ind. Salary):Incentive Fee",
+                    "cln_US6sal_lag1:PricingCombination or Other"="Log(Det. Ind. Salary):Comb./Other",
+                    "cln_US6sal_lag1:PricingOther CB"="Log(Det. Ind. Salary):Other Cost-Based",
+                    "cln_US6sal_lag1:PricingT&M/LH/FPLOE"="Log(Det. Ind. Salary):T&M/LH/FP:LoE",
                     
                     
-                    "PricingOther FP:cln_US6sal"="Log(Det. Ind. Salary):Pricing=Other Fixed-Price",
-                    "PricingIncentive:cln_US6sal"="Log(Det. Ind. Salary):Pricing=Incentive Fee",
-                    "PricingCombination or Other:cln_US6sal"="Log(Det. Ind. Salary):Pricing=Comb./Other",
-                    "PricingOther CB:cln_US6sal"="Log(Det. Ind. Salary):Pricing=Other Cost-Based",
-                    "PricingT&M/LH/FPLOE:cln_US6sal"="Log(Det. Ind. Salary):Pricing=T&M/LH/FP:LoE",
-                    "PricingUCA:cln_US6sal"="Log(Det. Ind. Salary):Pricing=UCA",
+                    "PricingOther FP:cln_US6sal"="Log(Det. Ind. Salary):Other Fixed-Price",
+                    "PricingIncentive:cln_US6sal"="Log(Det. Ind. Salary):Incentive Fee",
+                    "PricingCombination or Other:cln_US6sal"="Log(Det. Ind. Salary):Comb./Other",
+                    "PricingOther CB:cln_US6sal"="Log(Det. Ind. Salary):Other Cost-Based",
+                    "PricingT&M/LH/FPLOE:cln_US6sal"="Log(Det. Ind. Salary):T&M/LH/FP:LoE",
+                    "PricingUCA:cln_US6sal"="Log(Det. Ind. Salary):UCA",
                     
-                    "cln_PSCrate:PricingOther FP"="Log(Serv. Code Invoice Rate):Pricing=Other Fixed-Price",
-                    "cln_PSCrate:PricingIncentive"="Log(Serv. Code Invoice Rate):Pricing=Incentive Fee",
-                    "cln_PSCrate:PricingCombination or Other"="Log(Serv. Code Invoice Rate):Pricing=Comb./Other",
-                    "cln_PSCrate:PricingOther CB"="Log(Serv. Code Invoice Rate):Pricing=Other Cost-Based",
-                    "cln_PSCrate:PricingT&M/LH/FPLOE"="Log(Serv. Code Invoice Rate):Pricing=T&M/LH/FP:LoE",
-                    "cln_PSCrate:PricingUCA"="Log(Serv. Code Invoice Rate):Pricing=UCA",
+                    "cln_PSCrate:PricingOther FP"="Log(Serv. Code Invoice Rate):Other Fixed-Price",
+                    "cln_PSCrate:PricingIncentive"="Log(Serv. Code Invoice Rate):Incentive Fee",
+                    "cln_PSCrate:PricingCombination or Other"="Log(Serv. Code Invoice Rate):Comb./Other",
+                    "cln_PSCrate:PricingOther CB"="Log(Serv. Code Invoice Rate):Other Cost-Based",
+                    "cln_PSCrate:PricingT&M/LH/FPLOE"="Log(Serv. Code Invoice Rate):T&M/LH/FP:LoE",
+                    "cln_PSCrate:PricingUCA"="Log(Serv. Code Invoice Rate):UCA",
                     
-                    "cln_PSCrate:PricingUCAOther FP"="Log(Serv. Code Invoice Rate):Pricing=Other Fixed-Price",
-                    "cln_PSCrate:PricingUCAIncentive"="Log(Serv. Code Invoice Rate):Pricing=Incentive Fee",
-                    "cln_PSCrate:PricingUCACombination or Other"="Log(Serv. Code Invoice Rate):Pricing=Comb./Other",                    
-                    "cln_PSCrate:PricingUCAOther CB"="Log(Serv. Code Invoice Rate):Pricing=Other Cost-Based",
-                    "cln_PSCrate:PricingUCAT&M/LH/FPLOE"="Log(Serv. Code Invoice Rate):Pricing=T&M/LH/FP:LoE",
-                    "cln_PSCrate:PricingUCAUCA"="Log(Serv. Code Invoice Rate):Pricing=UCA",
+                    "cln_PSCrate:PricingUCAOther FP"="Log(Serv. Code Invoice Rate):Other Fixed-Price",
+                    "cln_PSCrate:PricingUCAIncentive"="Log(Serv. Code Invoice Rate):Incentive Fee",
+                    "cln_PSCrate:PricingUCACombination or Other"="Log(Serv. Code Invoice Rate):Comb./Other",                    
+                    "cln_PSCrate:PricingUCAOther CB"="Log(Serv. Code Invoice Rate):Other Cost-Based",
+                    "cln_PSCrate:PricingUCAT&M/LH/FPLOE"="Log(Serv. Code Invoice Rate):T&M/LH/FP:LoE",
+                    "cln_PSCrate:PricingUCAUCA"="Log(Serv. Code Invoice Rate):UCA",
                     
                     #Office Capability
                     
@@ -2905,31 +2973,31 @@ get_coef_list<-function(limit=NULL){
                     
                     
                     #Paired Relationship
-                    "c_pairHist:PricingUCAOther FP"="Paired Years:Pricing=Other Fixed-Price",
-                    "c_pairHist:PricingUCAIncentive"="Paired Years:Pricing=Incentive Fee",
-                    "c_pairHist:PricingUCACombination or Other"="Paired Years:Pricing=Comb./Other",
-                    "c_pairHist:PricingUCAOther CB"="Paired Years:Pricing=Other Cost-Based",
-                    "c_pairHist:PricingUCAT&M/LH/FPLOE"="Paired Years:Pricing=T&M/LH/FP:LoE",
-                    "c_pairHist:PricingUCAUCA"="Paired Years:Pricing=UCA",
-                    "cn_PairHist7:PricingUCAOther FP"="Paired Years:Pricing=Other Fixed-Price",
-                    "cn_PairHist7:PricingUCAIncentive"="Paired Years:Pricing=Incentive Fee",
-                    "cn_PairHist7:PricingUCACombination or Other"="Paired Years:Pricing=Comb./Other",
-                    "cn_PairHist7:PricingUCAOther CB"="Paired Years:Pricing=Other Cost-Based",
-                    "cn_PairHist7:PricingUCAT&M/LH/FPLOE"="Paired Years:Pricing=T&M/LH/FP:LoE",
-                    "cn_PairHist7:PricingUCAUCA"="Paired Years:Pricing=UCA",
-                    "cn_PairHist7:PricingOther FP"="Paired Years:Pricing=Other Fixed-Price",
-                    "cn_PairHist7:PricingIncentive"="Paired Years:Pricing=Incentive Fee",
-                    "cn_PairHist7:PricingCombination or Other"="Paired Years:Pricing=Comb./Other",
-                    "cn_PairHist7:PricingOther CB"="Paired Years:Pricing=Other Cost-Based",
-                    "cn_PairHist7:PricingT&M/LH/FPLOE"="Paired Years:Pricing=T&M/LH/FP:LoE",
-                    "cn_PairHist7:PricingUCA"="Paired Years:Pricing=UCA",
+                    "c_pairHist:PricingUCAOther FP"="Paired Years:Other Fixed-Price",
+                    "c_pairHist:PricingUCAIncentive"="Paired Years:Incentive Fee",
+                    "c_pairHist:PricingUCACombination or Other"="Paired Years:Comb./Other",
+                    "c_pairHist:PricingUCAOther CB"="Paired Years:Other Cost-Based",
+                    "c_pairHist:PricingUCAT&M/LH/FPLOE"="Paired Years:T&M/LH/FP:LoE",
+                    "c_pairHist:PricingUCAUCA"="Paired Years:UCA",
+                    "cn_PairHist7:PricingUCAOther FP"="Paired Years:Other Fixed-Price",
+                    "cn_PairHist7:PricingUCAIncentive"="Paired Years:Incentive Fee",
+                    "cn_PairHist7:PricingUCACombination or Other"="Paired Years:Comb./Other",
+                    "cn_PairHist7:PricingUCAOther CB"="Paired Years:Other Cost-Based",
+                    "cn_PairHist7:PricingUCAT&M/LH/FPLOE"="Paired Years:T&M/LH/FP:LoE",
+                    "cn_PairHist7:PricingUCAUCA"="Paired Years:UCA",
+                    "cn_PairHist7:PricingOther FP"="Paired Years:Other Fixed-Price",
+                    "cn_PairHist7:PricingIncentive"="Paired Years:Incentive Fee",
+                    "cn_PairHist7:PricingCombination or Other"="Paired Years:Comb./Other",
+                    "cn_PairHist7:PricingOther CB"="Paired Years:Other Cost-Based",
+                    "cn_PairHist7:PricingT&M/LH/FPLOE"="Paired Years:T&M/LH/FP:LoE",
+                    "cn_PairHist7:PricingUCA"="Paired Years:UCA",
                     
                     
                     #Non-Study Variale interactions
-                    "VehS-IDC:b_Intl"="Vehicle=S-IDC:Performed Abroad",
-                    "VehM-IDC:b_Intl"="Vehicle=M-IDC:Performed Abroad",
-                    "VehFSS/GWAC:b_Intl"="Vehicle=FSS/GWAC:Performed Abroad",
-                    "VehBPA/BOA:b_Intl"="Vehicle=BPA/BOA:Performed Abroad",
+                    "VehS-IDC:b_Intl"="S-IDC:Performed Abroad",
+                    "VehM-IDC:b_Intl"="M-IDC:Performed Abroad",
+                    "VehFSS/GWAC:b_Intl"="FSS/GWAC:Performed Abroad",
+                    "VehBPA/BOA:b_Intl"="BPA/BOA:Performed Abroad",
                     
                     "cl_Base:cl_Base2Ceil"="Log(Init. Base):Log(Init. Ceiling:Base)",
                     "cln_Base:clr_Ceil2Base"="Log(Init. Base):Log(Init. Ceiling:Base)",
@@ -2939,9 +3007,9 @@ get_coef_list<-function(limit=NULL){
                     "cln_OffObl7:cln_OffFocus" = "Log(Office Obligations+1):Log(Office Focus)",
                     
                     
-                    "FMSAlways:cln_Base"="FMS=Always:Log(Init. Base)",  
-                    "FMSPost-Start:cln_Base"="FMS=Post-Start:Log(Init. Base)",
-                    "FMSFMS post-start:cln_Base"="FMS=Post-Start:Log(Init. Base)"
+                    "FMSAlways:cln_Base"="Initial FMS:Log(Init. Base)",  
+                    "FMSPost-Start:cln_Base"="Post-Start FMS:Log(Init. Base)",
+                    "FMSFMS post-start:cln_Base"="Post-Start FMS:Log(Init. Base)"
     )
   } else if (limit=="services"){
     coef_list<-list("(Intercept)"="(Intercept)",

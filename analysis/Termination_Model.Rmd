@@ -16,7 +16,6 @@ library(csis360)
 library(ggplot2)
 library(dplyr)
 library(arm)
-library(R2WinBUGS)
 library(Hmisc)
 library(sjstats)
 source("..\\scripts\\DIIGstat.r")
@@ -31,6 +30,11 @@ geom.text.size<-12
 
 main.text.size<-1
 note.text.size<-1.40
+
+load(file="..//data//clean//def_sample.Rdata")
+
+contract_transform_verify(smp,dollars_suffix="Then_Year",just_check_na=TRUE)
+contract_transform_verify(smp1m,dollars_suffix="Then_Year",just_check_na=TRUE)
 
 
 ```
@@ -139,15 +143,7 @@ Next, we eliminate missing data entries and then draw a sample. The final comput
 
 ###Computational Sample Creation
 ```{r Sample}
- load(file="..//data//clean//def_sample.Rdata")
-# save(smp,smp1m,file="..//data//def_sample.Rdata")
-#Code to update sample w/o recreating.
-smp<-smp["CSIScontractID"]
-smp<-left_join(smp,def)
-smp1m<-smp1m["CSIScontractID"]
-smp1m<-left_join(smp1m,def)
 
-  
   #Customer
   if(!"Is.Defense" %in% colnames(contract) & "Who" %in% colnames(contract)){
     contract$Is.Defense<-as.character(contract$Who)
@@ -176,7 +172,6 @@ smp1m<-left_join(smp1m,def)
     
   }
   contract
-}
 debug(add_who)
 smp<-add_who(smp)
 smp1m<-add_who(smp1m)
@@ -5408,6 +5403,75 @@ get_icc(Term_Cons_Comp_14C_1m)
 
 ```
 
+
+###Model 14D: Rerun after UCA, ratio, and construction fixes
+```{r 14D}
+load(file="..//Output//Term_Cons_Comp_14D.rdata") 
+stargazer(Term_Cons_Comp_14B_1m,
+          Term_Cons_Comp_14D_1m,type="text",
+                         digits=2)
+
+if(!exists("Term_Cons_Comp_14D_1m")){
+  
+  Term_Cons_Comp_14D_1m <- glmer (data=smp,
+                               b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                                 #cl_US3_avg_sal_lag1+
+                                 cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                                 cl_US6_avg_sal_lag1+
+                                 CompOffr+
+                                 cl_Ceil_Then_Year + cl_Days+
+                                 Veh +
+                                 PricingFee + b_UCA +
+                                 b_Intl+
+
+                                 # cl_def6_HHI_lag1:cl_Days+
+                                 b_UCA:cl_Ceil_Then_Year+
+                                 # b_UCA:cl_def6_HHI_lag1 +
+                                 # PricingFee:cl_US6_avg_sal_lag1+
+                                 cl_def6_HHI_lag1:cl_def6_obl_lag1  +
+                                 # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                                 cl_def3_HHI_lag1:cl_def3_ratio_lag1+
+
+                                 (1 | NAICS3/NAICS) + (1 | Agency/Office)
+                               , family=binomial(link="logit"),verbose=1)
+save(Term_Cons_Comp_14D,file="..//Output//Term_Cons_Comp_14D.rdata")
+  
+  Term_Cons_Comp_14D_1m <- glmer (data=smp1m,
+                                  b_Term ~cl_def3_HHI_lag1+cl_def3_ratio_lag1+#cl_def3_obl_lag1+
+                                    #cl_US3_avg_sal_lag1+
+                                    cl_def6_HHI_lag1+cl_def6_obl_lag1+cl_def6_ratio_lag1+
+                                    cl_US6_avg_sal_lag1+
+                                    CompOffr+
+                                    cl_Ceil_Then_Year + cl_Days+ 
+                                    Veh +
+                                    PricingFee + b_UCA +
+                                    b_Intl+
+                                    
+                                    # cl_def6_HHI_lag1:cl_Days+
+                                    b_UCA:cl_Ceil_Then_Year+
+                                    # b_UCA:cl_def6_HHI_lag1 +
+                                    # PricingFee:cl_US6_avg_sal_lag1+
+                                    cl_def6_HHI_lag1:cl_def6_obl_lag1  +
+                                    # cl_def6_HHI_lag1:cl_def6_ratio_lag1+
+                                    cl_def3_HHI_lag1:cl_def3_ratio_lag1+  
+                                    
+                                    (1 | NAICS3/NAICS) + (1 | Agency/Office)
+                                  , family=binomial(link="logit"),verbose=1)
+  
+  
+  
+  
+  save(Term_Cons_Comp_14D,Term_Cons_Comp_14D_1m,file="..//Output//Term_Cons_Comp_14D.rdata")
+  
+}
+
+  source(system.file("utils", "allFit.R", package="lme4"))
+  
+glmer_examine(Term_Cons_Comp_14C_1m)
+odds_ratio(Term_Cons_Comp_14C_1m,"Term_Cons_Comp_14C_1m",walds = TRUE)
+get_icc(Term_Cons_Comp_14C_1m)
+
+```
 
 ## Rare Events Logit
 
