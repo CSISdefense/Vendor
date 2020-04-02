@@ -110,8 +110,8 @@ sum(def$Action_Obligation_Then_Year[def$Action_Obligation_Then_Year<0])
 length(money[!complete])/length(money)
 sum(money[!complete],na.rm=TRUE)/sum(money,na.rm=TRUE)
 
-if(file.exists("data/clean/def_sample.Rdata")) load(file="data/cleaen/defe_smple.Rdata")
-else{
+if(file.exists("data/clean/def_sample.Rdata")){ load(file="data/cleaen/defe_smple.Rdata")
+} else{
   smp_complete<-def[complete,]
   # #
   smp1m<-smp_complete[sample(nrow(smp_complete),1000000),]
@@ -188,47 +188,3 @@ write.foreign(df=def_breach,
               package = "Stata")
 save(file="data//clean//def_sample.Rdata",smp,smp1m,def_breach)
 
-
-#Verifying why some are  missing
-load(file="data//clean//JSCAN//def_sample.Rdata")
-missing<-smp1m[!smp1m$CSIScontractID %in% def$CSIScontractID,]
-
-
-missing<-read_and_join_experiment(missing,
-                                  "Contract.IsParentContractID.txt",
-                                  by="CSIScontractID",
-                                  # replace_na_var="AgencyID",
-                                  add_var=c("IsParentCSIScontractID"),
-                                  skip_check_var = "IsParentCSIScontractID",
-                                  path ="", 
-                                  directory = "data\\semi_clean\\"
-)
-
-
-summary(missing$IsParentCSIScontractID)
-
-
-smp1m<-read_and_join_experiment(smp1m,
-                                  "Contract.IsParentContractID.txt",
-                                  by="CSIScontractID",
-                                  # replace_na_var="AgencyID",
-                                  add_var=c("IsParentCSIScontractID"),
-                                  skip_check_var = "IsParentCSIScontractID",
-                                  path ="", 
-                                  directory = "data\\semi_clean\\"
-)
-summary(smp1m$IsParentCSIScontractID)
-summary(smp1m$CSIScontractID)
-
-def<-read_and_join_experiment(def,
-                                "Contract.IsParentContractID.txt",
-                                by="CSIScontractID",
-                                # replace_na_var="AgencyID",
-                                add_var=c("IsParentCSIScontractID"),
-                                skip_check_var = "IsParentCSIScontractID",
-                                path ="", 
-                                directory = "data\\semi_clean\\"
-)
-summary(def$IsParentCSIScontractID)
-
-summary(missing %>% filter (CSIScontractID, IDVPIID,PIID))
