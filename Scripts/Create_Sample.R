@@ -186,5 +186,4 @@ write.foreign(df=def_breach,
               datafile="Data//clean//def_breach.dat",
               codefile="Data//clean//def_breach_code.do",
               package = "Stata")
-save(file="data//clean//def_sample.Rdata",smp,smp1m,def_breach)
 
