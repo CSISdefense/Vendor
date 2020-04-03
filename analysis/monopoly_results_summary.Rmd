@@ -16,12 +16,12 @@ library(csis360)
 library(ggplot2)
 library(dplyr)
 library(arm)
-library(R2WinBUGS)
 library(knitr)
 library(foreign)
 library(stargazer)
 library(texreg)
 library(reshape2)
+library(svglite)
 source("..\\scripts\\DIIGstat.r")
 
 axis.text.size<-10
@@ -35,7 +35,7 @@ main.text.size<-1
 note.text.size<-1.40
 
 load("..\\data\\clean\\JSCAN\\transformed_def.Rdata")
-load("..//data//clean//def_sample.Rdata")
+
 memory.limit(56000)
 ```
 
@@ -532,6 +532,10 @@ sum(def$Action_Obligation_Then_Year[is.na(def$EffComp)],na.rm=TRUE)/sum(def$Acti
 ```
 
 
+## Data Exploration Cleanp
+```{r Data-Cleanup}
+rm(def)
+```
 
 
 # Loading Models
@@ -611,10 +615,10 @@ get_icc(CBre_Cons_Comp_15A_1m)
 failure to converge in 10000 evaluationsModel failed to converge with max|grad| = 0.00901903 (tol = 0.001, component 1)
 
 ### Updated Ceiling Breach
-```{r CBre-Both}
+```{r CBre-Update}
 load("..//Output//CBre_Cons_Comp_15C.rdata")
 
-stargazer::stargazer(CBre_Cons_Comp_15C,type="text",
+stargazer::stargazer(CBre_Cons_Comp_15A_1m,CBre_Cons_Comp_15C_1m,type="text",
                        digits=2)
 
 
@@ -623,12 +627,9 @@ stargazer::stargazer(CBre_Cons_Comp_15C,type="text",
 # CBre_Cons_Comp_15C_1m_ss_cons <- summary(CBre_Cons_Comp_15C_1m.all)
 
 
-glmer_examine(CBre_Cons_Comp_15C,display=TRUE)
-CBre_Cons_Comp_15C_odds_ratio<-odds_ratio(CBre_Cons_Comp_15C,"CBre_Cons_Comp_15C",walds = TRUE)
-get_icc(CBre_Cons_Comp_15C)
-
-stargazer::stargazer(CBre_Cons_Comp_15A,CBre_Cons_Comp_15C,type="text",
-                       digits=2)
+glmer_examine(CBre_Cons_Comp_15C_1m,display=TRUE)
+CBre_Cons_Comp_15C_odds_ratio<-odds_ratio(CBre_Cons_Comp_15C_1m,"CBre_Cons_Comp_15C_1m",walds = TRUE)
+get_icc(CBre_Cons_Comp_15C_1m)
 
 ```
 
@@ -636,7 +637,7 @@ stargazer::stargazer(CBre_Cons_Comp_15A,CBre_Cons_Comp_15C,type="text",
 
 ### Organically Developed
 ```{r Model5A}
-if(file.exists("..//Output//ln_CBre_15A.rdata")) load(file="..//Output//ln_CBre_15A.rdata")
+load(file="..//Output//Archives//2019_Models//ln_CBre_15A.rdata")
 
 glmer_examine(ln_CBre_Cons_15A)
 
@@ -667,7 +668,24 @@ stargazer::stargazer(ln_CBre_Cons_15B,ln_CBre_Comp_15B,ln_CBre_Cons_Comp_15B,typ
 # save(ln_CBre_Cons_15B,ln_CBre_Comp_15B,ln_CBre_Cons_Comp_15B,file="..//Output//ln_CBre_15B.rdata")```
 ```
 
+### Updated Breach
+```{r Model15C}
+ load(file="..//Output//ln_CBre_15C.rdata")
 
+glmer_examine(ln_CBre_Cons_15C)
+
+
+glmer_examine(ln_CBre_Comp_15C)
+
+glmer_examine(ln_CBre_Cons_Comp_15C)
+
+
+stargazer::stargazer(ln_CBre_Cons_Comp_15A,ln_CBre_Cons_Comp_15B,ln_CBre_Cons_Comp_15C,type="text",
+                       digits=2)
+
+
+# save(ln_CBre_Cons_15B,ln_CBre_Comp_15B,ln_CBre_Cons_Comp_15B,file="..//Output//ln_CBre_15B.rdata")```
+```
 ## Output: Termination
 
 ### Consolidation and Termination
@@ -700,11 +718,11 @@ odds_ratio(Term_Comp_13F_1m,"Term_Comp_13F_1m",walds = TRUE)
 
 ### Both and Terminations
 
-```{r Both-Term}
+```{r Term-Update}
 load(file="..//Output//Archives///2018_Models//Term_Cons_Comp_14C.rdata")
 # load(file="..//Output//Archives///2018_Models//Term_Cons_Comp_14B_1m.rdata")
 
-stargazer(Term_Cons_Comp_14C_1m,type="text",
+stargazer(Term_Cons_13E_1m,Term_Comp_13F_1m,Term_Cons_Comp_14C_1m,type="text",
                          digits=2)
 
 
@@ -719,7 +737,7 @@ get_icc(Term_Cons_Comp_14C_1m)
 
 ```{r Both-Term}
 load(file="..//Output//Term_Cons_Comp_14D.rdata") 
-stargazer(Term_Cons_Comp_14D_1m,type="text",
+stargazer(Term_Cons_Comp_14C_1m,Term_Cons_Comp_14D_1m,type="text",
                          digits=2)
 
 
