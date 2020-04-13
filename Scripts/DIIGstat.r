@@ -992,7 +992,7 @@ binned_fitted_versus_cbre_residuals<-function(model,bins=20){
   
   ggplot(data= data %>% 
            group_by(bin_fitted) %>% 
-           summarise (mean_CBre = mean(b_CBre),
+           dplyr::summarise (mean_CBre = mean(b_CBre),
                       mean_fitted =mean(fitted)),
          aes(y=mean_CBre,x=mean_fitted))+geom_point() +
     labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
@@ -1031,7 +1031,7 @@ binned_fitted_versus_term_residuals<-function(model,bins=20){
   
   ggplot(data= data %>% 
            group_by(bin_fitted) %>% 
-           summarise (mean_Term = mean(b_Term),
+           dplyr::summarise (mean_Term = mean(b_Term),
                       mean_fitted =mean(fitted)),
          aes(y=mean_Term,x=mean_fitted))+geom_point() +
     labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
@@ -1072,7 +1072,7 @@ binned_fitted_versus_SomeOpt_residuals<-function(model,bins=20){
   
   ggplot(data= data %>% 
            group_by(bin_fitted) %>% 
-           summarise (mean_SomeOpt = mean(b_SomeOpt),
+           dplyr::summarise (mean_SomeOpt = mean(b_SomeOpt),
                       mean_fitted =mean(fitted)),
          aes(y=mean_SomeOpt,x=mean_fitted))+geom_point() +
     labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
@@ -1113,7 +1113,7 @@ binned_fitted_versus_AllOpt_residuals<-function(model,bins=20){
   
   ggplot(data= data %>% 
            group_by(bin_fitted) %>% 
-           summarise (mean_AllOpt = mean(b_AllOpt),
+           dplyr::summarise (mean_AllOpt = mean(b_AllOpt),
                       mean_fitted =mean(fitted)),
          aes(y=mean_AllOpt,x=mean_fitted))+geom_point() +
     labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
@@ -1153,7 +1153,7 @@ binned_fitted_versus_lp_CBre_residuals<-function(model,bins=20){
   
   ggplot(data= data %>% 
            group_by(bin_fitted) %>% 
-           summarise (mean_CBre = mean(lp_CBre),
+           dplyr::summarise (mean_CBre = mean(lp_CBre),
                       mean_fitted =mean(fitted)),
          aes(y=mean_CBre,x=mean_fitted))+geom_point() +
     labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
@@ -1193,7 +1193,7 @@ binned_fitted_versus_ln_CBre_residuals<-function(model,bins=20){
   
   ggplot(data= data %>% 
            group_by(bin_fitted) %>% 
-           summarise (mean_CBre = mean(ln_CBre),
+           dplyr::summarise (mean_CBre = mean(ln_CBre),
                       mean_fitted =mean(fitted)),
          aes(y=mean_CBre,x=mean_fitted))+geom_point() +
     labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
@@ -2210,6 +2210,11 @@ get_study_variables_odds_ratio<-function(or.df,study="monopoly"){
     study_list<-c(names(study_list),study_list)
     study_list<-study_list[-which(study_list=="(Intercept)")]
     study_coef_list<-NA
+  } else if (study=="crisis"){
+    study_list<-get_coef_list(limit="crisis")
+    study_list<-c(names(study_list),study_list)
+    study_list<-study_list[-which(study_list=="(Intercept)")]
+    study_coef_list<-NA
     
   } else if (study=="FMS"){
     stop("Doesn't work yet")
@@ -2605,7 +2610,14 @@ get_coef_list<-function(limit=NULL){
                     "Comp2-4 Offers"="Comp. w/ 2-4 Offers",
                     "Comp5+ Offers"="Comp. w/ 5+ Offers",
                     
+                    "NoCompOffr2Urgency"="No Comp., Urgency",
+                    "NoCompOffr2Other No"="No Comp., Other",
+                    "NoCompOffr21 offer"="Comp. w/ 1 Offer",
+                    "NoCompOffr25+ offers"="Comp. w/ 5+ Offers",
                     
+                    "c_OffCri"="Cont. Office Crisis %",
+                    "OffPlaceMixed"="Cont. Office 1-50% Intl",
+                    "OffPlaceIntl"="Cont. Office 50%+ Intl.",
                     
                     
                     #Vehicle
@@ -2674,6 +2686,13 @@ get_coef_list<-function(limit=NULL){
                     "cp_PairObl7"="Paired Share %",
                     "c_pMarket"="Paired Share %",
                     
+                    #Budget
+                    "dActual_Lead3"="&Delta;Actual('19 vs. '16)",
+                    "dFYDP2_PB_Base"="&Delta;FYDP2('19 vs. '18 PB Base)",
+                    "dFYDP2_Actual"="&Delta;FYDP2('19 vs. '16 Actual)",
+                    "dPB_Base_Actual"="&Delta;PB Base('18 vs. '16 Actual)",
+                    "PB_OCO"="PB OCO ('18)",
+                    
                     #interations
                     
                     #Consolidation
@@ -2683,13 +2702,18 @@ get_coef_list<-function(limit=NULL){
                     "cl_def6_HHI_lag1:b_UCA"="Log(Det. Ind. HHI):UCA",
                     "cl_Ceil:b_UCA"="Log(Init. Ceiling):UCA",
                     
+                    
+                    
                     #Competition
                     "CompOffr1 offer:b_UCA"="1 offer:UCA",
                     "CompOffr2 offers:b_UCA"="2 offers:UCA",
                     "CompOffr3-4 offers:b_UCA"="3-4 offers:UCA",
                     "CompOffr5+ offers:b_UCA"="5+ offers:UCA",
                     
-                    
+                    "NoCompOffr2Urgency:cl_Ceil"="No Comp., Urgency:Log(Init. Ceiling)",
+                    "NoCompOffr2Other No:cl_Ceil"="No Comp., Other:Log(Init. Ceiling)",
+                    "NoCompOffr21 offer:cl_Ceil"="Comp. w/ 1 Offer:Log(Init. Ceiling)",
+                    "NoCompOffr25+ offers:cl_Ceil"="Comp. w/ 5+ Offers:Log(Init. Ceiling)",
                     
                     #Service Complexity
                     "cl_US6_avg_sal_lag1:PricingFeeOther FP"="Log(Det. Ind. Salary):Other Fixed-Price",
@@ -3027,7 +3051,21 @@ get_coef_list<-function(limit=NULL){
                     "cl_pairCA"="Log(Paired Actions)",
                     "cln_PairCA"="Log(Paired Actions)"
     )
-    
+  } else if (limit=="crisis"){
+    coef_list<-list("(Intercept)"="(Intercept)",
+                    "CrisisARRA"="Crisis=Recovery Act",
+                    "CrisisDis"="Crisis=Disaster",
+                    "CrisisOCO"="Crisis=OCO",
+                    "NoCompOffr2Urgency"="No Comp., Urgency",
+                    "NoCompOffr2Other No"="No Comp., Other",
+                    "NoCompOffr21 offer"="Comp. w/ 1 Offer",
+                    "NoCompOffr25+ offers"="Comp. w/ 5+ Offers",
+                    "b_UCA"="UCA",
+                    "c_OffCri"="Cont. Office Crisis %",
+                    "OffPlaceMixed"="Cont. Office 1-50% Intl",
+                    "OffPlaceIntl"="Cont. Office 50%+ Intl."
+                    
+    )
   }
   else stop(paste("Do not know how to process limit:",limit))
  
