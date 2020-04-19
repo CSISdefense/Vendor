@@ -1711,11 +1711,11 @@ get_icc<-function(model,display=FALSE){
   # icc
   if(display==TRUE) display(model)
   if(!is.null(model@optinfo$conv$lme4$messages)){
-    output<-list(icc(model),
+    output<-list(performance::icc(model),
                  model@optinfo$conv$lme4$messages)
   }
   else{
-    output<-icc(model)
+    output<-performance::icc(model)
   }
   output
 }
@@ -2692,6 +2692,15 @@ get_coef_list<-function(limit=NULL){
                     "dFYDP2_Actual"="&Delta;FYDP2('19 vs. '16 Actual)",
                     "dPB_Base_Actual"="&Delta;PB Base('18 vs. '16 Actual)",
                     "PB_OCO"="PB OCO ('18)",
+                    
+                    "log(FYDP2 + 1)"="log(FYDP2+1)",
+                    
+                    "MilDepArmy"="Army",
+                    "MilDepAir Force"="Air Force",
+                    "MilDepOther DoD"="Other DoD",
+                    "log(Actual + 1)"="log(Actual+1)",
+                    "log(PB_Base + 1)"="log(PB Base+1)",
+                    "log(PB_OCO + 1)"="log(PB OCO+1)",
                     
                     #interations
                     
