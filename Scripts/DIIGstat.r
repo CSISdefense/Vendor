@@ -2103,7 +2103,7 @@ grouped_barplot <- function(x, contract,
   levels(name_Info$variable)[levels(name_Info$variable)=="% of $s"] = "% of Obligations"
   name_Info$variable <- factor(name_Info$variable, rev(levels(name_Info$variable)))
   if(any(is.na(name_Info[, 1])))
-    limits<-rev(c(name_Info_noNAN,"NA"))
+    limits<-rev(c(name_Info_noNAN,NA))
   else
     limits<-rev(name_Info_noNAN)
   basicplot <- ggplot(data = name_Info, 
@@ -2112,7 +2112,7 @@ grouped_barplot <- function(x, contract,
                           fill = factor(variable))) +
     geom_bar(stat = "identity", position = "dodge", width = 0.8) + 
     xlab("Category") + 
-    ylab("") + 
+    ylab("") + scale_y_continuous(labels = scales::percent)+
     coord_flip() + 
     guides(fill = guide_legend(reverse = TRUE)) +   #reverse the order of legend
     theme_grey() + 
