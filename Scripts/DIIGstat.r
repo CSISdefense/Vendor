@@ -1905,12 +1905,15 @@ verify_transform<-function(x,
 
 contract_transform_verify<-function(contract,just_check_na=FALSE,dollars_suffix="OMB20_GDP18",unlogged_ratio=FALSE){
   #Outcome
-  if(dollars_suffix=="Then_Year")
-    verify_transform(contract,paste("n_CBre",dollars_suffix,sep="_"),
-                     paste("ln_CBre",dollars_suffix,sep="_"),rescale=FALSE)
-  else
-    verify_transform(contract,paste("n_CBre",dollars_suffix,sep="_"),
-                     "ln_CBre",rescale=FALSE)
+  if("n_Cbre" %in% colnames(contract)){
+    if(dollars_suffix=="Then_Year")
+      verify_transform(contract,paste("n_CBre",dollars_suffix,sep="_"),
+                       paste("ln_CBre",dollars_suffix,sep="_"),rescale=FALSE)
+    else
+      verify_transform(contract,paste("n_CBre",dollars_suffix,sep="_"),
+                       "ln_CBre",rescale=FALSE)
+  }
+  else warning("No n_Cbre in dataset")
   #Scope
   if(dollars_suffix=="Then_Year" & paste("cln_Base",dollars_suffix,sep="_") %in% colnames(contract))
     verify_transform(contract,paste("UnmodifiedBase",dollars_suffix,sep="_"),
@@ -2047,7 +2050,7 @@ statsummary_continuous <- function(x,
   continuous_Info$aboveMax[continuous_Info$Max < continuous_Info$`1 unit above`] <- "*"
   continuous_Info$belowMin[continuous_Info$Min > continuous_Info$`1 unit below`] <- "*"
   # editing percentage values
-  continuous_Info[,8:9] <- lapply(continuous_Info[,8:9], function(x) percent(x))#, accuracy = .01))
+  continuous_Info[,8:9] <- lapply(continuous_Info[,8:9], function(x) percent(x, accuracy = .01))
   continuous_Info[,2:7] <- lapply(continuous_Info[,2:7], function(x) comma_format(accuracy = 10^-digits)(x))#big.mark = ',',
   continuous_Info$`% of Obligations to NA records`[continuous_Info$`% of Obligations to NA records`=="NA%"] <- NA
   
@@ -2341,7 +2344,99 @@ swr <- function(string, nwrap=20) {
 swr <- Vectorize(swr)
 
 
-
+transition_variable_names_common<-function(contract){
+  for(i in 1:ncol(contract)){
+    if(is.character(contract[,i])){
+      print(colnames(contract)[i])
+      contract[,i]<-factor(contract[,i])
+    } 
+  }
+  
+  #Dropping Redundant
+  contract<-contract[,!colnames(contract) %in% c( "UnmodifiedNumberOfOffersSummary",
+                                                  "SizeOfUnmodifiedContractBaseAndAll" 
+  )]
+  
+      
+  
+  contract<-contract[,!colnames(contract) %in% c("n_Comp","cb_Comp",
+                                                 "cn_Offr","cl_Offr",
+                                                 "nq_Offr","NAICS5",
+                                                 "NAICS4","SteadyScopeOptionGrowthAlone" ,
+                                                 "SteadyScopeOptionGrowthMixed",
+                                                 "ChangeOrderCeilingGrowth",
+                                                 "SteadyScopeOptionRescision",
+                                                 "AdminOptionModification",
+                                                 "ChangeOrderOptionModification",
+                                                 "EndingOptionModification",
+                                                 "OtherOptionModification", "override_unmodified_ceiling",
+                                                 "override_unmodified_base",
+                                                 "override_change_order_growth",
+                                                 "override_exercised_growth",
+                                                 "j_Term",
+                                                 "j_CBre",
+                                                 "ln_CBre_Then_Year",
+                                                 "n_Fixed",
+                                                 "n_Incent",
+                                                 "n_Nofee",
+                                                 "UnmodifiedYearsFloat",
+                                                 "b_ODoD",
+                                                 "ODoD"
+  )]
+  
+  contract<-contract[,!colnames(contract) %in% c( "l_US6_avg_sal_lag1Const",
+                                                  "l_def6_obl_lag1Const" ,
+                                                  "l_def3_obl_lag1Const",
+                                                  # "capped_def6_ratio_lag1"  ,
+                                                  # "capped_def3_ratio_lag1"  ,
+                                                  "lp_OptGrowth",
+                                                  "capped_cl_Days",
+                                                  "lp_CBre" 
+  )]
+  
+  
+  if("cln_days" %in% colnames(contract))
+    contract<-contract[,!colnames(contract) %in% c("capped_cl_Days")]
+  
+  if("Agency" %in% colnames(contract))
+    contract<-contract[,!colnames(contract) %in% c("AgencyID")]
+  
+  
+  if("ProductServiceOrRnDarea" %in% colnames(contract))
+    contract<-contract[,!colnames(contract) %in% c("ProductsCategory",#"ProductOrServiceArea",
+                                                   "ServicesCategory", "ProductOrServiceCode1L", "ProductOrServiceCode2L", "ProductOrServiceCode2R", 
+                                                   "ProductOrServiceCode1L1R", #"Simple", "HostNation3Category",
+                                                   "Unseperated", "IsService", 
+                                                   "IsCatchAllCode", "DoDportfolioGroup", "DoDportfolio", "DoDportfolioCategory", 
+                                                   "DoDportfolioSubCategory", "PlatformPortfolio", "isRnD1to5", "PBLscore", 
+                                                   "IsPossibleReclassification", "IsPossibleSoftwareEngineering", "RnD_BudgetActivity", 
+                                                   "ProductServiceOrRnDarea", "CanadaSector", "VAPortfolio", "ServArea", "IsRnDdefenseSystem", 
+                                                   "Level1_Code", "Level1_Category", "Level2_Code", "Level2_Category" #"CrisisProductOrServiceArea",
+    )]
+  
+  
+  if("Office" %in% colnames(contract))  
+    contract<-contract[,!colnames(contract) %in% c(#"DepartmentID", "AgencyID", "ContractingOfficeName", 
+      "StartDate", "EndDate", "AddressLine1", "AddressLine2", 
+      "AddressLine3", "AddressCity", "AddressState", "ZipCode", 
+      "CountryCode", "Depot", "FISC", "TFBSOrelated",
+      "CSIScreatedDate", "CSISmodifieddDate", "OCOcrisisScore"
+    )
+    ]
+  
+  if("Veh" %in% colnames(contract))
+    contract<-contract[,!colnames(contract) %in% c("SIDV","MIDV","FSSGWAC","BPABOA")]
+  
+  #Text search, note we need the if any because if no results, then it gets rid of all columns
+  if(any(grep("def[2,4-5]",colnames(contract))))
+    contract<-contract[,-grep("def[2,4-5]",colnames(contract))]
+  if(any(grep("US[2,4-5]",colnames(contract))))
+    contract<-contract[,-grep("US[2,4-5]",colnames(contract))]
+  
+  
+  if(any(duplicated(colnames(contract)))) stop("Duplicate Contract Name")
+  contract
+}
 
 transition_variable_names_service<-function(contract){
   
@@ -2401,49 +2496,7 @@ transition_variable_names_service<-function(contract){
 }
 
 transition_variable_names_FMS<-function(contract){
-  #Dropping Redundant
-  
-  for(i in 1:ncol(contract)){
-    if(is.character(contract[,i])){
-      print(colnames(contract)[i])
-      contract[,i]<-factor(contract[,i])
-    } 
-  }
-  
-  contract<-contract[,!colnames(contract) %in% c("n_Comp","cb_Comp",
-                                                 "cn_Offr","cl_Offr",
-                                                 "nq_Offr","NAICS5",
-                                                 "NAICS4","SteadyScopeOptionGrowthAlone" ,
-                                                 "SteadyScopeOptionGrowthMixed",
-                                                 "ChangeOrderCeilingGrowth",
-                                                 "SteadyScopeOptionRescision",
-                                                 "AdminOptionModification",
-                                                 "ChangeOrderOptionModification",
-                                                 "EndingOptionModification",
-                                                 "OtherOptionModification", "override_unmodified_ceiling",
-                                                 "override_unmodified_base",
-                                                 "override_change_order_growth",
-                                                 "override_exercised_growth",
-                                                 "j_Term",
-                                                 "j_CBre",
-                                                 "ln_CBre_Then_Year",
-                                                 "n_Fixed",
-                                                 "n_Incent",
-                                                 "n_Nofee",
-                                                 "UnmodifiedYearsFloat",
-                                                 "b_ODoD",
-                                                 "ODoD"
-                                                 )]
-  
-  contract<-contract[,!colnames(contract) %in% c( "l_US6_avg_sal_lag1Const",
-                                                  "l_def6_obl_lag1Const" ,
-                                                  "l_def3_obl_lag1Const",
-                                                  # "capped_def6_ratio_lag1"  ,
-                                                  # "capped_def3_ratio_lag1"  ,
-                                                  "lp_OptGrowth",
-                                                  "capped_cl_Days",
-                                                  "lp_CBre" 
-  )]
+  contract<-transition_variable_names_common(contract)
   
   #Services variables not using
   contract<-contract[,!colnames(contract) %in% c( "office_PBSCobligated_1year",
@@ -2459,44 +2512,6 @@ transition_variable_names_FMS<-function(contract){
   )]
   
                                            
-  
-  if("cln_days" %in% colnames(contract))
-    contract<-contract[,!colnames(contract) %in% c("capped_cl_Days")]
-  
-  if("Agency" %in% colnames(contract))
-    contract<-contract[,!colnames(contract) %in% c("AgencyID")]
-  
-  
-  if("ProductServiceOrRnDarea" %in% colnames(contract))
-    contract<-contract[,!colnames(contract) %in% c("ProductsCategory",#"ProductOrServiceArea",
-                                              "ServicesCategory", "ProductOrServiceCode1L", "ProductOrServiceCode2L", "ProductOrServiceCode2R", 
-                                              "ProductOrServiceCode1L1R", #"Simple", "HostNation3Category",
-                                              "Unseperated", "IsService", 
-                                              "IsCatchAllCode", "DoDportfolioGroup", "DoDportfolio", "DoDportfolioCategory", 
-                                              "DoDportfolioSubCategory", "PlatformPortfolio", "isRnD1to5", "PBLscore", 
-                                              "IsPossibleReclassification", "IsPossibleSoftwareEngineering", "RnD_BudgetActivity", 
-                                              "ProductServiceOrRnDarea", "CanadaSector", "VAPortfolio", "ServArea", "IsRnDdefenseSystem", 
-                                              "Level1_Code", "Level1_Category", "Level2_Code", "Level2_Category" #"CrisisProductOrServiceArea",
-                                              )]
-  
-  
-  if("Office" %in% colnames(contract))  
-    contract<-contract[,!colnames(contract) %in% c(#"DepartmentID", "AgencyID", "ContractingOfficeName", 
-                                              "StartDate", "EndDate", "AddressLine1", "AddressLine2", 
-                                              "AddressLine3", "AddressCity", "AddressState", "ZipCode", 
-                                              "CountryCode", "Depot", "FISC", "TFBSOrelated",
-                                              "CSIScreatedDate", "CSISmodifieddDate", "OCOcrisisScore"
-                                              )
-                         ]
-  
-  if("Veh" %in% colnames(contract))
-    contract<-contract[,!colnames(contract) %in% c("SIDV","MIDV","FSSGWAC","BPABOA")]
-  
-  #Text search, note we need the if any because if no results, then it gets rid of all columns
-  if(any(grep("def[2,4-5]",colnames(contract))))
-     contract<-contract[,-grep("def[2,4-5]",colnames(contract))]
-  if(any(grep("US[2,4-5]",colnames(contract))))
-    contract<-contract[,-grep("US[2,4-5]",colnames(contract))]
   
   #Using new naming scheme
   
@@ -2534,7 +2549,6 @@ transition_variable_names_FMS<-function(contract){
     colnames(contract)[colnames(contract)=="CrisisProductOrServiceArea"]<-"ServArea"
     colnames(contract)[colnames(contract)=="PlaceCountryISO3"]<-"Place"
     
-    if(any(duplicated(colnames(contract)))) stop("Duplicate Contract Name")
     
     
     #Picking versions of variabls for this model
@@ -2554,6 +2568,8 @@ transition_variable_names_FMS<-function(contract){
       contract<-contract[,!colnames(contract) %in% c("Pricing")]
       colnames(contract)[colnames(contract)=="PricingUCA"]<-"Pricing"
     }
+    
+    if(any(duplicated(colnames(contract)))) stop("Duplicate Contract Name")
   
   contract
 }
