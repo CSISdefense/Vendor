@@ -960,45 +960,21 @@ resid_plot<-function(model,sample=NA){
 }
 
 binned_fitted_versus_cbre_residuals<-function(model,bins=20){
-  
-  #Save this for a future GLM
-  # CBre_data_01A<-data.frame(fitted=fitted(CBre_01A),
-  #                        residuals=residuals(CBre_01A),
-  #                        nCBre=CBre_01A@frame$nCBre,
-  #                        cb_Comp=CBre_01A@frame$cb_Comp
-  #                        )
-  
-  if(class(model)[1] %in% c("glmerMod","lmerMod"))
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      b_CBre=model@frame$b_CBre
-    )
-    
-  }
-  else
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      b_CBre=model$model$b_CBre
-    )
-  }
-  
-  data$bin_fitted<-bin_df(data,rank_col="fitted",bins=bins)
-  
-  data<-subset(data,!is.na(fitted) & !is.na(residuals) )
-  
-  ggplot(data= data %>% 
-           group_by(bin_fitted) %>% 
-           dplyr::summarise (mean_CBre = mean(b_CBre),
-                      mean_fitted =mean(fitted)),
-         aes(y=mean_CBre,x=mean_fitted))+geom_point() +
-    labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+  warning("binned_fitted_versus_cbre_residuals is deprecated. Use binned_fitted_residuals instead.")
+  binned_fitted_residuals(model,"b_CBre",bins)
 }
 
 binned_fitted_versus_term_residuals<-function(model,bins=20){
+  warning("binned_fitted_versus_term_residuals is deprecated. Use binned_fitted_residuals instead.")
+  binned_fitted_residuals(model,"b_Term",bins)
+}
+
+
+
+binned_fitted_residuals<-function(model,
+                                  versus_col,
+                                  bins=20,
+                                  caption="Source: FPDS, CSIS Analysis"){
   
   #Save this for a future GLM
   # Term_data_01A<-data.frame(fitted=fitted(Term_01A),
@@ -1012,7 +988,7 @@ binned_fitted_versus_term_residuals<-function(model,bins=20){
     data <-data.frame(
       fitted=fitted(model),
       residuals=residuals(model),
-      b_Term=model@frame$b_Term
+      versus=model@frame[[versus_col]]
     )
     
   }
@@ -1021,7 +997,7 @@ binned_fitted_versus_term_residuals<-function(model,bins=20){
     data <-data.frame(
       fitted=fitted(model),
       residuals=residuals(model),
-      b_Term=model$model$b_Term
+      versus=model$model[[versus_col]]
     )
   }
   
@@ -1031,217 +1007,83 @@ binned_fitted_versus_term_residuals<-function(model,bins=20){
   
   ggplot(data= data %>% 
            group_by(bin_fitted) %>% 
-           dplyr::summarise (mean_Term = mean(b_Term),
-                      mean_fitted =mean(fitted)),
-         aes(y=mean_Term,x=mean_fitted))+geom_point() +
-    labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+           dplyr::summarise (mean_versus = mean(versus),
+                             mean_fitted =mean(fitted)),
+         aes(y=mean_versus,x=mean_fitted))+geom_point() +
+    labs(title="Binned Fitted Linear Model", caption=caption)
 }
 
 
 
 binned_fitted_versus_SomeOpt_residuals<-function(model,bins=20){
-  
-  #Save this for a future GLM
-  # Term_data_01A<-data.frame(fitted=fitted(Term_01A),
-  #                        residuals=residuals(Term_01A),
-  #                        nTerm=Term_01A@frame$nTerm,
-  #                        cb_Comp=Term_01A@frame$cb_Comp
-  #                        )
-  
-  if(class(model)[1] %in% c("glmerMod","lmerMod"))
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      b_SomeOpt=model@frame$b_SomeOpt
-    )
-    
-  }
-  else
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      b_SomeOpt=model$model$b_SomeOpt
-    )
-  }
-  
-  data$bin_fitted<-bin_df(data,rank_col="fitted",bins=bins)
-  
-  data<-subset(data,!is.na(fitted) & !is.na(residuals) )
-  
-  ggplot(data= data %>% 
-           group_by(bin_fitted) %>% 
-           dplyr::summarise (mean_SomeOpt = mean(b_SomeOpt),
-                      mean_fitted =mean(fitted)),
-         aes(y=mean_SomeOpt,x=mean_fitted))+geom_point() +
-    labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+  warning("binned_fitted_versus_SomeOpt_residuals is deprecated. Use binned_fitted_residuals instead.")
+  binned_fitted_residuals(model,"b_SomeOpt",bins)
 }
 
 
 
 binned_fitted_versus_AllOpt_residuals<-function(model,bins=20){
-  
-  #Save this for a future GLM
-  # Term_data_01A<-data.frame(fitted=fitted(Term_01A),
-  #                        residuals=residuals(Term_01A),
-  #                        nTerm=Term_01A@frame$nTerm,
-  #                        cb_Comp=Term_01A@frame$cb_Comp
-  #                        )
-  
-  if(class(model)[1] %in% c("glmerMod","lmerMod"))
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      b_AllOpt=model@frame$b_AllOpt
-    )
-    
-  }
-  else
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      b_AllOpt=model$model$b_AllOpt
-    )
-  }
-  
-  data$bin_fitted<-bin_df(data,rank_col="fitted",bins=bins)
-  
-  data<-subset(data,!is.na(fitted) & !is.na(residuals) )
-  
-  ggplot(data= data %>% 
-           group_by(bin_fitted) %>% 
-           dplyr::summarise (mean_AllOpt = mean(b_AllOpt),
-                      mean_fitted =mean(fitted)),
-         aes(y=mean_AllOpt,x=mean_fitted))+geom_point() +
-    labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+  warning("binned_fitted_versus_AllOpt_residuals is deprecated. Use binned_fitted_residuals instead.")
+  binned_fitted_residuals(model,"b_AllOpt",bins)
 }
 
 
 binned_fitted_versus_lp_CBre_residuals<-function(model,bins=20){
-  
-  #Save this for a future GLM
-  # CBre_data_01A<-data.frame(fitted=fitted(CBre_01A),
-  #                        residuals=residuals(CBre_01A),
-  #                        nCBre=CBre_01A@frame$nCBre,
-  #                        cb_Comp=CBre_01A@frame$cb_Comp
-  #                        )
-  
-  if(class(model)[1] %in% c("glmerMod","lmerMod"))
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      lp_CBre=model@frame$lp_CBre
-    )
-    
-  }
-  else
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      lp_CBre=model$model$lp_CBre
-    )
-  }
-  
-  data$bin_fitted<-bin_df(data,rank_col="fitted",bins=bins)
-  
-  data<-subset(data,!is.na(fitted) & !is.na(residuals) )
-  
-  ggplot(data= data %>% 
-           group_by(bin_fitted) %>% 
-           dplyr::summarise (mean_CBre = mean(lp_CBre),
-                      mean_fitted =mean(fitted)),
-         aes(y=mean_CBre,x=mean_fitted))+geom_point() +
-    labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+  warning("binned_fitted_versus_lp_CBre_residuals is deprecated. Use binned_fitted_residuals instead.")
+  binned_fitted_residuals(model,"lp_CBre",bins)
 }
 
 
 binned_fitted_versus_ln_CBre_residuals<-function(model,bins=20){
-  
-  #Save this for a future GLM
-  # CBre_data_01A<-data.frame(fitted=fitted(CBre_01A),
-  #                        residuals=residuals(CBre_01A),
-  #                        nCBre=CBre_01A@frame$nCBre,
-  #                        cb_Comp=CBre_01A@frame$cb_Comp
-  #                        )
-  
-  if(class(model)[1] %in% c("glmerMod","lmerMod"))
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      ln_CBre=model@frame$ln_CBre
-    )
-    
-  }
-  else
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      ln_CBre=model$model$ln_CBre
-    )
-  }
-  
-  data$bin_fitted<-bin_df(data,rank_col="fitted",bins=bins)
-  
-  data<-subset(data,!is.na(fitted) & !is.na(residuals) )
-  
-  ggplot(data= data %>% 
-           group_by(bin_fitted) %>% 
-           dplyr::summarise (mean_CBre = mean(ln_CBre),
-                      mean_fitted =mean(fitted)),
-         aes(y=mean_CBre,x=mean_fitted))+geom_point() +
-    labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+  warning("binned_fitted_versus_ln_CBre_residuals is deprecated. Use binned_fitted_residuals instead.")
+  binned_fitted_residuals(model,"ln_CBre",bins)
 }
 
 binned_fitted_versus_residuals<-function(model,bins=20){
   if(class(model)[1] %in% c("glmerMod","lmerMod"))
   {
     if(!is.null(model@frame$b_CBre)){
-      graph<-binned_fitted_versus_cbre_residuals(model,bins)
+      graph<-binned_fitted_residuals(model,"b_CBre",bins)
     } else if(!is.null(model@frame$lp_CBre)){
-      graph<-binned_fitted_versus_lp_CBre_residuals(model,bins)
+      graph<-binned_fitted_residuals(model,"lp_CBre",bins)
     } else if(!is.null(model@frame$ln_CBre)){
-      graph<-binned_fitted_versus_ln_CBre_residuals(model,bins)
+      graph<-binned_fitted_residuals(model,"ln_CBre",bins)
     } else if(!is.null(model@frame$b_Term)){
-      graph<-binned_fitted_versus_term_residuals(model,bins)
+      graph<-binned_fitted_residuals(model,"b_Term",bins)
     } else if(!is.null(model@frame$b_SomeOpt)){
-      graph<-binned_fitted_versus_SomeOpt_residuals(model,bins)
+      graph<-binned_fitted_residuals(model,"b_SomeOpt",bins)
     } else if(!is.null(model@frame$b_AllOpt)){
-      graph<-binned_fitted_versus_AllOpt_residuals(model,bins)
-    } else if(!is.null(model@frame$l_Offr)){
+      graph<-binned_fitted_residuals(model,"b_AllOpt",bins)
+    } else if(any(c("l_Offr",
+                    "lp_OptGrowth",
+                    "ln_OptGrowth",
+                    "log(FYDP2_Actual + 1)",
+                    "log(FYDP2_ActCml + 1)"
+    ) %in% colnames(model@frame))){
       graph<-resid_plot(model,sample=25000)
-    } else if(!is.null(model@frame$lp_OptGrowth)){
-      graph<-resid_plot(model,sample=25000)  
-    } else if(!is.null(model@frame$ln_OptGrowth)){
-      graph<-resid_plot(model,sample=25000)  
     }
     else{stop("Outcome variable not recognized.")}
   }
   else
   {
     if(!is.null(model$model$b_CBre)){
-      graph<-binned_fitted_versus_cbre_residuals(model,bins)
+      graph<-binned_fitted_residuals(model,"b_CBre",bins)
     } else if(!is.null(model$model$lp_CBre)){
-      graph<-binned_fitted_versus_lp_CBre_residuals(model,bins)
+      graph<-binned_fitted_residuals(model,"lp_CBre",bins)
     } else if(!is.null(model$model$ln_CBre)){
-      graph<-binned_fitted_versus_ln_CBre_residuals(model,bins)
+      graph<-binned_fitted_residuals(model,"ln_CBre",bins)
     } else if(!is.null(model$model$b_Term)){
-      graph<-binned_fitted_versus_term_residuals(model,bins)
+      graph<-binned_fitted_residuals(model,"b_Term",bins)
     } else if(!is.null(model$model$b_SomeOpt)){
-      graph<-binned_fitted_versus_SomeOpt_residuals(model,bins)
+      graph<-binned_fitted_residuals(model,"b_SomeOpt",bins)
     } else if(!is.null(model$model$b_AllOpt)){
-      graph<-binned_fitted_versus_AllOpt_residuals(model,bins)
-    } else if(!is.null(model$model$l_Offr)){
-      graph<-resid_plot(model,sample=25000)
-    } else if(!is.null(model$model$lp_OptGrowth)){
-      graph<-resid_plot(model,sample=25000)  
-    } else if(!is.null(model$model$ln_OptGrowth)){
+      graph<-binned_fitted_residuals(model,"b_AllOpt",bins)
+    } else if(any(c("l_Offr",
+                    "lp_OptGrowth",
+                    "ln_OptGrowth",
+                    "log(FYDP2_Actual + 1)",
+                    "log(FYDP2_ActCml + 1)"
+                    ) %in% colnames(model$model))){
       graph<-resid_plot(model,sample=25000)  
     }
     else{stop("Outcome variable not recognized.")}
@@ -1494,13 +1336,13 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
                             resid_plot(model2_old,sample=25000),
                             resid_plot(model2_new,sample=25000),
                             ncol=2)
-    
+    else{
       gridExtra::grid.arrange(residuals_binned(model1_old,bins=bins),
                               residuals_binned(model1_new,bins=bins),
                               residuals_binned(model2_old,bins=bins),
                               residuals_binned(model2_new,bins=bins),
                               ncol=2)
-    
+    }
     
     
     # if("c_OffCri" %in% model_colnames(model1_new) & "c_OffCri" %in% model_colnames(model2_new)){
@@ -1551,16 +1393,17 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
                             ncol=2)
     
     if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old) &
-       !"b_SomeOpt" %in% model_colnames(model1_old) & !"b_AllOpt" %in% model_colnames(model1_old))
+       !"b_SomeOpt" %in% model_colnames(model1_old) & !"b_AllOpt" %in% model_colnames(model1_old)){
       
       gridExtra::grid.arrange(resid_plot(model1_old,sample=25000),
                               resid_plot(model1_new,sample=25000),
                               ncol=2)
-    
-    gridExtra::grid.arrange(residuals_binned(model1_old,bins=bins),
-                            residuals_binned(model1_new,bins=bins),
-                            ncol=2)
-    
+    }
+    else{
+      gridExtra::grid.arrange(residuals_binned(model1_old,bins=bins),
+                              residuals_binned(model1_new,bins=bins),
+                              ncol=2)
+    }
     
     # if("c_OffCri" %in% model_colnames(model1_new) & "c_OffCri" %in% model_colnames(model2_new)){
     # residual_compare(model1_old,model1_new,model2_old,model2_new,"c_OffCri","Office Crisis %",10)
@@ -2710,11 +2553,13 @@ get_coef_list<-function(limit=NULL){
                     "PB_OCO"="PB OCO ('18)",
                     
                     "log(FYDP2 + 1)"="log(FYDP2+1)",
+                    "log(FYDP2_Base + 1)"="log(FYDP2+1)",
                     
                     "MilDepArmy"="Army",
                     "MilDepAir Force"="Air Force",
                     "MilDepOther DoD"="Other DoD",
                     "log(Actual + 1)"="log(Actual+1)",
+                    "log(Actual_Total + 1)"="log(Actual_Total+1)",
                     "log(PB_Base + 1)"="log(PB Base+1)",
                     "log(PB_OCO + 1)"="log(PB OCO+1)",
                     
