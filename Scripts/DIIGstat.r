@@ -206,20 +206,36 @@ summary_double_continuous<-function(data,x_col,y_col,bins=20,metric="perform"){
                             
     )
   } else if (metric=="opt"){
-    gridExtra::grid.arrange(ggplot(data=data,
-                                   aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(b_SomeOpt~.)+
-                              labs(title="Distribution by Some Options",
-                                   caption="Source: FPDS, CSIS Analysis"),
+    # gridExtra::grid.arrange(
+      ggplot(data=data,
+                                   aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(FYDP2_ActCml>0~.)+
+                              labs(title="Distribution by FYDP2_ActCml>0>0s",
+                                   caption="Source: Justification Books, CSIS Analysis")#,
                             
                             
-                            #First a quick scatter plot for terminations by duration and ceiling
-                            ggplot(data=data %>% filter(b_SomeOpt==1),
-                                   aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(b_AllOpt~.)+
-                              labs(title="Distribution by All Options"),
-                            
-                            ncol=2
-    )
+    #                         #First a quick scatter plot for terminations by duration and ceiling
+    #                         ggplot(data=data %>% filter(b_SomeOpt==1),
+    #                                aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(b_AllOpt~.)+
+    #                           labs(title="Distribution by All Options"),
+    #                         
+    #                         ncol=2
+    # )
   #If none, nothing else to add.
+    }  else if (metric=="FYDP2_ActCml"){
+      gridExtra::grid.arrange(ggplot(data=data,
+                                     aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(b_SomeOpt~.)+
+                                labs(title="Distribution by Some Options",
+                                     caption="Source: FPDS, CSIS Analysis"),
+                              
+                              
+                              #First a quick scatter plot for terminations by duration and ceiling
+                              ggplot(data=data %>% filter(b_SomeOpt==1),
+                                     aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(b_AllOpt~.)+
+                                labs(title="Distribution by All Options"),
+                              
+                              ncol=2
+      )
+      #If none, nothing else to add.
     } else if (metric != "none") stop(paste("Unknown metric:",metric))
   
   
@@ -239,11 +255,14 @@ summary_discrete_plot<-function(data,x_col,group_col=NA,rotate_text=FALSE,metric
       output<-list(table(unlist(data[,x_col])),
                    table(unlist(data[,x_col]),data$b_SomeOpt),
                    table(unlist(data[,x_col]),data$b_AllOpt))
-    else
+    else if (metric=="perform")
       output<-list(table(unlist(data[,x_col])),
                    table(unlist(data[,x_col]),data$CBre),
                    table(unlist(data[,x_col]),data$Term))
-    
+    else if (metric=="FYDP2_ActCml")
+      output<-list(table(unlist(data[,x_col])),
+                   table(unlist(data[,x_col]),data$FYDP2_ActCml>0))
+    else (stop("Unknown Metric"))
     
   }
   else{
@@ -252,10 +271,14 @@ summary_discrete_plot<-function(data,x_col,group_col=NA,rotate_text=FALSE,metric
       output<-list(table(unlist(data[,x_col]),unlist(data[,group_col])),
                    table(unlist(data[,x_col]),unlist(data[,group_col]),data$b_SomeOpt),
                    table(unlist(data[,x_col]),unlist(data[,group_col]),data$b_AllOpt))  
-    else
-    output<-list(table(unlist(data[,x_col]),unlist(data[,group_col])),
+    else if (metric=="perform")
+      output<-list(table(unlist(data[,x_col]),unlist(data[,group_col])),
                  table(unlist(data[,x_col]),unlist(data[,group_col]),data$CBre),
                  table(unlist(data[,x_col]),unlist(data[,group_col]),data$Term))
+    else if (metric=="FYDP2_ActCml")
+      output<-list(table(unlist(data[,x_col]),unlist(data[,group_col])),
+                   table(unlist(data[,x_col]),unlist(data[,group_col]),data$FYDP2_ActCml>0))
+    else (stop("Unknown Metric"))
     
   }
   
@@ -465,6 +488,36 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
                     scatter_CBre)
       data$output<-factor(data$output,c("Breach Occured","Average Size (logged)","Breach Scatterplot (logged)"))  
     }
+    else if (metric=="FYDP2_ActCml"){
+      any<-data %>% summarise_ (   mean_y = "mean(FYDP2_ActCml>0)" 
+                                      , mean_x =  paste( "mean(" ,  x_col  ,")"  ))
+      spent<-data %>% summarise_ (    mean_y = "mean(log(FYDP2_ActCml+1))"
+                                       , mean_x =  paste( "mean(" ,  x_col  ,")"  ))
+      
+      
+      scatter_spend<-data[data$any==1,colnames(data) %in% c("FYDP2_ActCml",x_col)]
+      colnames(scatter_spend)[colnames(scatter_spend) %in% c("FYDP2_ActCml")]<-"mean_y"
+      colnames(scatter_spend)[colnames(scatter_spend)==x_col]<-"mean_x"
+      scatter_spend$bin_x<-0
+      
+      any$output<-"Any Spending"
+      spent$output<-"Spending (Logged and Incremented)"
+      
+      scatter_spend$output<-"Spending Scatterplot (logged)"
+      
+      #For the def_breach dataset, there are no unbreached contracts, making this graph unhelpful.
+      if(any(any$mean_y<1)) 
+        data<-rbind(any,any,any,any,
+                    spent,spent,spent,spent,
+                    scatter_CBre)
+      else
+        data<-rbind(spent,spent,spent,spent,
+                    scatter_spend)
+      data$output<-factor(data$output,c("Any Spending","Spending (Logged and Incremented)","Spending Scatterplot (logged)"))  
+
+
+      # data<-rbind(any,spent)
+    } 
     
     plot<-ggplot(data=data,
                  aes(y=mean_y,x=mean_x))+facet_grid(output~.,scales="free_y")
@@ -745,6 +798,15 @@ discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,rot
         data<-ln_CBre
       data$output<-factor(data$output,c("Breach Occured","Breach Size (logged)"))  
     }
+    else if (metric=="FYDP2_ActCml"){
+      any<-data %>% summarise_ (   mean_y = "mean(FYDP2_ActCml>0)"   )  
+      spent<-data %>% summarise_ (   mean_y = "mean(log(FYDP2_ActCml+1))"   )  
+      any$output<-"Any Spending"
+      spent$output<-"Spending (Logged and Incremented)"
+      data<-rbind(any,spent)
+      data$output<-factor(data$output,c("Any Spending","Spending (Logged and Incremented)"))  
+    }
+    else stop("Unrecognized metric")
     
     plot<-ggplot(data=data,
                  aes_string(y="mean_y",x=x_col))
@@ -784,7 +846,15 @@ discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,rot
         data<-ln_CBre
       data$output<-factor(data$output,c("Breach Occured","Breach Size (logged)"))  
     }
-    
+    else if (metric=="FYDP2_ActCml"){
+      any<-data %>% summarise_ (   mean_y = "mean(FYDP2_ActCml>0)"   )  
+      spent<-data %>% summarise_ (   mean_y = "mean(log(FYDP2_ActCml+1))"   )  
+      any$output<-"Any Spending"
+      spent$output<-"Spending (Logged and Incremented)"
+      data<-rbind(any,spent)
+      data$output<-factor(data$output,c("Any Spending","Spending (Logged and Incremented)"))  
+    }
+    else stop("Unrecognized metric")
     
     plot<-ggplot(data=data,
                  aes_string(y="mean_y",x=x_col))+
