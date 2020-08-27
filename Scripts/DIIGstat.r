@@ -206,20 +206,36 @@ summary_double_continuous<-function(data,x_col,y_col,bins=20,metric="perform"){
                             
     )
   } else if (metric=="opt"){
-    gridExtra::grid.arrange(ggplot(data=data,
-                                   aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(b_SomeOpt~.)+
-                              labs(title="Distribution by Some Options",
-                                   caption="Source: FPDS, CSIS Analysis"),
+    # gridExtra::grid.arrange(
+      ggplot(data=data,
+                                   aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(FYDP2_ActCml>0~.)+
+                              labs(title="Distribution by FYDP2_ActCml>0>0s",
+                                   caption="Source: Justification Books, CSIS Analysis")#,
                             
                             
-                            #First a quick scatter plot for terminations by duration and ceiling
-                            ggplot(data=data %>% filter(b_SomeOpt==1),
-                                   aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(b_AllOpt~.)+
-                              labs(title="Distribution by All Options"),
-                            
-                            ncol=2
-    )
+    #                         #First a quick scatter plot for terminations by duration and ceiling
+    #                         ggplot(data=data %>% filter(b_SomeOpt==1),
+    #                                aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(b_AllOpt~.)+
+    #                           labs(title="Distribution by All Options"),
+    #                         
+    #                         ncol=2
+    # )
   #If none, nothing else to add.
+    }  else if (metric=="FYDP2_ActCml"){
+      gridExtra::grid.arrange(ggplot(data=data,
+                                     aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(b_SomeOpt~.)+
+                                labs(title="Distribution by Some Options",
+                                     caption="Source: FPDS, CSIS Analysis"),
+                              
+                              
+                              #First a quick scatter plot for terminations by duration and ceiling
+                              ggplot(data=data %>% filter(b_SomeOpt==1),
+                                     aes_string(x=x_col,y=y_col))+geom_point(alpha=0.1)+facet_grid(b_AllOpt~.)+
+                                labs(title="Distribution by All Options"),
+                              
+                              ncol=2
+      )
+      #If none, nothing else to add.
     } else if (metric != "none") stop(paste("Unknown metric:",metric))
   
   
@@ -239,11 +255,14 @@ summary_discrete_plot<-function(data,x_col,group_col=NA,rotate_text=FALSE,metric
       output<-list(table(unlist(data[,x_col])),
                    table(unlist(data[,x_col]),data$b_SomeOpt),
                    table(unlist(data[,x_col]),data$b_AllOpt))
-    else
+    else if (metric=="perform")
       output<-list(table(unlist(data[,x_col])),
                    table(unlist(data[,x_col]),data$CBre),
                    table(unlist(data[,x_col]),data$Term))
-    
+    else if (metric=="FYDP2_ActCml")
+      output<-list(table(unlist(data[,x_col])),
+                   table(unlist(data[,x_col]),data$FYDP2_ActCml>0))
+    else (stop("Unknown Metric"))
     
   }
   else{
@@ -252,10 +271,14 @@ summary_discrete_plot<-function(data,x_col,group_col=NA,rotate_text=FALSE,metric
       output<-list(table(unlist(data[,x_col]),unlist(data[,group_col])),
                    table(unlist(data[,x_col]),unlist(data[,group_col]),data$b_SomeOpt),
                    table(unlist(data[,x_col]),unlist(data[,group_col]),data$b_AllOpt))  
-    else
-    output<-list(table(unlist(data[,x_col]),unlist(data[,group_col])),
+    else if (metric=="perform")
+      output<-list(table(unlist(data[,x_col]),unlist(data[,group_col])),
                  table(unlist(data[,x_col]),unlist(data[,group_col]),data$CBre),
                  table(unlist(data[,x_col]),unlist(data[,group_col]),data$Term))
+    else if (metric=="FYDP2_ActCml")
+      output<-list(table(unlist(data[,x_col]),unlist(data[,group_col])),
+                   table(unlist(data[,x_col]),unlist(data[,group_col]),data$FYDP2_ActCml>0))
+    else (stop("Unknown Metric"))
     
   }
   
@@ -465,6 +488,36 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
                     scatter_CBre)
       data$output<-factor(data$output,c("Breach Occured","Average Size (logged)","Breach Scatterplot (logged)"))  
     }
+    else if (metric=="FYDP2_ActCml"){
+      any<-data %>% summarise_ (   mean_y = "mean(FYDP2_ActCml>0)" 
+                                      , mean_x =  paste( "mean(" ,  x_col  ,")"  ))
+      spent<-data %>% summarise_ (    mean_y = "mean(log(FYDP2_ActCml+1))"
+                                       , mean_x =  paste( "mean(" ,  x_col  ,")"  ))
+      
+      
+      scatter_spend<-data[data$any==1,colnames(data) %in% c("FYDP2_ActCml",x_col)]
+      colnames(scatter_spend)[colnames(scatter_spend) %in% c("FYDP2_ActCml")]<-"mean_y"
+      colnames(scatter_spend)[colnames(scatter_spend)==x_col]<-"mean_x"
+      scatter_spend$bin_x<-0
+      
+      any$output<-"Any Spending"
+      spent$output<-"Spending (Logged and Incremented)"
+      
+      scatter_spend$output<-"Spending Scatterplot (logged)"
+      
+      #For the def_breach dataset, there are no unbreached contracts, making this graph unhelpful.
+      if(any(any$mean_y<1)) 
+        data<-rbind(any,any,any,any,
+                    spent,spent,spent,spent,
+                    scatter_CBre)
+      else
+        data<-rbind(spent,spent,spent,spent,
+                    scatter_spend)
+      data$output<-factor(data$output,c("Any Spending","Spending (Logged and Incremented)","Spending Scatterplot (logged)"))  
+
+
+      # data<-rbind(any,spent)
+    } 
     
     plot<-ggplot(data=data,
                  aes(y=mean_y,x=mean_x))+facet_grid(output~.,scales="free_y")
@@ -745,6 +798,15 @@ discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,rot
         data<-ln_CBre
       data$output<-factor(data$output,c("Breach Occured","Breach Size (logged)"))  
     }
+    else if (metric=="FYDP2_ActCml"){
+      any<-data %>% summarise_ (   mean_y = "mean(FYDP2_ActCml>0)"   )  
+      spent<-data %>% summarise_ (   mean_y = "mean(log(FYDP2_ActCml+1))"   )  
+      any$output<-"Any Spending"
+      spent$output<-"Spending (Logged and Incremented)"
+      data<-rbind(any,spent)
+      data$output<-factor(data$output,c("Any Spending","Spending (Logged and Incremented)"))  
+    }
+    else stop("Unrecognized metric")
     
     plot<-ggplot(data=data,
                  aes_string(y="mean_y",x=x_col))
@@ -784,7 +846,15 @@ discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,rot
         data<-ln_CBre
       data$output<-factor(data$output,c("Breach Occured","Breach Size (logged)"))  
     }
-    
+    else if (metric=="FYDP2_ActCml"){
+      any<-data %>% summarise_ (   mean_y = "mean(FYDP2_ActCml>0)"   )  
+      spent<-data %>% summarise_ (   mean_y = "mean(log(FYDP2_ActCml+1))"   )  
+      any$output<-"Any Spending"
+      spent$output<-"Spending (Logged and Incremented)"
+      data<-rbind(any,spent)
+      data$output<-factor(data$output,c("Any Spending","Spending (Logged and Incremented)"))  
+    }
+    else stop("Unrecognized metric")
     
     plot<-ggplot(data=data,
                  aes_string(y="mean_y",x=x_col))+
@@ -960,45 +1030,21 @@ resid_plot<-function(model,sample=NA){
 }
 
 binned_fitted_versus_cbre_residuals<-function(model,bins=20){
-  
-  #Save this for a future GLM
-  # CBre_data_01A<-data.frame(fitted=fitted(CBre_01A),
-  #                        residuals=residuals(CBre_01A),
-  #                        nCBre=CBre_01A@frame$nCBre,
-  #                        cb_Comp=CBre_01A@frame$cb_Comp
-  #                        )
-  
-  if(class(model)[1] %in% c("glmerMod","lmerMod"))
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      b_CBre=model@frame$b_CBre
-    )
-    
-  }
-  else
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      b_CBre=model$model$b_CBre
-    )
-  }
-  
-  data$bin_fitted<-bin_df(data,rank_col="fitted",bins=bins)
-  
-  data<-subset(data,!is.na(fitted) & !is.na(residuals) )
-  
-  ggplot(data= data %>% 
-           group_by(bin_fitted) %>% 
-           dplyr::summarise (mean_CBre = mean(b_CBre),
-                      mean_fitted =mean(fitted)),
-         aes(y=mean_CBre,x=mean_fitted))+geom_point() +
-    labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+  warning("binned_fitted_versus_cbre_residuals is deprecated. Use binned_fitted_residuals instead.")
+  binned_fitted_residuals(model,"b_CBre",bins)
 }
 
 binned_fitted_versus_term_residuals<-function(model,bins=20){
+  warning("binned_fitted_versus_term_residuals is deprecated. Use binned_fitted_residuals instead.")
+  binned_fitted_residuals(model,"b_Term",bins)
+}
+
+
+
+binned_fitted_residuals<-function(model,
+                                  versus_col,
+                                  bins=20,
+                                  caption="Source: FPDS, CSIS Analysis"){
   
   #Save this for a future GLM
   # Term_data_01A<-data.frame(fitted=fitted(Term_01A),
@@ -1012,7 +1058,7 @@ binned_fitted_versus_term_residuals<-function(model,bins=20){
     data <-data.frame(
       fitted=fitted(model),
       residuals=residuals(model),
-      b_Term=model@frame$b_Term
+      versus=model@frame[[versus_col]]
     )
     
   }
@@ -1021,7 +1067,7 @@ binned_fitted_versus_term_residuals<-function(model,bins=20){
     data <-data.frame(
       fitted=fitted(model),
       residuals=residuals(model),
-      b_Term=model$model$b_Term
+      versus=model$model[[versus_col]]
     )
   }
   
@@ -1031,217 +1077,83 @@ binned_fitted_versus_term_residuals<-function(model,bins=20){
   
   ggplot(data= data %>% 
            group_by(bin_fitted) %>% 
-           dplyr::summarise (mean_Term = mean(b_Term),
-                      mean_fitted =mean(fitted)),
-         aes(y=mean_Term,x=mean_fitted))+geom_point() +
-    labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+           dplyr::summarise (mean_versus = mean(versus),
+                             mean_fitted =mean(fitted)),
+         aes(y=mean_versus,x=mean_fitted))+geom_point() +
+    labs(title="Binned Fitted Linear Model", caption=caption)
 }
 
 
 
 binned_fitted_versus_SomeOpt_residuals<-function(model,bins=20){
-  
-  #Save this for a future GLM
-  # Term_data_01A<-data.frame(fitted=fitted(Term_01A),
-  #                        residuals=residuals(Term_01A),
-  #                        nTerm=Term_01A@frame$nTerm,
-  #                        cb_Comp=Term_01A@frame$cb_Comp
-  #                        )
-  
-  if(class(model)[1] %in% c("glmerMod","lmerMod"))
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      b_SomeOpt=model@frame$b_SomeOpt
-    )
-    
-  }
-  else
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      b_SomeOpt=model$model$b_SomeOpt
-    )
-  }
-  
-  data$bin_fitted<-bin_df(data,rank_col="fitted",bins=bins)
-  
-  data<-subset(data,!is.na(fitted) & !is.na(residuals) )
-  
-  ggplot(data= data %>% 
-           group_by(bin_fitted) %>% 
-           dplyr::summarise (mean_SomeOpt = mean(b_SomeOpt),
-                      mean_fitted =mean(fitted)),
-         aes(y=mean_SomeOpt,x=mean_fitted))+geom_point() +
-    labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+  warning("binned_fitted_versus_SomeOpt_residuals is deprecated. Use binned_fitted_residuals instead.")
+  binned_fitted_residuals(model,"b_SomeOpt",bins)
 }
 
 
 
 binned_fitted_versus_AllOpt_residuals<-function(model,bins=20){
-  
-  #Save this for a future GLM
-  # Term_data_01A<-data.frame(fitted=fitted(Term_01A),
-  #                        residuals=residuals(Term_01A),
-  #                        nTerm=Term_01A@frame$nTerm,
-  #                        cb_Comp=Term_01A@frame$cb_Comp
-  #                        )
-  
-  if(class(model)[1] %in% c("glmerMod","lmerMod"))
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      b_AllOpt=model@frame$b_AllOpt
-    )
-    
-  }
-  else
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      b_AllOpt=model$model$b_AllOpt
-    )
-  }
-  
-  data$bin_fitted<-bin_df(data,rank_col="fitted",bins=bins)
-  
-  data<-subset(data,!is.na(fitted) & !is.na(residuals) )
-  
-  ggplot(data= data %>% 
-           group_by(bin_fitted) %>% 
-           dplyr::summarise (mean_AllOpt = mean(b_AllOpt),
-                      mean_fitted =mean(fitted)),
-         aes(y=mean_AllOpt,x=mean_fitted))+geom_point() +
-    labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+  warning("binned_fitted_versus_AllOpt_residuals is deprecated. Use binned_fitted_residuals instead.")
+  binned_fitted_residuals(model,"b_AllOpt",bins)
 }
 
 
 binned_fitted_versus_lp_CBre_residuals<-function(model,bins=20){
-  
-  #Save this for a future GLM
-  # CBre_data_01A<-data.frame(fitted=fitted(CBre_01A),
-  #                        residuals=residuals(CBre_01A),
-  #                        nCBre=CBre_01A@frame$nCBre,
-  #                        cb_Comp=CBre_01A@frame$cb_Comp
-  #                        )
-  
-  if(class(model)[1] %in% c("glmerMod","lmerMod"))
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      lp_CBre=model@frame$lp_CBre
-    )
-    
-  }
-  else
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      lp_CBre=model$model$lp_CBre
-    )
-  }
-  
-  data$bin_fitted<-bin_df(data,rank_col="fitted",bins=bins)
-  
-  data<-subset(data,!is.na(fitted) & !is.na(residuals) )
-  
-  ggplot(data= data %>% 
-           group_by(bin_fitted) %>% 
-           dplyr::summarise (mean_CBre = mean(lp_CBre),
-                      mean_fitted =mean(fitted)),
-         aes(y=mean_CBre,x=mean_fitted))+geom_point() +
-    labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+  warning("binned_fitted_versus_lp_CBre_residuals is deprecated. Use binned_fitted_residuals instead.")
+  binned_fitted_residuals(model,"lp_CBre",bins)
 }
 
 
 binned_fitted_versus_ln_CBre_residuals<-function(model,bins=20){
-  
-  #Save this for a future GLM
-  # CBre_data_01A<-data.frame(fitted=fitted(CBre_01A),
-  #                        residuals=residuals(CBre_01A),
-  #                        nCBre=CBre_01A@frame$nCBre,
-  #                        cb_Comp=CBre_01A@frame$cb_Comp
-  #                        )
-  
-  if(class(model)[1] %in% c("glmerMod","lmerMod"))
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      ln_CBre=model@frame$ln_CBre
-    )
-    
-  }
-  else
-  {
-    data <-data.frame(
-      fitted=fitted(model),
-      residuals=residuals(model),
-      ln_CBre=model$model$ln_CBre
-    )
-  }
-  
-  data$bin_fitted<-bin_df(data,rank_col="fitted",bins=bins)
-  
-  data<-subset(data,!is.na(fitted) & !is.na(residuals) )
-  
-  ggplot(data= data %>% 
-           group_by(bin_fitted) %>% 
-           dplyr::summarise (mean_CBre = mean(ln_CBre),
-                      mean_fitted =mean(fitted)),
-         aes(y=mean_CBre,x=mean_fitted))+geom_point() +
-    labs(title="Binned Fitted Linear Model",           caption="Source: FPDS, CSIS Analysis")
+  warning("binned_fitted_versus_ln_CBre_residuals is deprecated. Use binned_fitted_residuals instead.")
+  binned_fitted_residuals(model,"ln_CBre",bins)
 }
 
 binned_fitted_versus_residuals<-function(model,bins=20){
   if(class(model)[1] %in% c("glmerMod","lmerMod"))
   {
     if(!is.null(model@frame$b_CBre)){
-      graph<-binned_fitted_versus_cbre_residuals(model,bins)
+      graph<-binned_fitted_residuals(model,"b_CBre",bins)
     } else if(!is.null(model@frame$lp_CBre)){
-      graph<-binned_fitted_versus_lp_CBre_residuals(model,bins)
+      graph<-binned_fitted_residuals(model,"lp_CBre",bins)
     } else if(!is.null(model@frame$ln_CBre)){
-      graph<-binned_fitted_versus_ln_CBre_residuals(model,bins)
+      graph<-binned_fitted_residuals(model,"ln_CBre",bins)
     } else if(!is.null(model@frame$b_Term)){
-      graph<-binned_fitted_versus_term_residuals(model,bins)
+      graph<-binned_fitted_residuals(model,"b_Term",bins)
     } else if(!is.null(model@frame$b_SomeOpt)){
-      graph<-binned_fitted_versus_SomeOpt_residuals(model,bins)
+      graph<-binned_fitted_residuals(model,"b_SomeOpt",bins)
     } else if(!is.null(model@frame$b_AllOpt)){
-      graph<-binned_fitted_versus_AllOpt_residuals(model,bins)
-    } else if(!is.null(model@frame$l_Offr)){
+      graph<-binned_fitted_residuals(model,"b_AllOpt",bins)
+    } else if(any(c("l_Offr",
+                    "lp_OptGrowth",
+                    "ln_OptGrowth",
+                    "log(FYDP2_Actual + 1)",
+                    "log(FYDP2_ActCml + 1)"
+    ) %in% colnames(model@frame))){
       graph<-resid_plot(model,sample=25000)
-    } else if(!is.null(model@frame$lp_OptGrowth)){
-      graph<-resid_plot(model,sample=25000)  
-    } else if(!is.null(model@frame$ln_OptGrowth)){
-      graph<-resid_plot(model,sample=25000)  
     }
     else{stop("Outcome variable not recognized.")}
   }
   else
   {
     if(!is.null(model$model$b_CBre)){
-      graph<-binned_fitted_versus_cbre_residuals(model,bins)
+      graph<-binned_fitted_residuals(model,"b_CBre",bins)
     } else if(!is.null(model$model$lp_CBre)){
-      graph<-binned_fitted_versus_lp_CBre_residuals(model,bins)
+      graph<-binned_fitted_residuals(model,"lp_CBre",bins)
     } else if(!is.null(model$model$ln_CBre)){
-      graph<-binned_fitted_versus_ln_CBre_residuals(model,bins)
+      graph<-binned_fitted_residuals(model,"ln_CBre",bins)
     } else if(!is.null(model$model$b_Term)){
-      graph<-binned_fitted_versus_term_residuals(model,bins)
+      graph<-binned_fitted_residuals(model,"b_Term",bins)
     } else if(!is.null(model$model$b_SomeOpt)){
-      graph<-binned_fitted_versus_SomeOpt_residuals(model,bins)
+      graph<-binned_fitted_residuals(model,"b_SomeOpt",bins)
     } else if(!is.null(model$model$b_AllOpt)){
-      graph<-binned_fitted_versus_AllOpt_residuals(model,bins)
-    } else if(!is.null(model$model$l_Offr)){
-      graph<-resid_plot(model,sample=25000)
-    } else if(!is.null(model$model$lp_OptGrowth)){
-      graph<-resid_plot(model,sample=25000)  
-    } else if(!is.null(model$model$ln_OptGrowth)){
+      graph<-binned_fitted_residuals(model,"b_AllOpt",bins)
+    } else if(any(c("l_Offr",
+                    "lp_OptGrowth",
+                    "ln_OptGrowth",
+                    "log(FYDP2_Actual + 1)",
+                    "log(FYDP2_ActCml + 1)"
+                    ) %in% colnames(model$model))){
       graph<-resid_plot(model,sample=25000)  
     }
     else{stop("Outcome variable not recognized.")}
@@ -1494,13 +1406,13 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
                             resid_plot(model2_old,sample=25000),
                             resid_plot(model2_new,sample=25000),
                             ncol=2)
-    
+    else{
       gridExtra::grid.arrange(residuals_binned(model1_old,bins=bins),
                               residuals_binned(model1_new,bins=bins),
                               residuals_binned(model2_old,bins=bins),
                               residuals_binned(model2_new,bins=bins),
                               ncol=2)
-    
+    }
     
     
     # if("c_OffCri" %in% model_colnames(model1_new) & "c_OffCri" %in% model_colnames(model2_new)){
@@ -1551,16 +1463,17 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
                             ncol=2)
     
     if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old) &
-       !"b_SomeOpt" %in% model_colnames(model1_old) & !"b_AllOpt" %in% model_colnames(model1_old))
+       !"b_SomeOpt" %in% model_colnames(model1_old) & !"b_AllOpt" %in% model_colnames(model1_old)){
       
       gridExtra::grid.arrange(resid_plot(model1_old,sample=25000),
                               resid_plot(model1_new,sample=25000),
                               ncol=2)
-    
-    gridExtra::grid.arrange(residuals_binned(model1_old,bins=bins),
-                            residuals_binned(model1_new,bins=bins),
-                            ncol=2)
-    
+    }
+    else{
+      gridExtra::grid.arrange(residuals_binned(model1_old,bins=bins),
+                              residuals_binned(model1_new,bins=bins),
+                              ncol=2)
+    }
     
     # if("c_OffCri" %in% model_colnames(model1_new) & "c_OffCri" %in% model_colnames(model2_new)){
     # residual_compare(model1_old,model1_new,model2_old,model2_new,"c_OffCri","Office Crisis %",10)
@@ -1905,12 +1818,15 @@ verify_transform<-function(x,
 
 contract_transform_verify<-function(contract,just_check_na=FALSE,dollars_suffix="OMB20_GDP18",unlogged_ratio=FALSE){
   #Outcome
-  if(dollars_suffix=="Then_Year")
-    verify_transform(contract,paste("n_CBre",dollars_suffix,sep="_"),
-                     paste("ln_CBre",dollars_suffix,sep="_"),rescale=FALSE)
-  else
-    verify_transform(contract,paste("n_CBre",dollars_suffix,sep="_"),
-                     "ln_CBre",rescale=FALSE)
+  if("n_Cbre" %in% colnames(contract)){
+    if(dollars_suffix=="Then_Year")
+      verify_transform(contract,paste("n_CBre",dollars_suffix,sep="_"),
+                       paste("ln_CBre",dollars_suffix,sep="_"),rescale=FALSE)
+    else
+      verify_transform(contract,paste("n_CBre",dollars_suffix,sep="_"),
+                       "ln_CBre",rescale=FALSE)
+  }
+  else warning("No n_Cbre in dataset")
   #Scope
   if(dollars_suffix=="Then_Year" & paste("cln_Base",dollars_suffix,sep="_") %in% colnames(contract))
     verify_transform(contract,paste("UnmodifiedBase",dollars_suffix,sep="_"),
@@ -2047,7 +1963,7 @@ statsummary_continuous <- function(x,
   continuous_Info$aboveMax[continuous_Info$Max < continuous_Info$`1 unit above`] <- "*"
   continuous_Info$belowMin[continuous_Info$Min > continuous_Info$`1 unit below`] <- "*"
   # editing percentage values
-  continuous_Info[,8:9] <- lapply(continuous_Info[,8:9], function(x) percent(x))#, accuracy = .01))
+  continuous_Info[,8:9] <- lapply(continuous_Info[,8:9], function(x) percent(x, accuracy = .01))
   continuous_Info[,2:7] <- lapply(continuous_Info[,2:7], function(x) comma_format(accuracy = 10^-digits)(x))#big.mark = ',',
   continuous_Info$`% of Obligations to NA records`[continuous_Info$`% of Obligations to NA records`=="NA%"] <- NA
   
@@ -2341,7 +2257,99 @@ swr <- function(string, nwrap=20) {
 swr <- Vectorize(swr)
 
 
-
+transition_variable_names_common<-function(contract){
+  for(i in 1:ncol(contract)){
+    if(is.character(contract[,i])){
+      print(colnames(contract)[i])
+      contract[,i]<-factor(contract[,i])
+    } 
+  }
+  
+  #Dropping Redundant
+  contract<-contract[,!colnames(contract) %in% c( "UnmodifiedNumberOfOffersSummary",
+                                                  "SizeOfUnmodifiedContractBaseAndAll" 
+  )]
+  
+      
+  
+  contract<-contract[,!colnames(contract) %in% c("n_Comp","cb_Comp",
+                                                 "cn_Offr","cl_Offr",
+                                                 "nq_Offr","NAICS5",
+                                                 "NAICS4","SteadyScopeOptionGrowthAlone" ,
+                                                 "SteadyScopeOptionGrowthMixed",
+                                                 "ChangeOrderCeilingGrowth",
+                                                 "SteadyScopeOptionRescision",
+                                                 "AdminOptionModification",
+                                                 "ChangeOrderOptionModification",
+                                                 "EndingOptionModification",
+                                                 "OtherOptionModification", "override_unmodified_ceiling",
+                                                 "override_unmodified_base",
+                                                 "override_change_order_growth",
+                                                 "override_exercised_growth",
+                                                 "j_Term",
+                                                 "j_CBre",
+                                                 "ln_CBre_Then_Year",
+                                                 "n_Fixed",
+                                                 "n_Incent",
+                                                 "n_Nofee",
+                                                 "UnmodifiedYearsFloat",
+                                                 "b_ODoD",
+                                                 "ODoD"
+  )]
+  
+  contract<-contract[,!colnames(contract) %in% c( "l_US6_avg_sal_lag1Const",
+                                                  "l_def6_obl_lag1Const" ,
+                                                  "l_def3_obl_lag1Const",
+                                                  # "capped_def6_ratio_lag1"  ,
+                                                  # "capped_def3_ratio_lag1"  ,
+                                                  "lp_OptGrowth",
+                                                  "capped_cl_Days",
+                                                  "lp_CBre" 
+  )]
+  
+  
+  if("cln_days" %in% colnames(contract))
+    contract<-contract[,!colnames(contract) %in% c("capped_cl_Days")]
+  
+  if("Agency" %in% colnames(contract))
+    contract<-contract[,!colnames(contract) %in% c("AgencyID")]
+  
+  
+  if("ProductServiceOrRnDarea" %in% colnames(contract))
+    contract<-contract[,!colnames(contract) %in% c("ProductsCategory",#"ProductOrServiceArea",
+                                                   "ServicesCategory", "ProductOrServiceCode1L", "ProductOrServiceCode2L", "ProductOrServiceCode2R", 
+                                                   "ProductOrServiceCode1L1R", #"Simple", "HostNation3Category",
+                                                   "Unseperated", "IsService", 
+                                                   "IsCatchAllCode", "DoDportfolioGroup", "DoDportfolio", "DoDportfolioCategory", 
+                                                   "DoDportfolioSubCategory", "PlatformPortfolio", "isRnD1to5", "PBLscore", 
+                                                   "IsPossibleReclassification", "IsPossibleSoftwareEngineering", "RnD_BudgetActivity", 
+                                                   "ProductServiceOrRnDarea", "CanadaSector", "VAPortfolio", "ServArea", "IsRnDdefenseSystem", 
+                                                   "Level1_Code", "Level1_Category", "Level2_Code", "Level2_Category" #"CrisisProductOrServiceArea",
+    )]
+  
+  
+  if("Office" %in% colnames(contract))  
+    contract<-contract[,!colnames(contract) %in% c(#"DepartmentID", "AgencyID", "ContractingOfficeName", 
+      "StartDate", "EndDate", "AddressLine1", "AddressLine2", 
+      "AddressLine3", "AddressCity", "AddressState", "ZipCode", 
+      "CountryCode", "Depot", "FISC", "TFBSOrelated",
+      "CSIScreatedDate", "CSISmodifieddDate", "OCOcrisisScore"
+    )
+    ]
+  
+  if("Veh" %in% colnames(contract))
+    contract<-contract[,!colnames(contract) %in% c("SIDV","MIDV","FSSGWAC","BPABOA")]
+  
+  #Text search, note we need the if any because if no results, then it gets rid of all columns
+  if(any(grep("def[2,4-5]",colnames(contract))))
+    contract<-contract[,-grep("def[2,4-5]",colnames(contract))]
+  if(any(grep("US[2,4-5]",colnames(contract))))
+    contract<-contract[,-grep("US[2,4-5]",colnames(contract))]
+  
+  
+  if(any(duplicated(colnames(contract)))) stop("Duplicate Contract Name")
+  contract
+}
 
 transition_variable_names_service<-function(contract){
   
@@ -2401,49 +2409,7 @@ transition_variable_names_service<-function(contract){
 }
 
 transition_variable_names_FMS<-function(contract){
-  #Dropping Redundant
-  
-  for(i in 1:ncol(contract)){
-    if(is.character(contract[,i])){
-      print(colnames(contract)[i])
-      contract[,i]<-factor(contract[,i])
-    } 
-  }
-  
-  contract<-contract[,!colnames(contract) %in% c("n_Comp","cb_Comp",
-                                                 "cn_Offr","cl_Offr",
-                                                 "nq_Offr","NAICS5",
-                                                 "NAICS4","SteadyScopeOptionGrowthAlone" ,
-                                                 "SteadyScopeOptionGrowthMixed",
-                                                 "ChangeOrderCeilingGrowth",
-                                                 "SteadyScopeOptionRescision",
-                                                 "AdminOptionModification",
-                                                 "ChangeOrderOptionModification",
-                                                 "EndingOptionModification",
-                                                 "OtherOptionModification", "override_unmodified_ceiling",
-                                                 "override_unmodified_base",
-                                                 "override_change_order_growth",
-                                                 "override_exercised_growth",
-                                                 "j_Term",
-                                                 "j_CBre",
-                                                 "ln_CBre_Then_Year",
-                                                 "n_Fixed",
-                                                 "n_Incent",
-                                                 "n_Nofee",
-                                                 "UnmodifiedYearsFloat",
-                                                 "b_ODoD",
-                                                 "ODoD"
-                                                 )]
-  
-  contract<-contract[,!colnames(contract) %in% c( "l_US6_avg_sal_lag1Const",
-                                                  "l_def6_obl_lag1Const" ,
-                                                  "l_def3_obl_lag1Const",
-                                                  # "capped_def6_ratio_lag1"  ,
-                                                  # "capped_def3_ratio_lag1"  ,
-                                                  "lp_OptGrowth",
-                                                  "capped_cl_Days",
-                                                  "lp_CBre" 
-  )]
+  contract<-transition_variable_names_common(contract)
   
   #Services variables not using
   contract<-contract[,!colnames(contract) %in% c( "office_PBSCobligated_1year",
@@ -2459,44 +2425,6 @@ transition_variable_names_FMS<-function(contract){
   )]
   
                                            
-  
-  if("cln_days" %in% colnames(contract))
-    contract<-contract[,!colnames(contract) %in% c("capped_cl_Days")]
-  
-  if("Agency" %in% colnames(contract))
-    contract<-contract[,!colnames(contract) %in% c("AgencyID")]
-  
-  
-  if("ProductServiceOrRnDarea" %in% colnames(contract))
-    contract<-contract[,!colnames(contract) %in% c("ProductsCategory",#"ProductOrServiceArea",
-                                              "ServicesCategory", "ProductOrServiceCode1L", "ProductOrServiceCode2L", "ProductOrServiceCode2R", 
-                                              "ProductOrServiceCode1L1R", #"Simple", "HostNation3Category",
-                                              "Unseperated", "IsService", 
-                                              "IsCatchAllCode", "DoDportfolioGroup", "DoDportfolio", "DoDportfolioCategory", 
-                                              "DoDportfolioSubCategory", "PlatformPortfolio", "isRnD1to5", "PBLscore", 
-                                              "IsPossibleReclassification", "IsPossibleSoftwareEngineering", "RnD_BudgetActivity", 
-                                              "ProductServiceOrRnDarea", "CanadaSector", "VAPortfolio", "ServArea", "IsRnDdefenseSystem", 
-                                              "Level1_Code", "Level1_Category", "Level2_Code", "Level2_Category" #"CrisisProductOrServiceArea",
-                                              )]
-  
-  
-  if("Office" %in% colnames(contract))  
-    contract<-contract[,!colnames(contract) %in% c(#"DepartmentID", "AgencyID", "ContractingOfficeName", 
-                                              "StartDate", "EndDate", "AddressLine1", "AddressLine2", 
-                                              "AddressLine3", "AddressCity", "AddressState", "ZipCode", 
-                                              "CountryCode", "Depot", "FISC", "TFBSOrelated",
-                                              "CSIScreatedDate", "CSISmodifieddDate", "OCOcrisisScore"
-                                              )
-                         ]
-  
-  if("Veh" %in% colnames(contract))
-    contract<-contract[,!colnames(contract) %in% c("SIDV","MIDV","FSSGWAC","BPABOA")]
-  
-  #Text search, note we need the if any because if no results, then it gets rid of all columns
-  if(any(grep("def[2,4-5]",colnames(contract))))
-     contract<-contract[,-grep("def[2,4-5]",colnames(contract))]
-  if(any(grep("US[2,4-5]",colnames(contract))))
-    contract<-contract[,-grep("US[2,4-5]",colnames(contract))]
   
   #Using new naming scheme
   
@@ -2534,7 +2462,6 @@ transition_variable_names_FMS<-function(contract){
     colnames(contract)[colnames(contract)=="CrisisProductOrServiceArea"]<-"ServArea"
     colnames(contract)[colnames(contract)=="PlaceCountryISO3"]<-"Place"
     
-    if(any(duplicated(colnames(contract)))) stop("Duplicate Contract Name")
     
     
     #Picking versions of variabls for this model
@@ -2554,6 +2481,8 @@ transition_variable_names_FMS<-function(contract){
       contract<-contract[,!colnames(contract) %in% c("Pricing")]
       colnames(contract)[colnames(contract)=="PricingUCA"]<-"Pricing"
     }
+    
+    if(any(duplicated(colnames(contract)))) stop("Duplicate Contract Name")
   
   contract
 }
@@ -2694,11 +2623,13 @@ get_coef_list<-function(limit=NULL){
                     "PB_OCO"="PB OCO ('18)",
                     
                     "log(FYDP2 + 1)"="log(FYDP2+1)",
+                    "log(FYDP2_Base + 1)"="log(FYDP2+1)",
                     
                     "MilDepArmy"="Army",
                     "MilDepAir Force"="Air Force",
                     "MilDepOther DoD"="Other DoD",
                     "log(Actual + 1)"="log(Actual+1)",
+                    "log(Actual_Total + 1)"="log(Actual_Total+1)",
                     "log(PB_Base + 1)"="log(PB Base+1)",
                     "log(PB_OCO + 1)"="log(PB OCO+1)",
                     
