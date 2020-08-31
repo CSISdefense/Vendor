@@ -163,11 +163,17 @@ freq_discrete_plot<-function(data,x_col,
 }
 
 
-summary_continuous_plot<-function(data,x_col,group_col=NA,bins=20,metric="perform", log=FALSE){
+summary_continuous_plot<-function(data,x_col,
+                                  group_col=NA,bins=20,
+                                  metric="perform", 
+                                  log=FALSE,plus1=FALSE){
   if(metric!="none")
-    gridExtra::grid.arrange(freq_continuous_plot(data,x_col,group_col,bins=bins,caption=FALSE,log),
-                          binned_percent_plot(data,x_col=x_col,group_col=group_col,bins=bins,caption=TRUE,metric=metric,log=log))
-  else freq_continuous_plot(data,x_col,group_col,bins=bins,caption=FALSE)
+    gridExtra::grid.arrange(freq_continuous_plot(data,x_col,group_col,bins=bins,
+                                                 caption=FALSE,log=log,plus1=plus1),
+                          binned_percent_plot(data,x_col=x_col,group_col=group_col,bins=bins,caption=TRUE,metric=metric,
+                                              log=log,plus1=plus1))
+  else freq_continuous_plot(data,x_col,group_col,bins=bins,caption=FALSE,
+                            log=log,plus1=plus1)
   
 }
 
@@ -427,7 +433,8 @@ freq_continuous_cbre_plot<-function(data,x_col,group_col=NA,bins=20,
 }
 
 
-binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metric="perform",log=FALSE){
+binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metric="perform",
+                              log=FALSE,plus1=FALSE){
   data<-data[!is.na(data[,x_col]),]
   if(is.na(group_col)){
     data$bin_x<-bin_df(data,x_col,bins=bins)
@@ -800,17 +807,18 @@ discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,rot
     }
     else if (metric=="FYDP2_ActCml"){
       any<-data %>% summarise_ (   mean_y = "mean(FYDP2_ActCml>0)"   )  
-      spent<-data %>% summarise_ (   mean_y = "mean(log(FYDP2_ActCml+1))"   )  
+      spent<-data %>% dplyr::filter(FYDP2_ActCml>0) %>% summarise_ (   mean_y = "mean(log(FYDP2_ActCml+1))"   )  
       any$output<-"Any Spending"
-      spent$output<-"Spending (Logged and Incremented)"
+      spent$output<-"Log(Spending+1)\nGiven any Spending"
       data<-rbind(any,spent)
-      data$output<-factor(data$output,c("Any Spending","Spending (Logged and Incremented)"))  
+      data$output<-factor(data$output,c("Any Spending","Log(Spending+1)\nGiven any Spending"))  
     }
     else stop("Unrecognized metric")
     
     plot<-ggplot(data=data,
                  aes_string(y="mean_y",x=x_col))
-    if (metric=="cbre") plot<-plot+facet_grid(output~.,scales="free_y")
+    #Metrics 
+    if (metric %in% c("cbre","FYDP2_ActCml")) plot<-plot+facet_wrap(output~.,scales="free")
     else plot<-plot+facet_wrap(~output)
   }
   else{
