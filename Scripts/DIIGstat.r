@@ -1184,6 +1184,7 @@ binned_fitted_versus_residuals<-function(model,bins=20){
     } else if(!is.null(model@frame$b_AllOpt)){
       graph<-binned_fitted_residuals(model,"b_AllOpt",bins)
     } else if(!is.null(model@frame$b_FYDP2_ActCml)){
+      graph<-binned_fitted_residuals(model,"b_FYDP2_ActCml",bins)
     } else if(any(c("l_Offr",
                     "lp_OptGrowth",
                     "ln_OptGrowth",
@@ -1289,8 +1290,6 @@ residuals_binned<-function(model,col="fitted",bins=40){
   {
     if(!is.null(model@frame$b_CBre)){
       data$outcome<-model@frame$b_CBre
-      data<-binned.resids (data[,col],
-                           data$fitted-data$outcome, nclass=bins)$binned
     } else if(!is.null(model@frame$b_Term)){
       data$outcome<-model@frame$b_Term
       data<-binned.resids (data[,col],
@@ -1303,6 +1302,10 @@ residuals_binned<-function(model,col="fitted",bins=40){
       data$outcome<-model@frame$b_AllOpt
       data<-binned.resids (data[,col],
                            data$fitted-data$outcome, nclass=bins)$binned
+    } else if(!is.null(model@frame$b_FYDP2_ActCml)){
+      data$outcome<-model@frame$b_FYDP2_ActCml
+      data<-binned.resids(data[,col],
+                          data$fitted-data$outcome, nclass=bins)$binned
       
     } else if(!is.null(model@frame$lp_CBre)){
       data$outcome<-model@frame$lp_CBre
@@ -1326,6 +1329,7 @@ residuals_binned<-function(model,col="fitted",bins=40){
                           data$residuals, nclass=bins)$binned
     } 
     else{stop("Outcome variable not recognized.")}
+    
   }
   else
   {
