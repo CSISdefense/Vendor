@@ -1183,6 +1183,7 @@ binned_fitted_versus_residuals<-function(model,bins=20){
       graph<-binned_fitted_residuals(model,"b_SomeOpt",bins)
     } else if(!is.null(model@frame$b_AllOpt)){
       graph<-binned_fitted_residuals(model,"b_AllOpt",bins)
+    } else if(!is.null(model@frame$b_FYDP2_ActCml)){
     } else if(any(c("l_Offr",
                     "lp_OptGrowth",
                     "ln_OptGrowth",
@@ -1207,6 +1208,8 @@ binned_fitted_versus_residuals<-function(model,bins=20){
       graph<-binned_fitted_residuals(model,"b_SomeOpt",bins)
     } else if(!is.null(model$model$b_AllOpt)){
       graph<-binned_fitted_residuals(model,"b_AllOpt",bins)
+    } else if(!is.null(model$model$b_FYDP2_ActCml)){
+      graph<-binned_fitted_residuals(model,"b_FYDP2_ActCml",bins)
     } else if(any(c("l_Offr",
                     "lp_OptGrowth",
                     "ln_OptGrowth",
@@ -1459,7 +1462,9 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
     #This only works once you have some continuous variables or set a small bin count
     
     if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old) &
-       !"b_SomeOpt" %in% model_colnames(model1_old) & !"b_AllOpt" %in% model_colnames(model1_old))
+       !"b_SomeOpt" %in% model_colnames(model1_old) & !"b_AllOpt" %in% model_colnames(model1_old) & 
+       !"b_FYDP2_ActCml" %in% model_colnames(model1_old)
+       )
     gridExtra::grid.arrange(resid_plot(model1_old,sample=25000),
                             resid_plot(model1_new,sample=25000),
                             resid_plot(model2_old,sample=25000),
@@ -1522,8 +1527,9 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
                             ncol=2)
     
     if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old) &
-       !"b_SomeOpt" %in% model_colnames(model1_old) & !"b_AllOpt" %in% model_colnames(model1_old)){
-      
+       !"b_SomeOpt" %in% model_colnames(model1_old) & !"b_AllOpt" %in% model_colnames(model1_old) & 
+       !"b_FYDP2_ActCml" %in% model_colnames(model1_old)
+    ){
       gridExtra::grid.arrange(resid_plot(model1_old,sample=25000),
                               resid_plot(model1_new,sample=25000),
                               ncol=2)
