@@ -163,11 +163,17 @@ freq_discrete_plot<-function(data,x_col,
 }
 
 
-summary_continuous_plot<-function(data,x_col,group_col=NA,bins=20,metric="perform", log=FALSE){
+summary_continuous_plot<-function(data,x_col,
+                                  group_col=NA,bins=20,
+                                  metric="perform", 
+                                  log=FALSE,plus1=FALSE){
   if(metric!="none")
-    gridExtra::grid.arrange(freq_continuous_plot(data,x_col,group_col,bins=bins,caption=FALSE,log),
-                          binned_percent_plot(data,x_col=x_col,group_col=group_col,bins=bins,caption=TRUE,metric=metric,log=log))
-  else freq_continuous_plot(data,x_col,group_col,bins=bins,caption=FALSE)
+    gridExtra::grid.arrange(freq_continuous_plot(data,x_col,group_col,bins=bins,
+                                                 caption=FALSE,log=log,plus1=plus1),
+                          binned_percent_plot(data,x_col=x_col,group_col=group_col,bins=bins,caption=TRUE,metric=metric,
+                                              log=log,plus1=plus1))
+  else freq_continuous_plot(data,x_col,group_col,bins=bins,caption=FALSE,
+                            log=log,plus1=plus1)
   
 }
 
@@ -427,8 +433,16 @@ freq_continuous_cbre_plot<-function(data,x_col,group_col=NA,bins=20,
 }
 
 
-binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metric="perform",log=FALSE){
+binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metric="perform",
+                              log=FALSE,plus1=FALSE){
   data<-data[!is.na(data[,x_col]),]
+  
+  #Increment by one if +1 is true. This is intended for variables we log that are sometimes 0.
+  if(plus1 & !log) stop("plus1 is intended for those situations when log=TRUE")
+  else if(plus1) data[,x_col]<-data[,x_col]+1
+  
+  
+  
   if(is.na(group_col)){
     data$bin_x<-bin_df(data,x_col,bins=bins)
     data<-data %>% group_by(bin_x)
@@ -474,7 +488,7 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
       scatter_CBre<-data[data$b_CBre==1,colnames(data) %in% c("ln_CBre","ln_CBre_OMB20_GDP18",x_col)]
       colnames(scatter_CBre)[colnames(scatter_CBre) %in% c("ln_CBre","ln_CBre_OMB20_GDP18")]<-"mean_y"
       colnames(scatter_CBre)[colnames(scatter_CBre)==x_col]<-"mean_x"
-      scatter_CBre$bin_x<-0
+      scatter_CBre$bin_x<-NA
       b_CBre$output<-"Breach Occured"
       ln_CBre$output<-"Average Size (logged)"
       scatter_CBre$output<-"Breach Scatterplot (logged)"
@@ -489,38 +503,43 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
       data$output<-factor(data$output,c("Breach Occured","Average Size (logged)","Breach Scatterplot (logged)"))  
     }
     else if (metric=="FYDP2_ActCml"){
+      
       any<-data %>% summarise_ (   mean_y = "mean(FYDP2_ActCml>0)" 
                                       , mean_x =  paste( "mean(" ,  x_col  ,")"  ))
       spent<-data %>% summarise_ (    mean_y = "mean(log(FYDP2_ActCml+1))"
                                        , mean_x =  paste( "mean(" ,  x_col  ,")"  ))
       
       
-      scatter_spend<-data[data$any==1,colnames(data) %in% c("FYDP2_ActCml",x_col)]
+      scatter_spend<-data[data$FYDP2_ActCml>0,colnames(data) %in% c("FYDP2_ActCml",x_col)]
       colnames(scatter_spend)[colnames(scatter_spend) %in% c("FYDP2_ActCml")]<-"mean_y"
+      #We can't just apply a logarithmic filter to the y_scale because we want 
+      #An alternate way to do this would just be to do the scatter seperately as it's 
+      #not really a binned_percent_plot. Though that loses the common x_scale
+      scatter_spend$mean_y<-log(scatter_spend$mean_y+1)
       colnames(scatter_spend)[colnames(scatter_spend)==x_col]<-"mean_x"
-      scatter_spend$bin_x<-0
+      
+      scatter_spend$bin_x<-NA
       
       any$output<-"Any Spending"
       spent$output<-"Spending (Logged and Incremented)"
       
       scatter_spend$output<-"Spending Scatterplot (logged)"
       
-      #For the def_breach dataset, there are no unbreached contracts, making this graph unhelpful.
+      #This graph is only helpful if there are any zero
       if(any(any$mean_y<1)) 
         data<-rbind(any,any,any,any,
-                    spent,spent,spent,spent,
-                    scatter_CBre)
-      else
-        data<-rbind(spent,spent,spent,spent,
+                    # spent,spent,spent,spent,
                     scatter_spend)
+      else
+        data<-#rbind(spent,spent,spent,spent,
       data$output<-factor(data$output,c("Any Spending","Spending (Logged and Incremented)","Spending Scatterplot (logged)"))  
 
 
       # data<-rbind(any,spent)
-    } 
+    } else (stop(paste("Unrecognized metric:",metric)))
     
     plot<-ggplot(data=data,
-                 aes(y=mean_y,x=mean_x))+facet_grid(output~.,scales="free_y")
+                 aes(y=mean_y,x=mean_x))+facet_wrap(output~.,scales="free_y",ncol=1)
   }
   else{
     data<-data[!is.na(data[,group_col]),]
@@ -561,7 +580,7 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
       b_CBre<-as.data.frame(b_CBre)
       ln_CBre<-as.data.frame(ln_CBre)
       scatter_CBre<-as.data.frame(scatter_CBre)
-      scatter_CBre$bin_x<-0
+      scatter_CBre$bin_x<-NA
       b_CBre$output<-"Breach Occured"
       ln_CBre$output<-"Average Size (logged)"
       scatter_CBre$output<-"Breach Scatterplot (logged)"
@@ -573,7 +592,42 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
         data<-rbind(ln_CBre,ln_CBre,ln_CBre,ln_CBre,
                     scatter_CBre)
       data$output<-factor(data$output,c("Breach Occured","Average Size (logged)","Breach Scatterplot (logged)"))  
-    }
+      } else if (metric=="FYDP2_ActCml"){
+        
+        any<-data %>% summarise_ (   mean_y = "mean(FYDP2_ActCml>0)" 
+                                     , mean_x =  paste( "mean(" ,  x_col  ,")"  ))
+        spent<-data %>% summarise_ (    mean_y = "mean(log(FYDP2_ActCml+1))"
+                                        , mean_x =  paste( "mean(" ,  x_col  ,")"  ))
+        
+        
+        scatter_spend<-data[data$FYDP2_ActCml>0,colnames(data) %in% c("FYDP2_ActCml",x_col,group_col)]
+        colnames(scatter_spend)[colnames(scatter_spend) %in% c("FYDP2_ActCml")]<-"mean_y"
+        #We can't just apply a logarithmic filter to the y_scale because we want 
+        #An alternate way to do this would just be to do the scatter seperately as it's 
+        #not really a binned_percent_plot. Though that loses the common x_scale
+        scatter_spend$mean_y<-log(scatter_spend$mean_y+1)
+        colnames(scatter_spend)[colnames(scatter_spend)==x_col]<-"mean_x"
+        
+        scatter_spend$bin_x<-NA
+        
+        any$output<-"Any Spending"
+        spent$output<-"Spending (Logged and Incremented)"
+        
+        scatter_spend$output<-"Spending Scatterplot (logged)"
+        
+        #This graph is only helpful if there are any zero
+        if(any(any$mean_y<1)) 
+          data<-rbind(any,any,any,any,
+                      # spent,spent,spent,spent,
+                      scatter_spend)
+        else
+          data<-#rbind(spent,spent,spent,spent,
+                      scatter_spend#)
+        data$output<-factor(data$output,c("Any Spending","Spending (Logged and Incremented)","Spending Scatterplot (logged)"))  
+        
+        
+        # data<-rbind(any,spent)
+      } else (stop(paste("Unrecognized metric:",metric)))
     
     plot<-ggplot(data=data,
                  aes(y=mean_y,x=mean_x))+
@@ -637,6 +691,9 @@ binned_double_percent_plot<-function(data,x_col,y_col,bins=20,caption=TRUE,metri
 
 
 binned_percent_term_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE){
+  warning("deprecating this, use binned_percent_plot")
+  binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metric="perform",
+                                log=FALSE,plus1=FALSE)
   data<-data[!is.na(data[,x_col]),]
   if(is.na(group_col)){
     data$bin_x<-bin_df(data,x_col,bins=bins)
@@ -666,6 +723,7 @@ binned_percent_term_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE)
 
 
 binned_percent_cbre_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE){
+  warning("deprecating this, use binned_percent_plot")
   data<-data[!is.na(data[,x_col]),]
   if(is.na(group_col)){
     data$bin_x<-bin_df(data,x_col,bins=bins)
@@ -800,17 +858,18 @@ discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,rot
     }
     else if (metric=="FYDP2_ActCml"){
       any<-data %>% summarise_ (   mean_y = "mean(FYDP2_ActCml>0)"   )  
-      spent<-data %>% summarise_ (   mean_y = "mean(log(FYDP2_ActCml+1))"   )  
+      spent<-data %>% dplyr::filter(FYDP2_ActCml>0) %>% summarise_ (   mean_y = "mean(log(FYDP2_ActCml+1))"   )  
       any$output<-"Any Spending"
-      spent$output<-"Spending (Logged and Incremented)"
+      spent$output<-"Log(Spending+1)\nGiven any Spending"
       data<-rbind(any,spent)
-      data$output<-factor(data$output,c("Any Spending","Spending (Logged and Incremented)"))  
+      data$output<-factor(data$output,c("Any Spending","Log(Spending+1)\nGiven any Spending"))  
     }
     else stop("Unrecognized metric")
     
     plot<-ggplot(data=data,
                  aes_string(y="mean_y",x=x_col))
-    if (metric=="cbre") plot<-plot+facet_grid(output~.,scales="free_y")
+    #Metrics 
+    if (metric %in% c("cbre","FYDP2_ActCml")) plot<-plot+facet_wrap(output~.,scales="free")
     else plot<-plot+facet_wrap(~output)
   }
   else{
@@ -1124,6 +1183,8 @@ binned_fitted_versus_residuals<-function(model,bins=20){
       graph<-binned_fitted_residuals(model,"b_SomeOpt",bins)
     } else if(!is.null(model@frame$b_AllOpt)){
       graph<-binned_fitted_residuals(model,"b_AllOpt",bins)
+    } else if(!is.null(model@frame$b_FYDP2_ActCml)){
+      graph<-binned_fitted_residuals(model,"b_FYDP2_ActCml",bins)
     } else if(any(c("l_Offr",
                     "lp_OptGrowth",
                     "ln_OptGrowth",
@@ -1148,6 +1209,8 @@ binned_fitted_versus_residuals<-function(model,bins=20){
       graph<-binned_fitted_residuals(model,"b_SomeOpt",bins)
     } else if(!is.null(model$model$b_AllOpt)){
       graph<-binned_fitted_residuals(model,"b_AllOpt",bins)
+    } else if(!is.null(model$model$b_FYDP2_ActCml)){
+      graph<-binned_fitted_residuals(model,"b_FYDP2_ActCml",bins)
     } else if(any(c("l_Offr",
                     "lp_OptGrowth",
                     "ln_OptGrowth",
@@ -1227,8 +1290,6 @@ residuals_binned<-function(model,col="fitted",bins=40){
   {
     if(!is.null(model@frame$b_CBre)){
       data$outcome<-model@frame$b_CBre
-      data<-binned.resids (data[,col],
-                           data$fitted-data$outcome, nclass=bins)$binned
     } else if(!is.null(model@frame$b_Term)){
       data$outcome<-model@frame$b_Term
       data<-binned.resids (data[,col],
@@ -1241,6 +1302,10 @@ residuals_binned<-function(model,col="fitted",bins=40){
       data$outcome<-model@frame$b_AllOpt
       data<-binned.resids (data[,col],
                            data$fitted-data$outcome, nclass=bins)$binned
+    } else if(!is.null(model@frame$b_FYDP2_ActCml)){
+      data$outcome<-model@frame$b_FYDP2_ActCml
+      data<-binned.resids(data[,col],
+                          data$fitted-data$outcome, nclass=bins)$binned
       
     } else if(!is.null(model@frame$lp_CBre)){
       data$outcome<-model@frame$lp_CBre
@@ -1264,6 +1329,7 @@ residuals_binned<-function(model,col="fitted",bins=40){
                           data$residuals, nclass=bins)$binned
     } 
     else{stop("Outcome variable not recognized.")}
+    
   }
   else
   {
@@ -1400,7 +1466,9 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
     #This only works once you have some continuous variables or set a small bin count
     
     if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old) &
-       !"b_SomeOpt" %in% model_colnames(model1_old) & !"b_AllOpt" %in% model_colnames(model1_old))
+       !"b_SomeOpt" %in% model_colnames(model1_old) & !"b_AllOpt" %in% model_colnames(model1_old) & 
+       !"b_FYDP2_ActCml" %in% model_colnames(model1_old)
+       )
     gridExtra::grid.arrange(resid_plot(model1_old,sample=25000),
                             resid_plot(model1_new,sample=25000),
                             resid_plot(model2_old,sample=25000),
@@ -1463,8 +1531,9 @@ summary_residual_compare<-function(model1_old,model1_new=NULL,
                             ncol=2)
     
     if(!"b_Term" %in% model_colnames(model1_old) & !"b_CBre" %in% model_colnames(model1_old) &
-       !"b_SomeOpt" %in% model_colnames(model1_old) & !"b_AllOpt" %in% model_colnames(model1_old)){
-      
+       !"b_SomeOpt" %in% model_colnames(model1_old) & !"b_AllOpt" %in% model_colnames(model1_old) & 
+       !"b_FYDP2_ActCml" %in% model_colnames(model1_old)
+    ){
       gridExtra::grid.arrange(resid_plot(model1_old,sample=25000),
                               resid_plot(model1_new,sample=25000),
                               ncol=2)
