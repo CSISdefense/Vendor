@@ -24,7 +24,7 @@ BEGIN
 	-- interfering with SELECT statements.
 	SET NOCOUNT ON;
 
-
+/* 1) Run queries leading up to the standardized vendor names */ 
 
 --Update AnyIsSmall/AlwaysIsSmall
 
@@ -179,7 +179,7 @@ where
 		,C.fiscal_year
 
 	--Track which years dyads actually receive funding
-Update d
+Update contractor.Dunsnumbertoparentcontractorhistory
 set IsPresent=0
 
 Update d
@@ -247,11 +247,8 @@ where f.obligatedamount>0
 
 
 --*************************Kludge to update standardized vendor names via R happens here
-select VendorName
-,StandardizedVendorName
-from vendor.vendorname
-where StandardizedVendorName is null
-
+ 
+ -- Instructions at Vendor roll ups update
 
 --StandardizeContractor = strText
 	--Insert any ParentIDs that haven't been otherwise captured into Vendor.VendorName
@@ -263,12 +260,15 @@ where StandardizedVendorName is null
 	on p.ParentID=v.vendorname
 	where v.vendorname is null
 
-	
+/* 2A) Download new names to DIIGsql Repository data/semi_clean/Errorlogging.VendorNamesToStandardize */	
 
 	--List any vendornames that need standardization. Sigh, fix this.
-	select *
+	select vendorname, StandardizedVendorName
 	from errorlogging.VendorNamesToStandardize
-	
+
+	drop table ErrorLogging.VendorNameImport
+
+/* -- 2B) Upload the new names after running DIIGsqlRepository scripts/StandardizeVendorNames.r into Errologging.VendorNameImport */
 
 	--List the new assignments
 	select v.vendorname, d.StandardizedVendorName
@@ -298,7 +298,7 @@ where StandardizedVendorName is null
 	where d.StandardizedVendorName is not null and (v.StandardizedVendorName is null 
 	or  v.StandardizedVendorName<>d.StandardizedVendorName)
 
-
+--**************3) Update support fields
 --Update support fields in in contractor.DUNSnumberToParentContractorHistory using contract.FPDS. 
 --We fill in each category that is not controversial. E.g. it only has a single value or NULLs.
 --In some cases, even when there are multiple variants, this means all three fields are filled in.
@@ -485,7 +485,7 @@ where  isnull(base.ParentDUNSnumber,'')<>iif(aggregated.maxofParentDUNSnumber=ag
 	order by parent.ParentID, ParentDUNSnumber, dunsnumber
 
 
---*******************Inserting and updating dyads for Vendor.StandardizedVendorNameHistory
+--*******************4) Inserting and updating dyads for Vendor.StandardizedVendorNameHistory
 	-- Insert new FPDS vendornames into standardized vendorname
 	insert into vendor.standardizedvendornamehistory (standardizedvendorname, fiscal_year)
 	select
