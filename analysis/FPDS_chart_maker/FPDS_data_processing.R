@@ -125,6 +125,8 @@ full_data %<>%
 colnames(full_data)[colnames(full_data)=="Fiscal.Year"]<-"fiscal_year"
 
 
+full_data$dFYear<-as.Date(paste("1/1/",as.character(full_data$fiscal_year),sep=""),"%m/%d/%Y")
+
 # write output to CleanedVendorSize.csv
 # save(full_data,labels_and_colors,column_key, file="Shiny Apps//FPDS_chart_maker//2018_unaggregated_FPDS.Rda")
 
