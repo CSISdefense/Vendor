@@ -24,7 +24,7 @@ BEGIN
 	-- interfering with SELECT statements.
 	SET NOCOUNT ON;
 
-/* 1) Run queries leading up to the standardized vendor names */ 
+/* ******** 1) Run queries leading up to the standardized vendor names */ 
 
 --Update AnyIsSmall/AlwaysIsSmall
 
@@ -88,7 +88,7 @@ BEGIN
 --from contractor.DunsnumberToParentContractorHistory
 --where ObligatedAmount is not null 
 
---***************** Updating Contractor.Dunsnumber
+--*** Updating Contractor.Dunsnumber
 --Clear out '' parentdunsnumbers and headquartercode from Contract.fpds
 --That should be tracked as a unknownvendorparent, but since it contains literally no information
 --It's simpler to treat it as a null and to all for is null tests and the like
@@ -165,7 +165,7 @@ where
 	)
 
 
---***********Inserting and updating new dyads into into dunsnumbertoparentcontractorhistory
+--***Inserting and updating new dyads into into dunsnumbertoparentcontractorhistory
  	-- Insert new FPDS Dunsnumber/fiscal year pairs into dunsnumbertoparentcontractorhistory
 	insert into contractor.DunsnumberToParentContractorHistory (dunsnumber, FiscalYear)
 	select
@@ -246,7 +246,7 @@ where f.obligatedamount>0
 
 
 
---*************************Kludge to update standardized vendor names via R happens here
+--***Kludge to update standardized vendor names via R happens here
  
  -- Instructions at Vendor roll ups update
 
@@ -260,7 +260,7 @@ where f.obligatedamount>0
 	on p.ParentID=v.vendorname
 	where v.vendorname is null
 
-/* 2A) Download new names to DIIGsql Repository data/semi_clean/Errorlogging.VendorNamesToStandardize */	
+/* ***** 2A) Download new names to DIIGsql Repository data/semi_clean/Errorlogging.VendorNamesToStandardize */	
 
 	--List any vendornames that need standardization. Sigh, fix this.
 	select vendorname, StandardizedVendorName
@@ -268,7 +268,7 @@ where f.obligatedamount>0
 
 	drop table ErrorLogging.VendorNameImport
 
-/* -- 2B) Upload the new names after running DIIGsqlRepository scripts/StandardizeVendorNames.r into Errologging.VendorNameImport */
+/* -- ****** 2B) Upload the new names after running DIIGsqlRepository scripts/StandardizeVendorNames.r into Errologging.VendorNameImport */
 
 	--List the new assignments
 	select v.vendorname, d.StandardizedVendorName
@@ -735,7 +735,7 @@ where  isnull(base.ParentDUNSnumber,'')<>iif(aggregated.maxofParentDUNSnumber=ag
 	--Find parentids that could be moved over from the prior year. Only for last year
 	declare @latestyear int
 	set @latestyear =(select max(fiscalyear) from contractor.DunsnumberToParentContractorHistory)
-	
+
 	update dtpch1
 --select
 --	dtpch2.ParentID as NewParentID

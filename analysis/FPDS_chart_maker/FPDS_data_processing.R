@@ -1,6 +1,6 @@
 ################################################################################
 # Data Pre-Processing for Vendor Size Shiny Graphic
-# UPDATED 2/22/17
+# UPDATED 2021/03/07
 #
 # This script does pre-processing to get a SQL query into usable form for shiny
 # graphics
@@ -9,7 +9,7 @@
 #   CSV-format results from SQL query:
 #     Vendor_SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer
 #
-# Output: CSV file (CleanedVendorSize.csv)
+# Output: CSV file (unaggregated_FPDS.Rda)
 # with data in the minimal form needed by Shiny script
 ################################################################################
 
@@ -22,10 +22,10 @@ library(Hmisc)
 # read in data
 full_data <- read_delim(
   "Data//semi_clean//Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",delim = "\t",
-  col_names = TRUE, col_types = "cccccccccc",na=c("NA","NULL"))
+  col_names = TRUE, guess_max = 500000,na=c("NA","NULL"))
 
-if(substring(full_data$fiscal_year[nrow(full_data)],1,15)=="Completion time")
-  full_data<-full_data[-nrow(full_data)]
+if(substring(full_data$fiscal_year[nrow(full_data)],1,12)=="Completion time")
+  full_data<-full_data[-nrow(full_data),]
 
 full_data<-standardize_variable_names(full_data)
 # coerce Amount to be a numeric variable
@@ -34,7 +34,7 @@ full_data$Number.Of.Actions %<>% as.numeric()
 full_data$Fiscal.Year <- as.numeric(full_data$Fiscal.Year)
 
 # discard pre-2000
-full_data %<>% filter(Fiscal.Year >= 2000 & Customer=="Defense")
+full_data %<>% filter(Fiscal.Year >= 2000 & ContractingCustomer=="Defense")
 
 
 full_data<-deflate(full_data,
@@ -75,6 +75,18 @@ full_data<-csis360::read_and_join(full_data,
   dir="Lookups/"
 )
 
+# classify competition
+full_data<-csis360::read_and_join(full_data,
+                                  "Lookup_SQL_CompetitionClassification.csv",
+                                  by=c("CompetitionClassification","ClassifyNumberOfOffers"),
+                                  replace_na_var="ClassifyNumberOfOffers",
+                                  add_var=c("Competition.sum",
+                                            "Competition.multisum",
+                                            "Competition.effective.only",
+                                            "No.Competition.sum"),
+                                  path="https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/",
+                                  dir="Lookups/"
+)
 
 #Classify Product or Service Codes
 full_data<-csis360::read_and_join(full_data,
@@ -88,30 +100,48 @@ full_data<-csis360::read_and_join(full_data,
 )
 
 
-full_data<-replace_nas_with_unlabeled(full_data,"SubCustomer","Uncategorized")
-full_data<-csis360::read_and_join(full_data,
+full_data<-replace_nas_with_unlabeled(full_data,"ContractingSubCustomer","Uncategorized")
+full_data<-csis360::read_and_join_experiment(full_data,
                         "SubCustomer.csv",
-                        by=c("Customer","SubCustomer"),
+                        by=c("ContractingCustomer"="Customer","ContractingSubCustomer"="SubCustomer"),
                         add_var="SubCustomer.platform",
                         path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
                         dir="office/"
 )
 
-
 full_data<-replace_nas_with_unlabeled(full_data,"PlatformPortfolio")
+
+full_data$PricingUCA.sum<-factor(full_data$PricingUCA)
+full_data<-replace_nas_with_unlabeled(full_data,"PricingUCA.sum")
+levels(full_data$PricingUCA.sum)<-
+  list("FFP"="FFP",
+       "Less Common"=c("Other FP","T&M/LH/FPLOE"),
+       "Incentive"="Incentive",
+       "Other CB"="Other CB",
+       "UCA"="UCA",
+       "Unclear"=c("Combination/Other","Unlabeled"))
+
+
+
+
+# 
+# full_data$PricingUCA<-full_data$PricingFee
+# summary(factor(full_data$PricingUCA))
+# full_data$PricingUCA[is.na(full_data$IsUCA)]<-NA
+# full_data$PricingUCA[!is.na(full_data$IsUCA)&full_data$IsUCA==1]<-"UCA"
+
+
 
 # debug(csis360::prepare_labels_and_colors)
 # load("Shiny Apps/FPDS_chart_maker/2016_unaggregated_FPDS.Rda")
-labels_and_colors<-csis360::prepare_labels_and_colors(full_data)
 
 
-column_key<-csis360::get_column_key(full_data)
 
 # set correct data types
 full_data %<>%
-  select(-Customer) %>%
+  select(-ContractingCustomer) %>%
   # select(-ClassifyNumberOfOffers) %>%
-  mutate(SubCustomer = factor(SubCustomer)) %>%
+  mutate(ContractingSubCustomer = factor(ContractingSubCustomer)) %>%
   mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
   mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
   mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
@@ -120,11 +150,16 @@ full_data %<>%
   mutate(Competition.sum = factor(Competition.sum)) %>%
   mutate(Competition.effective.only = factor(Competition.effective.only)) %>%
   mutate(Competition.multisum = factor(Competition.multisum))  %>%
-  mutate(No.Competition.sum = factor(No.Competition.sum))
+  mutate(No.Competition.sum = factor(No.Competition.sum)) %>%
+  mutate(Vehicle = factor(Vehicle)) %>%
+  mutate(PricingUCA = factor(PricingUCA))
 
 colnames(full_data)[colnames(full_data)=="Fiscal.Year"]<-"fiscal_year"
 
 
+labels_and_colors<-csis360::prepare_labels_and_colors(full_data)
+
+column_key<-csis360::get_column_key(full_data)
 full_data$dFYear<-as.Date(paste("1/1/",as.character(full_data$fiscal_year),sep=""),"%m/%d/%Y")
 
 # write output to CleanedVendorSize.csv
@@ -168,12 +203,12 @@ full_data$dFYear<-as.Date(paste("1/1/",as.character(full_data$fiscal_year),sep="
 #                             "Agency_AgencyID.csv",
 #                             dir="",
 #                             by=c("AgencyID"),
-#                             add_var=c("Customer","SubCustomer","Platform"),
+#                             add_var=c("ContractingCustomer","SubCustomer","Platform"),
 #                             skip_check_var="Platform")
 # 
 # sum(partial_2018$Action_Obligation.Then.Year)
 
-# partial_2018<-partial_2018%>%filter(Customer=="Defense")
+# partial_2018<-partial_2018%>%filter(ContractingCustomer=="Defense")
 # 
 # #Classify Product or Service Codes
 # partial_2018<-csis360::read_and_join(partial_2018,
@@ -190,7 +225,7 @@ full_data$dFYear<-as.Date(paste("1/1/",as.character(full_data$fiscal_year),sep="
 # partial_2018<-replace_nas_with_unlabeled(partial_2018,"SubCustomer","Uncategorized")
 # partial_2018<-csis360::read_and_join(partial_2018,
 #                                   "Lookup_SubCustomer.csv",
-#                                   by=c("Customer","SubCustomer"),
+#                                   by=c("ContractingCustomer","ContractingSubCustomer"),
 #                                   add_var="SubCustomer.platform",
 #                                   path="https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/",
 #                                   dir="Lookups/"
@@ -208,7 +243,7 @@ full_data$dFYear<-as.Date(paste("1/1/",as.character(full_data$fiscal_year),sep="
 # 
 # partial_2018<-partial_2018 %>% group_by(ProductServiceOrRnDarea,
 #                                         ProductServiceOrRnDarea.sum,
-#                           SubCustomer,
+#                           ContractingSubCustomer,
 #                           SubCustomer.platform,
 #                           fiscal_year) %>%
 #   dplyr::summarize(Action_Obligation.Then.Year=sum(Action_Obligation.Then.Year,na.rm=TRUE),
