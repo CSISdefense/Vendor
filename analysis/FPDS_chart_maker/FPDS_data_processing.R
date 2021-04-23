@@ -37,15 +37,11 @@ full_data$Fiscal.Year <- as.numeric(full_data$Fiscal.Year)
 full_data %<>% filter(Fiscal.Year >= 2000 & ContractingCustomer=="Defense")
 
 
-full_data<-deflate(full_data,
-                  money_var = "Action_Obligation",
-                  deflator_var="OMB19_19"
-)
  
    colnames(full_data)[colnames(full_data)=="Action_Obligation_Then_Year"]<-"Action_Obligation"
 full_data<-deflate(full_data,
                    money_var = "Action_Obligation",
-                   deflator_var="OMB20_GDP18"
+                   deflator_var="OMB20_GDP20"
 )
 
 
@@ -104,7 +100,7 @@ full_data<-replace_nas_with_unlabeled(full_data,"ContractingSubCustomer","Uncate
 full_data<-csis360::read_and_join_experiment(full_data,
                         "SubCustomer.csv",
                         by=c("ContractingCustomer"="Customer","ContractingSubCustomer"="SubCustomer"),
-                        add_var="SubCustomer.platform",
+                        add_var=c("SubCustomer.platform","SubCustomer.sum"),
                         path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
                         dir="office/"
 )
