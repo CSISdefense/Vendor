@@ -1,0 +1,119 @@
+---
+title: "Bioeconomy"
+author: "Greg Sanders"
+date: "5/7/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(csis360)
+library(readr)
+library(tidyr)
+library(ggplot2)
+
+# bioecon 
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r Biotechnology}
+
+
+
+bioecon$NASbioEconomyPretty<-factor(bioecon$NASbioEconomy,
+                              levels=c("Biobased plastic products","Bioeconomy R&D services","Biofuels (ethanol)", "Biologics (enzymes)",
+                                       "Biopharmaceuticals/Other pharmaceuticals","Biorefining (food)",
+                                       "Crop products","Electromedical instruments","Surgical and Medical Equipment",
+                                       "Other biobased chemicals","Other enzymes" ,"NULL" ),
+                              labels=c("Biobased plastic\nproducts","Bioeconomy\nR&D services","Biofuels (ethanol)", "Biologics (enzymes)",
+                                       "Biopharmaceuticals\n/Other pharmaceuticals","Biorefining (food)",
+                                       "Crop products","Electromedical\ninstruments","Surgical and\nMedical Equipment",
+                                       "Other biobased\nchemicals","Other enzymes" ,"Bioproduct Outside\nNAS chosen codes")
+                              )
+bioecon$NASbioEconomyTrans<-factor(bioecon$NASbioEconomy,
+                              levels=c("Biobased plastic products","Bioeconomy R&D services","Fuel Refineries (ethanol)", "Biologics (enzymes)",
+                                       "Biopharmaceuticals/Other pharmaceuticals","Biorefining (food)",
+                                       "Crop products","Electromedical instruments","Surgical and Medical Equipment",
+                                       "Other biobased chemicals","Other enzymes" ,"NULL" ),
+                              labels=c("Plastic and Rubber\nManufacturing","R&D services\n(Excluding Nanotech)","Fuel Refineries", "Biological Product\nManufacturing",
+                                       "Pharmaceuticals Prep Manufacturing","Biorefining (food)",
+                                       "Crop products","Electromedical\ninstruments","Surgical and\nMedical Equipment",
+                                       "Other chemicals\n(incl. ","Other enzymes" ,"Bioproduct Outside\nNAS chosen codes")
+                              )
+
+(all<-build_plot(bioecon,
+           x_var="Fiscal.Year",
+           y_var="Action_Obligation_OMB20_GDP20",
+           color_var="NASbioEconomypt",
+           chart_geom="Bar Chart",
+           facet_var="NASbioEconomyPretty",
+           format=TRUE)+facet_wrap(~NASbioEconomyPretty,scales="free_y")
+)
+ggsave(file=file.path("..","Output","NASbioEconomy_all.png"))
+
+summary(bioecon$biobased)
+
+(full<-build_plot(bioecon %>% dplyr::filter(NASbioEconomypt=="NAICSpt Code"),
+           x_var="Fiscal.Year",
+           y_var="Action_Obligation_OMB20_GDP20",
+           color_var="NASbioEconomyPretty",
+           chart_geom="Bar Chart",
+           facet_var="NASbioEconomyPretty",
+           format=TRUE)
+)
+ggsave(file=file.path("..","Output","NASbioEconomy_full.png"))
+
+
+
+build_plot(bioecon %>% dplyr::filter(NASbioEconomypt=="NAICSpt Code"),
+           x_var="Fiscal.Year",
+           y_var="Action_Obligation_OMB20_GDP20",
+           color_var="biobased",
+           chart_geom="Bar Chart",
+           facet_var="biobased",
+           format=TRUE)
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+bioecon$BioTechCustomer<-factor(bioecon$ContractingCustomer)
+levels(bioecon$BioTechCustomer)<-
+  list(
+    "HHS"    ="HHS"    ,
+    "Energy"="Energy",
+    "VA"="VA",
+    "Defense"="Defense",
+    "DHS"="DHS",
+    "Other Agencies"=c("GSA","NASA",
+                       "NATIONAL ENDOWMENT FOR THE HUMANITIES","Other Agencies",
+                       "State and IAP","UNITED STATES INTERNATIONAL DEVELOPMENT FINANCE CO"   ))
+
+
+(a<-    build_plot(bioecon %>% dplyr::filter(NASbioEconomypt=="NAICS entire code"&
+                                       NASbioEconomy=="Bioeconomy R&D services"&
+                                         Fiscal.Year>=2008),
+           x_var="Fiscal.Year",
+           y_var="Action_Obligation_OMB20_GDP20",
+           color_var="BioTechCustomer",
+           chart_geom="Bar Chart",
+           facet_var="BioTechCustomer",
+           format=TRUE)+labs(main="Research and Development in Biotechnology",
+                             y="Obligated Amount (2020 Constant $)",
+                             x="Fiscal Year")+
+  theme(legend.position = "None")
+)
+ggsave(a,file=file.path("..","Output","Biotechnology_Customer.png"))
+
+
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

@@ -2691,14 +2691,23 @@ get_coef_list<-function(limit=NULL){
                     "dPB_Base_Actual"="&Delta;PB Base('18 vs. '16 Actual)",
                     "PB_OCO"="PB OCO ('18)",
                     
+                    "log(FYDP2_BaseCml + 1)"="log(Cumulative Base + 1)",
+                    "log(FYDP2_BaseCml + PB_OCO + 1)"="log(Cumulative Base + OCO + 1)",
+                    
                     "log(FYDP2 + 1)"="log(FYDP2+1)",
                     "log(FYDP2_Base + 1)"="log(FYDP2+1)",
+                    
+                    "log(Actual + 1)"="log(Actual+1)",
+                    "log(Actual_Total + 1)"="log(Actual_Total+1)",
+                    
+                    "IsPBbaseZeroTRUE"="No PB Base",
+                    "IsFYDP2zero1"="No FYDP2 Base",
+                    "IsPBocoZeroTRUE"="No PB OBO",
+                    "Enacted_AnyOCO"="Any Enacted OCO",
                     
                     "MilDepArmy"="Army",
                     "MilDepAir Force"="Air Force",
                     "MilDepOther DoD"="Other DoD",
-                    "log(Actual + 1)"="log(Actual+1)",
-                    "log(Actual_Total + 1)"="log(Actual_Total+1)",
                     "log(PB_Base + 1)"="log(PB Base+1)",
                     "log(PB_OCO + 1)"="log(PB OCO+1)",
                     

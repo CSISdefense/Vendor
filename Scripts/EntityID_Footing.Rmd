@@ -1,0 +1,556 @@
+---
+title: "Footing"
+author: "Greg Sanders"
+date: "July 16, 2018"
+output: html_document
+---
+## Setup
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(csis360)
+```
+
+
+
+```{r import}
+
+
+
+
+# load(file = file.path("../Cleaning Data/FPDS/FPDS_eid_fyearpull_all_v3.Rda"))
+# load(file = file.path("../Cleaning Data/FPDS/FPDS_cleaned_unique_wtotalobligations.Rda"))
+
+file.exists("../Data/semi_clean/Vendor.EntityIDhistory.txt")
+# dir.exists("Cleaning Data/")
+# dir.exists("Analysis")
+# file.exists("New Entrants.Rproj")
+# list.files("../")
+FPDS_eid_fyear <- read.delim(file.path("../Data/semi_clean/Vendor.EntityIDhistory.txt"), header=TRUE,  na.strings = c("", "NULL"))
+
+FPDS_eid_fyear<-as.data.frame(FPDS_eid_fyear)
+FPDS_eid_fyear$IsEntityAbove2018constant10ThousandThreshold
+```
+
+
+## Prepare the raw data
+```{r prepare}
+
+FPDS_eid_fyear<-csis360::remove_bom(FPDS_eid_fyear)
+# FPDS_eid_fyear<-subset(FPDS_eid_fyear,fiscal_year>=2000)
+
+FPDS_eid_fyear<-csis360::deflate(FPDS_eid_fyear,money_var="ObligatedAmount",
+                            fy_var="fiscal_year",deflator_var = "OMB20_GDP20")
+
+FPDS_eid_fyear<-csis360::read_and_join_experiment(FPDS_eid_fyear,
+                        "EntitySizeCode.csv",
+                        by=c("EntitySizeCode"),
+                        # add_var=c("SubCustomer.platform","SubCustomer.sum"),
+                        path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                        dir="vendor/"
+)
+
+
+
+#Graduation
+
+FPDS_eid_fyear$MajorityNotSmall<-NA
+FPDS_eid_fyear$ObligatedAmountIsSmall[is.na(FPDS_eid_fyear$ObligatedAmountIsSmall)&!is.na(FPDS_eid_fyear$Action_Obligation_Then_Year)]<-0
+FPDS_eid_fyear$MajorityNotSmall[FPDS_eid_fyear$ObligatedAmountIsSmall ==0 &
+                                  FPDS_eid_fyear$EntitySizeCode %in% c('B','J','L')]<-1
+
+FPDS_eid_fyear$MajorityNotSmall[FPDS_eid_fyear$EntitySizeText=="Always Small Vendor" | 
+                                  (FPDS_eid_fyear$ObligatedAmountIsSmall*2>=FPDS_eid_fyear$Action_Obligation_Then_Year &
+                                     (FPDS_eid_fyear$ObligatedAmountIsSmall>0) |
+                                     FPDS_eid_fyear$ObligatedAmountIsSmall==FPDS_eid_fyear$Action_Obligation_Then_Year)&
+                                  is.na(FPDS_eid_fyear$MajorityNotSmall)
+                                  ]<-0
+
+#Negative corner case
+FPDS_eid_fyear$MajorityNotSmall[abs(FPDS_eid_fyear$ObligatedAmountIsSmall*2)>=abs(FPDS_eid_fyear$Action_Obligation_Then_Year) &
+                                     FPDS_eid_fyear$Action_Obligation_Then_Year<0&
+                                  is.na(FPDS_eid_fyear$MajorityNotSmall)
+                                  ]<-0
+  
+FPDS_eid_fyear$MajorityNotSmall[abs(FPDS_eid_fyear$ObligatedAmountIsSmall)*2<abs(FPDS_eid_fyear$Action_Obligation_Then_Year)&
+                                  FPDS_eid_fyear$ObligatedAmountIsSmall!=FPDS_eid_fyear$Action_Obligation_Then_Year&
+                                  is.na(FPDS_eid_fyear$MajorityNotSmall)]<-1
+
+FPDS_eid_fyear %>% group_by(MajorityNotSmall,EntitySizeText) %>%
+  summarise(count=length(EntityID),
+            ObligatedAmountIsSmall=sum(ObligatedAmountIsSmall),
+            Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
+
+#Calculate first_year at all
+FPDS_eid_fyear<-FPDS_eid_fyear %>%
+  group_by(EntityID) %>%
+  dplyr::mutate(first_year=min(fiscal_year),
+                first_graduate=min(ifelse(MajorityNotSmall==0 |is.na(MajorityNotSmall) ,9999,fiscal_year)),
+    entrant=ifelse(min(fiscal_year)==fiscal_year,TRUE,FALSE))
+
+
+FPDS_eid_fyear$first_graduate[FPDS_eid_fyear$first_graduate==9999]<-NA
+
+#Calculate first year above threshold
+FPDS_eid_fyear<-FPDS_eid_fyear %>%
+  group_by(EntityID) %>%
+  dplyr::mutate(first_year_2018T=min(ifelse(IsEntityAbove2018constant10ThousandThreshold==1,fiscal_year,9999)),
+                last_year_2018T=max(ifelse(IsEntityAbove2018constant10ThousandThreshold==1,fiscal_year,0)),
+                active_2007_to_2016=sum(ifelse(IsEntityAbove2018constant10ThousandThreshold==1 &
+                                               fiscal_year>=2007 &
+                                               fiscal_year<=2016,1,0)))
+
+summary(factor(FPDS_eid_fyear$EntitySizeText))
+
+FPDS_eid_fyear$first_year_2018T[FPDS_eid_fyear$first_year_2018T==9999]<-NA
+FPDS_eid_fyear$first_year_2018T[FPDS_eid_fyear$last_year_2018T==0]<-NA
+FPDS_eid_fyear<-FPDS_eid_fyear %>%
+  group_by(EntityID) %>%
+    dplyr::mutate(entrant_2018T=ifelse(fiscal_year==first_year_2018T,TRUE,FALSE))
+
+
+
+summary(FPDS_eid_fyear$entrant[FPDS_eid_fyear$fiscal_year==2007 & FPDS_eid_fyear$IsEntityAbove2016constantOneMillionThreshold==TRUE])
+summary(FPDS_eid_fyear$IsEntityAbove2018constant10ThousandThreshold[FPDS_eid_fyear$fiscal_year==2007 & FPDS_eid_fyear$entrant==TRUE])
+summary(FPDS_eid_fyear$entrant_2018T[FPDS_eid_fyear$fiscal_year==2007])
+summary(factor(FPDS_eid_fyear$first_year_2018T))
+summary(factor(FPDS_eid_fyear$first_year))
+summary(FPDS_eid_fyear$entrant[FPDS_eid_fyear$fiscal_year==2007])
+summary(factor(FPDS_eid_fyear$active_2007_to_2016[FPDS_eid_fyear$first_year_2018T==2007&FPDS_eid_fyear$fiscal_year==2007]))
+
+new_entrant_2007_dyad<-FPDS_eid_fyear %>% filter(first_year_2018T==2007)
+new_entrant_2007<-FPDS_eid_fyear %>% filter(first_year_2018T==2007 & fiscal_year==2007) 
+write.csv(new_entrant_2007,file.path("..","Output","new_entrant_2007.csv"),row.names = FALSE)
+colnames(new_entrant_2007)
+new_entrant_2007<-new_entrant_2007[, c("EntityID","fiscal_year","EntityText","EntityCategory","EntitySizeCode","EntitySizeText",
+ "UnknownCompany", "IsEntityAbove2018constant10ThousandThreshold","AnyEntityUSplaceOfPerformance",
+ "AnyEntityForeignPlaceOfPerformance","Action_Obligation_Then_Year", "ObligatedAmountIsSmall","MajorityNotSmall" ,
+ "ObligatedAmount_OMB20_GDP20" ,"NumberOfActions",
+ "first_year_2018T","last_year_2018T","active_2007_to_2016","first_year", "first_graduate")]
+
+new_entrant_2007_dyad<-new_entrant_2007_dyad[, c("EntityID","fiscal_year","EntityText","EntityCategory","EntitySizeCode","EntitySizeText",
+ "UnknownCompany", "IsEntityAbove2018constant10ThousandThreshold","AnyEntityUSplaceOfPerformance",
+ "AnyEntityForeignPlaceOfPerformance","Action_Obligation_Then_Year", "ObligatedAmountIsSmall","MajorityNotSmall" ,
+ "ObligatedAmount_OMB20_GDP20" ,"NumberOfActions",
+ "first_year_2018T","last_year_2018T","active_2007_to_2016","first_year", "first_graduate")]
+colnames(new_entrant_2007)[duplicated(colnames(new_entrant_2007))]
+
+write.csv(new_entrant_2007,file.path("..","Output","new_entrant_2007.csv"),row.names = FALSE)
+write.csv(new_entrant_2007 %>% filter(EntitySizeCode %in% c('N','S') & MajorityNotSmall==0 & 
+                                        (is.na(first_graduate)|first_graduate>2007)),
+          file.path("..","Output","new_entrant_small_2007.csv"),row.names = FALSE)
+write.csv(new_entrant_2007_dyad,file.path("..","Output","new_entrant_2007_dyad.csv"),row.names = FALSE)
+# #Calculate annual spend and presence.
+# FPDS_eid_fyear<-FPDS_eid_fyear %>%
+#   group_by(EntityID,fiscal_year,entrant,first_year) %>%
+#   dplyr::summarize(obligatedAmount.2017=sum(ObligatedAmount_OMB20_GDP20,na.rm=TRUE),
+#   # dplyr::summarize(obligatedAmount.Deflator.2016=sum(obligatedAmount.Deflator.2016,na.rm=TRUE),
+#                    present=max(IsEntityAbove2018constant10ThousandThreshold))
+FPDS_eid_fyear$present<-FPDS_eid_fyear$IsEntityAbove2018constant10ThousandThreshold
+
+nrow(new_entrant_2007 %>% filter(EntitySizeText %in% c('N','S')))
+
+
+#Check if EntityID is present in previous year
+FPDS_duns_prev_fyear<-subset(FPDS_eid_fyear,select=c(fiscal_year,EntityID,present))
+FPDS_duns_prev_fyear$fiscal_year<-FPDS_duns_prev_fyear$fiscal_year+1
+colnames(FPDS_duns_prev_fyear)[colnames(FPDS_duns_prev_fyear)=="present"]<-"prev_present"
+FPDS_eid_fyear<-left_join(FPDS_eid_fyear,FPDS_duns_prev_fyear)
+#Label NAs with 0, except when at start or end of series.
+FPDS_eid_fyear$prev_present[is.na(FPDS_eid_fyear$prev_present) & FPDS_eid_fyear$fiscal_year!=2000]<-0
+summary(FPDS_eid_fyear$prev_present)
+rm(FPDS_duns_prev_fyear)
+
+#Check if EntityID is present in next year
+FPDS_duns_next_fyear<-subset(FPDS_eid_fyear,select=c(fiscal_year,EntityID,present))
+FPDS_duns_next_fyear$fiscal_year<-FPDS_duns_next_fyear$fiscal_year-1
+colnames(FPDS_duns_next_fyear)[colnames(FPDS_duns_next_fyear)=="present"]<-"next_present"
+FPDS_eid_fyear<-left_join(FPDS_eid_fyear,FPDS_duns_next_fyear)
+#Label NAs with 0, except when at start or end of series.
+FPDS_eid_fyear$next_present[is.na(FPDS_eid_fyear$next_present) & FPDS_eid_fyear$fiscal_year<2020]<-0
+summary(FPDS_eid_fyear$next_present)
+rm(FPDS_duns_next_fyear)
+  
+
+FPDS_eid_fyear$sample_year<-FPDS_eid_fyear$first_year_2018T
+FPDS_eid_fyear$sample_year[FPDS_eid_fyear$sample_year<2001 | FPDS_eid_fyear$sample_year>2007]<-"Not in sample"
+FPDS_eid_fyear$sample_year<-factor(FPDS_eid_fyear$sample_year,levels=c("Not in sample","2001","2002","2003","2004","2005","2006","2007"))
+
+
+
+FPDS_eid_fyear$status<-NA
+FPDS_eid_fyear$status[FPDS_eid_fyear$IsEntityAbove2018constant10ThousandThreshold==0]<-"Below Threshold"
+FPDS_eid_fyear$status[is.na(FPDS_eid_fyear$status) & FPDS_eid_fyear$prev_present==0 & FPDS_eid_fyear$next_present==0]<-"Blip"
+FPDS_eid_fyear$status[is.na(FPDS_eid_fyear$status) & FPDS_eid_fyear$prev_present==0 & !is.na(FPDS_eid_fyear$next_present)]<-"Enter"
+FPDS_eid_fyear$status[is.na(FPDS_eid_fyear$status) & FPDS_eid_fyear$next_present==0 & !is.na(FPDS_eid_fyear$prev_present)]<-"Exit"
+FPDS_eid_fyear$status[is.na(FPDS_eid_fyear$status) & FPDS_eid_fyear$prev_present==1 & FPDS_eid_fyear$next_present==1]<-"Steady"
+FPDS_eid_fyear$status<-factor(FPDS_eid_fyear$status)
+summary(FPDS_eid_fyear$status)
+
+FPDS_eid_fyear<-subset(FPDS_eid_fyear,fiscal_year>=2000)
+
+save(file="../data/clean/FPDS_eid_fyear.rda",FPDS_eid_fyear)
+# load(file="../Cleaning Data/footing.rda")
+FPDS_eid_fyear$count<-1
+
+```
+
+## Count
+
+First lets look at the total number of vendors.
+
+```{r count, echo=FALSE, fig.width=6.5, fig.height=9}
+##counting the number of new entrants and incumbent firms##
+
+eid_lc<-prepare_labels_and_colors(FPDS_eid_fyear)
+
+build_plot(
+  data=FPDS_eid_fyear, ##where is FPDS summary?
+  chart_geom = "Line Chart",
+  share = TRUE,
+  x_var="fiscal_year",
+  y_var="count", #Name of variable to plot on y-axis
+  color_var="entrant",       # name of coloration variable, as string
+  # facet_var="entrant",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=eid_lc,
+  column_key=NULL,
+  format=TRUE
+)
+
+
+build_plot(
+  data=FPDS_eid_fyear %>% filter(first_year_2018T==2007), ##where is FPDS summary?
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  x_var="fiscal_year",
+  y_var="count", #Name of variable to plot on y-axis
+  color_var="last_year_2018T",       # name of coloration variable, as string
+  # facet_var="entrant",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=NULL,
+  column_key=NULL,
+  format=TRUE
+)
+
+  ##counting the number of new entrants and incumbent firms stacked##
+  build_plot(
+    data=FPDS_eid_fyear,
+    chart_geom = "Histogram",
+    # share = FALSE,
+    x_var="fiscal_year",
+    # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+    color_var="status",       # name of coloration variable, as string
+    facet_var="status",        # name of facet variable, as string
+    legend=TRUE, #Include a legend
+    caption=TRUE, #Include a source caption
+    labels_and_colors=NULL,
+    column_key=NULL
+  )
+
+  ##counting the number of new entrants and incumbent firms stacked##
+  build_plot(
+    data=FPDS_eid_fyear %>% filter(first_year_2018T==2007),
+    chart_geom = "Histogram",
+    # share = FALSE,
+    x_var="fiscal_year",
+    # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+    color_var="status",       # name of coloration variable, as string
+    facet_var="status",        # name of facet variable, as string
+    legend=TRUE, #Include a legend
+    caption=TRUE, #Include a source caption
+    labels_and_colors=NULL,
+    column_key=NULL
+  )
+```
+
+### SRC Count
+```{r srccount}
+#*****#
+##SRC##
+#*****#
+#number of new entrants vs incumbent firms
+#drop years before 2001 and after 2016
+FPDS_eid_fyear_op <- FPDS_eid_fyear[!(FPDS_eid_fyear$fiscal_year<2001), ]
+FPDS_eid_fyear_op <- FPDS_eid_fyear_op[!(FPDS_eid_fyear_op$fiscal_year>2016), ]
+
+ggplot(FPDS_eid_fyear_op, aes(x = fiscal_year, fill = factor(entrant))) +
+  geom_histogram(position = "stack", binwidth = 1) +
+  scale_x_continuous(breaks = c(2001:2016)) +
+  xlab("Fiscal Year") +
+  ylab("Number of Vendors") +
+  scale_fill_manual(name = "New Entrants Types", values = c("darkslategray1", "cadetblue4"), labels = c("Incumbent", "New Entrant")) 
+#******************************#
+#******************************#
+
+##counting the number of new entrant and incumbent firms on two separate graphs##
+build_plot(
+  data=FPDS_eid_fyear,
+  chart_geom = "Histogram",
+  # share = FALSE,
+  x_var="fiscal_year",
+  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  color_var="entrant",       # name of coloration variable, as string
+  facet_var="entrant",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=eid_lc,
+  column_key=NULL
+)+facet_wrap(~entrant,scales="free_y",ncol=1)
+
+
+build_plot(
+  data=FPDS_eid_fyear,
+  chart_geom = "Histogram",
+  # share = FALSE,
+  x_var="fiscal_year",
+  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  color_var="status",       # name of coloration variable, as string
+  facet_var="entrant",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=eid_lc,
+  column_key=NULL
+)+facet_wrap(~entrant,scales="free_y",ncol=1)
+
+
+#number of vendors from each sample over time#
+#I think i want drop the "not included in sample" --> use FPDS_eid_fyear_op
+build_plot(
+  data=FPDS_eid_fyear,
+  chart_geom = "Histogram",
+  # share = FALSE,
+  x_var="fiscal_year",
+  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  color_var="sample_year",       # name of coloration variable, as string
+  # facet_var="sample_year",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=eid_lc,
+  column_key=NULL
+)+labs(x="Fiscal Year of Transaction",y="Number of Contractors") #what do you mean by fiscal year of transaction
+
+
+
+
+
+
+
+build_plot(
+  data=subset(FPDS_eid_fyear,sample_year!="Not in sample"),
+  chart_geom = "Histogram",
+  # share = FALSE,
+  x_var="fiscal_year",
+  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  color_var="sample_year",       # name of coloration variable, as string
+  # facet_var="sample_year",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=eid_lc,
+  column_key=NULL
+)+labs(x="Fiscal Year of Transaction",y="Number of Contractors") #what do you mean by fiscal year of transaction
+
+
+#*******#
+#**SRC**#
+#*******#
+##drop those not in sample 
+#1. make not in sample binary
+table(FPDS_eid_fyear$sample_year)
+FPDS_eid_fyear$sample_year_bin <- revalue(FPDS_eid_fyear$sample_year, c("Not in sample"="0", "2001"="1", "2002"="2", "2003"="3", "2004"="4", "2005"="5", "2006"="6"))
+str(FPDS_eid_fyear$sample_year_bin)
+table(FPDS_eid_fyear$sample_year_bin)
+FPDS_eid_fyear$sample_year_bin <- as.numeric(as.character(FPDS_eid_fyear$sample_year_bin))
+str(FPDS_eid_fyear$sample_year_bin)
+table(FPDS_eid_fyear$sample_year_bin)
+
+FPDS_eid_fyear_samples <- FPDS_eid_fyear[!(FPDS_eid_fyear$sample_year_bin<1), ]
+FPDS_eid_fyear_samples_op <- FPDS_eid_fyear_samples[!(FPDS_eid_fyear_samples$fiscal_year<2001), ]
+FPDS_eid_fyear_samples_op <- FPDS_eid_fyear_samples_op[!(FPDS_eid_fyear_samples_op$fiscal_year>2016), ]
+
+
+ggplot(FPDS_eid_fyear_samples_op, aes(x = fiscal_year, fill = factor(sample_year))) +
+  geom_histogram(position = "stack", binwidth = .5)
+#*****************************************************************************************#
+#*****************************************************************************************#
+
+
+build_plot(
+  data=FPDS_eid_fyear,
+  chart_geom = "Histogram",
+  # share = FALSE,
+  x_var="fiscal_year",
+  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  color_var="sample_year",       # name of coloration variable, as string
+  facet_var="sample_year",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=eid_lc,
+  column_key=NULL
+)+facet_wrap(~sample_year,scales="fixed",ncol=1)+
+  labs(x="Fiscal Year of Transaction",y="Number of Contractors")
+
+#GSS2018-07-30 Start year faceted, but only vendors in sample, x is fiscal year
+sample<-subset(FPDS_eid_fyear,sample_year!="Not in sample")
+build_plot(
+  data=sample,
+  chart_geom = "Histogram",
+  # share = FALSE,
+  x_var="fiscal_year",
+  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  color_var="sample_year",       # name of coloration variable, as string
+  facet_var="sample_year",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=eid_lc,
+  column_key=NULL
+)+facet_wrap(~sample_year,scales="fixed",ncol=1)+
+  labs(x="Fiscal Year of Transaction",y="Number of Contractors")
+
+#GSS2018-07-30 Start year faceted, but only vendors in sample, x is number of years since entry
+
+sample$years_in_sample<-sample$fiscal_year-sample$first_year_2018T
+build_plot(
+  data=sample,
+  chart_geom = "Histogram",
+  # share = FALSE,
+  x_var="years_in_sample",
+  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  color_var="sample_year",       # name of coloration variable, as string
+  facet_var="sample_year",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=eid_lc,
+  column_key=NULL
+)+facet_wrap(~sample_year,scales="fixed",ncol=1)+
+  labs(x="Years Since Vendor Became New Entrant",y="Number of Contractors")
+
+
+
+
+
+build_plot(
+  data=FPDS_eid_fyear,
+  chart_geom = "Histogram",
+  # share = FALSE,
+  x_var="fiscal_year",
+  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  color_var="status",       # name of coloration variable, as string
+  facet_var="sample_year",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=eid_lc,
+  column_key=NULL
+)+facet_wrap(~sample_year,scales="fixed",ncol=1)+
+  labs(x="Fiscal Year of Transaction",y="Number of Contractors")
+
+
+
+
+build_plot(
+  data=FPDS_cleaned_unique,
+  chart_geom = "Histogram",
+  # share = FALSE,
+  x_var="FYear",
+  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  # color_var="entrant",       # name of coloration variable, as string
+  # facet_var="entrant",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=eid_lc,
+  column_key=NULL
+)+labs(x="Fiscal Year of Contractor First Appearance",y="Number of Contractors")#+facet_wrap(~entrant,scales="free_y",ncol=1)
+
+
+```
+# Dollars
+Then the vendor spend.
+
+```{r dollars, fig.width=7, fig.height=7}
+
+build_plot(
+  data=FPDS_eid_fyear,
+  chart_geom = "Bar Chart",
+  # share = FALSE,
+  x_var="fiscal_year",
+  y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  color_var="entrant",       # name of coloration variable, as string
+  # facet_var="entrant",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=eid_lc,
+  column_key=NULL
+)+labs(x="Fiscal Year of Transaction",y="Obligations 2017 $")
+
+
+##fiscal year of transaction
+build_plot(
+  data=FPDS_eid_fyear,
+  chart_geom = "Bar Chart",
+  # share = FALSE,
+  x_var="fiscal_year",
+  y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  color_var="entrant",       # name of coloration variable, as string
+  facet_var="entrant",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=eid_lc,
+  column_key=NULL
+)+facet_wrap(~entrant,scales="free_y",ncol=1)+labs(x="Fiscal Year of Transaction",y="Obligations 2017 $")
+
+
+build_plot(
+  data=FPDS_eid_fyear,
+  chart_geom = "Bar Chart",
+  # share = FALSE,
+  x_var="fiscal_year",
+  y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  color_var="sample_year",       # name of coloration variable, as string
+  # facet_var="sample_year",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=eid_lc,
+  column_key=NULL
+)+labs(x="Fiscal Year of Transaction",y="Obligations 2017 $")
+
+
+build_plot(
+  data=FPDS_eid_fyear,
+  chart_geom = "Bar Chart",
+  # share = FALSE,
+  x_var="fiscal_year",
+  y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  color_var="sample_year",       # name of coloration variable, as string
+  facet_var="sample_year",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=eid_lc,
+  column_key=NULL
+)+facet_wrap(~sample_year,scales="free_y",space="free_y",ncol=1)+
+  labs(x="Fiscal Year of Transaction",y="Obligations 2017 $")
+
+
+
+build_plot(
+  data=FPDS_cleaned_unique,
+  chart_geom = "Bar Chart",
+  # share = FALSE,
+  x_var="FYear",
+  y_var="total_obligations", #Name of variable to plot on y-axis
+  # color_var="entrant",       # name of coloration variable, as string
+  # facet_var="entrant",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  labels_and_colors=eid_lc,
+  column_key=NULL
+)labs(x="Fiscal Year of Contractor First Appearance",y="Obligations 2017 $")
+
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+

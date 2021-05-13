@@ -15,6 +15,27 @@ SET NOCOUNT ON;
 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
+/****** Script for SelectTopNRows command from SSMS  ******/
+SELECT  [EntityID]
+      ,[fiscal_year]
+      ,[EntityText]
+      ,[EntityCategory]
+      ,[EntitySizeCode]
+      ,[IsEntityAbove2016constantOneMillionThreshold]
+      ,[IsEntityAbove2016constantReportingThreshold]
+      ,[IsEntityAbove1990constantReportingThreshold]
+      ,[AnyEntityUSplaceOfPerformance]
+      ,[AnyEntityForeignPlaceOfPerformance]
+      ,[ObligatedAmount]
+      ,[NumberOfActions]
+      ,[Top100Federal]
+      ,[Top6]
+      ,[UnknownCompany]
+  FROM [Vendor].[EntityIDhistory]
+  where fiscal_year>=2000
+  
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
 
 --This way took 5 minutes.
 --gt250k_change_outliers.txt
