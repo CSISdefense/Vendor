@@ -10,7 +10,47 @@ library(csis360)
 library(readr)
 library(tidyr)
 library(ggplot2)
+bioecon<-read_delim(file.path("..","data","semi_clean","Economic.SP_NASbioeconomy.txt"),delim="\t",na=c("NULL","NA"))
+colnames(bioecon)[colnames(bioecon)=="value"]<-"Action_Obligation_OMB20_GDP20"
+#kludge while I redownload
+# bioecon<-bioecon %>% dplyr::filter(ProductOrServiceCodeText!="GUIDED MISSILE COMPONENTS"|principalnaicscode!=541714)
+bioecon<-standardize_variable_names(bioecon)
+# lc<-prepare_labels_and_colors(bioecon)
+  # bioecon<-read_and_join_experiment(bioecon,
+  #                                         lookup_file = "Lookup_PrincipalNAICScode.csv",
+  #                                         path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+  #                                         dir="economic\\",
+  #                              by=c("NAICS_Code"="principalnaicscode"),
+  #                              add_var=c("principalnaicscodeText","NAICS_shorthand"),
+  #                              skip_check_var=c("principalnaicscodeText","NAICS_shorthand")
 
+bioecon$NASbioEconomy[bioecon$principalnaicscode=="339112"]<-"Surgical and Medical Equipment"
+
+bioecon$biobased<-factor(bioecon$biobased)
+levels(bioecon$biobased)<-list("Biobased"="1","Not Biobased"="0")
+summary(bioecon$biobased)
+
+bioecon$NASbioEconomypt<-factor(bioecon$NASbioEconomypt)
+
+
+
+bioecon$NASbioEconomypt[bioecon$NASbioEconomy %in% c("Biorefining (food)",
+                                       "Crop products")]<-0
+levels(bioecon$NASbioEconomypt)<-list("NAICS Partial Code"="1","Other NAICS Code"="0")
+
+
+summary(bioecon$NASbioEconomypt)
+  # bioecon<-read_and_join_experiment(bioecon,
+  #                                         lookup_file = "Lookup_PrincipalNAICScode.csv",
+  #                                         path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+  #                                         dir="economic\\",
+  #                              by=c("NAICS_Code"="principalnaicscode"),
+  #                              add_var=c("principalnaicscodeText","NAICS_shorthand"),
+  #                              skip_check_var=c("principalnaicscodeText","NAICS_shorthand"))
+bioecon<-deflate(bioecon,
+                   money_var = "Action_Obligation",
+                   deflator_var="OMB20_GDP20"
+)
 # bioecon 
 ```
 
@@ -35,14 +75,14 @@ bioecon$NASbioEconomyPretty<-factor(bioecon$NASbioEconomy,
                                        "Other biobased\nchemicals","Other enzymes" ,"Bioproduct Outside\nNAS chosen codes")
                               )
 bioecon$NASbioEconomyTrans<-factor(bioecon$NASbioEconomy,
-                              levels=c("Biobased plastic products","Bioeconomy R&D services","Fuel Refineries (ethanol)", "Biologics (enzymes)",
+                              levels=c("Biobased plastic products","Bioeconomy R&D services","Biofuels (ethanol)", "Biologics (enzymes)",
                                        "Biopharmaceuticals/Other pharmaceuticals","Biorefining (food)",
                                        "Crop products","Electromedical instruments","Surgical and Medical Equipment",
                                        "Other biobased chemicals","Other enzymes" ,"NULL" ),
-                              labels=c("Plastic and Rubber\nManufacturing","R&D services\n(Excluding Nanotech)","Fuel Refineries", "Biological Product\nManufacturing",
-                                       "Pharmaceuticals Prep Manufacturing","Biorefining (food)",
+                              labels=c("Plastic and Rubber\nManufacturing","R&D services\n(Excluding Nanotech)","Fuel Refineries\n(incl. ethanol)", "Biological Product\nManufacturing",
+                                       "Pharmaceuticals Prep\nManufacturing","Potential\nBiorefining (food)",
                                        "Crop products","Electromedical\ninstruments","Surgical and\nMedical Equipment",
-                                       "Other chemicals\n(incl. ","Other enzymes" ,"Bioproduct Outside\nNAS chosen codes")
+                                       "Potential biobased\nchemicals. ","Other enzymes" ,"Bioproduct Outside\nNAS chosen codes")
                               )
 
 (all<-build_plot(bioecon,
@@ -53,6 +93,19 @@ bioecon$NASbioEconomyTrans<-factor(bioecon$NASbioEconomy,
            facet_var="NASbioEconomyPretty",
            format=TRUE)+facet_wrap(~NASbioEconomyPretty,scales="free_y")
 )
+ggsave(file=file.path("..","Output","NASbioEconomy_all.png"))
+
+
+(all<-build_plot(bioecon %>% dplyr::filter(!is.na(NASbioEconomy)),
+           x_var="Fiscal.Year",
+           y_var="Action_Obligation_OMB20_GDP20",
+           color_var="NASbioEconomypt",
+           chart_geom="Bar Chart",
+           facet_var="NASbioEconomyTrans",
+           format=TRUE)+facet_wrap(~NASbioEconomyTrans,scales="free_y")
+)+scale_x_continuous(breaks=c(2000,2010,2020))+labs(main="NAICS Codes in NAS categories",
+                             y="Obligated Amount (2020 Constant $)",
+                             x="Fiscal Year")
 ggsave(file=file.path("..","Output","NASbioEconomy_all.png"))
 
 summary(bioecon$biobased)
@@ -95,7 +148,17 @@ levels(bioecon$BioTechCustomer)<-
     "Other Agencies"=c("GSA","NASA",
                        "NATIONAL ENDOWMENT FOR THE HUMANITIES","Other Agencies",
                        "State and IAP","UNITED STATES INTERNATIONAL DEVELOPMENT FINANCE CO"   ))
+bioecon$EnzymeCustomer<-factor(bioecon$ContractingCustomer)
+levels(bioecon$EnzymeCustomer)<-
+  list(
+    "HHS"    ="HHS"    ,
+    "VA"="VA",
+    "Defense"="Defense",
+    "Other Agencies"=c("GSA","NASA","DHS","Energy",
+                       "NATIONAL ENDOWMENT FOR THE HUMANITIES","Other Agencies",
+                       "State and IAP","UNITED STATES INTERNATIONAL DEVELOPMENT FINANCE CO"   ))
 
+summary(bioecon$EnzymeCustomer)
 
 (a<-    build_plot(bioecon %>% dplyr::filter(NASbioEconomypt=="NAICS entire code"&
                                        NASbioEconomy=="Bioeconomy R&D services"&
@@ -112,8 +175,57 @@ levels(bioecon$BioTechCustomer)<-
 )
 ggsave(a,file=file.path("..","Output","Biotechnology_Customer.png"))
 
+(a<-    build_plot(bioecon %>% dplyr::filter(#NASbioEconomypt=="NAICS entire code"&
+                                       NASbioEconomy=="Biologics (enzymes)"),
+           x_var="Fiscal.Year",
+           y_var="Action_Obligation_OMB20_GDP20",
+           color_var="EnzymeCustomer",
+           chart_geom="Bar Chart",
+           facet_var="EnzymeCustomer",
+           format=TRUE)+labs(main="Biological (enzymes)",
+                             y="Obligated Amount (2020 Constant $),\n Variable Scale",
+                             x="Fiscal Year")+facet_wrap(~EnzymeCustomer, scales="free_y")+
+  theme(legend.position = "None")
+)
+ggsave(a,file=file.path("..","Output","Biotproduct_Customer.png"))
 
 
+
+
+
+(a<-    build_plot(bioecon %>% dplyr::filter(#NASbioEconomypt=="NAICS entire code"&
+                                       NASbioEconomy %in% c("Biologics (enzymes)",
+                                       "Biopharmaceuticals/Other pharmaceuticals","Biorefining (food)",
+                                       "Crop products","Electromedical instruments","Surgical and Medical Equipment",
+                                       "Other biobased chemicals","Other enzymes" )),
+           x_var="Fiscal.Year",
+           y_var="Action_Obligation_OMB20_GDP20",
+           color_var="EnzymeCustomer",
+           chart_geom="Bar Chart",
+           facet_var="NASbioEconomyTrans",
+           format=TRUE)+labs(main="Biological (enzymes)",
+                             y="Obligated Amount (2020 Constant $),\n Variable Scale",
+                             x="Fiscal Year")+facet_wrap(~NASbioEconomyTrans, scales="free_y",ncol=4)+
+  theme(legend.position = "bottom")
+)
+ggsave(a,file=file.path("..","Output","Bioproduct_Customer.png"))
+```
+
+
+```{r biobased}
+summary(bioecon$biobased)
+(a<-    build_plot(bioecon %>% dplyr::filter(biobased=="Biobased"),
+           x_var="Fiscal.Year",
+           y_var="Action_Obligation_OMB20_GDP20",
+           color_var="ContractingCustomer",
+           chart_geom="Bar Chart",
+           facet_var="ContractingCustomer",
+           format=TRUE)+labs(main="Biobased Products",
+                             y="Obligated Amount (2020 Constant $),\n Variable Scale",
+                             x="Fiscal Year")+#+facet_wrap(~EnzymeCustomer, scales="free_y")+
+  theme(legend.position = "None")+facet_wrap(~ContractingCustomer,ncol=5)
++scale_x_continuous(breaks=c(2013,2017,2020)))
+ggsave(a,file=file.path("..","Output","Biobased_Customer.png"))
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
