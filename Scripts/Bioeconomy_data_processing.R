@@ -19,6 +19,7 @@ library(tidyverse)
 library(magrittr)
 library(csis360)
 library(Hmisc)
+source("scripts\\NAICS.r")
 # read in data
 
 bio_data<-read_delim(file.path("data","semi_clean","Economic.SP_NASbioeconomy.txt"),delim="\t",na=c("NULL","NA"),
@@ -80,12 +81,14 @@ bio_data<-deflate(bio_data,
 
 
 
-if(substring(bio_data$fiscal_year[nrow(bio_data)],1,12)=="Completion time")
+if(substring(bio_data$Fiscal.Year[nrow(bio_data)],1,12)=="Completion time")
   bio_data<-bio_data[-nrow(bio_data),]
+
+bio_data$recoveredmaterialclauses[bio_data$recoveredmaterialclauses==""]<-NA
 
 
 # discard pre-2000
-bio_data <-bio_data%>% filter(fiscal_year >= 2000)
+bio_data <-bio_data%>% filter(Fiscal.Year >= 2000)
 
 bio_ck<-get_column_key(bio_data)
 bio_lc<-prepare_labels_and_colors(bio_data)
@@ -213,7 +216,7 @@ save(bio_data,bio_lc,bio_ck, file="data/Clean/BioEconomy.Rda")#bio_lc
 # labels_and_colors<-csis360::prepare_labels_and_colors(bio_data)
 # 
 # column_key<-csis360::get_column_key(bio_data)
-# bio_data$dFYear<-as.Date(paste("1/1/",as.character(bio_data$fiscal_year),sep=""),"%m/%d/%Y")
+# bio_data$dFYear<-as.Date(paste("1/1/",as.character(bio_data$Fiscal.Year),sep=""),"%m/%d/%Y")
 # 
 # # write output to CleanedVendorSize.csv
 # # save(bio_data,labels_and_colors,column_key, file="Shiny Apps//FPDS_chart_maker//2018_unaggregated_FPDS.Rda")
@@ -298,7 +301,7 @@ save(bio_data,bio_lc,bio_ck, file="data/Clean/BioEconomy.Rda")#bio_lc
 # #                                         ProductServiceOrRnDarea.sum,
 # #                           ContractingSubCustomer,
 # #                           SubCustomer.platform,
-# #                           fiscal_year) %>%
+# #                           Fiscal.Year) %>%
 # #   dplyr::summarize(Action_Obligation.Then.Year=sum(Action_Obligation.Then.Year,na.rm=TRUE),
 # #                    Action_Obligation.OMB.2019=sum(Action_Obligation.OMB.2019,na.rm=TRUE),
 # #                    Number.Of.Actions=sum(Number.Of.Actions,na.rm=TRUE))
@@ -321,7 +324,7 @@ save(bio_data,bio_lc,bio_ck, file="data/Clean/BioEconomy.Rda")#bio_lc
 # # 
 # # 
 # 
-# # write.csv(bio_data%>%group_by(fiscal_year)%>%
+# # write.csv(bio_data%>%group_by(Fiscal.Year)%>%
 # #       dplyr::summarize(Action_Obligation.Then.Year=sum(Action_Obligation.Then.Year,na.rm=TRUE),
 # #                                                          Action_Obligation.OMB.2019=sum(Action_Obligation.OMB.2019,na.rm=TRUE),
 # #                                                          Number.Of.Actions=sum(Number.Of.Actions,na.rm=TRUE)),
