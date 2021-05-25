@@ -19,6 +19,8 @@ library(tidyverse)
 library(magrittr)
 library(csis360)
 library(Hmisc)
+library(readr)
+
 source("scripts\\NAICS.r")
 # read in data
 
@@ -42,7 +44,7 @@ bio_data<-read_and_join_experiment(bio_data,
                              by=c("productorservicecode"="ProductOrServiceCode"),
                              add_var=c("ProductServiceOrRnDarea","BioRelated"),
                              skip_check_var=c("BioRelated"))
-bio_data$productorservicecode[bio_data$BioRelated==""]<-NA
+bio_data$BioRelated[bio_data$BioRelated==""]<-NA
 
 
 
@@ -335,3 +337,20 @@ save(bio_data,bio_lc,bio_ck, file="data/Clean/BioEconomy.Rda")#bio_lc
 # # bio_data <- read_delim(
 # #   "Data//2017_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",delim = "\t",
 # #   col_names = TRUE, col_types = "cccccccccc",na=c("NA","NULL"))
+
+
+life_rnd<-read_delim(file.path("data_raw","Bioeconomy","FFS_export_table_2021-05-23T11 42 50.584Z.csv"),delim=",",na=c("NULL","NA"),
+                     col_names = TRUE, guess_max = 500000,skip=11)
+# colnames(life_rnd)[grep("X[0-9]",colnames(life_rnd))]<-life_rnd[1,grep("X[0-9]",colnames(life_rnd))]
+check_column<-max(which(life_rnd[1,]!=""))
+colnames(life_rnd)[life_rnd[1,]!=""]<-life_rnd[1,which(life_rnd[1,]!="")]
+life_rnd<-life_rnd[-which(life_rnd[,check_column]=="Total for selected values"),]
+life_rnd<-life_rnd[life_rnd$'[measures]'!="[measures]",]
+life_rnd<-life_rnd[life_rnd[,2]!="",]
+life_rnd<-pivot_longer(life_rnd, names_to="Fiscal.Year", cols=colnames(life_rnd)[grep("[1-2][0-9][0-9][0-9]",colnames(life_rnd))])
+life_rnd$value[life_rnd$value=="-"]<-"0"
+life_rnd$value<-text_to_number(life_rnd$value)
+life_rnd<-deflate(life_rnd,
+                  money_var = "value",
+                  deflator_var="OMB20_GDP20"
+)

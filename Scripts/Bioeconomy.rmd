@@ -10,48 +10,7 @@ library(csis360)
 library(readr)
 library(tidyr)
 library(ggplot2)
-bio_data<-read_delim(file.path("..","data","semi_clean","Economic.SP_NASbioeconomy.txt"),delim="\t",na=c("NULL","NA"))
-colnames(bio_data)[colnames(bio_data)=="value"]<-"Action_Obligation_OMB20_GDP20"
-#kludge while I redownload
-# bio_data<-bio_data %>% dplyr::filter(ProductOrServiceCodeText!="GUIDED MISSILE COMPONENTS"|principalnaicscode!=541714)
-bio_data<-standardize_variable_names(bio_data)
-# lc<-prepare_labels_and_colors(bio_data)
-  # bio_data<-read_and_join_experiment(bio_data,
-  #                                         lookup_file = "Lookup_PrincipalNAICScode.csv",
-  #                                         path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-  #                                         dir="economic\\",
-  #                              by=c("NAICS_Code"="principalnaicscode"),
-  #                              add_var=c("principalnaicscodeText","NAICS_shorthand"),
-  #                              skip_check_var=c("principalnaicscodeText","NAICS_shorthand")
-
-bio_data$NASbioEconomy[bio_data$principalnaicscode=="339112"]<-"Surgical and Medical Equipment"
-
-bio_data$biobased<-factor(bio_data$biobased)
-levels(bio_data$biobased)<-list("Biobased"="1","Not Biobased"="0")
-summary(bio_data$biobased)
-
-bio_data$NASbioEconomypt<-factor(bio_data$NASbioEconomypt)
-
-
-
-bio_data$NASbioEconomypt[bio_data$NASbioEconomy %in% c("Biorefining (food)",
-                                       "Crop products")]<-0
-levels(bio_data$NASbioEconomypt)<-list("NAICS Partial Code"="1","Other NAICS Code"="0")
-
-
-summary(bio_data$NASbioEconomypt)
-  # bio_data<-read_and_join_experiment(bio_data,
-  #                                         lookup_file = "Lookup_PrincipalNAICScode.csv",
-  #                                         path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-  #                                         dir="economic\\",
-  #                              by=c("NAICS_Code"="principalnaicscode"),
-  #                              add_var=c("principalnaicscodeText","NAICS_shorthand"),
-  #                              skip_check_var=c("principalnaicscodeText","NAICS_shorthand"))
-bio_data<-deflate(bio_data,
-                   money_var = "Action_Obligation",
-                   deflator_var="OMB20_GDP20"
-)
-# bio_data 
+load(file="../data/Clean/BioEconomy.Rda")
 ```
 
 ## R Markdown
@@ -59,6 +18,8 @@ bio_data<-deflate(bio_data,
 This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+## Bioeconomy
 
 ```{r Biotechnology}
 
@@ -132,7 +93,9 @@ build_plot(bio_data %>% dplyr::filter(NASbioEconomypt=="NAICS Partial Code"),
 
 ```
 
-## Biotechnology customer
+## Research
+
+### Biotechnology customer
 
 You can also embed plots, for example:
 
@@ -210,6 +173,73 @@ ggsave(a,file=file.path("..","Output","Biotproduct_Customer.png"))
 )
 ggsave(a,file=file.path("..","Output","Bioproduct_Customer.png"))
 ```
+### Life sciences
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+summary(factor(bio_data$BioRelated[bio_data$NASbioEconomy=="Bioeconomy R&D services"]))
+summary(factor(bio_data$ProductOrServiceCodeText[bio_data$NASbioEconomy=="Bioeconomy R&D services"&
+                                                   bio_data$BioRelated=="Bioeconomy"]))
+
+
+bio_data$LifeScience<-bio_data$BioRelated
+bio_data$LifeScience[bio_data$NASbioEconomy=="Bioeconomy R&D services"&
+                                                bio_data$NASbioEconomypt=="Other NAICS Code"]<-
+  "Biotechnology"
+bio_data$LifeScience<-factor(bio_data$LifeScience)
+levels(bio_data$LifeScience)<-list("Agricultural Sciences"="Agricultural Sciences",
+               "Biomedical and Drugs/Biologicals"="Bioeconomy",
+               "Biotechnology"="Biotechnology",
+               "Other Medical"="Medical",
+               "Other Life Sciences"="Life Sciences")
+
+(a<-    build_plot(bio_data %>% dplyr::filter(NASbioEconomy=="Bioeconomy R&D services"&
+                                                (NASbioEconomypt=="Other NAICS Code" |
+                                                   !is.na(BioRelated))# &
+                                       
+                                         # Fiscal.Year>=2008
+                                           ),
+           x_var="Fiscal.Year",
+           y_var="Action_Obligation_OMB20_GDP20",
+           color_var="BioTechCustomer",
+           chart_geom="Bar Chart",
+           facet_var="BioTechCustomer",
+           format=TRUE)+labs(main="Research and Development in Life Sciences and Biotechnology",
+                             y="Obligated Amount (2020 Constant $)",
+                             x="Fiscal Year")+
+  theme(legend.position = "None")
+)
+ggsave(a,file=file.path("..","Output","Life_Science_Customer.png"))
+
+(a<-    build_plot(bio_data %>% dplyr::filter(NASbioEconomy=="Bioeconomy R&D services"&
+                                                (NASbioEconomypt=="Other NAICS Code" |
+                                                   !is.na(BioRelated))# &
+                                       
+                                         # Fiscal.Year>=2008
+                                           ),
+           x_var="Fiscal.Year",
+           y_var="Action_Obligation_OMB20_GDP20",
+           color_var="LifeScience",
+           chart_geom="Bar Chart",
+           facet_var="BioTechCustomer",
+           format=TRUE)+labs(main="Research and Development in Life Sciences and Biotechnology",
+                             y="Contract Obligated Amount (2020 Constant $)",
+                             x="Fiscal Year")#+
+  # theme(legend.position = "None")
+)
+ggsave(a,file=file.path("..","Output","Life_Science_Customer.png"))
+
+bio_data$ProductOrServiceCodeText
+write.csv(file="..\\output\\GeneralRnDprodcodes.csv",
+bio_data %>% filter(NASbioEconomy=="Bioeconomy R&D services"&
+                                                NASbioEconomypt!="Other NAICS Code" )%>%
+  group_by(productorservicecode,ProductOrServiceCodeText,BioRelated)%>%
+  summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20,na.rm=TRUE))
+)
+
+```
+
 
 ## BioBased
 ```{r biobased}
@@ -229,3 +259,27 @@ ggsave(a,file=file.path("..","Output","Biobased_Customer.png"))
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+#NCES
+```{r life rnd}
+colnames(life_rnd)[colnames(life_rnd)=="[Broad Fields]"]<-"BroadFields"
+life_rnd$Fiscal.Year<-text_to_number(life_rnd$Fiscal.Year)
+
+bf<-format_data_for_plot(life_rnd,
+                     fy_var="Fiscal.Year",
+                     y_var="value_OMB20_GDP20",
+                     color_var="BroadFields"
+)                     
+# The palette with grey:
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+levels(bf$BroadFields)
+
+(
+a<-ggplot(bf %>% filter(BroadFields!="Biological aspects"), aes(x=Fiscal.Year,y=value_OMB20_GDP20,fill=BroadFields))+geom_col()+scale_fill_manual(values=cbPalette)+labs(
+  x="Fiscal Year",y="Federal Obligations for R&D\n(thousands, constant 2020 $)",caption="Source: National Center for Science and Engineering Statistics",fill="Broad Field"
+)+scale_x_continuous(n.breaks=7)+scale_y_continuous(label=scales::comma)
+)
+ggsave(a,file=file.path("..","output","NCSES_funds.png"))
+
+```
