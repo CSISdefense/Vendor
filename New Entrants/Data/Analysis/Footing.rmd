@@ -29,8 +29,8 @@ file.exists("New Entrants.Rproj")
 list.files("../")
 FPDS_data <- read.delim(file.path("../Raw Data/FPDS","Vendor.SP_DunsnumberNewEntrants_all.txt"), fill = TRUE, header=TRUE,  na.strings = c("", "NULL"))
 
-setwd("K:/2018-01 NPS New Entrants/Data/Data/Raw Data/FPDS")
-FPDS_data <- read.delim("Vendor.SP_DunsnumberNewEntrants_all.txt", fill = TRUE, header=TRUE,  na.strings = c("", "NULL"))
+# setwd("K:/2018-01 NPS New Entrants/Data/Data/Raw Data/FPDS")
+# FPDS_data <- read.delim("Vendor.SP_DunsnumberNewEntrants_all.txt", fill = TRUE, header=TRUE,  na.strings = c("", "NULL"))
 
 FPDS_data<-as.data.frame(FPDS_data)
 
@@ -44,7 +44,7 @@ FPDS_data<-csis360::remove_bom(FPDS_data)
 # FPDS_data<-subset(FPDS_data,fiscal_year>=2000)
 
 FPDS_data<-csis360::deflate(FPDS_data,money_var="obligatedAmount",
-                            fy_var="fiscal_year")
+                            fy_var="fiscal_year", deflator_var = "GDPdeflator2017")
 #Calculate first_year
 FPDS_data<-FPDS_data %>%
   group_by(Dunsnumber) %>%
@@ -54,9 +54,9 @@ FPDS_data<-FPDS_data %>%
 #Calculate annual spend and presence.
 FPDS_duns_fyear<-FPDS_data %>%
   group_by(Dunsnumber,fiscal_year,entrant,first_year) %>%
-  dplyr::summarize(obligatedAmount.2017=sum(obligatedAmount.Deflator.2017,na.rm=TRUE),
+  dplyr::summarize(obligatedAmount.2017=sum(obligatedAmount_GDPdeflator2017,na.rm=TRUE),
   # dplyr::summarize(obligatedAmount.Deflator.2016=sum(obligatedAmount.Deflator.2016,na.rm=TRUE),
-                   present=max(obligatedAmount.Deflator.2016,na.rm=TRUE))
+                   present=max(obligatedAmount_GDPdeflator2017,na.rm=TRUE))
 FPDS_duns_fyear$present<-ifelse(FPDS_duns_fyear$present>0,1,0)
 summary(FPDS_duns_fyear$present)
 
@@ -211,7 +211,7 @@ build_plot(
 
 
 build_plot(
-  data=subset(FPDS_duns_fyear,sample_year!="Not in sample")
+  data=subset(FPDS_duns_fyear,sample_year!="Not in sample"),
   chart_geom = "Histogram",
   # share = FALSE,
   x_var="fiscal_year",

@@ -536,6 +536,40 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
 
 
       # data<-rbind(any,spent)
+      else if (metric=="FYDP3_ActCml"){
+        
+        any<-data %>% summarise_ (   mean_y = "mean(FYDP3_ActCml>0)" 
+                                     , mean_x =  paste( "mean(" ,  x_col  ,")"  ))
+        spent<-data %>% summarise_ (    mean_y = "mean(log(FYDP3_ActCml+1))"
+                                        , mean_x =  paste( "mean(" ,  x_col  ,")"  ))
+        
+        
+        scatter_spend<-data[data$FYDP3_ActCml>0,colnames(data) %in% c("FYDP3_ActCml",x_col)]
+        colnames(scatter_spend)[colnames(scatter_spend) %in% c("FYDP3_ActCml")]<-"mean_y"
+        #We can't just apply a logarithmic filter to the y_scale because we want 
+        #An alternate way to do this would just be to do the scatter seperately as it's 
+        #not really a binned_percent_plot. Though that loses the common x_scale
+        scatter_spend$mean_y<-log(scatter_spend$mean_y+1)
+        colnames(scatter_spend)[colnames(scatter_spend)==x_col]<-"mean_x"
+        
+        scatter_spend$bin_x<-NA
+        
+        any$output<-"Any Spending"
+        spent$output<-"Spending (Logged and Incremented)"
+        
+        scatter_spend$output<-"Spending Scatterplot (logged)"
+        
+        #This graph is only helpful if there are any zero
+        if(any(any$mean_y<1)) 
+          data<-rbind(any,any,any,any,
+                      # spent,spent,spent,spent,
+                      scatter_spend)
+        else
+          data<-#rbind(spent,spent,spent,spent,
+          data$output<-factor(data$output,c("Any Spending","Spending (Logged and Incremented)","Spending Scatterplot (logged)"))  
+        
+        
+        # data<-rbind(any,spent)
     } else (stop(paste("Unrecognized metric:",metric)))
     
     plot<-ggplot(data=data,
@@ -623,6 +657,41 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
         else
           data<-#rbind(spent,spent,spent,spent,
                       scatter_spend#)
+        data$output<-factor(data$output,c("Any Spending","Spending (Logged and Incremented)","Spending Scatterplot (logged)"))  
+        
+        
+        # data<-rbind(any,spent)
+      } else if (metric=="FYDP3_ActCml"){
+        
+        any<-data %>% summarise_ (   mean_y = "mean(FYDP3_ActCml>0)" 
+                                     , mean_x =  paste( "mean(" ,  x_col  ,")"  ))
+        spent<-data %>% summarise_ (    mean_y = "mean(log(FYDP3_ActCml+1))"
+                                        , mean_x =  paste( "mean(" ,  x_col  ,")"  ))
+        
+        
+        scatter_spend<-data[data$FYDP3_ActCml>0,colnames(data) %in% c("FYDP3_ActCml",x_col,group_col)]
+        colnames(scatter_spend)[colnames(scatter_spend) %in% c("FYDP3_ActCml")]<-"mean_y"
+        #We can't just apply a logarithmic filter to the y_scale because we want 
+        #An alternate way to do this would just be to do the scatter seperately as it's 
+        #not really a binned_percent_plot. Though that loses the common x_scale
+        scatter_spend$mean_y<-log(scatter_spend$mean_y+1)
+        colnames(scatter_spend)[colnames(scatter_spend)==x_col]<-"mean_x"
+        
+        scatter_spend$bin_x<-NA
+        
+        any$output<-"Any Spending"
+        spent$output<-"Spending (Logged and Incremented)"
+        
+        scatter_spend$output<-"Spending Scatterplot (logged)"
+        
+        #This graph is only helpful if there are any zero
+        if(any(any$mean_y<1)) 
+          data<-rbind(any,any,any,any,
+                      # spent,spent,spent,spent,
+                      scatter_spend)
+        else
+          data<-#rbind(spent,spent,spent,spent,
+          scatter_spend#)
         data$output<-factor(data$output,c("Any Spending","Spending (Logged and Incremented)","Spending Scatterplot (logged)"))  
         
         
@@ -856,9 +925,9 @@ discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,rot
         data<-ln_CBre
       data$output<-factor(data$output,c("Breach Occured","Breach Size (logged)"))  
     }
-    else if (metric=="FYDP2_ActCml"){
-      any<-data %>% summarise_ (   mean_y = "mean(FYDP2_ActCml>0)"   )  
-      spent<-data %>% dplyr::filter(FYDP2_ActCml>0) %>% summarise_ (   mean_y = "mean(log(FYDP2_ActCml+1))"   )  
+    else if (metric=="FYDP3_ActCml"){
+      any<-data %>% summarise_ (   mean_y = "mean(FYDP3_ActCml>0)"   )  
+      spent<-data %>% dplyr::filter(FYDP3_ActCml>0) %>% summarise_ (   mean_y = "mean(log(FYDP3_ActCml+1))"   )  
       any$output<-"Any Spending"
       spent$output<-"Log(Spending+1)\nGiven any Spending"
       data<-rbind(any,spent)
@@ -869,7 +938,7 @@ discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,rot
     plot<-ggplot(data=data,
                  aes_string(y="mean_y",x=x_col))
     #Metrics 
-    if (metric %in% c("cbre","FYDP2_ActCml")) plot<-plot+facet_wrap(output~.,scales="free")
+    if (metric %in% c("cbre","FYDP3_ActCml")) plot<-plot+facet_wrap(output~.,scales="free")
     else plot<-plot+facet_wrap(~output)
   }
   else{
@@ -908,6 +977,14 @@ discrete_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,rot
     else if (metric=="FYDP2_ActCml"){
       any<-data %>% summarise_ (   mean_y = "mean(FYDP2_ActCml>0)"   )  
       spent<-data %>% summarise_ (   mean_y = "mean(log(FYDP2_ActCml+1))"   )  
+      any$output<-"Any Spending"
+      spent$output<-"Spending (Logged and Incremented)"
+      data<-rbind(any,spent)
+      data$output<-factor(data$output,c("Any Spending","Spending (Logged and Incremented)"))  
+    }
+    else if (metric=="FYDP3_ActCml"){
+      any<-data %>% summarise_ (   mean_y = "mean(FYDP3_ActCml>0)"   )  
+      spent<-data %>% summarise_ (   mean_y = "mean(log(FYDP3_ActCml+1))"   )  
       any$output<-"Any Spending"
       spent$output<-"Spending (Logged and Incremented)"
       data<-rbind(any,spent)
@@ -1185,11 +1262,14 @@ binned_fitted_versus_residuals<-function(model,bins=20){
       graph<-binned_fitted_residuals(model,"b_AllOpt",bins)
     } else if(!is.null(model@frame$b_FYDP2_ActCml)){
       graph<-binned_fitted_residuals(model,"b_FYDP2_ActCml",bins)
+    } else if(!is.null(model@frame$b_FYDP3_ActCml)){
+      graph<-binned_fitted_residuals(model,"b_FYDP3_ActCml",bins)
     } else if(any(c("l_Offr",
                     "lp_OptGrowth",
                     "ln_OptGrowth",
                     "log(FYDP2_Actual + 1)",
-                    "log(FYDP2_ActCml + 1)"
+                    "log(FYDP2_ActCml + 1)",
+                    "log(FYDP3_ActCml + 1)"
     ) %in% colnames(model@frame))){
       graph<-resid_plot(model,sample=25000)
     }
@@ -1215,7 +1295,8 @@ binned_fitted_versus_residuals<-function(model,bins=20){
                     "lp_OptGrowth",
                     "ln_OptGrowth",
                     "log(FYDP2_Actual + 1)",
-                    "log(FYDP2_ActCml + 1)"
+                    "log(FYDP2_ActCml + 1)",
+                    "log(FYDP3_ActCml + 1)"
                     ) %in% colnames(model$model))){
       graph<-resid_plot(model,sample=25000)  
     }
@@ -1304,6 +1385,10 @@ residuals_binned<-function(model,col="fitted",bins=40){
                            data$fitted-data$outcome, nclass=bins)$binned
     } else if(!is.null(model@frame$b_FYDP2_ActCml)){
       data$outcome<-model@frame$b_FYDP2_ActCml
+      data<-binned.resids(data[,col],
+                          data$fitted-data$outcome, nclass=bins)$binned
+    } else if(!is.null(model@frame$b_FYDP3_ActCml)){
+      data$outcome<-model@frame$b_FYDP3_ActCml
       data<-binned.resids(data[,col],
                           data$fitted-data$outcome, nclass=bins)$binned
       
