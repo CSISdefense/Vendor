@@ -172,6 +172,24 @@ ggsave(a,file=file.path("..","Output","Biotproduct_Customer.png"))
   theme(legend.position = "bottom")
 )
 ggsave(a,file=file.path("..","Output","Bioproduct_Customer.png"))
+
+
+
+(a<-    build_plot(bio_data %>% dplyr::filter(#NASbioEconomypt=="Other NAICS Code"&
+                                       NASbioEconomy %in% c("Biologics (enzymes)",
+                                       "Biopharmaceuticals/Other pharmaceuticals","Biorefining (food)",
+                                       "Crop products","Electromedical instruments","Surgical and Medical Equipment",
+                                       "Other biobased chemicals","Other enzymes" )),
+           x_var="Fiscal.Year",
+           y_var="Action_Obligation_OMB20_GDP20",
+           color_var="EnzymeCustomer",
+           chart_geom="Bar Chart",
+           facet_var="NASbioEconomyTrans",
+           format=TRUE)+labs(main="Biological (enzymes)",
+                             y="Obligated Amount (2020 Constant $),\n Variable Scale",
+                             x="Fiscal Year")+facet_wrap(~NASbioEconomyTrans, scales="free_y",ncol=4)+
+  theme(legend.position = "bottom")
+)
 ```
 ### Life sciences
 
@@ -181,18 +199,32 @@ You can also embed plots, for example:
 summary(factor(bio_data$BioRelated[bio_data$NASbioEconomy=="Bioeconomy R&D services"]))
 summary(factor(bio_data$ProductOrServiceCodeText[bio_data$NASbioEconomy=="Bioeconomy R&D services"&
                                                    bio_data$BioRelated=="Bioeconomy"]))
-
+summary(factor(bio_data$BioRelated))
 
 bio_data$LifeScience<-bio_data$BioRelated
 bio_data$LifeScience[bio_data$NASbioEconomy=="Bioeconomy R&D services"&
                                                 bio_data$NASbioEconomypt=="Other NAICS Code"]<-
   "Biotechnology"
+bio_data$LifeScience.sum<-factor(bio_data$LifeScience)
+levels(bio_data$LifeScience.sum)<-list(
+               "Medical and Drugs/Biologicals"=c("Bioeconomy","Medical"),
+               "Biotechnology"="Biotechnology",
+               "Other Life Sciences"=c("Life Sciences","Agricultural Sciences"),
+               "Environmental Sciences"="Environmental Sciences"
+)
+
 bio_data$LifeScience<-factor(bio_data$LifeScience)
 levels(bio_data$LifeScience)<-list("Agricultural Sciences"="Agricultural Sciences",
                "Biomedical and Drugs/Biologicals"="Bioeconomy",
                "Biotechnology"="Biotechnology",
                "Other Medical"="Medical",
-               "Other Life Sciences"="Life Sciences")
+               "Other Life Sciences"="Life Sciences",
+               "Environmental Sciences"="Environmental Sciences")
+
+
+
+summary(bio_data$LifeScience)
+
 
 (a<-    build_plot(bio_data %>% dplyr::filter(NASbioEconomy=="Bioeconomy R&D services"&
                                                 (NASbioEconomypt=="Other NAICS Code" |
@@ -212,6 +244,7 @@ levels(bio_data$LifeScience)<-list("Agricultural Sciences"="Agricultural Science
 )
 ggsave(a,file=file.path("..","Output","Life_Science_Customer.png"))
 
+
 (a<-    build_plot(bio_data %>% dplyr::filter(NASbioEconomy=="Bioeconomy R&D services"&
                                                 (NASbioEconomypt=="Other NAICS Code" |
                                                    !is.na(BioRelated))# &
@@ -221,6 +254,23 @@ ggsave(a,file=file.path("..","Output","Life_Science_Customer.png"))
            x_var="Fiscal.Year",
            y_var="Action_Obligation_OMB20_GDP20",
            color_var="LifeScience",
+           chart_geom="Bar Chart",
+           facet_var="LifeScience",
+           format=TRUE)+labs(main="Research and Development in Life Sciences and Biotechnology",
+                             y="Contract Obligated Amount (2020 Constant $)",
+                             x="Fiscal Year")#+
+  # theme(legend.position = "None")
+)
+
+(a<-    build_plot(bio_data %>% dplyr::filter(NASbioEconomy=="Bioeconomy R&D services"&
+                                                (NASbioEconomypt=="Other NAICS Code" |
+                                                   !is.na(BioRelated))# &
+                                       
+                                         # Fiscal.Year>=2008
+                                           ),
+           x_var="Fiscal.Year",
+           y_var="Action_Obligation_OMB20_GDP20",
+           color_var="LifeScience.sum",
            chart_geom="Bar Chart",
            facet_var="BioTechCustomer",
            format=TRUE)+labs(main="Research and Development in Life Sciences and Biotechnology",
@@ -237,6 +287,9 @@ bio_data %>% filter(NASbioEconomy=="Bioeconomy R&D services"&
   group_by(productorservicecode,ProductOrServiceCodeText,BioRelated)%>%
   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20,na.rm=TRUE))
 )
+
+
+
 
 ```
 
@@ -262,24 +315,41 @@ Note that the `echo = FALSE` parameter was added to the code chunk to prevent pr
 
 #NCES
 ```{r life rnd}
-colnames(life_rnd)[colnames(life_rnd)=="[Broad Fields]"]<-"BroadFields"
+colnames(life_rnd)[colnames(life_rnd)=="[Detailed Fields]"]<-"DetailedFields"
+colnames(life_rnd)[colnames(life_rnd)=="[Basic Research and Applied Research]"]<-"BasicApplied"
 life_rnd$Fiscal.Year<-text_to_number(life_rnd$Fiscal.Year)
 
 bf<-format_data_for_plot(life_rnd,
                      fy_var="Fiscal.Year",
                      y_var="value_OMB20_GDP20",
-                     color_var="BroadFields"
+                     color_var="DetailedFields"
 )                     
 # The palette with grey:
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
-levels(bf$BroadFields)
+levels(bf$DetailedFields)
 
 (
-a<-ggplot(bf %>% filter(BroadFields!="Biological aspects"), aes(x=Fiscal.Year,y=value_OMB20_GDP20,fill=BroadFields))+geom_col()+scale_fill_manual(values=cbPalette)+labs(
+a<-ggplot(bf %>% dplyr::filter(DetailedFields!="Biological aspects"), aes(x=Fiscal.Year,y=value_OMB20_GDP20,fill=DetailedFields))+geom_col()+scale_fill_manual(values=cbPalette)+labs(
   x="Fiscal Year",y="Federal Obligations for R&D\n(thousands, constant 2020 $)",caption="Source: National Center for Science and Engineering Statistics",fill="Broad Field"
 )+scale_x_continuous(n.breaks=7)+scale_y_continuous(label=scales::comma)
 )
 ggsave(a,file=file.path("..","output","NCSES_funds.png"))
+
+life_rnd$`[Basic Research and Applied Research]`
+
+bf<-format_data_for_plot(life_rnd,
+                     fy_var="Fiscal.Year",
+                     facet_var = "BasicApplied",
+                     y_var="value_OMB20_GDP20",
+                     color_var="DetailedFields"
+)         
+
+(
+a<-ggplot(bf %>% dplyr::filter(DetailedFields!="Biological aspects"), aes(x=Fiscal.Year,y=value_OMB20_GDP20,fill=BasicApplied))+geom_col()+scale_fill_manual(values=cbPalette)+labs(
+  x="Fiscal Year",y="Federal Obligations for R&D\n(thousands, constant 2020 $)",caption="Source: National Center for Science and Engineering Statistics",fill="Basic Research and Applied Research"
+)+scale_x_continuous(n.breaks=7)+scale_y_continuous(label=scales::comma)+facet_wrap(~DetailedFields)
+)
+
 
 ```

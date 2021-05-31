@@ -42,9 +42,10 @@ bio_data<-read_and_join_experiment(bio_data,
                                         path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
                                         dir="",
                              by=c("productorservicecode"="ProductOrServiceCode"),
-                             add_var=c("ProductServiceOrRnDarea","BioRelated"),
-                             skip_check_var=c("BioRelated"))
+                             add_var=c("ProductServiceOrRnDarea","BioRelated","RnD_BudgetActivity","Simple"),
+                             skip_check_var=c("BioRelated","RnD_BudgetActivity"))
 bio_data$BioRelated[bio_data$BioRelated==""]<-NA
+bio_data$RnD_BudgetActivity[is.na(bio_data$RnD_BudgetActivity)]<-bio_data$Simple[is.na(bio_data$RnD_BudgetActivity)]
 
 
 
@@ -94,7 +95,7 @@ bio_data <-bio_data%>% filter(Fiscal.Year >= 2000)
 
 bio_ck<-get_column_key(bio_data)
 bio_lc<-prepare_labels_and_colors(bio_data)
-save(bio_data,bio_lc,bio_ck, file="data/Clean/BioEconomy.Rda")#bio_lc
+
 
 # write.csv(unique(bio_data$NASbioEconomy[!is.na(bio_data$NASbioEconomy)]) ,"new_colors.csv",row.names = FALSE)
 
@@ -343,9 +344,9 @@ life_rnd<-read_delim(file.path("data_raw","Bioeconomy","FFS_export_table_2021-05
                      col_names = TRUE, guess_max = 500000,skip=11)
 # colnames(life_rnd)[grep("X[0-9]",colnames(life_rnd))]<-life_rnd[1,grep("X[0-9]",colnames(life_rnd))]
 check_column<-max(which(life_rnd[1,]!=""))
-colnames(life_rnd)[life_rnd[1,]!=""]<-life_rnd[1,which(life_rnd[1,]!="")]
+colnames(life_rnd)[life_rnd[1,]!=""]<-c(life_rnd[1,which(life_rnd[1,]!="")][-1],"ManualLabel")
 life_rnd<-life_rnd[-which(life_rnd[,check_column]=="Total for selected values"),]
-life_rnd<-life_rnd[life_rnd$'[measures]'!="[measures]",]
+life_rnd<-life_rnd[life_rnd[,1]!="[measures]",]
 life_rnd<-life_rnd[life_rnd[,2]!="",]
 life_rnd<-pivot_longer(life_rnd, names_to="Fiscal.Year", cols=colnames(life_rnd)[grep("[1-2][0-9][0-9][0-9]",colnames(life_rnd))])
 life_rnd$value[life_rnd$value=="-"]<-"0"
@@ -354,3 +355,6 @@ life_rnd<-deflate(life_rnd,
                   money_var = "value",
                   deflator_var="OMB20_GDP20"
 )
+
+
+save(bio_data,bio_lc,bio_ck,life_rnd, file="data/Clean/BioEconomy.Rda")#bio_lc
