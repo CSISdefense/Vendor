@@ -31,4 +31,10 @@ ContractingOfficeID,ContractingOfficeName
 from contract.FPDSpartial
 where contractingofficeagencyid='97JC' and principalnaicscode in ('541711','541714')
 
+select CSIScontractID, CSIStransactionID, descriptionofcontractrequirement, obligatedAmount,agencyid,principalnaicscode, principalnaicscodeText,ProductOrServiceCode,ProductOrServiceCodeText, piid,idvpiid,claimantprogramcode,
+ContractingOfficeID,ContractingOfficeName
+from contract.FPDSpartial
+where contractingcustomer='Energy' and principalnaicscode in ('541711','541714')
+
+
 77209836
