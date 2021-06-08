@@ -22,6 +22,7 @@ When you click the **Knit** button a document will be generated that includes bo
 # Bioeconomy
 
 ```{r Biotechnology}
+summary(factor(bio_data$NASbioEconomy))
 
 
 
@@ -29,21 +30,25 @@ bio_data$NASbioEconomyPretty<-factor(bio_data$NASbioEconomy,
                               levels=c("Biobased plastic products","Bioeconomy R&D services","Biofuels (ethanol)", "Biologics (enzymes)",
                                        "Biopharmaceuticals/Other pharmaceuticals","Biorefining (food)",
                                        "Crop products","Electromedical instruments","Surgical and Medical Equipment",
-                                       "Other biobased chemicals","Other enzymes" ,"NULL" ),
+                                       "Other biobased chemicals","Other enzymes" ,"Bioproduct Outside NAS chosen codes",
+                                       "Other COVID19 Pandemic","Other Ebola Response"),
                               labels=c("Biobased plastic\nproducts","Bioeconomy\nR&D services","Biofuels (ethanol)", "Biologics (enzymes)",
                                        "Biopharmaceuticals\n/Other pharmaceuticals","Biorefining (food)",
                                        "Crop products","Electromedical\ninstruments","Surgical and\nMedical Equipment",
-                                       "Other biobased\nchemicals","Other enzymes" ,"Bioproduct Outside\nNAS chosen codes")
+                                       "Other biobased\nchemicals","Other enzymes" ,"Bioproduct Outside\nNAS chosen codes",
+                                       "Other COVID19 Pandemic","Other Ebola Response")
                               )
 bio_data$NASbioEconomyTrans<-factor(bio_data$NASbioEconomy,
                               levels=c("Biobased plastic products","Bioeconomy R&D services","Biofuels (ethanol)", "Biologics (enzymes)",
                                        "Biopharmaceuticals/Other pharmaceuticals","Biorefining (food)",
                                        "Crop products","Electromedical instruments","Surgical and Medical Equipment",
-                                       "Other biobased chemicals","Other enzymes" ,"NULL" ),
+                                       "Other biobased chemicals","Other enzymes" ,"Bioproduct Outside NAS chosen codes",
+                                       "Other COVID19 Pandemic","Other Ebola Response"),
                               labels=c("Plastic and Rubber\nManufacturing","R&D services\n(Excluding Nanotech)","Fuel Refineries\n(incl. ethanol)", "Biological Product\nManufacturing",
                                        "Pharmaceuticals Prep\nManufacturing","Potential\nBiorefining (food)",
                                        "Crop products","Electromedical\ninstruments","Surgical and\nMedical Equipment",
-                                       "Potential biobased\nchemicals. ","Other enzymes" ,"Bioproduct Outside\nNAS chosen codes")
+                                       "Potential biobased\nchemicals. ","Other enzymes" ,"Bioproduct Outside\nNAS chosen codes",
+                                       "Other COVID19 Pandemic","Other Ebola Response")
                               )
 
 (all<-build_plot(bio_data,
@@ -289,9 +294,62 @@ bio_data %>% filter(NASbioEconomy=="Bioeconomy R&D services"&
 
 
 ```
+# Pandemic Response
+## Covid19
+```{r COVID19}
+(a<-    build_plot(bio_data %>% dplyr::filter(nationalinterestactioncode=="P20C"),
+           x_var="ContractingCustomer",
+           y_var="Action_Obligation_OMB20_GDP20",
+           color_var="ContractingCustomer",
+           chart_geom="Bar Chart",
+           # facet_var="ContractingCustomer",
+           format=TRUE)+labs(main="COVID19 response",
+                             y="Obligated Amount (2020 Constant $),\n Variable Scale",
+                             x="Fiscal Year")+#+facet_wrap(~EnzymeCustomer, scales="free_y")+
+  theme(legend.position = "None")#+facet_wrap(~ContractingCustomer,ncol=5)
+#+scale_x_continuous(breaks=c(2013,2017,2020))
+)+coord_flip()
+summary(factor(bio_data$ContractingCustomer))
+summary(factor(bio_data$ContractingAgencyText[bio_data$nationalinterestactioncode=="P20C" & bio_data$ContractingCustomer=="Other Agencies"]))
+other_agency_covid<-bio_data %>% filter(nationalinterestactioncode=="P20C" & ContractingCustomer=="Other Agencies")%>%
+  group_by(ContractingAgencyText)%>%summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
+other_agency_covid[order_by(other_agency_covid$Action_Obligation_OMB20_GDP20)]
+arrange(other_agency_covid,desc(Action_Obligation_OMB20_GDP20))
 
 
-## BioBased
+(a<-    build_plot(bio_data %>% dplyr::filter(nationalinterestactioncode=="P20C"),
+           x_var="NASbioEconomyPretty",
+           y_var="Action_Obligation_OMB20_GDP20",
+           color_var="NASbioEconomyPretty",
+           chart_geom="Bar Chart",
+           # facet_var="ContractingCustomer",
+           format=TRUE)+labs(main="COVID19 response",
+                             y="Obligated Amount (2020 Constant $),\n Variable Scale",
+                             x="Fiscal Year")+#+facet_wrap(~EnzymeCustomer, scales="free_y")+
+  theme(legend.position = "None")#+facet_wrap(~ContractingCustomer,ncol=5)
+#+scale_x_continuous(breaks=c(2013,2017,2020))
+)+coord_flip()
+
+bio_data$ProductServiceOrRnDarea
+(a<-    build_plot(bio_data %>% dplyr::filter(nationalinterestactioncode=="P20C"),
+           x_var="ProductServiceOrRnDarea",
+           y_var="Action_Obligation_OMB20_GDP20",
+           color_var="ProductServiceOrRnDarea",
+           chart_geom="Bar Chart",
+           facet_var="Simple",
+           format=TRUE)+labs(main="COVID19 response",
+                             y="Obligated Amount (2020 Constant $),\n Variable Scale",
+                             x="Fiscal Year")+facet_wrap(Simple~., scales="free_y",ncol=1)+
+  theme(legend.position = "None")+coord_flip()#+facet_wrap(~ContractingCustomer,ncol=5)
+#+scale_x_continuous(breaks=c(2013,2017,2020))
+)
+
+covid19 %>% group_by(Fiscal_Year) %>% summarise(Action_Obligation=sum(Action_Obligation))
+bio_data %>% filter(nationalinterestactioncode=="P20C") %>% group_by(Fiscal.Year) %>% summarise(Action_Obligation=sum(Action_Obligation_Then_Year))
+```
+
+
+# BioBased
 ```{r biobased}
 summary(bio_data$biobased)
 (a<-    build_plot(bio_data %>% dplyr::filter(biobased=="Biobased"),
@@ -334,14 +392,64 @@ bio_data$ProductServiceOrRnDarea
     coord_flip()#+facet_wrap(~ContractingCustomer,ncol=5)+
 # +scale_x_continuous(breaks=c(2013,2017,2020)))
 )
+
+(a<-    build_plot(bio_data %>% dplyr::filter(biobased=="Biobased"),
+           x_var="ProductServiceOrRnDarea",
+           y_var="Action_Obligation_OMB20_GDP20",
+           color_var="ProductServiceOrRnDarea",
+           chart_geom="Bar Chart",
+           facet_var="Simple",
+           format=TRUE)+labs(main="Biobased",
+                             y="Obligated Amount (2020 Constant $),\n Variable Scale",
+                             x="Fiscal Year")+facet_wrap(Simple~., scales="free_y",ncol=1)+
+  theme(legend.position = "None")+coord_flip()#+facet_wrap(~ContractingCustomer,ncol=5)
+#+scale_x_continuous(breaks=c(2013,2017,2020))
+)
+
+biobased<-bio_data %>% filter(biobased=="Biobased")%>% group_by(productorservicecode,ProductOrServiceCodeText,Simple) %>%
+  summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
+arrange(biobased,desc(Action_Obligation_OMB20_GDP20))
+top5biopsc<-arrange(biobased,desc(Action_Obligation_OMB20_GDP20))$ProductOrServiceCodeText[1:5]
+bio_data$biobasedPSC<-NA
+bio_data$biobasedPSC[is.na(bio_data$biobasedPSC)&bio_data$ProductOrServiceCodeText %in% top5biopsc]<-
+  bio_data$ProductOrServiceCodeText[is.na(bio_data$biobasedPSC)&bio_data$ProductOrServiceCodeText %in% top5biopsc]
+bio_data$biobasedPSC[is.na(bio_data$biobasedPSC)&bio_data$ProductServiceOrRnDarea=="FRS"]<-
+  "Other Facility-Related Services"
+bio_data$biobasedPSC[is.na(bio_data$biobasedPSC)&bio_data$CrisisProductOrServiceArea=="Construction"]<-
+  "Other Construction"
+bio_data$biobasedPSC[is.na(bio_data$biobasedPSC)&bio_data$Simple=="Services"]<-
+  "Other Services"
+bio_data$biobasedPSC[is.na(bio_data$biobasedPSC)&bio_data$Simple=="Products"]<-
+  "Other Products"
+bio_data$biobasedPSC[is.na(bio_data$biobasedPSC)&bio_data$Simple=="R&D"]<-
+  "Other R&D"
+
+
+(a<-    build_plot(bio_data %>% dplyr::filter(biobased=="Biobased"),
+           x_var="biobasedPSC",
+           y_var="Action_Obligation_OMB20_GDP20",
+           color_var="Simple",
+           chart_geom="Bar Chart",
+           # facet_var="Simple",
+           format=TRUE)+labs(main="Biobased",
+                             y="Obligated Amount (2020 Constant $),\n Variable Scale",
+                             x="Fiscal Year")+#facet_wrap(Simple~., scales="free_y",ncol=1)+
+  #theme(legend.position = "None")+
+    coord_flip()#+facet_wrap(~ContractingCustomer,ncol=5)
+#+scale_x_continuous(breaks=c(2013,2017,2020))
+)
+
+summary(factor(bio_data$ProductServiceOrRnDarea))
+summary(factor(bio_data$biobasedPSC))
+
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
-#NCES
+#NCSES
 ##FFS
 ```{r life rnd}
-colnames(life_HERD)[colnames(life_rnd)=="[Detailed Fields]"]<-"DetailedFields"
+colnames(life_rnd)[colnames(life_rnd)=="[Detailed Fields]"]<-"DetailedFields"
 colnames(life_rnd)[colnames(life_rnd)=="[Basic Research and Applied Research]"]<-"BasicApplied"
 life_rnd$Fiscal.Year<-text_to_number(life_rnd$Fiscal.Year)
 
@@ -363,7 +471,18 @@ a<-ggplot(bf %>% dplyr::filter(DetailedFields!="Biological aspects"), aes(x=Fisc
 ggsave(a,file=file.path("..","output","NCSES_funds.png"))
 a$data  
 write.csv(pivot_wider(a$data,id_cols=DetailedFields, names_from = Fiscal.Year,values_from = value_OMB20_GDP20),
-          file = file.path("..","Data","semi_clean","NCES_LifeSciences.csv"))
+          file = file.path("..","Data","semi_clean","NCSES_LifeSciences.csv"))
+
+
+write.csv(pivot_wider(format_data_for_plot(life_rnd,
+                     fy_var="Fiscal.Year",
+                     y_var="value_Then_Year",
+                     color_var="DetailedFields"
+)  ,id_cols=DetailedFields, names_from = Fiscal.Year,values_from = value_Then_Year),
+          file = file.path("..","Data","semi_clean","NCSES_LifeSciences_current.csv"))
+
+
+
 
 life_rnd$`[Basic Research and Applied Research]`
 
@@ -402,29 +521,20 @@ life_HERD$Detailed_Field<-factor(life_HERD$Detailed_Field,c("Agricultural scienc
 
 (
 a<-ggplot(life_HERD, #%>% dplyr::filter(DetailedFields!="Biological aspects"),
-          aes(x=Fiscal_Year,y=Expenditures,fill=Detailed_Field))+geom_col()+scale_fill_manual(values=cbPalette)+labs(
-  x="Fiscal Year",y="Federal Funded University Expenditures for R&D\n(thousands, constant 2020 $)",caption="Source: National Center for Science and Engineering Statistics",fill="Detailed Field"
-)+scale_x_continuous(breaks=c(2010,2015,2019))+scale_y_continuous(label=scales::comma)+facet_wrap(~Federal_and_Nonfederal)
+          aes(x=Fiscal_Year,y=Expenditures_OMB20_GDP20,fill=Detailed_Field))+geom_col()+scale_fill_manual(values=cbPalette)+labs(
+  x="Fiscal Year",y="Federal Funded University Expenditures for R&D\n(constant 2020 $)",caption="Source: National Center for Science and Engineering Statistics",fill="Detailed Field"
+)+scale_x_continuous(breaks=c(2010,2015,2019))+
+  scale_y_continuous(labels = scales::label_number_si())+facet_wrap(~Federal_and_Nonfederal)
+    # scale_y_continuous(label=scales::comma)
 )
-ggsave(a,file=file.path("..","output","HERD_funds.png"))
-a$data  
-write.csv(pivot_wider(a$data,id_cols=DetailedFields, names_from = Fiscal.Year,values_from = value_OMB20_GDP20),
-          file = file.path("..","Data","semi_clean","NCES_LifeSciences.csv"))
+ggsave(a,file=file.path("..","output","HERD_funds.png"),height=4, width=6.5)
+colnames(a$data  )
+write.csv(pivot_wider(a$data,id_cols=c(Broad_Field,Detailed_Field,Federal_and_Nonfederal), names_from = Fiscal_Year,values_from = Expenditures_OMB20_GDP20),
+          file = file.path("..","Data","semi_clean","HERD_LifeSciences.csv"))
 
-life_HERD$`[Basic Research and Applied Research]`
-
-bf<-format_data_for_plot(life_HERD,
-                     fy_var="Fiscal.Year",
-                     facet_var = "BasicApplied",
-                     y_var="value_OMB20_GDP20",
-                     color_var="DetailedFields"
-)         
-
-(
-a<-ggplot(bf %>% dplyr::filter(DetailedFields!="Biological aspects"), aes(x=Fiscal.Year,y=value_OMB20_GDP20,fill=BasicApplied))+geom_col()+scale_fill_manual(values=cbPalette)+labs(
-  x="Fiscal Year",y="Federal Obligations for R&D\n(thousands, constant 2020 $)",caption="Source: National Center for Science and Engineering Statistics",fill="Basic Research and Applied Research"
-)+scale_x_continuous(n.breaks=7)+scale_y_continuous(label=scales::comma)+facet_wrap(~DetailedFields)
-)
+write.csv(pivot_wider(a$data,id_cols=c(Broad_Field,Detailed_Field,Federal_and_Nonfederal), names_from = Fiscal_Year,values_from =
+                        Expenditures_Then_Year),
+                      file = file.path("..","Data","semi_clean","HERD_LifeScieNCSES_current.csv"))#,row.names=FALSE)
 
 
 ```

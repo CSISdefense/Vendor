@@ -68,11 +68,16 @@ levels(bio_data$NASbioEconomypt)<-list("NAICS Partial Code"="1","Other NAICS Cod
 
 
 summary(bio_data$NASbioEconomypt)
+sum(bio_data$Action_Obligation_Then_Year[bio_data$nationalinterestactioncode=="P20C"])
 
 bio_data<-deflate(bio_data,
                  money_var = "Action_Obligation",
                  deflator_var="OMB20_GDP20"
 )
+summary(factor(bio_data$NASbioEconomy))
+bio_data$NASbioEconomy[is.na(bio_data$NASbioEconomy)&bio_data$biobased=="Biobased"]<-"Bioproduct Outside NAS chosen codes"
+bio_data$NASbioEconomy[is.na(bio_data$NASbioEconomy)&bio_data$nationalinterestactioncode=="P20C"]<-"Other COVID19 Pandemic"
+bio_data$NASbioEconomy[is.na(bio_data$NASbioEconomy)&bio_data$nationalinterestactioncode=="O14E"]<-"Other Ebola Response"
 
 
 # bio_data<-read_and_join_experiment(bio_data,
@@ -389,6 +394,7 @@ check_column<-max(which(colnames(life_HERD)!="Expenditures"))
 life_HERD<-life_HERD[-which(life_HERD[,check_column]=="Total for selected values"),]
 
 life_HERD<-life_HERD[!is.na(life_HERD$Detailed_Field),]
+life_HERD<-life_HERD[!is.na(life_HERD$Fiscal_Year),]
 life_HERD$Fiscal_Year<-text_to_number(life_HERD$Fiscal_Year)
 life_HERD$Expenditures<-life_HERD$Expenditures*1000
 life_HERD<-deflate(life_HERD,
