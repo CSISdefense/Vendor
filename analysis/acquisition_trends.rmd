@@ -123,8 +123,8 @@ ToplineVehicle<-build_plot(
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
-  color_var="Shiny.VendorSize", #color_var
-  facet_var="Vehicle", #facet_var
+  color_var="ProductServiceOrRnDarea.sum", #color_var
+  facet_var="Vehicle.sum", #facet_var
   column_key=column_key,
   format=TRUE,
   ytextposition=FALSE
@@ -140,6 +140,37 @@ ToplineVehicle<-build_plot(
   theme(legend.position = "right")+
   labs(y="Obligations (Constant 2020 $s)")
 )
+
+
+(
+ToplineVehicle<-build_plot(
+  data=full_data %>% filter(!is.na(Vehicle.AwardTask)),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  color_var="Vehicle.sum", #color_var
+  facet_var="Vehicle.AwardTask", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)",
+       caption="Note: Unlabeled not shown. Source: FPDS; CSIS analysis")
+)
+
+summary(full_data$Vehicle)
 
 ggsave600dpi("..//Output//topline_vehicle.png", ToplineVehicle, 
              width=13, height= 4.5, units="in",size=11
@@ -150,7 +181,13 @@ ggsave600dpi("..//Output//topline_vehicle.png", ToplineVehicle,
 
 ## Topline Pricing
 ```{r ToplinePricing}
-
+full_data$PricingUCA.sumlong<-full_data$PricingUCA.sum
+levels(full_data$PricingUCA.sumlong)<-list("Firm-Fixed-Price"="FFP",
+                                           "Less Common"="Less Common",
+                                           "Incentive"="Incentive",
+                                           "Other Cost-Based"="Other CB",
+                                           "Undefinitized\nContract Award"="UCA",
+                                           "Unclear"="Unclear"   )
 (
 ToplinePricing<-build_plot(
   data=full_data,
@@ -161,7 +198,7 @@ ToplinePricing<-build_plot(
   x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
   color_var="PricingUCA", #color_var
-  facet_var="PricingUCA.sum", #facet_var
+  facet_var="PricingUCA.sumlong", #facet_var
   column_key=column_key,
   format=TRUE,
   ytextposition=FALSE
@@ -178,9 +215,17 @@ ToplinePricing<-build_plot(
   labs(y="Obligations (Constant 2020 $s)")
 )
 
-ggsave600dpi("..//Output//topline_pricing.png", ToplinePricing, 
-             width=6.5, height= 4, units="in",size=11
+# ggsave600dpi("..//Output//topline_pricing.png", ToplinePricing, 
+#              width=6.5, height= 4, units="in",size=11
+#              )
+
+
+ggsave600dpi("..//Output//topline_pricing.png", ToplinePricing,  
+             width=12, height= 6, units="in",size=11, lineheight=1.2
              )
+
+write.csv(file="..//Output//topline_pricing.csv",row.names = FALSE,
+          pivot_wider(ToplinePricing$data,id_cols=c(PricingUCA,PricingUCA.sumlong),names_from=dFYear,values_from=Action_Obligation_OMB20_GDP20))
 
 ```
 

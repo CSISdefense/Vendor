@@ -13,13 +13,13 @@ library(ggplot2)
 load(file="../data/Clean/BioEconomy.Rda")
 ```
 
-## R Markdown
+# R Markdown
 
 This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-## Bioeconomy
+# Bioeconomy
 
 ```{r Biotechnology}
 
@@ -93,7 +93,7 @@ build_plot(bio_data %>% dplyr::filter(NASbioEconomypt=="NAICS Partial Code"),
 
 ```
 
-## Research
+# Research
 
 ### Biotechnology customer
 
@@ -154,6 +154,18 @@ ggsave(a,file=file.path("..","Output","Biotproduct_Customer.png"))
 
 
 
+(a<-    build_plot(bio_data %>% dplyr::filter(#NASbioEconomypt=="Other NAICS Code"&
+                                       NASbioEconomy=="Biologics (enzymes)"),
+           x_var="Fiscal.Year",
+           y_var="Action_Obligation_OMB20_GDP20",
+           color_var="RnD_BudgetActivity",
+           chart_geom="Bar Chart",
+           facet_var="RnD_BudgetActivity",
+           format=TRUE)+labs(main="Biological (enzymes)",
+                             y="Obligated Amount (2020 Constant $),\n Variable Scale",
+                             x="Fiscal Year")+facet_wrap(~RnD_BudgetActivity, scales="free_y")
+  #theme(legend.position = "None")
+)
 
 
 (a<-    build_plot(bio_data %>% dplyr::filter(#NASbioEconomypt=="Other NAICS Code"&
@@ -175,21 +187,6 @@ ggsave(a,file=file.path("..","Output","Bioproduct_Customer.png"))
 
 
 
-(a<-    build_plot(bio_data %>% dplyr::filter(#NASbioEconomypt=="Other NAICS Code"&
-                                       NASbioEconomy %in% c("Biologics (enzymes)",
-                                       "Biopharmaceuticals/Other pharmaceuticals","Biorefining (food)",
-                                       "Crop products","Electromedical instruments","Surgical and Medical Equipment",
-                                       "Other biobased chemicals","Other enzymes" )),
-           x_var="Fiscal.Year",
-           y_var="Action_Obligation_OMB20_GDP20",
-           color_var="EnzymeCustomer",
-           chart_geom="Bar Chart",
-           facet_var="NASbioEconomyTrans",
-           format=TRUE)+labs(main="Biological (enzymes)",
-                             y="Obligated Amount (2020 Constant $),\n Variable Scale",
-                             x="Fiscal Year")+facet_wrap(~NASbioEconomyTrans, scales="free_y",ncol=4)+
-  theme(legend.position = "bottom")
-)
 ```
 ### Life sciences
 
@@ -309,13 +306,42 @@ summary(bio_data$biobased)
   theme(legend.position = "None")+facet_wrap(~ContractingCustomer,ncol=5)
 +scale_x_continuous(breaks=c(2013,2017,2020)))
 ggsave(a,file=file.path("..","Output","Biobased_Customer.png"))
+bio_data$ProductServiceOrRnDarea
+(a<-    build_plot(bio_data %>% dplyr::filter(biobased=="Biobased"),
+           x_var="NAICS2text",
+           y_var="Action_Obligation_OMB20_GDP20",
+           color_var="ProductServiceOrRnDarea",
+           chart_geom="Bar Chart",
+           # facet_var="ContractingCustomer",
+           format=TRUE)+labs(main="Biobased Products",
+                             y="NAICS 2 Sector",
+                             x="Fiscal Year")+#+facet_wrap(~EnzymeCustomer, scales="free_y")+
+  #theme(legend.position = "None")+
+    coord_flip()#+facet_wrap(~ContractingCustomer,ncol=5)+
+# +scale_x_continuous(breaks=c(2013,2017,2020)))
+)
+
+(a<-    build_plot(bio_data %>% dplyr::filter(biobased=="Biobased"),
+           x_var="ProductServiceOrRnDarea",
+           y_var="Action_Obligation_OMB20_GDP20",
+           color_var="ProductServiceOrRnDarea",
+           chart_geom="Bar Chart",
+           # facet_var="ContractingCustomer",
+           format=TRUE)+labs(main="Biobased Products",
+                             y="NAICS 2 Sector",
+                             x="Fiscal Year")+#+facet_wrap(~EnzymeCustomer, scales="free_y")+
+  #theme(legend.position = "None")+
+    coord_flip()#+facet_wrap(~ContractingCustomer,ncol=5)+
+# +scale_x_continuous(breaks=c(2013,2017,2020)))
+)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
 #NCES
+##FFS
 ```{r life rnd}
-colnames(life_rnd)[colnames(life_rnd)=="[Detailed Fields]"]<-"DetailedFields"
+colnames(life_HERD)[colnames(life_rnd)=="[Detailed Fields]"]<-"DetailedFields"
 colnames(life_rnd)[colnames(life_rnd)=="[Basic Research and Applied Research]"]<-"BasicApplied"
 life_rnd$Fiscal.Year<-text_to_number(life_rnd$Fiscal.Year)
 
@@ -335,10 +361,59 @@ a<-ggplot(bf %>% dplyr::filter(DetailedFields!="Biological aspects"), aes(x=Fisc
 )+scale_x_continuous(n.breaks=7)+scale_y_continuous(label=scales::comma)
 )
 ggsave(a,file=file.path("..","output","NCSES_funds.png"))
+a$data  
+write.csv(pivot_wider(a$data,id_cols=DetailedFields, names_from = Fiscal.Year,values_from = value_OMB20_GDP20),
+          file = file.path("..","Data","semi_clean","NCES_LifeSciences.csv"))
 
 life_rnd$`[Basic Research and Applied Research]`
 
 bf<-format_data_for_plot(life_rnd,
+                     fy_var="Fiscal.Year",
+                     facet_var = "BasicApplied",
+                     y_var="value_OMB20_GDP20",
+                     color_var="DetailedFields"
+)         
+
+(
+a<-ggplot(bf %>% dplyr::filter(DetailedFields!="Biological aspects"), aes(x=Fiscal.Year,y=value_OMB20_GDP20,fill=BasicApplied))+geom_col()+scale_fill_manual(values=cbPalette)+labs(
+  x="Fiscal Year",y="Federal Obligations for R&D\n(thousands, constant 2020 $)",caption="Source: National Center for Science and Engineering Statistics",fill="Basic Research and Applied Research"
+)+scale_x_continuous(n.breaks=7)+scale_y_continuous(label=scales::comma)+facet_wrap(~DetailedFields)
+)
+
+
+```
+
+##HERD
+```{r life rnd}
+
+
+# bf<-format_data_for_plot(life_HERD,
+#                      fy_var="Fiscal.Year",
+#                      y_var="value_OMB20_GDP20",
+#                      color_var="DetailedFields"
+# )                     
+# The palette with grey:
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+life_HERD$Detailed_Field<-factor(life_HERD$Detailed_Field,c("Agricultural sciences",
+                                          "Biological and biomedical sciences", "Health sciences",
+                                          "Natural resources and conservation","Other life sciences",
+                                          "Bioengineering and biomedical engineering"))
+
+(
+a<-ggplot(life_HERD, #%>% dplyr::filter(DetailedFields!="Biological aspects"),
+          aes(x=Fiscal_Year,y=Expenditures,fill=Detailed_Field))+geom_col()+scale_fill_manual(values=cbPalette)+labs(
+  x="Fiscal Year",y="Federal Funded University Expenditures for R&D\n(thousands, constant 2020 $)",caption="Source: National Center for Science and Engineering Statistics",fill="Detailed Field"
+)+scale_x_continuous(breaks=c(2010,2015,2019))+scale_y_continuous(label=scales::comma)+facet_wrap(~Federal_and_Nonfederal)
+)
+ggsave(a,file=file.path("..","output","HERD_funds.png"))
+a$data  
+write.csv(pivot_wider(a$data,id_cols=DetailedFields, names_from = Fiscal.Year,values_from = value_OMB20_GDP20),
+          file = file.path("..","Data","semi_clean","NCES_LifeSciences.csv"))
+
+life_HERD$`[Basic Research and Applied Research]`
+
+bf<-format_data_for_plot(life_HERD,
                      fy_var="Fiscal.Year",
                      facet_var = "BasicApplied",
                      y_var="value_OMB20_GDP20",

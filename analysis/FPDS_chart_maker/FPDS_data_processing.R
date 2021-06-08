@@ -105,6 +105,15 @@ full_data<-csis360::read_and_join_experiment(full_data,
                         dir="office/"
 )
 
+full_data<-csis360::read_and_join_experiment(full_data,
+                                             "Vehicle.csv",
+                                             by=c("Vehicle"="Vehicle.detail"),
+                                             add_var=c("Vehicle.sum","Vehicle.AwardTask"),
+                                             # path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                             path="K:/Users/Greg/Repositories/Lookup-Tables/",
+                                             dir="contract/"
+)
+
 full_data<-replace_nas_with_unlabeled(full_data,"PlatformPortfolio")
 
 full_data$PricingUCA.sum<-factor(full_data$PricingUCA)
@@ -116,6 +125,7 @@ levels(full_data$PricingUCA.sum)<-
        "Other CB"="Other CB",
        "UCA"="UCA",
        "Unclear"=c("Combination/Other","Unlabeled"))
+
 
 
 

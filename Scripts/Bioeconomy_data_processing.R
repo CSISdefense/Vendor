@@ -48,6 +48,7 @@ bio_data$BioRelated[bio_data$BioRelated==""]<-NA
 bio_data$RnD_BudgetActivity[is.na(bio_data$RnD_BudgetActivity)]<-bio_data$Simple[is.na(bio_data$RnD_BudgetActivity)]
 
 
+bio_data$NAICS2<-create_naics2(bio_data$principalnaicscode)
 
 
 
@@ -83,6 +84,16 @@ bio_data<-deflate(bio_data,
 #                              skip_check_var=c("principalnaicscodeText","NAICS_shorthand"))
 
 
+bio_data<-read_and_join_experiment(bio_data,
+                                        lookup_file = "Lookup_PrincipalNAICScode.csv",
+                                        path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                        dir="economic\\",
+                             by=c("NAICS2"="principalnaicscode"),
+                             add_var=c("principalnaicscodeText","NAICS_shorthand"),
+                             skip_check_var=c("principalnaicscodeText","NAICS_shorthand"))
+
+colnames(bio_data)[colnames(bio_data)=="principalnaicscodeText"]<-"NAICS2text"
+colnames(bio_data)[colnames(bio_data)=="NAICS_shorthand"]<-"NAICS2shorthand"
 
 if(substring(bio_data$Fiscal.Year[nrow(bio_data)],1,12)=="Completion time")
   bio_data<-bio_data[-nrow(bio_data),]
@@ -347,7 +358,7 @@ check_column<-max(which(life_rnd[1,]!=""))
 colnames(life_rnd)[life_rnd[1,]!=""]<-c(life_rnd[1,which(life_rnd[1,]!="")][-1],"ManualLabel")
 life_rnd<-life_rnd[-which(life_rnd[,check_column]=="Total for selected values"),]
 life_rnd<-life_rnd[life_rnd[,1]!="[measures]",]
-life_rnd<-life_rnd[life_rnd[,2]!="",]
+
 life_rnd<-pivot_longer(life_rnd, names_to="Fiscal.Year", cols=colnames(life_rnd)[grep("[1-2][0-9][0-9][0-9]",colnames(life_rnd))])
 life_rnd$value[life_rnd$value=="-"]<-"0"
 life_rnd$value<-text_to_number(life_rnd$value)
@@ -355,6 +366,35 @@ life_rnd<-deflate(life_rnd,
                   money_var = "value",
                   deflator_var="OMB20_GDP20"
 )
+life2020<-readxl::read_excel(file.path("data_raw","Bioeconomy","nsf21329-data-tables-tables","nsf21329-tab017.xlsx"),skip=3)
+life2020value<-as.numeric(life2020$`2020 (preliminary)`[life2020$Field=="Life sciences"])
+life
+# data.frame("[Science and Engineering]"="Science",
+#               "[Broad Fields]"= "Life sciences",
+#                "[Detailed Fields]"="Total Life Sciences",
+#                "[Federal Department]"=NA,
+#                "[Federal Agency]"=NA,
+#                "[Basic Research and Applied Research]"=NA,
+#                "ManualLabel"=NA,
+#                "Fiscal.Year"=2020,
+#               "value_Then_Year"=life2020value)
 
+life_HERD<-read_delim(file.path("data_raw","Bioeconomy","HERD_export_table_2021-06-08T02 40 54.456Z.csv"),delim=",",na=c("NULL","NA"),
+                      col_names = TRUE, guess_max = 500000,skip=11)
+colnames(life_HERD)[colnames(life_HERD)=="X5"]<-"Expenditures"
+colnames(life_HERD)<-gsub("\\[","",colnames(life_HERD))
+colnames(life_HERD)<-gsub("\\]","",colnames(life_HERD))
+colnames(life_HERD)<-gsub(" ","_",colnames(life_HERD))
+check_column<-max(which(colnames(life_HERD)!="Expenditures"))
+life_HERD<-life_HERD[-which(life_HERD[,check_column]=="Total for selected values"),]
+
+life_HERD<-life_HERD[!is.na(life_HERD$Detailed_Field),]
+life_HERD$Fiscal_Year<-text_to_number(life_HERD$Fiscal_Year)
+life_HERD$Expenditures<-life_HERD$Expenditures*1000
+life_HERD<-deflate(life_HERD,
+                  money_var = "Expenditures",
+                  deflator_var="OMB20_GDP20"
+)
 
 save(bio_data,bio_lc,bio_ck,life_rnd, file="data/Clean/BioEconomy.Rda")#bio_lc
+
