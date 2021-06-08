@@ -356,6 +356,15 @@ bio_lc<-prepare_labels_and_colors(bio_data)
 # #   col_names = TRUE, col_types = "cccccccccc",na=c("NA","NULL"))
 
 
+ota<-read_delim(file.path("data_raw","OTA_All_FIelds.csv"),delim=",",na=c("NULL","NA"),
+                     col_names = TRUE, guess_max = 500000,skip=2)
+ota$COVIDmention<-FALSE
+ota$
+  gsub(" ","_",colnames(ota))
+
+
+
+#Life science RnD
 life_rnd<-read_delim(file.path("data_raw","Bioeconomy","FFS_export_table_2021-05-23T11 42 50.584Z.csv"),delim=",",na=c("NULL","NA"),
                      col_names = TRUE, guess_max = 500000,skip=11)
 # colnames(life_rnd)[grep("X[0-9]",colnames(life_rnd))]<-life_rnd[1,grep("X[0-9]",colnames(life_rnd))]
@@ -363,7 +372,7 @@ check_column<-max(which(life_rnd[1,]!=""))
 colnames(life_rnd)[life_rnd[1,]!=""]<-c(life_rnd[1,which(life_rnd[1,]!="")][-1],"ManualLabel")
 life_rnd<-life_rnd[-which(life_rnd[,check_column]=="Total for selected values"),]
 life_rnd<-life_rnd[life_rnd[,1]!="[measures]",]
-
+life_rnd<-life_rnd[life_rnd[,2]!="",]
 life_rnd<-pivot_longer(life_rnd, names_to="Fiscal.Year", cols=colnames(life_rnd)[grep("[1-2][0-9][0-9][0-9]",colnames(life_rnd))])
 life_rnd$value[life_rnd$value=="-"]<-"0"
 life_rnd$value<-text_to_number(life_rnd$value)
