@@ -42,8 +42,8 @@ bio_data<-read_and_join_experiment(bio_data,
                                         path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
                                         dir="",
                              by=c("productorservicecode"="ProductOrServiceCode"),
-                             add_var=c("ProductServiceOrRnDarea","BioRelated","RnD_BudgetActivity","Simple"),
-                             skip_check_var=c("BioRelated","RnD_BudgetActivity"))
+                             add_var=c("ProductServiceOrRnDarea","BioRelated","RnD_BudgetActivity","Simple","CrisisProductOrServiceArea"),
+                             skip_check_var=c("BioRelated","RnD_BudgetActivity")) #Remove CrisisProductOrServiceArea later
 bio_data$BioRelated[bio_data$BioRelated==""]<-NA
 bio_data$RnD_BudgetActivity[is.na(bio_data$RnD_BudgetActivity)]<-bio_data$Simple[is.na(bio_data$RnD_BudgetActivity)]
 
@@ -356,15 +356,6 @@ bio_lc<-prepare_labels_and_colors(bio_data)
 # #   col_names = TRUE, col_types = "cccccccccc",na=c("NA","NULL"))
 
 
-ota<-read_delim(file.path("data_raw","OTA_All_FIelds.csv"),delim=",",na=c("NULL","NA"),
-                     col_names = TRUE, guess_max = 500000,skip=2)
-ota$COVIDmention<-FALSE
-ota$
-  gsub(" ","_",colnames(ota))
-
-
-
-#Life science RnD
 life_rnd<-read_delim(file.path("data_raw","Bioeconomy","FFS_export_table_2021-05-23T11 42 50.584Z.csv"),delim=",",na=c("NULL","NA"),
                      col_names = TRUE, guess_max = 500000,skip=11)
 # colnames(life_rnd)[grep("X[0-9]",colnames(life_rnd))]<-life_rnd[1,grep("X[0-9]",colnames(life_rnd))]
@@ -372,7 +363,7 @@ check_column<-max(which(life_rnd[1,]!=""))
 colnames(life_rnd)[life_rnd[1,]!=""]<-c(life_rnd[1,which(life_rnd[1,]!="")][-1],"ManualLabel")
 life_rnd<-life_rnd[-which(life_rnd[,check_column]=="Total for selected values"),]
 life_rnd<-life_rnd[life_rnd[,1]!="[measures]",]
-life_rnd<-life_rnd[life_rnd[,2]!="",]
+
 life_rnd<-pivot_longer(life_rnd, names_to="Fiscal.Year", cols=colnames(life_rnd)[grep("[1-2][0-9][0-9][0-9]",colnames(life_rnd))])
 life_rnd$value[life_rnd$value=="-"]<-"0"
 life_rnd$value<-text_to_number(life_rnd$value)
@@ -399,6 +390,9 @@ colnames(life_HERD)[colnames(life_HERD)=="X5"]<-"Expenditures"
 colnames(life_HERD)<-gsub("\\[","",colnames(life_HERD))
 colnames(life_HERD)<-gsub("\\]","",colnames(life_HERD))
 colnames(life_HERD)<-gsub(" ","_",colnames(life_HERD))
+
+
+
 check_column<-max(which(colnames(life_HERD)!="Expenditures"))
 life_HERD<-life_HERD[-which(life_HERD[,check_column]=="Total for selected values"),]
 
@@ -411,5 +405,36 @@ life_HERD<-deflate(life_HERD,
                   deflator_var="OMB20_GDP20"
 )
 
-save(bio_data,bio_lc,bio_ck,life_rnd, file="data/Clean/BioEconomy.Rda")#bio_lc
+
+covid19<-readxl::read_excel(file.path("data_raw","Bioeconomy","SAM_IAE COVID-19 Report 2021-06-07.xlsx"),skip=4,sheet="COVID-19 Contracts",
+                            guess_max = 200000)
+colnames(covid19)<-gsub(" ","_",colnames(covid19))
+if(all(is.na(covid19[,"...5"])))
+   covid19<-covid19[,colnames(covid19)!="...5"]
+if(all(is.na(covid19[,"...9"])))
+  covid19<-covid19[,colnames(covid19)!="...9"]
+covid19<-covid19[covid19$Contracting_Agency_ID!="Total",]
+covid19$Fiscal_Year<-get_fiscal_year(covid19$Date_Signed)
+covid19 %>% group_by(Fiscal_Year) %>% summarise(Action_Obligation=sum(Action_Obligation))
+
+
+covid19<-read_and_join_experiment(covid19,
+                                   lookup_file = "ProductOrServiceCodes.csv",
+                                   path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                   dir="",
+                                   by=c("Product_or_Service_Code"="ProductOrServiceCode"),
+                                   add_var=c("ProductServiceOrRnDarea","BioRelated","RnD_BudgetActivity","Simple","CrisisProductOrServiceArea"),
+                                   skip_check_var=c("BioRelated","RnD_BudgetActivity"))
+
+
+covid19<-read_and_join_experiment(covid19,
+                                  lookup_file = "Agency_AgencyID.csv",
+                                  path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                  dir="",
+                                  by=c("Contracting_Agency_ID"="AgencyID"),
+                                  add_var=c("Customer")),
+                                  skip_check_var=c("BioRelated","RnD_BudgetActivity"))
+
+
+save(bio_data,bio_lc,bio_ck,life_rnd,life_HERD,covid19, file="data/Clean/BioEconomy.Rda")#bio_lc
 
