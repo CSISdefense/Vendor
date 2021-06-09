@@ -19,7 +19,8 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-# Bioeconomy
+# Illustative Bioeconomy
+## All Categories
 
 ```{r Biotechnology}
 summary(factor(bio_data$NASbioEconomy))
@@ -98,7 +99,7 @@ build_plot(bio_data %>% dplyr::filter(NASbioEconomypt=="NAICS Partial Code"),
 
 ```
 
-# Research
+## Research
 
 ### Biotechnology customer
 
@@ -125,7 +126,7 @@ levels(bio_data$BioTechCustomer.sum)<-
     "Other Agencies"=c("GSA","NASA","VA","DHS",
                        "NATIONAL ENDOWMENT FOR THE HUMANITIES","Other Agencies",
                        "State and IAP","UNITED STATES INTERNATIONAL DEVELOPMENT FINANCE CO"   ))
-bio_data$EnzymeCustomer<-factor(bio_data$ContractingCustomer)
+  bio_data$EnzymeCustomer<-factor(bio_data$ContractingCustomer)
 levels(bio_data$EnzymeCustomer)<-
   list(
     "HHS"    ="HHS"    ,
@@ -332,6 +333,78 @@ write.csv(bio_data %>% dplyr::filter(NASbioEconomy=="Bioeconomy R&D services"&
   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20)),file="stage.csv"
 )
 ```
+
+## Most illustrative categories
+
+```{r pressure, echo=FALSE}
+
+summary(factor(bio_data$NASbioEconomyPretty))
+Bio5<-c("Biologics (enzymes)","Bioeconomy R&D services","Surgical and Medical Equipment","Electromedical instruments","Biopharmaceuticals/Other pharmaceuticals")
+
+
+
+bio_data$NASbioEconomyCSIS<-bio_data$NASbioEconomypt
+bio_data$NASbioEconomyCSIS[bio_data$NASbioEconomy=="Biopharmaceuticals/Other pharmaceuticals"]<-"Other NAICS Code"
+bio_data$NASbioEconomyCSIS[bio_data$NASbioEconomy=="Bioeconomy R&D services"&
+                             !is.na(bio_data$LifeScience)&
+                             bio_data$LifeScience!="Environmental Sciences"]<-"Other NAICS Code"
+
+
+summary(factor(bio_data$NASbioEconomypt))
+
+
+  cbPalette <- rev(c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00"))#, "#CC79A7"
+  (a<-    build_plot(bio_data %>% dplyr::filter(NASbioEconomy %in% Bio5 &
+                                                  NASbioEconomyCSIS=="Other NAICS Code"),
+             x_var="Fiscal.Year",
+             y_var="Action_Obligation_OMB20_GDP20",
+             color_var="BioTechCustomer",
+             chart_geom="Bar Chart",
+             facet_var="NASbioEconomyPretty",
+             format=TRUE,
+             legend = TRUE)+labs(title="Federal Contracting for Selected Illustrative Bioeconomy Segments",
+                               y="Obligated Amount (2020 Constant $)",
+                               x="Fiscal Year")+scale_fill_manual(values=cbPalette)+
+    theme(legend.position = "right")
+  )
+
+
+ggsave(a,file=file.path("..","Output","Illustrative_BioEconomy_Contracting.png"),height=4, width=7)
+
+write.csv(pivot_wider(a$data,id_cols=c(NASbioEconomyPretty,BioTechCustomer), names_from = Fiscal.Year,values_from = Action_Obligation_OMB20_GDP20),
+          file = file.path("..","Output","Illustrative_BioEconomy_Contracting.csv"))
+
+bio_data %>% filter(is.na(principalnaicscode)|principalnaicscode=="") %>%
+  group_by(Fiscal.Year)%>% summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
+
+bio_data %>% filter(NASbioEconomy %in% Bio5) %>%
+  group_by(principalnaicscode,principalnaicscodeText)%>% summarise(First=min(Fiscal.Year))
+
+summary(factor(bio_data$national_interest_action_name))
+bio_data$IsCovid19<-ifelse(bio_data$national_interest_action_name=="COVID-19 2020","COVID-19 Related","All Other Funding")
+bio_data$IsCovid19<-factor(bio_data$IsCovid19,c("COVID-19 Related","All Other Funding"))
+bio_data$IsCovid19[is.na(bio_data$IsCovid19)&bio_data$Fiscal.Year<2020]<-"All Other Funding"
+  cbPalette <- rev(c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00"))#, "#CC79A7"
+  (a<-    build_plot(bio_data %>% dplyr::filter(NASbioEconomy %in% Bio5 &
+                                                  NASbioEconomyCSIS=="Other NAICS Code"),
+             x_var="Fiscal.Year",
+             y_var="Action_Obligation_OMB20_GDP20",
+             color_var="IsCovid19",
+             chart_geom="Bar Chart",
+             facet_var="NASbioEconomyPretty",
+             format=TRUE,
+             legend = TRUE)+labs(title="Federal Contracting for Selected Illustrative Bioeconomy Segments",
+                               y="Obligated Amount (2020 Constant $)",
+                               x="Fiscal Year")+scale_fill_manual(values=cbPalette)+
+    theme(legend.position = "bottom")
+  )
+
+ggsave(a,file=file.path("..","Output","Illustrative_BioEconomy_Covid19.png"),height=4, width=6.5)
+
+write.csv(pivot_wider(a$data,id_cols=c(NASbioEconomyPretty,IsCovid19), names_from = Fiscal.Year,values_from = Action_Obligation_OMB20_GDP20),
+          file = file.path("..","Output","Illustrative_BioEconomy_Covid19.csv"))
+```
+
 # Pandemic Response
 ## Covid19
 ```{r COVID19}
