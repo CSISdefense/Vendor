@@ -9,7 +9,9 @@ output: html_document
 library(csis360)
 library(readr)
 library(tidyr)
+library(tidyverse)
 library(ggplot2)
+library(svglite)
 load(file="../data/Clean/BioEconomy.Rda")
 ```
 
@@ -276,6 +278,7 @@ ggsave(a,file=file.path("..","Output","Life_Science_Customer.png"))
                              caption="Source: FPDS, CSIS analysis\nNote: Bioeconomy R&D services ")#+
   # theme(legend.position = "None")
 )
+diigPalette <- rev(c( "#eec260", "#0e99d6","#BB4243"))#, "#CC79A7" #, "#4c9361", "#eec260", "#1d2d5c", "#D55E00"
 
 (a<-    build_plot(bio_data %>% dplyr::filter(NASbioEconomy=="Bioeconomy R&D services"&
                                                 (NASbioEconomypt=="Other NAICS Code" |
@@ -291,10 +294,12 @@ ggsave(a,file=file.path("..","Output","Life_Science_Customer.png"))
            format=TRUE)+labs(main="Research and Development in Life Sciences and Biotechnology",
                              y="Contract Obligated Amount\n(2020 Constant $)",
                              x="Fiscal Year", 
-                             caption="Source: FPDS, CSIS analysis\nNote: Builds on NAS category of Bioeconomy Research Services. Classification assisted via Product or Service Codes")#+
+                             caption="Source: FPDS; CSIS analysis\nNote: Builds on NASEM category of Bioeconomy Research Services. Classification assisted via Product or Service Codes.")+scale_fill_manual(values=diigPalette)
   # theme(legend.position = "None")
 )
 ggsave(a,file=file.path("..","Output","Life_Science_Customer.png"),height=4, width=6.5)
+ggsave(a,file=file.path("..","Output","Life_Science_Customer.eps"),height=4, width=6.5)
+
 
 
 write.csv(pivot_wider(a$data,id_cols=c(BioTechCustomer.sum,LifeScience.sum), names_from = Fiscal.Year,values_from = Action_Obligation_OMB20_GDP20),
@@ -323,7 +328,7 @@ bio_data %>% filter(NASbioEconomy=="Bioeconomy R&D services"&
            format=TRUE)+labs(main="Research and Development in Life Sciences and Biotechnology",
                              y="Contract Obligated Amount\n(2020 Constant $)",
                              x="Fiscal Year", 
-                             caption="Source: FPDS, CSIS analysis\nNote: Builds on NAS category of Bioeconomy Research Services. Classification assisted via Product or Service Codes")+coord_flip()+facet_wrap(Simple~.,scales="free_y",ncol=1)
+                             caption="Source: FPDS, CSIS analysis\nNote: Builds on NASEM category of Bioeconomy Research Services. Classification assisted via Product or Service Codes")+coord_flip()+facet_wrap(Simple~.,scales="free_y",ncol=1)
   # theme(legend.position = "None")
 )
 write.csv(bio_data %>% dplyr::filter(NASbioEconomy=="Bioeconomy R&D services"&
@@ -353,7 +358,8 @@ bio_data$NASbioEconomyCSIS[bio_data$NASbioEconomy=="Bioeconomy R&D services"&
 summary(factor(bio_data$NASbioEconomypt))
 
 
-  cbPalette <- rev(c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00"))#, "#CC79A7"
+
+  cbPalette <- rev(c("#999999", "#e58846", "#0e99d6", "#4c9361", "#eec260", "#1d2d5c", "#BB4243"))#, "#CC79A7"
   (a<-    build_plot(bio_data %>% dplyr::filter(NASbioEconomy %in% Bio5 &
                                                   NASbioEconomyCSIS=="Other NAICS Code"),
              x_var="Fiscal.Year",
@@ -364,12 +370,14 @@ summary(factor(bio_data$NASbioEconomypt))
              format=TRUE,
              legend = TRUE)+labs(title="Federal Contracting for Selected Illustrative Bioeconomy Segments",
                                y="Obligated Amount (2020 Constant $)",
-                               x="Fiscal Year")+scale_fill_manual(values=cbPalette)+
+                               x="Fiscal Year",
+                               caption="Source: FPDS; CSIS Analysis\nNote: Builds on NASEM categorization. Classification assisted via Product or Service Codes.")+scale_fill_manual(values=cbPalette)+
     theme(legend.position = "right")
   )
 
 
-ggsave(a,file=file.path("..","Output","Illustrative_BioEconomy_Contracting.png"),height=4, width=7)
+ggsave(a+labs(title=NULL),file=file.path("..","Output","Illustrative_BioEconomy_Contracting.png"),height=4, width=7)
+ggsave(a+labs(title=NULL),file=file.path("..","Output","Illustrative_BioEconomy_Contracting.eps"),height=4, width=7)
 
 write.csv(pivot_wider(a$data,id_cols=c(NASbioEconomyPretty,BioTechCustomer), names_from = Fiscal.Year,values_from = Action_Obligation_OMB20_GDP20),
           file = file.path("..","Output","Illustrative_BioEconomy_Contracting.csv"))
@@ -384,7 +392,7 @@ summary(factor(bio_data$national_interest_action_name))
 bio_data$IsCovid19<-ifelse(bio_data$national_interest_action_name=="COVID-19 2020","COVID-19 Related","All Other Funding")
 bio_data$IsCovid19<-factor(bio_data$IsCovid19,c("COVID-19 Related","All Other Funding"))
 bio_data$IsCovid19[is.na(bio_data$IsCovid19)&bio_data$Fiscal.Year<2020]<-"All Other Funding"
-  cbPalette <- rev(c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00"))#, "#CC79A7"
+  cbPalette <- rev(c("#999999", "#e58846", "#0e99d6", "#4c9361", "#eec260", "#1d2d5c", "#D55E00"))#, "#CC79A7"
   (a<-    build_plot(bio_data %>% dplyr::filter(NASbioEconomy %in% Bio5 &
                                                   NASbioEconomyCSIS=="Other NAICS Code"),
              x_var="Fiscal.Year",
@@ -696,7 +704,7 @@ bf<-format_data_for_plot(life_rnd,
                      color_var="DetailedFields"
 )                     
 # The palette with grey:
-cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+cbPalette <- c("#999999", "#e58846", "#0e99d6", "#4c9361", "#eec260", "#1d2d5c", "#D55E00", "#CC79A7")
 
 levels(bf$DetailedFields)
 
@@ -749,7 +757,7 @@ a<-ggplot(bf %>% dplyr::filter(DetailedFields!="Biological aspects"), aes(x=Fisc
 #                      color_var="DetailedFields"
 # )                     
 # The palette with grey:
-cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+cbPalette <- c("#999999", "#e58846", "#0e99d6", "#4c9361", "#eec260", "#1d2d5c", "#D55E00", "#CC79A7")
 
 life_HERD$Detailed_Field<-factor(life_HERD$Detailed_Field,c("Agricultural sciences",
                                           "Biological and biomedical sciences", "Health sciences",
@@ -759,12 +767,13 @@ life_HERD$Detailed_Field<-factor(life_HERD$Detailed_Field,c("Agricultural scienc
 (
 a<-ggplot(life_HERD, #%>% dplyr::filter(DetailedFields!="Biological aspects"),
           aes(x=Fiscal_Year,y=Expenditures_OMB20_GDP20,fill=Detailed_Field))+geom_col()+scale_fill_manual(values=cbPalette)+labs(
-  x="Fiscal Year",y="Federal Funded University Expenditures for R&D\n(constant 2020 $)",caption="Source: National Center for Science and Engineering Statistics",fill="Detailed Field"
+  x="Fiscal Year",y="Federal Funded University Expenditures for R&D\n(constant 2020 $)",caption="Source: Higher Education Research and Development Survey,\nNational Center for Science and Engineering Statistics;\nCSIS Analysis",fill="Detailed Field"
 )+scale_x_continuous(breaks=c(2010,2015,2019))+
   scale_y_continuous(labels = scales::label_number_si())+facet_wrap(~Federal_and_Nonfederal)
     # scale_y_continuous(label=scales::comma)
 )
-ggsave(a,file=file.path("..","output","HERD_funds.png"),height=4, width=6.5)
+ggsave(a+labs(title=NULL),file=file.path("..","output","HERD_funds.png"),height=4, width=6.5)
+ggsave(a+labs(title=NULL),file=file.path("..","output","HERD_funds.eps"),height=4, width=6.5)
 colnames(a$data  )
 write.csv(pivot_wider(a$data,id_cols=c(Broad_Field,Detailed_Field,Federal_and_Nonfederal), names_from = Fiscal_Year,values_from = Expenditures_OMB20_GDP20),
           file = file.path("..","Data","semi_clean","HERD_LifeSciences.csv"))

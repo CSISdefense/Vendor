@@ -4,11 +4,12 @@ author: "Greg Sanders"
 date: "July 16, 2018"
 output: html_document
 ---
-## Setup
+# Setup
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(tidyr)
+library(tidyverse)
 library(ggplot2)
 library(csis360)
 ```
@@ -28,18 +29,21 @@ file.exists("../Data/semi_clean/Vendor.EntityIDhistory.txt")
 # dir.exists("Analysis")
 # file.exists("New Entrants.Rproj")
 # list.files("../")
-FPDS_eid_fyear <- read.delim(file.path("../Data/semi_clean/Vendor.EntityIDhistory.txt"), header=TRUE,  na.strings = c("", "NULL"))
+# FPDS_eid_fyear <- read.delim(file.path("../Data/semi_clean/Vendor.EntityIDhistory.txt"), header=TRUE,  na.strings = c("", "NULL"))
+FPDS_eid_fyear <- read.delim(file.path("../Data/semi_clean/Vendor.EntityIDhistory_update2.txt"), header=TRUE,  na.strings = c("", "NULL"))
 
 FPDS_eid_fyear<-as.data.frame(FPDS_eid_fyear)
-FPDS_eid_fyear$IsEntityAbove2018constant10ThousandThreshold
+# FPDS_eid_fyear$IsEntityAbove2018constant10ThousandThreshold
+FPDS_eid_fyear<-csis360::remove_bom(FPDS_eid_fyear)
+# FPDS_eid_fyear<-subset(FPDS_eid_fyear,fiscal_year>=2000)
 ```
 
 
-## Prepare the raw data
+# Prepare the raw data
+## Individual Dyad
 ```{r prepare}
 
-FPDS_eid_fyear<-csis360::remove_bom(FPDS_eid_fyear)
-# FPDS_eid_fyear<-subset(FPDS_eid_fyear,fiscal_year>=2000)
+
 
 FPDS_eid_fyear<-csis360::deflate(FPDS_eid_fyear,money_var="ObligatedAmount",
                             fy_var="fiscal_year",deflator_var = "OMB20_GDP20")
@@ -52,14 +56,53 @@ FPDS_eid_fyear<-csis360::read_and_join_experiment(FPDS_eid_fyear,
                         dir="vendor/"
 )
 
+#***********Error checking
+#Look for cases where obligated spend doesn't match up with entity size
+FPDS_eid_fyear$EntitySizeGlitch<-is.na(FPDS_eid_fyear$EntitySizeCode)
+if(any(FPDS_eid_fyear$EntitySizeCode=='S' & (FPDS_eid_fyear$Action_Obligation_Then_Year!=FPDS_eid_fyear$ObligatedAmountIsSmall|
+   (is.na(FPDS_eid_fyear$ObligatedAmountIsSmall)&!is.na(FPDS_eid_fyear$Action_Obligation_Then_Year))))){   
+  warning("EntitySizeCode and ObligatedAmountIsSmall contradiction")
+  # View(FPDS_eid_fyear %>% filter(EntitySizeCode=='S' & (Action_Obligation_Then_Year!=ObligatedAmountIsSmall|
+  #                                                         (is.na(ObligatedAmountIsSmall)&
+  #                                                         !is.na(Action_Obligation_Then_Year)))))
+  FPDS_eid_fyear$EntitySizeGlitch[FPDS_eid_fyear$EntitySizeCode=='S' &
+                                    (FPDS_eid_fyear$Action_Obligation_Then_Year!=FPDS_eid_fyear$ObligatedAmountIsSmall|
+                                       (is.na(FPDS_eid_fyear$ObligatedAmountIsSmall)&!is.na(FPDS_eid_fyear$Action_Obligation_Then_Year)))]<-TRUE
+  summary(FPDS_eid_fyear$EntitySizeGlitch)
+}
+if(any(FPDS_eid_fyear$EntitySizeCode=='M' & !(FPDS_eid_fyear$ObligatedAmountIsSmall==0 |is.na(FPDS_eid_fyear$ObligatedAmountIsSmall)))){   
+  warning("EntitySizeCode and ObligatedAmountIsSmall contradiction")
+  View(FPDS_eid_fyear %>% filter(EntitySizeCode=='M'
+                                 & !(ObligatedAmountIsSmall==0 |is.na(ObligatedAmountIsSmall))))
+    
+  FPDS_eid_fyear$EntitySizeGlitch[FPDS_eid_fyear$EntitySizeCode=='M' & !(FPDS_eid_fyear$ObligatedAmountIsSmall==0 |is.na(FPDS_eid_fyear$ObligatedAmountIsSmall))]<-TRUE
+  summary(FPDS_eid_fyear$EntitySizeGlitch)
+}
+#Large but not labeled by PID
+if(any((FPDS_eid_fyear$EntitySizeCode %in% c('B','J','L') & !is.na(FPDS_eid_fyear$EntitySizeCode))&
+       FPDS_eid_fyear$EntityCategory!="PID")){
+  View(FPDS_eid_fyear %>% filter((EntitySizeCode %in% c('B','J','L') & !is.na(EntitySizeCode))&
+       EntityCategory!="PID"))
+    FPDS_eid_fyear$EntitySizeGlitch[(FPDS_eid_fyear$EntitySizeCode %in% c('B','J','L') & !is.na(FPDS_eid_fyear$EntitySizeCode))&
+       FPDS_eid_fyear$EntityCategory!="PID"]<-TRUE
+
+}
+
+#****** Graduation ************
+
+#Create MajorityNotSmall
 
 
-#Graduation
+  summary(factor(FPDS_eid_fyear$EntityCategory))
+
 
 FPDS_eid_fyear$MajorityNotSmall<-NA
-FPDS_eid_fyear$ObligatedAmountIsSmall[is.na(FPDS_eid_fyear$ObligatedAmountIsSmall)&!is.na(FPDS_eid_fyear$Action_Obligation_Then_Year)]<-0
+#No small spend and yes other spend
+if(any(is.na(FPDS_eid_fyear$ObligatedAmountIsSmall)&!is.na(FPDS_eid_fyear$Action_Obligation_Then_Year)))
+  FPDS_eid_fyear$ObligatedAmountIsSmall[is.na(FPDS_eid_fyear$ObligatedAmountIsSmall)&!is.na(FPDS_eid_fyear$Action_Obligation_Then_Year)]<-0
+#0 small spend and in a large category
 FPDS_eid_fyear$MajorityNotSmall[FPDS_eid_fyear$ObligatedAmountIsSmall ==0 &
-                                  FPDS_eid_fyear$EntitySizeCode %in% c('B','J','L')]<-1
+                                  FPDS_eid_fyear$EntitySizeCode %in% c('B','J','L','M')]<-1
 
 FPDS_eid_fyear$MajorityNotSmall[FPDS_eid_fyear$EntitySizeText=="Always Small Vendor" | 
                                   (FPDS_eid_fyear$ObligatedAmountIsSmall*2>=FPDS_eid_fyear$Action_Obligation_Then_Year &
@@ -68,27 +111,63 @@ FPDS_eid_fyear$MajorityNotSmall[FPDS_eid_fyear$EntitySizeText=="Always Small Ven
                                   is.na(FPDS_eid_fyear$MajorityNotSmall)
                                   ]<-0
 
-#Negative corner case
-FPDS_eid_fyear$MajorityNotSmall[abs(FPDS_eid_fyear$ObligatedAmountIsSmall*2)>=abs(FPDS_eid_fyear$Action_Obligation_Then_Year) &
-                                     FPDS_eid_fyear$Action_Obligation_Then_Year<0&
-                                  is.na(FPDS_eid_fyear$MajorityNotSmall)
-                                  ]<-0
-  
-FPDS_eid_fyear$MajorityNotSmall[abs(FPDS_eid_fyear$ObligatedAmountIsSmall)*2<abs(FPDS_eid_fyear$Action_Obligation_Then_Year)&
-                                  FPDS_eid_fyear$ObligatedAmountIsSmall!=FPDS_eid_fyear$Action_Obligation_Then_Year&
+FPDS_eid_fyear$MajorityNotSmall[FPDS_eid_fyear$ObligatedAmountIsSmall*2<FPDS_eid_fyear$Action_Obligation_Then_Year&
+                                  FPDS_eid_fyear$Action_Obligation_Then_Year>0 &
                                   is.na(FPDS_eid_fyear$MajorityNotSmall)]<-1
 
-FPDS_eid_fyear %>% group_by(MajorityNotSmall,EntitySizeText) %>%
+#Negative corner case
+
+# FPDS_eid_fyear$MajorityNotSmall[abs(FPDS_eid_fyear$ObligatedAmountIsSmall*2)>=abs(FPDS_eid_fyear$Action_Obligation_Then_Year) &
+#                                      FPDS_eid_fyear$Action_Obligation_Then_Year<0&
+#                                   is.na(FPDS_eid_fyear$MajorityNotSmall)
+#                                   ]<-0
+
+#If net spending and majority not small is a deobligation, count as graduated
+FPDS_eid_fyear$MajorityNotSmall[FPDS_eid_fyear$ObligatedAmountIsSmall<0 & FPDS_eid_fyear$Action_Obligation_Then_Year>0&
+                                  is.na(FPDS_eid_fyear$MajorityNotSmall)]<-1
+  
+#Remaining corner case. Net deobligation for an entity for a year and net deobligation or zero spending in small records. 
+# After trying to reason that through for a while, I realized I’m not confident in how to classify whether these have graduated
+# I’m leaving them unlabeled for now. 
+
+
+summary(factor(FPDS_eid_fyear$EntitySizeCode))
+summary(factor(FPDS_eid_fyear$MajorityNotSmall))
+View(FPDS_eid_fyear %>% filter(is.na(MajorityNotSmall)))
+#Error checking
+if(any((FPDS_eid_fyear$MajorityNotSmall==1 | is.na(FPDS_eid_fyear$MajorityNotSmall)) & (FPDS_eid_fyear$EntitySizeCode=='S' &
+                                                                                        !is.na(FPDS_eid_fyear$EntitySizeCode)))){
+  warning("MajorityNotSmall and EntitySizeCode always small contradiction")
+  View(FPDS_eid_fyear %>%filter(MajorityNotSmall==0 & EntitySizeCode=='S'))
+}
+if(any((FPDS_eid_fyear$MajorityNotSmall==0 | is.na(FPDS_eid_fyear$MajorityNotSmall)) &
+       (FPDS_eid_fyear$EntitySizeCode %in% c('B','J','L','M') & !is.na(FPDS_eid_fyear$EntitySizeCode))&
+       FPDS_eid_fyear$EntitySizeGlitch==FALSE)){
+  warning("MajorityNotSmall and EntitySizeCode medium or larger unexpected result not covered by glitch")
+  View(FPDS_eid_fyear %>%filter(MajorityNotSmall==0 & 
+                                  EntitySizeCode %in% c('B','J','L','M')&
+                                  EntitySizeGlitch==FALSE))
+}
+```
+
+## First/last year labeling
+```{r CrossYear}
+
+#******* First years
+
+FPDS_eid_fyear %>% group_by(MajorityNotSmall,EntitySizeText,EntitySizeGlitch) %>%
   summarise(count=length(EntityID),
             ObligatedAmountIsSmall=sum(ObligatedAmountIsSmall),
             Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
 
-#Calculate first_year at all
+#Calculate first_year at all and first graduate
 FPDS_eid_fyear<-FPDS_eid_fyear %>%
   group_by(EntityID) %>%
   dplyr::mutate(first_year=min(fiscal_year),
                 first_graduate=min(ifelse(MajorityNotSmall==0 |is.na(MajorityNotSmall) ,9999,fiscal_year)),
-    entrant=ifelse(min(fiscal_year)==fiscal_year,TRUE,FALSE))
+                entrant=ifelse(min(fiscal_year)==fiscal_year,TRUE,FALSE),
+                AnyEntitySizeGlitch=any(EntitySizeGlitch==TRUE),
+                AnyMajorityNotSmallNA=any(is.na(MajorityNotSmall)))
 
 
 FPDS_eid_fyear$first_graduate[FPDS_eid_fyear$first_graduate==9999]<-NA
@@ -100,7 +179,10 @@ FPDS_eid_fyear<-FPDS_eid_fyear %>%
                 last_year_2018T=max(ifelse(IsEntityAbove2018constant10ThousandThreshold==1,fiscal_year,0)),
                 active_2007_to_2016=sum(ifelse(IsEntityAbove2018constant10ThousandThreshold==1 &
                                                fiscal_year>=2007 &
-                                               fiscal_year<=2016,1,0)))
+                                               fiscal_year<=2016,1,0)),
+                active_2008_to_2017=sum(ifelse(IsEntityAbove2018constant10ThousandThreshold==1 &
+                                               fiscal_year>=2008 &
+                                               fiscal_year<=2017,1,0)))
 
 summary(factor(FPDS_eid_fyear$EntitySizeText))
 
@@ -110,7 +192,27 @@ FPDS_eid_fyear<-FPDS_eid_fyear %>%
   group_by(EntityID) %>%
     dplyr::mutate(entrant_2018T=ifelse(fiscal_year==first_year_2018T,TRUE,FALSE))
 
+```
+### Overall New Entrants Dataset
+```{r overall}
+new_entrant<-FPDS_eid_fyear %>% filter(first_year_2018T==fiscal_year) 
+new_entrant<-new_entrant[, c("EntityID","fiscal_year",
+                                       "EntityText","EntityCategory","EntitySizeCode","EntitySizeText","AnyEntitySizeGlitch",
+ "UnknownCompany", "IsEntityAbove2018constant10ThousandThreshold","AnyEntityUSplaceOfPerformance",
+ "AnyEntityForeignPlaceOfPerformance","Action_Obligation_Then_Year", "ObligatedAmountIsSmall","MajorityNotSmall" ,
+ "ObligatedAmount_OMB20_GDP20" ,"NumberOfActions",
+ "first_year_2018T","last_year_2018T","active_2007_to_2016","first_year", "first_graduate","AnyMajorityNotSmallNA")]
 
+new_entrant %>% group_by(first_year_2018T ) %>%
+  summarise(n=length(first_year_2018T))
+write.csv(new_entrant %>% group_by(first_year_2018T ) %>%
+  summarise(n=length(first_year_2018T)),file.path("..","Output","new_entrant_count.csv"),row.names = FALSE)
+write.csv(new_entrant,file.path("..","Output","new_entrant_all_years.csv"),row.names = FALSE)
+
+```
+
+### 2007 Datasets
+```{r 2007datasets}
 
 summary(FPDS_eid_fyear$entrant[FPDS_eid_fyear$fiscal_year==2007 & FPDS_eid_fyear$IsEntityAbove2016constantOneMillionThreshold==TRUE])
 summary(FPDS_eid_fyear$IsEntityAbove2018constant10ThousandThreshold[FPDS_eid_fyear$fiscal_year==2007 & FPDS_eid_fyear$entrant==TRUE])
@@ -122,19 +224,24 @@ summary(factor(FPDS_eid_fyear$active_2007_to_2016[FPDS_eid_fyear$first_year_2018
 
 new_entrant_2007_dyad<-FPDS_eid_fyear %>% filter(first_year_2018T==2007)
 new_entrant_2007<-FPDS_eid_fyear %>% filter(first_year_2018T==2007 & fiscal_year==2007) 
-write.csv(new_entrant_2007,file.path("..","Output","new_entrant_2007.csv"),row.names = FALSE)
-colnames(new_entrant_2007)
-new_entrant_2007<-new_entrant_2007[, c("EntityID","fiscal_year","EntityText","EntityCategory","EntitySizeCode","EntitySizeText",
- "UnknownCompany", "IsEntityAbove2018constant10ThousandThreshold","AnyEntityUSplaceOfPerformance",
- "AnyEntityForeignPlaceOfPerformance","Action_Obligation_Then_Year", "ObligatedAmountIsSmall","MajorityNotSmall" ,
- "ObligatedAmount_OMB20_GDP20" ,"NumberOfActions",
- "first_year_2018T","last_year_2018T","active_2007_to_2016","first_year", "first_graduate")]
 
-new_entrant_2007_dyad<-new_entrant_2007_dyad[, c("EntityID","fiscal_year","EntityText","EntityCategory","EntitySizeCode","EntitySizeText",
+
+colnames(new_entrant_2007)
+
+
+new_entrant_2007<-new_entrant_2007[, c("EntityID","fiscal_year",
+                                       "EntityText","EntityCategory","EntitySizeCode","EntitySizeText","AnyEntitySizeGlitch",
  "UnknownCompany", "IsEntityAbove2018constant10ThousandThreshold","AnyEntityUSplaceOfPerformance",
  "AnyEntityForeignPlaceOfPerformance","Action_Obligation_Then_Year", "ObligatedAmountIsSmall","MajorityNotSmall" ,
  "ObligatedAmount_OMB20_GDP20" ,"NumberOfActions",
- "first_year_2018T","last_year_2018T","active_2007_to_2016","first_year", "first_graduate")]
+ "first_year_2018T","last_year_2018T","active_2007_to_2016","first_year", "first_graduate","AnyMajorityNotSmallNA")]
+
+new_entrant_2007_dyad<-new_entrant_2007_dyad[, c("EntityID","fiscal_year",
+                                                 "EntityText","EntityCategory","EntitySizeCode","EntitySizeText","EntitySizeGlitch",
+ "UnknownCompany", "IsEntityAbove2018constant10ThousandThreshold","AnyEntityUSplaceOfPerformance",
+ "AnyEntityForeignPlaceOfPerformance","Action_Obligation_Then_Year", "ObligatedAmountIsSmall","MajorityNotSmall" ,
+ "ObligatedAmount_OMB20_GDP20" ,"NumberOfActions",
+ "first_year_2018T","last_year_2018T","active_2007_to_2016","first_year", "first_graduate","AnyMajorityNotSmallNA")]
 colnames(new_entrant_2007)[duplicated(colnames(new_entrant_2007))]
 
 write.csv(new_entrant_2007,file.path("..","Output","new_entrant_2007.csv"),row.names = FALSE)
@@ -151,7 +258,58 @@ write.csv(new_entrant_2007_dyad,file.path("..","Output","new_entrant_2007_dyad.c
 FPDS_eid_fyear$present<-FPDS_eid_fyear$IsEntityAbove2018constant10ThousandThreshold
 
 nrow(new_entrant_2007 %>% filter(EntitySizeText %in% c('N','S')))
+```
 
+
+
+### 2008 Datasets
+```{r 2008datasets}
+
+summary(FPDS_eid_fyear$entrant[FPDS_eid_fyear$fiscal_year==2008 & FPDS_eid_fyear$IsEntityAbove2016constantOneMillionThreshold==TRUE])
+summary(FPDS_eid_fyear$IsEntityAbove2018constant10ThousandThreshold[FPDS_eid_fyear$fiscal_year==2008 & FPDS_eid_fyear$entrant==TRUE])
+summary(FPDS_eid_fyear$entrant_2018T[FPDS_eid_fyear$fiscal_year==2008])
+summary(factor(FPDS_eid_fyear$first_year_2018T))
+summary(factor(FPDS_eid_fyear$first_year))
+summary(FPDS_eid_fyear$entrant[FPDS_eid_fyear$fiscal_year==2008])
+summary(factor(FPDS_eid_fyear$active_2008_to_2017[FPDS_eid_fyear$first_year_2018T==2008&FPDS_eid_fyear$fiscal_year==2008]))
+
+new_entrant_2008_dyad<-FPDS_eid_fyear %>% filter(first_year_2018T==2008)
+new_entrant_2008<-FPDS_eid_fyear %>% filter(first_year_2018T==2008 & fiscal_year==2008) 
+
+colnames(new_entrant_2008)
+new_entrant_2008<-new_entrant_2008[, c("EntityID","fiscal_year",
+                                       "EntityText","EntityCategory","EntitySizeCode","EntitySizeText","AnyEntitySizeGlitch",
+ "UnknownCompany", "IsEntityAbove2018constant10ThousandThreshold","AnyEntityUSplaceOfPerformance",
+ "AnyEntityForeignPlaceOfPerformance","Action_Obligation_Then_Year", "ObligatedAmountIsSmall","MajorityNotSmall" ,
+ "ObligatedAmount_OMB20_GDP20" ,"NumberOfActions",
+ "first_year_2018T","last_year_2018T","active_2008_to_2017","first_year", "first_graduate","AnyMajorityNotSmallNA")]
+
+new_entrant_2008_dyad<-new_entrant_2008_dyad[, c("EntityID","fiscal_year",
+                                                 "EntityText","EntityCategory","EntitySizeCode","EntitySizeText","EntitySizeGlitch",
+ "UnknownCompany", "IsEntityAbove2018constant10ThousandThreshold","AnyEntityUSplaceOfPerformance",
+ "AnyEntityForeignPlaceOfPerformance","Action_Obligation_Then_Year", "ObligatedAmountIsSmall","MajorityNotSmall" ,
+ "ObligatedAmount_OMB20_GDP20" ,"NumberOfActions",
+ "first_year_2018T","last_year_2018T","active_2008_to_2017","first_year", "first_graduate","AnyMajorityNotSmallNA")]
+colnames(new_entrant_2008)[duplicated(colnames(new_entrant_2008))]
+
+write.csv(new_entrant_2008,file.path("..","Output","new_entrant_2008.csv"),row.names = FALSE)
+write.csv(new_entrant_2008 %>% filter(EntitySizeCode %in% c('N','S') & MajorityNotSmall==0 & 
+                                        (is.na(first_graduate)|first_graduate>2008)),
+          file.path("..","Output","new_entrant_small_2008.csv"),row.names = FALSE)
+write.csv(new_entrant_2008_dyad,file.path("..","Output","new_entrant_2008_dyad.csv"),row.names = FALSE)
+# #Calculate annual spend and presence.
+# FPDS_eid_fyear<-FPDS_eid_fyear %>%
+#   group_by(EntityID,fiscal_year,entrant,first_year) %>%
+#   dplyr::summarize(obligatedAmount.2017=sum(ObligatedAmount_OMB20_GDP20,na.rm=TRUE),
+#   # dplyr::summarize(obligatedAmount.Deflator.2016=sum(obligatedAmount.Deflator.2016,na.rm=TRUE),
+#                    present=max(IsEntityAbove2018constant10ThousandThreshold))
+FPDS_eid_fyear$present<-FPDS_eid_fyear$IsEntityAbove2018constant10ThousandThreshold
+
+nrow(new_entrant_2008 %>% filter(EntitySizeText %in% c('N','S')))
+```
+
+### Next previous labeling
+```{r NextPreviousLabel}
 
 #Check if EntityID is present in previous year
 FPDS_duns_prev_fyear<-subset(FPDS_eid_fyear,select=c(fiscal_year,EntityID,present))
@@ -197,7 +355,7 @@ FPDS_eid_fyear$count<-1
 
 ```
 
-## Count
+# Count
 
 First lets look at the total number of vendors.
 

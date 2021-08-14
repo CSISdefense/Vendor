@@ -22,11 +22,13 @@ SELECT  [EntityID]
       ,[EntityCategory]
       ,[EntitySizeCode]
       ,[IsEntityAbove2016constantOneMillionThreshold]
+	  ,IsEntityAbove2018constant10ThousandThreshold	
       ,[IsEntityAbove2016constantReportingThreshold]
       ,[IsEntityAbove1990constantReportingThreshold]
       ,[AnyEntityUSplaceOfPerformance]
       ,[AnyEntityForeignPlaceOfPerformance]
       ,[ObligatedAmount]
+	  ,ObligatedAmountIsSmall
       ,[NumberOfActions]
       ,[Top100Federal]
       ,[Top6]
@@ -34,6 +36,7 @@ SELECT  [EntityID]
   FROM [Vendor].[EntityIDhistory]
   where fiscal_year>=2000
   
+
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
