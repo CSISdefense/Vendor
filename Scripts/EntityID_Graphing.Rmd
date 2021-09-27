@@ -13,17 +13,80 @@ library(tidyverse)
 library(ggplot2)
 library(csis360)
 load(file="../data/clean/FPDS_eid_fyear.rda",FPDS_eid_fyear)
+eid_lc<-prepare_labels_and_colors(FPDS_eid_fyear)
+```
+# Overall Vendor
+```{r overall}
+
+summary(factor(FPDS_eid_fyear$IsEntityAbove2018constant10ThousandThreshold))
+
+summary(factor(FPDS_eid_fyear$EntitySizeText))
+summary(factor(FPDS_eid_fyear$EntitySizeGlitch))
+summary(FPDS_eid_fyear$ObligatedAmountIsSmall)
+summary(FPDS_eid_fyear$MajorityNotSmall)
+
+FPDS_eid_fyear<-csis360::read_and_join_experiment(FPDS_eid_fyear,
+                        "EntitySizeCode.csv",
+                        by=c("EntitySizeCode"),
+                        add_var=c("EntitySmall"),
+                        path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                        dir="vendor/"
+)
+
+FPDS_eid_fyear$EntitySmall[FPDS_eid_fyear$EntitySizeGlitch==TRUE |FPDS_eid_fyear$EntitySmall=="Unlabeled Vendor" ]<-"Unlabeled"
+summary(factor(FPDS_eid_fyear$EntitySmall))
+FPDS_eid_fyear$EntitySmall<-factor(FPDS_eid_fyear$EntitySmall,rev(c("Always Small Vendor","Sometimes Small Vendor","Other Than Small","Unlabeled")))
+
+(
+all_10k_small_bar<-build_plot(
+  data=FPDS_eid_fyear %>% dplyr::filter(IsEntityAbove2018constant10ThousandThreshold==1), ##where is FPDS summary?
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  x_var="fiscal_year",
+  y_var="count", #Name of variable to plot on y-axis
+  color_var="EntitySmall",       # name of coloration variable, as string
+  # facet_var="EntitySizeText",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  # labels_and_colors=eid_lc,
+  column_key=NULL,
+  format=TRUE
+)
+)
+(
+all_small_bar<-build_plot(
+  data=FPDS_eid_fyear,# %>% dplyr::filter(IsEntityAbove2018constant10ThousandThreshold==0), ##where is FPDS summary?
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  x_var="fiscal_year",
+  y_var="count", #Name of variable to plot on y-axis
+  color_var="EntitySmall",       # name of coloration variable, as string
+  # facet_var="EntitySizeText",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  # labels_and_colors=eid_lc,
+  column_key=NULL,
+  format=TRUE
+)
+)
+
+write.csv(all_10k_small_bar$data %>% pivot_wider(id_cols="EntitySmall",names_from="fiscal_year",values_from="count"),file.path("..","output","all_10k_small.csv"))
+
+
+write.csv(all_plot_bar$data %>% pivot_wider(id_cols="EntitySmall",names_from="fiscal_year",values_from="count"),file.path("..","output","all_small.csv"))
+
+ggsave(all_10k_small_bar+labs(title="Federal Contractor Count",x="Fiscal Year",y="Number of Entities with contracts\nvalued over $10k threshold (in 2018 constant dollars)"),file=file.path("..","output","all_10k_small.png"))
+
 ```
 
-
-# Count
+# New Entrant Count
 
 First lets look at the total number of vendors.
 
 ```{r count, echo=FALSE, fig.width=6.5, fig.height=9}
 ##counting the number of new entrants and incumbent firms##
 
-eid_lc<-prepare_labels_and_colors(FPDS_eid_fyear)
+
 
 build_plot(
   data=FPDS_eid_fyear, ##where is FPDS summary?
