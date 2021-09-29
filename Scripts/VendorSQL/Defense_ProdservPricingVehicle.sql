@@ -3,14 +3,14 @@
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
-select productorservicecode
-,ServicesCategory
-,IsService
-,Simple
-,ProductOrServiceArea
-,ProductServiceOrRnDarea
-,ProductOrServiceCode
+select ,ProductOrServiceCode
 ,ProductOrServiceCodeText
+,Simple
+,ProductServiceOrRnDarea
+,platformportfolio
+,f.[claimantprogramcode]
+,f.[principalnaicscode]
+,f.principalnaicscodeText
 ,Contractingcustomer
 ,contractingofficeagencyid
 ,ContractingAgencyText
