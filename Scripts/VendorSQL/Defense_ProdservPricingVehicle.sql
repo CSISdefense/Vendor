@@ -3,14 +3,17 @@
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
-select ,ProductOrServiceCode
+select ProductOrServiceCode
 ,ProductOrServiceCodeText
 ,Simple
 ,ProductServiceOrRnDarea
 ,platformportfolio
 ,f.[claimantprogramcode]
-,f.[principalnaicscode]
-,f.principalnaicscodeText
+,f.ClaimantProgramCodeText
+,f.ProjectAbbreviation
+,f.ProjectName
+--,f.[principalnaicscode]
+--,f.principalnaicscodeText
 ,Contractingcustomer
 ,contractingofficeagencyid
 ,ContractingAgencyText
@@ -19,7 +22,7 @@ select ,ProductOrServiceCode
 	     ,[TypeOfContractPricing5Category]
 	  	  ,PricingFee
 		  , PricingUCA
-		  ,VehicleClassification
+		  ,VehicleClassification		  
 ,sum(obligatedamount) as obligatedamount
 from contract.[FPDSclassification]
 where Contractingcustomer='Defense'-- and  ProductOrServiceArea in ('Electronics & Communications'  , 'ICT')
