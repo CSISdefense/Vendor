@@ -8,132 +8,110 @@ select ProductOrServiceCode
 ,Simple
 ,ProductServiceOrRnDarea
 ,platformportfolio
-,f.[claimantprogramcode]
-,f.ClaimantProgramCodeText
-,f.ProjectAbbreviation
-,f.ProjectName
+,[claimantprogramcode]
+,ClaimantProgramCodeText
+,ProjectAbbreviation
+,ProjectName
+,EntityID
+,EntityText
+,EntityVendorName
 --,f.[principalnaicscode]
 --,f.principalnaicscodeText
 ,Contractingcustomer
 ,contractingofficeagencyid
 ,ContractingAgencyText
 ,fiscal_year
+,PlaceCountryText
+,fundedbyforeignentity
  --Pricing
 	     ,[TypeOfContractPricing5Category]
 	  	  ,PricingFee
 		  , PricingUCA
 		  ,VehicleClassification		  
 ,sum(obligatedamount) as obligatedamount
-from contract.[FPDSclassification]
-where Contractingcustomer='Defense'-- and  ProductOrServiceArea in ('Electronics & Communications'  , 'ICT')
+from contract.[FPDSclassification] f
+--where Contractingcustomer='Defense'-- and  ProductOrServiceArea in ('Electronics & Communications'  , 'ICT')
 group by  productorservicecode
 ,ServicesCategory
 ,IsService
 ,Simple
-,ProductOrServiceArea
 ,ProductServiceOrRnDarea
-,ProductOrServiceCode
-,ProductOrServiceCodeText
-,Contractingcustomer
-,contractingofficeagencyid
-,ContractingAgencyText
-,fiscal_year
-	     ,[TypeOfContractPricing5Category]
-	  	  ,PricingFee
-		  , PricingUCA
-		  ,VehicleClassification
-
-
-select Simple
-,ProductServiceOrRnDarea
-,ProductOrServiceCode
-,ProductOrServiceCodeText
-,Contractingcustomer
-,contractingofficeagencyid
-,ContractingAgencyText
-,fiscal_year
-	     ,[TypeOfContractPricing5Category]
-	  	  ,PricingFee
-		  , PricingUCA
-		  ,VehicleClassification
-,sum(obligatedamount) as obligatedamount
-from contract.[FPDSclassification]
---where Contractingcustomer='Defense'-- and  ProductOrServiceArea in ('Electronics & Communications'  , 'ICT')
-group by Simple
-,ProductServiceOrRnDarea
-,ProductOrServiceCode
-,ProductOrServiceCodeText
-,Contractingcustomer
-,contractingofficeagencyid
-,ContractingAgencyText
-,fiscal_year
-	     ,[TypeOfContractPricing5Category]
-	  	  ,PricingFee
-		  , PricingUCA
-		  ,VehicleClassification
-
-
-		  
-select Simple
-,ProductServiceOrRnDarea
-,ProductOrServiceCode
-,ProductOrServiceCodeText
-,Contractingcustomer
-,contractingofficeagencyid
-,ContractingAgencyText
-,fiscal_year
-	     --,[TypeOfContractPricing5Category]
-	  	--  ,PricingFee
-		  --, PricingUCA
-		  --,VehicleClassification
-,sum(obligatedamount) as obligatedamount
-from contract.[FPDSclassification]
---where Contractingcustomer='Defense'-- and  ProductOrServiceArea in ('Electronics & Communications'  , 'ICT')
-group by Simple
-,ProductServiceOrRnDarea
-,ProductOrServiceCode
-,ProductOrServiceCodeText
-,Contractingcustomer
-,contractingofficeagencyid
-,ContractingAgencyText
-,fiscal_year
-	   --  ,[TypeOfContractPricing5Category]
-	  	--  ,PricingFee
-		  --, PricingUCA
-		  --,VehicleClassification
-
-
-		  select 
-		  PlatformPortfolio
-		  ,Simple
-,ProductServiceOrRnDarea
-,ProductOrServiceCode
-,ProductOrServiceCodeText
-,claimantprogramcode
+,platformportfolio
+,[claimantprogramcode]
 ,ClaimantProgramCodeText
+,ProjectAbbreviation
+,ProjectName
+,EntityID
+,EntityText
+,EntityVendorName
+,ProductOrServiceCode
+,ProductOrServiceCodeText
 ,Contractingcustomer
 ,contractingofficeagencyid
 ,ContractingAgencyText
 ,fiscal_year
-	     --,[TypeOfContractPricing5Category]
-	  	--  ,PricingFee
-		  --, PricingUCA
-		  --,VehicleClassification
-,sum(obligatedamount) as obligatedamount
-from contract.[FPDSclassification]
---where Contractingcustomer='Defense'-- and  ProductOrServiceArea in ('Electronics & Communications'  , 'ICT')
-group by PlatformPortfolio
+,PlaceCountryText
+,fundedbyforeignentity
+	     ,[TypeOfContractPricing5Category]
+	  	  ,PricingFee
+		  , PricingUCA
+		  ,VehicleClassification
+
+
+
+		
+select ProductOrServiceCode
+,ProductOrServiceCodeText
 ,Simple
 ,ProductServiceOrRnDarea
-,ProductOrServiceCode
-,ProductOrServiceCodeText
-,claimantprogramcode
+,platformportfolio
+,[claimantprogramcode]
 ,ClaimantProgramCodeText
+,ProjectAbbreviation
+,ProjectName
+,ProjectPlatform
+--,EntityID
+--,EntityText
+--,EntityVendorName
+--,f.[principalnaicscode]
+--,f.principalnaicscodeText
 ,Contractingcustomer
 ,contractingofficeagencyid
 ,ContractingAgencyText
 ,fiscal_year
+--,PlaceCountryText
+--,fundedbyforeignentity
+ --Pricing
 	   --  ,[TypeOfContractPricing5Category]
 	  	--  ,PricingFee
 		  --, PricingUCA
-		  --,VehicleClassification
+		  --,VehicleClassification		  
+,sum(obligatedamount) as obligatedamount
+from contract.[FPDSclassification] f
+--where Contractingcustomer='Defense'-- and  ProductOrServiceArea in ('Electronics & Communications'  , 'ICT')
+group by  productorservicecode
+,ServicesCategory
+,IsService
+,Simple
+,ProductServiceOrRnDarea
+,platformportfolio
+,[claimantprogramcode]
+,ClaimantProgramCodeText
+,ProjectAbbreviation
+,ProjectName
+,ProjectPlatform
+--,EntityID
+--,EntityText
+--,EntityVendorName
+,ProductOrServiceCode
+,ProductOrServiceCodeText
+,Contractingcustomer
+,contractingofficeagencyid
+,ContractingAgencyText
+,fiscal_year
+--,PlaceCountryText
+--,fundedbyforeignentity
+--	     ,[TypeOfContractPricing5Category]
+--	  	  ,PricingFee
+--		  , PricingUCA
+--		  ,VehicleClassification
