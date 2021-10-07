@@ -4,7 +4,7 @@ output:
   html_document:
     keep_md: yes
     toc: yes
-date: "Thursday, March 4, 2031"
+date: "Wednesday, October 6, 2021"
 ---
 
 # Setup
@@ -70,7 +70,12 @@ ggsave600dpi("..//Output//topline_comp.png", ToplineComp,
              )
 
 View(ToplineComp$data)
-write.csv(ToplineComp$data,file="..\\Output\\competition.csv")
+
+write.csv(file="..//Output//topline_competition.csv",row.names = FALSE,
+          # ToplineComp$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
+            pivot_wider(ToplineComp$data,id_cols=c(Competition.sum),
+                        names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
+
 
 
 ```
@@ -223,9 +228,13 @@ ToplinePricing<-build_plot(
 ggsave600dpi("..//Output//topline_pricing.png", ToplinePricing,  
              width=12, height= 6, units="in",size=11, lineheight=1.2
              )
-
+lubridate::year(full_data$dFYear)
 write.csv(file="..//Output//topline_pricing.csv",row.names = FALSE,
-          pivot_wider(ToplinePricing$data,id_cols=c(PricingUCA,PricingUCA.sumlong),names_from=dFYear,values_from=Action_Obligation_OMB20_GDP20))
+          ToplinePricing$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(PricingUCA,PricingUCA.sumlong),
+                        names_from=dFYear,values_from=Action_Obligation_OMB20_GDP20))
+
+ToplinePricing$data$dFYear
 
 ```
 
@@ -343,8 +352,17 @@ ggsave600dpi("..//Output//subcustomer.png", SubCustomer,
              width=12, height= 6, units="in",size=11,lineheight = 1.2
              )
 
+write.csv(file="..//Output//topline_subcustomer.csv",row.names = FALSE,
+          pivot_wider(SubCustomer$data,id_cols=c(SubCustomer.sum,SubCustomer.platform),
+                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
 
+write.csv(file="..//Output//topline_subcustomer_current.csv",row.names = FALSE,
+          full_data %>% group_by(SubCustomer.sum,ContractingSubCustomer,fiscal_year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(SubCustomer.sum,ContractingSubCustomer),
+                      names_from=fiscal_year,values_from=Action_Obligation_Then_Year))
 
+summary(full_data$ContractingSubCustomer)
 ```
 
 
