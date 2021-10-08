@@ -207,7 +207,8 @@ platpsc %<>%
   
 
 
-
+detail_lc<-csis360::prepare_labels_and_colors(platpsc)
+detail_ck<-csis360::get_column_key(platpsc)
 
 
 
@@ -313,6 +314,7 @@ column_key<-csis360::get_column_key(full_data)
 # full_data<-rbind(full_data,as.data.frame(partial_2018))
 # 
 save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
+save(platpsc,labels_and_colors,column_key, file="data/semi_clean/platpsc_FPDS.Rda")
 # 
 # 
 
