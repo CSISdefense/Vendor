@@ -30,18 +30,19 @@ if(!exists("full_data"))
   load(file="FPDS_chart_maker//unaggregated_FPDS.Rda")
 
 disa_data<- full_data %>% filter(ContractingSubCustomer=="DISA")
+load(file=file.path("..","data","semi_clean","disa.Rda"))
 
 ```
 
-# Topline
+# DISA
 
 
 
-## Topline Competition
-```{r ToplineComp}
+## DISA Competition
+```{r DISAComp}
 
 (
-ToplineComp<-build_plot(
+DISAComp<-build_plot(
   data=disa_data,
   chart_geom = "Bar Chart",
   share = FALSE,
@@ -67,15 +68,15 @@ ToplineComp<-build_plot(
   labs(y="Obligations (Constant 2020 $s)")
 )
 
-ggsave600dpi("..//Output//topline_comp.png", ToplineComp,  
+ggsave600dpi("..//Output//DISA_comp.png", DISAComp,  
              width=12, height= 6, units="in",size=11, lineheight=1.2
              )
 
-View(ToplineComp$data)
+View(DISAComp$data)
 
-write.csv(file="..//Output//topline_competition.csv",row.names = FALSE,
-          # ToplineComp$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
-            pivot_wider(ToplineComp$data,id_cols=c(Competition.sum),
+write.csv(file="..//Output//DISA_competition.csv",row.names = FALSE,
+          # DISAComp$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
+            pivot_wider(DISAComp$data,id_cols=c(Competition.sum),
                         names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
 
 
@@ -83,11 +84,11 @@ write.csv(file="..//Output//topline_competition.csv",row.names = FALSE,
 ```
 
 
-## Topline Vendor Size
-```{r ToplineVendor}
+## DISA Vendor Size
+```{r DISAVendor}
 platpsc %>% group_by(Contracting.Agency.ID,ContractingAgencyText)%>% dplyr::summarize()
 (
-ToplineVendor<-build_plot(
+DISAVendor<-build_plot(
   data=disa_data,
   chart_geom = "Bar Chart",
   share = FALSE,
@@ -113,16 +114,16 @@ ToplineVendor<-build_plot(
   labs(y="Obligations (Constant 2020 $s)")
 )
 
-ggsave600dpi("..//Output//topline_vendor.png", ToplineVendor, 
+ggsave600dpi("..//Output//DISA_vendor.png", DISAVendor, 
              width=6.5, height= 4, units="in",size=11
              )
 
 ```
-## Topline Vehicle
-```{r ToplineVehicle}
+## DISA Vehicle
+```{r DISAVehicle}
 
 (
-ToplineVehicle<-build_plot(
+DISAVehicle<-build_plot(
   data=disa_data,
   chart_geom = "Bar Chart",
   share = FALSE,
@@ -150,7 +151,7 @@ ToplineVehicle<-build_plot(
 
 
 (
-ToplineVehicle<-build_plot(
+DISAVehicle<-build_plot(
   data=disa_data %>% filter(!is.na(Vehicle.AwardTask)),
   chart_geom = "Bar Chart",
   share = FALSE,
@@ -179,15 +180,15 @@ ToplineVehicle<-build_plot(
 
 summary(disa_data$Vehicle)
 
-ggsave600dpi("..//Output//topline_vehicle.png", ToplineVehicle, 
+ggsave600dpi("..//Output//DISA_vehicle.png", DISAVehicle, 
              width=13, height= 4.5, units="in",size=11
              )
 
 ```
 
 
-## Topline Pricing
-```{r ToplinePricing}
+## DISA Pricing
+```{r DISAPricing}
 disa_data$PricingUCA.sumlong<-disa_data$PricingUCA.sum
 levels(disa_data$PricingUCA.sumlong)<-list("Firm-Fixed-Price"="FFP",
                                            "Less Common"="Less Common",
@@ -196,7 +197,7 @@ levels(disa_data$PricingUCA.sumlong)<-list("Firm-Fixed-Price"="FFP",
                                            "Undefinitized\nContract Award"="UCA",
                                            "Unclear"="Unclear"   )
 (
-ToplinePricing<-build_plot(
+DISAPricing<-build_plot(
   data=disa_data,
   chart_geom = "Bar Chart",
   share = FALSE,
@@ -222,29 +223,280 @@ ToplinePricing<-build_plot(
   labs(y="Obligations (Constant 2020 $s)")
 )
 
-# ggsave600dpi("..//Output//topline_pricing.png", ToplinePricing, 
+# ggsave600dpi("..//Output//DISA_pricing.png", DISAPricing, 
 #              width=6.5, height= 4, units="in",size=11
 #              )
 
 
-ggsave600dpi("..//Output//topline_pricing.png", ToplinePricing,  
+ggsave600dpi("..//Output//DISA_pricing.png", DISAPricing,  
              width=12, height= 6, units="in",size=11, lineheight=1.2
              )
-write.csv(file="..//Output//topline_pricing.csv",row.names = FALSE,
-          ToplinePricing$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
+write.csv(file="..//Output//DISA_pricing.csv",row.names = FALSE,
+          DISAPricing$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(PricingUCA,PricingUCA.sumlong),
                         names_from=dFYear,values_from=Action_Obligation_OMB20_GDP20))
 
 
 ```
 
-#Product/Service/R&D
+## DISA Info Tech Commercial
+```{r DISAcomm}
+disa_sum<-read_and_join_experiment(data=disa_sum
+                                   ,"InformationTechnologyCommercialItemCategory.csv"
+                                   ,path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/"
+                                   ,dir="productorservice/"
+                                   ,by=c("informationtechnologycommercialitemcategory"="informationtechnologycommercialitemcategory")
+                                   # ,new_var_checked=FALSE
+                                   # ,create_lookup_rdata=TRUE
+                                   # ,col_types="dddddddddccc"
+) 
 
-## Topline Product/Service/R&D
-```{r ToplinePSR}
+disa_data$PricingUCA.sumlong<-disa_data$PricingUCA.sum
+write.csv(levels(factor(disa_sum$informationtechnologycommercialitemcategory)),file="informationtechnologycommercialitemcategory.csv")
 
 (
-ToplinePSR<-build_plot(
+DISAcomm<-build_plot(
+  data=disa_sum %>% filter(fiscal_year>=2002),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="obligatedAmount_OMB19_19", #VAR.y.variable
+  color_var="informationtechnologycommercialitemcategory", #color_var
+  facet_var="informationtechnologycommercialitemcategory", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+
+
+(
+DISAcomm<-build_plot(
+  data=disa_sum %>% filter(fiscal_year>=2002),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="obligatedAmount_OMB19_19", #VAR.y.variable
+  color_var="informationtechnologycommercialitemcategory", #color_var
+  facet_var="Commercial", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+(
+DISAcomm<-build_plot(
+  data=disa_sum %>% filter(fiscal_year>=2002),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="obligatedAmount_OMB19_19", #VAR.y.variable
+  color_var="informationtechnologycommercialitemcategory", #color_var
+  facet_var="ITcategory", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+
+(
+DISAcomm<-build_plot(
+  data=disa_sum %>% filter(fiscal_year>=2002),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="obligatedAmount_OMB19_19", #VAR.y.variable
+  color_var="informationtechnologycommercialitemcategory", #color_var
+  facet_var="ProductServiceOrRnDarea.sum", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+
+# ggsave600dpi("..//Output//DISA_pricing.png", DISAcomm, 
+#              width=6.5, height= 4, units="in",size=11
+#              )
+
+
+ggsave600dpi("..//Output//DISA_comm.png", DISAcomm,  
+             width=12, height= 6, units="in",size=11, lineheight=1.2
+             )
+write.csv(file="..//Output//DISA_comm.csv",row.names = FALSE,
+          DISAcomm$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(PricingUCA,PricingUCA.sumlong),
+                        names_from=dFYear,values_from=Action_Obligation_OMB20_GDP20))
+
+
+```
+
+## DISA Funder   
+```{r Funder}
+
+colnames(disa_sum)[colnames(disa_sum)=="SubCustomer"]<-"ContractingSubCustomer"
+disa_sum$FundingAgency[disa_sum$fundingrequestingagencyid=="955P"]<-"DHS"
+disa_sum<-read_and_join_experiment(disa_sum,
+                            path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                            "Agency_AgencyID.csv",
+                            dir="",
+                            by=c("fundingrequestingagencyid"="AgencyID"),
+                            add_var=c("SubCustomer"),#Contracting.Agency.ID
+                            skip_check_var=c("Platform","SubCustomer"),
+                            guess_max=2000)
+colnames(disa_sum)[colnames(disa_sum)=="SubCustomer"]<-"SubFunder"
+disa_sum<-replace_nas_with_unlabeled(disa_sum,"SubFunder","Uncategorized")
+disa_sum<-csis360::read_and_join_experiment(disa_sum,
+                                             "SubCustomer.csv",
+                                             by=c("FundingAgency"="Customer","SubFunder"="SubCustomer"),
+                                             add_var=c("SubCustomer.platform","SubCustomer.sum"),
+                                             path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                             dir="office/",
+                                            case_sensitive = FALSE
+)
+disa_sum<-disa_sum[,!colnames(disa_sum) %in% c("FundingSubAgency.platform","FundingSubAgency.sum")]
+colnames(disa_sum)[colnames(disa_sum)=="SubCustomer.platform"]<-"FundingSubAgency.platform"
+colnames(disa_sum)[colnames(disa_sum)=="SubCustomer.sum"]<-"FundingSubAgency.sum"
+
+summary(factor(disa_sum$FundingSubAgency.sum))
+disa_sum$Funder<-disa_sum$FundingAgency
+
+disa_sum$Funder[disa_sum$FundingAgency =="Defense" & !is.na(disa_sum$FundingAgency)& !is.na(disa_sum$FundingSubAgency.sum)]<-
+  disa_sum$FundingSubAgency.sum[disa_sum$FundingAgency =="Defense" & !is.na(disa_sum$FundingAgency) & !is.na(disa_sum$FundingSubAgency.sum)]
+disa_sum$Funder[disa_sum$FundingAgency!= "Defense"]<-"Other than DoD"
+disa_sum$Funder[disa_sum$FundingSubAgency=="DISA"]<-"DISA"
+disa_sum$FunderDISA<-ifelse(disa_sum$FundingSubAgency=="DISA","DISA","Other than DISA")
+disa_sum %>% group_by(FundingAgency ) %>% summarise(obligatedAmount_OMB19_19=sum(obligatedAmount_OMB19_19,na.rm=TRUE))
+disa_sum %>% group_by(Funder ) %>% summarise(obligatedAmount_OMB19_19=sum(obligatedAmount_OMB19_19,na.rm=TRUE))
+# levels(disa_sum$Funder)<-list("Telecomm Div.\n(HC1013)"="HC1013",
+#                               "DITCO-PAC\n(HC1019)"="HC1019" ,
+#                               "DITCO-Europe\n(HC1021)"="HC1021",
+#                               "DITCO-Alaska\n(HC1022)"="HC1022",
+#                               "IT Contracting PL83\n(HC1028)"="HC1028" ,
+#                               "DISA-Ft. Meade\n(HC1046)"="HC1046", 
+#                               "DISA-Ft. Meade\n(HC1047)"="HC1047", 
+#                               "J7 White House Comm\n(HC1064)"="HC1064",
+#                               "IT Contracting PL84\n(HC1084)"="HC1084" ,
+#                               "ZD10"=c("ZD10"   ,"ZD10 "),
+#                               "ZD11"=c("ZD11"   ,"ZD11 "),
+#                               "ZD13"=c("ZD13"="ZD13 "),
+#                               "ZD14"=c("ZD14"="ZD14 "),
+#                               "ZD15"=c("ZD15"="ZD15 "))
+# disa_sum$FunderLoc<-factor(disa_sum$ContractingFunderID)
+# levels(disa_sum$FunderLoc)<-list("Scott AFB"=c("HC1013","HC1028","HC1084"),
+#                                 "Fort Meade"=c("HC1046","HC1047"),
+#                               "Pearl Harbor"="HC1019" ,
+#                               "Europe"="HC1021",
+#                               "Alaska"="HC1022",
+#                               "Washington, DC"="HC1064",
+#                               "ZD10"=c("ZD10"   ,"ZD10 "),
+#                               "ZD11"=c("ZD11"   ,"ZD11 "),
+#                               "ZD13"=c("ZD13"="ZD13 "),
+#                               "ZD14"=c("ZD14"="ZD14 "),
+#                               "ZD15"=c("ZD15"="ZD15 "))
+
+(
+Funder<-build_plot(
+  data=disa_sum %>% filter(fiscal_year>=2004),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="obligatedAmount_OMB19_19", #VAR.y.variable
+  color_var="Funder", #color_var
+  facet_var="Funder", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+ggsave600dpi("..//Output//Funder.png", Funder, 
+             width=12, height= 6, units="in",size=11,lineheight = 1.2
+             )
+
+write.csv(file="..//Output//DISA_Funder.csv",row.names = FALSE,
+          pivot_wider(Funder$data,id_cols=c(Funder.sum,Funder.platform),
+                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
+
+write.csv(file="..//Output//DISA_Funder_current.csv",row.names = FALSE,
+          disa_data %>% group_by(Funder.sum,ContractingFunder,fiscal_year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(Funder.sum,ContractingFunder),
+                      names_from=fiscal_year,values_from=Action_Obligation_Then_Year))
+
+summary(disa_data$ContractingFunder)
+```
+
+#Product/Service/R&D
+
+## DISA Product/Service/R&D
+```{r DISAPSR}
+
+(
+DISAPSR<-build_plot(
   data=disa_data,
   chart_geom = "Bar Chart",
   share = FALSE,
@@ -270,11 +522,11 @@ ToplinePSR<-build_plot(
   labs(y="Obligations (Constant 2020 $s)")
 )
 
-ggsave600dpi("..//Output//topline_psr.png", ToplinePSR, 
+ggsave600dpi("..//Output//DISA_psr.png", DISAPSR, 
              width=12, height= 6, units="in",size=11, lineheight=1.2
              )
 
-write.csv(file="..//Output//topline_psr.csv",row.names = FALSE,
+write.csv(file="..//Output//DISA_psr.csv",row.names = FALSE,
           disa_data %>% group_by(ProductServiceOrRnDarea.sum,fiscal_year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(ProductServiceOrRnDarea.sum),
@@ -384,21 +636,70 @@ write.csv(file="..//Output//psr_Services_current.csv",row.names = FALSE,
 
 ```
 
-# SubCustomer
-## Topline SubCustomer 
-```{r SubCustomer}
+# Funder
+## Funder Office
+```{r FunderOffice}
 
 (
-SubCustomer<-build_plot(
-  data=disa_data,
+FunderOffice<-build_plot(
+  data=disa_sum %>% filter(fiscal_year>=2004),
   chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=labels_and_colors,
+  share = TRUE,
+  # labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="fiscal_year", #x_var
-  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
-  color_var="SubCustomer.platform", #color_var
-  facet_var="SubCustomer.sum", #facet_var
+  y_var="obligatedAmount_OMB19_19", #VAR.y.variable
+  color_var="Office", #color_var
+  facet_var="Funder", #facet_var
+  column_key=column_key,
+  format=FALSE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+
+ggsave600dpi("..//Output//OfficePricing.png", OfficePricing, 
+             width=12, height= 6, units="in",size=11,lineheight = 1.2
+             )
+
+write.csv(file="..//Output//DISA_OfficePricing.csv",row.names = FALSE,
+          pivot_wider(OfficePricing$data,id_cols=c(Office.sum,Office.platform),
+                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
+
+write.csv(file="..//Output//DISA_OfficePricing_current.csv",row.names = FALSE,
+          disa_sum %>% group_by(Office.sum,ContractingOffice,fiscal_year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(Office.sum,ContractingOffice),
+                      names_from=fiscal_year,values_from=Action_Obligation_Then_Year))
+
+summary(disa_sum$ContractingOffice)
+```
+
+
+## Funder Commercial
+```{r FunderComm}
+
+(
+FunderComm<-build_plot(
+  data=disa_sum %>% filter(fiscal_year>=2004),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="obligatedAmount_OMB19_19", #VAR.y.variable
+  color_var="Commercial", #color_var
+  facet_var="Funder", #facet_var
   column_key=column_key,
   format=TRUE,
   ytextposition=FALSE
@@ -415,23 +716,435 @@ SubCustomer<-build_plot(
   labs(y="Obligations (Constant 2020 $s)")
 )
 
-ggsave600dpi("..//Output//subcustomer.png", SubCustomer, 
+
+ggsave600dpi("..//Output//OfficePricing.png", OfficePricing, 
              width=12, height= 6, units="in",size=11,lineheight = 1.2
              )
 
-write.csv(file="..//Output//topline_subcustomer.csv",row.names = FALSE,
-          pivot_wider(SubCustomer$data,id_cols=c(SubCustomer.sum,SubCustomer.platform),
+write.csv(file="..//Output//DISA_OfficePricing.csv",row.names = FALSE,
+          pivot_wider(OfficePricing$data,id_cols=c(Office.sum,Office.platform),
                       names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
 
-write.csv(file="..//Output//topline_subcustomer_current.csv",row.names = FALSE,
-          disa_data %>% group_by(SubCustomer.sum,ContractingSubCustomer,fiscal_year)%>%
+write.csv(file="..//Output//DISA_OfficePricing_current.csv",row.names = FALSE,
+          disa_sum %>% group_by(Office.sum,ContractingOffice,fiscal_year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-          pivot_wider(id_cols=c(SubCustomer.sum,ContractingSubCustomer),
+          pivot_wider(id_cols=c(Office.sum,ContractingOffice),
                       names_from=fiscal_year,values_from=Action_Obligation_Then_Year))
 
-summary(disa_data$ContractingSubCustomer)
+summary(disa_sum$ContractingOffice)
+```
+# Office
+## DISA Office 
+```{r Office}
+disa_sum$Office<-factor(disa_sum$ContractingOfficeID)
+levels(disa_sum$Office)<-list("Telecomm Div.\n(HC1013)"="HC1013",
+                              "DITCO-PAC\n(HC1019)"="HC1019" ,
+                              "DITCO-Europe\n(HC1021)"="HC1021",
+                              "DITCO-Alaska\n(HC1022)"="HC1022",
+                              "IT Contracting PL83\n(HC1028)"="HC1028" ,
+                              "DISA-Ft. Meade\n(HC1046)"="HC1046", 
+                              "DISA-Ft. Meade\n(HC1047)"="HC1047", 
+                              "J7 White House Comm\n(HC1064)"="HC1064",
+                              "IT Contracting PL84\n(HC1084)"="HC1084" ,
+                              "ZD10"=c("ZD10"   ,"ZD10 "),
+                              "ZD11"=c("ZD11"   ,"ZD11 "),
+                              "ZD13"=c("ZD13"="ZD13 "),
+                              "ZD14"=c("ZD14"="ZD14 "),
+                              "ZD15"=c("ZD15"="ZD15 "))
+disa_sum$OfficeLoc<-factor(disa_sum$ContractingOfficeID)
+levels(disa_sum$OfficeLoc)<-list("Scott AFB"=c("HC1013","HC1028","HC1084"),
+                                "Fort Meade"=c("HC1046","HC1047"),
+                              "Pearl Harbor"="HC1019" ,
+                              "Europe"="HC1021",
+                              "Alaska"="HC1022",
+                              "Washington, DC"="HC1064",
+                              "ZD10"=c("ZD10"   ,"ZD10 "),
+                              "ZD11"=c("ZD11"   ,"ZD11 "),
+                              "ZD13"=c("ZD13"="ZD13 "),
+                              "ZD14"=c("ZD14"="ZD14 "),
+                              "ZD15"=c("ZD15"="ZD15 "))
+
+(
+Office<-build_plot(
+  data=disa_sum %>% filter(fiscal_year>=2004),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="obligatedAmount_OMB19_19", #VAR.y.variable
+  color_var="Office", #color_var
+  facet_var="Office", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+ggsave600dpi("..//Output//Office.png", Office, 
+             width=12, height= 6, units="in",size=11,lineheight = 1.2
+             )
+
+write.csv(file="..//Output//DISA_Office.csv",row.names = FALSE,
+          pivot_wider(Office$data,id_cols=c(Office.sum,Office.platform),
+                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
+
+write.csv(file="..//Output//DISA_Office_current.csv",row.names = FALSE,
+          disa_data %>% group_by(Office.sum,ContractingOffice,fiscal_year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(Office.sum,ContractingOffice),
+                      names_from=fiscal_year,values_from=Action_Obligation_Then_Year))
+
+summary(disa_data$ContractingOffice)
+```
+## DISA Office  Location
+```{r Office}
+
+disa_sum$OfficeLoc<-factor(disa_sum$ContractingOfficeID)
+levels(disa_sum$OfficeLoc)<-list("Scott AFB"=c("HC1013","HC1028","HC1084"),
+                                "Fort Meade"=c("HC1046","HC1047"),
+                              "Pearl Harbor"="HC1019" ,
+                              "Europe"="HC1021",
+                              "Alaska"="HC1022",
+                              "Washington, DC"="HC1064",
+                              "ZD10"=c("ZD10"   ,"ZD10 "),
+                              "ZD11"=c("ZD11"   ,"ZD11 "),
+                              "ZD13"=c("ZD13"="ZD13 "),
+                              "ZD14"=c("ZD14"="ZD14 "),
+                              "ZD15"=c("ZD15"="ZD15 "))
+
+disa_sum$OfficeSum<-factor(disa_sum$ContractingOfficeID)
+levels(disa_sum$OfficeSum)<-list("Scott AFB"=c("HC1013","HC1028","HC1084"),
+                                "Fort Meade"=c("HC1046","HC1047"),
+                              "All Other"=c("HC1019" ,"HC1021","HC1022","HC1064"),
+                              "ZD10"=c("ZD10"   ,"ZD10 "),
+                              "ZD11"=c("ZD11"   ,"ZD11 "),
+                              "ZD13"=c("ZD13"="ZD13 "),
+                              "ZD14"=c("ZD14"="ZD14 "),
+                              "ZD15"=c("ZD15"="ZD15 "))
+
+(
+OfficeLoc<-build_plot(
+  data=disa_sum %>% filter(fiscal_year>=2004),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="obligatedAmount_OMB19_19", #VAR.y.variable
+  color_var="Office", #color_var
+  facet_var="OfficeSum", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+ggsave600dpi("..//Output//DISA_OfficeSum.png", OfficeLoc, 
+             width=12, height= 6, units="in",size=11,lineheight = 1.2
+             )
+
+write.csv(file="..//Output//DISA_Office.csv",row.names = FALSE,
+          pivot_wider(Office$data,id_cols=c(Office.sum,Office.platform),
+                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
+
+write.csv(file="..//Output//DISA_Office_current.csv",row.names = FALSE,
+          disa_data %>% group_by(Office.sum,ContractingOffice,fiscal_year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(Office.sum,ContractingOffice),
+                      names_from=fiscal_year,values_from=Action_Obligation_Then_Year))
+
+summary(disa_data$ContractingOffice)
 ```
 
+## Office ProdServ
+```{r OfficePSR}
+
+(
+OfficePSR<-build_plot(
+  data=disa_sum %>% filter(fiscal_year>=2004),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="obligatedAmount_OMB19_19", #VAR.y.variable
+  color_var="ProductServiceOrRnDarea.sum", #color_var
+  facet_var="ContractingOfficeID", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+ggsave600dpi("..//Output//OfficePSR.png", OfficePSR, 
+             width=12, height= 6, units="in",size=11,lineheight = 1.2
+             )
+
+write.csv(file="..//Output//DISA_OfficePSR.csv",row.names = FALSE,
+          pivot_wider(OfficePSR$data,id_cols=c(Office.sum,Office.platform),
+                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
+
+write.csv(file="..//Output//DISA_OfficePSR_current.csv",row.names = FALSE,
+          disa_sum %>% group_by(Office.sum,ContractingOffice,fiscal_year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(Office.sum,ContractingOffice),
+                      names_from=fiscal_year,values_from=Action_Obligation_Then_Year))
+
+```
+## Office Pricing
+```{r OfficePricing}
+
+(
+OfficePricing<-build_plot(
+  data=disa_sum %>% filter(fiscal_year>=2004),
+  chart_geom = "Bar Chart",
+  share = TRUE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="obligatedAmount_OMB19_19", #VAR.y.variable
+  color_var="TypeOfContractPricing5Category", #color_var
+  facet_var="Office", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+ggsave600dpi("..//Output//OfficePricing.png", OfficePricing, 
+             width=12, height= 6, units="in",size=11,lineheight = 1.2
+             )
+
+write.csv(file="..//Output//DISA_OfficePricing.csv",row.names = FALSE,
+          pivot_wider(OfficePricing$data,id_cols=c(Office.sum,Office.platform),
+                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
+
+write.csv(file="..//Output//DISA_OfficePricing_current.csv",row.names = FALSE,
+          disa_sum %>% group_by(Office.sum,ContractingOffice,fiscal_year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(Office.sum,ContractingOffice),
+                      names_from=fiscal_year,values_from=Action_Obligation_Then_Year))
+
+summary(disa_sum$ContractingOffice)
+```
+## Office Funder
+```{r OfficeFudner}
+(
+OfficeFunderDISA<-build_plot(
+  data=disa_sum %>% filter(fiscal_year>=2004),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="obligatedAmount_OMB19_19", #VAR.y.variable
+  color_var="FunderDISA", #color_var
+  facet_var="Office", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+(
+OfficeFunder<-build_plot(
+  data=disa_sum %>% filter(fiscal_year>=2004),
+  chart_geom = "Bar Chart",
+  share = TRUE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="obligatedAmount_OMB19_19", #VAR.y.variable
+  color_var="Funder", #color_var
+  facet_var="Office", #facet_var
+  column_key=column_key,
+  format=FALSE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+
+(
+FunderOffice<-build_plot(
+  data=disa_sum %>% filter(fiscal_year>=2004),
+  chart_geom = "Bar Chart",
+  share = TRUE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="obligatedAmount_OMB19_19", #VAR.y.variable
+  color_var="Office", #color_var
+  facet_var="Funder", #facet_var
+  column_key=column_key,
+  format=FALSE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+
+ggsave600dpi("..//Output//OfficePricing.png", OfficePricing, 
+             width=12, height= 6, units="in",size=11,lineheight = 1.2
+             )
+
+write.csv(file="..//Output//DISA_OfficePricing.csv",row.names = FALSE,
+          pivot_wider(OfficePricing$data,id_cols=c(Office.sum,Office.platform),
+                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
+
+write.csv(file="..//Output//DISA_OfficePricing_current.csv",row.names = FALSE,
+          disa_sum %>% group_by(Office.sum,ContractingOffice,fiscal_year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(Office.sum,ContractingOffice),
+                      names_from=fiscal_year,values_from=Action_Obligation_Then_Year))
+
+summary(disa_sum$ContractingOffice)
+```
+
+## Office Commercial
+```{r OfficePricing}
+
+(
+OfficeComm<-build_plot(
+  data=disa_sum %>% filter(fiscal_year>=2004),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="obligatedAmount_OMB19_19", #VAR.y.variable
+  color_var="Commercial", #color_var
+  facet_var="Office", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+
+(
+OfficeIT<-build_plot(
+  data=disa_sum %>% filter(fiscal_year>=2004),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="obligatedAmount_OMB19_19", #VAR.y.variable
+  color_var="ITcategory", #color_var
+  facet_var="Office", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+
+ggsave600dpi("..//Output//OfficePricing.png", OfficePricing, 
+             width=12, height= 6, units="in",size=11,lineheight = 1.2
+             )
+
+write.csv(file="..//Output//DISA_OfficePricing.csv",row.names = FALSE,
+          pivot_wider(OfficePricing$data,id_cols=c(Office.sum,Office.platform),
+                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
+
+write.csv(file="..//Output//DISA_OfficePricing_current.csv",row.names = FALSE,
+          disa_sum %>% group_by(Office.sum,ContractingOffice,fiscal_year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(Office.sum,ContractingOffice),
+                      names_from=fiscal_year,values_from=Action_Obligation_Then_Year))
+
+summary(disa_sum$ContractingOffice)
+```
 
 ## SubCustomer Product/Service/R&D
 ```{r SubCustomerPSR}
@@ -474,7 +1187,7 @@ ggsave600dpi("..//Output//subcustomer_PSR.png", SubCustomerPSR,
 
 
 # Platform
-## Topline  Platform
+## DISA  Platform
 ```{r Platform}
 
 (
@@ -509,7 +1222,7 @@ ggsave600dpi("..//Output//platform.png", Platform,
              )
 
 
-write.csv(file="..//Output//topline_platform_current.csv",row.names = FALSE,
+write.csv(file="..//Output//DISA_platform_current.csv",row.names = FALSE,
           disa_data %>% group_by(PlatformPortfolio,fiscal_year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(PlatformPortfolio),
