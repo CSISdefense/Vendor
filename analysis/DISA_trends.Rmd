@@ -610,7 +610,52 @@ write.csv(file="..//Output//DISA_Funder_current.csv",row.names = FALSE,
 
 summary(disa_data$ContractingFunder)
 ```
+## DISA ICT Funder   
+```{r Funder_DISA_ICT}
 
+(
+Funder<-build_plot(
+  data=disa_sum %>% filter(fiscal_year>=2000 & ServicesCategory.detail=="ICT"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=ds_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  color_var="Funder", #color_var
+  facet_var="Funder", #facet_var
+  column_key=ds_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+ggsave600dpi("..//Output//DISA_Funder.png", Funder, 
+             width=13, height= 6, units="in",size=16,lineheight = 1.2
+             )
+
+write.csv(file="..//Output//DISA_Funder.csv",row.names = FALSE,
+          pivot_wider(Funder$data,id_cols=c(Funder.sum,Funder.platform),
+                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
+
+write.csv(file="..//Output//DISA_Funder_current.csv",row.names = FALSE,
+          disa_data %>% group_by(Funder.sum,ContractingFunder,fiscal_year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(Funder.sum,ContractingFunder),
+                      names_from=fiscal_year,values_from=Action_Obligation_Then_Year))
+
+summary(disa_data$ContractingFunder)
+```
 ## ICT
 ```{r Funder}
 summary(factor(full_data$ServicesCategory.detail))
@@ -698,44 +743,102 @@ full_ICT<- read_delim(
   "..//data//semi_clean//EC_ICT_ProdservAgency.txt",delim = "\t",
   col_names = TRUE, guess_max = 500000,na=c("NA","NULL"))
 
-full_ICT<-standardize_variable_names(ict_data)
-colnames(full_ICT)[colnames(ict_data)=="Fiscal.Year"]<-"fiscal_year"
+full_ICT<-standardize_variable_names(full_ICT)
+colnames(full_ICT)[colnames(full_ICT)=="Fiscal.Year"]<-"fiscal_year"
 full_ICT<-deflate(full_ICT,
                    money_var = "Action_Obligation",
                    fy_var="fiscal_year",
                    deflator_var="OMB20_GDP20"
 )
-ict_data$dFYear<-as.Date(paste("1/1/",as.character(ict_data$fiscal_year),sep=""),"%m/%d/%Y")
+full_ICT$dFYear<-as.Date(paste("1/1/",as.character(full_ICT$fiscal_year),sep=""),"%m/%d/%Y")
 
-levels(ICT_data$ContractingSubCustomer)<-list(
+
+
+# ICT_lc<-prepare_labels_and_colors(full_ICT,path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+
+View(full_ICT%>% filter(ContractingCustomer=='Defense' & (is.na(Funder)|is.na(fundingagency)|full_ICT$fundingagency=="Unlabeled")))
+full_ICT$fundingagency[is.na(full_ICT$fundingagency)& full_ICT$fundingrequestingagencyid==""]<-
+  full_ICT$ContractingCustomer[is.na(full_ICT$fundingagency)& full_ICT$fundingrequestingagencyid==""]
+full_ICT$fundingsubagency[is.na(full_ICT$fundingsubagency)& full_ICT$fundingrequestingagencyid=="" &
+                            !is.na(full_ICT$fundingrequestingagencyid)]<-
+  full_ICT$SubCustomer[is.na(full_ICT$fundingsubagency)& full_ICT$fundingrequestingagencyid==""&
+                            !is.na(full_ICT$fundingrequestingagencyid)]
+
+
+full_ICT<-read_and_join_experiment(full_ICT,
+                            path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                            "Agency_AgencyID.csv",
+                            dir="",
+                            by=c("Contracting.Agency.ID"="AgencyID"),
+                            add_var=c("SubCustomer"),#Contracting.Agency.ID
+                            skip_check_var=c("Platform","SubCustomer"),
+                            guess_max=2000)
+
+full_ICT$fundingagency[full_ICT$fundingrequestingagencyid %in% c('7055','7058')]<-"DHS"
+
+  
+full_ICT$Funder<-full_ICT$fundingagency
+full_ICT$Funder[full_ICT$Funder!='Defense']<-"DoD Implemented\nOther Funder"
+full_ICT$Funder[full_ICT$Funder=='Defense'&!is.na(full_ICT$Funder)]<-
+  full_ICT$fundingsubagency[full_ICT$Funder=='Defense'&!is.na(full_ICT$Funder)]
+full_ICT$Funder[full_ICT$fundingrequestingagencyid %in% c('9700')]<-"Other DoD"
+
+full_ICT$Funder<-factor(full_ICT$Funder)
+levels(full_ICT$Funder)<-list(
   "Army"="Army",
   "Navy"="Navy",
    "Air Force"="Air Force",
   "DISA"="DISA",
   "Other DoD"=c("DLA","MDA","MilitaryHealth","Other DoD"),
+  "DoD Implemented\nOther Funder"=c("DoD Implemented\nOther Funder","Other than DoD"),
   "Uncategorized"=  "Uncategorized" 
 )
 
+full_ICT$Agency<-full_ICT$ContractingCustomer
+full_ICT$Agency[!full_ICT$Agency %in% c('Defense','GSA')]<-"Other Agencies"
+full_ICT$Agency[full_ICT$Agency=="Defense"]<-full_ICT$SubCustomer[full_ICT$Agency=="Defense"]
+full_ICT$Agency<-factor(full_ICT$Agency)
+levels(full_ICT$Agency)<-list(
+  "Self-Administered"="Self-Administered",
+  "Army"="Army",
+  "Navy"="Navy",
+   "Air Force"="Air Force",
+  "DISA"="DISA",
+  "Other DoD"=c("DLA","MDA","MilitaryHealth","Other DoD"),
+  "GSA"="GSA",
+  "Other Agencies"="Other Agencies",
+  "Uncategorized"=  "Uncategorized" 
+)
 
-ICT_lc<-prepare_labels_and_colors(full_ICT,path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+full_ICT$Agency[as.character(full_ICT$Agency)==as.character(full_ICT$Funder)]<-"Self-Administered"
 
-full_ICT$fundingagency
+full_ICT %>% filter(fiscal_year>=2000 & ProductServiceOrRnDarea=="ICT" & 
+                            (   ContractingCustomer=='Defense' | fundingagency=='Defense') &
+                             !is.na(Funder)) %>% group_by(SubCustomer)%>%
+  filter(ContractingCustomer=="Other Agencies") %>%
+  summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
+
+ICT_lc<-prepare_labels_and_colors(full_ICT,path="F:\\Users\\gsanders\\Documents\\Repositories\\Lookup-Tables\\style\\")
+
+
 (
 ICTfunder<-build_plot(
   data=full_ICT %>% filter(fiscal_year>=2000 & ProductServiceOrRnDarea=="ICT" & 
-                               ContractingCustomer=='Defense' | fundingagency=='Defense'),
+                            (   ContractingCustomer=='Defense' | fundingagency=='Defense') &
+                             !is.na(Funder)),
   chart_geom = "Bar Chart",
   share = FALSE,
-  # labels_and_colors=ICT_lc,
+  labels_and_colors=ICT_lc,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
-  color_var="ContractingCustomer", #color_var
-  facet_var="fundingagency", #facet_var
+  color_var="Agency", #color_var
+  facet_var="Funder", #facet_var
   column_key=column_key,
   format=TRUE,
   ytextposition=FALSE
-)+
+  
+)+ theme(legend.title = element_text("Contracting\nAgency"))+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
@@ -745,12 +848,12 @@ ICTfunder<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2020 $s)")
+  labs(y="Funded ICT Service Obligations (Constant 2020 $s)",fill="Contracting\nAgency")
 )
 
 
 
-ggsave600dpi("..//Output//ICT_disa.png", ICT, 
+ggsave600dpi("..//Output//ICT_funder.png", ICTfunder, 
              width=13, height= 6, units="in",size=16,lineheight = 1.2
              )
 
