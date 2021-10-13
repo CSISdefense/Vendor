@@ -1,4 +1,3 @@
-################################################################################
 # Data Pre-Processing for Vendor Size Shiny Graphic
 # UPDATED 2021/03/07
 #
@@ -24,23 +23,42 @@ full_data <- read_delim(
   "Data//semi_clean//Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",delim = "\t",
   col_names = TRUE, guess_max = 500000,na=c("NA","NULL"))
 
-if(substring(full_data$fiscal_year[nrow(full_data)],1,12)=="Completion time")
-  full_data<-full_data[-nrow(full_data),]
+platpsc<-read_delim(file.path("data","semi_clean","Federal_ProdservPlatform.txt"),delim="\t",na=c("NULL","NA"),
+              col_names = TRUE, guess_max = 10000000)
 
-full_data<-standardize_variable_names(full_data)
-# coerce Amount to be a numeric variable
-full_data$Action_Obligation %<>% as.numeric()
-full_data$Number.Of.Actions %<>% as.numeric()
-full_data$Fiscal.Year <- as.numeric(full_data$Fiscal.Year)
+initial_clean<-function(df){
+  if(substring(df$fiscal_year[nrow(df)],1,12)=="Completion time")
+    df<-df[-nrow(df),]
+  
+  df<-standardize_variable_names(df)
+  # coerce Amount to be a numeric variable
+  df$Action_Obligation %<>% as.numeric()
+  if("Number.Of.Actions" %in% colnames(df)) 
+    df$Number.Of.Actions %<>% as.numeric()
+  df$Fiscal.Year <- as.numeric(df$Fiscal.Year)
+  colnames(df)[colnames(df)=="Contractingcustomer"]<-"ContractingCustomer"
+  colnames(df)[colnames(df)=="platformportfolio"]<-"PlatformPortfolio"
+  # discard pre-2000
+  df %<>% filter(Fiscal.Year >= 2000 & ContractingCustomer=="Defense")
+  colnames(df)[colnames(df)=="Action_Obligation_Then_Year"]<-"Action_Obligation"
+  colnames(df)[colnames(df)=="Fiscal.Year"]<-"fiscal_year"
+  df$dFYear<-as.Date(paste("1/1/",as.character(df$fiscal_year),sep=""),"%m/%d/%Y")
+  df
+}
 
-# discard pre-2000
-full_data %<>% filter(Fiscal.Year >= 2000 & ContractingCustomer=="Defense")
-
+platpsc<-initial_clean(platpsc)
+full_data<-initial_clean(full_data)
 
  
-   colnames(full_data)[colnames(full_data)=="Action_Obligation_Then_Year"]<-"Action_Obligation"
 full_data<-deflate(full_data,
                    money_var = "Action_Obligation",
+                   fy_var="fiscal_year",
+                   deflator_var="OMB20_GDP20"
+)
+
+platpsc<-deflate(platpsc,
+                   money_var = "Action_Obligation",
+                 fy_var="fiscal_year",
                    deflator_var="OMB20_GDP20"
 )
 
@@ -109,8 +127,8 @@ full_data<-csis360::read_and_join_experiment(full_data,
                                              "Vehicle.csv",
                                              by=c("Vehicle"="Vehicle.detail"),
                                              add_var=c("Vehicle.sum","Vehicle.AwardTask"),
-                                             # path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                                             path="K:/Users/Greg/Repositories/Lookup-Tables/",
+                                             path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                             # path="K:/Users/Greg/Repositories/Lookup-Tables/",
                                              dir="contract/"
 )
 
@@ -141,6 +159,24 @@ levels(full_data$PricingUCA.sum)<-
 # debug(csis360::prepare_labels_and_colors)
 # load("Shiny Apps/FPDS_chart_maker/2016_unaggregated_FPDS.Rda")
 
+platpsc<-read_and_join_experiment(platpsc,
+                            path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                            "Agency_AgencyID.csv",
+                            dir="",
+                            by=c("Contracting.Agency.ID"="AgencyID"),
+                            add_var=c("SubCustomer"),#Contracting.Agency.ID
+                            skip_check_var=c("Platform","SubCustomer"),
+                            guess_max=2000)
+colnames(platpsc)[colnames(platpsc)=="SubCustomer"]<-"ContractingSubCustomer"
+
+platpsc<-replace_nas_with_unlabeled(platpsc,"ContractingSubCustomer","Uncategorized")
+platpsc<-csis360::read_and_join_experiment(platpsc,
+                                             "SubCustomer.csv",
+                                             by=c("ContractingCustomer"="Customer","ContractingSubCustomer"="SubCustomer"),
+                                             add_var=c("SubCustomer.platform","SubCustomer.sum"),
+                                             path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                             dir="office/"
+)
 
 
 # set correct data types
@@ -160,13 +196,26 @@ full_data %<>%
   mutate(Vehicle = factor(Vehicle)) %>%
   mutate(PricingUCA = factor(PricingUCA))
 
-colnames(full_data)[colnames(full_data)=="Fiscal.Year"]<-"fiscal_year"
+
+platpsc %<>%
+  select(-ContractingCustomer) %>%
+  # select(-ClassifyNumberOfOffers) %>%
+  mutate(ContractingSubCustomer = factor(ContractingSubCustomer)) %>%
+  mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
+  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
+  mutate(PlatformPortfolio = factor(PlatformPortfolio))
+  
+
+
+detail_lc<-csis360::prepare_labels_and_colors(platpsc)
+detail_ck<-csis360::get_column_key(platpsc)
+
 
 
 labels_and_colors<-csis360::prepare_labels_and_colors(full_data)
 
 column_key<-csis360::get_column_key(full_data)
-full_data$dFYear<-as.Date(paste("1/1/",as.character(full_data$fiscal_year),sep=""),"%m/%d/%Y")
+
 
 # write output to CleanedVendorSize.csv
 # save(full_data,labels_and_colors,column_key, file="Shiny Apps//FPDS_chart_maker//2018_unaggregated_FPDS.Rda")
@@ -204,13 +253,7 @@ full_data$dFYear<-as.Date(paste("1/1/",as.character(full_data$fiscal_year),sep="
 # 
 # 
 # 
-# partial_2018<-read_and_join(partial_2018,
-#                             path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-#                             "Agency_AgencyID.csv",
-#                             dir="",
-#                             by=c("AgencyID"),
-#                             add_var=c("ContractingCustomer","SubCustomer","Platform"),
-#                             skip_check_var="Platform")
+
 # 
 # sum(partial_2018$Action_Obligation.Then.Year)
 
@@ -271,6 +314,7 @@ full_data$dFYear<-as.Date(paste("1/1/",as.character(full_data$fiscal_year),sep="
 # full_data<-rbind(full_data,as.data.frame(partial_2018))
 # 
 save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
+save(platpsc,labels_and_colors,column_key, file="data/semi_clean/platpsc_FPDS.Rda")
 # 
 # 
 
