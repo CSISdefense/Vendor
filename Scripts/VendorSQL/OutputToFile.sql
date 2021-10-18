@@ -10,7 +10,15 @@ SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
 
-
+select fiscal_year
+,fiscal_quarter
+,sum(obligatedAmount) as obligatedAmount
+,ContractingCustomer
+from [Contract].[FPDSpartial]
+where ContractingCustomer='Defense'
+group by  fiscal_year
+,fiscal_quarter
+,ContractingCustomer
 
 
 SET ANSI_WARNINGS OFF;
