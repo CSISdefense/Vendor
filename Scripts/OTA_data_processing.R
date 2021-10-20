@@ -56,7 +56,7 @@ OTA_data<-deflate(OTA_data,
                    deflator_var="OMB20_GDP20"
 )
 
-
+OTA_data$dFYear<-as.Date(paste("1/1/",as.character(OTA_data$Fiscal_Year),sep=""),"%m/%d/%Y")
 
 #Consolidate categories for Vendor Size
 
@@ -97,6 +97,8 @@ OTA_data<-deflate(OTA_data,
 # )
 colnames(OTA_data)[colnames(OTA_data)=="PlatformPortfolio"]<-"OrigPlat"
 
+
+levels(factor(OTA_data$Contracting_Agency_Name))
 #Classify Product or Service Codes
 OTA_data<-csis360::read_and_join_experiment(OTA_data,
                                   "ProductOrServiceCodes.csv",
@@ -122,10 +124,6 @@ levels(OTA_data$OrigPlat)<-list(
   "Unmanned"="Unmanned",
   "Ordnance and Missiles"="Weapons and Ammunition" 
 )
-levels(factor(OTA_data$PlatformPortfolio))
-
-# View(OTA_data %>% filter(PlatformPortfolio!=OrigPlat) %>% select(Product_or_Service_Code,Product_or_Service_Description,PlatformPortfolio,OrigPlat))
-
 
 #Classify Product or Service Codes
 OTA_data<-csis360::read_and_join(OTA_data,
@@ -138,15 +136,38 @@ OTA_data<-csis360::read_and_join(OTA_data,
   dir="Lookups/"
 )
 
+colnames(OTA_data)[colnames(OTA_data)=="PlatformPortfolio"]<-"PSCPlatformPortfolio"
+OTA_data<-read_and_join_experiment(OTA_data,
+                            path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                            "Agency_AgencyID.csv",
+                            dir="",
+                            by=c("Contracting_Agency_ID"="AgencyID"),
+                            add_var=c("Customer","SubCustomer","PlatformPortfolio"),#Contracting.Agency.ID
+                            skip_check_var=c("PlatformPortfolio","SubCustomer"),
+                            guess_max=2000)
+OTA_data$PlatformPortfolio[is.na(OTA_data$PlatformPortfolio)]<-OTA_data$PSCPlatformPortfolio[is.na(OTA_data$PlatformPortfolio)]
+
+levels(factor(OTA_data$PlatformPortfolio))
+OTA_data$Dollars_Obligated_OMB20_GDP20
+# View(OTA_data %>% filter(as.character(PlatformPortfolio)!=as.character(OrigPlat)) %>%
+#        group_by(Product_or_Service_Code,Product_or_Service_Description,PlatformPortfolio,OrigPlat) %>% 
+#        summarise(Dollars_Obligated_OMB20_GDP20=sum(Dollars_Obligated_OMB20_GDP20)))
+
+
 # 
-# OTA_data<-replace_nas_with_unlabeled(OTA_data,"ContractingSubCustomer","Uncategorized")
-# OTA_data<-csis360::read_and_join_experiment(OTA_data,
-#                         "SubCustomer.csv",
-#                         by=c("ContractingCustomer"="Customer","ContractingSubCustomer"="SubCustomer"),
-#                         add_var=c("SubCustomer.platform","SubCustomer.sum"),
-#                         path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-#                         dir="office/"
-# )
+OTA_data<-replace_nas_with_unlabeled(OTA_data,"SubCustomer","Uncategorized")
+OTA_data<-csis360::read_and_join_experiment(OTA_data,
+                        "SubCustomer.csv",
+                        by=c("Customer"="Customer","SubCustomer"="SubCustomer"),
+                        add_var=c("SubCustomer.platform","SubCustomer.sum"),
+                        path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                        dir="office/"
+)
+
+OTA_data %>% group_by(Contracting_Agency_Name ,Contracting_Agency_ID) %>% 
+  filter(Customer=="Defense") %>%summarise(Dollars_Obligated_OMB20_GDP20=sum(Dollars_Obligated_OMB20_GDP20))
+OTA_data$SubCustomer.OTA<-OTA_data$SubCustomer
+OTA_data$SubCustomer.OTA[OTA_data$Contracting_Agency_ID=="97AE"]<-"DARPA"
 
 # OTA_data<-csis360::read_and_join_experiment(OTA_data,
 #                                              "Vehicle.csv",
@@ -184,14 +205,6 @@ OTA_data<-csis360::read_and_join(OTA_data,
 # debug(csis360::prepare_labels_and_colors)
 # load("Shiny Apps/FPDS_chart_maker/2016_unaggregated_FPDS.Rda")
 # 
-# platpsc<-read_and_join_experiment(platpsc,
-#                             path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-#                             "Agency_AgencyID.csv",
-#                             dir="",
-#                             by=c("Contracting.Agency.ID"="AgencyID"),
-#                             add_var=c("SubCustomer"),#Contracting.Agency.ID
-#                             skip_check_var=c("Platform","SubCustomer"),
-#                             guess_max=2000)
 # colnames(platpsc)[colnames(platpsc)=="SubCustomer"]<-"ContractingSubCustomer"
 # 
 # platpsc<-replace_nas_with_unlabeled(platpsc,"ContractingSubCustomer","Uncategorized")
@@ -208,8 +221,9 @@ OTA_data<-csis360::read_and_join(OTA_data,
 OTA_data %<>%
   # select(-ContractingCustomer) %>%
   # select(-ClassifyNumberOfOffers) %>%
-  # mutate(ContractingSubCustomer = factor(ContractingSubCustomer)) %>%
-  # mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
+  mutate(SubCustomer.OTA = factor(SubCustomer.OTA)) %>%
+  mutate(SubCustomer.sum = factor(SubCustomer.sum)) %>%
+  mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
   mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
   mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
   # mutate(Shiny.VendorSize = factor(Shiny.VendorSize)) %>%
@@ -228,5 +242,5 @@ ota_ck<-csis360::get_column_key(OTA_data)
 levels(factor(OTA_data$Contracting_Department_ID))
 
 save(OTA_data,ota_lc,ota_ck, file="data/semi_clean/Federal_OTA.Rda")
-OTA_def<-OTA_data %>% filter(Contracting_Department_ID=="9700")
-save(OTA_def,ota_lc,ota_ck, file="data/semi_clean/Defense_OTA.Rda")
+ota_def<-OTA_data %>% filter(Contracting_Department_ID=="9700")
+save(ota_def,ota_lc,ota_ck, file="data/semi_clean/Defense_OTA.Rda")
