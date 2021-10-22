@@ -28,7 +28,8 @@ main.text.size<-1
 note.text.size<-1.40
 if(!exists("full_data"))
   load(file="FPDS_chart_maker//unaggregated_FPDS.Rda")
-
+load(file="FPDS_chart_maker//unaggregated_FPDS.Rda")
+load(file="../data/semi_clean/Defense_OTA.Rda")
 ```
 
 # Topline
@@ -332,6 +333,100 @@ write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE,
             arrange(ProductServiceOrRnDarea))
 
 ```
+
+## R&D phase and OTA
+```{r Services}
+
+contract_merge<-full_data%>%filter(fiscal_year >=2015) %>%
+  group_by(fiscal_year,
+                         ProductServiceOrRnDarea,
+                         ProductServiceOrRnDarea.sum)%>%
+  summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
+
+# 
+#   format_data_for_plot(contract_data,
+#                      fy_var="fiscal_year", #x_var
+#                      y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+#                      color_var="ProductServiceOrRnDarea", #color_var
+#                      facet_var = "ProductServiceOrRnDarea.sum",
+#                      labels_and_colors = labels_and_colors
+# )
+# ota_merge<-format_data_for_plot(ota_def,
+#                      fy_var="Fiscal_Year", #x_var
+#                      y_var="Dollars_Obligated_OMB20_GDP20", #VAR.y.variable
+#                      color_var="ProductServiceOrRnDarea", #color_var
+#                      facet_var = "ProductServiceOrRnDarea.sum",
+#                      labels_and_colors = labels_and_colors
+# )
+
+ota_merge<-ota_def%>%filter(Fiscal_Year >=2015) %>%
+  group_by(Fiscal_Year,
+                         ProductServiceOrRnDarea,
+                         ProductServiceOrRnDarea.sum)%>%
+  summarise(Action_Obligation_OMB20_GDP20=sum(Dollars_Obligated_OMB20_GDP20))
+
+
+#   format_data_for_plot(ota_def,
+#                      fy_var="Fiscal_Year", #x_var
+#                      y_var="Dollars_Obligated_OMB20_GDP20", #VAR.y.variable
+#                      color_var="ProductServiceOrRnDarea", #color_var
+#                      facet_var = "ProductServiceOrRnDarea.sum",
+#                      labels_and_colors = labels_and_colors
+# )
+
+ota_merge$type<-"OTA"
+colnames(ota_merge)[colnames(ota_merge)=="Fiscal_Year"]<-"fiscal_year"
+contract_merge$type<-"contract"
+merge<-rbind(ota_merge,contract_merge)
+
+(
+RnDphase<-build_plot(
+  data=merge %>% filter(ProductServiceOrRnDarea.sum=="R&D"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  color_var="type", #color_var
+  facet_var="ProductServiceOrRnDarea", #facet_var
+  column_key=column_key,
+  format=FALSE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+# ggsave600dpi("..//Output//contractota_RnDPhase.png", RnDphase, 
+#              width=12, height= 6, units="in",size=11, lineheight=1.2
+#              )
+#                            
+# 
+write.csv(file="..//Output//contractota_RnDPhase.csv",row.names = FALSE,
+          pivot_wider(RnDphase$data,id_cols=c(ProductServiceOrRnDarea,type),
+                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20)%>%
+            arrange(ProductServiceOrRnDarea,type))
+#             
+# 
+# write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE,
+#           full_data %>% filter(ProductServiceOrRnDarea.sum=="R&D") %>%
+#             format_data_for_plot(fy_var="fiscal_year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
+#                                  labels_and_colors=labels_and_colors) %>%
+#           pivot_wider(id_cols=c(ProductServiceOrRnDarea),
+#                       names_from=fiscal_year,values_from=Action_Obligation_Then_Year)%>%
+#             arrange(ProductServiceOrRnDarea))
+
+```
+
 ## Services
 ```{r names_from=lubridate::year(dFYear)}
 
@@ -567,7 +662,6 @@ write.csv(file="..//Output//topline_platform_current.csv",row.names = FALSE,
                       names_from=fiscal_year,values_from=Action_Obligation_Then_Year))
 
 ```
-
 
 
 ## Platform SubCustomer
