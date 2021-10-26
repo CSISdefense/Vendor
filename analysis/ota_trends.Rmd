@@ -29,9 +29,148 @@ note.text.size<-1.40
 load(file="../data/semi_clean/Defense_OTA.Rda")
 ```
 
+## Estimate Prep
+```{r EstimatePrep}
+OTAquarterly<-read.csv(file.path("..","Data_Raw","OTA_All_FIelds.csv"),skip = 2)
+OTAquarterly<-standardize_variable_names(OTAquarterly)
+OTAquarterly$Date.Signed<-as.Date(OTAquarterly$Date.Signed,"%m/%d/%Y")
+
+OTAquarterly<-OTAquarterly %>% mutate(fiscal_quarter=lubridate::quarter(Date.Signed,fiscal_start=10),
+                        ContractingCustomer=ifelse(Contracting.Department.ID=="9700","Defense","Non-Defense")) %>%
+  group_by(Fiscal.Year,fiscal_quarter,ContractingCustomer) %>%
+  dplyr::summarize(Action_Obligation=sum(csis360::text_to_number(Dollars.Obligated),na.rm=TRUE)#,
+            # minSD=min(Date.Signed),
+            # maxSD=max(Date.Signed)
+            )%>% filter((fiscal_quarter<=3 | Fiscal.Year<2021)&
+                                                Fiscal.Year>=2015 & ContractingCustomer=="Defense") %>%
+  arrange(Fiscal.Year,fiscal_quarter)
+
+
+
+
+if(any(is.na(OTAquarterly$Fiscal.Year))) stop("NA Quarters")
+
+
+OTAquarterly<-deflate(OTAquarterly,money_var = "Action_Obligation",deflator_var="OMB20_GDP20")
+
+
+```
+## Estimate Last Quarter
+Create a univariate model that estimates the fourth quarter based on the first three quarters.
+
+This isn't a perfect representation, as the spending in the first three quarters will continue to fluctuate even well after the 90 day delay for DoD has expired. In theory, there could be slightly greater precision by tracking the first three quarters at a consistent point in each year. However, that's not a level of history that can be straightforwardly reconstructed.  
+
+This is also a tiny n, only 6 or so years, and thus an incredibly crude estimate.
+```{r Model}
+
+
+a<-OTAquarterly %>% group_by(Fiscal.Year) %>% filter(Fiscal.Year<2021 & !is.na(fiscal_quarter))%>% summarise(
+  q1toq3=sum(ifelse(fiscal_quarter<=3,Action_Obligation_OMB20_GDP20,0)),
+  q4=sum(ifelse(fiscal_quarter==4,Action_Obligation_OMB20_GDP20,0)),
+             total=sum(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
+)
+
+
+m<-lm(data=a,q4~q1toq3)
+summary(m)
+
+plot(m)
+
+q1to13_2021<-sum(ifelse(OTAquarterly$fiscal_quarter<=3 & !is.na(OTAquarterly$fiscal_quarter) & OTAquarterly$Fiscal.Year==2021,OTAquarterly$Action_Obligation_OMB20_GDP20,0))
+
+cvalues<-data.frame(q1toq3=q1to13_2021)
+
+p<-predict(m,cvalues,interval="prediction")
+e2021<-data.frame(Fiscal.Year=2021,
+           fiscal_quarter=4,
+           Action_Obligation_Then_Year=NA,
+           Action_Obligation_OMB20_GDP20=NA,
+           yest=p[1]+q1to13_2021,
+           lwr=p[2]+q1to13_2021,
+           upr=p[3]+q1to13_2021,
+           ContractingCustomer="Defense",
+           Actual="Estimate"
+           )
+rm(q1to13_2021,cvalues)
+```
+
 # Topline
 
+## Topline Estimate
+```{r Topline}
 
+OTAquarterly$Actual<-"Actual"
+OTAquarterly$lwr<-NA
+OTAquarterly$upr<-NA
+OTAquarterly$yest<-NA
+
+# build_plot(data=rbind(OTAquarterly,q2021,e2021),
+#            x_var="Fiscal.Year",
+#            y_var="Action_Obligation_OMB20_GDP20",
+#            color_var = "fiscal_quarter",
+#            facet_var="Actual",
+#            chart_geom="Bar Chart")+facet_wrap(~)
+OTAquarterlyEst<-rbind(OTAquarterly,e2021)
+OTAquarterlyEst$Actual<-factor(OTAquarterlyEst$Actual,levels=c("Estimate","Actual"))
+OTAquarterlyEst$fiscal_quarter<-factor(OTAquarterlyEst$fiscal_quarter,c("4","3","2","1"))
+OTAquarterlyEst$dFYear<-as.Date(paste("1/1/",as.character(OTAquarterlyEst$Fiscal.Year),sep=""),"%m/%d/%Y")
+
+(ota_topline_qest<-ggplot(data=OTAquarterlyEst %>% filter(Fiscal.Year>=2000) #rbind(OTAquarterly,q2021,e2021),
+      )+geom_col( aes(x=dFYear,
+           y=Action_Obligation_OMB20_GDP20/1000000000,
+           # alpha=Actual,
+           fill = fiscal_quarter
+       ))+
+  # scale_alpha_discrete(range=c(0.4,1))+
+  geom_errorbar(aes(x=dFYear,ymin=lwr/1000000000,ymax=upr/1000000000,color = fiscal_quarter))+
+    geom_point(aes(x=dFYear,y=yest/1000000000,color = fiscal_quarter))+
+    scale_color_discrete("Estimate")+
+    labs(x="Fiscal Year",y="Constant FY 2020 $ Billions",fill="Quarter")
+)
+
+ggsave600dpi(ota_topline_qest,file=file.path("..","Output","ota_quarterly_est.png"),  
+             width=12, height= 6, units="in",size=16, lineheight=1.2
+             )
+
+(ota_topline_q<-ggplot(data=OTAquarterlyEst %>% filter(Fiscal.Year>=2000) #rbind(OTAquarterly,q2021,e2021),
+      )+geom_col( aes(x=dFYear,
+           y=Action_Obligation_OMB20_GDP20/1000000000,
+           # alpha=Actual,
+           fill = fiscal_quarter
+       ))+
+  # scale_alpha_discrete(range=c(0.4,1))+
+  # geom_errorbar(aes(x=dFYear,ymin=lwr,ymax=upr,color = fiscal_quarter))+
+    # geom_point(aes(x=dFYear,y=yest,color = fiscal_quarter))+
+    # scale_color_discrete("Estimate")+
+    labs(x="Fiscal Year",y="Constant FY 2020 $ Billions",fill="Quarter")
+)
+
+
+
+write.csv(file="..//Output//ota_topline.csv",row.names = FALSE,na="",
+          OTAquarterlyEst %>%  filter(Fiscal.Year>=2015)%>%
+          format_data_for_plot(
+                               fy_var="Fiscal.Year",
+                               y_var="Action_Obligation_OMB20_GDP20",
+                               color_var="fiscal_quarter",
+                               # facet="SubCustomer",
+                               # labels_and_colors = ota_lc,
+                               group=TRUE) %>%
+            arrange(Fiscal.Year) %>%
+            mutate(Dollars_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
+          pivot_wider(id_cols=c(fiscal_quarter),
+                      names_from=Fiscal.Year,values_from=Dollars_GDP20) %>% 
+            
+            # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=ota_lc$variable[ota_lc$column=="PlatformPortfolio"]))%>%
+            # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=levels(fiscal_quarter),
+            #                                 labels=gsub("\\n"," ",levels(PlatformPortfolio))))%>%
+                   arrange(fiscal_quarter))
+
+
+ggsave600dpi(ota_topline_q,file=file.path("..","Output","ota_quarterly.png"),  
+             width=12, height= 6, units="in",size=16, lineheight=1.2
+             )
+```
 
 ## Topline Competition
 ```{r ToplineComp}
