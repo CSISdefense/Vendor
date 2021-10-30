@@ -141,7 +141,7 @@ DECLARE	@return_value int
 --EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
 EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer
 --EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
-		@Customer = 'Defense',
+		@Customer = NULL, --'Defense',
 		@SubCustomer = NULL,
 		@PlatformPortfolio =NULL
 
@@ -190,7 +190,7 @@ SET NOCOUNT ON;
 DECLARE	@return_value int
 
 EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
-		@Customer = NULL
+		@Customer = 'Defense'
 		
 --SELECT	'Return Value' = @return_value
 
@@ -216,9 +216,16 @@ DECLARE	@return_value int
 EXEC	@return_value = [Vendor].[SP_EntityIDhistoryPlatform]
 --EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
 		@Customer = 'Defense'
-		
---SELECT	'Return Value' = @return_value
 
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+
+DECLARE	@return_value int
+--SELECT	'Return Value' = @return_value
+--EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
+EXEC	@return_value = [Vendor].[sp_EntityCountHistoryCustomer]
+--EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
+		@Customer =NULL
 
 --SET ANSI_WARNINGS OFF;
 --SET NOCOUNT ON;
@@ -265,7 +272,7 @@ EXEC	@return_value = Vendor.sp_EntityCountHistorySubCustomer
 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
-
+--9h23m
 DECLARE	@return_value int
 
 --EXEC	@return_value = [Vendor].[SP_EntityIDhistory]

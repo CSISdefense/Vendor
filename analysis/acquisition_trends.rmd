@@ -1122,3 +1122,139 @@ write.csv(file="..//Output//platform_comp_line.csv",row.names = FALSE,
 
 
 ```
+#Vendor Count
+```{r EntityCount}
+
+ecp<-read.delim(file.path("FPDS_vendor_count/Defense_Vendor_sp_EntityCountHistoryPlatformCustomer.txt"), header=TRUE,  na.strings = c("", "NULL"))
+ecp<-remove_bom(ecp)
+ecp$dFYear<-as.Date(paste("1/1/",as.character(ecp$fiscal_year),sep=""),"%m/%d/%Y")
+ecsub<-read.delim(file.path("FPDS_vendor_count/Vendor_sp_EntityCountHistorySubCustomerUpdate.txt"), header=TRUE,  na.strings = c("", "NULL"))
+ecsub<-remove_bom(ec)
+ecsub$dFYear<-as.Date(paste("1/1/",as.character(ec$fiscal_year),sep=""),"%m/%d/%Y")
+
+
+
+ecsub<-csis360::read_and_join(ecsub,
+  "EntitySizeCode.csv",
+  by="EntitySizeCode",
+  add_var="EntitySmall",
+  path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+  dir="vendor/"
+)
+ecp<-csis360::read_and_join(ecp,
+  "EntitySizeCode.csv",
+  by="EntitySizeCode",
+  add_var="EntitySmall",
+  path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+  dir="vendor/"
+)
+
+def_eid_fyear<-read.delim(file.path("../Data/semi_clean/Defense_Vendor.SP_EntityIDhistory.txt"), header=TRUE,  na.strings = c("", "NULL"))
+def_eid_fyear<-remove_bom(def_eid_fyear)
+def_eid_fyear$EntityCount<-1
+def_eid_fyear$dFYear<-as.Date(paste("1/1/",as.character(def_eid_fyear$fiscal_year),sep=""),"%m/%d/%Y")
+
+def_eid_fyear_plat<-read.delim(file.path("../Data/semi_clean/Defense_Vendor.SP_EntityIDhistoryPlatform.txt"), header=TRUE,  na.strings = c("", "NULL"))
+def_eid_fyear_plat<-remove_bom(def_eid_fyear_plat)
+def_eid_fyear_plat$EntityCount<-1
+def_eid_fyear_plat$dFYear<-as.Date(paste("1/1/",as.character(def_eid_fyear_plat$fiscal_year),sep=""),"%m/%d/%Y")
+
+eid_lc<-prepare_labels_and_colors(def_eid_fyear_plat)
+ecp_lc<-prepare_labels_and_colors(ecp,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+ecp$EntitySizeText<-factor(ecp$EntitySizeText)
+
+
+(edef<-build_plot(def_eid_fyear %>% filter(fiscal_year>=2005),
+           chart_geom = "Line Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           # color_var="Small",
+           labels_and_colors = ecp_lc,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+)
+ecsub$IsEntityAbove2018constant10ThousandThreshold
+ecsub$EntitySizeText
+undebug(add_preassigned_scales)
+(esub<-build_plot(ecsub  %>% filter(fiscal_year>=2005 & IsEntityAbove2018constant10ThousandThreshold==1),
+           chart_geom = "Line Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           facet_var="SubCustomer",
+           color_var="EntitySmall",
+           labels_and_colors = ecp_lc,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+)+facet_wrap(~SubCustomer,scale="free_y")
+
+
+ggsave600dpi(file.path("..","Output","def_entity_count.png"), edef, 
+             width=6.5, height= 4, units="in",size=11,lineheight = 0.75
+             )
+
+write.csv(file=file.path("..","Output","def_entity_count.csv"),row.names = FALSE,
+          edef$data%>% mutate(fiscal_year=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(),
+                        names_from=fiscal_year,values_from=EntityCount))
+ecp$IsEntityAbove2016constantOneMillionThreshold
+ecp$thresh<-factor(ecp$IsEntityAbove2016constantOneMillionThreshold,
+                   levels=c(0,1), labels=c("Vendor only receives smaller contracts","Vendor receives contracts over $1 million in 2016 $"))
+(eplat<-build_plot(ecp %>% filter(fiscal_year>=2005 &
+                                    IsEntityAbove2016constantReportingThreshold==1),
+           chart_geom = "Bar Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           color_var="thresh",
+           facet_var="PlatformPortfolio",
+           # second_var="",
+           # labels_and_colors = ecp_lc,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+)+labs(color="Vendor receives over $1 million threshold in 2016 $s")
+(eplat<-build_plot(ecp %>% filter(fiscal_year>=2005 &
+                                    IsEntityAbove2016constantReportingThreshold==1),
+           chart_geom = "Bar Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           color_var="EntitySmall",
+           facet_var="PlatformPortfolio",
+           # second_var="",
+           labels_and_colors = ecp_lc,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+)+labs(color="Vendor receives over $1 million threshold in 2016 $s")+facet_wrap(~PlatformPortfolio,scale="free_y")
+(eplat<-build_plot(ecp %>% filter(fiscal_year>=2005 &
+                                    IsEntityAbove2016constantReportingThreshold==1),
+           chart_geom = "Bar Chart",
+           x_var="dFYear",
+           y_var="ObligatedAmount",
+           color_var="EntitySizeText",
+           facet_var="IsEntityAbove2016constantOneMillionThreshold",
+           second_var="PlatformPortfolio",
+           # labels_and_colors = ecp_lc,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+)#+facet_wrap(~PlatformPortfolio,scale="free_y")
+
+ecp %>% group_by(IsEntityAbove2016constantOneMillionThreshold,fiscal_year) %>%
+          summarise(act=sum(ObligatedAmount))%>%group_by(fiscal_year)%>%mutate(act=act/sum(act))
+
+(eplat<-build_plot(def_eid_fyear_plat %>% dplyr::filter(fiscal_year>=2005),
+           chart_geom = "Line Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           facet_var="platformPortfolio",
+           # color_var="platformPortfolio",
+           labels_and_colors = eid_lc,
+           format=TRUE)+facet_wrap(~platformPortfolio)+labs(x="Fiscal Year",y="Vendor Count")
+)
+ggsave600dpi(file.path("..","Output","def_entity_count_plat.png"), eplat, 
+             width=6.5, height= 4, units="in",size=11,lineheight = 0.75
+             )
+
+
+write.csv(file=file.path("..","Output","def_entity_count_plat.csv"),row.names = FALSE,
+          eplat$data%>% mutate(fiscal_year=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(platformPortfolio),
+                        names_from=fiscal_year,values_from=EntityCount))
+
+write.csv(file=file.path("..","Output","def_entity_count_plat.csv"),row.names = FALSE,
+          eplat$data%>% mutate(fiscal_year=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(platformPortfolio),
+                        names_from=fiscal_year,values_from=EntityCount))
+```
