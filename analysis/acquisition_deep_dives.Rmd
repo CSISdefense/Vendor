@@ -30,6 +30,8 @@ if(!exists("full_data"))
   load(file="FPDS_chart_maker//unaggregated_FPDS.Rda")
 
 load(file="../data/semi_clean/platpsc_FPDS.Rda")
+labels_and_colors<-prepare_labels_and_colors(platpsc,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+column_key<-get_column_key(platpsc,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 ```
 # Preprocessing 
 ## Project
@@ -91,6 +93,58 @@ platpsc$TopPStext[is.na(platpsc$TopPStext) & !is.na(platpsc$ProductOrServiceCode
 summary(factor(platpsc$TopPStext))
 
 
+```
+
+# Component Variant
+## SubCustomer with JPO
+```{r SubCustomer}
+platpsc$SubCustomer.JPO<-as.character(platpsc$SubCustomer.platform)
+platpsc$SubCustomer.JPO[platpsc$ProjectName=="JSF (F-35) " & !is.na(platpsc$ProjectName)]<-"F-35 JPO"
+platpsc$SubCustomer.JPO<-factor(platpsc$SubCustomer.JPO)
+any(as.character(platpsc$TopProject)=="JSF (F-35) "& !is.na(platpsc$TopProject))
+paste("*",unique(platpsc$TopProject),"*",sep="")
+(
+SubCustomer<-build_plot(
+  data=platpsc,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  color_var="SubCustomer.JPO", #color_var
+  facet_var="SubCustomer.sum", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+ggsave600dpi("..//Output//subcustomer_JPO.png", SubCustomer, 
+             width=12, height= 6, units="in",size=11,lineheight = 1.2
+             )
+
+write.csv(file="..//Output//topline_subcustomer_JPO.csv",row.names = FALSE,
+          pivot_wider(SubCustomer$data,id_cols=c(SubCustomer.sum,SubCustomer.JPO),
+                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
+
+write.csv(file="..//Output//topline_subcustomer_JPO_current.csv",row.names = FALSE,
+          platpsc %>% group_by(SubCustomer.sum,SubCustomer.JPO,fiscal_year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(SubCustomer.sum,SubCustomer.JPO),
+                      names_from=fiscal_year,values_from=Action_Obligation_Then_Year))
+
+summary(full_data$ContractingSubCustomer)
 ```
 
 # Platforms and Top Projects
@@ -346,6 +400,7 @@ PSC<-build_plot(
   theme(legend.position = "none")+
   labs(y="Obligations (Constant 2020 $s)")
 )
+
 
 ```
 
