@@ -135,7 +135,7 @@ EXEC	@return_value = Contract.SP_ContractUnmodifiedScope
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
-
+--4h44m
 DECLARE	@return_value int
 
 --EXEC	@return_value = [Vendor].[SP_EntityIDhistory]

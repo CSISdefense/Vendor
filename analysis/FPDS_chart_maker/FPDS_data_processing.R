@@ -20,10 +20,9 @@ library(csis360)
 library(Hmisc)
 # read in data
 full_data <- read_delim(
-  "Data//semi_clean//Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",delim = "\t",
+  "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",delim = "\t",
   col_names = TRUE, guess_max = 500000,na=c("NA","NULL"))
-
-
+  
 platpsc<-read_delim(file.path("data","semi_clean","Federal_ProdservPlatform.txt"),delim="\t",na=c("NULL","NA"),
               col_names = TRUE, guess_max = 10000000)
 
@@ -178,6 +177,12 @@ platpsc<-csis360::read_and_join_experiment(platpsc,
                                              path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
                                              dir="office/"
 )
+
+#SubCustomer.JPO
+platpsc$SubCustomer.JPO<-as.character(platpsc$SubCustomer.platform)
+platpsc$SubCustomer.JPO[platpsc$ProjectName=="JSF (F-35) " & !is.na(platpsc$ProjectName)]<-"F-35 JPO"
+platpsc$SubCustomer.JPO<-factor(platpsc$SubCustomer.JPO)
+any(as.character(platpsc$TopProject)=="JSF (F-35) "& !is.na(platpsc$TopProject))
 
 
 # set correct data types
