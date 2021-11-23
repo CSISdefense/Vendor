@@ -135,13 +135,27 @@ EXEC	@return_value = Contract.SP_ContractUnmodifiedScope
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
---4h44m
+--4h48m
 DECLARE	@return_value int
 
 --EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
 EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer
 --EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
 		@Customer = NULL, --'Defense',
+		@SubCustomer = NULL,
+		@PlatformPortfolio =NULL
+
+
+		
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+
+DECLARE	@return_value int
+--4h04m
+--EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
+EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerInternational
+--EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
+		@Customer = 'Defense',
 		@SubCustomer = NULL,
 		@PlatformPortfolio =NULL
 

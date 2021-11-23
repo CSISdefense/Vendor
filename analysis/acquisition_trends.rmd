@@ -1126,7 +1126,7 @@ write.csv(file="..//Output//platform_comp_line.csv",row.names = FALSE,
 ## Defense Count
 ```{r EntityCount}
 
-ec<-read.delim(file.path("../Data/semi_clean/Vendor_sp_EntityCountHistoryCustomerU2.txt"), header=TRUE,  na.strings = c("", "NULL"))
+ec<-read.delim(file.path("../Data/semi_clean/Vendor_sp_EntityCountHistoryCustomer.txt"), header=TRUE,  na.strings = c("", "NULL"))
 ec<-remove_bom(ec)
 ec<-standardize_variable_names(ec)
 ec$dFYear<-as.Date(paste("1/1/",as.character(ec$Fiscal.Year),sep=""),"%m/%d/%Y")
@@ -1143,6 +1143,7 @@ ec<-csis360::read_and_join(ec,
 def_eid_fyear<-read.delim(file.path("../Data/semi_clean/Defense_Vendor.SP_EntityIDhistory.txt"), header=TRUE,  na.strings = c("", "NULL"))
 def_eid_fyear<-remove_bom(def_eid_fyear)
 def_eid_fyear$EntityCount<-1
+def_eid_fyear<-standardize_variable_names(def_eid_fyear)
 def_eid_fyear$dFYear<-as.Date(paste("1/1/",as.character(def_eid_fyear$Fiscal.Year),sep=""),"%m/%d/%Y")
 
 eid_lc<-prepare_labels_and_colors(ec,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
@@ -1186,15 +1187,15 @@ eid_lc<-prepare_labels_and_colors(ec,path="K:\\Users\\Greg\\Repositories\\Lookup
            labels_and_colors = eid_lc,
            format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
 )
-ggsave600dpi(file.path("..","Output","def_entity_count_bar.png"), edefbar+ guides(fill = guide_legend(nrow = 2)), 
-             width=4, height= 4, units="in",size=11,lineheight = 0.75
+ggsave600dpi(file.path("..","Output","def_entity_count_bar.png"), edefbar+ theme(legend.position = "right"),#guides(fill = guide_legend(nrow = 2)), 
+             width=6.5, height= 3, units="in",size=11,lineheight = 0.75
              )
 ggsave600dpi(file.path("..","Output","def_entity_count.png"), edef, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
   write.csv(file=file.path("..","Output","def_entity_count.csv"),row.names = FALSE,
-            edef$data%>% mutate(Fiscal.Year=lubridate::year(dFYear))%>%
+            edefbar$data%>% mutate(Fiscal.Year=lubridate::year(dFYear))%>%
               pivot_wider(id_cols=c(EntitySmall),
                           names_from=Fiscal.Year,values_from=EntityCount)%>% arrange(EntitySmall))
 
