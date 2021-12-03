@@ -8,7 +8,7 @@ date: "Wednesday, October 6, 2021"
 ---
 
 # Setup
-First we load the data. The dataset used is a U.S. Defense Contracting dataset derived from   FPDS.
+First we load the data. The dataset used is a U.S. Defense Contracting dataset derived from FPDS.
 
 ```{r Libraries, echo = FALSE}
 library(csis360)
@@ -28,13 +28,165 @@ main.text.size<-1
 note.text.size<-1.40
 if(!exists("full_data"))
   load(file="FPDS_chart_maker//unaggregated_FPDS.Rda")
-load(file="FPDS_chart_maker//unaggregated_FPDS.Rda")
+
 load(file="../data/semi_clean/Defense_OTA.Rda")
+
+toa<-readxl::read_excel(path=file.path("..","data_raw","FY22 PB Green Book Table 6-1.xlsx"),skip=4)
+# toa<-toa["Total Current Dollars ..............................................................." ==toa[,2] & !is.na(toa[,2]),]#%in% c(toa[,1],toa[,2],toa[,3]),]
+
+
+#Kludge
+toa<-toa[11,c(-1,-3)] 
+colnames(toa)<-gsub("FY ","",colnames(toa))
+colnames(toa)[colnames(toa)=="...2"]<-"Series"
+toa<-pivot_longer(toa,  cols=!Series, names_to="Fiscal.Year", values_to="Total_Obligation_Authority")
+toa$Total_Obligation_Authority<-toa$Total_Obligation_Authority*1000000
+toa<-deflate(toa,money_var = "Total_Obligation_Authority",deflator_var="OMB20_GDP20")
 ```
+## Quarterly YTD
+Read in quarterly data from the CSIS database and the current year data from SAM.gov.
+
+```{r EstimatePrep}
+y2021<-read.csv(file.path("..","Data_Raw","SAM","Defense_Agency_SignedDate_2021.csv"),skip = 2)
+y2021<-standardize_variable_names(y2021)
+y2021$Date.Signed<-as.Date(y2021$Date.Signed,"%m/%d/%Y")
+
+q2021<-y2021 %>% mutate(fiscal_quarter=lubridate::quarter(Date.Signed,fiscal_start=10),
+                        ContractingCustomer=ifelse(Contracting.Department.ID=="9700","Defense","Non-Defense")) %>%
+  group_by(Fiscal.Year,fiscal_quarter,ContractingCustomer) %>%
+  dplyr::summarize(Action_Obligation=sum(csis360::text_to_number(Dollars.Obligated),na.rm=TRUE),
+            minSD=min(Date.Signed),
+            maxSD=max(Date.Signed))%>% filter(fiscal_quarter<=3)
+y2021
+q2021<-q2021 %>% select(Fiscal.Year,fiscal_quarter,Action_Obligation,ContractingCustomer)
+# colnames(q2021)[colnames(q2021)=="Fiscal.Year"]<-"fiscal_year"
+# colnames(q2021)[colnames(q2021)=="Fiscal.Year"]<-"fiscal_year"
+
+
+quarterly<-read.csv(file.path("..","Data","Semi_Clean","Defense_Contract.FiscalQuarter.csv"),na.strings = "NULL")
+quarterly<-standardize_variable_names(quarterly)
+quarterly<-remove_bom(quarterly)
+quarterly$fiscal_quarter<-as.numeric(quarterly$fiscal_quarter)-1
+quarterly <- quarterly %>% filter(Fiscal.Year>=2000)  %>% arrange(Fiscal.Year,fiscal_quarter)
+if(any(is.na(quarterly$Fiscal.Year))) stop("NA Quarters")
+
+quarterlyYTD<-rbind(quarterly,q2021 )
+quarterlyYTD<-deflate(quarterlyYTD,money_var = "Action_Obligation",deflator_var="OMB20_GDP20")
+colnames(quarterlyYTD)
+toa$fiscal_quarter<-NA
+toa$Action_Obligation_Then_Year<-NA
+toa$Action_Obligation_OMB20_GDP20<-NA
+toa$ContractingCustomer<-"Defense"
+quarterlyYTD$Total_Obligation_Authority_OMB20_GDP20<-NA
+quarterlyYTD$Total_Obligation_Authority_Then_Year<-NA
+quarterlyYTD<-rbind(quarterlyYTD,toa %>% select(-Series))
+
+```
+
+## Estimate last quarter
+Create a univariate model that estimates the fourth quarter based on the first three quarters.
+
+This isn't a perfect representation, as the spending in the first three quarters will continue to fluctuate even well after the 90 day delay for DoD has expired. In theory, there could be slightly greater precision by tracking the first three quarters at a consistent point in each year. However, that's not a level of history that can be straightforwardly reconstructed.  
+```{r Model}
+
+
+a<-quarterlyYTD %>% group_by(Fiscal.Year) %>% filter(Fiscal.Year<2021 & !is.na(fiscal_quarter))%>% summarise(
+  q1toq3=sum(ifelse(fiscal_quarter<=3,Action_Obligation_OMB20_GDP20,0)),
+  q4=sum(ifelse(fiscal_quarter==4,Action_Obligation_OMB20_GDP20,0)),
+             total=sum(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
+)
+a$NewAdmin<-0
+a$NewAdmin[a$Fiscal.Year %in% c(2001,2009,2017,2021)]<-1
+
+m<-lm(data=a,q4~q1toq3)
+m2<-lm(data=a,q4~q1toq3+NewAdmin)
+summary(m)
+summary(m2)
+plot(m)
+
+q1to13_2021<-sum(ifelse(quarterlyYTD$fiscal_quarter<=3 & !is.na(quarterlyYTD$fiscal_quarter) & quarterlyYTD$Fiscal.Year==2021,quarterlyYTD$Action_Obligation_OMB20_GDP20,0))
+
+cvalues<-data.frame(q1toq3=q1to13_2021)
+
+p<-predict(m,cvalues,interval="prediction")
+e2021<-data.frame(Fiscal.Year=2021,
+           fiscal_quarter=4,
+           Action_Obligation_Then_Year=NA,
+           Action_Obligation_OMB20_GDP20=NA,
+           yest=p[1]+q1to13_2021,
+           lwr=p[2]+q1to13_2021,
+           upr=p[3]+q1to13_2021,
+           ContractingCustomer="Defense",
+           Actual="Estimate",
+           Total_Obligation_Authority_OMB20_GDP20=NA,
+           Total_Obligation_Authority_Then_Year=NA
+           )
+rm(q1to13_2021,cvalues)
+```
+The first three years made a pretty good estimator. However, adding a variable based on whether it was the first year of a new adminsitration added nothing to the model.
 
 # Topline
 
+## TOA Topline
+```{r TOA}
 
+quarterlyYTD$Actual<-"Actual"
+quarterlyYTD$lwr<-NA
+quarterlyYTD$upr<-NA
+quarterlyYTD$yest<-NA
+
+# build_plot(data=rbind(quarterly,q2021,e2021),
+#            x_var="Fiscal.Year",
+#            y_var="Action_Obligation_OMB20_GDP20",
+#            color_var = "fiscal_quarter",
+#            facet_var="Actual",
+#            chart_geom="Bar Chart")+facet_wrap(~)
+quarterlyEst<-rbind(quarterlyYTD,e2021)
+quarterlyEst$Actual<-factor(quarterlyEst$Actual,levels=c("Estimate","Actual"))
+quarterlyEst$fiscal_quarter<-factor(quarterlyEst$fiscal_quarter,c("4","3","2","1"))
+quarterlyEst$dFYear<-as.Date(paste("1/1/",as.character(quarterlyEst$Fiscal.Year),sep=""),"%m/%d/%Y")
+
+(topline_q<-ggplot(data=quarterlyEst %>% filter(Fiscal.Year>=2000) #rbind(quarterly,q2021,e2021),
+      )+geom_col( aes(x=dFYear,
+           y=Action_Obligation_OMB20_GDP20/1000000000,
+           # alpha=Actual,
+           fill = fiscal_quarter
+       ))+
+    geom_path(aes(x=dFYear,y=Total_Obligation_Authority_OMB20_GDP20/1000000000),group="Quarter")+
+  # scale_alpha_discrete(range=c(0.4,1))+
+  geom_errorbar(aes(x=dFYear,ymin=lwr/1000000000,ymax=upr/1000000000,y=yest/1000000000,color = fiscal_quarter))+
+    geom_point(aes(x=dFYear,ymin=lwr/1000000000,ymax=upr/1000000000,y=yest/1000000000,color = fiscal_quarter))+
+    scale_color_discrete("Estimate")+
+    labs(x="Fiscal Year",y="Constant FY 2020 $ Billions",fill="Quarter")
+)
+
+write.csv(file="..//Output//toa_topline.csv",row.names = FALSE,na="",
+          quarterlyEst %>% mutate(fiscal_quarter=ifelse(!is.na(Total_Obligation_Authority_OMB20_GDP20),"TOA",fiscal_quarter),
+                                            Dollars_GDP20=ifelse(fiscal_quarter=="TOA",
+                                                                 Total_Obligation_Authority_OMB20_GDP20,Action_Obligation_OMB20_GDP20))%>%
+            filter(Fiscal.Year>=2000)%>%
+          format_data_for_plot(
+                               fy_var="Fiscal.Year",
+                               y_var="Dollars_GDP20",
+                               color_var="fiscal_quarter",
+                               # facet="SubCustomer",
+                               # labels_and_colors = ota_lc,
+                               group=TRUE) %>%
+            arrange(Fiscal.Year) %>%
+            mutate(Dollars_GDP20=Dollars_GDP20/1000000000)%>%
+          pivot_wider(id_cols=c(fiscal_quarter),
+                      names_from=Fiscal.Year,values_from=Dollars_GDP20) %>% 
+            
+            # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=ota_lc$variable[ota_lc$column=="PlatformPortfolio"]))%>%
+            # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=levels(fiscal_quarter),
+            #                                 labels=gsub("\\n"," ",levels(PlatformPortfolio))))%>%
+                   arrange(fiscal_quarter))
+
+p
+ggsave600dpi(topline_q,file=file.path("..","Output","toa_quarterly.png"),  
+             width=12, height= 6, units="in",size=11, lineheight=1.2
+             )
+```
 
 ## Topline Competition
 ```{r ToplineComp}
@@ -70,7 +222,7 @@ ggsave600dpi("..//Output//topline_comp.png", ToplineComp,
              width=12, height= 6, units="in",size=11, lineheight=1.2
              )
 
-View(ToplineComp$data)
+
 
 write.csv(file="..//Output//topline_competition.csv",row.names = FALSE,
           # ToplineComp$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
@@ -109,12 +261,60 @@ ToplineVendor<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2020 $s)")
+  labs(y="Obligations (Constant 2020 $s)",
+       caption="Source: FPDS; CSIS Analysis\nNote: The Merger of Raytheon and United Technologies took place in April of 2020 and thus did not make the cutofff for inclusion in FY2020.")
 )
 
-ggsave600dpi("..//Output//topline_vendor.png", ToplineVendor, 
-             width=6.5, height= 4, units="in",size=11
+(
+ToplineVendor_line<-build_plot(
+  data=full_data,
+  chart_geom = "Line Chart",
+  share = TRUE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  color_var="Shiny.VendorSize", #color_var
+  # facet_var="Competition.sum", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)",caption="Source: FPDS; CSIS Analysis\nNote: The Merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
+)
+
+ggsave600dpi("..//Output//topline_vendor.png", ToplineVendor+
+  labs(y="Obligations (Constant 2020 $s)",caption="Source: FPDS; CSIS Analysis\nNote: The Merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
              )
+
+ggsave600dpi("..//Output//topline_vendor.eps", ToplineVendor+
+  labs(y="Obligations (Constant 2020 $s)",caption="Source: FPDS; CSIS Analysis\nNote: The Merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+
+write.csv(file="..//Output//topline_vendor_cur.csv",row.names = FALSE,
+          full_data %>% group_by(Shiny.VendorSize,fiscal_year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE)/1000000000)%>%
+          pivot_wider(id_cols=c(Shiny.VendorSize),
+                      names_from=fiscal_year,values_from=Action_Obligation_Then_Year)%>% arrange(Shiny.VendorSize))
+
+
+write.csv(file="..//Output//topline_vendor.csv",row.names = FALSE,
+          ToplineVendor$data%>% mutate(fiscal_year=lubridate::year(dFYear),
+                                       bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
+            pivot_wider(id_cols=c(Shiny.VendorSize),
+                        names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%arrange(Shiny.VendorSize))
 
 ```
 ## Topline Vehicle
@@ -353,7 +553,7 @@ contract_merge<-full_data%>%filter(fiscal_year >=2015) %>%
 #                      labels_and_colors = labels_and_colors
 # )
 # ota_merge<-format_data_for_plot(ota_def,
-#                      fy_var="Fiscal_Year", #x_var
+#                      fy_var="Fiscal.Year", #x_var
 #                      y_var="Dollars_Obligated_OMB20_GDP20", #VAR.y.variable
 #                      color_var="ProductServiceOrRnDarea", #color_var
 #                      facet_var = "ProductServiceOrRnDarea.sum",
@@ -527,9 +727,9 @@ write.csv(file="..//Output//topline_subcustomer_current.csv",row.names = FALSE,
 summary(full_data$ContractingSubCustomer)
 ```
 
-## Topline SubCustomer Cariant
+## Topline SubCustomer Variant
 ```{r SubCustomer}
-platpsc$SubCustomer.platform[platpsc$Contracting.Agency.ID==]
+# platpsc$SubCustomer.platform[platpsc$Contracting.Agency.ID==]
 platpsc$Action_Obligation_OMB20_GDP20
 summary(factor(platpsc$Contracting.Agency.ID))
 platpsc %>% group_by(fiscal_year,Contracting.Agency.ID) %>% filter(Contracting.Agency.ID=="571S")%>%
@@ -618,7 +818,82 @@ ggsave600dpi("..//Output//subcustomer_PSR.png", SubCustomerPSR,
              )
 ```
 
+## SubCustomer Competition
+```{r SubCustomerComp}
+full_data$SubCustomer.platform
+(
+SubCustomerComp_line<-build_plot(
+  data=full_data,
+  chart_geom = "Line Chart",
+  share = TRUE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  color_var="Competition.effective.only", #color_var
+  facet_var="SubCustomer.platform", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
 
+# ggsave600dpi("..//Output//subcustomer_PSR.png", SubCustomerPSR, 
+#              width=6.5, height= 4, units="in",size=11
+#              )
+ggsave600dpi("..//Output//subcustomer_Comp_line.png", SubCustomerComp_line, 
+             width=12, height= 6, units="in",size=11,lineheight = 1.2
+             )
+
+(
+SubCustomerComp_bar<-build_plot(
+  data=full_data,
+  chart_geom = "Bar Chart",
+  share = TRUE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  color_var="Competition.multisum", #color_var
+  facet_var="SubCustomer.platform", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+ggsave600dpi("..//Output//subcustomer_Comp_bar.png", SubCustomerComp_bar, 
+             width=12, height= 6, units="in",size=11,lineheight = 1.2
+             )
+
+
+write.csv(file="..//Output//subcustomer_competition.csv",row.names = FALSE,
+          # ToplineComp$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
+            pivot_wider(SubCustomerComp$data,id_cols=c(SubCustomer.platform,Competition.effective.only),
+                        names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20)%>%
+            arrange(SubCustomer.platform,Competition.effective.only))
+
+```
 
 # Platform
 ## Topline  Platform
@@ -783,7 +1058,7 @@ ggsave600dpi("..//Output//platform_vendor.png", PlatformVendor,
 ```{r PlatformComp}
 
 (
-PlatformComp<-build_plot(
+PlatformComp_bar<-build_plot(
   data=full_data %>% filter(PlatformPortfolio!="Unlabeled" ),
   chart_geom = "Bar Chart",
   share = TRUE,
@@ -809,8 +1084,434 @@ PlatformComp<-build_plot(
   labs(y="Obligations (Constant 2020 $s)")
 )
 
-ggsave600dpi("..//Output//platform_comp.png", PlatformComp, 
+
+(
+PlatformComp_line<-build_plot(
+  data=full_data %>% filter(PlatformPortfolio!="Unlabeled" ),
+  chart_geom = "Line Chart",
+  share = TRUE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  color_var="Competition.effective.only", #color_var
+  facet_var="PlatformPortfolio", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+
+ggsave600dpi("..//Output//platform_comp_bar.png", PlatformComp_bar, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
+
+ggsave600dpi("..//Output//platform_comp_line.png", PlatformComp_line, 
+             width=6.5, height= 4, units="in",size=11,lineheight = 0.75
+             )
+
+write.csv(file="..//Output//platform_comp_line.csv",row.names = FALSE,
+          PlatformComp_line$data%>% mutate(fiscal_year=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(PlatformPortfolio,Competition.effective.only),
+                        names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20)%>%
+            arrange(PlatformPortfolio,Competition.effective.only))
+
+
+```
+#Vendor Count
+## Defense Count
+```{r EntityCount}
+
+ec<-read.delim(file.path("../Data/semi_clean/Vendor_sp_EntityCountHistoryCustomer.txt"), header=TRUE,  na.strings = c("", "NULL"))
+ec<-remove_bom(ec)
+ec<-standardize_variable_names(ec)
+ec$dFYear<-as.Date(paste("1/1/",as.character(ec$Fiscal.Year),sep=""),"%m/%d/%Y")
+
+
+ec<-csis360::read_and_join(ec,
+  "EntitySizeCode.csv",
+  by="EntitySizeCode",
+  add_var="EntitySmall",
+  path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+  dir="vendor/"
+)
+
+def_eid_fyear<-read.delim(file.path("../Data/semi_clean/Defense_Vendor.SP_EntityIDhistory.txt"), header=TRUE,  na.strings = c("", "NULL"))
+def_eid_fyear<-remove_bom(def_eid_fyear)
+def_eid_fyear$EntityCount<-1
+def_eid_fyear<-standardize_variable_names(def_eid_fyear)
+def_eid_fyear$dFYear<-as.Date(paste("1/1/",as.character(def_eid_fyear$Fiscal.Year),sep=""),"%m/%d/%Y")
+
+eid_lc<-prepare_labels_and_colors(ec,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+
+(edef<-build_plot(ec %>% filter(Fiscal.Year>=2005 & Customer=="Defense"),
+           chart_geom = "Line Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           color_var="IsEntityAbove2018constant10ThousandThreshold",
+           # labels_and_colors = eid_lc,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+)
+
+(edef<-build_plot(ec %>% filter(Fiscal.Year>=2005 & Customer=="Defense"&
+                                  IsEntityAbove2018constant10ThousandThreshold==1),
+           chart_geom = "Line Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           color_var="EntitySmall",
+           labels_and_colors = eid_lc,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+)
+
+
+(edefbar<-build_plot(ec %>% filter(Fiscal.Year>=2005 & Customer=="Defense"&
+                                  IsEntityAbove2018constant10ThousandThreshold==1),
+           chart_geom = "Bar Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           color_var="EntitySmall",
+           labels_and_colors = eid_lc,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+)
+
+
+(edef<-build_plot(def_eid_fyear %>% filter(Fiscal.Year>=2005),
+           chart_geom = "Line Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           # color_var="Small",
+           labels_and_colors = eid_lc,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+)
+ggsave600dpi(file.path("..","Output","def_entity_count_bar.png"), edefbar+ theme(legend.position = "right"),#guides(fill = guide_legend(nrow = 2)), 
+             width=6.5, height= 3, units="in",size=11,lineheight = 0.75
+             )
+ggsave600dpi(file.path("..","Output","def_entity_count.png"), edef, 
+             width=6.5, height= 4, units="in",size=11,lineheight = 0.75
+             )
+
+  write.csv(file=file.path("..","Output","def_entity_count.csv"),row.names = FALSE,
+            edefbar$data%>% mutate(Fiscal.Year=lubridate::year(dFYear))%>%
+              pivot_wider(id_cols=c(EntitySmall),
+                          names_from=Fiscal.Year,values_from=EntityCount)%>% arrange(EntitySmall))
+
+ec$thresh<-factor(ec$IsEntityAbove2016constantOneMillionThreshold,
+                   levels=c(0,1), labels=c("Vendor only receives smaller contracts","Vendor receives contracts over $1 million in 2016 $"))
+(eplat<-build_plot(ec %>% filter(Fiscal.Year>=2005 &
+                                    IsEntityAbove2018constant10ThousandThreshold==1&
+                                   Customer=="Defense"),
+           chart_geom = "Bar Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           color_var="thresh",
+           # second_var="",
+           # labels_and_colors = eid_lc,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+)+labs(color="Vendor receives over $1 million threshold in 2016 $s")
+
+(build_plot(ec %>% filter(Fiscal.Year>=2005 &
+                                    IsEntityAbove2018constant10ThousandThreshold==1&
+                                   Customer=="Defense"),
+           chart_geom = "Bar Chart",
+           x_var="dFYear",
+           y_var="Action_Obligation",
+           color_var="EntitySizeText",
+           facet_var="IsEntityAbove2016constantOneMillionThreshold",
+           labels_and_colors = eid_lc,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+)#+facet_wrap(~PlatformPortfolio,scale="free_y")
+
+(build_plot(ec %>% filter(Fiscal.Year>=2005 &
+                                    IsEntityAbove2018constant10ThousandThreshold==1&
+                                   Customer=="Defense"),
+           chart_geom = "Bar Chart",
+           x_var="dFYear",
+           y_var="Action_Obligation",
+           color_var="EntitySizeText",
+           facet_var="IsEntityAbove2016constantOneMillionThreshold",
+           labels_and_colors = eid_lc,
+           share=TRUE,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+)#+facet_wrap(~PlatformPortfolio,scale="free_y")
+
+
+ec %>% filter() %>% group_by(IsEntityAbove2016constantOneMillionThreshold,Fiscal.Year) %>%
+          summarise(act=sum(Action_Obligation))%>%group_by(Fiscal.Year)%>%mutate(act=act/sum(act))
+
+
+
+```
+## Platform
+```{r EntityCount}
+
+ecp<-read.delim(file.path("../Data/semi_clean/Defense_Vendor_sp_EntityCountHistoryPlatformCustomerUpdate.txt"), header=TRUE,  na.strings = c("", "NULL"))
+ecp<-remove_bom(ecp)
+ecp<-standardize_variable_names(ecp)
+ecp$dFYear<-as.Date(paste("1/1/",as.character(ecp$Fiscal.Year),sep=""),"%m/%d/%Y")
+
+
+
+ecp<-csis360::read_and_join(ecp,
+  "EntitySizeCode.csv",
+  by="EntitySizeCode",
+  add_var="EntitySmall",
+  path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+  dir="vendor/"
+)
+def_eid_fyear_plat<-read.delim(file.path("../Data/semi_clean/Defense_Vendor.SP_EntityIDhistoryPlatform.txt"), header=TRUE,  na.strings = c("", "NULL"))
+def_eid_fyear_plat<-remove_bom(def_eid_fyear_plat)
+def_eid_fyear_plat$EntityCount<-1
+def_eid_fyear_plat$dFYear<-as.Date(paste("1/1/",as.character(def_eid_fyear_plat$Fiscal.Year),sep=""),"%m/%d/%Y")
+
+ecp_lc<-prepare_labels_and_colors(ecp,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+ecp$EntitySizeText<-factor(ecp$EntitySizeText)
+
+
+write.csv(file=file.path("..","Output","def_entity_count.csv"),row.names = FALSE,
+          edef$data%>% mutate(Fiscal.Year=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(),
+                        names_from=Fiscal.Year,values_from=EntityCount))
+
+
+
+ecp$thresh<-factor(ecp$IsEntityAbove2016constantOneMillionThreshold,
+                   levels=c(0,1), labels=c("Vendor only receives smaller contracts","Vendor receives contracts over $1 million in 2016 $"))
+(eplat<-build_plot(ecp %>% filter(Fiscal.Year>=2005 &
+                                    IsEntityAbove2018constant10ThousandThreshold==1),
+           chart_geom = "Bar Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           color_var="thresh",
+           facet_var="PlatformPortfolio",
+           # second_var="",
+           # labels_and_colors = ecp_lc,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+)+labs(color="Vendor receives over $1 million threshold in 2016 $s")
+(eplatbar<-build_plot(ecp %>% filter(Fiscal.Year>=2005 &
+                                    IsEntityAbove2018constant10ThousandThreshold==1),
+           chart_geom = "Bar Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           color_var="EntitySmall",
+           facet_var="PlatformPortfolio",
+           # second_var="",
+           labels_and_colors = ecp_lc,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+)+facet_wrap(~PlatformPortfolio,scale="free_y")
+
+(eplatbar<-build_plot(ecp %>% filter(Fiscal.Year>=2005 &
+                                    IsEntityAbove2018constant10ThousandThreshold==1),
+           chart_geom = "Bar Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           color_var="EntitySmall",
+           facet_var="PlatformPortfolio",
+           # second_var="",
+           labels_and_colors = ecp_lc,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+)+facet_wrap(~PlatformPortfolio,ncol=6)+scale_x_date("Fiscal Year",labels = date_format("'%y"),date_breaks = "3 years")
+
+(eplatline<-build_plot(ecp %>% filter(Fiscal.Year>=2005 &
+                                    IsEntityAbove2018constant10ThousandThreshold==1),
+           chart_geom = "Line Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           # color_var="PlatformPortfolio",
+           facet_var="PlatformPortfolio",
+           # second_var="",
+           labels_and_colors = ecp_lc,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")+
+    facet_wrap(~PlatformPortfolio,ncol=6)+scale_x_date("Fiscal Year",labels = date_format("'%y"),date_breaks = "3 years")
+)
+
+write.csv(file=file.path("..","Output","def_entity_count_plat.csv"),row.names = FALSE,
+          eplatline$data%>% mutate(Fiscal.Year=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(PlatformPortfolio),
+                        names_from=Fiscal.Year,values_from=EntityCount))
+
+ggsave600dpi(file=file.path("..","Output","def_entity_count_plat_line.png"), eplatline, 
+             width=6.5, height= 4, units="in",size=9,lineheight = 0.75
+             )
+
+(eplat<-build_plot(ecp %>% filter(Fiscal.Year>=2005 &
+                                    IsEntityAbove2018constant10ThousandThreshold==1),
+           chart_geom = "Bar Chart",
+           x_var="dFYear",
+           y_var="Action_Obligation",
+           color_var="EntitySizeText",
+           facet_var="IsEntityAbove2016constantOneMillionThreshold",
+           second_var="PlatformPortfolio",
+           # labels_and_colors = ecp_lc,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+)#+facet_wrap(~PlatformPortfolio,scale="free_y")
+
+
+
+ecp %>% group_by(IsEntityAbove2016constantOneMillionThreshold,Fiscal.Year) %>%
+          summarise(act=sum(Action_Obligation))%>%group_by(Fiscal.Year)%>%mutate(act=act/sum(act))
+
+(eplat<-build_plot(def_eid_fyear_plat %>% dplyr::filter(Fiscal.Year>=2005),
+           chart_geom = "Line Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           facet_var="platformPortfolio",
+           # color_var="platformPortfolio",
+           labels_and_colors = eid_lc,
+           format=TRUE)+facet_wrap(~platformPortfolio)+labs(x="Fiscal Year",y="Vendor Count")
+)
+ggsave600dpi(file.path("..","Output","def_entity_count_plat.png"), eplat, 
+             width=6.5, height= 4, units="in",size=11,lineheight = 0.75
+             )
+
+
+
+```
+
+## SubCustomer
+```{r EntityCount}
+
+ecp<-read.delim(file.path("../Data/semi_clean/Defense_Vendor_sp_EntityCountHistoryPlatformCustomerUpdate.txt"), header=TRUE,  na.strings = c("", "NULL"))
+ecp<-remove_bom(ecp)
+ecp$dFYear<-as.Date(paste("1/1/",as.character(ecp$fiscal_year),sep=""),"%m/%d/%Y")
+ecsub<-read.delim(file.path("../Data/semi_clean/Vendor_sp_EntityCountHistorySubCustomerUpdate.txt"), header=TRUE,  na.strings = c("", "NULL"))
+ecsub<-remove_bom(ec)
+ecsub$dFYear<-as.Date(paste("1/1/",as.character(ec$fiscal_year),sep=""),"%m/%d/%Y")
+
+
+
+ecsub<-csis360::read_and_join(ecsub,
+  "EntitySizeCode.csv",
+  by="EntitySizeCode",
+  add_var="EntitySmall",
+  path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+  dir="vendor/"
+)
+ecp<-csis360::read_and_join(ecp,
+  "EntitySizeCode.csv",
+  by="EntitySizeCode",
+  add_var="EntitySmall",
+  path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+  dir="vendor/"
+)
+
+def_eid_fyear<-read.delim(file.path("../Data/semi_clean/Defense_Vendor.SP_EntityIDhistory.txt"), header=TRUE,  na.strings = c("", "NULL"))
+def_eid_fyear<-remove_bom(def_eid_fyear)
+def_eid_fyear$EntityCount<-1
+def_eid_fyear$dFYear<-as.Date(paste("1/1/",as.character(def_eid_fyear$fiscal_year),sep=""),"%m/%d/%Y")
+
+def_eid_fyear_plat<-read.delim(file.path("../Data/semi_clean/Defense_Vendor.SP_EntityIDhistoryPlatform.txt"), header=TRUE,  na.strings = c("", "NULL"))
+def_eid_fyear_plat<-remove_bom(def_eid_fyear_plat)
+def_eid_fyear_plat$EntityCount<-1
+def_eid_fyear_plat$dFYear<-as.Date(paste("1/1/",as.character(def_eid_fyear_plat$fiscal_year),sep=""),"%m/%d/%Y")
+
+eid_lc<-prepare_labels_and_colors(def_eid_fyear_plat)
+ecp_lc<-prepare_labels_and_colors(ecp,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+ecp$EntitySizeText<-factor(ecp$EntitySizeText)
+
+
+(edef<-build_plot(def_eid_fyear %>% filter(fiscal_year>=2005),
+           chart_geom = "Line Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           # color_var="Small",
+           labels_and_colors = ecp_lc,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+)
+ecsub$IsEntityAbove2018constant10ThousandThreshold
+ecsub$EntitySizeText
+undebug(add_preassigned_scales)
+(esub<-build_plot(ecsub  %>% filter(fiscal_year>=2005 & IsEntityAbove2018constant10ThousandThreshold==1),
+           chart_geom = "Line Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           facet_var="SubCustomer",
+           color_var="EntitySmall",
+           labels_and_colors = ecp_lc,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+)+facet_wrap(~SubCustomer,scale="free_y")
+
+
+ggsave600dpi(file.path("..","Output","def_entity_count.png"), edef, 
+             width=6.5, height= 4, units="in",size=11,lineheight = 0.75
+             )
+
+write.csv(file=file.path("..","Output","def_entity_count.csv"),row.names = FALSE,
+          edef$data%>% mutate(fiscal_year=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(),
+                        names_from=fiscal_year,values_from=EntityCount))
+ecp$IsEntityAbove2016constantOneMillionThreshold
+ecp$thresh<-factor(ecp$IsEntityAbove2016constantOneMillionThreshold,
+                   levels=c(0,1), labels=c("Vendor only receives smaller contracts","Vendor receives contracts over $1 million in 2016 $"))
+(eplat<-build_plot(ecp %>% filter(fiscal_year>=2005 &
+                                    IsEntityAbove2018constant10ThousandThreshold==1),
+           chart_geom = "Bar Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           color_var="thresh",
+           facet_var="PlatformPortfolio",
+           # second_var="",
+           # labels_and_colors = ecp_lc,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+)+labs(color="Vendor receives over $1 million threshold in 2016 $s")
+(eplat<-build_plot(ecp %>% filter(fiscal_year>=2005 &
+                                    IsEntityAbove2018constant10ThousandThreshold==1),
+           chart_geom = "Bar Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           color_var="EntitySmall",
+           facet_var="PlatformPortfolio",
+           # second_var="",
+           labels_and_colors = ecp_lc,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+)+labs(color="Vendor receives over $1 million threshold in 2016 $s")+facet_wrap(~PlatformPortfolio,scale="free_y")
+(eplat<-build_plot(ecp %>% filter(fiscal_year>=2005 &
+                                    IsEntityAbove2018constant10ThousandThreshold==1),
+           chart_geom = "Bar Chart",
+           x_var="dFYear",
+           y_var="Action_Obligation",
+           color_var="EntitySizeText",
+           facet_var="IsEntityAbove2016constantOneMillionThreshold",
+           second_var="PlatformPortfolio",
+           # labels_and_colors = ecp_lc,
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+)#+facet_wrap(~PlatformPortfolio,scale="free_y")
+
+ecp %>% group_by(IsEntityAbove2016constantOneMillionThreshold,fiscal_year) %>%
+          summarise(act=sum(Action_Obligation))%>%group_by(fiscal_year)%>%mutate(act=act/sum(act))
+
+(eplat<-build_plot(def_eid_fyear_plat %>% dplyr::filter(fiscal_year>=2005),
+           chart_geom = "Line Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           facet_var="platformPortfolio",
+           # color_var="platformPortfolio",
+           labels_and_colors = eid_lc,
+           format=TRUE)+facet_wrap(~platformPortfolio)+labs(x="Fiscal Year",y="Vendor Count")
+)
+ggsave600dpi(file.path("..","Output","def_entity_count_plat.png"), eplat, 
+             width=6.5, height= 4, units="in",size=11,lineheight = 0.75
+             )
+
+
+write.csv(file=file.path("..","Output","def_entity_count_plat.csv"),row.names = FALSE,
+          eplat$data%>% mutate(fiscal_year=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(platformPortfolio),
+                        names_from=fiscal_year,values_from=EntityCount))
+
+write.csv(file=file.path("..","Output","def_entity_count_plat.csv"),row.names = FALSE,
+          eplat$data%>% mutate(fiscal_year=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(platformPortfolio),
+                        names_from=fiscal_year,values_from=EntityCount))
 ```
