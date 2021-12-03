@@ -58,8 +58,6 @@ levels(disa_data$PricingUCA.sumlong)<-list("Firm-Fixed-Price"="FFP",
 full_data$ContractingSubCustomer<-factor(full_data$ContractingSubCustomer)
 
 
-
-
   
 disa_sum <- deflate(disa_sum,money_var="Action_Obligation_Then_Year",fy_var="fiscal_year",deflator_var="OMB20_GDP20")
 colnames(disa_sum)[colnames(disa_sum)=="Action_Obligation_Then_Year_Then_Year"]<-"Action_Obligation_Then_Year"
@@ -183,6 +181,15 @@ levels(disa_sum$OfficeSum)<-list("Telecomm Div."="HC1013",
                               "ZD14"=c("ZD14"="ZD14 "),
                               "ZD15"=c("ZD15"="ZD15 "))
 
+# ds_lc<-prepare_labels_and_colors(disa_sum,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+# ds_ck<-csis360::get_column_key(disa_sum,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+# ds_lc<-prepare_labels_and_colors(disa_sum,path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+# ds_ck<-csis360::get_column_key(disa_sum,path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+# full_labels_and_colors<-prepare_labels_and_colors(full_data,path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+# labels_and_colors<-prepare_labels_and_colors(disa_data,path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+# column_key<-get_column_key(disa_data,path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+ds_lc<-prepare_labels_and_colors(disa_sum)
+ds_ck<-csis360::get_column_key(disa_sum)
 
 
 
@@ -311,17 +318,17 @@ write.csv(file="..//Output//DISA_vendorsize.csv",row.names = FALSE,
 ```{r DISAVehicle}
 
 (
-DISAVehicle<-build_plot(
-  data=disa_sum,
+DISAVehiclePSR<-build_plot(
+  data=disa_sum%>% filter(!is.na(Vehicle.AwardTask)),
   chart_geom = "Bar Chart",
   share = FALSE,
-  labels_and_colors=labels_and_colors,
+  labels_and_colors=ds_lc,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
-  color_var="ProductServiceOrRnDarea.sum", #color_var
+  color_var="DISAprodserv.sum", #color_var
   facet_var="Vehicle.sum7", #facet_var
-  column_key=column_key,
+  column_key=ds_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -380,6 +387,17 @@ write.csv(file="..//Output//DISA_vehicle.csv",row.names = FALSE,
 ggsave600dpi("..//Output//DISA_vehicle.png", DISAVehicle, 
              width=13, height= 6, units="in",size=16
              )
+ggsave600dpi("..//Output//DISA_vehicle_paper.png", DISAVehicle, 
+             width=13, height= 4.25, units="in",size=16
+             )
+
+write.csv(file="..//Output//DISA_Vehicle.csv",row.names = FALSE,
+          DISAVehicle$data%>% mutate(fiscal_year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
+            arrange(fiscal_year)%>%
+          pivot_wider(id_cols=c(Vehicle.AwardTask,Vehicle.sum7),
+                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+            arrange(Vehicle.AwardTask,Vehicle.sum7),na="")
 
 ```
 
@@ -586,16 +604,17 @@ ggsave600dpi("..//Output//DISA_comm.png", DISAcomm,
              width=13, height= 6, units="in",size=16, lineheight=1.2
              )
 
-
+ggsave600dpi("..//Output//DISA_comm_paper.png", DISAcomm,  
+             width=13, height= 3.75, units="in",size=16, lineheight=1.2
+             )
 
 write.csv(file="..//Output//DISA_comm.csv",row.names = FALSE,
-          arrange(pivot_wider(DISAcomm$data %>% 
-                        arrange(dFYear) %>% mutate(fiscal_year=lubridate::year(dFYear)),
-                      id_cols=c(Commercial),
-                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20),Commercial))
-
-
-
+          DISAcomm$data%>% mutate(fiscal_year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
+            arrange(fiscal_year)%>%
+          pivot_wider(id_cols=c(Commercial),
+                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+            arrange(Commercial),na="")
 
 ```
 
@@ -634,10 +653,12 @@ ggsave600dpi("..//Output//DISA_Funder.png", Funder,
              )
 
 write.csv(file="..//Output//DISA_Funder.csv",row.names = FALSE,
-          arrange(pivot_wider(Funder$data %>% 
-                        arrange(dFYear) %>% mutate(fiscal_year=lubridate::year(dFYear)),
-                      id_cols=c(Funder),
-                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20),Funder))
+          Funder$data%>% mutate(fiscal_year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
+            arrange(fiscal_year)%>%
+          pivot_wider(id_cols=c(Funder),
+                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+            arrange(Funder),na="")
 
 
 write.csv(file="..//Output//DISA_Funder_current.csv",row.names = FALSE,
@@ -687,9 +708,9 @@ write.csv(file="..//Output//DISA_Funder.csv",row.names = FALSE,
                       names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
 
 write.csv(file="..//Output//DISA_Funder_current.csv",row.names = FALSE,
-          disa_data %>% group_by(Funder.sum,ContractingFunder,fiscal_year)%>%
-            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-          pivot_wider(id_cols=c(Funder.sum,ContractingFunder),
+          disa_sum %>% group_by(Funder,fiscal_year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE)/1000000000)%>%
+          pivot_wider(id_cols=c(Funder),
                       names_from=fiscal_year,values_from=Action_Obligation_Then_Year))
 
 summary(disa_data$ContractingFunder)
@@ -919,13 +940,13 @@ DISAPSR<-build_plot(
   data=disa_data,
   chart_geom = "Bar Chart",
   share = FALSE,
-  labels_and_colors=labels_and_colors,
+  labels_and_colors=ds_lc,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
   color_var="ProductServiceOrRnDarea.sum", #color_var
   # facet_var="Competition.sum", #facet_var
-  column_key=column_key,
+  column_key=ds_ck,
   format=TRUE,
   ytextposition=FALSE
 )+
@@ -1391,14 +1412,12 @@ write.csv(prodservcomm,"..\\output\\DISA_prodservComm.csv",row.names = FALSE)
 
 disa_sum$DISAprodserv<-as.character(disa_sum$ServicesCategory.sum)
 disa_sum$DISAprodserv[substr(disa_sum$ProductOrServiceCode,1,1)=="D" ]<-"Other IT and Telecomm"
-disa_sum$DISAprodserv[disa_sum$ProductOrServiceCode =="D304" ]<-"Telecomm & Transmission"
+# disa_sum$DISAprodserv[disa_sum$ProductOrServiceCode =="D304" ]<-"Telecomm & Transmission"
 disa_sum$DISAprodserv[disa_sum$ProductOrServiceCode =="D316" ]<-"Telecomm Network Mgmt."
 disa_sum$DISAprodserv[disa_sum$ProductOrServiceCode =="D319" ]<-"Annual Software Maint."
 disa_sum$DISAprodserv[disa_sum$ProductOrServiceCode =="7030" ]<-"Software as a product"
 disa_sum$DISAprodserv[disa_sum$DISAprodserv =="Products" ]<-"Other Products"
 disa_sum$DISAprodserv[disa_sum$DISAprodserv =="ICT" ]<-"Other ICT Services"
-
-
 
 
 
@@ -1410,6 +1429,7 @@ disa_sum$DISAprodserv<-factor(disa_sum$DISAprodserv,
                                         "Other Products" ,"Unlabeled"))
              
 
+  
 
 (
 DISAProdServdetail<-build_plot(
@@ -1441,6 +1461,14 @@ DISAProdServdetail<-build_plot(
 ggsave600dpi(DISAProdServdetail,file="..//output//DISA_prodserv.png",  
              width=13, height= 6, units="in",size=16, lineheight=1.2
              )
+
+write.csv(file="..//Output//DISAProdServdetail.csv",row.names = FALSE,
+          DISAProdServdetail$data%>% mutate(fiscal_year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
+            arrange(fiscal_year)%>%
+          pivot_wider(id_cols=c(DISAprodserv,Commercial),
+                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+            arrange(DISAprodserv,Commercial),na="")
 ```
 
 ```{r HandOffice}
@@ -1656,6 +1684,15 @@ write.csv(file="..//Output//DISA_CommVeh.csv",row.names = FALSE,
           DISAcomm$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(PricingUCA,PricingUCA.sumlong),
                         names_from=dFYear,values_from=Action_Obligation_OMB20_GDP20))
+
+write.csv(file="..//Output//DISA_VehCommSum.csv",row.names = FALSE,
+          VehCommSum$data%>% mutate(fiscal_year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
+            arrange(fiscal_year)%>%
+          pivot_wider(id_cols=c(Vehicle.sum7,Commercial),
+                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+            arrange(Vehicle.sum7,Commercial),na="")
+
 
 levels(factor(disa_sum$Commercial))
 ```
@@ -1918,20 +1955,54 @@ OfficePSR<-build_plot(
   labs(y="Obligations (Constant 2020 $s)")
 )+facet_wrap(~OfficeSum, ncol=3)
 
+(
+OfficePSRdetail<-build_plot(
+  data=disa_sum %>% filter(fiscal_year>=2004),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=ds_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  color_var="DISAprodserv", #color_var
+  facet_var="OfficeSum", #facet_var
+  # column_key=ds_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")
+)+facet_wrap(~OfficeSum, ncol=3, scales="free_y")
 
 
 ggsave600dpi("..//Output//DISA_OfficePSR.png", OfficePSR, 
              width=13, height= 6, units="in",size=16,lineheight = 1.2
              )
 
+ggsave600dpi("..//Output//DISA_OfficePSR_paper.png", OfficePSR, 
+             width=13, height= 4.5, units="in",size=16,lineheight = 1.2
+             )
+
 write.csv(file="..//Output//DISA_OfficePSR.csv",row.names = FALSE,
-          pivot_wider(OfficePSR$data,id_cols=c(Office.sum,Office.platform),
-                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
+          OfficePSR$data%>% mutate(fiscal_year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
+            arrange(fiscal_year)%>%
+          pivot_wider(id_cols=c(OfficeSum,DISAprodserv.sum),
+                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+            arrange(OfficeSum,DISAprodserv.sum),na="")
 
 write.csv(file="..//Output//DISA_OfficePSR_current.csv",row.names = FALSE,
-          disa_sum %>% group_by(Office.sum,ContractingOffice,fiscal_year)%>%
+          disa_sum %>% group_by(OfficeSum,ContractingOffice,fiscal_year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-          pivot_wider(id_cols=c(Office.sum,ContractingOffice),
+          pivot_wider(id_cols=c(OfficeSum,ContractingOffice),
                       names_from=fiscal_year,values_from=Action_Obligation_Then_Year))
 
 ```
@@ -2043,9 +2114,18 @@ ggsave600dpi("..//Output//DISA_OfficeFunder.png", OfficeFunder,
              width=13, height= 6, units="in",size=16,lineheight = 1.2
              )
 
-write.csv(file="..//Output//DISA_OfficePricing.csv",row.names = FALSE,
-          pivot_wider(OfficePricing$data,id_cols=c(Office.sum,Office.platform),
-                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
+ggsave600dpi("..//Output//DISA_OfficeFunder_paper.png", OfficeFunder, 
+             width=13, height= 4.5, units="in",size=16,lineheight = 1.2
+             )
+
+
+write.csv(file="..//Output//DISA_OfficeFunder.csv",row.names = FALSE,
+          OfficeFunder$data%>% mutate(fiscal_year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
+            arrange(fiscal_year)%>%
+          pivot_wider(id_cols=c(OfficeSum,Funder),
+                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+            arrange(OfficeSum,Funder),na="")
 
 write.csv(file="..//Output//DISA_OfficePricing_current.csv",row.names = FALSE,
           disa_sum %>% group_by(Office.sum,ContractingOffice,fiscal_year)%>%
@@ -2146,9 +2226,19 @@ ggsave600dpi("..//Output//DISA_OfficeComm.png", OfficeComm,
              width=13, height= 6, units="in",size=16,lineheight = 1.2
              )
 
+
+ggsave600dpi("..//Output//DISA_OfficeComm_paper.png", OfficeComm, 
+             width=13, height= 4.5, units="in",size=16,lineheight = 1.2
+             )
+
 write.csv(file="..//Output//DISA_OfficeComm.csv",row.names = FALSE,
-          pivot_wider(OfficeComm$data,id_cols=c(Office.sum,Office.platform),
-                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
+          OfficeComm$data%>% mutate(fiscal_year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
+            arrange(fiscal_year)%>%
+          pivot_wider(id_cols=c(OfficeSum,Commercial),
+                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+            arrange(OfficeSum,Commercial),na="")
+
 
 write.csv(file="..//Output//DISA_OfficeComm_current.csv",row.names = FALSE,
           disa_sum %>% group_by(Office.sum,ContractingOffice,fiscal_year)%>%
@@ -2320,41 +2410,24 @@ OfficeVehicleLine<-build_plot(
   labs(y="Obligations (Constant 2020 $s)")
 )
 
-(
-OfficeIT<-build_plot(
-  data=disa_sum %>% filter(fiscal_year>=2004),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
-  color_var="ITcategory", #color_var
-  facet_var="OfficeSum", #facet_var
-  column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2020 $s)")
-)
-
 
 ggsave600dpi("..//Output//DISA_OfficeVehicle.png", OfficeVehicle, 
              width=13, height= 6, units="in",size=16,lineheight = 1.2
              )
 
+ggsave600dpi("..//Output//DISA_OfficeVehicle_paper.png", OfficeVehicle, 
+             width=13, height= 4.5, units="in",size=16,lineheight = 1.2
+             )
+
+
 write.csv(file="..//Output//DISA_OfficeVehicle.csv",row.names = FALSE,
-          pivot_wider(OfficeVehicle$data,id_cols=c(Office.sum,Office.platform),
-                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
+          OfficeVehicle$data%>% mutate(fiscal_year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
+            arrange(fiscal_year)%>%
+          pivot_wider(id_cols=c(OfficeSum,Vehicle.sum7),
+                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+            arrange(OfficeSum,Vehicle.sum7),na="")
+
 
 write.csv(file="..//Output//DISA_OfficeVehicle_current.csv",row.names = FALSE,
           disa_sum %>% group_by(Office.sum,ContractingOffice,fiscal_year)%>%

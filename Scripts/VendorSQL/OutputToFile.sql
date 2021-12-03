@@ -135,15 +135,27 @@ EXEC	@return_value = Contract.SP_ContractUnmodifiedScope
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
-
+--4h48m
 DECLARE	@return_value int
 
 --EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
 EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer
 --EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
-		@Customer = 'Defense',
+		@Customer = NULL, --'Defense',
 		@SubCustomer = NULL,
 		@PlatformPortfolio =NULL
+
+
+		
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+
+DECLARE	@return_value int
+--10h13m
+--EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
+EXEC	@return_value = [budget].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS]
+--EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
+		@Customer = 'Defense'
 
 
 SET ANSI_WARNINGS OFF;
@@ -190,7 +202,7 @@ SET NOCOUNT ON;
 DECLARE	@return_value int
 
 EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
-		@Customer = NULL
+		@Customer = 'Defense'
 		
 --SELECT	'Return Value' = @return_value
 
@@ -211,14 +223,31 @@ SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
 DECLARE	@return_value int
-
+--1h41me
 --EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
 EXEC	@return_value = [Vendor].[SP_EntityIDhistoryPlatform]
 --EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
 		@Customer = 'Defense'
-		
---SELECT	'Return Value' = @return_value
 
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+
+DECLARE	@return_value int
+--SELECT	'Return Value' = @return_value
+--EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
+EXEC	@return_value = [Vendor].[sp_EntityCountHistoryCustomer]
+--EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
+		@Customer =NULL
+
+--1h32m
+DECLARE	@return_value int
+--SELECT	'Return Value' = @return_value
+--EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
+EXEC	@return_value = [Vendor].SP_TopVendorHistoryCustomer
+--EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
+		@Customer ='Defense',
+		@IsService=NULL
+		
 
 --SET ANSI_WARNINGS OFF;
 --SET NOCOUNT ON;
@@ -230,6 +259,47 @@ EXEC	@return_value = [Vendor].[SP_EntityIDhistoryPlatform]
 --		@Customer = NULL
 --This resulted in a blank file!
 --SELECT	'Return Value' = @return_value
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+
+DECLARE	@return_value int
+
+--EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
+EXEC	@return_value = Vendor.sp_EntityCountHistoryCustomer
+--EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
+		@Customer = 'Defense'
+		
+--SELECT	'Return Value' = @return_value
+
+
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+--9h20m
+DECLARE	@return_value int
+
+--EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
+EXEC	@return_value = Vendor.sp_EntityCountHistoryPlatformCustomer
+--EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
+		@Customer = 'Defense'
+		
+--SELECT	'Return Value' = @return_value
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+
+DECLARE	@return_value int
+
+--EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
+EXEC	@return_value = Vendor.sp_EntityCountHistorySubCustomer
+--EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
+		@Customer = 'Defense'
+		
+--SELECT	'Return Value' = @return_value
+
+
+
 
 
 SET ANSI_WARNINGS OFF;
@@ -249,44 +319,6 @@ EXEC	@return_value = Vendor.sp_EntityCountHistoryPlatformSubCustomer
 --SELECT	'Return Value' = @return_value
 
 
-
-SET ANSI_WARNINGS OFF;
-SET NOCOUNT ON;
-
-DECLARE	@return_value int
-
---EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
-EXEC	@return_value = Vendor.sp_EntityCountHistorySubCustomer
---EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
-		@Customer = 'Defense'
-		
---SELECT	'Return Value' = @return_value
-
-
-SET ANSI_WARNINGS OFF;
-SET NOCOUNT ON;
-
-DECLARE	@return_value int
-
---EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
-EXEC	@return_value = Vendor.sp_EntityCountHistoryPlatformCustomer
---EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
-		@Customer = 'Defense'
-		
---SELECT	'Return Value' = @return_value
-
-
-SET ANSI_WARNINGS OFF;
-SET NOCOUNT ON;
-
-DECLARE	@return_value int
-
---EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
-EXEC	@return_value = Vendor.sp_EntityCountHistoryCustomer
---EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
-		@Customer = 'Defense'
-		
---SELECT	'Return Value' = @return_value
 
 
 
