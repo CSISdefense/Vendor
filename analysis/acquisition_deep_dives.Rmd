@@ -30,6 +30,9 @@ if(!exists("full_data"))
   load(file="FPDS_chart_maker//unaggregated_FPDS.Rda")
 
 load(file="../data/semi_clean/platpsc_FPDS.Rda")
+detail_lc<-prepare_labels_and_colors(platpsc)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+detail_ck<-get_column_key(platpsc)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+# column_key<-get_column_key(platpsc,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 detail_lc<-prepare_labels_and_colors(platpsc,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 detail_ck<-get_column_key(platpsc,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 ```
@@ -98,6 +101,19 @@ summary(factor(platpsc$TopPStext))
 # Component Variant
 ## SubCustomer with JPO
 ```{r SubCustomer}
+levels(platpsc$SubCustomer.JPO)<-list(
+  "Army"="Army",
+  "F-35 Joint Program Office"="F-35 JPO",
+  "Navy"="Navy",
+  "Air Force"="Air Force", 
+  "Defense Logistics Agency" =c("DLA","Defense Logistics Agency"),
+  "Missile Defense Agency"="MDA",
+  "Other DoD"="Other DoD"
+)
+detail_lc<-prepare_labels_and_colors(platpsc)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+detail_ck<-get_column_key(platpsc)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+
+
 (
 SubCustomer<-build_plot(
   data=platpsc,
@@ -105,7 +121,7 @@ SubCustomer<-build_plot(
   share = FALSE,
   labels_and_colors=detail_lc,
   # NA, #VAR.ncol
-  x_var="fiscal_year", #x_var
+  x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
   color_var="SubCustomer.JPO", #color_var
   facet_var="SubCustomer.sum", #facet_var
@@ -122,18 +138,26 @@ SubCustomer<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2020 $s)")
+  labs(y="Obligations (Constant 2020 $s)")+
+  facet_wrap(~SubCustomer.sum,nrow=1)+scale_x_date(breaks=
+  as.Date(c("2000-1-1","2005-1-1","2010-1-1","2015-1-1","2020-1-1")),date_labels="'%y")
 )
 
-ggsave600dpi("..//Output//subcustomer_JPO.png", SubCustomer, 
-             width=12, height= 6, units="in",size=11,lineheight = 1.2
+ggsave600dpi("..//Output//subcustomer_JPO.png", SubCustomer+labs(caption="Source: FPDS and CSIS analysis."), 
+             width=6.5, height= 3.5, units="in",size=11,lineheight = 1
              )
 ggsave600dpi("..//Output//subcustomer_JPO.eps", SubCustomer, 
              width=12, height= 6, units="in",size=11,lineheight = 1.2
              )
 
+ggsave600dpi("..//Output//subcustomer_JPO.eps", SubCustomer+labs(caption="Source: FPDS and CSIS analysis."), 
+             width=6.5, height= 3.5, units="in",size=11,lineheight = 1
+             )
+
+
 write.csv(file="..//Output//topline_subcustomer_JPO.csv",row.names = FALSE,
-          pivot_wider(SubCustomer$data,id_cols=c(SubCustomer.sum,SubCustomer.JPO),
+          SubCustomer$data%>% mutate(fiscal_year=lubridate::year(dFYear))%>%
+          pivot_wider(id_cols=c(SubCustomer.sum,SubCustomer.JPO),
                       names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
 
 write.csv(file="..//Output//topline_subcustomer_JPO_current.csv",row.names = FALSE,
@@ -144,6 +168,60 @@ write.csv(file="..//Output//topline_subcustomer_JPO_current.csv",row.names = FAL
 
 summary(full_data$ContractingSubCustomer)
 ```
+
+# Service variant
+## Crisis Services
+```{r services}
+platpsc$CrisisProductOrServiceArea
+(
+Services<-build_plot(
+  data=platpsc %>% filter(Simple=="Services"&ProductOrServiceCode!="M183"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=detail_lc,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  color_var="CrisisProductOrServiceArea", #color_var
+  # facet_var="Competition.sum", #facet_var
+  column_key=detail_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+ggsave600dpi("..//Output//cpsr_Services.png", Services, 
+             width=12, height= 6, units="in",size=11, lineheight=1.2
+             )
+                           
+
+write.csv(file="..//Output//cpsr_Services.csv",row.names = FALSE,
+          pivot_wider(Services$data,id_cols=c(CrisisProductOrServiceArea),
+                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20)%>%
+            arrange(CrisisProductOrServiceArea))
+            
+
+write.csv(file="..//Output//psr_Services_current.csv",row.names = FALSE,
+          full_data %>% filter(ProductServiceOrRnDarea.sum=="R&D") %>%
+            format_data_for_plot(fy_var="fiscal_year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
+                                 labels_and_colors=labels_and_colors) %>%
+          pivot_wider(id_cols=c(ProductServiceOrRnDarea),
+                      names_from=fiscal_year,values_from=Action_Obligation_Then_Year)%>%
+            arrange(ProductServiceOrRnDarea))
+
+```
+
+
 
 # Platforms and Top Projects
 
@@ -194,6 +272,16 @@ Platform<-build_plot(
   theme(legend.position = "none")+
   labs(y="Obligations (Constant 2020 $s)")
 )
+  
+  
+  write.csv(file="..//Output//Aircraft_project_cur.csv",row.names = FALSE,
+            platpsc %>% filter(PlatformPortfolio=="Aircraft")  %>%
+              format_data_for_plot(fy_var="fiscal_year",y_var="Action_Obligation_Then_Year",color_var = "TopProject"#,
+                                   # labels_and_colors=labels_and_colors
+                                   )%>% arrange(fiscal_year) %>%
+            pivot_wider(id_cols=c(TopProject),
+                        names_from=fiscal_year,values_from=Action_Obligation_Then_Year)%>%
+              arrange(TopProject))
 ```
 
 ## Ships and Submarines
@@ -242,6 +330,15 @@ Platform<-build_plot(
   theme(legend.position = "none")+
   labs(y="Obligations (Constant 2020 $s)")
 )
+
+ write.csv(file="..//Output//ShipSub_project_current.csv",row.names = FALSE,na="",
+            platpsc %>% filter(PlatformPortfolio=="Ships & Submarines")  %>%
+              format_data_for_plot(fy_var="fiscal_year",y_var="Action_Obligation_Then_Year",color_var = "TopProject"#,
+                                   # labels_and_colors=labels_and_colors
+                                   )%>% arrange(fiscal_year) %>%
+            pivot_wider(id_cols=c(TopProject),
+                        names_from=fiscal_year,values_from=Action_Obligation_Then_Year)%>%
+              arrange(TopProject))
 ```
 
 
@@ -320,6 +417,15 @@ PSC<-build_plot(
   theme(legend.position = "none")+
   labs(y="Obligations (Constant 2020 $s)")
 )
+
+write.csv(file="..//Output//OrdMiss_psc_current.csv",row.names = FALSE,na="",
+            platpsc %>% filter(PlatformPortfolio=="Ordnance and Missiles")  %>%
+              format_data_for_plot(fy_var="fiscal_year",y_var="Action_Obligation_Then_Year",color_var = "TopPStext"#,
+                                   # labels_and_colors=labels_and_colors
+                                   )%>% arrange(fiscal_year) %>%
+            pivot_wider(id_cols=c(TopPStext),
+                        names_from=fiscal_year,values_from=Action_Obligation_Then_Year)%>%
+              arrange(TopPStext))
 
 ```
 
@@ -609,6 +715,83 @@ Platform<-build_plot(
 (
 PSC<-build_plot(
   data=platpsc %>% filter(PlatformPortfolio=="Land Vehicles"),
+  chart_geom = "Line Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  color_var="TopPStext", #color_var
+  facet_var="TopPStext", #facet_var
+  # column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+```
+
+## Facility Related And Construction
+```{r FRSnC}
+summary(factor(platpsc$ProjectPlatform))
+# platpsc$fiscal_year
+# 
+# topplat<-platpsc %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
+#   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
+#             Action_Obligation_2020=sum(ifelse(fiscal_year==2020,Action_Obligation_OMB20_GDP20,0))
+#             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
+#                         rank_2020=rank(desc(Action_Obligation_2020)))
+# topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
+# 
+# platpsc$TopShipProject<-
+#   ifelse(platpsc$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
+#          platpsc$ProjectName,NA)
+# platpsc$TopShipProject[is.na(platpsc$TopShipProject) & !is.na(platpsc$ProjectName)]<-
+#   "Other Labeled Project"
+# summary(factor(platpsc$TopShipProject))
+
+
+(
+Platform<-build_plot(
+  data=platpsc %>% filter(PlatformPortfolio=="Facilities and Construction"),
+  chart_geom = "Line Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  color_var="TopProject", #color_var
+  facet_var="TopProject", #facet_var
+  # column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+
+(
+PSC<-build_plot(
+  data=platpsc %>% filter(PlatformPortfolio=="Facilities and Construction"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,

@@ -42,6 +42,7 @@ colnames(toa)[colnames(toa)=="...2"]<-"Series"
 toa<-pivot_longer(toa,  cols=!Series, names_to="Fiscal.Year", values_to="Total_Obligation_Authority")
 toa$Total_Obligation_Authority<-toa$Total_Obligation_Authority*1000000
 toa<-deflate(toa,money_var = "Total_Obligation_Authority",deflator_var="OMB20_GDP20")
+labels_and_colors<-prepare_labels_and_colors(full_data)
 ```
 ## Quarterly YTD
 Read in quarterly data from the CSIS database and the current year data from SAM.gov.
@@ -269,7 +270,6 @@ ToplineVendor<-build_plot(
 ToplineVendor_line<-build_plot(
   data=full_data,
   chart_geom = "Line Chart",
-  share = TRUE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
@@ -292,8 +292,17 @@ ToplineVendor_line<-build_plot(
   labs(y="Obligations (Constant 2020 $s)",caption="Source: FPDS; CSIS Analysis\nNote: The Merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
 )
 
-ggsave600dpi("..//Output//topline_vendor.png", ToplineVendor+
+ggsave600dpi("..//Output//topline_vendor_cq.png", ToplineVendor+
   labs(y="Obligations (Constant 2020 $s)",caption="Source: FPDS; CSIS Analysis\nNote: The Merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+ggsave600dpi("..//Output//topline_vendor_cq.eps", ToplineVendor+
+  labs(y="Obligations (Constant 2020 $s)",caption="Source: FPDS; CSIS Analysis\nNote: The Merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+ggsave600dpi("..//Output//topline_vendor.png", ToplineVendor, 
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
@@ -429,11 +438,12 @@ ToplinePricing<-build_plot(
 ggsave600dpi("..//Output//topline_pricing.png", ToplinePricing,  
              width=12, height= 6, units="in",size=11, lineheight=1.2
              )
-lubridate::year(full_data$dFYear)
+
 write.csv(file="..//Output//topline_pricing.csv",row.names = FALSE,
-          ToplinePricing$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
-            pivot_wider(id_cols=c(PricingUCA,PricingUCA.sumlong),
-                        names_from=dFYear,values_from=Action_Obligation_OMB20_GDP20))
+  arrange(pivot_wider(ToplinePricing$data %>% 
+                        arrange(dFYear) %>% mutate(fiscal_year=lubridate::year(dFYear)),
+                      id_cols=c(PricingUCA,PricingUCA.sumlong),
+                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20),PricingUCA.sumlong))
 
 
 ```
@@ -534,8 +544,102 @@ write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE,
 
 ```
 
-## R&D phase and OTA
-```{r Services}
+## R&D Phase+OTA    
+```{r PhaseAndOTA}
+
+contract_merge<-full_data%>%filter(fiscal_year >=2015) %>%
+  group_by(fiscal_year,
+                         ProductServiceOrRnDarea,
+                         ProductServiceOrRnDarea.sum)%>%
+  summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
+
+# 
+#   format_data_for_plot(contract_data,
+#                      fy_var="fiscal_year", #x_var
+#                      y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+#                      color_var="ProductServiceOrRnDarea", #color_var
+#                      facet_var = "ProductServiceOrRnDarea.sum",
+#                      labels_and_colors = labels_and_colors
+# )
+# ota_merge<-format_data_for_plot(ota_def,
+#                      fy_var="Fiscal.Year", #x_var
+#                      y_var="Dollars_Obligated_OMB20_GDP20", #VAR.y.variable
+#                      color_var="ProductServiceOrRnDarea", #color_var
+#                      facet_var = "ProductServiceOrRnDarea.sum",
+#                      labels_and_colors = labels_and_colors
+# )
+
+ota_merge<-ota_def%>%filter(Fiscal_Year >=2015) %>%
+  group_by(Fiscal_Year,ProductServiceOrRnDarea.sum)%>%
+  summarise(Action_Obligation_OMB20_GDP20=sum(Dollars_Obligated_OMB20_GDP20))
+
+
+#   format_data_for_plot(ota_def,
+#                      fy_var="Fiscal_Year", #x_var
+#                      y_var="Dollars_Obligated_OMB20_GDP20", #VAR.y.variable
+#                      color_var="ProductServiceOrRnDarea", #color_var
+#                      facet_var = "ProductServiceOrRnDarea.sum",
+#                      labels_and_colors = labels_and_colors
+# )
+
+ota_merge$ProductServiceOrRnDarea<-"Other Transaction Authority (OTA) R&D Agreements"
+colnames(ota_merge)[colnames(ota_merge)=="Fiscal_Year"]<-"fiscal_year"
+merge<-rbind(ota_merge,contract_merge)
+merge$dFYear<-as.Date(paste(merge$fiscal_year,"1","1",sep="-"))
+(
+RnDphasePlusOTA<-build_plot(
+  data=merge %>% filter(ProductServiceOrRnDarea.sum=="R&D"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=prepare_labels_and_colors(merge),
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  color_var="ProductServiceOrRnDarea", #color_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE,
+  reverse_color = TRUE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")
+)+scale_x_date(date_labels="'%y",date_breaks="1 year")
+
+ggsave600dpi("..//Output//RnDPhasePlusOTA.png", RnDphasePlusOTA+labs(caption="Source: FPDS and CSIS analysis."),
+             width=5, height= 4.75, units="in",size=11, lineheight=1.2
+             )
+
+ggsave600dpi("..//Output//RnDPhasePlusOTA.eps", RnDphasePlusOTA+labs(caption="Source: FPDS and CSIS analysis."),
+             width=5, height= 4.75, units="in",size=11, lineheight=1.2
+             )
+#                            
+# 
+write.csv(file="..//Output//contractota_RnDPhase.csv",row.names = FALSE,
+          pivot_wider(RnDphase$data,id_cols=c(ProductServiceOrRnDarea,type),
+                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20)%>%
+            arrange(ProductServiceOrRnDarea,type))
+#             
+# 
+# write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE,
+#           full_data %>% filter(ProductServiceOrRnDarea.sum=="R&D") %>%
+#             format_data_for_plot(fy_var="fiscal_year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
+#                                  labels_and_colors=labels_and_colors) %>%
+#           pivot_wider(id_cols=c(ProductServiceOrRnDarea),
+#                       names_from=fiscal_year,values_from=Action_Obligation_Then_Year)%>%
+#             arrange(ProductServiceOrRnDarea))
+
+```
+
+## Phase: Contract and OTA
+```{r PhaseBoth}
 
 contract_merge<-full_data%>%filter(fiscal_year >=2015) %>%
   group_by(fiscal_year,

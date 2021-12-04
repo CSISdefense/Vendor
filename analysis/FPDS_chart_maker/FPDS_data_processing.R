@@ -123,6 +123,16 @@ full_data<-csis360::read_and_join_experiment(full_data,
                         dir="office/"
 )
 
+platpsc<-csis360::read_and_join_experiment(platpsc,
+                                             "ProductOrServiceCodes.csv",
+                                             by=c("ProductOrServiceCode"="ProductOrServiceCode"),
+                                             add_var=c("CrisisProductOrServiceArea","Simple"),
+                                           path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\",
+                                             # path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                           skip_check_var = c("CrisisProductOrServiceArea","Simple"),
+                                             dir=""
+)
+
 full_data<-csis360::read_and_join_experiment(full_data,
                                              "Vehicle.csv",
                                              by=c("Vehicle"="Vehicle.detail"),
@@ -209,7 +219,8 @@ platpsc %<>%
   mutate(ContractingSubCustomer = factor(ContractingSubCustomer)) %>%
   mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
   mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
-  mutate(PlatformPortfolio = factor(PlatformPortfolio))
+  mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
+  mutate(CrisisProductOrServiceArea = factor(CrisisProductOrServiceArea))
   
 
 
