@@ -26,28 +26,47 @@ full_data <- read_delim(
 platpsc<-read_delim(file.path("data","semi_clean","Federal_ProdservPlatform.txt"),delim="\t",na=c("NULL","NA"),
               col_names = TRUE, guess_max = 10000000)
 
+platpscintl<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdServPlatformAgencyPlaceOriginVendor.txt"),delim="\t",na=c("NULL","NA"),
+                    col_names = TRUE, guess_max = 10000000)
+
+test<-apply_lookups(platpscintl)
+
+
+test<-read_and_join_experiment(test,
+                                  path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                  "Agency_AgencyID.csv",
+                                  dir="",
+                                  by=c("Contracting.Agency.ID"="AgencyID"),
+                                  add_var=c("Customer","SubCustomer"),#Contracting.Agency.ID
+                                  skip_check_var=c("Customer","Platform","SubCustomer"),
+                                  guess_max=2000)
+colnames(test)[colnames(test)=="Customer"]<-"ContractingCustomer"
+
 initial_clean<-function(df){
+  
+  colnames(df)[colnames(df)=="Fiscal.Year"]<-"fiscal_year"
   if(substring(df$fiscal_year[nrow(df)],1,12)=="Completion time")
     df<-df[-nrow(df),]
   
   df<-standardize_variable_names(df)
   # coerce Amount to be a numeric variable
-  df$Action_Obligation %<>% as.numeric()
+  if("Action_Obligation" %in% colnames(df)) 
+  df$Action_Obligation %<>% text_to_number()
   if("Number.Of.Actions" %in% colnames(df)) 
-    df$Number.Of.Actions %<>% as.numeric()
+    df$Number.Of.Actions %<>% text_to_number()
   df$Fiscal.Year <- as.numeric(df$Fiscal.Year)
   colnames(df)[colnames(df)=="Contractingcustomer"]<-"ContractingCustomer"
   colnames(df)[colnames(df)=="platformportfolio"]<-"PlatformPortfolio"
   # discard pre-2000
   df %<>% filter(Fiscal.Year >= 2000 & ContractingCustomer=="Defense")
   colnames(df)[colnames(df)=="Action_Obligation_Then_Year"]<-"Action_Obligation"
-  colnames(df)[colnames(df)=="Fiscal.Year"]<-"fiscal_year"
   df$dFYear<-as.Date(paste("1/1/",as.character(df$fiscal_year),sep=""),"%m/%d/%Y")
   df
 }
 
 platpsc<-initial_clean(platpsc)
 full_data<-initial_clean(full_data)
+test<-initial_clean(test)
 
  
 full_data<-deflate(full_data,
