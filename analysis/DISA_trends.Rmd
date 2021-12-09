@@ -962,13 +962,13 @@ DISAPSR<-build_plot(
   data=disa_data,
   chart_geom = "Bar Chart",
   share = FALSE,
-  labels_and_colors=ds_lc,
+  labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
   color_var="ProductServiceOrRnDarea.sum", #color_var
   # facet_var="Competition.sum", #facet_var
-  column_key=ds_ck,
+  column_key=column_key,
   format=TRUE,
   ytextposition=FALSE
 )+
@@ -1451,10 +1451,9 @@ disa_sum$DISAprodserv<-factor(disa_sum$DISAprodserv,
                                         "Other Products" ,"Unlabeled"))
              
 
-  
 
 (
-DISAProdServdetail<-build_plot(
+DISAProdServdetail_Comm<-build_plot(
   data=disa_sum %>% filter(fiscal_year>=2002 & ProductServiceOrRnDarea!="Unlabeled")  ,
   chart_geom = "Bar Chart",
   share = FALSE,
@@ -1480,17 +1479,24 @@ DISAProdServdetail<-build_plot(
   labs(y="Obligations (Constant 2020 $s)",caption="Note: Unlabeled not shown. Source: FPDS; CSIS analysis.")
 )
 
+
+write.csv(file="..//Output//DISA_prodserv.csv",row.names = FALSE,
+          arrange(pivot_wider(DISAProdServdetail$data %>% 
+                        arrange(dFYear) %>% mutate(fiscal_year=lubridate::year(dFYear)),
+                      id_cols=c(DISAprodserv),
+                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20),DISAprodserv))
+
+
+
+write.csv(file="..//Output//DISA_prodserv_comm.csv",row.names = FALSE,
+          arrange(pivot_wider(DISAProdServdetail$data %>% 
+                        arrange(dFYear) %>% mutate(fiscal_year=lubridate::year(dFYear)),
+                      id_cols=c(DISAprodserv,Commercial),
+                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20),DISAprodserv,Commercial))
+
 ggsave600dpi(DISAProdServdetail,file="..//output//DISA_prodserv.png",  
              width=13, height= 6, units="in",size=16, lineheight=1.2
              )
-
-write.csv(file="..//Output//DISAProdServdetail.csv",row.names = FALSE,
-          DISAProdServdetail$data%>% mutate(fiscal_year=lubridate::year(dFYear),
-                                bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
-            arrange(fiscal_year)%>%
-          pivot_wider(id_cols=c(DISAprodserv,Commercial),
-                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
-            arrange(DISAprodserv,Commercial),na="")
 ```
 
 ```{r HandOffice}
