@@ -532,11 +532,11 @@ binned_percent_plot<-function(data,x_col,group_col=NA,bins=20,caption=TRUE,metri
                     scatter_spend)
       else
         data<-#rbind(spent,spent,spent,spent,
-      data$output<-factor(data$output,c("Any Spending","Spending (Logged and Incremented)","Spending Scatterplot (logged)"))  
-
-
+        data$output<-factor(data$output,c("Any Spending","Spending (Logged and Incremented)","Spending Scatterplot (logged)"))  
+      
+      
       # data<-rbind(any,spent)
-      else if (metric=="FYDP3_ActCml"){
+      } else if (metric=="FYDP3_ActCml"){
         
         any<-data %>% summarise_ (   mean_y = "mean(FYDP3_ActCml>0)" 
                                      , mean_x =  paste( "mean(" ,  x_col  ,")"  ))
