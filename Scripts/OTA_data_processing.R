@@ -19,17 +19,29 @@ library(magrittr)
 library(csis360)
 library(Hmisc)
 # read in data
-OTA_data <- read_delim(
-  "data_raw//OTA_All_FIelds.csv",delim = ",",
+OTA_data_current <- read_delim(
+  "data_raw//OTA_All_Fields.csv",delim = ",",
   col_names = TRUE, guess_max = 500000,na=c("NA","NULL"),skip = 2)
+
+
+
+OTA_data_current$MentionsCovid<-TRUE
+OTA_data_current$MCDCcovid<-FALSE
+OTA_data_current$MentionsCovid[grep("COVID-19",OTA_data_current$`Description of Requirement`,invert=TRUE)]<-FALSE
+OTA_data_current$MCDCcovid[OTA_data_current$PIID=="W15QKN1691002" & 
+                     OTA_data_current$MentionsCovid]<-TRUE
+
+OTA_data$`Description of Requirement`[OTA_data$MCDCcovid]
+
+
 
 OTA_data <- read_delim(
   "data_raw//OTA_NPS_report.csv",delim = ",",
   col_names = TRUE, guess_max = 500000,na=c("NA","NULL"))
 
 
-
 colnames(OTA_data)<-gsub(" ","_",colnames(OTA_data))
+
 initial_clean<-function(df){
   if(substring(df$fiscal_year[nrow(df)],1,12)=="Completion time")
     df<-df[-nrow(df),]
@@ -125,6 +137,8 @@ levels(OTA_data$OrigPlat)<-list(
   "Ordnance and Missiles"="Weapons and Ammunition" 
 )
 
+
+
 #Classify Product or Service Codes
 OTA_data<-csis360::read_and_join(OTA_data,
   "LOOKUP_Buckets.csv",
@@ -135,6 +149,8 @@ OTA_data<-csis360::read_and_join(OTA_data,
   path="https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/",
   dir="Lookups/"
 )
+
+
 
 colnames(OTA_data)[colnames(OTA_data)=="PlatformPortfolio"]<-"PSCPlatformPortfolio"
 OTA_data<-read_and_join_experiment(OTA_data,
