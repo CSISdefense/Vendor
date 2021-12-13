@@ -146,8 +146,8 @@ platpsc<-csis360::read_and_join_experiment(platpsc,
                                              "ProductOrServiceCodes.csv",
                                              by=c("ProductOrServiceCode"="ProductOrServiceCode"),
                                              add_var=c("CrisisProductOrServiceArea","Simple"),
-                                           path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\",
-                                             # path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                           # path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\",
+                                             path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
                                            skip_check_var = c("CrisisProductOrServiceArea","Simple"),
                                              dir=""
 )
@@ -209,7 +209,7 @@ platpsc<-csis360::read_and_join_experiment(platpsc,
 
 #SubCustomer.JPO
 platpsc$SubCustomer.JPO<-as.character(platpsc$SubCustomer.platform)
-platpsc$SubCustomer.JPO[platpsc$ProjectName=="JSF (F-35) " & !is.na(platpsc$ProjectName)]<-"F-35 JPO"
+platpsc$SubCustomer.JPO[platpsc$ProjectName=="JSF (F-35) " & !is.na(platpsc$ProjectName)&platpsc$SubCustomer.platform=="Navy"]<-"F-35 JPO"
 platpsc$SubCustomer.JPO<-factor(platpsc$SubCustomer.JPO)
 any(as.character(platpsc$TopProject)=="JSF (F-35) "& !is.na(platpsc$TopProject))
 
@@ -233,10 +233,11 @@ full_data %<>%
 
 
 platpsc %<>%
-  select(-ContractingCustomer) %>%
+  # select(-ContractingCustomer) %>%
   # select(-ClassifyNumberOfOffers) %>%
   mutate(ContractingSubCustomer = factor(ContractingSubCustomer)) %>%
   mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
+  mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
   mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
   mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
   mutate(CrisisProductOrServiceArea = factor(CrisisProductOrServiceArea))
