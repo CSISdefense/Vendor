@@ -30,6 +30,8 @@ if(!exists("full_data"))
   load(file="FPDS_chart_maker//unaggregated_FPDS.Rda")
 
 load(file="../data/semi_clean/platpsc_FPDS.Rda")
+load(file="../data/semi_clean/platpscintl_FPDS.Rda")
+
 detail_lc<-prepare_labels_and_colors(platpsc)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 detail_ck<-get_column_key(platpsc)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 # column_key<-get_column_key(platpsc,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
@@ -1026,6 +1028,8 @@ PSC<-build_plot(
 
 # International
 ##FMS 
+
+
 ###FMS identification
 ```{r contract_identification}
 
@@ -1056,6 +1060,70 @@ ggsave600dpi(contract_identification,file="../output/figure_03_contract_identifi
 
 
 ```
+
+### JSF International
+```{r FPDS_JSF}
+
+summary(factor(platpscintldef$Shiny.VendorSize[platpscintldef$VendorIsForeign==1]))
+summary(platpscintldef$VendorSize_Intl)
+
+# undebug(format_data_for_plot)
+(fpds_vendor_intl_place <-  build_plot(data=platpscintldef %>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign)&
+                                                                      !is.na(IsFMS)& Fiscal.Year>2011),
+                                       #IsFMS==TRUE 
+                                       chart_geom="Bar Chart",
+                            x_var="Fiscal.Year",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="VendorSize_Intl",
+                            facet_var="PlaceIsForeign",
+                            second_var="IsFMS",
+                            labels_and_colors=intl_lc,
+                            column_key=intl_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE)+theme(legend.position = "right")+
+    facet_grid( .~IsFMS+PlaceIsForeign )#, scales="free_y"
+  )
+
+
+write.csv(file="..//Output//FMS_vendorplaceintl.csv",row.names = FALSE,
+          fpds_vendor_intl_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(VendorSize_Intl,IsFMS, PlaceIsForeign),
+                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,VendorSize_Intl))
+
+ggsave600dpi(fpds_vendor_intl_place,file="../output/FMS_vendorplaceintl.png",
+             size = 12, lineheight=1, height =4.5, width=9)
+
+
+# platpscintldef$Shiny.VendorSize
+(fpds_vendor_place <-  build_plot(data=platpscintldef %>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign)&
+                                                                      !is.na(IsFMS)&Fiscal.Year>2011 ),#IsFMS==TRUE  
+                            chart_geom="Bar Chart",
+                            x_var="Fiscal.Year",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="Shiny.VendorSize",
+                            facet_var="PlaceIsForeign",
+                            second_var="IsFMS",
+                            labels_and_colors=intl_lc,
+                            column_key=intl_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE)+theme(legend.position = "right")+
+    facet_grid( .~IsFMS+PlaceIsForeign )#, scales="free_y"
+  )
+
+ggsave600dpi(fpds_vendor_place,file="../output/FMS_vendorplace.png",
+             size = 12, lineheight=1, height =4.5, width=9)
+
+
+write.csv(file="..//Output//FMS_vendorplace.csv",row.names = FALSE,
+          fpds_vendor_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(Shiny.VendorSize,PlaceIsForeign,IsFMS),
+                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,Shiny.VendorSize,IsFMS))
+
+
+```
+
 
 ### FMS Vendor Size/Intl and Place
 ```{r FPDS_vendor_Intl}
@@ -1182,6 +1250,8 @@ write.csv(file="..//Output//FMS_vendorplace.csv",row.names = FALSE,
 
 
 ```
+
+
 
 #### Place
 ```{r FPDS_vendor_Intl}
