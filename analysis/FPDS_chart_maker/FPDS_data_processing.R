@@ -65,9 +65,11 @@ initial_clean<-function(df){
   # discard pre-2000
   df %<>% filter(Fiscal.Year >= 2000 & ContractingCustomer=="Defense")
   colnames(df)[colnames(df)=="Action_Obligation_Then_Year"]<-"Action_Obligation"
-  df$dFYear<-as.Date(paste("1/1/",as.character(df$fiscal_year),sep=""),"%m/%d/%Y")
+  df$dFYear<-as.Date(paste("1/1/",as.character(df$Fiscal.Year),sep=""),"%m/%d/%Y")
   df
 }
+
+platpscintldef$dFYear<-as.Date(paste("1/1/",as.character(platpscintldef$Fiscal.Year),sep=""),"%m/%d/%Y")
 
 platpsc<-initial_clean(platpsc)
 full_data<-initial_clean(full_data)
