@@ -30,6 +30,8 @@ if(!exists("full_data"))
   load(file="FPDS_chart_maker//unaggregated_FPDS.Rda")
 
 load(file="../data/semi_clean/platpsc_FPDS.Rda")
+load(file="../data/semi_clean/platpscintl_FPDS.Rda")
+
 detail_lc<-prepare_labels_and_colors(platpsc)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 detail_ck<-get_column_key(platpsc)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 # column_key<-get_column_key(platpsc,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
@@ -1026,6 +1028,8 @@ PSC<-build_plot(
 
 # International
 ##FMS 
+
+
 ###FMS identification
 ```{r contract_identification}
 
@@ -1055,7 +1059,71 @@ summary(fpds_data$foreign_funding_description)
 ggsave600dpi(contract_identification,file="../output/figure_03_contract_identification.png",size=12,lineheight=1, height =5, width=9)
 
 
+
 ```
+
+### JSF International
+```{r FPDS_JSF}
+
+summary(factor(platpscintldef$Shiny.VendorSize[platpscintldef$VendorIsForeign==1]))
+summary(platpscintldef$VendorSize_Intl)
+
+# undebug(format_data_for_plot)
+(jsf_vendor_intl_place <-  build_plot(data=platpscintldef %>% filter(IsJSF=="JSF (F-35)"& Fiscal.Year>2011),
+                                       #IsFMS==TRUE 
+                                       chart_geom="Bar Chart",
+                            x_var="Fiscal.Year",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="VendorSize_Intl",
+                            facet_var="PlaceIsForeign",
+                            second_var="IsFMS",
+                            labels_and_colors=intl_lc,
+                            column_key=intl_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE)+theme(legend.position = "right")+
+    facet_grid( .~IsFMS+PlaceIsForeign )#, scales="free_y"
+  )
+
+
+write.csv(file="..//Output//jsf_vendor_intl_place.csv",row.names = FALSE,
+          jsf_vendor_intl_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(VendorSize_Intl,IsFMS, PlaceIsForeign),
+                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,VendorSize_Intl))
+
+ggsave600dpi(jsf_vendor_intl_place,file="../output/jsf_vendor_intl_place.png",
+             size = 12, lineheight=1, height =4.5, width=9)
+
+
+# platpscintldef$Shiny.VendorSize
+# undebug(format_data_for_plot)
+(jsf_manufacture_intl_place <-  build_plot(data=platpscintldef%>% filter(IsJSF=="JSF (F-35)"& Fiscal.Year>2011),              
+                                            chart_geom="Bar Chart",
+                            x_var="Fiscal.Year",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="PlaceOfManufacture_Sum",
+                            facet_var="PlaceIsForeign",
+                            second_var="IsFMS",
+                            labels_and_colors=intl_lc,
+                            column_key=intl_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE)+theme(legend.position = "right")+
+    facet_grid( .~IsFMS+PlaceIsForeign )#, scales="free_y"
+  )
+
+
+write.csv(file="..//Output//jsf_manufacture_intl_place.csv",row.names = FALSE,
+          jsf_manufacture_intl_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(PlaceIsForeign,IsFMS, PlaceOfManufacture_Sum),
+                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,PlaceOfManufacture_Sum))
+
+ggsave600dpi(jsf_manufacture_intl_place,file="../output/jsf_manufacture_intl_place.png",
+             size = 12, lineheight=1, height =4.5, width=9)
+
+
+```
+
 
 ### FMS Vendor Size/Intl and Place
 ```{r FPDS_vendor_Intl}
@@ -1078,16 +1146,16 @@ summary(platpscintldef$VendorSize_Intl)
                             legend=TRUE,
                             caption=FALSE,
                             format=TRUE)+theme(legend.position = "right")+
-    facet_grid( .~IsFMS+PlaceIsForeign )#, scales="free_y"
+    facet_grid( .~IsFMS+PlaceIsForeign )+labs(title="FMS or Performed Internationally, Including JSF")#, scales="free_y"
   )
 
 
-write.csv(file="..//Output//FMS_vendorplaceintl.csv",row.names = FALSE,
+write.csv(file="..//Output//FMS_vendorplaceintl_all.csv",row.names = FALSE,
           fpds_vendor_intl_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(VendorSize_Intl,IsFMS, PlaceIsForeign),
                         names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,VendorSize_Intl))
 
-ggsave600dpi(fpds_vendor_intl_place,file="../output/FMS_vendorplaceintl.png",
+ggsave600dpi(fpds_vendor_intl_place,file="../output/FMS_vendorplaceintl_all.png",
              size = 12, lineheight=1, height =4.5, width=9)
 
 
@@ -1105,15 +1173,80 @@ ggsave600dpi(fpds_vendor_intl_place,file="../output/FMS_vendorplaceintl.png",
                             legend=TRUE,
                             caption=FALSE,
                             format=TRUE)+theme(legend.position = "right")+
-    facet_grid( .~IsFMS+PlaceIsForeign )#, scales="free_y"
+    facet_grid( .~IsFMS+PlaceIsForeign )+labs(title="FMS or Performed Internationally, Including JSF")#, scales="free_y"#, scales="free_y"
   )
 
-ggsave600dpi(fpds_vendor_place,file="../output/FMS_vendorplace.png",
+ggsave600dpi(fpds_vendor_place,file="../output/FMS_vendorplace_all.png",
              size = 12, lineheight=1, height =4.5, width=9)
 
 
-write.csv(file="..//Output//FMS_vendorplace.csv",row.names = FALSE,
+write.csv(file="..//Output//FMS_vendorplace_all.csv",row.names = FALSE,
           fpds_vendor_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(Shiny.VendorSize,PlaceIsForeign,IsFMS),
+                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,Shiny.VendorSize,IsFMS))
+
+
+```
+
+### FMS Vendor Size/Intl and Place No JSF
+```{r FPDS_vendor_Intl}
+
+summary(factor(platpscintldef$Shiny.VendorSize[platpscintldef$VendorIsForeign==1]))
+summary(platpscintldef$VendorSize_Intl)
+
+# undebug(format_data_for_plot)
+(fpds_vendor_intl_place_noJSF <-  build_plot(data=platpscintldef %>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign)&
+                                                                      !is.na(IsFMS)& Fiscal.Year>2011&
+                                                                            IsJSF %in% c("Other Project","Unknown Project")),
+                                       #IsFMS==TRUE 
+                                       chart_geom="Bar Chart",
+                            x_var="Fiscal.Year",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="VendorSize_Intl",
+                            facet_var="PlaceIsForeign",
+                            second_var="IsFMS",
+                            labels_and_colors=intl_lc,
+                            column_key=intl_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE)+theme(legend.position = "right")+
+    facet_grid( .~IsFMS+PlaceIsForeign )+labs(title="FMS or Performed Internationally, No JSF")#, scales="free_y"
+  )
+
+
+write.csv(file="..//Output//FMS_vendorplaceintl_noJSF.csv",row.names = FALSE,
+          fpds_vendor_intl_place_noJSF$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(VendorSize_Intl,IsFMS, PlaceIsForeign),
+                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,VendorSize_Intl))
+
+ggsave600dpi(fpds_vendor_intl_place_noJSF,file="../output/FMS_vendorplaceintl_noJSF.png",
+             size = 12, lineheight=1, height =4.5, width=9)
+
+
+# platpscintldef$Shiny.VendorSize
+(fpds_vendor_place_noJSF <-  build_plot(data=platpscintldef %>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign)&
+                                                                      !is.na(IsFMS)&Fiscal.Year>2011&
+                                                                            IsJSF %in% c("Other Project","Unknown Project") ),#IsFMS==TRUE  
+                            chart_geom="Bar Chart",
+                            x_var="Fiscal.Year",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="Shiny.VendorSize",
+                            facet_var="PlaceIsForeign",
+                            second_var="IsFMS",
+                            labels_and_colors=intl_lc,
+                            column_key=intl_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE)+theme(legend.position = "right")+
+    facet_grid( .~IsFMS+PlaceIsForeign )+labs(title="FMS or Performed Internationally, No JSF")#, scales="free_y"#, scales="free_y"
+  )
+
+ggsave600dpi(fpds_vendor_place_noJSF,file="../output/FMS_vendorplace_noJSF.png",
+             size = 12, lineheight=1, height =4.5, width=9)
+
+
+write.csv(file="..//Output//FMS_vendorplace_noJSF.csv",row.names = FALSE,
+          fpds_vendor_place_noJSF$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(Shiny.VendorSize,PlaceIsForeign,IsFMS),
                         names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,Shiny.VendorSize,IsFMS))
 
@@ -1183,6 +1316,8 @@ write.csv(file="..//Output//FMS_vendorplace.csv",row.names = FALSE,
 
 ```
 
+
+
 #### Place
 ```{r FPDS_vendor_Intl}
 
@@ -1201,14 +1336,51 @@ write.csv(file="..//Output//FMS_vendorplace.csv",row.names = FALSE,
                             legend=TRUE,
                             caption=FALSE,
                             format=TRUE)+theme(legend.position = "right")+
-    facet_grid( .~IsFMS+PlaceIsForeign )#, scales="free_y"
+    facet_grid( .~IsFMS+PlaceIsForeign )+labs(title="FMS or Performed Internationally, Including JSF")#, scales="free_y"#, scales="free_y"
   )
 
 
-write.csv(file="..//Output//FMS_BAAplaceintl.csv",row.names = FALSE,
+write.csv(file="..//Output//FMS_BAAplaceintl_all.csv",row.names = FALSE,
           fpds_manufacture_intl_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(PlaceIsForeign,IsFMS, PlaceOfManufacture_Sum),
                         names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,PlaceOfManufacture_Sum))
+
+ggsave600dpi(fpds_manufacture_intl_place,file="../output/FMS_BAAplaceintl_all.png",
+             size = 12, lineheight=1, height =4.5, width=9)
+
+```
+
+#### Place No JSF
+```{r FPDS_vendor_Intl}
+
+summary(factor(platpscintldef$IsJSF))
+# undebug(format_data_for_plot)
+(fpds_manufacture_intl_place_noJSF <-  build_plot(data=platpscintldef%>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign) &
+                                                                            Fiscal.Year>2011 & !is.na(IsFMS)&
+                                                                            IsJSF %in% c("Other Project","Unknown Project")),#IsFMS==TRUE                             
+                                            chart_geom="Bar Chart",
+                            x_var="Fiscal.Year",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="PlaceOfManufacture_Sum",
+                            facet_var="PlaceIsForeign",
+                            second_var="IsFMS",
+                            labels_and_colors=intl_lc,
+                            column_key=intl_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE)+theme(legend.position = "right")+
+    facet_grid( .~IsFMS+PlaceIsForeign )+labs(title="FMS or Performed Internationally, No JSF")#, scales="free_y"#, scales="free_y"
+  )
+
+
+write.csv(file="..//Output//FMS_BAAplaceintl_noJSF.csv",row.names = FALSE,
+          fpds_manufacture_intl_place_noJSF$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(PlaceIsForeign,IsFMS, PlaceOfManufacture_Sum),
+                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,PlaceOfManufacture_Sum))
+
+ggsave600dpi(fpds_manufacture_intl_place_noJSF,file="../output/FMS_BAAplaceintl_noJSF.png",
+             size = 12, lineheight=1, height =4.5, width=9)
+
 ```
 
 #### JSF Place
@@ -1241,3 +1413,64 @@ write.csv(file="..//Output//FMS_BAAplaceintl.csv",row.names = FALSE,
 
 
 
+
+#### Service Category
+```{r FPDS_vendor_Intl}
+
+summary(factor(platpscintldef$SimpleArea))
+# undebug(format_data_for_plot)
+(fmsintl_service <-  build_plot(data=platpscintldef%>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign) &
+                                                                            Fiscal.Year>2011 & !is.na(IsFMS)&
+                                                                  SimpleArea=="Services"),#IsFMS==TRUE                             
+                                            chart_geom="Bar Chart",
+                            x_var="Fiscal.Year",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="CrisisProductOrServiceArea",
+                            facet_var="PlaceIsForeign",
+                            second_var="IsFMS",
+                            labels_and_colors=intl_lc,
+                            column_key=intl_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE)+theme(legend.position = "right")+
+    facet_grid( .~IsFMS+PlaceIsForeign )+labs(title="Services FMS or Performed Internationally")#, scales="free_y"#, scales="free_y"
+  )
+summary(platpscintldef$dFYear)
+
+write.csv(file="..//Output//fmsintl_service.csv",row.names = FALSE,
+          fmsintl_service$data%>%# mutate(Fiscal.Year=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(PlaceIsForeign,IsFMS,CrisisProductOrServiceArea),
+                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,CrisisProductOrServiceArea))
+
+ggsave600dpi(fmsintl_service,file="../output/fmsintl_service.png",
+             size = 12, lineheight=1, height =6, width=9)
+
+
+(fmsintl_service_vendor <-  build_plot(data=platpscintldef%>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign) &
+                                                                            Fiscal.Year>2011 & !is.na(IsFMS)&
+                                                                  SimpleArea=="Services"),#IsFMS==TRUE                             
+                                            chart_geom="Bar Chart",
+                            x_var="dFYear",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="CrisisProductOrServiceArea",
+                            facet_var="IsFMSplaceIntl",
+                            second_var="VendorSize_Intl",
+                            labels_and_colors=intl_lc,
+                            column_key=intl_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE)+theme(legend.position = "right")+
+    facet_grid( IsFMSplaceIntl~VendorSize_Intl , scales="free_y", space="free_y")+labs(title="Services FMS or Performed Internationally")+
+    theme(  strip.text.y=element_text(angle=0))
+  )
+
+
+write.csv(file="..//Output//fmsintl_service_vendor.csv",row.names = FALSE,
+          fmsintl_service_vendor$data%>% mutate(Fiscal.Year=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(IsFMSplaceIntl,VendorSize_Intl,CrisisProductOrServiceArea),
+                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(IsFMSplaceIntl,VendorSize_Intl,CrisisProductOrServiceArea))
+
+ggsave600dpi(fmsintl_service_vendor,file="../output/fmsintl_service_vendor.png",
+             size = 12, lineheight=1, height =6, width=9)
+
+```
