@@ -150,11 +150,19 @@ platpscintldef$IsFMS[is.na(platpscintldef$IsFMS) & platpscintldef$IsFMSmac==1]<-
 platpscintldef$IsFMS[is.na(platpscintldef$IsFMS) & platpscintldef$IsFMSmac==0]<-0
 # platpscintldef$IsFMS[is.na(platpscintldef$IsFMS) & platpscintldef$IsUnlabeledMAC==0]<-0
 
+platpscintldef %<>% read_and_join_experiment(lookup_file="ProjectID.txt",
+                                             path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="project/",
+                                             add_var = c("ProjectName","IsUnknown"),
+                                             by=c("ProjectID")#,
+                                             # missing_file="missing_iso.csv",
+                                             # skip_check_var = c("ProjectName","IsUnidentified	")
+)
+
 
 platpscintldef$IsJSF[platpscintldef$ProjectID==87]<-"JSF (F-35)"
-platpscintldef$IsJSF[!is.na(platpscintldef$ProjectID)&platpscintldef$ProjectID!=87]<-"Other Project"
-platpscintldef$IsJSF[is.na(platpscintldef$ProjectID)]<-"Unlabeled Project"
-platpscintldef$IsJSF[is.na(platpscintldef$IsJSF)]
+platpscintldef$IsJSF[!is.na(platpscintldef$ProjectID)&platpscintldef$ProjectID!=87&platpscintldef$IsUnknown==0]<-"Other Project"
+platpscintldef$IsJSF[is.na(platpscintldef$IsUnknown)|platpscintldef$IsUnknown==1]<-"Unknown Project"
+# platpscintldef$IsJSF[is.na(platpscintldef$IsJSF)]
 summary(factor(platpscintldef$IsJSF))
 
 platpscintldef$IsFMSplaceIntl<-paste(platpscintldef$IsFMS,platpscintldef$PlaceIsForeign,sep="\n")
