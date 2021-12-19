@@ -94,6 +94,7 @@ platpsc$TopPScode[is.na(platpsc$TopPScode) & !is.na(platpsc$ProductOrServiceCode
 platpsc$TopPStext[is.na(platpsc$TopPStext) & !is.na(platpsc$ProductOrServiceCode)]<-
   "Other Labeled PSC"
 
+platpsc$TopPStext<-string_wrap(platpsc$TopPStext)
 
 summary(factor(platpsc$TopPStext))
 
@@ -1472,5 +1473,137 @@ write.csv(file="..//Output//fmsintl_service_vendor.csv",row.names = FALSE,
 
 ggsave600dpi(fmsintl_service_vendor,file="../output/fmsintl_service_vendor.png",
              size = 12, lineheight=1, height =6, width=9)
+
+```
+
+#Software
+
+## Product vs. Service
+```{r ProdServ}
+
+# platpsc$SimpleArea
+platpsc$SWpsc<-as.character(platpsc$SimpleArea)
+platpsc$SWpsc[substr(platpsc$ProductOrServiceCode,1,1)=="D" ]<-"Other IT and Telecomm"
+platpsc$SWpsc[substr(platpsc$ProductOrServiceCode,1,2)=="70" ]<-"Other ADP EQPT/SOFTWARE/SUPPLIES AND EQPT"
+# platpsc$SWpsc[platpsc$ProductOrServiceCode =="D304" ]<-"Telecomm & Transmission"
+# platpsc$SWpsc[platpsc$ProductOrServiceCode =="D316" ]<-"Telecomm Network Mgmt."
+platpsc$SWpsc[platpsc$ProductOrServiceCode =="D319" ]<-"Annual Software Maint."
+platpsc$SWpsc[platpsc$ProductOrServiceCode =="D305" ]<-"Teleprocessing, Timeshare, Cloud Computing, and High Performance Computing"
+platpsc$SWpsc[platpsc$ProductOrServiceCode =="7030" ]<-"Software as a product"
+platpsc$SWpsc[platpsc$SWpsc =="Products" ]<-"Other Products"
+platpsc$SWpsc[platpsc$SWpsc =="Services" ]<-"Other Services"
+
+platpsc %>%group_by(SWpsc)%>%
+  dplyr::summarise(o=sum(Action_Obligation_OMB20_GDP20))
+levels(factor(platpsc$SWpsc))
+any(platpsc$ProductOrServiceCode=="D305")
+
+levels(factor(platpsc$SWpsc))
+platpsc$SWpsc<-factor(platpsc$SWpsc,
+                              levels=c("Annual Software Maint.",
+                                       "Teleprocessing, Timeshare, Cloud Computing, and High Performance Computing",
+                                       "Other IT and Telecomm"  ,
+                                       "Other Services" ,
+                                       "Software as a product" ,
+                                       "Other ADP EQPT/SOFTWARE/SUPPLIES AND EQPT",
+                                       "Other Products"  ,
+                                       "R&D"))
+                             
+
+summary(platpsc$ProductServiceOrRnDarea)
+(
+SWpscdetail<-build_plot(
+  data=platpsc %>% filter(fiscal_year>=2002 & ProductServiceOrRnDarea!="Unlabeled" &
+                            !SWpsc %in% c("Other Services" ,"Other Products","R&D" ))  ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=ds_lc,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  color_var="SWpsc", #color_var
+  facet_var="SWpsc", #facet_var
+  # column_key=ds_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)",caption="Note: Unlabeled not shown. Source: FPDS; CSIS analysis.")
+)
+
+platpsc$ContractingAgencyText
+platpsc$ContractingAgencyTextSwr<-string_wrap(platpsc$ContractingAgencyText)
+
+
+write.csv(file="..//Output//DISA_prodserv.csv",row.names = FALSE,
+          arrange(pivot_wider(SWpscdetail$data %>% 
+                        arrange(dFYear) %>% mutate(fiscal_year=lubridate::year(dFYear)),
+                      id_cols=c(SWpsc),
+                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20),SWpsc))
+
+
+
+# write.csv(file="..//Output//DISA_prodserv_comm.csv",row.names = FALSE,
+#           arrange(pivot_wider(SWpscdetail$data %>% 
+#                         arrange(dFYear) %>% mutate(fiscal_year=lubridate::year(dFYear)),
+#                       id_cols=c(SWpsc,Commercial),
+#                       names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20),SWpsc,Commercial))
+
+ggsave600dpi(SWpscdetail,file="..//output//DISA_prodserv.png",  
+             width=13, height= 6, units="in",size=16, lineheight=1.2
+             )
+ggsave600dpi(SWpscdetail,file="..//output//DISA_prodserv.eps",  
+             width=13, height= 6, units="in",size=16, lineheight=1.2
+             )
+```
+
+## DoD Component 
+```{r DoDsoftware}
+
+
+
+(
+SWpscdetail<-build_plot(
+  data=platpsc %>% filter(fiscal_year>=2000 & ProductServiceOrRnDarea!="Unlabeled" &
+                            SWpsc %in% c("Annual Software Maint.", "Software as a product"  ))  ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=ds_lc,
+  # NA, #VAR.ncol
+  x_var="fiscal_year", #x_var
+  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  color_var="SWpsc", #color_var
+  facet_var="ContractingAgencyTextSwr", #facet_var
+  # column_key=ds_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)",caption="Note: Unlabeled not shown. Source: FPDS; CSIS analysis.")#+
+    # facet_wrap(~ContractingAgencyTextSwr,ncol=4)
+)
+
+ggsave600dpi(SWpscdetail,file="..//output//sw_Agency.png",  
+             width=13, height= 6, units="in",size=8, lineheight=1.2
+             )
+ggsave600dpi(SWpscdetail,file="..//output//sw_Agency.eps",  
+             width=13, height= 6, units="in",size=16, lineheight=1.2
+             )
 
 ```
