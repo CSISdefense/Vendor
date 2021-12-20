@@ -298,7 +298,8 @@ rename_value <- function(
 
 
 get_bottom<-function(
-  size=8
+  size=8,
+  caption="Source: FPDS; CSIS analysis."
 ){
   
   c<-text_grob(caption,
@@ -331,7 +332,7 @@ make_chart_from_input <- function(
   show_period = "No",
   y_total_or_share = "As Total", #Default to As Total? I'm not sure what it should be.
   filetype = "None",
-  caption = "Source: FPDS; CSIS analysis"
+  caption = "Source: FPDS; CSIS analysis."
 ){
   # Builds a ggplot based on user settings, for display on the main panel.
   # Reactive binding will cause the ggplot to update when the user changes any
