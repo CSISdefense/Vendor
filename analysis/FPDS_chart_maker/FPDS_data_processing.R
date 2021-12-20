@@ -25,14 +25,28 @@ full_data <- read_delim(
   
 platpsc<-read_delim(file.path("data","semi_clean","Federal_ProdservPlatform.txt"),delim="\t",na=c("NULL","NA"),
               col_names = TRUE, guess_max = 10000000)
+sum(platpscintlFMS$obligatedamount,na.rm=TRUE)
+sum(platpscintl$obligatedamount,na.rm=TRUE)
+platpscintlFMS<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdServPlatformAgencyPlaceOriginVendorFMS.txt"),delim="\t",na=c("NULL","NA"),
+                        col_names = TRUE, guess_max = 10000000)
+
+
+sw<-read_delim(file.path("data","semi_clean","Summary.SP_SoftwareDetail.txt"),delim="\t",na=c("NULL","NA"),
+                    col_names = TRUE, guess_max = 10000000)
+
 
 platpscintl<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdServPlatformAgencyPlaceOriginVendor.txt"),delim="\t",na=c("NULL","NA"),
                     col_names = TRUE, guess_max = 10000000)
 
-test<-apply_lookups(platpscintl)
+platpscintl<-apply_standard_lookups(platpscintl)
+colnames(sw)[colnames(sw)=="Contracting_Agency_ID"]<-"Contracting.Agency.ID"
 
-
-test<-read_and_join_experiment(test,
+sw<-apply_standard_lookups(sw)
+colnames(sw)[colnames(sw)=="Fiscal.Year"]<-"fiscal_year"
+sw_lc<-prepare_labels_and_colors(sw)
+sw_ck<-get_column_key(sw)
+sw$Contracting_Agency_ID
+platpscintl<-read_and_join_experiment(test,
                                   path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
                                   "Agency_AgencyID.csv",
                                   dir="",
@@ -40,7 +54,7 @@ test<-read_and_join_experiment(test,
                                   add_var=c("Customer","SubCustomer"),#Contracting.Agency.ID
                                   skip_check_var=c("Customer","Platform","SubCustomer"),
                                   guess_max=2000)
-colnames(test)[colnames(test)=="Customer"]<-"ContractingCustomer"
+colnames(platpscintl)[colnames(platpscintl)=="Customer"]<-"ContractingCustomer"
 
 initial_clean<-function(df){
   
@@ -51,22 +65,24 @@ initial_clean<-function(df){
   df<-standardize_variable_names(df)
   # coerce Amount to be a numeric variable
   if("Action_Obligation" %in% colnames(df)) 
-  df$Action_Obligation %<>% text_to_number()
+    df$Action_Obligation %<>% text_to_number()
   if("Number.Of.Actions" %in% colnames(df)) 
     df$Number.Of.Actions %<>% text_to_number()
-  df$Fiscal.Year <- as.numeric(df$Fiscal.Year)
+  df$Fiscal.Year <- text_to_number(df$Fiscal.Year)
   colnames(df)[colnames(df)=="Contractingcustomer"]<-"ContractingCustomer"
   colnames(df)[colnames(df)=="platformportfolio"]<-"PlatformPortfolio"
   # discard pre-2000
   df %<>% filter(Fiscal.Year >= 2000 & ContractingCustomer=="Defense")
   colnames(df)[colnames(df)=="Action_Obligation_Then_Year"]<-"Action_Obligation"
-  df$dFYear<-as.Date(paste("1/1/",as.character(df$fiscal_year),sep=""),"%m/%d/%Y")
+  df$dFYear<-as.Date(paste("1/1/",as.character(df$Fiscal.Year),sep=""),"%m/%d/%Y")
   df
 }
 
+platpscintldef$dFYear<-as.Date(paste("1/1/",as.character(platpscintldef$Fiscal.Year),sep=""),"%m/%d/%Y")
+
 platpsc<-initial_clean(platpsc)
 full_data<-initial_clean(full_data)
-test<-initial_clean(test)
+platpscintldef<-initial_clean(platpscintl)
 
  
 full_data<-deflate(full_data,
@@ -81,7 +97,95 @@ platpsc<-deflate(platpsc,
                    deflator_var="OMB20_GDP20"
 )
 
+if(!"PlaceIsForeign" %in% colnames(platpscintldef)){
+  platpscintldef<-read_and_join_experiment(platpscintldef,lookup_file="Location_CountryCodes.csv",
+                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="location/",
+                                      add_var = c("isforeign"),#"USAID region",
+                                      by=c("PlaceISOalpha3"="alpha-3"),
+                                      # skip_check_var=c("NATOyear",	"MajorNonNATOyear","NTIByear"	,"SEATOendYear","RioTreatyStartYear","RioTreatyEndYear","FiveEyes","OtherTreatyName"	,"OtherTreatyStartYear","OtherTreatyEndYear","isforeign"),
+                                      missing_file="missing_DSCA_iso.csv")
+  colnames(platpscintldef)[colnames(platpscintldef)=="isforeign"]<-"PlaceIsForeign"
+}
 
+if(!"VendorIsForeign" %in% colnames(platpscintldef)){
+  platpscintldef<-read_and_join_experiment(platpscintldef,lookup_file="Location_CountryCodes.csv",
+                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="location/",
+                                      add_var = c("isforeign"),#"USAID region",
+                                      by=c("VendorISOalpha3"="alpha-3"),
+                                      # skip_check_var=c("NATOyear",	"MajorNonNATOyear","NTIByear"	,"SEATOendYear","RioTreatyStartYear","RioTreatyEndYear","FiveEyes","OtherTreatyName"	,"OtherTreatyStartYear","OtherTreatyEndYear","isforeign"),
+                                      missing_file="missing_DSCA_iso.csv")
+  colnames(platpscintldef)[colnames(platpscintldef)=="isforeign"]<-"VendorIsForeign"
+}
+
+#Place of manufacture
+platpscintldef<-csis360::read_and_join_experiment(platpscintldef,
+                                             "Location_PlaceOfManufacture.csv",
+                                             by="PlaceOfManufacture",
+                                             add_var=c("PlaceOfManufactureText","PlaceOfManufacture_Sum"),
+                                             skip_check_var = c("PlaceOfManufactureText","PlaceOfManufacture_Sum"),
+                                             path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                             dir="location/",
+                                             case_sensitive = FALSE
+)
+
+#Vendor Size
+platpscintldef$VendorSize_Intl<-factor(platpscintldef$Shiny.VendorSize)
+levels(platpscintldef$VendorSize_Intl)<-list(
+  "Unlabeled"="Unlabeled",
+  "International"="International",
+  "U.S. Big Five"=c("Big Five","U.S. Big Five"),
+  "U.S. Large"=c("Large","U.S. Large"),
+  "U.S. Medium"=c("Medium","U.S. Medium"),
+  "U.S. Small"=c("Small","U.S. Small")
+)
+platpscintldef$VendorSize_Intl[platpscintldef$VendorIsForeign==1]<-"International"
+platpscintldef$VendorSize_Intl[is.na(platpscintldef$VendorIsForeign)]<-"Unlabeled"
+
+#foreign_funding_description
+
+platpscintldef %<>% read_and_join_experiment(lookup_file="Budget_FundedByForeignEntity.csv",
+                                        path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="budget/",
+                                        add_var = c("foreign_funding_description","foreign_funding_sum"),
+                                        by=c("fundedbyforeignentity"),
+                                        # missing_file="missing_iso.csv",
+                                        skip_check_var = c("foreign_funding_description","foreign_funding_sum")
+)
+
+
+# platpscintldef$IsUnlabeledMAC<-is.na(platpscintldef$mainaccountcode) | is.na(platpscintldef$treasuryagencycode)
+platpscintldef$IsFMS<-NA
+platpscintldef$IsFMS[platpscintldef$foreign_funding_description %in% c("Foreign Funds FMS")]<-1
+platpscintldef$IsFMS[platpscintldef$foreign_funding_description %in% c("Foreign Funds non-FMS", "Not Applicable")]<-0
+platpscintldef$IsFMS[is.na(platpscintldef$IsFMS)]<-platpscintldef$IsFMSml[is.na(platpscintldef$IsFMS)]
+platpscintldef$IsFMS[is.na(platpscintldef$IsFMS) & platpscintldef$IsFMSmac==1]<-1
+platpscintldef$IsFMS[is.na(platpscintldef$IsFMS) & platpscintldef$IsFMSmac==0]<-0
+# platpscintldef$IsFMS[is.na(platpscintldef$IsFMS) & platpscintldef$IsUnlabeledMAC==0]<-0
+
+platpscintldef %<>% read_and_join_experiment(lookup_file="ProjectID.txt",
+                                             path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="project/",
+                                             add_var = c("ProjectName","IsUnknown"),
+                                             by=c("ProjectID")#,
+                                             # missing_file="missing_iso.csv",
+                                             # skip_check_var = c("ProjectName","IsUnidentified	")
+)
+
+
+platpscintldef$IsJSF[platpscintldef$ProjectID==87]<-"JSF (F-35)"
+platpscintldef$IsJSF[!is.na(platpscintldef$ProjectID)&platpscintldef$ProjectID!=87&platpscintldef$IsUnknown==0]<-"Other Project"
+platpscintldef$IsJSF[is.na(platpscintldef$IsUnknown)|platpscintldef$IsUnknown==1]<-"Unknown Project"
+# platpscintldef$IsJSF[is.na(platpscintldef$IsJSF)]
+summary(factor(platpscintldef$IsJSF))
+
+platpscintldef$IsFMSplaceIntl<-paste(platpscintldef$IsFMS,platpscintldef$PlaceIsForeign,sep="\n")
+summary(factor(platpscintldef$IsFMSplaceIntl))
+platpscintldef$IsFMSplaceIntl<-factor(platpscintldef$IsFMSplaceIntl)
+levels(platpscintldef$IsFMSplaceIntl)=list(
+  "Includes FMS\nPerformed Internationally"="1\n1",
+  "Includes FMS\nPerformed Domestically"="1\n0",
+  "No FMS\nPerformed Internationally"="0\n1",
+  "No FMS\nPerformed Domestically"="0\n0",
+  "Unlabeled"=c("0\nNA","1\nNA",   "NA\n0" ,  "NA\n1"  ,"NA\nNA" )
+)
 
 #Consolidate categories for Vendor Size
 
@@ -146,8 +250,8 @@ platpsc<-csis360::read_and_join_experiment(platpsc,
                                              "ProductOrServiceCodes.csv",
                                              by=c("ProductOrServiceCode"="ProductOrServiceCode"),
                                              add_var=c("CrisisProductOrServiceArea","Simple"),
-                                           path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\",
-                                             # path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                           # path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\",
+                                             path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
                                            skip_check_var = c("CrisisProductOrServiceArea","Simple"),
                                              dir=""
 )
@@ -209,7 +313,7 @@ platpsc<-csis360::read_and_join_experiment(platpsc,
 
 #SubCustomer.JPO
 platpsc$SubCustomer.JPO<-as.character(platpsc$SubCustomer.platform)
-platpsc$SubCustomer.JPO[platpsc$ProjectName=="JSF (F-35) " & !is.na(platpsc$ProjectName)]<-"F-35 JPO"
+platpsc$SubCustomer.JPO[platpsc$ProjectName=="JSF (F-35) " & !is.na(platpsc$ProjectName)&platpsc$SubCustomer.platform=="Navy"]<-"F-35 JPO"
 platpsc$SubCustomer.JPO<-factor(platpsc$SubCustomer.JPO)
 any(as.character(platpsc$TopProject)=="JSF (F-35) "& !is.na(platpsc$TopProject))
 
@@ -233,10 +337,11 @@ full_data %<>%
 
 
 platpsc %<>%
-  select(-ContractingCustomer) %>%
+  # select(-ContractingCustomer) %>%
   # select(-ClassifyNumberOfOffers) %>%
   mutate(ContractingSubCustomer = factor(ContractingSubCustomer)) %>%
   mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
+  mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
   mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
   mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
   mutate(CrisisProductOrServiceArea = factor(CrisisProductOrServiceArea))
@@ -245,7 +350,6 @@ platpsc %<>%
 
 detail_lc<-csis360::prepare_labels_and_colors(platpsc)
 detail_ck<-csis360::get_column_key(platpsc)
-
 
 
 labels_and_colors<-csis360::prepare_labels_and_colors(full_data)
@@ -351,6 +455,11 @@ column_key<-csis360::get_column_key(full_data)
 # 
 save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
 save(platpsc,labels_and_colors,column_key, file="data/semi_clean/platpsc_FPDS.Rda")
+
+intl_lc<-csis360::prepare_labels_and_colors(platpscintldef)
+intl_ck<-csis360::get_column_key(platpscintldef)
+
+save(platpscintldef,intl_lc, intl_ck,file="data/semi_clean/platpscintl_FPDS.Rda")
 # 
 # 
 
