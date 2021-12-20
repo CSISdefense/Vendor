@@ -31,12 +31,21 @@ platpscintlFMS<-read_delim(file.path("data","semi_clean","Federal_Location.SP_Pr
                         col_names = TRUE, guess_max = 10000000)
 
 
+sw<-read_delim(file.path("data","semi_clean","Summary.SP_SoftwareDetail.txt"),delim="\t",na=c("NULL","NA"),
+                    col_names = TRUE, guess_max = 10000000)
+
+
 platpscintl<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdServPlatformAgencyPlaceOriginVendor.txt"),delim="\t",na=c("NULL","NA"),
                     col_names = TRUE, guess_max = 10000000)
 
 platpscintl<-apply_standard_lookups(platpscintl)
+colnames(sw)[colnames(sw)=="Contracting_Agency_ID"]<-"Contracting.Agency.ID"
 
-
+sw<-apply_standard_lookups(sw)
+colnames(sw)[colnames(sw)=="Fiscal.Year"]<-"fiscal_year"
+sw_lc<-prepare_labels_and_colors(sw)
+sw_ck<-get_column_key(sw)
+sw$Contracting_Agency_ID
 platpscintl<-read_and_join_experiment(test,
                                   path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
                                   "Agency_AgencyID.csv",
