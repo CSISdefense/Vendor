@@ -1518,8 +1518,25 @@ ggsave600dpi(fmsintl_service_vendor,file="../output/fmsintl_service_vendor.png",
 
 sw$SWpsc<-as.character(sw$SimpleArea)
 sw$SWpsc[sw$ProductOrServiceCode =="D319" ]<-"Annual Software Maint."
+# sw$SWpsc[sw$ProductOrServiceCode =="D317" ]<-"Annual Software Maint."
 sw$SWpsc[sw$ProductOrServiceCode =="7030" ]<-"Software as a product"
+sw$SWpsc[sw$ProductOrServiceCode =="D305" ]<-"Teleprocessing / Cloud Computing"
+sw$SWpsc[sw$ProductOrServiceCode %in% c("D302","D307","D308","D313","D317","D318","D319","D399","H170","H970","J070","R413")]<-"Software Development Related"
 sw$SWpsc[sw$SWpsc =="Services" ]<-"Other ADP Services"
+#D317
+#D399, R413
+
+sw %>% 
+  group_by(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText)%>% summarise(o=sum(Action_Obligation_OMB20_GDP20))
+
+sw %>% filter (ProductOrServiceCode %in% c("D317","D319")) %>%  #D317 not included
+  group_by(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText)%>% summarise(o=sum(Action_Obligation_OMB20_GDP20))
+
+
+sw %>% filter (ProductOrServiceCode %in% c("7030","D302","D307","D308","D313","D317","D318","D319","H170","J070","R413")) %>% 
+  group_by(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText)%>% summarise(o=sum(Action_Obligation_OMB20_GDP20))
+
+sw<-sw %>% filter(ProductOrServiceCode %in% c("D305", "D317","D319", "7030","D302","D307","D308","D313","D317","D318","D319","D399","H170","H970","J070","R413"))
 
 # platpsc$SimpleArea
 platpsc$SWpsc<-as.character(platpsc$SimpleArea)
@@ -2188,7 +2205,7 @@ ggsave600dpi("..//Output//SoftwareCommDefAgency.png", SoftwareCommAgency,
              )
 
 write.csv(file="..//Output//SoftwareCommDefAgency.csv",row.names = FALSE,
-          SoftwareComm$data%>% mutate(fiscal_year=lubridate::year(dFYear),
+          SoftwareCommAgency$data%>% mutate(fiscal_year=lubridate::year(dFYear),
                                 bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
             arrange(fiscal_year)%>%
           pivot_wider(id_cols=c(Commercial,SWpsc,TopAgencyText),
