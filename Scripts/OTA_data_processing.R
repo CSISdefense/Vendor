@@ -27,17 +27,30 @@ OTA_data_current <- read_delim(
 
 OTA_data_current$MentionsCovid<-TRUE
 OTA_data_current$MCDCcovid<-FALSE
+
 OTA_data_current$MentionsCovid[grep("COVID-19",OTA_data_current$`Description of Requirement`,invert=TRUE)]<-FALSE
 OTA_data_current$MCDCcovid[OTA_data_current$PIID=="W15QKN1691002" & 
                      OTA_data_current$MentionsCovid]<-TRUE
 
-OTA_data$`Description of Requirement`[OTA_data$MCDCcovid]
-
+summary(OTA_data_current$MCDCcovid)
+View(OTA_data_current$`Description of Requirement`[OTA_data_current$MCDCcovid==TRUE])
+descript<-OTA_data_current$`Description of Requirement`[OTA_data_current$MCDCcovid==TRUE]
+OTA_data_current$`Dollars Obligated`<-text_to_number(OTA_data_current$`Dollars Obligated`)
 
 
 OTA_data <- read_delim(
   "data_raw//OTA_NPS_report.csv",delim = ",",
   col_names = TRUE, guess_max = 500000,na=c("NA","NULL"))
+
+
+nrow(OTA_data[OTA_data$`Description of Requirement` %in% descript,])
+OTA_data$MCDCcovid<-FALSE
+OTA_data$MCDCcovid[OTA_data$`Description of Requirement` %in% descript]<-TRUE
+
+OTA_data_current %>% group_by(MCDCcovid,`Fiscal Year`) %>% dplyr::summarize(n=length(`Fiscal Year`),
+                                                                            o=sum(`Dollars Obligated`))
+OTA_data %>% group_by(MCDCcovid,`Fiscal Year`) %>% dplyr::summarize(n=length(`Fiscal Year`),
+                                                                            o=sum(`Dollars Obligated`))
 
 
 colnames(OTA_data)<-gsub(" ","_",colnames(OTA_data))
@@ -233,6 +246,12 @@ OTA_data$SubCustomer.OTA[OTA_data$Contracting_Agency_ID=="97AE"]<-"DARPA"
 # )
 # 
 
+OTA_data$ProductServiceOrRnDarea.covid<-as.character(OTA_data$ProductServiceOrRnDarea.sum)
+OTA_data$ProductServiceOrRnDarea.covid[OTA_data$MCDCcovid==TRUE]<-"R&D (Covid-19 Medical CBRN Defense Consortium)"
+OTA_data$ProductServiceOrRnDarea.covid[OTA_data$ProductServiceOrRnDarea.covid=="R&D"]<-"R&D (Other)"
+
+
+
 # set correct data types
 OTA_data %<>%
   # select(-ContractingCustomer) %>%
@@ -242,6 +261,7 @@ OTA_data %<>%
   mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
   mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
   mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
+  mutate(ProductServiceOrRnDarea.covid = factor(ProductServiceOrRnDarea.covid)) %>%
   # mutate(Shiny.VendorSize = factor(Shiny.VendorSize)) %>%
   mutate(ProductServiceOrRnDarea.sum = factor(ProductServiceOrRnDarea.sum))# %>%
   # mutate(Competition.sum = factor(Competition.sum)) %>%
@@ -250,6 +270,7 @@ OTA_data %<>%
   # mutate(No.Competition.sum = factor(No.Competition.sum)) %>%
   # mutate(Vehicle = factor(Vehicle)) %>%
   # mutate(PricingUCA = factor(PricingUCA))
+
 
 
 ota_lc<-csis360::prepare_labels_and_colors(OTA_data)

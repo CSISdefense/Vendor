@@ -1156,6 +1156,23 @@ write.csv(file="..//Output//jsf_manufacture_intl_place.csv",row.names = FALSE,
 ggsave600dpi(jsf_manufacture_intl_place,file="../output/jsf_manufacture_intl_place.png",
              size = 12, lineheight=1, height =4.5, width=9)
 
+platpscintldef$OriginISOalpha3
+(jsf_manufacture_intl_place <-  build_plot(data=platpscintldef%>% filter(IsJSF=="JSF (F-35)"& Fiscal.Year>2011),              
+                                            chart_geom="Bar Chart",
+                            x_var="Fiscal.Year",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="OriginISOalpha3",
+                            facet_var="PlaceIsForeign",
+                            second_var="IsFMS",
+                            # labels_and_colors=intl_lc,
+                            # column_key=intl_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE)+theme(legend.position = "right")+
+    facet_grid( .~IsFMS+PlaceIsForeign )#, scales="free_y"
+  )
+
+
 
 ```
 
@@ -1529,6 +1546,13 @@ sw$SWpsc[sw$SWpsc =="Services" ]<-"Other ADP Services"
 sw %>% 
   group_by(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText)%>% summarise(o=sum(Action_Obligation_OMB20_GDP20))
 
+write.csv(sw %>% filter(fiscal_year>=2000) %>%
+  group_by(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText,fiscal_year)%>% summarise(o=sum(Action_Obligation_OMB20_GDP20))%>%#/1000000000
+    arrange(fiscal_year)%>%pivot_wider(id_cols=c(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText),
+                names_from=fiscal_year,values_from=o)%>%arrange(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText)
+  ,file="..\\output\\Software_Prodserv.csv",row.names = FALSE)
+
+
 sw %>% filter (ProductOrServiceCode %in% c("D317","D319")) %>%  #D317 not included
   group_by(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText)%>% summarise(o=sum(Action_Obligation_OMB20_GDP20))
 
@@ -1539,38 +1563,38 @@ sw %>% filter (ProductOrServiceCode %in% c("7030","D302","D307","D308","D313","D
 sw<-sw %>% filter(ProductOrServiceCode %in% c("D305", "D317","D319", "7030","D302","D307","D308","D313","D317","D318","D319","D399","H170","H970","J070","R413"))
 
 # platpsc$SimpleArea
-platpsc$SWpsc<-as.character(platpsc$SimpleArea)
-platpsc$SWpsc[substr(platpsc$ProductOrServiceCode,1,1)=="D" ]<-"Other IT and Telecomm"
-platpsc$SWpsc[substr(platpsc$ProductOrServiceCode,1,2)=="70" ]<-"Other ADP EQPT/SOFTWARE/SUPPLIES AND EQPT"
-# platpsc$SWpsc[platpsc$ProductOrServiceCode =="D304" ]<-"Telecomm & Transmission"
-# platpsc$SWpsc[platpsc$ProductOrServiceCode =="D316" ]<-"Telecomm Network Mgmt."
-platpsc$SWpsc[platpsc$ProductOrServiceCode =="D319" ]<-"Annual Software Maint."
-platpsc$SWpsc[platpsc$ProductOrServiceCode =="D305" ]<-"Teleprocessing, Timeshare, Cloud Computing, and High Performance Computing"
-platpsc$SWpsc[platpsc$ProductOrServiceCode =="7030" ]<-"Software as a product"
-platpsc$SWpsc[platpsc$SWpsc =="Products" ]<-"Other Products"
-platpsc$SWpsc[platpsc$SWpsc =="Services" ]<-"Other Services"
-
-platpsc %>%group_by(SWpsc)%>%
-  dplyr::summarise(o=sum(Action_Obligation_OMB20_GDP20))
-levels(factor(platpsc$SWpsc))
-any(platpsc$ProductOrServiceCode=="D305")
-
-levels(factor(platpsc$SWpsc))
-platpsc$SWpsc<-factor(platpsc$SWpsc,
-                              levels=c("Annual Software Maint.",
-                                       "Teleprocessing, Timeshare, Cloud Computing, and High Performance Computing",
-                                       "Other IT and Telecomm"  ,
-                                       "Other Services" ,
-                                       "Software as a product" ,
-                                       "Other ADP EQPT/SOFTWARE/SUPPLIES AND EQPT",
-                                       "Other Products"  ,
-                                       "R&D"))
-                             
+# platpsc$SWpsc<-as.character(platpsc$SimpleArea)
+# platpsc$SWpsc[substr(platpsc$ProductOrServiceCode,1,1)=="D" ]<-"Other IT and Telecomm"
+# platpsc$SWpsc[substr(platpsc$ProductOrServiceCode,1,2)=="70" ]<-"Other ADP EQPT/SOFTWARE/SUPPLIES AND EQPT"
+# # platpsc$SWpsc[platpsc$ProductOrServiceCode =="D304" ]<-"Telecomm & Transmission"
+# # platpsc$SWpsc[platpsc$ProductOrServiceCode =="D316" ]<-"Telecomm Network Mgmt."
+# platpsc$SWpsc[platpsc$ProductOrServiceCode =="D319" ]<-"Annual Software Maint."
+# platpsc$SWpsc[platpsc$ProductOrServiceCode =="D305" ]<-"Teleprocessing, Timeshare, Cloud Computing, and High Performance Computing"
+# platpsc$SWpsc[platpsc$ProductOrServiceCode =="7030" ]<-"Software as a product"
+# platpsc$SWpsc[platpsc$SWpsc =="Products" ]<-"Other Products"
+# platpsc$SWpsc[platpsc$SWpsc =="Services" ]<-"Other Services"
+# 
+# platpsc %>%group_by(SWpsc)%>%
+#   dplyr::summarise(o=sum(Action_Obligation_OMB20_GDP20))
+# levels(factor(platpsc$SWpsc))
+# any(platpsc$ProductOrServiceCode=="D305")
+# 
+# levels(factor(platpsc$SWpsc))
+# platpsc$SWpsc<-factor(platpsc$SWpsc,
+#                               levels=c("Annual Software Maint.",
+#                                        "Teleprocessing, Timeshare, Cloud Computing, and High Performance Computing",
+#                                        "Other IT and Telecomm"  ,
+#                                        "Other Services" ,
+#                                        "Software as a product" ,
+#                                        "Other ADP EQPT/SOFTWARE/SUPPLIES AND EQPT",
+#                                        "Other Products"  ,
+#                                        "R&D"))
+#                              
 
 summary(platpsc$ProductServiceOrRnDarea)
 (
 SWpscdetail<-build_plot(
-  data=platpsc %>% filter(fiscal_year>=2002 & ProductServiceOrRnDarea!="Unlabeled" &
+  data=sw %>% filter(fiscal_year>=2002 & ProductServiceOrRnDarea!="Unlabeled" &
                             !SWpsc %in% c("Other Services" ,"Other Products","R&D" ))  ,
   chart_geom = "Bar Chart",
   share = FALSE,
@@ -1596,8 +1620,8 @@ SWpscdetail<-build_plot(
   labs(y="Obligations (Constant 2020 $s)",caption="Note: Unlabeled not shown. Source: FPDS; CSIS analysis.")
 )
 
-platpsc$ContractingAgencyText
-platpsc$ContractingAgencyTextSwr<-factor_wrap(platpsc$ContractingAgencyText)
+# platpsc$ContractingAgencyText
+# platpsc$ContractingAgencyTextSwr<-factor_wrap(platpsc$ContractingAgencyText)
 
 
 write.csv(file="..//Output//Software_prodserv.csv",row.names = FALSE,
@@ -1666,13 +1690,21 @@ ggsave600dpi(SWpscdetail,file="..//output//Software_Customer_Agency.eps",
              width=13, height= 6, units="in",size=16, lineheight=1.2
              )
 
+write.csv(file="..//Output//Software_Customer.csv",row.names = FALSE,
+          SWpscdetail$data %>% mutate(#fiscal_year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
+            arrange(fiscal_year)%>%
+          pivot_wider(id_cols=c(Customer,SWpsc),
+                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+            arrange(Customer,SWpsc),na="")
+
 ```
 ## DoD Component 
 ```{r DoDsoftware}
 
 
 (
-SWpscdetail<-build_plot(
+SWpscDoDcomp<-build_plot(
   data=sw %>% filter(fiscal_year>=2000 & Customer=="Defense")  ,
   chart_geom = "Bar Chart",
   share = FALSE,
@@ -1699,12 +1731,20 @@ SWpscdetail<-build_plot(
     # facet_wrap(~ContractingAgencyTextSwr,ncol=4)
 )
 
-ggsave600dpi(SWpscdetail,file="..//output//Software_Defense_Agency.png",  
+ggsave600dpi(SWpscDoDcomp,file="..//output//Software_Defense_Agency.png",  
              width=13, height= 6, units="in",size=8, lineheight=1.2
              )
-ggsave600dpi(SWpscdetail,file="..//output//Software_Defense_Agency.eps",  
+ggsave600dpi(SWpscDoDcomp,file="..//output//Software_Defense_Agency.eps",  
              width=13, height= 6, units="in",size=16, lineheight=1.2
              )
+
+write.csv(file="..//Output//SWpscDoDcomp.csv",row.names = FALSE,
+          SWpscDoDcomp$data %>% mutate(#fiscal_year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
+            arrange(fiscal_year)%>%
+          pivot_wider(id_cols=c(TopAgencyText,SWpsc),
+                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+            arrange(TopAgencyText,SWpsc),na="")
 
 ```
 
@@ -1714,7 +1754,7 @@ ggsave600dpi(SWpscdetail,file="..//output//Software_Defense_Agency.eps",
 
 (
 SoftwareComp<-build_plot(
-  data=sw,
+  data=sw %>% filter(fiscal_year>=2000),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=sw_lc,
@@ -1746,11 +1786,12 @@ ggsave600dpi("..//Output//Software_comp.png", SoftwareComp,
 
 
 write.csv(file="..//Output//Software_competition.csv",row.names = FALSE,
-          SoftwareComp$data%>% #mutate(dFYear=lubridate::year(dFYear))%>%
-            pivot_wider(id_cols=c(Competition.sum),
-                        names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
-
-
+          SoftwareComp$data %>% mutate(#fiscal_year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
+            arrange(fiscal_year)%>%
+          pivot_wider(id_cols=c(SWpsc,Competition.sum),
+                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+            arrange(SWpsc,Competition.sum),na="")
 
 ```
 
@@ -1760,7 +1801,7 @@ write.csv(file="..//Output//Software_competition.csv",row.names = FALSE,
 library(scales)
 (
 SoftwareVendor<-build_plot(
-  data=sw,
+  data=sw %>% filter(fiscal_year>=2000),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=sw_lc,
@@ -1838,19 +1879,24 @@ ggsave600dpi("..//Output//Software_vendor.eps", SoftwareVendor+
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
+# 
+# write.csv(file="..//Output//Software_vendor_cur.csv",row.names = FALSE,
+#           sw %>% group_by(Shiny.VendorSize,fiscal_year)%>%
+#             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE)/1000000000)%>%
+#           pivot_wider(id_cols=c(Shiny.VendorSize),
+#                       names_from=fiscal_year,values_from=Action_Obligation_Then_Year)%>% arrange(Shiny.VendorSize))
+# 
 
-write.csv(file="..//Output//Software_vendor_cur.csv",row.names = FALSE,
-          sw %>% group_by(Shiny.VendorSize,fiscal_year)%>%
-            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE)/1000000000)%>%
-          pivot_wider(id_cols=c(Shiny.VendorSize),
-                      names_from=fiscal_year,values_from=Action_Obligation_Then_Year)%>% arrange(Shiny.VendorSize))
 
 
 write.csv(file="..//Output//Software_vendor.csv",row.names = FALSE,
-          SoftwareVendor$data%>% mutate(fiscal_year=lubridate::year(dFYear),
-                                       bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
-            pivot_wider(id_cols=c(Shiny.VendorSize),
-                        names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%arrange(Shiny.VendorSize))
+          SoftwareVendor$data %>% mutate(fiscal_year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
+            arrange(fiscal_year)%>%
+          pivot_wider(id_cols=c(SWpsc,Shiny.VendorSize),
+                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+            arrange(SWpsc,Shiny.VendorSize),na="")
+
 
 ```
 ##  Vehicle
@@ -1948,14 +1994,14 @@ ggsave600dpi("..//Output//Software_pricing.png", SoftwarePricing,
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
+
 write.csv(file="..//Output//Software_pricing.csv",row.names = FALSE,
-  arrange(pivot_wider(SoftwarePricing$data %>% 
-                        arrange(dFYear) %>% mutate(fiscal_year=lubridate::year(dFYear)),
-                      id_cols=c(PricingUCA.sumlong,PricingUCA),
-                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20),PricingUCA.sumlong)%>%
-    arrange(PricingUCA.sumlong,PricingUCA))
-
-
+          SoftwarePricing$data %>% mutate(fiscal_year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
+            arrange(fiscal_year)%>%
+          pivot_wider(id_cols=c(SWpsc,PricingUCA),
+                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+            arrange(SWpsc,PricingUCA),na="")
 ```
 
 
@@ -2108,9 +2154,18 @@ SoftwarecommPSCdetail<-build_plot(
 #              )
 
 
-ggsave600dpi("..//Output//Software_comm.png", Softwarecomm,  
+ggsave600dpi("..//Output//Software_comm.png", SoftwareComm,  
              width=13, height= 6, units="in",size=16, lineheight=1.2
              )
+
+
+write.csv(file="..//Output//Software_comm.csv",row.names = FALSE,
+          SoftwareComm$data %>% mutate(fiscal_year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
+            arrange(fiscal_year)%>%
+          pivot_wider(id_cols=c(SWpsc,Commercial),
+                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+            arrange(SWpsc,Commercial),na="")
 
 ggsave600dpi("..//Output//Software_comm_paper.png", Softwarecomm,  
              width=13, height= 3.75, units="in",size=16, lineheight=1.2
@@ -2201,15 +2256,15 @@ SoftwareCommAgencyLine<-build_plot(
 
 # 
 ggsave600dpi("..//Output//SoftwareCommDefAgency.png", SoftwareCommAgency,
-             width=13, height= 6, units="in",size=16, lineheight=1.2
+             width=13, height= 6, units="in",size=12, lineheight=1.2
              )
 
 write.csv(file="..//Output//SoftwareCommDefAgency.csv",row.names = FALSE,
           SoftwareCommAgency$data%>% mutate(fiscal_year=lubridate::year(dFYear),
                                 bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
             arrange(fiscal_year)%>%
-          pivot_wider(id_cols=c(Commercial,SWpsc,TopAgencyText),
+          pivot_wider(id_cols=c(TopAgencyText,SWpsc,Commercial),
                       names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
-            arrange(Commercial,SWpsc,TopAgencyText),na="")
+            arrange(TopAgencyText,SWpsc,Commercial),na="")
 
 ```
