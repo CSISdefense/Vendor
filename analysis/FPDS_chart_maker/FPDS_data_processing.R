@@ -25,10 +25,9 @@ full_data <- read_delim(
   
 platpsc<-read_delim(file.path("data","semi_clean","Federal_ProdservPlatform.txt"),delim="\t",na=c("NULL","NA"),
               col_names = TRUE, guess_max = 10000000)
-sum(platpscintlFMS$obligatedamount,na.rm=TRUE)
-sum(platpscintl$obligatedamount,na.rm=TRUE)
-platpscintlFMS<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdServPlatformAgencyPlaceOriginVendorFMS.txt"),delim="\t",na=c("NULL","NA"),
-                        col_names = TRUE, guess_max = 10000000)
+
+sw<-read_delim(file.path("data","semi_clean","Summary.SP_SoftwareDetail.txt"),delim="\t",na=c("NULL","NA"),
+                    col_names = TRUE, guess_max = 10000000)
 
 
 platpscintl<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdServPlatformAgencyPlaceOriginVendor.txt"),delim="\t",na=c("NULL","NA"),
@@ -36,6 +35,20 @@ platpscintl<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdS
 
 platpscintl<-apply_standard_lookups(platpscintl)
 
+sw<-apply_standard_lookups(sw)
+colnames(sw)[colnames(sw)=="Fiscal.Year"]<-"fiscal_year"
+# sw<-read_and_join_experiment(data=sw
+#                              ,"InformationTechnologyCommercialItemCategory.csv"
+#                              # ,path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/"
+#                              ,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\"
+#                              ,dir="productorservice/"
+#                              ,by=c("informationtechnologycommercialitemcategory"="informationtechnologycommercialitemcategory")
+#                              # ,new_var_checked=FALSE
+#                              # ,create_lookup_rdata=TRUE
+# )
+
+sw_lc<-prepare_labels_and_colors(sw)
+sw_ck<-get_column_key(sw)
 
 platpscintl<-read_and_join_experiment(test,
                                   path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
