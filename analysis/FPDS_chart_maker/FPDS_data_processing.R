@@ -263,7 +263,7 @@ platpsc<-csis360::read_and_join_experiment(platpsc,
 full_data<-csis360::read_and_join_experiment(full_data,
                                              "Vehicle.csv",
                                              by=c("Vehicle"="Vehicle.detail"),
-                                             add_var=c("Vehicle.sum","Vehicle.AwardTask"),
+                                             add_var=c("Vehicle.sum","Vehicle.sum7","Vehicle.AwardTask"),
                                              path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
                                              # path="K:/Users/Greg/Repositories/Lookup-Tables/",
                                              dir="contract/"
@@ -321,10 +321,10 @@ platpsc$SubCustomer.JPO[platpsc$ProjectName=="JSF (F-35) " & !is.na(platpsc$Proj
 platpsc$SubCustomer.JPO<-factor(platpsc$SubCustomer.JPO)
 any(as.character(platpsc$TopProject)=="JSF (F-35) "& !is.na(platpsc$TopProject))
 
-
+if("ContractingCustomer" %in% colnames(full_data))
+  full_data %<>%  select(-ContractingCustomer)
 # set correct data types
 full_data %<>%
-  select(-ContractingCustomer) %>%
   # select(-ClassifyNumberOfOffers) %>%
   mutate(ContractingSubCustomer = factor(ContractingSubCustomer)) %>%
   mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
@@ -336,7 +336,9 @@ full_data %<>%
   mutate(Competition.effective.only = factor(Competition.effective.only)) %>%
   mutate(Competition.multisum = factor(Competition.multisum))  %>%
   mutate(No.Competition.sum = factor(No.Competition.sum)) %>%
-  mutate(Vehicle = factor(Vehicle)) %>%
+  mutate(Vehicle.sum = factor(Vehicle.sum)) %>%
+  mutate(Vehicle.sum7 = factor(Vehicle.sum7)) %>%
+  mutate(Vehicle.AwardTask = factor(Vehicle.AwardTask)) %>%
   mutate(PricingUCA = factor(PricingUCA))
 
 
@@ -360,6 +362,14 @@ labels_and_colors<-csis360::prepare_labels_and_colors(full_data)
 
 column_key<-csis360::get_column_key(full_data)
 
+
+save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
+save(platpsc,labels_and_colors,column_key, file="data/semi_clean/platpsc_FPDS.Rda")
+
+intl_lc<-csis360::prepare_labels_and_colors(platpscintldef)
+intl_ck<-csis360::get_column_key(platpscintldef)
+
+save(platpscintldef,intl_lc, intl_ck,file="data/semi_clean/platpscintl_FPDS.Rda")
 
 # write output to CleanedVendorSize.csv
 # save(full_data,labels_and_colors,column_key, file="Shiny Apps//FPDS_chart_maker//2018_unaggregated_FPDS.Rda")
@@ -457,13 +467,6 @@ column_key<-csis360::get_column_key(full_data)
 # 
 # full_data<-rbind(full_data,as.data.frame(partial_2018))
 # 
-save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
-save(platpsc,labels_and_colors,column_key, file="data/semi_clean/platpsc_FPDS.Rda")
-
-intl_lc<-csis360::prepare_labels_and_colors(platpscintldef)
-intl_ck<-csis360::get_column_key(platpscintldef)
-
-save(platpscintldef,intl_lc, intl_ck,file="data/semi_clean/platpscintl_FPDS.Rda")
 # 
 # 
 
