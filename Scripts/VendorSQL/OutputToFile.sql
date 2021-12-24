@@ -157,6 +157,8 @@ EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCus
 
 
 		
+
+		
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
@@ -165,7 +167,7 @@ DECLARE	@return_value int
 --EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
 EXEC	@return_value = [budget].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS]
 --EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
-		@Customer = 'Defense'
+		@Customer = NULL -- 'Defense'
 
 
 SET ANSI_WARNINGS OFF;
