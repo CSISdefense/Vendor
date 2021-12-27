@@ -39,7 +39,7 @@ shinyServer(function(input, output, session) {
 
   # in case user renames the data-frame choosing variables
   vars <- reactiveValues(
-    fiscal_year = "fiscal_year",
+    Fiscal_Year = "Fiscal_Year",
     user_title = "None")
   
   # create working copies of the data for user modification, while retaining
@@ -55,7 +55,7 @@ shinyServer(function(input, output, session) {
     current_data=current_data,
     chart_geom = input$chart_geom,
     y_var = input$y_var,
-    fy_var= vars$fiscal_year,
+    fy_var= vars$Fiscal_Year,
     color_var = input$color_var,
     facet_var = input$facet_var,
     labels_and_colors = labels_and_colors,
@@ -105,7 +105,7 @@ shinyServer(function(input, output, session) {
       if(input$chart_geom == "Double Stacked") {
         plotdata <- csis360::format_data_for_plot(data=current_data,
                                                   share=FALSE,
-                                                  fy_var=vars$fiscal_year,
+                                                  fy_var=vars$Fiscal_Year,
                                                   start_fy=input$year[1],
                                                   end_fy=input$year[2],
                                                   y_var=input$y_var,
@@ -115,7 +115,7 @@ shinyServer(function(input, output, session) {
         
         sharedata <-   csis360::format_data_for_plot(data=current_data,
                                                      share=TRUE,
-                                                     fy_var=vars$fiscal_year,
+                                                     fy_var=vars$Fiscal_Year,
                                                      start_fy=input$year[1],
                                                      end_fy=input$year[2],
                                                      y_var=input$y_var,
@@ -130,7 +130,7 @@ shinyServer(function(input, output, session) {
       } else{
         plot_data<-csis360::format_data_for_plot(data=current_data,
                                       share=ifelse(input$y_total_or_share == "As Share",TRUE,FALSE),
-                                      fy_var=vars$fiscal_year,
+                                      fy_var=vars$Fiscal_Year,
                                       start_fy=input$year[1],
                                       end_fy=input$year[2],
                                       y_var=input$y_var,
@@ -162,7 +162,7 @@ shinyServer(function(input, output, session) {
     current_data=current_data,
     chart_geom = input$chart_geom,
     y_var = input$y_var,
-    fy_var= vars$fiscal_year,
+    fy_var= vars$Fiscal_Year,
     color_var = input$color_var,
     facet_var = input$facet_var,
     labels_and_colors = labels_and_colors,
@@ -200,7 +200,7 @@ shinyServer(function(input, output, session) {
     current_data=current_data,
     chart_geom = input$chart_geom,
     y_var = input$y_var,
-    fy_var= vars$fiscal_year,
+    fy_var= vars$Fiscal_Year,
     color_var = input$color_var,
     facet_var = input$facet_var,
     labels_and_colors = labels_and_colors,
@@ -234,7 +234,7 @@ shinyServer(function(input, output, session) {
   #   current_data=current_data,
   #   chart_geom = input$chart_geom,
   #   y_var = input$y_var,
-  #   fy_var= vars$fiscal_year,
+  #   fy_var= vars$Fiscal_Year,
   #   color_var = input$color_var,
   #   facet_var = input$facet_var,
   #   labels_and_colors = labels_and_colors,
@@ -375,8 +375,8 @@ shinyServer(function(input, output, session) {
       names(changed_data)[names(changed_data) == input$edit_var] <<-
         input$rename_var_txt
       
-      if(input$edit_var == vars$fiscal_year) {
-        vars$fiscal_year <- input$rename_var_txt
+      if(input$edit_var == vars$Fiscal_Year) {
+        vars$Fiscal_Year <- input$rename_var_txt
       }
       
       removeUI(selector = "#edit_var_select")
@@ -394,8 +394,8 @@ shinyServer(function(input, output, session) {
       
       changed_data <<- rename_value(changed_data, input)
       
-      if(input$edit_var == vars$fiscal_year) {
-        vars$fiscal_year <- input$rename_var_txt
+      if(input$edit_var == vars$Fiscal_Year) {
+        vars$Fiscal_Year <- input$rename_var_txt
       }
       
       removeUI(selector = "#edit_value_select")
@@ -421,14 +421,14 @@ shinyServer(function(input, output, session) {
       stringsAsFactors = TRUE,
       data.table = FALSE)
     #This is a bad way to do this.
-    vars$fiscal_year <- names(original_data)[1]
+    vars$Fiscal_Year <- names(original_data)[1]
     
     if("Action.Obligation" %in% tolower(colnames(original_data))){
       sum_index <-
         which(tolower(colnames(original_data)) == "Action.Obligation")
       
       original_data <- deflate(original_data,
-                               fy_var = vars$fiscal_year,
+                               fy_var = vars$Fiscal_Year,
                                money_var = colnames(original_data)[sum_index]
       )
       

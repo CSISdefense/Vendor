@@ -46,7 +46,7 @@ summary(factor(platpsc$ProjectPlatform))
 
 topplat<-platpsc %>% group_by (ProjectName,PlatformPortfolio) %>%
   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
-            Action_Obligation_2020=sum(ifelse(fiscal_year==2020,Action_Obligation_OMB20_GDP20,0)))%>%
+            Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0)))%>%
               group_by (PlatformPortfolio) %>%
     mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
                         rank_2020=rank(desc(Action_Obligation_2020)))
@@ -74,7 +74,7 @@ summary(factor(platpsc$ProjectPlatform))
 
 topPSC<-platpsc %>% group_by (ProductOrServiceCode,ProductOrServiceCodeText,PlatformPortfolio) %>%
   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
-            Action_Obligation_2020=sum(ifelse(fiscal_year==2020,Action_Obligation_OMB20_GDP20,0)))%>%
+            Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0)))%>%
               group_by (PlatformPortfolio) %>%
     mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
                         rank_2020=rank(desc(Action_Obligation_2020)))
@@ -106,14 +106,14 @@ summary(factor(platpsc$TopPStext))
 
 # test$pop_isna<-is.na(test$pop_state_code)
 # test$sc_isna<-is.na(test$PlaceStateCode)
-# test %>% group_by(Fiscal.Year,pop_isna,sc_isna) %>%
-#   summarise(n=length(Fiscal.Year))
+# test %>% group_by(Fiscal_Year,pop_isna,sc_isna) %>%
+#   summarise(n=length(Fiscal_Year))
 
 # summary(factor(test$CrisisProductOrServiceArea))
-colnames(test)[colnames(test)=="Fiscal.Year"]<-"fiscal_year"
+colnames(test)[colnames(test)=="Fiscal_Year"]<-"Fiscal_Year"
 topState<-test %>% group_by (pop_state_code,CrisisProductOrServiceArea) %>%
   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
-            Action_Obligation_2020=sum(ifelse(fiscal_year==2020,Action_Obligation_OMB20_GDP20,0)))%>%
+            Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0)))%>%
               group_by (CrisisProductOrServiceArea) %>%
     mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
                         rank_2020=rank(desc(Action_Obligation_2020)))
@@ -145,10 +145,10 @@ test$TopStateAbbr[is.na(test$TopStateAbbr) & !is.na(test$pop_state_code)]<-
 ```{r PreprocessCountry}
 
 # summary(factor(test$CrisisProductOrServiceArea))
-colnames(test)[colnames(test)=="Fiscal.Year"]<-"fiscal_year"
+colnames(test)[colnames(test)=="Fiscal_Year"]<-"Fiscal_Year"
 topCountry<-test %>% group_by (PlaceISOalpha3,CrisisProductOrServiceArea) %>%
   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
-            Action_Obligation_2020=sum(ifelse(fiscal_year==2020,Action_Obligation_OMB20_GDP20,0)))%>%
+            Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0)))%>%
               group_by (CrisisProductOrServiceArea) %>%
     mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
                         rank_2020=rank(desc(Action_Obligation_2020)))
@@ -181,7 +181,7 @@ test$TopCountryISO[is.na(test$TopCountryISO) & !is.na(test$PlaceISOalpha3)]<-
 
 topAgency<-sw %>% group_by (Contracting_Agency_ID,ContractingAgencyName,Customer) %>% #,PlatformPortfolio
   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
-            Action_Obligation_2020=sum(ifelse(fiscal_year==2020,Action_Obligation_OMB20_GDP20,0)))%>%
+            Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0)))%>%
               group_by (Customer) %>%
     mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
                         rank_2020=rank(desc(Action_Obligation_2020)))
@@ -267,15 +267,15 @@ ggsave600dpi("..//Output//topline_subcustomer_JPO_wide.png", SubCustomer+labs(ca
 
 
 write.csv(file="..//Output//topline_subcustomer_JPO.csv",row.names = FALSE,
-          SubCustomer$data%>% mutate(fiscal_year=lubridate::year(dFYear))%>%
+          SubCustomer$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
           pivot_wider(id_cols=c(SubCustomer.sum,SubCustomer.JPO),
-                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20))
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20))
 
 write.csv(file="..//Output//topline_subcustomer_JPO_current.csv",row.names = FALSE,
-          platpsc %>% group_by(SubCustomer.sum,SubCustomer.JPO,fiscal_year)%>%
+          platpsc %>% group_by(SubCustomer.sum,SubCustomer.JPO,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(SubCustomer.sum,SubCustomer.JPO),
-                      names_from=fiscal_year,values_from=Action_Obligation_Then_Year))
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
 
 summary(full_data$ContractingSubCustomer)
 ```
@@ -291,7 +291,7 @@ Services<-build_plot(
   share = FALSE,
   labels_and_colors=detail_lc,
   # NA, #VAR.ncol
-  x_var="fiscal_year", #x_var
+  x_var="Fiscal_Year", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
   color_var="CrisisProductOrServiceArea", #color_var
   # facet_var="Competition.sum", #facet_var
@@ -318,16 +318,16 @@ ggsave600dpi("..//Output//cpsr_Services.png", Services,
 
 write.csv(file="..//Output//cpsr_Services.csv",row.names = FALSE,
           pivot_wider(Services$data,id_cols=c(CrisisProductOrServiceArea),
-                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20)%>%
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>%
             arrange(CrisisProductOrServiceArea))
             
 
 write.csv(file="..//Output//psr_Services_current.csv",row.names = FALSE,
           full_data %>% filter(ProductServiceOrRnDarea.sum=="R&D") %>%
-            format_data_for_plot(fy_var="fiscal_year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
+            format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
                                  labels_and_colors=labels_and_colors) %>%
           pivot_wider(id_cols=c(ProductServiceOrRnDarea),
-                      names_from=fiscal_year,values_from=Action_Obligation_Then_Year)%>%
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
             arrange(ProductServiceOrRnDarea))
 
 ```
@@ -340,11 +340,11 @@ write.csv(file="..//Output//psr_Services_current.csv",row.names = FALSE,
 ## Aircraft System
 ```{r Aircraft}
 # summary(factor(platpsc$ProjectPlatform))
-# platpsc$fiscal_year
+# platpsc$Fiscal_Year
 # 
 # topplat<-platpsc %>% filter(PlatformPortfolio=="Aircraft") %>% group_by (ProjectName) %>%
 #   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
-#             Action_Obligation_2020=sum(ifelse(fiscal_year==2020,Action_Obligation_OMB20_GDP20,0))
+#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
 #                         rank_2020=rank(desc(Action_Obligation_2020)))
 # topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
@@ -387,22 +387,22 @@ Platform<-build_plot(
   
   write.csv(file="..//Output//Aircraft_project_cur.csv",row.names = FALSE,
             platpsc %>% filter(PlatformPortfolio=="Aircraft")  %>%
-              format_data_for_plot(fy_var="fiscal_year",y_var="Action_Obligation_Then_Year",color_var = "TopProject"#,
+              format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "TopProject"#,
                                    # labels_and_colors=labels_and_colors
-                                   )%>% arrange(fiscal_year) %>%
+                                   )%>% arrange(Fiscal_Year) %>%
             pivot_wider(id_cols=c(TopProject),
-                        names_from=fiscal_year,values_from=Action_Obligation_Then_Year)%>%
+                        names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
               arrange(TopProject))
 ```
 
 ## Ships and Submarines
 ```{r ShipsAndSubs}
 # summary(factor(platpsc$ProjectPlatform))
-# platpsc$fiscal_year
+# platpsc$Fiscal_Year
 # 
 # topplat<-platpsc %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
 #   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
-#             Action_Obligation_2020=sum(ifelse(fiscal_year==2020,Action_Obligation_OMB20_GDP20,0))
+#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
 #                         rank_2020=rank(desc(Action_Obligation_2020)))
 # topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
@@ -444,11 +444,11 @@ Platform<-build_plot(
 
  write.csv(file="..//Output//ShipSub_project_current.csv",row.names = FALSE,na="",
             platpsc %>% filter(PlatformPortfolio=="Ships & Submarines")  %>%
-              format_data_for_plot(fy_var="fiscal_year",y_var="Action_Obligation_Then_Year",color_var = "TopProject"#,
+              format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "TopProject"#,
                                    # labels_and_colors=labels_and_colors
-                                   )%>% arrange(fiscal_year) %>%
+                                   )%>% arrange(Fiscal_Year) %>%
             pivot_wider(id_cols=c(TopProject),
-                        names_from=fiscal_year,values_from=Action_Obligation_Then_Year)%>%
+                        names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
               arrange(TopProject))
 ```
 
@@ -456,11 +456,11 @@ Platform<-build_plot(
 ## Ordnance and Missiles
 ```{r OrdMissiles}
 summary(factor(platpsc$ProjectPlatform))
-# platpsc$fiscal_year
+# platpsc$Fiscal_Year
 # 
 # topplat<-platpsc %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
 #   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
-#             Action_Obligation_2020=sum(ifelse(fiscal_year==2020,Action_Obligation_OMB20_GDP20,0))
+#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
 #                         rank_2020=rank(desc(Action_Obligation_2020)))
 # topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
@@ -531,11 +531,11 @@ PSC<-build_plot(
 
 write.csv(file="..//Output//OrdMiss_psc_current.csv",row.names = FALSE,na="",
             platpsc %>% filter(PlatformPortfolio=="Ordnance and Missiles")  %>%
-              format_data_for_plot(fy_var="fiscal_year",y_var="Action_Obligation_Then_Year",color_var = "TopPStext"#,
+              format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "TopPStext"#,
                                    # labels_and_colors=labels_and_colors
-                                   )%>% arrange(fiscal_year) %>%
+                                   )%>% arrange(Fiscal_Year) %>%
             pivot_wider(id_cols=c(TopPStext),
-                        names_from=fiscal_year,values_from=Action_Obligation_Then_Year)%>%
+                        names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
               arrange(TopPStext))
 
 ```
@@ -543,11 +543,11 @@ write.csv(file="..//Output//OrdMiss_psc_current.csv",row.names = FALSE,na="",
 ## Air and Missile Defesnse
 ```{r Defense}
 summary(factor(platpsc$ProjectPlatform))
-# platpsc$fiscal_year
+# platpsc$Fiscal_Year
 # 
 # topplat<-platpsc %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
 #   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
-#             Action_Obligation_2020=sum(ifelse(fiscal_year==2020,Action_Obligation_OMB20_GDP20,0))
+#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
 #                         rank_2020=rank(desc(Action_Obligation_2020)))
 # topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
@@ -622,11 +622,11 @@ PSC<-build_plot(
 ## Electronics Comms and Sensors
 ```{r ElecCommsSensors}
 summary(factor(platpsc$ProjectPlatform))
-# platpsc$fiscal_year
+# platpsc$Fiscal_Year
 # 
 # topplat<-platpsc %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
 #   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
-#             Action_Obligation_2020=sum(ifelse(fiscal_year==2020,Action_Obligation_OMB20_GDP20,0))
+#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
 #                         rank_2020=rank(desc(Action_Obligation_2020)))
 # topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
@@ -701,11 +701,11 @@ PSC<-build_plot(
 ## Space Systems
 ```{r Space}
 summary(factor(platpsc$ProjectPlatform))
-# platpsc$fiscal_year
+# platpsc$Fiscal_Year
 # 
 # topplat<-platpsc %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
 #   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
-#             Action_Obligation_2020=sum(ifelse(fiscal_year==2020,Action_Obligation_OMB20_GDP20,0))
+#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
 #                         rank_2020=rank(desc(Action_Obligation_2020)))
 # topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
@@ -778,11 +778,11 @@ PSC<-build_plot(
 ## Land Vehicles
 ```{r Land}
 summary(factor(platpsc$ProjectPlatform))
-# platpsc$fiscal_year
+# platpsc$Fiscal_Year
 # 
 # topplat<-platpsc %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
 #   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
-#             Action_Obligation_2020=sum(ifelse(fiscal_year==2020,Action_Obligation_OMB20_GDP20,0))
+#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
 #                         rank_2020=rank(desc(Action_Obligation_2020)))
 # topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
@@ -855,11 +855,11 @@ PSC<-build_plot(
 ## Facility Related And Construction
 ```{r FRSnC}
 summary(factor(platpsc$ProjectPlatform))
-# platpsc$fiscal_year
+# platpsc$Fiscal_Year
 # 
 # topplat<-platpsc %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
 #   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
-#             Action_Obligation_2020=sum(ifelse(fiscal_year==2020,Action_Obligation_OMB20_GDP20,0))
+#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
 #                         rank_2020=rank(desc(Action_Obligation_2020)))
 # topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
@@ -932,11 +932,11 @@ PSC<-build_plot(
 ## Construction
 ```{r FRSnC}
 summary(factor(test$CrisisProductOrServiceArea))
-# test$fiscal_year
+# test$Fiscal_Year
 # 
 # topplat<-test %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
 #   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
-#             Action_Obligation_2020=sum(ifelse(fiscal_year==2020,Action_Obligation_OMB20_GDP20,0))
+#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
 #                         rank_2020=rank(desc(Action_Obligation_2020)))
 # topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
@@ -955,7 +955,7 @@ State<-build_plot(
   share = FALSE,
   # labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="fiscal_year", #x_var
+  x_var="Fiscal_Year", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
   color_var="TopStateAbbr", #color_var
   facet_var="TopStateAbbr", #facet_var
@@ -982,7 +982,7 @@ State<-build_plot(
   share = FALSE,
   # labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="fiscal_year", #x_var
+  x_var="Fiscal_Year", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
   color_var="TopStateAbbr", #color_var
   facet_var="TopStateAbbr", #facet_var
@@ -1011,7 +1011,7 @@ Country<-build_plot(
   share = FALSE,
   # labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="fiscal_year", #x_var
+  x_var="Fiscal_Year", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
   color_var="TopCountryISO", #color_var
   facet_var="TopCountryISO", #facet_var
@@ -1075,7 +1075,7 @@ summary(fpds_data$foreign_funding_description)
 (contract_identification <-  build_plot(data=platpscintldef %>% filter(Customer=="Defense"),
                             chart_geom="Bar Chart",
                             share=FALSE,
-                            x_var="Fiscal.Year",
+                            x_var="Fiscal_Year",
                             y_var="Action_Obligation_OMB20_GDP20",
                             color_var="foreign_funding_description",
                             facet_var="IsFMS",
@@ -1104,10 +1104,10 @@ summary(factor(platpscintldef$Shiny.VendorSize[platpscintldef$VendorIsForeign==1
 summary(platpscintldef$VendorSize_Intl)
 
 # undebug(format_data_for_plot)
-(jsf_vendor_intl_place <-  build_plot(data=platpscintldef %>% filter(IsJSF=="JSF (F-35)"& Fiscal.Year>2011),
+(jsf_vendor_intl_place <-  build_plot(data=platpscintldef %>% filter(IsJSF=="JSF (F-35)"& Fiscal_Year>2011),
                                        #IsFMS==TRUE 
                                        chart_geom="Bar Chart",
-                            x_var="Fiscal.Year",
+                            x_var="Fiscal_Year",
                             y_var="Action_Obligation_OMB20_GDP20",
                             color_var="VendorSize_Intl",
                             facet_var="PlaceIsForeign",
@@ -1124,7 +1124,7 @@ summary(platpscintldef$VendorSize_Intl)
 write.csv(file="..//Output//jsf_vendor_intl_place.csv",row.names = FALSE,
           jsf_vendor_intl_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(VendorSize_Intl,IsFMS, PlaceIsForeign),
-                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,VendorSize_Intl))
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,VendorSize_Intl))
 
 ggsave600dpi(jsf_vendor_intl_place,file="../output/jsf_vendor_intl_place.png",
              size = 12, lineheight=1, height =4.5, width=9)
@@ -1132,9 +1132,9 @@ ggsave600dpi(jsf_vendor_intl_place,file="../output/jsf_vendor_intl_place.png",
 
 # platpscintldef$Shiny.VendorSize
 # undebug(format_data_for_plot)
-(jsf_manufacture_intl_place <-  build_plot(data=platpscintldef%>% filter(IsJSF=="JSF (F-35)"& Fiscal.Year>2011),              
+(jsf_manufacture_intl_place <-  build_plot(data=platpscintldef%>% filter(IsJSF=="JSF (F-35)"& Fiscal_Year>2011),              
                                             chart_geom="Bar Chart",
-                            x_var="Fiscal.Year",
+                            x_var="Fiscal_Year",
                             y_var="Action_Obligation_OMB20_GDP20",
                             color_var="PlaceOfManufacture_Sum",
                             facet_var="PlaceIsForeign",
@@ -1151,15 +1151,15 @@ ggsave600dpi(jsf_vendor_intl_place,file="../output/jsf_vendor_intl_place.png",
 write.csv(file="..//Output//jsf_manufacture_intl_place.csv",row.names = FALSE,
           jsf_manufacture_intl_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(PlaceIsForeign,IsFMS, PlaceOfManufacture_Sum),
-                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,PlaceOfManufacture_Sum))
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,PlaceOfManufacture_Sum))
 
 ggsave600dpi(jsf_manufacture_intl_place,file="../output/jsf_manufacture_intl_place.png",
              size = 12, lineheight=1, height =4.5, width=9)
 
 platpscintldef$OriginISOalpha3
-(jsf_manufacture_intl_place <-  build_plot(data=platpscintldef%>% filter(IsJSF=="JSF (F-35)"& Fiscal.Year>2011),              
+(jsf_manufacture_intl_place <-  build_plot(data=platpscintldef%>% filter(IsJSF=="JSF (F-35)"& Fiscal_Year>2011),              
                                             chart_geom="Bar Chart",
-                            x_var="Fiscal.Year",
+                            x_var="Fiscal_Year",
                             y_var="Action_Obligation_OMB20_GDP20",
                             color_var="OriginISOalpha3",
                             facet_var="PlaceIsForeign",
@@ -1185,10 +1185,10 @@ summary(platpscintldef$VendorSize_Intl)
 
 # undebug(format_data_for_plot)
 (fpds_vendor_intl_place <-  build_plot(data=platpscintldef %>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign)&
-                                                                      !is.na(IsFMS)& Fiscal.Year>2011),
+                                                                      !is.na(IsFMS)& Fiscal_Year>2011),
                                        #IsFMS==TRUE 
                                        chart_geom="Bar Chart",
-                            x_var="Fiscal.Year",
+                            x_var="Fiscal_Year",
                             y_var="Action_Obligation_OMB20_GDP20",
                             color_var="VendorSize_Intl",
                             facet_var="PlaceIsForeign",
@@ -1205,7 +1205,7 @@ summary(platpscintldef$VendorSize_Intl)
 write.csv(file="..//Output//FMS_vendorplaceintl_all.csv",row.names = FALSE,
           fpds_vendor_intl_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(VendorSize_Intl,IsFMS, PlaceIsForeign),
-                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,VendorSize_Intl))
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,VendorSize_Intl))
 
 ggsave600dpi(fpds_vendor_intl_place,file="../output/FMS_vendorplaceintl_all.png",
              size = 12, lineheight=1, height =4.5, width=9)
@@ -1213,9 +1213,9 @@ ggsave600dpi(fpds_vendor_intl_place,file="../output/FMS_vendorplaceintl_all.png"
 
 # platpscintldef$Shiny.VendorSize
 (fpds_vendor_place <-  build_plot(data=platpscintldef %>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign)&
-                                                                      !is.na(IsFMS)&Fiscal.Year>2011 ),#IsFMS==TRUE  
+                                                                      !is.na(IsFMS)&Fiscal_Year>2011 ),#IsFMS==TRUE  
                             chart_geom="Bar Chart",
-                            x_var="Fiscal.Year",
+                            x_var="Fiscal_Year",
                             y_var="Action_Obligation_OMB20_GDP20",
                             color_var="Shiny.VendorSize",
                             facet_var="PlaceIsForeign",
@@ -1235,7 +1235,7 @@ ggsave600dpi(fpds_vendor_place,file="../output/FMS_vendorplace_all.png",
 write.csv(file="..//Output//FMS_vendorplace_all.csv",row.names = FALSE,
           fpds_vendor_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(Shiny.VendorSize,PlaceIsForeign,IsFMS),
-                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,Shiny.VendorSize,IsFMS))
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,Shiny.VendorSize,IsFMS))
 
 
 ```
@@ -1248,11 +1248,11 @@ summary(platpscintldef$VendorSize_Intl)
 
 # undebug(format_data_for_plot)
 (fpds_vendor_intl_place_noJSF <-  build_plot(data=platpscintldef %>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign)&
-                                                                      !is.na(IsFMS)& Fiscal.Year>2011&
+                                                                      !is.na(IsFMS)& Fiscal_Year>2011&
                                                                             IsJSF %in% c("Other Project","Unknown Project")),
                                        #IsFMS==TRUE 
                                        chart_geom="Bar Chart",
-                            x_var="Fiscal.Year",
+                            x_var="Fiscal_Year",
                             y_var="Action_Obligation_OMB20_GDP20",
                             color_var="VendorSize_Intl",
                             facet_var="PlaceIsForeign",
@@ -1269,7 +1269,7 @@ summary(platpscintldef$VendorSize_Intl)
 write.csv(file="..//Output//FMS_vendorplaceintl_noJSF.csv",row.names = FALSE,
           fpds_vendor_intl_place_noJSF$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(VendorSize_Intl,IsFMS, PlaceIsForeign),
-                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,VendorSize_Intl))
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,VendorSize_Intl))
 
 ggsave600dpi(fpds_vendor_intl_place_noJSF,file="../output/FMS_vendorplaceintl_noJSF.png",
              size = 12, lineheight=1, height =4.5, width=9)
@@ -1277,10 +1277,10 @@ ggsave600dpi(fpds_vendor_intl_place_noJSF,file="../output/FMS_vendorplaceintl_no
 
 # platpscintldef$Shiny.VendorSize
 (fpds_vendor_place_noJSF <-  build_plot(data=platpscintldef %>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign)&
-                                                                      !is.na(IsFMS)&Fiscal.Year>2011&
+                                                                      !is.na(IsFMS)&Fiscal_Year>2011&
                                                                             IsJSF %in% c("Other Project","Unknown Project") ),#IsFMS==TRUE  
                             chart_geom="Bar Chart",
-                            x_var="Fiscal.Year",
+                            x_var="Fiscal_Year",
                             y_var="Action_Obligation_OMB20_GDP20",
                             color_var="Shiny.VendorSize",
                             facet_var="PlaceIsForeign",
@@ -1300,7 +1300,7 @@ ggsave600dpi(fpds_vendor_place_noJSF,file="../output/FMS_vendorplace_noJSF.png",
 write.csv(file="..//Output//FMS_vendorplace_noJSF.csv",row.names = FALSE,
           fpds_vendor_place_noJSF$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(Shiny.VendorSize,PlaceIsForeign,IsFMS),
-                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,Shiny.VendorSize,IsFMS))
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,Shiny.VendorSize,IsFMS))
 
 
 ```
@@ -1313,10 +1313,10 @@ summary(platpscintldef$VendorSize_Intl)
 
 # undebug(format_data_for_plot)
 (fpds_vendor_intl_place <-  build_plot(data=platpscintldef %>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign)&
-                                                                      !is.na(IsFMS)& Fiscal.Year>2011),
+                                                                      !is.na(IsFMS)& Fiscal_Year>2011),
                                        #IsFMS==TRUE 
                                        chart_geom="Bar Chart",
-                            x_var="Fiscal.Year",
+                            x_var="Fiscal_Year",
                             y_var="Action_Obligation_OMB20_GDP20",
                             color_var="VendorSize_Intl",
                             facet_var="IsJSF",
@@ -1333,7 +1333,7 @@ summary(platpscintldef$VendorSize_Intl)
 write.csv(file="..//Output//FMS_vendorplaceintl.csv",row.names = FALSE,
           fpds_vendor_intl_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(VendorSize_Intl,IsFMS, PlaceIsForeign),
-                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,VendorSize_Intl))
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,VendorSize_Intl))
 
 ggsave600dpi(fpds_vendor_intl_place,file="../output/FMS_vendorplaceintl.png",
              size = 12, lineheight=1, height =4.5, width=9)
@@ -1341,9 +1341,9 @@ ggsave600dpi(fpds_vendor_intl_place,file="../output/FMS_vendorplaceintl.png",
 
 # platpscintldef$Shiny.VendorSize
 (fpds_vendor_place <-  build_plot(data=platpscintldef %>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign)&
-                                                                      !is.na(IsFMS)&Fiscal.Year>2011 ),#IsFMS==TRUE  
+                                                                      !is.na(IsFMS)&Fiscal_Year>2011 ),#IsFMS==TRUE  
                             chart_geom="Bar Chart",
-                            x_var="Fiscal.Year",
+                            x_var="Fiscal_Year",
                             y_var="Action_Obligation_OMB20_GDP20",
                             color_var="Shiny.VendorSize",
                             facet_var="PlaceIsForeign",
@@ -1363,7 +1363,7 @@ ggsave600dpi(fpds_vendor_place,file="../output/FMS_vendorplace.png",
 write.csv(file="..//Output//FMS_vendorplace.csv",row.names = FALSE,
           fpds_vendor_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(Shiny.VendorSize,PlaceIsForeign,IsFMS),
-                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,Shiny.VendorSize,IsFMS))
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,Shiny.VendorSize,IsFMS))
 
 
 ```
@@ -1376,9 +1376,9 @@ write.csv(file="..//Output//FMS_vendorplace.csv",row.names = FALSE,
 
 # undebug(format_data_for_plot)
 (fpds_manufacture_intl_place <-  build_plot(data=platpscintldef%>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign) &
-                                                                            Fiscal.Year>2011 & !is.na(IsFMS)),#IsFMS==TRUE                             
+                                                                            Fiscal_Year>2011 & !is.na(IsFMS)),#IsFMS==TRUE                             
                                             chart_geom="Bar Chart",
-                            x_var="Fiscal.Year",
+                            x_var="Fiscal_Year",
                             y_var="Action_Obligation_OMB20_GDP20",
                             color_var="PlaceOfManufacture_Sum",
                             facet_var="PlaceIsForeign",
@@ -1395,7 +1395,7 @@ write.csv(file="..//Output//FMS_vendorplace.csv",row.names = FALSE,
 write.csv(file="..//Output//FMS_BAAplaceintl_all.csv",row.names = FALSE,
           fpds_manufacture_intl_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(PlaceIsForeign,IsFMS, PlaceOfManufacture_Sum),
-                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,PlaceOfManufacture_Sum))
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,PlaceOfManufacture_Sum))
 
 ggsave600dpi(fpds_manufacture_intl_place,file="../output/FMS_BAAplaceintl_all.png",
              size = 12, lineheight=1, height =4.5, width=9)
@@ -1408,10 +1408,10 @@ ggsave600dpi(fpds_manufacture_intl_place,file="../output/FMS_BAAplaceintl_all.pn
 summary(factor(platpscintldef$IsJSF))
 # undebug(format_data_for_plot)
 (fpds_manufacture_intl_place_noJSF <-  build_plot(data=platpscintldef%>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign) &
-                                                                            Fiscal.Year>2011 & !is.na(IsFMS)&
+                                                                            Fiscal_Year>2011 & !is.na(IsFMS)&
                                                                             IsJSF %in% c("Other Project","Unknown Project")),#IsFMS==TRUE                             
                                             chart_geom="Bar Chart",
-                            x_var="Fiscal.Year",
+                            x_var="Fiscal_Year",
                             y_var="Action_Obligation_OMB20_GDP20",
                             color_var="PlaceOfManufacture_Sum",
                             facet_var="PlaceIsForeign",
@@ -1428,7 +1428,7 @@ summary(factor(platpscintldef$IsJSF))
 write.csv(file="..//Output//FMS_BAAplaceintl_noJSF.csv",row.names = FALSE,
           fpds_manufacture_intl_place_noJSF$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(PlaceIsForeign,IsFMS, PlaceOfManufacture_Sum),
-                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,PlaceOfManufacture_Sum))
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,PlaceOfManufacture_Sum))
 
 ggsave600dpi(fpds_manufacture_intl_place_noJSF,file="../output/FMS_BAAplaceintl_noJSF.png",
              size = 12, lineheight=1, height =4.5, width=9)
@@ -1441,9 +1441,9 @@ ggsave600dpi(fpds_manufacture_intl_place_noJSF,file="../output/FMS_BAAplaceintl_
 
 # undebug(format_data_for_plot)
 (fpds_manufacture_intl_place <-  build_plot(data=platpscintldef%>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign) &
-                                                                            Fiscal.Year>2011 & !is.na(IsFMS)),#IsFMS==TRUE                             
+                                                                            Fiscal_Year>2011 & !is.na(IsFMS)),#IsFMS==TRUE                             
                                             chart_geom="Bar Chart",
-                            x_var="Fiscal.Year",
+                            x_var="Fiscal_Year",
                             y_var="Action_Obligation_OMB20_GDP20",
                             color_var="PlaceOfManufacture_Sum",
                             facet_var="IsFMSplaceIntl",
@@ -1460,7 +1460,7 @@ ggsave600dpi(fpds_manufacture_intl_place_noJSF,file="../output/FMS_BAAplaceintl_
 write.csv(file="..//Output//FMS_BAAplaceintl.csv",row.names = FALSE,
           fpds_manufacture_intl_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(PlaceIsForeign,IsFMS, PlaceOfManufacture_Sum),
-                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,PlaceOfManufacture_Sum))
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,PlaceOfManufacture_Sum))
 ```
 
 
@@ -1472,10 +1472,10 @@ write.csv(file="..//Output//FMS_BAAplaceintl.csv",row.names = FALSE,
 summary(factor(platpscintldef$SimpleArea))
 # undebug(format_data_for_plot)
 (fmsintl_service <-  build_plot(data=platpscintldef%>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign) &
-                                                                            Fiscal.Year>2011 & !is.na(IsFMS)&
+                                                                            Fiscal_Year>2011 & !is.na(IsFMS)&
                                                                   SimpleArea=="Services"),#IsFMS==TRUE                             
                                             chart_geom="Bar Chart",
-                            x_var="Fiscal.Year",
+                            x_var="Fiscal_Year",
                             y_var="Action_Obligation_OMB20_GDP20",
                             color_var="CrisisProductOrServiceArea",
                             facet_var="PlaceIsForeign",
@@ -1490,16 +1490,16 @@ summary(factor(platpscintldef$SimpleArea))
 summary(platpscintldef$dFYear)
 
 write.csv(file="..//Output//fmsintl_service.csv",row.names = FALSE,
-          fmsintl_service$data%>%# mutate(Fiscal.Year=lubridate::year(dFYear))%>%
+          fmsintl_service$data%>%# mutate(Fiscal_Year=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(PlaceIsForeign,IsFMS,CrisisProductOrServiceArea),
-                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,CrisisProductOrServiceArea))
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,CrisisProductOrServiceArea))
 
 ggsave600dpi(fmsintl_service,file="../output/fmsintl_service.png",
              size = 12, lineheight=1, height =6, width=9)
 
 
 (fmsintl_service_vendor <-  build_plot(data=platpscintldef%>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign) &
-                                                                            Fiscal.Year>2011 & !is.na(IsFMS)&
+                                                                            Fiscal_Year>2011 & !is.na(IsFMS)&
                                                                   SimpleArea=="Services"),#IsFMS==TRUE                             
                                             chart_geom="Bar Chart",
                             x_var="dFYear",
@@ -1518,9 +1518,9 @@ ggsave600dpi(fmsintl_service,file="../output/fmsintl_service.png",
 
 
 write.csv(file="..//Output//fmsintl_service_vendor.csv",row.names = FALSE,
-          fmsintl_service_vendor$data%>% mutate(Fiscal.Year=lubridate::year(dFYear))%>%
+          fmsintl_service_vendor$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(IsFMSplaceIntl,VendorSize_Intl,CrisisProductOrServiceArea),
-                        names_from=Fiscal.Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(IsFMSplaceIntl,VendorSize_Intl,CrisisProductOrServiceArea))
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(IsFMSplaceIntl,VendorSize_Intl,CrisisProductOrServiceArea))
 
 ggsave600dpi(fmsintl_service_vendor,file="../output/fmsintl_service_vendor.png",
              size = 12, lineheight=1, height =6, width=9)
@@ -1546,10 +1546,10 @@ sw$SWpsc[sw$SWpsc =="Services" ]<-"Other ADP Services"
 sw %>% 
   group_by(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText)%>% summarise(o=sum(Action_Obligation_OMB20_GDP20))
 
-write.csv(sw %>% filter(fiscal_year>=2000) %>%
-  group_by(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText,fiscal_year)%>% summarise(o=sum(Action_Obligation_OMB20_GDP20))%>%#/1000000000
-    arrange(fiscal_year)%>%pivot_wider(id_cols=c(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText),
-                names_from=fiscal_year,values_from=o)%>%arrange(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText)
+write.csv(sw %>% filter(Fiscal_Year>=2000) %>%
+  group_by(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText,Fiscal_Year)%>% summarise(o=sum(Action_Obligation_OMB20_GDP20))%>%#/1000000000
+    arrange(Fiscal_Year)%>%pivot_wider(id_cols=c(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText),
+                names_from=Fiscal_Year,values_from=o)%>%arrange(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText)
   ,file="..\\output\\Software_Prodserv.csv",row.names = FALSE)
 
 
@@ -1594,13 +1594,13 @@ sw<-sw %>% filter(ProductOrServiceCode %in% c("D305", "D317","D319", "7030","D30
 summary(platpsc$ProductServiceOrRnDarea)
 (
 SWpscdetail<-build_plot(
-  data=sw %>% filter(fiscal_year>=2002 & ProductServiceOrRnDarea!="Unlabeled" &
+  data=sw %>% filter(Fiscal_Year>=2002 & ProductServiceOrRnDarea!="Unlabeled" &
                             !SWpsc %in% c("Other Services" ,"Other Products","R&D" ))  ,
   chart_geom = "Bar Chart",
   share = FALSE,
   # labels_and_colors=sw_lc,
   # NA, #VAR.ncol
-  x_var="fiscal_year", #x_var
+  x_var="Fiscal_Year", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
   color_var="SWpsc", #color_var
   facet_var="SWpsc", #facet_var
@@ -1626,17 +1626,17 @@ SWpscdetail<-build_plot(
 
 write.csv(file="..//Output//Software_prodserv.csv",row.names = FALSE,
           arrange(pivot_wider(SWpscdetail$data %>% 
-                        arrange(dFYear) %>% mutate(fiscal_year=lubridate::year(dFYear)),
+                        arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
                       id_cols=c(SWpsc),
-                      names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20),SWpsc))
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20),SWpsc))
 
 
 
 # write.csv(file="..//Output//Software_prodserv_comm.csv",row.names = FALSE,
 #           arrange(pivot_wider(SWpscdetail$data %>% 
-#                         arrange(dFYear) %>% mutate(fiscal_year=lubridate::year(dFYear)),
+#                         arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
 #                       id_cols=c(SWpsc,Commercial),
-#                       names_from=fiscal_year,values_from=Action_Obligation_OMB20_GDP20),SWpsc,Commercial))
+#                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20),SWpsc,Commercial))
 
 ggsave600dpi(SWpscdetail,file="..//output//Software_prodserv.png",  
              width=13, height= 6, units="in",size=16, lineheight=1.2
@@ -1657,12 +1657,12 @@ sw %>% filter(Customer=="Other Agencies") %>% group_by(ProductOrServiceCodeText,
 
 (
 SWpscdetail<-build_plot(
-  data=sw %>% filter(fiscal_year>=2000 )  ,
+  data=sw %>% filter(Fiscal_Year>=2000 )  ,
   chart_geom = "Bar Chart",
   share = FALSE,
   # labels_and_colors=sw_lc,
   # NA, #VAR.ncol
-  x_var="fiscal_year", #x_var
+  x_var="Fiscal_Year", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
   color_var="SWpsc", #color_var
   facet_var="Customer", #facet_var
@@ -1691,11 +1691,11 @@ ggsave600dpi(SWpscdetail,file="..//output//Software_Customer_Agency.eps",
              )
 
 write.csv(file="..//Output//Software_Customer.csv",row.names = FALSE,
-          SWpscdetail$data %>% mutate(#fiscal_year=lubridate::year(dFYear),
+          SWpscdetail$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
                                 bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
-            arrange(fiscal_year)%>%
+            arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(Customer,SWpsc),
-                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+                      names_from=Fiscal_Year,values_from=bAction_Obligation_OMB20_GDP20)%>%
             arrange(Customer,SWpsc),na="")
 
 ```
@@ -1705,12 +1705,12 @@ write.csv(file="..//Output//Software_Customer.csv",row.names = FALSE,
 
 (
 SWpscDoDcomp<-build_plot(
-  data=sw %>% filter(fiscal_year>=2000 & Customer=="Defense")  ,
+  data=sw %>% filter(Fiscal_Year>=2000 & Customer=="Defense")  ,
   chart_geom = "Bar Chart",
   share = FALSE,
   # labels_and_colors=sw_lc,
   # NA, #VAR.ncol
-  x_var="fiscal_year", #x_var
+  x_var="Fiscal_Year", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
   color_var="SWpsc", #color_var
   facet_var="TopAgencyText", #facet_var
@@ -1739,11 +1739,11 @@ ggsave600dpi(SWpscDoDcomp,file="..//output//Software_Defense_Agency.eps",
              )
 
 write.csv(file="..//Output//SWpscDoDcomp.csv",row.names = FALSE,
-          SWpscDoDcomp$data %>% mutate(#fiscal_year=lubridate::year(dFYear),
+          SWpscDoDcomp$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
                                 bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
-            arrange(fiscal_year)%>%
+            arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(TopAgencyText,SWpsc),
-                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+                      names_from=Fiscal_Year,values_from=bAction_Obligation_OMB20_GDP20)%>%
             arrange(TopAgencyText,SWpsc),na="")
 
 ```
@@ -1754,12 +1754,12 @@ write.csv(file="..//Output//SWpscDoDcomp.csv",row.names = FALSE,
 
 (
 SoftwareComp<-build_plot(
-  data=sw %>% filter(fiscal_year>=2000),
+  data=sw %>% filter(Fiscal_Year>=2000),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=sw_lc,
   # NA, #VAR.ncol
-  x_var="fiscal_year", #x_var
+  x_var="Fiscal_Year", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
   color_var="Competition.sum", #color_var
   facet_var="SWpsc", #facet_var
@@ -1786,11 +1786,11 @@ ggsave600dpi("..//Output//Software_comp.png", SoftwareComp,
 
 
 write.csv(file="..//Output//Software_competition.csv",row.names = FALSE,
-          SoftwareComp$data %>% mutate(#fiscal_year=lubridate::year(dFYear),
+          SoftwareComp$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
                                 bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
-            arrange(fiscal_year)%>%
+            arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(SWpsc,Competition.sum),
-                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+                      names_from=Fiscal_Year,values_from=bAction_Obligation_OMB20_GDP20)%>%
             arrange(SWpsc,Competition.sum),na="")
 
 ```
@@ -1801,7 +1801,7 @@ write.csv(file="..//Output//Software_competition.csv",row.names = FALSE,
 library(scales)
 (
 SoftwareVendor<-build_plot(
-  data=sw %>% filter(fiscal_year>=2000),
+  data=sw %>% filter(Fiscal_Year>=2000),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=sw_lc,
@@ -1881,20 +1881,20 @@ ggsave600dpi("..//Output//Software_vendor.eps", SoftwareVendor+
 
 # 
 # write.csv(file="..//Output//Software_vendor_cur.csv",row.names = FALSE,
-#           sw %>% group_by(Shiny.VendorSize,fiscal_year)%>%
+#           sw %>% group_by(Shiny.VendorSize,Fiscal_Year)%>%
 #             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE)/1000000000)%>%
 #           pivot_wider(id_cols=c(Shiny.VendorSize),
-#                       names_from=fiscal_year,values_from=Action_Obligation_Then_Year)%>% arrange(Shiny.VendorSize))
+#                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(Shiny.VendorSize))
 # 
 
 
 
 write.csv(file="..//Output//Software_vendor.csv",row.names = FALSE,
-          SoftwareVendor$data %>% mutate(fiscal_year=lubridate::year(dFYear),
+          SoftwareVendor$data %>% mutate(Fiscal_Year=lubridate::year(dFYear),
                                 bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
-            arrange(fiscal_year)%>%
+            arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(SWpsc,Shiny.VendorSize),
-                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+                      names_from=Fiscal_Year,values_from=bAction_Obligation_OMB20_GDP20)%>%
             arrange(SWpsc,Shiny.VendorSize),na="")
 
 
@@ -1939,10 +1939,10 @@ ggsave600dpi("..//Output//Software_vehicle.png", SoftwareVehicle,
              )
 
 write.csv(file="..//Output//Software_vehicle.csv",row.names = FALSE,
-          SoftwareVehicle$data%>% mutate(fiscal_year=lubridate::year(dFYear),
+          SoftwareVehicle$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
                                        bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
             pivot_wider(id_cols=c(Vehicle.sum,Vehicle.AwardTask),
-                        names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%arrange(Vehicle.sum,Vehicle.AwardTask))
+                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB20_GDP20)%>%arrange(Vehicle.sum,Vehicle.AwardTask))
 
 ```
 
@@ -1959,7 +1959,7 @@ levels(sw$PricingUCA.sumlong)<-list("Firm-Fixed-Price"="FFP",
                                            "Unclear"="Unclear"   )
   (
 SoftwarePricing<-build_plot(
-  data=sw %>% filter(fiscal_year>=2000),
+  data=sw %>% filter(Fiscal_Year>=2000),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=sw_lc,
@@ -1996,11 +1996,11 @@ ggsave600dpi("..//Output//Software_pricing.png", SoftwarePricing,
 
 
 write.csv(file="..//Output//Software_pricing.csv",row.names = FALSE,
-          SoftwarePricing$data %>% mutate(fiscal_year=lubridate::year(dFYear),
+          SoftwarePricing$data %>% mutate(Fiscal_Year=lubridate::year(dFYear),
                                 bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
-            arrange(fiscal_year)%>%
+            arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(SWpsc,PricingUCA),
-                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+                      names_from=Fiscal_Year,values_from=bAction_Obligation_OMB20_GDP20)%>%
             arrange(SWpsc,PricingUCA),na="")
 ```
 
@@ -2010,7 +2010,7 @@ write.csv(file="..//Output//Software_pricing.csv",row.names = FALSE,
 
 (
 SoftwareComm<-build_plot(
-  data=sw %>% filter(fiscal_year>=2002 & Customer %in% c("Defense","GSA")),
+  data=sw %>% filter(Fiscal_Year>=2002 & Customer %in% c("Defense","GSA")),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=sw_lc,
@@ -2038,7 +2038,7 @@ SoftwareComm<-build_plot(
 
 (
 SoftwareCommLine<-build_plot(
-  data=sw %>% filter(fiscal_year>=2002 & Customer %in% c("Defense","GSA")),
+  data=sw %>% filter(Fiscal_Year>=2002 & Customer %in% c("Defense","GSA")),
   chart_geom = "Line Chart",
   share = TRUE,
   labels_and_colors=sw_lc,
@@ -2066,7 +2066,7 @@ SoftwareCommLine<-build_plot(
 
 (
 SoftwareCommDetail<-build_plot(
-  data=sw %>% filter(fiscal_year>=2002 & Customer %in% c("Defense","GSA")),
+  data=sw %>% filter(Fiscal_Year>=2002 & Customer %in% c("Defense","GSA")),
   chart_geom = "Bar Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -2093,7 +2093,7 @@ SoftwareCommDetail<-build_plot(
 
 (
 SoftwareCommIT<-build_plot(
-  data=sw %>% filter(fiscal_year>=2002  & Customer %in% c("Defense","GSA")),
+  data=sw %>% filter(Fiscal_Year>=2002  & Customer %in% c("Defense","GSA")),
   chart_geom = "Bar Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -2122,7 +2122,7 @@ SoftwareCommIT<-build_plot(
 
 (
 SoftwarecommPSCdetail<-build_plot(
-  data=sw %>% filter(fiscal_year>=2002  & Customer %in% c("Defense","GSA")),
+  data=sw %>% filter(Fiscal_Year>=2002  & Customer %in% c("Defense","GSA")),
   chart_geom = "Bar Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -2160,11 +2160,11 @@ ggsave600dpi("..//Output//Software_comm.png", SoftwareComm,
 
 
 write.csv(file="..//Output//Software_comm.csv",row.names = FALSE,
-          SoftwareComm$data %>% mutate(fiscal_year=lubridate::year(dFYear),
+          SoftwareComm$data %>% mutate(Fiscal_Year=lubridate::year(dFYear),
                                 bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
-            arrange(fiscal_year)%>%
+            arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(SWpsc,Commercial),
-                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+                      names_from=Fiscal_Year,values_from=bAction_Obligation_OMB20_GDP20)%>%
             arrange(SWpsc,Commercial),na="")
 
 ggsave600dpi("..//Output//Software_comm_paper.png", Softwarecomm,  
@@ -2181,11 +2181,11 @@ ggsave600dpi("..//Output//Software_DefenseGSA_comm.png", SoftwareComm,
 
 
 write.csv(file="..//Output//Software_DefenseGSA_comm.csv",row.names = FALSE,
-          SoftwareComm$data%>% mutate(fiscal_year=lubridate::year(dFYear),
+          SoftwareComm$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
                                 bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
-            arrange(fiscal_year)%>%
+            arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(Commercial,SWpsc),
-                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+                      names_from=Fiscal_Year,values_from=bAction_Obligation_OMB20_GDP20)%>%
             arrange(Commercial,SWpsc),na="")
 
 ```
@@ -2195,7 +2195,7 @@ write.csv(file="..//Output//Software_DefenseGSA_comm.csv",row.names = FALSE,
 
 (
 SoftwareCommAgency<-build_plot(
-  data=sw %>% filter(fiscal_year>=2002 & Customer %in% c("Defense")),
+  data=sw %>% filter(Fiscal_Year>=2002 & Customer %in% c("Defense")),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=sw_lc,
@@ -2225,7 +2225,7 @@ SoftwareCommAgency<-build_plot(
 
 (
 SoftwareCommAgencyLine<-build_plot(
-  data=sw %>% filter(fiscal_year>=2002 & Customer %in% c("Defense")),
+  data=sw %>% filter(Fiscal_Year>=2002 & Customer %in% c("Defense")),
   chart_geom = "Line Chart",
   share = TRUE,
   labels_and_colors=sw_lc,
@@ -2260,11 +2260,11 @@ ggsave600dpi("..//Output//SoftwareCommDefAgency.png", SoftwareCommAgency,
              )
 
 write.csv(file="..//Output//SoftwareCommDefAgency.csv",row.names = FALSE,
-          SoftwareCommAgency$data%>% mutate(fiscal_year=lubridate::year(dFYear),
+          SoftwareCommAgency$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
                                 bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
-            arrange(fiscal_year)%>%
+            arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(TopAgencyText,SWpsc,Commercial),
-                      names_from=fiscal_year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+                      names_from=Fiscal_Year,values_from=bAction_Obligation_OMB20_GDP20)%>%
             arrange(TopAgencyText,SWpsc,Commercial),na="")
 
 ```
