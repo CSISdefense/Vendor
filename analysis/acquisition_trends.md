@@ -34700,7 +34700,7 @@ ggsave600dpi("..//Output//RnDPhasePlusOTA.eps", RnDphasePlusOTA+labs(caption="So
 ```r
 #                            
 # 
-write.csv(file="..//Output//contractota_RnDPhase.csv",row.names = FALSE,
+write.csv(file="..//Output//RnDPhasePlusOTA.csv",row.names = FALSE,
           RnDphasePlusOTA$data%>% mutate(Fiscal_Year=year(dFYear)) %>%
           pivot_wider(id_cols=c(ProductServiceOrRnDarea),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>%
@@ -34767,9 +34767,9 @@ ota_merge<-ota_def%>%filter(Fiscal_Year >=2015) %>%
 #                      labels_and_colors = labels_and_colors
 # )
 
-ota_merge$type<-"OTA"
+ota_merge$Authority<-"OTA"
 colnames(ota_merge)[colnames(ota_merge)=="Fiscal_Year"]<-"Fiscal_Year"
-contract_merge$type<-"contract"
+contract_merge$Authority<-"Contract"
 merge<-rbind(ota_merge,contract_merge)
 
 (
@@ -34777,14 +34777,14 @@ RnDphase<-build_plot(
   data=merge %>% filter(ProductServiceOrRnDarea.sum=="R&D"),
   chart_geom = "Bar Chart",
   share = FALSE,
-  # labels_and_colors=labels_and_colors,
+  labels_and_colors=prepare_labels_and_colors(merge),#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\"
   # NA, #VAR.ncol
   x_var="Fiscal_Year", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
-  color_var="type", #color_var
+  color_var="Authority", #color_var
   facet_var="ProductServiceOrRnDarea", #facet_var
   column_key=column_key,
-  format=FALSE,
+  format=TRUE,
   ytextposition=FALSE
 )+
   # theme(strip.text.y = element_text(angle=0))+
@@ -34801,8 +34801,33 @@ RnDphase<-build_plot(
 ```
 
 ```
-## Warning in add_preassigned_scales(mainplot, labels_and_colors, var = color_var):
-## type not found in labels_and_colors
+## Warning in if (is.na(breakout)) breakout <- NULL: the condition has length > 1
+## and only the first element will be used
+```
+
+```
+## 
+## -- Column specification --------------------------------------------------------
+## cols(
+##   column = col_character(),
+##   coloration.key = col_character(),
+##   title = col_character(),
+##   share.title = col_character(),
+##   period.title = col_logical(),
+##   is.colon.split = col_logical()
+## )
+```
+
+```
+## Warning in prepare_labels_and_colors(merge): ProductServiceOrRnDarea
+```
+
+```
+## Warning in prepare_labels_and_colors(merge): ProductServiceOrRnDarea.sum
+```
+
+```
+## Warning in prepare_labels_and_colors(merge): Authority
 ```
 
 ```
@@ -34844,15 +34869,54 @@ RnDphase<-build_plot(
 ![](acquisition_trends_files/figure-html/PhaseBoth-1.png)<!-- -->
 
 ```r
-# ggsave600dpi("..//Output//contractota_RnDPhase.png", RnDphase, 
-#              width=12, height= 6, units="in",size=12, lineheight=1.2
-#              )
+ggsave600dpi("..//Output//contractota_RnDPhase.png", RnDphase,
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, : font
+## family not found in Windows font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, : font
+## family not found in Windows font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, : font
+## family not found in Windows font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, : font
+## family not found in Windows font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, : font
+## family not found in Windows font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, : font
+## family not found in Windows font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, : font
+## family not found in Windows font database
+```
+
+```
+## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x, x$y, :
+## font family not found in Windows font database
+```
+
+```
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, : font
+## family not found in Windows font database
+
+## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, : font
+## family not found in Windows font database
+```
+
+```r
 #                            
 # 
 write.csv(file="..//Output//contractota_RnDPhase.csv",row.names = FALSE,
-          pivot_wider(RnDphase$data,id_cols=c(ProductServiceOrRnDarea,type),
+          pivot_wider(RnDphase$data,id_cols=c(ProductServiceOrRnDarea,Authority),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>%
-            arrange(ProductServiceOrRnDarea,type))
+            arrange(ProductServiceOrRnDarea,Authority))
 #             
 # 
 # write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE,
@@ -50712,7 +50776,8 @@ def_eid_fyear$EntityCount<-1
 def_eid_fyear<-standardize_variable_names(def_eid_fyear)
 def_eid_fyear$dFYear<-as.Date(paste("1/1/",as.character(def_eid_fyear$Fiscal_Year),sep=""),"%m/%d/%Y")
 
-eid_lc<-prepare_labels_and_colors(ec,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+# eid_lc<-prepare_labels_and_colors(ec,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+eid_lc<-prepare_labels_and_colors(ec)
 ```
 
 ```
@@ -50729,43 +50794,38 @@ eid_lc<-prepare_labels_and_colors(ec,path="K:\\Users\\Greg\\Repositories\\Lookup
 ```
 
 ```
-## Warning in prepare_labels_and_colors(ec, path = "K:\\Users\\Greg\\Repositories\
-## \Lookup-Tables\\style\\"): Customer
+## Warning in prepare_labels_and_colors(ec): Customer
 ```
 
 ```
-## Warning in prepare_labels_and_colors(ec, path = "K:\\Users\\Greg\\Repositories\
-## \Lookup-Tables\\style\\"): AnyEntityUSplaceOfPerformance
+## Warning in prepare_labels_and_colors(ec): AnyEntityUSplaceOfPerformance
 ```
 
 ```
-## Warning in prepare_labels_and_colors(ec, path = "K:\\Users\\Greg\\Repositories\
-## \Lookup-Tables\\style\\"): AnyEntityForeignPlaceOfPerformance
+## Warning in prepare_labels_and_colors(ec): AnyEntityForeignPlaceOfPerformance
 ```
 
 ```
-## Warning in prepare_labels_and_colors(ec, path = "K:\\Users\\Greg\\Repositories\
-## \Lookup-Tables\\style\\"): IsEntityAbove2016constantOneMillionThreshold
+## Warning in prepare_labels_and_colors(ec):
+## IsEntityAbove2016constantOneMillionThreshold
 ```
 
 ```
-## Warning in prepare_labels_and_colors(ec, path = "K:\\Users\\Greg\\Repositories\
-## \Lookup-Tables\\style\\"): IsEntityAbove1990constantReportingThreshold
+## Warning in prepare_labels_and_colors(ec):
+## IsEntityAbove1990constantReportingThreshold
 ```
 
 ```
-## Warning in prepare_labels_and_colors(ec, path = "K:\\Users\\Greg\\Repositories\
-## \Lookup-Tables\\style\\"): IsEntityAbove2016constantReportingThreshold
+## Warning in prepare_labels_and_colors(ec):
+## IsEntityAbove2016constantReportingThreshold
 ```
 
 ```
-## Warning in prepare_labels_and_colors(ec, path = "K:\\Users\\Greg\\Repositories\
-## \Lookup-Tables\\style\\"): EntitySizeText
+## Warning in prepare_labels_and_colors(ec): EntitySizeText
 ```
 
 ```
-## Warning in prepare_labels_and_colors(ec, path = "K:\\Users\\Greg\\Repositories\
-## \Lookup-Tables\\style\\"): EntitySmall
+## Warning in prepare_labels_and_colors(ec): EntitySmall
 ```
 
 ```r
@@ -51349,7 +51409,7 @@ def_eid_fyear_plat<-standardize_variable_names(def_eid_fyear_plat)
 def_eid_fyear_plat$EntityCount<-1
 def_eid_fyear_plat$dFYear<-as.Date(paste("1/1/",as.character(def_eid_fyear_plat$Fiscal_Year),sep=""),"%m/%d/%Y")
 
-ecp_lc<-prepare_labels_and_colors(ecp,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+ecp_lc<-prepare_labels_and_colors(ecp)
 ```
 
 ```
@@ -51366,51 +51426,46 @@ ecp_lc<-prepare_labels_and_colors(ecp,path="K:\\Users\\Greg\\Repositories\\Looku
 ```
 
 ```
-## Warning in prepare_labels_and_colors(ecp, path = "K:\\Users\\Greg\\Repositories\
-## \Lookup-Tables\\style\\"): Customer
+## Warning in prepare_labels_and_colors(ecp): Customer
 ```
 
 ```
-## Warning in prepare_labels_and_colors(ecp, path = "K:\\Users\\Greg\\Repositories\
-## \Lookup-Tables\\style\\"): PlatformPortfolio
+## Warning in prepare_labels_and_colors(ecp): PlatformPortfolio
 ```
 
 ```
-## Warning in prepare_labels_and_colors(ecp, path = "K:\\Users\\Greg\\Repositories\
-## \Lookup-Tables\\style\\"): AnyEntityUSplaceOfPerformance
+## Warning in prepare_labels_and_colors(ecp): AnyEntityUSplaceOfPerformance
 ```
 
 ```
-## Warning in prepare_labels_and_colors(ecp, path = "K:\\Users\\Greg\\Repositories\
-## \Lookup-Tables\\style\\"): AnyEntityForeignPlaceOfPerformance
+## Warning in prepare_labels_and_colors(ecp): AnyEntityForeignPlaceOfPerformance
 ```
 
 ```
-## Warning in prepare_labels_and_colors(ecp, path = "K:\\Users\\Greg\\Repositories\
-## \Lookup-Tables\\style\\"): IsEntityAbove2016constantOneMillionThreshold
+## Warning in prepare_labels_and_colors(ecp):
+## IsEntityAbove2016constantOneMillionThreshold
 ```
 
 ```
-## Warning in prepare_labels_and_colors(ecp, path = "K:\\Users\\Greg\\Repositories\
-## \Lookup-Tables\\style\\"): IsEntityAbove1990constantReportingThreshold
+## Warning in prepare_labels_and_colors(ecp):
+## IsEntityAbove1990constantReportingThreshold
 ```
 
 ```
-## Warning in prepare_labels_and_colors(ecp, path = "K:\\Users\\Greg\\Repositories\
-## \Lookup-Tables\\style\\"): IsEntityAbove2016constantReportingThreshold
+## Warning in prepare_labels_and_colors(ecp):
+## IsEntityAbove2016constantReportingThreshold
 ```
 
 ```
-## Warning in prepare_labels_and_colors(ecp, path = "K:\\Users\\Greg\\Repositories\
-## \Lookup-Tables\\style\\"): EntitySizeText
+## Warning in prepare_labels_and_colors(ecp): EntitySizeText
 ```
 
 ```
-## Warning in prepare_labels_and_colors(ecp, path = "K:\\Users\\Greg\\Repositories\
-## \Lookup-Tables\\style\\"): EntitySmall
+## Warning in prepare_labels_and_colors(ecp): EntitySmall
 ```
 
 ```r
+# ecp_lc<-prepare_labels_and_colors(ecp,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 ecp$EntitySizeText<-factor(ecp$EntitySizeText)
 
 
