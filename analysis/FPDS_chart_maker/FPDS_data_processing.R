@@ -48,17 +48,46 @@ full_data <- read_delim(
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
 
 
+full_data <- read_delim(
+  "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerpcau.txt",delim = "\t",
+  col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
+
+
 full_data<-initial_clean(full_data)
 full_data<-apply_standard_lookups(full_data)#,
 # path="K:/Users/Greg/Repositories/Lookup-Tables/style")
 
 
 
+# if("ContractingCustomer" %in% colnames(full_data))
+# full_data %<>%  select(-ContractingCustomer)
+# set correct data types
+full_data %<>%
+  # select(-ClassifyNumberOfOffers) %>%
+  mutate(ContractingSubCustomer = factor(ContractingSubCustomer)) %>%
+  mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
+  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
+  mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
+  mutate(Shiny.VendorSize = factor(Shiny.VendorSize)) %>%
+  mutate(ProductServiceOrRnDarea.sum = factor(ProductServiceOrRnDarea.sum)) %>%
+  mutate(Competition.sum = factor(Competition.sum)) %>%
+  mutate(Competition.effective.only = factor(Competition.effective.only)) %>%
+  mutate(Competition.multisum = factor(Competition.multisum))  %>%
+  mutate(No.Competition.sum = factor(No.Competition.sum)) %>%
+  mutate(Vehicle = factor(Vehicle)) %>%
+  mutate(Vehicle.sum = factor(Vehicle.sum)) %>%
+  mutate(Vehicle.sum7 = factor(Vehicle.sum7)) %>%
+  mutate(Vehicle.AwardTask = factor(Vehicle.AwardTask)) %>%
+  mutate(PricingUCA = factor(PricingUCA))
 
 
-# full_data <- read_delim(
-#   "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerpcau.txt",delim = "\t",
-#   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
+labels_and_colors<-csis360::prepare_labels_and_colors(full_data,
+                                                      path="K:/Users/Greg/Repositories/Lookup-Tables/Style/")
+
+column_key<-csis360::get_column_key(full_data)
+
+save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
+
 
 if(all(is.na(full_data[nrow(full_data),]))){
   full_data<-full_data[1:nrow(full_data)-1,]
@@ -208,34 +237,6 @@ levels(platpscintldef$IsFMSplaceIntl)=list(
 # load("Shiny Apps/FPDS_chart_maker/2016_unaggregated_FPDS.Rda")
 
 
-# if("ContractingCustomer" %in% colnames(full_data))
-  # full_data %<>%  select(-ContractingCustomer)
-# set correct data types
-full_data %<>%
-  # select(-ClassifyNumberOfOffers) %>%
-  mutate(ContractingSubCustomer = factor(ContractingSubCustomer)) %>%
-  mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
-  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
-  mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
-  mutate(Shiny.VendorSize = factor(Shiny.VendorSize)) %>%
-  mutate(ProductServiceOrRnDarea.sum = factor(ProductServiceOrRnDarea.sum)) %>%
-  mutate(Competition.sum = factor(Competition.sum)) %>%
-  mutate(Competition.effective.only = factor(Competition.effective.only)) %>%
-  mutate(Competition.multisum = factor(Competition.multisum))  %>%
-  mutate(No.Competition.sum = factor(No.Competition.sum)) %>%
-  mutate(Vehicle = factor(Vehicle)) %>%
-  mutate(Vehicle.sum = factor(Vehicle.sum)) %>%
-  mutate(Vehicle.sum7 = factor(Vehicle.sum7)) %>%
-  mutate(Vehicle.AwardTask = factor(Vehicle.AwardTask)) %>%
-  mutate(PricingUCA = factor(PricingUCA))
-
-
-labels_and_colors<-csis360::prepare_labels_and_colors(full_data,
-                                                      path="K:/Users/Greg/Repositories/Lookup-Tables/Style/")
-
-column_key<-csis360::get_column_key(full_data)
-
-save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
 
 
 platpsc %<>%
