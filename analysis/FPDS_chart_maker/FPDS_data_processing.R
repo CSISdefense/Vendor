@@ -20,96 +20,79 @@ library(csis360)
 
 # read in data
 
+
+
+initial_clean<-function(df){
+  df<-standardize_variable_names(df)
+  # colnames(df)[colnames(df)=="Fiscal.Year"]<-"Fiscal_Year"
+  if(substring(df$Fiscal_Year[nrow(df)],1,12)=="Completion time")
+    df<-df[-nrow(df),]
+  
+  # coerce Amount to be a numeric variable
+  # if("Action_Obligation" %in% colnames(df)) 
+  #   df$Action_Obligation %<>% text_to_number()
+  # if("NumberOfActions" %in% colnames(df)) 
+  #   df$NumberOfActions %<>% text_to_number()
+  # df$Fiscal_Year <- text_to_number(df$Fiscal_Year)
+  colnames(df)[colnames(df)=="Customer"]<-"ContractingCustomer"
+  # colnames(df)[colnames(df)=="platformportfolio"]<-"PlatformPortfolio"
+  # discard pre-2000
+  df %<>% filter(Fiscal_Year >= 2000 & ContractingCustomer=="Defense")
+  # colnames(df)[colnames(df)=="Action_Obligation_Then_Year"]<-"Action_Obligation"
+  # df$dFYear<-as.Date(paste("1/1/",as.character(df$Fiscal_Year),sep=""),"%m/%d/%Y")
+  
+  df
+}
 full_data <- read_delim(
   "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",delim = "\t",
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
 
+
+full_data<-initial_clean(full_data)
+full_data<-apply_standard_lookups(full_data)#,
+# path="K:/Users/Greg/Repositories/Lookup-Tables/style")
+
+
+
+
+
 # full_data <- read_delim(
 #   "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerpcau.txt",delim = "\t",
 #   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
-  
+
 if(all(is.na(full_data[nrow(full_data),]))){
   full_data<-full_data[1:nrow(full_data)-1,]
   warning("Echo row dropped")
 }
 
+
+
+
+
 platpsc<-read_delim(file.path("data","semi_clean","Federal_ProdservPlatform.txt"),delim="\t",na=c("NULL","NA"),
               col_names = TRUE, guess_max = 10000000)
+
+platpsc<-initial_clean(platpsc)
+platpsc<-apply_standard_lookups(platpsc)
+
+platpscintl<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdServPlatformAgencyPlaceOriginVendor.txt"),delim="\t",na=c("NULL","NA"),
+                        col_names = TRUE, guess_max = 10000000)
+colnames(platpscintl)[colnames(platpscintl)=="Customer"]<-"ContractingCustomer"
+
+platpscintldef<-initial_clean(platpscintl)
+platpscintldef<-apply_standard_lookups(platpscintldef)
 
 sw<-read_delim(file.path("data","semi_clean","Summary.SP_SoftwareDetail.txt"),delim="\t",na=c("NULL","NA"),
                     col_names = TRUE, guess_max = 10000000)
 
-
-platpscintl<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdServPlatformAgencyPlaceOriginVendor.txt"),delim="\t",na=c("NULL","NA"),
-                    col_names = TRUE, guess_max = 10000000)
-
-platpscintl<-apply_standard_lookups(platpscintl)
-
 sw<-apply_standard_lookups(sw)
-colnames(sw)[colnames(sw)=="Fiscal.Year"]<-"fiscal_year"
-# sw<-read_and_join_experiment(data=sw
-#                              ,"InformationTechnologyCommercialItemCategory.csv"
-#                              # ,path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/"
-#                              ,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\"
-#                              ,dir="productorservice/"
-#                              ,by=c("informationtechnologycommercialitemcategory"="informationtechnologycommercialitemcategory")
-#                              # ,new_var_checked=FALSE
-#                              # ,create_lookup_rdata=TRUE
-# )
 
 sw_lc<-prepare_labels_and_colors(sw)
 sw_ck<-get_column_key(sw)
 
-platpscintl<-read_and_join_experiment(test,
-                                  path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                                  "Agency_AgencyID.csv",
-                                  dir="",
-                                  by=c("Contracting.Agency.ID"="AgencyID"),
-                                  add_var=c("Customer","SubCustomer"),#Contracting.Agency.ID
-                                  skip_check_var=c("Customer","Platform","SubCustomer"),
-                                  guess_max=2000)
-colnames(platpscintl)[colnames(platpscintl)=="Customer"]<-"ContractingCustomer"
-
-initial_clean<-function(df){
-  df<-standardize_variable_names(df)
-    # colnames(df)[colnames(df)=="Fiscal.Year"]<-"Fiscal_Year"
-  if(substring(df$Fiscal_Year[nrow(df)],1,12)=="Completion time")
-    df<-df[-nrow(df),]
-  
-  # coerce Amount to be a numeric variable
-  if("Action_Obligation" %in% colnames(df)) 
-    df$Action_Obligation %<>% text_to_number()
-  if("Number.Of.Actions" %in% colnames(df)) 
-    df$Number.Of.Actions %<>% text_to_number()
-  df$Fiscal_Year <- text_to_number(df$Fiscal_Year)
-  # colnames(df)[colnames(df)=="Contractingcustomer"]<-"ContractingCustomer"
-  # colnames(df)[colnames(df)=="platformportfolio"]<-"PlatformPortfolio"
-  # discard pre-2000
-  df %<>% filter(Fiscal_Year >= 2000 & ContractingCustomer=="Defense")
-  colnames(df)[colnames(df)=="Action_Obligation_Then_Year"]<-"Action_Obligation"
-  df$dFYear<-as.Date(paste("1/1/",as.character(df$Fiscal_Year),sep=""),"%m/%d/%Y")
-  
-  df
-}
-
-platpscintldef$dFYear<-as.Date(paste("1/1/",as.character(platpscintldef$Fiscal.Year),sep=""),"%m/%d/%Y")
-
-platpsc<-initial_clean(platpsc)
-
-full_data<-initial_clean(full_data)
-full_data<-apply_standard_lookups(full_data)#,
-                                  # path="K:/Users/Greg/Repositories/Lookup-Tables/style")
-
-platpscintldef<-initial_clean(platpscintl)
+save(sw,sw_lc,sw_ck, file="data/semi_clean/sw_FPDS.Rda")
 
 
-
-
-platpsc<-deflate(platpsc,
-                   money_var = "Action_Obligation",
-                 fy_var="fiscal_year",
-                   deflator_var="OMB20_GDP20"
-)
 
 if(!"PlaceIsForeign" %in% colnames(platpscintldef)){
   platpscintldef<-read_and_join_experiment(platpscintldef,lookup_file="Location_CountryCodes.csv",
@@ -208,20 +191,6 @@ levels(platpscintldef$IsFMSplaceIntl)=list(
 
 
 
-platpsc<-csis360::read_and_join_experiment(platpsc,
-                                             "ProductOrServiceCodes.csv",
-                                             by=c("ProductOrServiceCode"="ProductOrServiceCode"),
-                                             add_var=c("CrisisProductOrServiceArea","Simple"),
-                                           # path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\",
-                                             path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                                           skip_check_var = c("CrisisProductOrServiceArea","Simple"),
-                                             dir=""
-)
-
-
-
-full_data<-replace_nas_with_unlabeled(full_data,"PlatformPortfolio")
-
 
 
 
@@ -238,30 +207,6 @@ full_data<-replace_nas_with_unlabeled(full_data,"PlatformPortfolio")
 # debug(csis360::prepare_labels_and_colors)
 # load("Shiny Apps/FPDS_chart_maker/2016_unaggregated_FPDS.Rda")
 
-platpsc<-read_and_join_experiment(platpsc,
-                            path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                            "Agency_AgencyID.csv",
-                            dir="",
-                            by=c("Contracting.Agency.ID"="AgencyID"),
-                            add_var=c("SubCustomer"),#Contracting.Agency.ID
-                            skip_check_var=c("Platform","SubCustomer"),
-                            guess_max=2000)
-colnames(platpsc)[colnames(platpsc)=="SubCustomer"]<-"ContractingSubCustomer"
-
-platpsc<-replace_nas_with_unlabeled(platpsc,"ContractingSubCustomer","Uncategorized")
-platpsc<-csis360::read_and_join_experiment(platpsc,
-                                             "SubCustomer.csv",
-                                             by=c("ContractingCustomer"="Customer","ContractingSubCustomer"="SubCustomer"),
-                                             add_var=c("SubCustomer.platform","SubCustomer.sum"),
-                                             path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                                             dir="office/"
-)
-
-#SubCustomer.JPO
-platpsc$SubCustomer.JPO<-as.character(platpsc$SubCustomer.platform)
-platpsc$SubCustomer.JPO[platpsc$ProjectName=="JSF (F-35) " & !is.na(platpsc$ProjectName)&platpsc$SubCustomer.platform=="Navy"]<-"F-35 JPO"
-platpsc$SubCustomer.JPO<-factor(platpsc$SubCustomer.JPO)
-any(as.character(platpsc$TopProject)=="JSF (F-35) "& !is.na(platpsc$TopProject))
 
 # if("ContractingCustomer" %in% colnames(full_data))
   # full_data %<>%  select(-ContractingCustomer)
@@ -308,9 +253,6 @@ platpsc %<>%
 detail_lc<-csis360::prepare_labels_and_colors(platpsc)
 detail_ck<-csis360::get_column_key(platpsc)
 
-
-
-
 save(platpsc,labels_and_colors,column_key, file="data/semi_clean/platpsc_FPDS.Rda")
 
 intl_lc<-csis360::prepare_labels_and_colors(platpscintldef)
@@ -345,7 +287,7 @@ save(platpscintldef,intl_lc, intl_ck,file="data/semi_clean/platpscintl_FPDS.Rda"
 # 
 # partial_2018<-deflate(partial_2018,
 #                       money_var = "Action_Obligation",
-#                       deflator_var="OMB20_GDP18"
+#                       deflator_var="OMB20_GDP20"
 # )
 # 
 # sum(partial_2018$Action_Obligation.Then.Year)
@@ -383,7 +325,7 @@ save(platpscintldef,intl_lc, intl_ck,file="data/semi_clean/platpscintl_FPDS.Rda"
 # 
 # 
 # colnames(partial_2018)[colnames(partial_2018)=="Fiscal.Year"]<-"fiscal_year"
-# colnames(partial_2018)[colnames(partial_2018)=="ContractActions"]<-"Number.Of.Actions"
+# colnames(partial_2018)[colnames(partial_2018)=="ContractActions"]<-"NumberOfActions"
 # 
 # colnames(partial_2018)[colnames(partial_2018) %in% colnames(full_data)]
 # colnames(full_data)[!colnames(full_data) %in% colnames(partial_2018)]
@@ -398,7 +340,7 @@ save(platpscintldef,intl_lc, intl_ck,file="data/semi_clean/platpscintl_FPDS.Rda"
 #                           fiscal_year) %>%
 #   dplyr::summarize(Action_Obligation.Then.Year=sum(Action_Obligation.Then.Year,na.rm=TRUE),
 #                    Action_Obligation.OMB.2019=sum(Action_Obligation.OMB.2019,na.rm=TRUE),
-#                    Number.Of.Actions=sum(Number.Of.Actions,na.rm=TRUE))
+#                    NumberOfActions=sum(NumberOfActions,na.rm=TRUE))
 # 
 # 
 # 
@@ -420,7 +362,7 @@ save(platpscintldef,intl_lc, intl_ck,file="data/semi_clean/platpscintl_FPDS.Rda"
 # write.csv(full_data%>%group_by(fiscal_year)%>%
 #       dplyr::summarize(Action_Obligation.Then.Year=sum(Action_Obligation.Then.Year,na.rm=TRUE),
 #                                                          Action_Obligation.OMB.2019=sum(Action_Obligation.OMB.2019,na.rm=TRUE),
-#                                                          Number.Of.Actions=sum(Number.Of.Actions,na.rm=TRUE)),
+#                                                          NumberOfActions=sum(NumberOfActions,na.rm=TRUE)),
 #       file="topline_usaspending.csv"
 # )
 # 
@@ -480,3 +422,52 @@ save(platpscintldef,intl_lc, intl_ck,file="data/semi_clean/platpscintl_FPDS.Rda"
 #        "Other CB"="Other CB",
 #        "UCA"="UCA",
 #        "Unclear"=c("Combination/Other","Unlabeled"))
+
+# sw<-read_and_join_experiment(data=sw
+#                              ,"InformationTechnologyCommercialItemCategory.csv"
+#                              # ,path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/"
+#                              ,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\"
+#                              ,dir="productorservice/"
+#                              ,by=c("informationtechnologycommercialitemcategory"="informationtechnologycommercialitemcategory")
+#                              # ,new_var_checked=FALSE
+#                              # ,create_lookup_rdata=TRUE
+# )
+
+
+# full_data<-replace_nas_with_unlabeled(full_data,"PlatformPortfolio")
+# platpscintldef$dFYear<-as.Date(paste("1/1/",as.character(platpscintldef$Fiscal.Year),sep=""),"%m/%d/%Y")
+
+# platpsc<-csis360::read_and_join_experiment(platpsc,
+#                                            "ProductOrServiceCodes.csv",
+#                                            by=c("ProductOrServiceCode"="ProductOrServiceCode"),
+#                                            add_var=c("CrisisProductOrServiceArea","Simple"),
+#                                            # path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\",
+#                                            path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+#                                            skip_check_var = c("CrisisProductOrServiceArea","Simple"),
+#                                            dir=""
+# )
+
+# platpsc<-read_and_join_experiment(platpsc,
+#                                   path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+#                                   "Agency_AgencyID.csv",
+#                                   dir="",
+#                                   by=c("Contracting.Agency.ID"="AgencyID"),
+#                                   add_var=c("SubCustomer"),#Contracting.Agency.ID
+#                                   skip_check_var=c("Platform","SubCustomer"),
+#                                   guess_max=2000)
+# colnames(platpsc)[colnames(platpsc)=="SubCustomer"]<-"ContractingSubCustomer"
+# 
+# platpsc<-replace_nas_with_unlabeled(platpsc,"ContractingSubCustomer","Uncategorized")
+# platpsc<-csis360::read_and_join_experiment(platpsc,
+#                                            "SubCustomer.csv",
+#                                            by=c("ContractingCustomer"="Customer","ContractingSubCustomer"="SubCustomer"),
+#                                            add_var=c("SubCustomer.platform","SubCustomer.sum"),
+#                                            path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+#                                            dir="office/"
+# )
+
+#SubCustomer.JPO
+# platpsc$SubCustomer.JPO<-as.character(platpsc$SubCustomer.platform)
+# platpsc$SubCustomer.JPO[platpsc$ProjectName=="JSF (F-35) " & !is.na(platpsc$ProjectName)&platpsc$SubCustomer.platform=="Navy"]<-"F-35 JPO"
+# platpsc$SubCustomer.JPO<-factor(platpsc$SubCustomer.JPO)
+# any(as.character(platpsc$TopProject)=="JSF (F-35) "& !is.na(platpsc$TopProject))

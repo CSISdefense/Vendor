@@ -31,9 +31,9 @@ if(!exists("full_data"))
 
 load(file="../data/semi_clean/platpsc_FPDS.Rda")
 load(file="../data/semi_clean/platpscintl_FPDS.Rda")
-
-detail_lc<-prepare_labels_and_colors(platpsc)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
-detail_ck<-get_column_key(platpsc)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+load(file="data/semi_clean/sw_FPDS.Rda")
+# detail_lc<-prepare_labels_and_colors(platpsc)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+# detail_ck<-get_column_key(platpsc)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 # column_key<-get_column_key(platpsc,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 # detail_lc<-prepare_labels_and_colors(platpsc,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 # detail_ck<-get_column_key(platpsc,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
@@ -104,14 +104,14 @@ summary(factor(platpsc$TopPStext))
 ## Place State
 ```{r PreprocessState}
 
-# test$pop_isna<-is.na(test$pop_state_code)
-# test$sc_isna<-is.na(test$PlaceStateCode)
-# test %>% group_by(Fiscal_Year,pop_isna,sc_isna) %>%
+# platpscintldef$pop_isna<-is.na(platpscintldef$pop_state_code)
+# platpscintldef$sc_isna<-is.na(platpscintldef$PlaceStateCode)
+# platpscintldef %>% group_by(Fiscal_Year,pop_isna,sc_isna) %>%
 #   summarise(n=length(Fiscal_Year))
 
-# summary(factor(test$CrisisProductOrServiceArea))
-colnames(test)[colnames(test)=="Fiscal_Year"]<-"Fiscal_Year"
-topState<-test %>% group_by (pop_state_code,CrisisProductOrServiceArea) %>%
+# summary(factor(platpscintldef$CrisisProductOrServiceArea))
+
+topState<-platpscintldef %>% group_by (pop_state_code,CrisisProductOrServiceArea) %>%
   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0)))%>%
               group_by (CrisisProductOrServiceArea) %>%
@@ -123,20 +123,20 @@ topState$TopStateAbbr<-
   ifelse(topState$rank_2020<=25 | topState$rank_total<=25,topState$pop_state_code,NA)
 # topState$TopStateName<-
 #   ifelse(topState$rank_2020<=7 | topState$rank_total<=7,topState$PlaceStateCodeText,NA)
-test<-test[,!colnames(test) %in% c("Action_Obligation_OMB20_GDP20.x","Action_Obligation_OMB20_GDP20.y",
+platpscintldef<-platpscintldef[,!colnames(platpscintldef) %in% c("Action_Obligation_OMB20_GDP20.x","Action_Obligation_OMB20_GDP20.y",
                                    "Action_Obligation_2020.x","Action_Obligation_2020.y",
   "rank_total.y","rank_total.x","rank_2020.y","rank_2020.x","TopStateAbbr.x","TopStateAbbr.y")]
 
-test<-left_join(test,topState %>% select(-Action_Obligation_OMB20_GDP20,Action_Obligation_2020),
+platpscintldef<-left_join(platpscintldef,topState %>% select(-Action_Obligation_OMB20_GDP20,Action_Obligation_2020),
           by=c("pop_state_code","CrisisProductOrServiceArea"))
 
-test$TopStateAbbr[is.na(test$TopStateAbbr) & !is.na(test$pop_state_code)]<-
+platpscintldef$TopStateAbbr[is.na(platpscintldef$TopStateAbbr) & !is.na(platpscintldef$pop_state_code)]<-
   "Other Labeled State"
-# test$TopStateName[is.na(test$TopStateName) & !is.na(test$pop_state_code)]<-
+# platpscintldef$TopStateName[is.na(platpscintldef$TopStateName) & !is.na(platpscintldef$pop_state_code)]<-
 #   "Other Labeled State"
 
 
-# summary(factor(test$TopStateName))
+# summary(factor(platpscintldef$TopStateName))
 
 
 ```
@@ -144,9 +144,9 @@ test$TopStateAbbr[is.na(test$TopStateAbbr) & !is.na(test$pop_state_code)]<-
 ## Place Country
 ```{r PreprocessCountry}
 
-# summary(factor(test$CrisisProductOrServiceArea))
-colnames(test)[colnames(test)=="Fiscal_Year"]<-"Fiscal_Year"
-topCountry<-test %>% group_by (PlaceISOalpha3,CrisisProductOrServiceArea) %>%
+# summary(factor(platpscintldef$CrisisProductOrServiceArea))
+colnames(platpscintldef)[colnames(platpscintldef)=="Fiscal_Year"]<-"Fiscal_Year"
+topCountry<-platpscintldef %>% group_by (PlaceISOalpha3,CrisisProductOrServiceArea) %>%
   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0)))%>%
               group_by (CrisisProductOrServiceArea) %>%
@@ -160,16 +160,16 @@ topCountry$TopCountryISO<-
 #   ifelse(topCountry$rank_2020<=7 | topCountry$rank_total<=7,topCountry$PlaceCountryCodeText,NA)
 
 
-test<-left_join(test,topCountry %>% select(-Action_Obligation_OMB20_GDP20,Action_Obligation_2020),
+platpscintldef<-left_join(platpscintldef,topCountry %>% select(-Action_Obligation_OMB20_GDP20,Action_Obligation_2020),
           by=c("PlaceISOalpha3","CrisisProductOrServiceArea"))
 
-test$TopCountryISO[is.na(test$TopCountryISO) & !is.na(test$PlaceISOalpha3)]<-
+platpscintldef$TopCountryISO[is.na(platpscintldef$TopCountryISO) & !is.na(platpscintldef$PlaceISOalpha3)]<-
   "Other Labeled Country"
-# test$TopCountryName[is.na(test$TopCountryName) & !is.na(test$PlaceISOalpha3)]<-
+# platpscintldef$TopCountryName[is.na(platpscintldef$TopCountryName) & !is.na(platpscintldef$PlaceISOalpha3)]<-
 #   "Other Labeled Country"
 
 
-# summary(factor(test$TopCountryName))
+# summary(factor(platpscintldef$TopCountryName))
 
 
 ```
@@ -931,26 +931,26 @@ PSC<-build_plot(
 
 ## Construction
 ```{r FRSnC}
-summary(factor(test$CrisisProductOrServiceArea))
-# test$Fiscal_Year
+summary(factor(platpscintldef$CrisisProductOrServiceArea))
+# platpscintldef$Fiscal_Year
 # 
-# topplat<-test %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
+# topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
 #   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
 #             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
 #                         rank_2020=rank(desc(Action_Obligation_2020)))
 # topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
 # 
-# test$TopShipProject<-
-#   ifelse(test$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
-#          test$ProjectName,NA)
-# test$TopShipProject[is.na(test$TopShipProject) & !is.na(test$ProjectName)]<-
+# platpscintldef$TopShipProject<-
+#   ifelse(platpscintldef$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
+#          platpscintldef$ProjectName,NA)
+# platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$ProjectName)]<-
 #   "Other Labeled Project"
-# summary(factor(test$TopShipProject))
+# summary(factor(platpscintldef$TopShipProject))
 
 (
 State<-build_plot(
-  data=test %>% filter(CrisisProductOrServiceArea=="Construction"),
+  data=platpscintldef %>% filter(CrisisProductOrServiceArea=="Construction"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -977,7 +977,7 @@ State<-build_plot(
 ggsave(State,file="construction_state.png")
 (
 State<-build_plot(
-  data=test %>% filter(CrisisProductOrServiceArea=="Construction"),
+  data=platpscintldef %>% filter(CrisisProductOrServiceArea=="Construction"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -1006,7 +1006,7 @@ State<-build_plot(
 
 (
 Country<-build_plot(
-  data=test %>% filter(CrisisProductOrServiceArea=="Construction"),
+  data=platpscintldef %>% filter(CrisisProductOrServiceArea=="Construction"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -1034,7 +1034,7 @@ Country<-build_plot(
 
 (
 PSC<-build_plot(
-  data=test %>% filter(PlatformPortfolio=="Construction"),
+  data=platpscintldef %>% filter(PlatformPortfolio=="Construction"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -1538,7 +1538,7 @@ sw$SWpsc[sw$ProductOrServiceCode =="D319" ]<-"Annual Software Maint."
 # sw$SWpsc[sw$ProductOrServiceCode =="D317" ]<-"Annual Software Maint."
 sw$SWpsc[sw$ProductOrServiceCode =="7030" ]<-"Software as a product"
 sw$SWpsc[sw$ProductOrServiceCode =="D305" ]<-"Teleprocessing / Cloud Computing"
-sw$SWpsc[sw$ProductOrServiceCode %in% c("D302","D307","D308","D313","D317","D318","D319","D399","H170","H970","J070","R413")]<-"Software Development Related"
+sw$SWpsc[sw$ProductOrServiceCode %in% c("D302","D307","D308","D313","D317","D318","D399","H170","H970","J070","R413")]<-"Software Development Related"
 sw$SWpsc[sw$SWpsc =="Services" ]<-"Other ADP Services"
 #D317
 #D399, R413
@@ -1602,7 +1602,7 @@ SWpscdetail<-build_plot(
   # NA, #VAR.ncol
   x_var="Fiscal_Year", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
-  color_var="SWpsc", #color_var
+  color_var="ProductOrServiceCode", #color_var
   facet_var="SWpsc", #facet_var
   # column_key=sw_ck,
   format=TRUE,
@@ -1626,9 +1626,9 @@ SWpscdetail<-build_plot(
 
 write.csv(file="..//Output//Software_prodserv.csv",row.names = FALSE,
           arrange(pivot_wider(SWpscdetail$data %>% 
-                        arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
-                      id_cols=c(SWpsc),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20),SWpsc))
+                        arrange(Fiscal_Year),# %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
+                      id_cols=c(SWpsc,ProductOrServiceCode),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20),ProductOrServiceCode,SWpsc))
 
 
 
@@ -1641,9 +1641,9 @@ write.csv(file="..//Output//Software_prodserv.csv",row.names = FALSE,
 ggsave600dpi(SWpscdetail,file="..//output//Software_prodserv.png",  
              width=13, height= 6, units="in",size=16, lineheight=1.2
              )
-ggsave600dpi(SWpscdetail,file="..//output//Software_prodserv.eps",  
-             width=13, height= 6, units="in",size=16, lineheight=1.2
-             )
+# ggsave600dpi(SWpscdetail,file="..//output//Software_prodserv.eps",  
+#              width=13, height= 6, units="in",size=16, lineheight=1.2
+#              )
 ```
 
 
@@ -1941,8 +1941,8 @@ ggsave600dpi("..//Output//Software_vehicle.png", SoftwareVehicle,
 write.csv(file="..//Output//Software_vehicle.csv",row.names = FALSE,
           SoftwareVehicle$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
                                        bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
-            pivot_wider(id_cols=c(Vehicle.sum,Vehicle.AwardTask),
-                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB20_GDP20)%>%arrange(Vehicle.sum,Vehicle.AwardTask))
+            pivot_wider(id_cols=c(SWpsc,Vehicle.sum,Vehicle.AwardTask),
+                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB20_GDP20)%>%arrange(SWpsc,Vehicle.sum,Vehicle.AwardTask))
 
 ```
 
@@ -2149,7 +2149,7 @@ SoftwarecommPSCdetail<-build_plot(
 )
 
 
-# ggsave600dpi("..//Output//Software_pricing.png", Softwarecomm, 
+# ggsave600dpi("..//Output//Software_pricing.png", SoftwareComm, 
 #              width=6.5, height= 4, units="in",size=11
 #              )
 
@@ -2167,12 +2167,12 @@ write.csv(file="..//Output//Software_comm.csv",row.names = FALSE,
                       names_from=Fiscal_Year,values_from=bAction_Obligation_OMB20_GDP20)%>%
             arrange(SWpsc,Commercial),na="")
 
-ggsave600dpi("..//Output//Software_comm_paper.png", Softwarecomm,  
+ggsave600dpi("..//Output//Software_comm_paper.png", SoftwareComm,  
              width=13, height= 3.75, units="in",size=16, lineheight=1.2
              )
-ggsave600dpi("..//Output//Software_comm_paper.eps", Softwarecomm,  
-             width=13, height= 3.75, units="in",size=16, lineheight=1.2
-             )
+# ggsave600dpi("..//Output//Software_comm_paper.eps", SoftwareComm,  
+#              width=13, height= 3.75, units="in",size=16, lineheight=1.2
+#              )
 
 
 ggsave600dpi("..//Output//Software_DefenseGSA_comm.png", SoftwareComm,  
