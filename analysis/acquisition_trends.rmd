@@ -220,6 +220,37 @@ ToplineComp<-build_plot(
   labs(y="Obligations (Constant 2020 $s)")
 )
 
+
+(
+ToplineCompLine<-build_plot(
+  data=full_data,
+  chart_geom = "Line Chart",
+  share = TRUE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="Fiscal_Year", #x_var
+  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  color_var="Competition.sum", #color_var
+  # facet_var="Competition.sum", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+full_data %>% filter(Competition.sum =="Unlabeled" & Fiscal_Year>=2019) %>% group_by(CompetitionClassification)%>%
+  summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
+
 ggsave600dpi("..//Output//topline_comp.png", ToplineComp,  
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
@@ -230,6 +261,55 @@ write.csv(file="..//Output//topline_competition.csv",row.names = FALSE,
           # ToplineComp$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(ToplineComp$data,id_cols=c(Competition.sum),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20))
+
+
+
+```
+
+### Missing Competition
+```{r UnlabeledComp}
+
+(
+UnlabeledComp<-build_plot(
+  data=full_data %>% filter(Competition.sum =="Unlabeled"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="Fiscal_Year", #x_var
+  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  color_var="CompetitionClassification", #color_var
+  facet_var="Vehicle.sum7", #facet_var
+  # column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+full_data %>% filter(Competition.sum =="Unlabeled" & Fiscal_Year>=2019) %>% group_by(CompetitionClassification)%>%
+  summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
+
+ggsave600dpi("..//Output//unlabeled_comp.png", UnlabeledComp,  
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+
+
+write.csv(file="..//Output//unlabeled_competition.csv",row.names = FALSE,
+          # ToplineComp$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
+            pivot_wider(UnlabeledComp$data,id_cols=c(CompetitionClassification,Vehicle.sum7),
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)
+          %>% arrange(CompetitionClassification,Vehicle.sum7))
 
 
 
