@@ -53,6 +53,10 @@ full_data <- read_delim(
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
 
 
+full_data <- read_delim(
+  "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerComp.txt",delim = "\t",
+  col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
+
 full_data<-initial_clean(full_data)
 full_data<-apply_standard_lookups(full_data)#,
 # path="K:/Users/Greg/Repositories/Lookup-Tables/style")
