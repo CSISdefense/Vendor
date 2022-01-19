@@ -192,7 +192,10 @@ ggsave600dpi(topline_q,file=file.path("..","Output","toa_quarterly.png"),
 
 ## Topline Competition
 ```{r ToplineComp}
+full_data %>% group_by(Fiscal_Year) %>% summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
+full_data %>% filter(Fiscal_Year==2021) %>% group_by(Competition.sum) %>% summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
 
+debug(build_plot)
 (
 ToplineComp<-build_plot(
   data=full_data,
@@ -428,7 +431,7 @@ ToplineVehicle<-build_plot(
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
-  color_var="ProductServiceOrRnDarea.sum", #color_var
+  color_var="SimpleArea", #color_var
   facet_var="Vehicle.sum7", #facet_var
   column_key=column_key,
   format=TRUE,
@@ -591,7 +594,7 @@ ToplinePSR<-build_plot(
   # NA, #VAR.ncol
   x_var="Fiscal_Year", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
-  color_var="ProductServiceOrRnDarea.sum", #color_var
+  color_var="SimpleArea", #color_var
   # facet_var="Competition.sum", #facet_var
   column_key=column_key,
   format=TRUE,
@@ -614,9 +617,9 @@ ggsave600dpi("..//Output//topline_psr.png", ToplinePSR,
              )
 
 write.csv(file="..//Output//topline_psr.csv",row.names = FALSE,
-          full_data %>% group_by(ProductServiceOrRnDarea.sum,Fiscal_Year)%>%
+          full_data %>% group_by(SimpleArea,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-          pivot_wider(id_cols=c(ProductServiceOrRnDarea.sum),
+          pivot_wider(id_cols=c(SimpleArea),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
 
 ```
@@ -627,7 +630,7 @@ write.csv(file="..//Output//topline_psr.csv",row.names = FALSE,
 
 (
 RnDphase<-build_plot(
-  data=full_data %>% filter(ProductServiceOrRnDarea.sum=="R&D"),
+  data=full_data %>% filter(SimpleArea=="R&D"),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -664,7 +667,7 @@ write.csv(file="..//Output//psr_RnDPhase.csv",row.names = FALSE,
             
 
 write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE,
-          full_data %>% filter(ProductServiceOrRnDarea.sum=="R&D") %>%
+          full_data %>% filter(SimpleArea=="R&D") %>%
             format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
                                  labels_and_colors=labels_and_colors) %>%
           pivot_wider(id_cols=c(ProductServiceOrRnDarea),
@@ -679,7 +682,7 @@ write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE,
 contract_merge<-full_data%>%filter(Fiscal_Year >=2015) %>%
   group_by(Fiscal_Year,
                          ProductServiceOrRnDarea,
-                         ProductServiceOrRnDarea.sum)%>%
+                         SimpleArea)%>%
   dplyr::summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
 
 # 
@@ -687,19 +690,19 @@ contract_merge<-full_data%>%filter(Fiscal_Year >=2015) %>%
 #                      fy_var="Fiscal_Year", #x_var
 #                      y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
 #                      color_var="ProductServiceOrRnDarea", #color_var
-#                      facet_var = "ProductServiceOrRnDarea.sum",
+#                      facet_var = "SimpleArea",
 #                      labels_and_colors = labels_and_colors
 # )
 # ota_merge<-format_data_for_plot(ota_def,
 #                      fy_var="Fiscal_Year", #x_var
 #                      y_var="Dollars_Obligated_OMB20_GDP20", #VAR.y.variable
 #                      color_var="ProductServiceOrRnDarea", #color_var
-#                      facet_var = "ProductServiceOrRnDarea.sum",
+#                      facet_var = "SimpleArea",
 #                      labels_and_colors = labels_and_colors
 # )
 
 ota_merge<-ota_def%>%filter(Fiscal_Year >=2015) %>%
-  group_by(Fiscal_Year,ProductServiceOrRnDarea.sum)%>%
+  group_by(Fiscal_Year,SimpleArea)%>%
   dplyr::summarise(Action_Obligation_OMB20_GDP20=sum(Dollars_Obligated_OMB20_GDP20))
 
 
@@ -707,7 +710,7 @@ ota_merge<-ota_def%>%filter(Fiscal_Year >=2015) %>%
 #                      fy_var="Fiscal_Year", #x_var
 #                      y_var="Dollars_Obligated_OMB20_GDP20", #VAR.y.variable
 #                      color_var="ProductServiceOrRnDarea", #color_var
-#                      facet_var = "ProductServiceOrRnDarea.sum",
+#                      facet_var = "SimpleArea",
 #                      labels_and_colors = labels_and_colors
 # )
 
@@ -717,7 +720,7 @@ merge<-rbind(ota_merge,contract_merge)
 merge$dFYear<-as.Date(paste(merge$Fiscal_Year,"1","1",sep="-"))
 (
 RnDphasePlusOTA<-build_plot(
-  data=merge %>% filter(ProductServiceOrRnDarea.sum=="R&D"),
+  data=merge %>% filter(SimpleArea=="R&D"),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=prepare_labels_and_colors(merge),
@@ -759,7 +762,7 @@ write.csv(file="..//Output//RnDPhasePlusOTA.csv",row.names = FALSE,
 #             
 # 
 # write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE,
-#           full_data %>% filter(ProductServiceOrRnDarea.sum=="R&D") %>%
+#           full_data %>% filter(SimpleArea=="R&D") %>%
 #             format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
 #                                  labels_and_colors=labels_and_colors) %>%
 #           pivot_wider(id_cols=c(ProductServiceOrRnDarea),
@@ -774,7 +777,7 @@ write.csv(file="..//Output//RnDPhasePlusOTA.csv",row.names = FALSE,
 contract_merge<-full_data%>%filter(Fiscal_Year >=2015) %>%
   group_by(Fiscal_Year,
                          ProductServiceOrRnDarea,
-                         ProductServiceOrRnDarea.sum)%>%
+                         SimpleArea)%>%
   dplyr::summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
 
 # 
@@ -782,21 +785,21 @@ contract_merge<-full_data%>%filter(Fiscal_Year >=2015) %>%
 #                      fy_var="Fiscal_Year", #x_var
 #                      y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
 #                      color_var="ProductServiceOrRnDarea", #color_var
-#                      facet_var = "ProductServiceOrRnDarea.sum",
+#                      facet_var = "SimpleArea",
 #                      labels_and_colors = labels_and_colors
 # )
 # ota_merge<-format_data_for_plot(ota_def,
 #                      fy_var="Fiscal_Year", #x_var
 #                      y_var="Dollars_Obligated_OMB20_GDP20", #VAR.y.variable
 #                      color_var="ProductServiceOrRnDarea", #color_var
-#                      facet_var = "ProductServiceOrRnDarea.sum",
+#                      facet_var = "SimpleArea",
 #                      labels_and_colors = labels_and_colors
 # )
 
 ota_merge<-ota_def%>%filter(Fiscal_Year >=2015) %>%
   group_by(Fiscal_Year,
                          ProductServiceOrRnDarea,
-                         ProductServiceOrRnDarea.sum)%>%
+                         SimpleArea)%>%
   dplyr::summarise(Action_Obligation_OMB20_GDP20=sum(Dollars_Obligated_OMB20_GDP20))
 
 
@@ -804,7 +807,7 @@ ota_merge<-ota_def%>%filter(Fiscal_Year >=2015) %>%
 #                      fy_var="Fiscal_Year", #x_var
 #                      y_var="Dollars_Obligated_OMB20_GDP20", #VAR.y.variable
 #                      color_var="ProductServiceOrRnDarea", #color_var
-#                      facet_var = "ProductServiceOrRnDarea.sum",
+#                      facet_var = "SimpleArea",
 #                      labels_and_colors = labels_and_colors
 # )
 
@@ -815,7 +818,7 @@ merge<-rbind(ota_merge,contract_merge)
 
 (
 RnDphase<-build_plot(
-  data=merge %>% filter(ProductServiceOrRnDarea.sum=="R&D"),
+  data=merge %>% filter(SimpleArea=="R&D"),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=prepare_labels_and_colors(merge),#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\"
@@ -852,7 +855,7 @@ write.csv(file="..//Output//contractota_RnDPhase.csv",row.names = FALSE,
 #             
 # 
 # write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE,
-#           full_data %>% filter(ProductServiceOrRnDarea.sum=="R&D") %>%
+#           full_data %>% filter(SimpleArea=="R&D") %>%
 #             format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
 #                                  labels_and_colors=labels_and_colors) %>%
 #           pivot_wider(id_cols=c(ProductServiceOrRnDarea),
@@ -866,7 +869,7 @@ write.csv(file="..//Output//contractota_RnDPhase.csv",row.names = FALSE,
 
 (
 Services<-build_plot(
-  data=full_data %>% filter(ProductServiceOrRnDarea.sum=="Services (Non-R&D)"),
+  data=full_data %>% filter(SimpleArea=="Services (Non-R&D)"),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -903,7 +906,7 @@ write.csv(file="..//Output//psr_Services.csv",row.names = FALSE,
             
 
 write.csv(file="..//Output//psr_Services_current.csv",row.names = FALSE,
-          full_data %>% filter(ProductServiceOrRnDarea.sum=="R&D") %>%
+          full_data %>% filter(SimpleArea=="R&D") %>%
             format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
                                  labels_and_colors=labels_and_colors) %>%
           pivot_wider(id_cols=c(ProductServiceOrRnDarea),
@@ -972,7 +975,7 @@ SubCustomerPSR<-build_plot(
   # NA, #VAR.ncol
   x_var="Fiscal_Year", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
-  color_var="ProductServiceOrRnDarea.sum", #color_var
+  color_var="SimpleArea", #color_var
   facet_var="SubCustomer.sum", #facet_var
   column_key=column_key,
   format=TRUE,
@@ -1198,7 +1201,7 @@ PlatformPSR<-build_plot(
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
-  color_var="ProductServiceOrRnDarea.sum", #color_var
+  color_var="SimpleArea", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=column_key,
   format=TRUE,
@@ -1340,6 +1343,115 @@ write.csv(file="..//Output//platform_comp_line.csv",row.names = FALSE,
 
 
 ```
+
+#International
+
+
+###FMS identification
+```{r contract_identification}
+
+summary(full_data$foreign_funding_description)
+
+# undebug(build_plot)
+
+(contract_identification <-  build_plot(data=full_data ,
+                            chart_geom="Bar Chart",
+                            share=FALSE,
+                            x_var="Fiscal_Year",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="foreign_funding_description",
+                            facet_var="IsFMS",
+                            # second_var="StateRegion",
+                            # labels_and_colors=intl_lc,
+                            # column_key=intl_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                        format=TRUE)+
+    # facet_grid(  IsFMS~., scales="free_y")+
+  labs(#x="Year of Delivery (Calendar or Fiscal Varies by Source)",
+       y="Constant 2020 $ Obligated",
+       caption="Source: FPDS; CSIS analysis.")+
+    guides(fill=guide_legend(ncol=3)))
+
+ggsave600dpi(contract_identification,file="../output/figure_03_contract_identification.png",size=12,lineheight=1, height =5, width=9)
+
+
+
+```
+###Buy America
+```{r contract_identification}
+
+summary(full_data$PlaceOfManufacture_Sum)
+
+# undebug(build_plot)
+
+(contract_identification <-  build_plot(data=full_data ,
+                            chart_geom="Bar Chart",
+                            share=FALSE,
+                            x_var="Fiscal_Year",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="PlaceOfManufacture_Sum",
+                            facet_var="SimpleArea",
+                            # second_var="StateRegion",
+                            labels_and_colors=labels_and_colors,
+                            column_key=column_key,
+                            legend=TRUE,
+                            caption=FALSE,
+                        format=TRUE)+
+    # facet_grid(  IsFMS~., scales="free_y")+
+  labs(#x="Year of Delivery (Calendar or Fiscal Varies by Source)",
+       y="Constant 2020 $ Obligated",
+       caption="Source: FPDS; CSIS analysis.")+
+    guides(fill=guide_legend(ncol=3)))
+
+
+(contract_identification <-  build_plot(data=full_data ,
+                            chart_geom="Bar Chart",
+                            share=FALSE,
+                            x_var="Fiscal_Year",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="PlaceOfManufacture_Sum",
+                            facet_var="PlaceIsForeign",
+                            # second_var="StateRegion",
+                            labels_and_colors=labels_and_colors,
+                            column_key=column_key,
+                            legend=TRUE,
+                            caption=FALSE,
+                        format=TRUE)+
+    # facet_grid(  IsFMS~., scales="free_y")+
+  labs(#x="Year of Delivery (Calendar or Fiscal Varies by Source)",
+       y="Constant 2020 $ Obligated",
+       caption="Source: FPDS; CSIS analysis.")+
+    guides(fill=guide_legend(ncol=3)))
+
+
+(contract_identification <-  build_plot(data=full_data ,
+                            chart_geom="Bar Chart",
+                            share=FALSE,
+                            x_var="Fiscal_Year",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="PlaceOfManufacture_Sum",
+                            facet_var="VendorIsForeign",
+                            # second_var="StateRegion",
+                            labels_and_colors=labels_and_colors,
+                            column_key=column_key,
+                            legend=TRUE,
+                            caption=FALSE,
+                        format=TRUE)+
+    # facet_grid(  IsFMS~., scales="free_y")+
+  labs(#x="Year of Delivery (Calendar or Fiscal Varies by Source)",
+       y="Constant 2020 $ Obligated",
+       caption="Source: FPDS; CSIS analysis.")+
+    guides(fill=guide_legend(ncol=3)))
+
+
+ggsave600dpi(contract_identification,file="../output/figure_03_contract_identification.png",size=12,lineheight=1, height =5, width=9)
+
+
+
+```
+
+
 #Vendor Count
 ## Defense Count
 ```{r EntityCount}
