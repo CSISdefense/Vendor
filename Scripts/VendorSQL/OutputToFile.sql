@@ -164,7 +164,7 @@ SET NOCOUNT ON;
 
 DECLARE	@return_value int
 --13h20m
---10h13m
+--10h25m
 --EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
 EXEC	@return_value = [budget].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS]
 --EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
