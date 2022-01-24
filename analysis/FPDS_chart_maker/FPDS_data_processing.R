@@ -44,12 +44,8 @@ initial_clean<-function(df){
   df
 }
 
-full_data %>% filter(fiscal_year==2021) %>% summarise(o=sum(SumOfobligatedAmount))
-full_data <- read_delim(
-  "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS2021.txt",delim = "\t",
-  col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
-
-
+# full_data %>% filter(fiscal_year==2021) %>% summarise(o=sum(SumOfobligatedAmount))
+u
 full_data <- read_delim(
   "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerpcau.txt",delim = "\t",
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))

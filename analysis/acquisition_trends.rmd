@@ -43,6 +43,7 @@ colnames(toa)[colnames(toa)=="...2"]<-"Series"
 toa<-pivot_longer(toa,  cols=!Series, names_to="Fiscal_Year", values_to="Total_Obligation_Authority")
 toa$Total_Obligation_Authority<-toa$Total_Obligation_Authority*1000000
 toa<-deflate(toa,money_var = "Total_Obligation_Authority",deflator_var="OMB20_GDP20")
+toa$dFYear<-as.Date(paste(toa$Fiscal_Year,1,1,sep="-"))
 labels_and_colors<-prepare_labels_and_colors(full_data)
 ```
 ## Quarterly YTD
@@ -129,7 +130,7 @@ The first three years made a pretty good estimator. However, adding a variable b
 
 # Topline
 
-## TOA Topline
+## TOA Topline Quarterly
 ```{r TOA}
 
 quarterlyYTD$Actual<-"Actual"
@@ -189,13 +190,63 @@ ggsave600dpi(topline_q,file=file.path("..","Output","toa_quarterly.png"),
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 ```
+## TOA annual
+```{r TOAannual}
+
+
+fpds_annual<-full_data %>% group_by(Fiscal_Year,dFYear,
+                                    ContractingCustomer) %>% summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
+                                                                      Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
+toa$Fiscal_Year<-text_to_number(toa$Fiscal_Year)
+fpds_annual$Total_Obligation_Authority_Then_Year<-NA
+fpds_annual$Total_Obligation_Authority_OMB20_GDP20<-NA
+fpds_annual<-rbind(fpds_annual,toa %>% select(-fiscal_quarter))
+
+(topline<-ggplot(data=fpds_annual %>% filter(Fiscal_Year>=2000) #rbind(quarterly,q2021,e2021),
+      )+geom_col( aes(x=dFYear,
+           y=Action_Obligation_OMB20_GDP20/1000000000
+           # alpha=Actual,
+           # fill = fiscal_quarter
+       ))+
+    geom_path(aes(x=dFYear,y=Total_Obligation_Authority_OMB20_GDP20/1000000000),group="Series")+
+  # scale_alpha_discrete(range=c(0.4,1))+
+    labs(x="Fiscal Year",y="Constant FY 2020 $ Billions",fill="Quarter")
+)
+
+write.csv(file="..//Output//toa_annual.csv",row.names = FALSE,na="",
+          topline %>% mutate(fiscal_quarter=ifelse(!is.na(Total_Obligation_Authority_OMB20_GDP20),"TOA",fiscal_quarter),
+                                            Dollars_GDP20=ifelse(fiscal_quarter=="TOA",
+                                                                 Total_Obligation_Authority_OMB20_GDP20,Action_Obligation_OMB20_GDP20))%>%
+            filter(Fiscal_Year>=2000)%>%
+          format_data_for_plot(
+                               fy_var="Fiscal_Year",
+                               y_var="Dollars_GDP20",
+                               color_var="fiscal_quarter",
+                               # facet="SubCustomer",
+                               # labels_and_colors = ota_lc,
+                               group=TRUE) %>%
+            arrange(Fiscal_Year) %>%
+            mutate(Dollars_GDP20=Dollars_GDP20/1000000000)%>%
+          pivot_wider(id_cols=c(fiscal_quarter),
+                      names_from=Fiscal_Year,values_from=Dollars_GDP20) %>% 
+            
+            # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=ota_lc$variable[ota_lc$column=="PlatformPortfolio"]))%>%
+            # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=levels(fiscal_quarter),
+            #                                 labels=gsub("\\n"," ",levels(PlatformPortfolio))))%>%
+                   arrange(fiscal_quarter))
+
+
+ggsave600dpi(topline,file=file.path("..","Output","topline_toa_annual.png"),  
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+```
 
 ## Topline Competition
 ```{r ToplineComp}
 full_data %>% group_by(Fiscal_Year) %>% summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
 full_data %>% filter(Fiscal_Year==2021) %>% group_by(Competition.sum) %>% summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
 
-debug(build_plot)
+
 (
 ToplineComp<-build_plot(
   data=full_data,
@@ -946,7 +997,7 @@ SubCustomer<-build_plot(
   labs(y="Obligations (Constant 2020 $s)")
 )
 
-ggsave600dpi("..//Output//subcustomer.png", SubCustomer, 
+ggsave600dpi("..//Output//topline_subcustomer.png", SubCustomer, 
              width=12, height= 6, units="in",size=12,lineheight = 1.2
              )
 
@@ -1369,7 +1420,7 @@ summary(full_data$foreign_funding_description)
                         format=TRUE)+
     # facet_grid(  IsFMS~., scales="free_y")+
   labs(#x="Year of Delivery (Calendar or Fiscal Varies by Source)",
-       y="Constant 2020 $ Obligated",
+       y="Obligations (Constant FY 2020 $s)",
        caption="Source: FPDS; CSIS analysis.")+
     guides(fill=guide_legend(ncol=3)))
 
@@ -1400,12 +1451,12 @@ summary(full_data$PlaceOfManufacture_Sum)
                         format=TRUE)+
     # facet_grid(  IsFMS~., scales="free_y")+
   labs(#x="Year of Delivery (Calendar or Fiscal Varies by Source)",
-       y="Constant 2020 $ Obligated",
+       y="Obligations (Constant FY 2020 $s)",
        caption="Source: FPDS; CSIS analysis.")+
     guides(fill=guide_legend(ncol=3)))
 
 
-(contract_identification <-  build_plot(data=full_data ,
+(contract_identification <-  build_plot(data=full_data %>% filter(!is.na(PlaceIsForeign)),
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="Fiscal_Year",
@@ -1418,9 +1469,9 @@ summary(full_data$PlaceOfManufacture_Sum)
                             legend=TRUE,
                             caption=FALSE,
                         format=TRUE)+
-    # facet_grid(  IsFMS~., scales="free_y")+
+    facet_grid(  PlaceIsForeign~., scales="free_y")+
   labs(#x="Year of Delivery (Calendar or Fiscal Varies by Source)",
-       y="Constant 2020 $ Obligated",
+       y="Obligations (Constant FY 2020 $s,\nVariable Axis)",
        caption="Source: FPDS; CSIS analysis.")+
     guides(fill=guide_legend(ncol=3)))
 
@@ -1440,7 +1491,7 @@ summary(full_data$PlaceOfManufacture_Sum)
                         format=TRUE)+
     # facet_grid(  IsFMS~., scales="free_y")+
   labs(#x="Year of Delivery (Calendar or Fiscal Varies by Source)",
-       y="Constant 2020 $ Obligated",
+       y="Obligations (Constant FY 2020 $s)",
        caption="Source: FPDS; CSIS analysis.")+
     guides(fill=guide_legend(ncol=3)))
 
