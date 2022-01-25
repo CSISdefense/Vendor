@@ -108,8 +108,9 @@ platpscintl<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdS
                         col_names = TRUE, guess_max = 10000000)
 colnames(platpscintl)[colnames(platpscintl)=="Customer"]<-"ContractingCustomer"
 
+platpscintl<-apply_standard_lookups(platpscintl)
 platpscintldef<-initial_clean(platpscintl)
-platpscintldef<-apply_standard_lookups(platpscintldef)
+
 
 sw<-read_delim(file.path("data","semi_clean","Summary.SP_SoftwareDetail.txt"),delim="\t",na=c("NULL","NA"),
                     col_names = TRUE, guess_max = 10000000)

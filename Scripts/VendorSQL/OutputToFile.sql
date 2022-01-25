@@ -114,7 +114,12 @@ select *
 from FPDSTypeTable.AgencyID
 where agencyid in ('5300')
 
+
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
 --3h38mm
+--2h12m
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
  EXEC [Location].[SP_ProdServPlatformAgencyPlaceOriginVendor]
@@ -146,6 +151,7 @@ SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
 --4h48m
+--2h32m (with 5 cores)
 DECLARE	@return_value int
 
 --EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
