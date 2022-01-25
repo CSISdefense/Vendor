@@ -27,7 +27,8 @@ geom.text.size<-12
 main.text.size<-1
 note.text.size<-1.40
 if(!exists("full_data"))
-  load(file="FPDS_chart_maker//unaggregated_FPDS.Rda")
+  load(file="..//Data/Clean//unaggregated_FPDS_2020.Rda")
+
 
 disa_data<- full_data %>% filter(ContractingSubCustomer=="DISA")
 load(file=file.path("..","data","semi_clean","disa.Rda"))
@@ -62,7 +63,7 @@ levels(disa_sum$ServicesCategory.sum)<-list("ICT" ="ICT" ,
                                        "Unlabeled"= "Unlabeled")
 
 disa_sum$DISAprodserv.sum<-as.character(disa_sum$ServicesCategory.sum)
-disa_sum$DISAprodserv.sum[disa_sum$ProductOrServiceCode =="7030" ]<-"Software as a product"
+disa_sum$DISAprodserv.sum[disa_sum$ProductOrServiceCode =="7030" ]<-"Software as a Product"
 disa_sum$DISAprodserv.sum[disa_sum$DISAprodserv.sum =="Products" ]<-"Other Products"
 disa_sum$DISAprodserv.sum<-factor(disa_sum$DISAprodserv.sum)
 levels(disa_sum$DISAprodserv.sum)<-list("Information & Communication\nTechnology Services" ="ICT",
@@ -610,7 +611,14 @@ write.csv(file="..//Output//DISA_comm.csv",row.names = FALSE,
 
 ## DISA Funder   
 ```{r Funder}
+summary(factor(disa_sum$fundingrequestingagencyid))
+disa_sum %>% group_by(Fiscal_Year,Funder,FundingAgency) %>% filter(Funder=="Other than DoD") %>% summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
 
+
+disa_sum %>% group_by(Fiscal_Year,Funder,FundingAgency,SubFunder,fundingrequestingagencyid) %>% filter(Funder=="Other than DoD") %>% summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
+
+
+disa_sum %>% group_by(Fiscal_Year,Funder,FundingAgency,SubFunder,fundingrequestingagencyid) %>% filter(Funder=="Other than DoD") %>% summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
 (
 Funder<-build_plot(
   data=disa_sum %>% filter(Fiscal_Year>=2000),
@@ -1254,7 +1262,7 @@ Products<-build_plot(
 
 
 # Product or Service Detail 
-## Top 7 ProdServ
+## Top 7 ProdServ Comm
 ```{r ProdServTop7}
 
 prodserv<-disa_sum %>% filter(Fiscal_Year>=2002) %>% group_by(ProductOrServiceCode,ProductOrServiceCodeText,ProductServiceOrRnDarea,SimpleArea)%>%
@@ -1388,8 +1396,8 @@ disa_sum$DISAprodserv<-as.character(disa_sum$ServicesCategory.sum)
 disa_sum$DISAprodserv[substr(disa_sum$ProductOrServiceCode,1,1)=="D" ]<-"Other IT and Telecomm"
 # disa_sum$DISAprodserv[disa_sum$ProductOrServiceCode =="D304" ]<-"Telecomm & Transmission"
 disa_sum$DISAprodserv[disa_sum$ProductOrServiceCode =="D316" ]<-"Telecomm Network Mgmt."
-disa_sum$DISAprodserv[disa_sum$ProductOrServiceCode =="D319" ]<-"Annual oftreoftware Maint."
-disa_sum$DISAprodserv[disa_sum$ProductOrServiceCode =="7030" ]<-"Software as a product"
+disa_sum$DISAprodserv[disa_sum$ProductOrServiceCode =="D319" ]<-"Annual Software Maint."
+disa_sum$DISAprodserv[disa_sum$ProductOrServiceCode =="7030" ]<-"Software as a Product"
 disa_sum$DISAprodserv[disa_sum$DISAprodserv =="Products" ]<-"Other Products"
 disa_sum$DISAprodserv[disa_sum$DISAprodserv =="ICT" ]<-"Other ICT Services"
 
@@ -1399,7 +1407,7 @@ levels(factor(disa_sum$DISAprodserv))
 disa_sum$DISAprodserv<-factor(disa_sum$DISAprodserv,
                               levels=c("Telecomm & Transmission", "Telecomm Network Mgmt.","Annual Software Maint.",
                                        "Other IT and Telecomm","Other ICT Services" ,
-                                        "PAMS" , "Other Services and R&D","Software as a product",
+                                        "PAMS" , "Other Services and R&D","Software as a Product",
                                         "Other Products" ,"Unlabeled"))
              
 
@@ -1446,10 +1454,10 @@ write.csv(file="..//Output//DISA_prodserv_Comm.csv",row.names = FALSE,
 #                       id_cols=c(DISAprodserv,Commercial),
 #                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20),DISAprodserv,Commercial))
 
-ggsave600dpi(DISAProdServdetail,file="..//output//DISA_prodserv.png",  
+ggsave600dpi(DISAProdServdetail,file="..//output//DISA_prodserv_comm.png",  
              width=13, height= 6, units="in",size=16, lineheight=1.2
              )
-ggsave600dpi(DISAProdServdetail,file="..//output//DISA_prodserv.eps",  
+ggsave600dpi(DISAProdServdetail,file="..//output//DISA_prodserv_comm.eps",  
              width=13, height= 6, units="in",size=16, lineheight=1.2
              )
 ```
@@ -1864,7 +1872,7 @@ OfficeSum<-build_plot(
   data=disa_sum %>% filter(Fiscal_Year>=2004),
   chart_geom = "Bar Chart",
   share = FALSE,
-  # labels_and_colors=ds_lc,
+  labels_and_colors=ds_lc,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
@@ -1883,7 +1891,7 @@ OfficeSum<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2020 $s)")
+  labs(y="Obligations (Constant 2020 $s)")#+  scale_fill_manual(values=cbPalette)
 )
 
 ggsave600dpi("..//Output//DISA_OfficeSum.png", OfficeSum, 
@@ -1896,7 +1904,8 @@ write.csv(file="..//Output//DISA_OfficeSum.csv",row.names = FALSE,
           arrange(pivot_wider(OfficeSum$data %>% 
                         arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
                       id_cols=c(OfficeScott,OfficeSum),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20),OfficeScott,OfficeSum))
+                    names_from=Fiscal_Year,values_from=
+                      Action_Obligation_OMB20_GDP20),OfficeScott,OfficeSum))
 
 
 

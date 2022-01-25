@@ -169,7 +169,8 @@ SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
 DECLARE	@return_value int
---10h13m
+--13h20m
+--10h25m
 --EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
 EXEC	@return_value = [budget].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS]
 --EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
