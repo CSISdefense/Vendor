@@ -211,6 +211,7 @@ summary(sw$TopAgencyText)
 # Component Variant
 ## SubCustomer with JPO
 ```{r SubCustomer}
+
 levels(platpsc$SubCustomer.JPO)<-list(
   "Army"="Army",
   "F-35 Joint Program Office"="F-35 JPO",
@@ -277,7 +278,7 @@ write.csv(file="..//Output//topline_subcustomer_JPO_current.csv",row.names = FAL
           pivot_wider(id_cols=c(SubCustomer.sum,SubCustomer.JPO),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
 
-summary(full_data$ContractingSubCustomer)
+
 ```
 
 # Service variant
@@ -1061,6 +1062,85 @@ PSC<-build_plot(
 
 ```
 
+
+## Other Products
+```{r OtherProducts}
+summary(factor(platpsc$PlatformPortfolio))
+# platpsc$Fiscal_Year
+# 
+# topplat<-platpsc %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
+#   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
+#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0))
+#             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
+#                         rank_2020=rank(desc(Action_Obligation_2020)))
+# topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
+# 
+# platpsc$TopShipProject<-
+#   ifelse(platpsc$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
+#          platpsc$ProjectName,NA)
+# platpsc$TopShipProject[is.na(platpsc$TopShipProject) & !is.na(platpsc$ProjectName)]<-
+#   "Other Labeled Project"
+# summary(factor(platpsc$TopShipProject))
+
+
+(
+Platform<-build_plot(
+  data=platpsc %>% filter(PlatformPortfolio=="Other Products"),
+  chart_geom = "Line Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  color_var="TopProject", #color_var
+  facet_var="TopProject", #facet_var
+  # column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+
+(
+PSC<-build_plot(
+  data=platpsc %>% filter(PlatformPortfolio=="Other Products"),
+  chart_geom = "Line Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  color_var="TopPStext", #color_var
+  facet_var="TopPStext", #facet_var
+  # column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
+
+```
+
+
 # International
 ##FMS 
 
@@ -1068,11 +1148,11 @@ PSC<-build_plot(
 ###FMS identification
 ```{r contract_identification}
 
-summary(fpds_data$foreign_funding_description)
+
 
 # undebug(build_plot)
 
-(contract_identification <-  build_plot(data=platpscintldef %>% filter(Customer=="Defense"),
+(contract_identification <-  build_plot(data=platpscintldef %>% filter(ContractingCustomer=="Defense"),
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="Fiscal_Year",
@@ -1177,7 +1257,7 @@ platpscintldef$OriginISOalpha3
 ```
 
 
-### FMS Vendor Size/Intl and Place
+  ### FMS Vendor Size/Intl and Place
 ```{r FPDS_vendor_Intl}
 
 summary(factor(platpscintldef$Shiny.VendorSize[platpscintldef$VendorIsForeign==1]))

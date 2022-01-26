@@ -45,14 +45,14 @@ initial_clean<-function(df){
 }
 
 # full_data %>% filter(fiscal_year==2021) %>% summarise(o=sum(SumOfobligatedAmount))
-u
+
 full_data <- read_delim(
   "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerpcau.txt",delim = "\t",
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
 
 
 full_data <- read_delim(
-  "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerComp.txt",delim = "\t",
+  "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS2021.txt",delim = "\t",
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
 
 full_data<-initial_clean(full_data)
@@ -86,8 +86,7 @@ full_data %<>%
   mutate(VendorIsForeign = factor(VendorIsForeign))%>%
   mutate(PlaceIsForeign = factor(PlaceIsForeign))
 
-labels_and_colors<-csis360::prepare_labels_and_colors(full_data,
-                                                      path="K:/Users/Greg/Repositories/Lookup-Tables/Style/")
+labels_and_colors<-csis360::prepare_labels_and_colors(full_data)
 
 column_key<-csis360::get_column_key(full_data)
 
@@ -145,12 +144,14 @@ platpscintldef$VendorSize_Intl[is.na(platpscintldef$VendorIsForeign)]<-"Unlabele
 
 #foreign_funding_description
 
+
+
 platpscintldef %<>% read_and_join_experiment(lookup_file="Budget_FundedByForeignEntity.csv",
                                         path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="budget/",
-                                        add_var = c("foreign_funding_description","foreign_funding_sum"),
+                                        add_var = c("foreign_funding_description","IsFMS"),
                                         by=c("fundedbyforeignentity"),
                                         # missing_file="missing_iso.csv",
-                                        skip_check_var = c("foreign_funding_description","foreign_funding_sum")
+                                        skip_check_var = c("foreign_funding_description","IsFMS")
 )
 
 
@@ -434,11 +435,12 @@ save(platpscintldef,intl_lc, intl_ck,file="data/semi_clean/platpscintl_FPDS.Rda"
 #                                            dir="office/"
 # )
 
-#SubCustomer.JPO
-# platpsc$SubCustomer.JPO<-as.character(platpsc$SubCustomer.platform)
-# platpsc$SubCustomer.JPO[platpsc$ProjectName=="JSF (F-35) " & !is.na(platpsc$ProjectName)&platpsc$SubCustomer.platform=="Navy"]<-"F-35 JPO"
-# platpsc$SubCustomer.JPO<-factor(platpsc$SubCustomer.JPO)
-# any(as.character(platpsc$TopProject)=="JSF (F-35) "& !is.na(platpsc$TopProject))
+# SubCustomer.JPO
+platpscintldef$SubCustomer.JPO<-as.character(platpscintldef$SubCustomer.platform)
+platpscintldef$SubCustomer.JPO[platpscintldef$ProjectName=="JSF (F-35)" & !is.na(platpscintldef$ProjectName)&platpscintldef$SubCustomer.platform=="Navy"]<-"F-35 JPO"
+platpscintldef$SubCustomer.JPO<-factor(platpscintldef$SubCustomer.JPO)
+summary(factor(platpscintldef$SubCustomer.JPO))
+any(as.character(platpscintldef$ProjectName)=="JSF (F-35)"& !is.na(platpscintldef$ProjectName))
 
 
 # platpscintldef$IsUnlabeledMAC<-is.na(platpscintldef$mainaccountcode) | is.na(platpscintldef$treasuryagencycode)
@@ -461,6 +463,16 @@ save(platpscintldef,intl_lc, intl_ck,file="data/semi_clean/platpscintl_FPDS.Rda"
 #   colnames(platpscintldef)[colnames(platpscintldef)=="isforeign"]<-"PlaceIsForeign"
 # }
 # 
+if(!"OriginIsForeign" %in% colnames(full_data)){
+  full_data<-read_and_join_experiment(full_data,lookup_file="Location_CountryCodes.csv",
+                                           path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="location/",
+                                           add_var = c("isforeign"),#"USAID region",
+                                           by=c("OriginISOalpha3"="alpha-3"),
+                                           # skip_check_var=c("NATOyear",	"MajorNonNATOyear","NTIByear"	,"SEATOendYear","RioTreatyStartYear","RioTreatyEndYear","FiveEyes","OtherTreatyName"	,"OtherTreatyStartYear","OtherTreatyEndYear","isforeign"),
+                                           missing_file="missing_DSCA_iso.csv")
+  colnames(full_data)[colnames(full_data)=="isforeign"]<-"OriginIsForeign"
+}
+
 # if(!"VendorIsForeign" %in% colnames(platpscintldef)){
 #   platpscintldef<-read_and_join_experiment(platpscintldef,lookup_file="Location_CountryCodes.csv",
 #                                            path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="location/",
