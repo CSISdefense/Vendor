@@ -44,7 +44,6 @@ initial_clean<-function(df){
   df
 }
 
-# full_data %>% filter(fiscal_year==2021) %>% summarise(o=sum(SumOfobligatedAmount))
 
 full_data <- read_delim(
   "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerpcau.txt",delim = "\t",
@@ -59,7 +58,7 @@ full_data<-initial_clean(full_data)
 full_data<-apply_standard_lookups(full_data)#,
 # path="K:/Users/Greg/Repositories/Lookup-Tables/style")
 
-
+View(full_data %>% group_by(Fiscal_Year) %>% summarise(o=sum(Action_Obligation_Then_Year)))
 
 # if("ContractingCustomer" %in% colnames(full_data))
 # full_data %<>%  select(-ContractingCustomer)
@@ -112,9 +111,8 @@ platpscintl<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdS
                         col_names = TRUE, guess_max = 10000000)
 colnames(platpscintl)[colnames(platpscintl)=="Customer"]<-"ContractingCustomer"
 
-platpscintl<-apply_standard_lookups(platpscintl)
 platpscintldef<-initial_clean(platpscintl)
-
+platpscintldef<-apply_standard_lookups(platpscintldef)
 
 sw<-read_delim(file.path("data","semi_clean","Summary.SP_SoftwareDetail.txt"),delim="\t",na=c("NULL","NA"),
                     col_names = TRUE, guess_max = 10000000)
