@@ -121,7 +121,12 @@ select *
 from FPDSTypeTable.AgencyID
 where agencyid in ('5300')
 
+
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
 --3h38mm
+--2h12m
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
  EXEC [Location].[SP_ProdServPlatformAgencyPlaceOriginVendor]
@@ -153,6 +158,7 @@ SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
 --4h48m
+--2h32m (with 5 cores)
 DECLARE	@return_value int
 
 --EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
@@ -164,15 +170,18 @@ EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCus
 
 
 		
+
+		
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
 DECLARE	@return_value int
---10h13m
+--13h20m
+--10h25m
 --EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
 EXEC	@return_value = [budget].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS]
 --EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
-		@Customer = 'Defense'
+		@Customer = NULL -- 'Defense'
 
 
 SET ANSI_WARNINGS OFF;
