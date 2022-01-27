@@ -22,6 +22,13 @@ group by  fiscal_year
 order by fiscal_year,fiscal_quarter
 
 
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+exec Summary.SP_SoftwareDetail
+@customer=NULL
+
+
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 /****** Script for SelectTopNRows command from SSMS  ******/
