@@ -26,15 +26,22 @@ OTA_data_current <- read_delim(
 
 
 OTA_data_current$MentionsCovid<-TRUE
-OTA_data_current$MCDCcovid<-FALSE
+OTA_data_current$TopCovid<-FALSE
 
 OTA_data_current$MentionsCovid[grep("COVID-19",OTA_data_current$`Description of Requirement`,invert=TRUE)]<-FALSE
-OTA_data_current$MCDCcovid[OTA_data_current$PIID=="W15QKN1691002" & 
+OTA_data_current$TopCovid[OTA_data_current$PIID %in% c("W15QKN1691002",
+                                                       "W15QKN2191003",
+                                                       "W911QY2190001",
+                                                       "W911QY2190002",
+                                                       "W911QY2190003",
+                                                       "W911NF2190001",
+                                                       "W911NF2190003",
+                                                       "W912CG2190001") & 
                      OTA_data_current$MentionsCovid]<-TRUE
 
-summary(OTA_data_current$MCDCcovid)
-View(OTA_data_current$`Description of Requirement`[OTA_data_current$MCDCcovid==TRUE])
-descript<-OTA_data_current$`Description of Requirement`[OTA_data_current$MCDCcovid==TRUE]
+summary(OTA_data_current$TopCovid)
+View(OTA_data_current$`Description of Requirement`[OTA_data_current$TopCovid==TRUE])
+descript<-OTA_data_current$`Description of Requirement`[OTA_data_current$TopCovid==TRUE]
 OTA_data_current$`Dollars Obligated`<-text_to_number(OTA_data_current$`Dollars Obligated`)
 
 
@@ -44,12 +51,12 @@ OTA_data <- read_delim(
 OTA_data<-OTA_data_current
 
 nrow(OTA_data[OTA_data$`Description of Requirement` %in% descript,])
-OTA_data$MCDCcovid<-FALSE
-OTA_data$MCDCcovid[OTA_data$`Description of Requirement` %in% descript]<-TRUE
+# OTA_data$TopCovid<-FALSE
+# OTA_data$TopCovid[OTA_data$`Description of Requirement` %in% descript]<-TRUE
 
-OTA_data_current %>% group_by(MCDCcovid,`Fiscal Year`) %>% dplyr::summarize(n=length(`Fiscal Year`),
+OTA_data_current %>% group_by(TopCovid,`Fiscal Year`) %>% dplyr::summarize(n=length(`Fiscal Year`),
                                                                             o=sum(`Dollars Obligated`))
-OTA_data %>% group_by(MCDCcovid,`Fiscal Year`) %>% dplyr::summarize(n=length(`Fiscal Year`),
+OTA_data %>% group_by(TopCovid,`Fiscal Year`) %>% dplyr::summarize(n=length(`Fiscal Year`),
                                                                             o=sum(`Dollars Obligated`))
 
 
@@ -250,7 +257,7 @@ OTA_data$SubCustomer.OTA[OTA_data$Contracting_Agency_ID=="97AE"]<-"DARPA"
 # 
 
 OTA_data$ProductServiceOrRnDarea.covid<-as.character(OTA_data$ProductServiceOrRnDarea.sum)
-OTA_data$ProductServiceOrRnDarea.covid[OTA_data$MCDCcovid==TRUE]<-"R&D (Covid-19 Medical CBRN Defense Consortium)"
+OTA_data$ProductServiceOrRnDarea.covid[OTA_data$TopCovid==TRUE]<-"R&D (Top OTAs responding to Covid-19)"
 OTA_data$ProductServiceOrRnDarea.covid[OTA_data$ProductServiceOrRnDarea.covid=="R&D"]<-"R&D (Other)"
 
 
