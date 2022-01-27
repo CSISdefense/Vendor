@@ -1276,7 +1276,40 @@ ggsave600dpi("..//Output//platform_PSR.png", PlatformPSR,
 
 ```
 
+## Platform R&D
+```{r PlatformPSR}
+(
+PlatformRnD<-build_plot(
+  data=full_data %>% filter(SimpleArea=="R&D"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  color_var="SimpleArea", #color_var
+  facet_var="PlatformPortfolio", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2020 $s)")
+)
 
+ggsave600dpi("..//Output//PlatformRnD.png", PlatformPSR, 
+             width=6.5, height= 4, units="in",size=11,lineheight = 0.75
+             )
+
+```
 
 
 
@@ -1511,7 +1544,8 @@ full_data$PlaceOfManufactureText20<-factor_wrap(full_data$PlaceOfManufactureText
 summary(factor(full_data$PlaceOfManufactureText20))
 (waiver <-  build_plot(data=full_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
                                                                           "Manufactured Outside U.S.",
-                                                                          "Performed/Manufactured Outside U.S.")) ,
+                                                                          "Performed/Manufactured Outside U.S.")|
+                                                   VendorIsForeign==1|OriginIsForeign==1) ,
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="Fiscal_Year",
@@ -1530,8 +1564,35 @@ summary(factor(full_data$PlaceOfManufactureText20))
        caption="Source: FPDS; CSIS analysis.")+
     theme(legend.position = "right")
     # guides(fill=guide_legend(ncol=2)
-           )
-summary(full_data$VendorIsForeign)
+
+
+  (waiverplace <-  build_plot(data=full_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
+                                                                          "Manufactured Outside U.S.",
+                                                                          "Performed/Manufactured Outside U.S.")|
+                                                   VendorIsForeign==1|OriginIsForeign==1) ,
+                            chart_geom="Bar Chart",
+                            share=FALSE,
+                            x_var="Fiscal_Year",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="PlaceOfManufactureText20",
+                            facet_var="PlaceAcquisitionCooperation",
+                            # second_var="StateRegion",
+                            # labels_and_colors=labels_and_colors,
+                            # column_key=column_key,
+                            legend=TRUE,
+                            caption=FALSE,
+                        format=TRUE)+
+    # facet_grid(  IsFMS~., scales="free_y")+
+  labs(#x="Year of Delivery (Calendar or Fiscal Varies by Source)",
+       y="Obligations (Constant FY 2020 $s)",
+       caption="Source: FPDS; CSIS analysis.")+
+    theme(legend.position = "right")
+    # guides(fill=guide_legend(ncol=2)
+)
+             )
+ggsave600dpi(waiverplace,file="../output/waverplace.png",size=8,lineheight=1, height =5, width=9)
+
+
 
 (waiver <-  build_plot(data=full_data %>% filter((PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
                                                                           "Manufactured Outside U.S.",
@@ -1543,7 +1604,7 @@ summary(full_data$VendorIsForeign)
                             x_var="Fiscal_Year",
                             y_var="Action_Obligation_OMB20_GDP20",
                             color_var="PlaceOfManufactureText20",
-                            facet_var="SimpleArea",
+                            facet_var="PlaceOfManufactureText20",
                             # second_var="StateRegion",
                             # labels_and_colors=labels_and_colors,
                             # column_key=column_key,
@@ -1609,8 +1670,227 @@ ggsave600dpi(contract_identification,file="../output/figure_03_contract_identifi
 
 
 ```
+### Place
+```{r buy_america_place}
+
+summary(full_data$PlaceStateRegion)
+full_data$PlaceOfManufactureText20<-factor_wrap(full_data$PlaceOfManufactureText)
+# undebug(build_plot)
+summary(factor(full_data$PlaceOfManufactureText20))
+(placeregion <-  build_plot(data=full_data %>% filter((PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
+                                                                          "Manufactured Outside U.S.",
+                                                                          "Performed/Manufactured Outside U.S.")|
+                                                   VendorIsForeign==1|OriginIsForeign==1)&!is.na(PlaceStateRegion)
+                                                     ),
+                            chart_geom="Bar Chart",
+                            share=FALSE,
+                            x_var="Fiscal_Year",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="PlaceOfManufacture_Sum",
+                            facet_var="PlaceStateRegion",
+                            # second_var="StateRegion",
+                            labels_and_colors=labels_and_colors,
+                            column_key=column_key,
+                            legend=TRUE,
+                            caption=FALSE,
+                        format=TRUE)+
+    # facet_grid(  IsFMS~., scales="free_y")+
+  labs(#x="Year of Delivery (Calendar or Fiscal Varies by Source)",
+       y="Obligations (Constant FY 2020 $s)",
+       caption="Source: FPDS; CSIS analysis.")+
+    theme(legend.position = "bottom")
+    # guides(fill=guide_legend(ncol=2)
+           )
+summary(full_data$vendor)
+full_data$PlaceMutualAcquisition
+(placeregion <-  build_plot(data=full_data %>% filter((PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
+                                                                          "Manufactured Outside U.S.",
+                                                                          "Performed/Manufactured Outside U.S.")|
+                                                   VendorIsForeign==1|OriginIsForeign==1)&!is.na(PlaceStateRegion)
+                                                     ),
+                            chart_geom="Bar Chart",
+                            share=FALSE,
+                            x_var="Fiscal_Year",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="PlaceOfManufacture_Sum",
+                            facet_var="PlaceMutualAcquisition",
+                            # second_var="StateRegion",
+                            labels_and_colors=labels_and_colors,
+                            column_key=column_key,
+                            legend=TRUE,
+                            caption=FALSE,
+                        format=TRUE)+
+    # facet_grid(  IsFMS~., scales="free_y")+
+  labs(#x="Year of Delivery (Calendar or Fiscal Varies by Source)",
+       y="Obligations (Constant FY 2020 $s)",
+       caption="Source: FPDS; CSIS analysis.")+
+    theme(legend.position = "bottom")
+    # guides(fill=guide_legend(ncol=2)
+           )
+full_data$PlaceAcquisitionCooperation
+
+(placeregion <-  build_plot(data=full_data %>% filter((PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
+                                                                          "Manufactured Outside U.S.",
+                                                                          "Performed/Manufactured Outside U.S.")|
+                                                   VendorIsForeign==1|OriginIsForeign==1)&!is.na(PlaceStateRegion)
+                                                     ),
+                            chart_geom="Bar Chart",
+                            share=FALSE,
+                            x_var="Fiscal_Year",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="PlaceOfManufacture_Sum",
+                            facet_var="PlaceAcquisitionCooperation",
+                            # second_var="StateRegion",
+                            labels_and_colors=labels_and_colors,
+                            column_key=column_key,
+                            legend=TRUE,
+                            caption=FALSE,
+                        format=TRUE)+
+    # facet_grid(  IsFMS~., scales="free_y")+
+  labs(#x="Year of Delivery (Calendar or Fiscal Varies by Source)",
+       y="Obligations (Constant FY 2020 $s)",
+       caption="Source: FPDS; CSIS analysis.")+
+    theme(legend.position = "bottom")
+    # guides(fill=guide_legend(ncol=2)
+           )
 
 
+full_data$place
+
+ggsave600dpi(placeregion,file="../output/place_of_manufacture_place_regionwaivr.png",size=8,lineheight=1, height =5, width=9)
+
+
+(vendorregion <-  build_plot(data=full_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
+                                                                          "Manufactured Outside U.S.",
+                                                                          "Performed/Manufactured Outside U.S.")|
+                                                   VendorIsForeign==1|OriginIsForeign==1) ,
+                            chart_geom="Bar Chart",
+                            share=FALSE,
+                            x_var="Fiscal_Year",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="PlaceOfManufacture_Sum",
+                            facet_var="VendorStateRegion",
+                            # second_var="VendorRegion",
+                            # labels_and_colors=labels_and_colors,
+                            # column_key=column_key,
+                            legend=TRUE,
+                            caption=FALSE,
+                        format=TRUE)+
+    # facet_grid(  IsFMS~., scales="free_y")+
+  labs(#x="Year of Delivery (Calendar or Fiscal Varies by Source)",
+       y="Obligations (Constant FY 2020 $s)",
+       caption="Source: FPDS; CSIS analysis.")+
+    theme(legend.position = "bottom")
+    # guides(fill=guide_legend(ncol=2)
+           )
+
+
+(originregion <-  build_plot(data=full_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
+                                                                          "Manufactured Outside U.S.",
+                                                                          "Performed/Manufactured Outside U.S.")|
+                                                   VendorIsForeign==1|OriginIsForeign==1) ,
+                            chart_geom="Bar Chart",
+                            share=FALSE,
+                            x_var="dFYear",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="PlaceOfManufacture_Sum",
+                            facet_var="OriginStateRegion",
+                            # second_var="VendorRegion",
+                            # labels_and_colors=labels_and_colors,
+                            # column_key=column_key,
+                            legend=TRUE,
+                            caption=FALSE,
+                        format=TRUE)+
+    # facet_grid(  IsFMS~., scales="free_y")+
+  labs(#x="Year of Delivery (Calendar or Fiscal Varies by Source)",
+       y="Obligations (Constant FY 2020 $s)",
+       caption="Source: FPDS; CSIS analysis.")+
+    theme(legend.position = "bottom")
+    # guides(fill=guide_legend(ncol=2)
+           )
+
+
+ggsave600dpi(waiver,file="../output/place_of_manufacture_waiver.png",size=8,lineheight=1, height =5, width=9)
+
+
+(contract_identification <-  build_plot(data=full_data %>% filter(!is.na(PlaceIsForeign)),
+                            chart_geom="Bar Chart",
+                            share=FALSE,
+                            x_var="Fiscal_Year",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="PlaceOfManufacture_Sum",
+                            facet_var="PlaceIsForeign",
+                            # second_var="StateRegion",
+                            labels_and_colors=labels_and_colors,
+                            column_key=column_key,
+                            legend=TRUE,
+                            caption=FALSE,
+                        format=TRUE)+
+    facet_grid(  PlaceIsForeign~., scales="free_y")+
+  labs(#x="Year of Delivery (Calendar or Fiscal Varies by Source)",
+       y="Obligations (Constant FY 2020 $s,\nVariable Axis)",
+       caption="Source: FPDS; CSIS analysis.")+
+    guides(fill=guide_legend(ncol=3)))
+
+
+
+
+
+
+```
+##Korea
+
+```{r}
+
+(korea <-  build_plot(data=full_data %>% filter(PlaceISOalpha3=="KOR" |
+                                                  VendorISOalpha3=="KOR" |
+                                                  OriginISOalpha3=="KOR"),
+                            chart_geom="Bar Chart",
+                            share=FALSE,
+                            x_var="Fiscal_Year",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="PlaceOfManufacture_Sum",
+                            facet_var="SimpleArea",
+                            # second_var="StateRegion",
+                            labels_and_colors=labels_and_colors,
+                            column_key=column_key,
+                            legend=TRUE,
+                            caption=FALSE,
+                        format=TRUE)+
+    # facet_grid(  IsFMS~., scales="free_y")+
+  labs(#x="Year of Delivery (Calendar or Fiscal Varies by Source)",
+       y="Obligations (Constant FY 2020 $s)",
+       caption="Source: FPDS; CSIS analysis.")+
+    theme(legend.position = "bottom")
+    # guides(fill=guide_legend(ncol=2)
+)
+
+full_data$IsFMS
+(korea <-  build_plot(data=full_data %>% filter(PlaceISOalpha3=="KOR" |
+                                                  VendorISOalpha3=="KOR" |
+                                                  OriginISOalpha3=="KOR"),
+                            chart_geom="Bar Chart",
+                            share=FALSE,
+                            x_var="Fiscal_Year",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="PlaceOfManufactureText20",
+                            facet_var="IsFMS",
+                            # second_var="StateRegion",
+                            # labels_and_colors=labels_and_colors,
+                            column_key=column_key,
+                            legend=TRUE,
+                            caption=FALSE,
+                        format=TRUE)+
+    # facet_grid(  IsFMS~., scales="free_y")+
+  labs(#x="Year of Delivery (Calendar or Fiscal Varies by Source)",
+       y="Obligations (Constant FY 2020 $s)",
+       caption="Source: FPDS; CSIS analysis.")+
+    theme(legend.position = "bottom")
+    # guides(fill=guide_legend(ncol=2)
+)
+
+PlaceOfManufactureText20
+```
 #Vendor Count
 ## Defense Count
 ```{r EntityCount}

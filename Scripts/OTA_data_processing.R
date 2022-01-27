@@ -41,7 +41,7 @@ OTA_data_current$`Dollars Obligated`<-text_to_number(OTA_data_current$`Dollars O
 OTA_data <- read_delim(
   "data_raw//OTA_NPS_report.csv",delim = ",",
   col_names = TRUE, guess_max = 500000,na=c("NA","NULL"))
-
+OTA_data<-OTA_data_current
 
 nrow(OTA_data[OTA_data$`Description of Requirement` %in% descript,])
 OTA_data$MCDCcovid<-FALSE
@@ -120,8 +120,25 @@ OTA_data$dFYear<-as.Date(paste("1/1/",as.character(OTA_data$Fiscal_Year),sep="")
 #                                   path="https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/",
 #                                   dir="Lookups/"
 # )
-colnames(OTA_data)[colnames(OTA_data)=="PlatformPortfolio"]<-"OrigPlat"
 
+if("PlatformPortfolio" %in% colnames(OTA_data)){
+  colnames(OTA_data)[colnames(OTA_data)=="PlatformPortfolio"]<-"OrigPlat"
+  OTA_data$OrigPlat<-factor(OTA_data$OrigPlat)
+  levels(OTA_data$OrigPlat)<-list(
+    "Aircraft"="Aircraft and Drones",
+    "Electronics, Comms, & Sensors"="Electronics and Communications",
+    "Facilities and Construction"="Facilities and Construction",
+    "Land Vehicles"="Land Vehicles",
+    "Missile and Space Systems"="Missile and Space Systems"     ,
+    "Other Products"="Other Products",
+    "Other R&D and Knowledge Based"="Other R&D and Knowledge Based",
+    "Other Services"="Other Services",
+    "Space Systems"="Space Systems",
+    "Unmanned"="Unmanned",
+    "Ordnance and Missiles"="Weapons and Ammunition" 
+  )
+  
+}
 
 levels(factor(OTA_data$Contracting_Agency_Name))
 #Classify Product or Service Codes
@@ -135,20 +152,6 @@ OTA_data<-csis360::read_and_join_experiment(OTA_data,
                                   dir=""
 )
 
-OTA_data$OrigPlat<-factor(OTA_data$OrigPlat)
-levels(OTA_data$OrigPlat)<-list(
-  "Aircraft"="Aircraft and Drones",
-  "Electronics, Comms, & Sensors"="Electronics and Communications",
-  "Facilities and Construction"="Facilities and Construction",
-  "Land Vehicles"="Land Vehicles",
-  "Missile and Space Systems"="Missile and Space Systems"     ,
-  "Other Products"="Other Products",
-  "Other R&D and Knowledge Based"="Other R&D and Knowledge Based",
-  "Other Services"="Other Services",
-  "Space Systems"="Space Systems",
-  "Unmanned"="Unmanned",
-  "Ordnance and Missiles"="Weapons and Ammunition" 
-)
 
 
 
