@@ -17,6 +17,7 @@ library(dplyr)
 library(tidyverse)
 library(scales)
 library(lubridate)
+library(svglite)
 
 axis.text.size<-10
 strip.text.size<-10
@@ -1664,13 +1665,14 @@ full_data$OriginManufactureVendor[is.na(full_data$OriginManufactureVendor)]<-
                                           skip_check_var = c("PlaceOfManufactureText","PlaceOfManufacture_Sum",
                                                              "PlaceOfManufacture_DoD"),
                                           # path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                                          path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\",
+                                          # path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\",
+                                          path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\",
                                           # path="F:\\Users\\gsanders\\Documents\\Repositories\\Lookup-Tables\\",
                                           dir="location/",
                                           case_sensitive = FALSE
     )
  
- debug(factor_wrap)
+ # debug(factor_wrap)
  full_data$OriginManufactureVendor20<-factor_wrap(full_data$OriginManufactureVendor)
  
 full_data$Service<-factor(full_data$SimpleArea)
@@ -1741,7 +1743,7 @@ full_data$OriginManufactureVendor<-full_data$PlaceOfManufacture_DoD
                             share=FALSE,
                             x_var="dFYear",
                             y_var="Action_Obligation_OMB20_GDP20",
-                            color_var="OriginManufactureVendor20",
+                            color_var="PlaceOfManufacture_DoD",
                             facet_var="SimpleArea",
                             # second_var="OriginIsForeign",
                             # labels_and_colors=labels_and_colors,
@@ -1764,12 +1766,84 @@ full_data$OriginManufactureVendor<-full_data$PlaceOfManufacture_DoD
   
   
     write.csv(file="..//Output//waiverdetail.csv",row.names = FALSE,
-            # ToplineComp$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
-              pivot_wider(waiverdetail$data,id_cols=c(PlaceOfManufactureText,SimpleArea),
+            waiverdetail$data %>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
+              pivot_wider(id_cols=c(PlaceOfManufacture_DoD,SimpleArea),
                           names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)
-            %>% arrange(PlaceOfManufactureText,SimpleArea))
+            %>% arrange(PlaceOfManufacture_DoD,SimpleArea))
 
 ```
+##### Simple Waiver Type
+```{r SimpleWaiver}
+full_data$PlaceOfManufacture_DoD09<-full_data$PlaceOfManufacture_DoD
+full_data %>% filter(OriginManufactureVendor=="Unlabeled Waiver" &
+                         Service=="Services and R&D" )  %>% group_by(VendorIsForeign,OriginIsForeign) %>%
+    summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
+  
+   full_data %>% filter(is.na(OriginManufactureVendor) &
+                         Service=="Services and R&D" )  %>% group_by(VendorIsForeign,OriginIsForeign) %>%
+    summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
+  
+  
+ full_data$PlaceOfManufacture_DoD09[is.na(full_data$PlaceOfManufacture_DoD09)&                                    
+                                     (full_data$Service=="Services and R&D" | 
+                                        full_data$PlaceOfManufactureText=="NOT A MANUFACTURED END PRODUCT") &
+                                     (full_data$VendorIsForeign==1 | full_data$OriginIsForeign==1)&
+                                    full_data$PlaceIsForeign==1]<-"Not MFG, Foreign Place of Performance"
+ full_data$PlaceOfManufacture_DoD09[full_data$PlaceOfManufacture_DoD09=="U.S. Manufactured" &
+                                    (full_data$VendorIsForeign==1 | full_data$OriginIsForeign==1)]<-
+   "U.S. Manufactured, Foreign Vendor or Origin"
+ full_data$PlaceOfManufacture_DoD09[is.na(full_data$PlaceOfManufacture_DoD09)&                                    
+                                     (full_data$Service=="Services and R&D" | 
+                                        full_data$PlaceOfManufactureText=="NOT A MANUFACTURED END PRODUCT") &
+                                     (full_data$VendorIsForeign==1 | full_data$OriginIsForeign==1)&
+                                    full_data$PlaceIsForeign==0]<-"Not MFG, U.S. Place of Performance"
+  full_data$PlaceOfManufacture_DoD09[full_data$PlaceOfManufacture_DoD09=="Foreign MFG, Perfomed, or Content, Unlabeled Waiver"]<-NA
+ 
+full_data$PlaceOfManufacture_DoD09<-factor_wrap(full_data$PlaceOfManufacture_DoD09,nwrap=45)
+ 
+  
+(waiversimple <-  build_plot(data=full_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
+                                                                          "Manufactured Outside U.S.",
+                                                                          "Performed/Manufactured Outside U.S.")|
+                                                   VendorIsForeign==1|OriginIsForeign==1)  %>%
+                               filter(!is.na(SimpleArea) & SimpleArea!="Unlabeled")%>%
+                               filter(Fiscal_Year>=2009),
+                            chart_geom="Bar Chart",
+                            share=FALSE,
+                            x_var="dFYear",
+                            y_var="Action_Obligation_OMB20_GDP20",
+                            color_var="PlaceOfManufacture_DoD09",
+                            facet_var="Service",
+                            # second_var="OriginIsForeign",
+                            # labels_and_colors=labels_and_colors,
+                            # column_key=column_key,
+                            legend=TRUE,
+                            caption=FALSE,
+                        format=TRUE)+
+    facet_grid(  Service~.)+
+  labs(x="Fiscal Year",
+       y="Obligations (Constant FY 2020 $s)",
+       caption="Source: FPDS; CSIS analysis.",
+       title="DoD Contracts with International\nVendors, Manufacture, or Origin")+
+    theme(legend.position = "right")
+    # guides(fill=guide_legend(ncol=2)
+)
+
+  ggsave600dpi(waiversimple,file="../output/waiversimple.png",size=14,lineheight=1, height =5.75, width=7)
+  ggsave600dpi(waiversimple,file="../output/waiversimple.svg",size=14,lineheight=1, height =5.75, width=7)
+
+
+  
+  
+  
+    write.csv(file="..//Output//waiversimple.csv",row.names = FALSE,
+            waiversimple$data %>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
+              pivot_wider(id_cols=c(PlaceOfManufacture_DoD09,Service),
+                          names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)
+            %>% arrange(PlaceOfManufacture_DoD09,Service))
+```
+
+
 #### Waiverplace
 ```{r WaiverPlace}
   (waiverally <-  build_plot(data=full_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
