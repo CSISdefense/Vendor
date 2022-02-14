@@ -28,6 +28,12 @@ SET NOCOUNT ON;
 exec Summary.SP_SoftwareDetail
 @customer=NULL
 
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+--8H29m
+exec Summary.SP_SoftwareC2Detail
+@customer='Defense'
+
 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;

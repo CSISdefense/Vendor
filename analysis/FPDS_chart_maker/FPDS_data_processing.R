@@ -66,6 +66,17 @@ full_data %<>% add_alliance(isoAlpha3_col= "VendorISOalpha3", drop_col = TRUE,pr
 full_data %<>% add_alliance(isoAlpha3_col= "OriginISOalpha3", drop_col = TRUE,prefix="Origin")
 
 
+full_data$VendorSize_Intl<-factor(full_data$Shiny.VendorSize)
+levels(full_data$VendorSize_Intl)<-list(
+  "Unlabeled"="Unlabeled",
+  "International"="International",
+  "U.S. Big Five"=c("Big Five","U.S. Big Five"),
+  "U.S. Large"=c("Large","U.S. Large"),
+  "U.S. Medium"=c("Medium","U.S. Medium"),
+  "U.S. Small"=c("Small","U.S. Small")
+)
+full_data$VendorSize_Intl[full_data$VendorIsForeign==1]<-"International"
+full_data$VendorSize_Intl[is.na(full_data$VendorIsForeign)]<-"Unlabeled"
 
 
 # if("ContractingCustomer" %in% colnames(full_data))
