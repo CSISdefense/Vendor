@@ -33,8 +33,10 @@ c2entity<-c2 %>% group_by(EntityText,EntityID)%>% summarise(SumOfobligatedAmount
                                                   SumOfnumberOfActions=sum(SumOfnumberOfActions))
 write.csv(c2entity,file="c2entity.csv",row.names = FALSE)
 
-c2_sum<-read_delim(file.path("data","semi_clean","c2_summary_veh.txt"),delim="\t",na=c("NULL","NA"),
-                     col_names = TRUE, guess_max = 700000)
+
+c2<-standardize_variable_names(c2)
+c2<-trimws(c2)
+c2<-c2%>%filter(Fiscal_Year>=2000)%>%apply_standard_lookups(c2)
 
 
 summary(factor(c2_gsa$CSISidvpiidid[c2_gsa$idvpiid==""]))
