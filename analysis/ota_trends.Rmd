@@ -175,6 +175,28 @@ ggsave600dpi(ota_topline_q,file=file.path("..","Output","ota_quarterly.png"),
              )
 ```
 
+## Topline spend 
+```{r}
+
+output_TY<-ota_def  %>% select(Fiscal_Year,Dollars_Obligated_Then_Year,`Base_and_All_Options_Value_(Total_Contract_Value)`)%>%
+  group_by(Fiscal_Year)%>%  
+  summarise(Dollars_Obligated_Then_Year=sum(Dollars_Obligated_Then_Year,na.rm=TRUE),
+            `Base_and_All_Options_Value_(Total_Contract_Value)`=sum(text_to_number(`Base_and_All_Options_Value_(Total_Contract_Value)`),
+                                                                    na.rm=TRUE))%>%
+  pivot_longer(cols=c(Dollars_Obligated_Then_Year,`Base_and_All_Options_Value_(Total_Contract_Value)`)) %>%
+  pivot_wider(names_from=c(Fiscal_Year))
+                                      
+
+wb <- loadWorkbook("..//Output//DoD_Acq_Trends_OTA.xlsx", create = TRUE)
+createSheet(wb, name = "Topline")
+writeWorksheet(wb, output_TY, sheet = "Topline", startRow = 1, startCol = 1)
+saveWorkbook(wb)
+rm(wb)
+xlcFreeMemory()
+            
+
+```
+
 ## Topline Competition
 ```{r ToplineComp}
 

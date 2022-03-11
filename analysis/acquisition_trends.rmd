@@ -18,6 +18,7 @@ library(tidyverse)
 library(scales)
 library(lubridate)
 library(svglite)
+library(readxl)
 
 axis.text.size<-10
 strip.text.size<-10
@@ -214,32 +215,45 @@ fpds_annual<-rbind(fpds_annual,toa %>% select(-fiscal_quarter))
     labs(x="Fiscal Year",y="Constant FY 2020 $ Billions",fill="Quarter")
 )
 
-write.csv(file="..//Output//toa_annual.csv",row.names = FALSE,na="",
-          topline %>% mutate(fiscal_quarter=ifelse(!is.na(Total_Obligation_Authority_OMB20_GDP20),"TOA",fiscal_quarter),
-                                            Dollars_GDP20=ifelse(fiscal_quarter=="TOA",
-                                                                 Total_Obligation_Authority_OMB20_GDP20,Action_Obligation_OMB20_GDP20))%>%
+output_TY<-topline$data %>% mutate(source=ifelse(!is.na(Total_Obligation_Authority_Then_Year),"TOA","Contract"),
+                                            Dollars=ifelse(source=="TOA",
+                                                                 Total_Obligation_Authority_Then_Year,Action_Obligation_Then_Year))%>%
             filter(Fiscal_Year>=2000)%>%
           format_data_for_plot(
                                fy_var="Fiscal_Year",
-                               y_var="Dollars_GDP20",
-                               color_var="fiscal_quarter",
+                               y_var="Dollars",
+                               color_var="source",
                                # facet="SubCustomer",
                                # labels_and_colors = ota_lc,
                                group=TRUE) %>%
             arrange(Fiscal_Year) %>%
-            mutate(Dollars_GDP20=Dollars_GDP20/1000000000)%>%
-          pivot_wider(id_cols=c(fiscal_quarter),
-                      names_from=Fiscal_Year,values_from=Dollars_GDP20) %>% 
+          pivot_wider(id_cols=c(source),
+                      names_from=Fiscal_Year,values_from=Dollars) %>% 
             
             # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=ota_lc$variable[ota_lc$column=="PlatformPortfolio"]))%>%
             # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=levels(fiscal_quarter),
             #                                 labels=gsub("\\n"," ",levels(PlatformPortfolio))))%>%
-                   arrange(fiscal_quarter))
-
+                   arrange(source)
 
 ggsave600dpi(topline,file=file.path("..","Output","topline_toa_annual.png"),  
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
+
+write.csv(file="..//Output//toa_annual.csv",row.names = FALSE,na="",output_TY
+          )
+
+
+
+
+wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+createSheet(wb, name = "TOA")
+writeWorksheet(wb, output_TY, sheet = "TOA", startRow = 2, startCol = 1)
+saveWorkbook(wb)
+rm(wb)
+xlcFreeMemory()
+
+
+
 ```
 
 ## Topline Competition
@@ -715,11 +729,18 @@ ggsave600dpi("..//Output//topline_psr.png", ToplinePSR,
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
-write.csv(file="..//Output//topline_psr.csv",row.names = FALSE,
-          full_data %>% group_by(SimpleArea,Fiscal_Year)%>%
+output_TY<-full_data %>% group_by(SimpleArea,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(SimpleArea),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)
+write.csv(file="..//Output//topline_psr.csv",row.names = FALSE,
+          output_TY)
+
+require(XLConnect)
+wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+createSheet(wb, name = "Area")
+writeWorksheet(wb, output_TY, sheet = "Area", startRow = 14, startCol = 14)
+saveWorkbook(wb)
 
 ```
 
@@ -765,13 +786,20 @@ write.csv(file="..//Output//psr_RnDPhase.csv",row.names = FALSE,
             arrange(ProductServiceOrRnDarea))
             
 
-write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE,
-          full_data %>% filter(SimpleArea=="R&D") %>%
+output_TY<-full_data %>% filter(SimpleArea=="R&D") %>%
             format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
                                  labels_and_colors=labels_and_colors) %>%
           pivot_wider(id_cols=c(ProductServiceOrRnDarea),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
-            arrange(ProductServiceOrRnDarea))
+            arrange(ProductServiceOrRnDarea)
+
+write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE,
+          output_TY)
+
+wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+createSheet(wb, name = "R&D")
+writeWorksheet(wb, output_TY, sheet = "R&D", startRow = 15, startCol = 13)
+saveWorkbook(wb)
 
 ```
 
@@ -851,8 +879,7 @@ contract_merge<-full_data%>%filter(Fiscal_Year >=2015) %>%
 #                      facet_var = "SimpleArea",
 #                      labels_and_colors = labels_and_colors
 # )
-
-ota_merge<-ota_def%>%filter(Fiscal_Year >=2015) %>%
+ota_merge<-standardize_variable_names(ota_def)%>%filter(Fiscal_Year >=2015) %>%
   group_by(Fiscal_Year,SimpleArea)%>%
   dplyr::summarise(Action_Obligation_OMB20_GDP20=sum(Dollars_Obligated_OMB20_GDP20))
 
@@ -1055,14 +1082,22 @@ write.csv(file="..//Output//psr_Services.csv",row.names = FALSE,
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>%
             arrange(ProductServiceOrRnDarea))
             
+output_TY<-full_data %>% 
+  format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ServicesCategory.detail",
+                                 labels_and_colors=labels_and_colors) %>%
+          pivot_wider(id_cols=c(ServicesCategory.detail),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
+            arrange(ServicesCategory.detail)
 
 write.csv(file="..//Output//psr_Services_current.csv",row.names = FALSE,
-          full_data %>% filter(SimpleArea=="R&D") %>%
-            format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
-                                 labels_and_colors=labels_and_colors) %>%
-          pivot_wider(id_cols=c(ProductServiceOrRnDarea),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
-            arrange(ProductServiceOrRnDarea))
+          output_TY)
+
+wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+createSheet(wb, name = "Area")
+writeWorksheet(wb, output_TY, sheet = "Area", startRow = 2, startCol = 14)
+createSheet(wb, name = "Services")
+writeWorksheet(wb, output_TY %>% filter(!ServicesCategory.detail %in% c("Products","Fuels","R&D","Unlabeled")), sheet = "Services", startRow = 2, startCol = 14)
+saveWorkbook(wb)
 
 ```
 
@@ -1300,6 +1335,12 @@ write.csv(file="..//Output//topline_platform_current.csv",row.names = FALSE,
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(PlatformPortfolio),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%arrange(PlatformPortfolio))
+
+wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+createSheet(wb, name = "Platform Portfolio")
+writeWorksheet(wb, output_TY, sheet = "Platform Portfolio", startRow = 15, startCol = 13)
+saveWorkbook(wb)
+
 
 ```
 
