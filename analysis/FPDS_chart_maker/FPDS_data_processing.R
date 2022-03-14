@@ -36,8 +36,8 @@ initial_clean<-function(df){
   # df$Fiscal_Year <- text_to_number(df$Fiscal_Year)
   colnames(df)[colnames(df)=="Customer"]<-"ContractingCustomer"
   # colnames(df)[colnames(df)=="platformportfolio"]<-"PlatformPortfolio"
-  # discard pre-2000
-  df %<>% filter(Fiscal_Year >= 2000 & ContractingCustomer=="Defense")
+  # discard pre-1990
+  df %<>% filter(Fiscal_Year >= 1990 & ContractingCustomer=="Defense") #Fiscal_Year >= 2000 & 
   # colnames(df)[colnames(df)=="Action_Obligation_Then_Year"]<-"Action_Obligation"
   # df$dFYear<-as.Date(paste("1/1/",as.character(df$Fiscal_Year),sep=""),"%m/%d/%Y")
   
