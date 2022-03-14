@@ -110,6 +110,9 @@ column_key<-csis360::get_column_key(full_data)
 
 save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
 
+summary(factor(full_data$VendorSize))
+
+
 
 if(all(is.na(full_data[nrow(full_data),]))){
   full_data<-full_data[1:nrow(full_data)-1,]
