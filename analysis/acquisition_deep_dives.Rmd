@@ -2373,8 +2373,8 @@ drone<-platpscintldef %>% filter(ProductOrServiceCode==1550 | IsRemotelyOperated
 
 summary(factor(drone$ProjectName))
 
-droneplat<-drone %>% group_by (ProjectName) %>%
-  summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
+droneplat<-drone %>% group_by(ProjectName) %>%
+  dplyr::summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0)))%>%
               group_by () %>%#PlatformPortfolio
     mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
@@ -2383,7 +2383,7 @@ droneplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
 
 
 droneplat$TopProject<-
-  ifelse(droneplat$rank_2020<=6 | droneplat$rank_total<=6,droneplat$ProjectName,NA)
+  ifelse(droneplat$rank_2020<=7 | droneplat$rank_total<=7,droneplat$ProjectName,NA)
 
 drone<-left_join(drone,droneplat %>% select(-Action_Obligation_OMB20_GDP20,Action_Obligation_2020),
           by=c("ProjectName"))
@@ -2423,7 +2423,7 @@ drone$TopPStext<-factor_wrap(drone$TopPStext)
 
 summary(factor(drone$TopPStext))
 
-
+drone %>% dplyr::group_by(ProjectName, IsRemotelyOperated)  %>% dplyr::summarise(Action_Obligation_2020.x=sum(Action_Obligation_2020.x))
 
 ```
 
@@ -2487,13 +2487,13 @@ rc_customer<-build_plot(
   data=drone  ,
   chart_geom = "Bar Chart",
   share = FALSE,
-  # labels_and_colors=drone_lc,
+  labels_and_colors=intl_lc,
   # NA, #VAR.ncol
   x_var="Fiscal_Year", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
-  color_var="SubCustomer", #color_var
-  facet_var="SubCustomer", #facet_var
-  # column_key=drone_ck,
+  color_var="SubCustomer.sum", #color_var
+  facet_var="SubCustomer.sum", #facet_var
+  column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+
@@ -2511,17 +2511,20 @@ rc_customer<-build_plot(
 )
 
 ggsave600dpi(rc_customer,file="..//output//Deep_Dives//Remotely_Crewed//Remotely_Crewed_Customer.png",  
-             width=13, height= 6, units="in",size=8, lineheight=1.2
+             width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
              )
-ggsave600dpi(rc_customer,file="..//output//Deep_Dives//Remotely_Crewed//Remotely_Crewed_Customer.eps",  
-             width=13, height= 6, units="in",size=16, lineheight=1.2
+ggsave600dpi(rc_customer,file="..//output//Deep_Dives//Remotely_Crewed//Remotely_Crewed_Customer.svg",  
+             width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
+             )
+ggsave600dpi(rc_customer,file="..//output//Deep_Dives//Remotely_Crewed//Remotely_Crewed_Customer.emf",  
+             width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
              )
 
 write.csv(file="..//Output//Deep_Dives//Remotely_Crewed//Remotely_Crewed_crewed_Customer.csv",row.names = FALSE,
           rc_customer$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
                                 bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
             arrange(Fiscal_Year)%>%
-          pivot_wider(id_cols=c(SubCustomer),
+          pivot_wider(id_cols=c(SubCustomer.sum),
                       names_from=Fiscal_Year,values_from=bAction_Obligation_OMB20_GDP20)%>%
             arrange(SubCustomer),na="")
 
