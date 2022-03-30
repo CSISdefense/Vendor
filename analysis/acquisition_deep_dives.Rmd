@@ -212,31 +212,31 @@ summary(sw$TopAgencyText)
 ## SubCustomer with JPO
 ```{r SubCustomer}
 
-levels(platpsc$SubCustomer.JPO)<-list(
-  "Army"="Army",
-  "F-35 Joint Program Office"="F-35 JPO",
-  "Navy"="Navy",
-  "Air Force"="Air Force", 
-  "Defense Logistics Agency" =c("DLA","Defense Logistics Agency"),
-  "Missile Defense Agency"=c("MDA","Missile Defense Agency"),
-  "Other DoD"="Other DoD"
-)
-detail_lc<-prepare_labels_and_colors(platpsc)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
-detail_ck<-get_column_key(platpsc)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+# levels(platpscintl$SubCustomer.JPO)<-list(
+#   "Army"="Army",
+#   "F-35 Joint Program Office"="F-35 JPO",
+#   "Navy"="Navy",
+#   "Air Force"="Air Force", 
+#   "Defense Logistics Agency" =c("DLA","Defense Logistics Agency"),
+#   "Missile Defense Agency"=c("MDA","Missile Defense Agency"),
+#   "Other DoD"="Other DoD"
+# )
+# detail_lc<-prepare_labels_and_colors(platpscintldef)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+# detail_ck<-get_column_key(platpscintldef)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 # platpsc$SubCustomer[platpsc$SubCustomer.JPO=="F-35 Joint Program Office"&SubCustomer.sum!="Navy"]
 
 (
 SubCustomer<-build_plot(
-  data=platpsc,
+  data=platpscintldef,
   chart_geom = "Bar Chart",
   share = FALSE,
-  labels_and_colors=detail_lc,
+  labels_and_colors=intl_lc,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
   color_var="SubCustomer.JPO", #color_var
   facet_var="SubCustomer.sum", #facet_var
-  column_key=detail_ck,
+  column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+
@@ -251,7 +251,7 @@ SubCustomer<-build_plot(
   theme(legend.position = "right")+
   labs(y="Obligations (Constant 2020 $s)")+
   facet_wrap(~SubCustomer.sum,nrow=1)+scale_x_date(breaks=
-  as.Date(c("2000-1-1","2005-1-1","2010-1-1","2015-1-1","2020-1-1")),date_labels="'%y")
+  as.Date(c("1990-1-1","1995-1-1","2000-1-1","2005-1-1","2010-1-1","2015-1-1","2020-1-1")),date_labels="'%y")
 )
 
 ggsave600dpi("..//Output//topline_subcustomer_JPO.png", SubCustomer+labs(caption="Source: FPDS and CSIS analysis."), 
@@ -261,6 +261,14 @@ ggsave600dpi("..//Output//topline_subcustomer_JPO.png", SubCustomer+labs(caption
 ggsave600dpi("..//Output//topline_subcustomer_JPO.eps", SubCustomer+labs(caption="Source: FPDS and CSIS analysis."), 
              width=6.5, height= 3.5, units="in",size=11,lineheight = 1
              )
+
+ggsave600dpi("..//Output//topline_subcustomer_JPO.svg", SubCustomer+labs(caption="Source: FPDS and CSIS analysis."), 
+             width=6.5, height= 3.5, units="in",size=11,lineheight = 1
+             )
+ggsave600dpi("..//Output//topline_subcustomer_JPO.emf", SubCustomer+labs(caption="Source: FPDS and CSIS analysis."), 
+             width=6.5, height= 3.5, units="in",size=11,lineheight = 1
+             )
+
 
 ggsave600dpi("..//Output//topline_subcustomer_JPO_wide.png", SubCustomer+labs(caption="Source: FPDS and CSIS analysis."), 
              width=12, height= 6, units="in",size=12,lineheight = 1
@@ -273,7 +281,7 @@ write.csv(file="..//Output//topline_subcustomer_JPO.csv",row.names = FALSE,
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20))
 
 write.csv(file="..//Output//topline_subcustomer_JPO_current.csv",row.names = FALSE,
-          platpsc %>% group_by(SubCustomer.sum,SubCustomer.JPO,Fiscal_Year)%>%
+          platpscintldef %>% group_by(SubCustomer.sum,SubCustomer.JPO,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(SubCustomer.sum,SubCustomer.JPO),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
