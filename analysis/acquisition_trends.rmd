@@ -50,6 +50,17 @@ toa$dFYear<-as.Date(paste(toa$Fiscal_Year,1,1,sep="-"))
 labels_and_colors<-prepare_labels_and_colors(full_data)
 ```
 ## Quarterly YTD
+
+```{r}
+write.csv(
+  full_data %>% group_by(SubCustomer.sum,PlatformPortfolio,SimpleArea,Competition.sum,
+                       VendorSize,Fiscal_Year) %>% filter(Fiscal_Year<=2020) %>%
+  summarise(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE),
+            Action_Obligation_OMB20_GDP20=sum(Action_Obligation_Then_Year,na.rm=TRUE)),"contracting.csv",row.names = FALSE)
+  
+
+```
+
 Read in quarterly data from the CSIS database and the current year data from SAM.gov.
 
 ```{r EstimatePrep}
@@ -1539,6 +1550,9 @@ write.csv(file="..//Output//subcustomer_competition.csv",row.names = FALSE,
 
 ```
 
+
+
+
 # Platform
 ## Topline  Platform
 ```{r Platform}
@@ -1633,6 +1647,98 @@ saveWorkbook(wb)
 
 ```
 
+## Platform by Service
+```{r Platform}
+for(s in c("Army","Navy","Air Force")){
+  
+  (
+    Platform<-build_plot(
+      data=full_data %>% filter(SubCustomer.sum==s),
+      chart_geom = "Line Chart",
+      share = FALSE,
+      labels_and_colors=labels_and_colors,
+      # NA, #VAR.ncol
+      x_var="dFYear", #x_var
+      y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+      color_var="PlatformPortfolio", #color_var
+      facet_var="PlatformPortfolio", #facet_var
+      column_key=column_key,
+      format=TRUE,
+      ytextposition=FALSE
+    )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+      # theme(strip.text.y = element_text(angle=0))+
+      # theme(axis.text.x = element_text(angle=90))+
+      #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+      #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+      #             )+labs(title=NULL,
+      # x="Fiscal Year",
+      # y="Percent of Obligations",
+      # color="Competition")+
+      theme(legend.position = "none")+
+      labs(y="Obligations (Constant 2020 $s)")
+  )
+  
+  ggsave600dpi(paste("..//Output//",s,"_platform.png",sep=""), Platform, 
+               width=12, height= 6, units="in",size=14,lineheight = 1.2
+  )
+  
+  ggsave600dpi(paste("..//Output//",s,"_platform.svg",sep=""), Platform, 
+               width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+  )
+  
+  ggsave600dpi(paste("..//Output//",s,"_platform.emf",sep=""), Platform+geom_line(
+    size=1,aes(x=dFYear,y=Action_Obligation_OMB20_GDP20,color=PlatformPortfolio)),
+    width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+  )
+}
+# 
+# (
+# Platform_Bar<-build_plot(
+#   data=full_data,
+#   chart_geom = "Bar Chart",
+#   share = FALSE,
+#   labels_and_colors=labels_and_colors,
+#   # NA, #VAR.ncol
+#   x_var="dFYear", #x_var
+#   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+#   color_var="PlatformPortfolio", #color_var
+#   facet_var="PlatformPortfolio", #facet_var
+#   column_key=column_key,
+#   format=TRUE,
+#   ytextposition=FALSE
+# )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+#   # theme(strip.text.y = element_text(angle=0))+
+#  # theme(axis.text.x = element_text(angle=90))+
+#  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+#  #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+#  #             )+labs(title=NULL,
+#   # x="Fiscal Year",
+#   # y="Percent of Obligations",
+#   # color="Competition")+
+#   theme(legend.position = "none")+
+#   labs(y="Obligations (Constant 2020 $s)")
+# )
+# 
+# ggsave600dpi("..//Output//topline_platform_bar.png", Platform_Bar, 
+#              width=12, height= 6, units="in",size=12,lineheight = 1.2
+#              )
+# 
+# ggsave600dpi("..//Output//topline_platform_bar.emf", Platform_Bar,
+#              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+#              )
+# 
+# write.csv(file="..//Output//topline_platform_current.csv",row.names = FALSE,
+#           full_data %>% group_by(PlatformPortfolio,Fiscal_Year)%>%
+#             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+#           pivot_wider(id_cols=c(PlatformPortfolio),
+#                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%arrange(PlatformPortfolio))
+# 
+# wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+# createSheet(wb, name = "Platform Portfolio")
+# writeWorksheet(wb, output_TY, sheet = "Platform Portfolio", startRow = 15, startCol = 13)
+# saveWorkbook(wb)
+
+```
 
 ## Platform SubCustomer
 ```{r PlatformSubCustomer}

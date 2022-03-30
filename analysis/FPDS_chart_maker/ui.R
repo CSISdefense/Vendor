@@ -18,10 +18,10 @@ shinyUI(fluidPage(
         sliderInput(
           inputId ="year",
           label = "Years",
-          min = 2000,
-          max = 2020,
+          min = 1990,
+          max = 2021,
           sep = "",
-          value = c(2000,2020)
+          value = c(1990,2021)
         )
       ),
       wellPanel(
