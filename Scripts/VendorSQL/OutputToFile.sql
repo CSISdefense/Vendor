@@ -165,12 +165,13 @@ SET NOCOUNT ON;
 
 --4h48m
 --2h32m (with 5 cores)
+--8h55m 1m rows (5 cores)
 DECLARE	@return_value int
 
 --EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
 EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer
 --EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
-		@Customer = NULL, --'Defense',
+		@Customer = 'Defense',-- [Summary].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer]
 		@SubCustomer = NULL,
 		@PlatformPortfolio =NULL
 

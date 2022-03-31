@@ -59,6 +59,14 @@ full_data<-initial_clean(full_data)
 full_data<-apply_standard_lookups(full_data)#,
 # path="K:/Users/Greg/Repositories/Lookup-Tables/style")
 
+#AnyCommercial 
+def_data<- read_delim(
+  "Data//semi_clean//Defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",delim = "\t",
+  col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
+def_data<-initial_clean(def_data)
+def_data<-apply_standard_lookups(def_data)#,
+
+
 full_data <- full_data %>% select(-PlaceIsForeign,-VendorIsForeign) 
 full_data %<>% add_alliance(isoAlpha3_col= "PlaceISOalpha3", drop_col = TRUE,prefix="Place")
 full_data$VendorISOalpha3[full_data$VendorISOalpha3=="~NJ"]<-NA
@@ -111,6 +119,36 @@ column_key<-csis360::get_column_key(full_data)
 save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
 
 summary(factor(full_data$VendorSize))
+
+
+#def_data
+def_data %<>%
+  # select(-ClassifyNumberOfOffers) %>%
+  mutate(ContractingSubCustomer = factor(ContractingSubCustomer)) %>%
+  mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
+  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
+  mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
+  mutate(Shiny.VendorSize = factor(Shiny.VendorSize)) %>%
+  mutate(SimpleArea = factor(SimpleArea)) %>%
+  mutate(Competition.sum = factor(Competition.sum)) %>%
+  mutate(Competition.effective.only = factor(Competition.effective.only)) %>%
+  mutate(Competition.multisum = factor(Competition.multisum))  %>%
+  mutate(No.Competition.sum = factor(No.Competition.sum)) %>%
+  mutate(Vehicle = factor(Vehicle)) %>%
+  mutate(Vehicle.sum = factor(Vehicle.sum)) %>%
+  mutate(Vehicle.sum7 = factor(Vehicle.sum7)) %>%
+  mutate(Vehicle.AwardTask = factor(Vehicle.AwardTask)) %>%
+  mutate(PricingUCA = factor(PricingUCA)) #%>%
+  # mutate(IsFMS = factor(IsFMS)) %>%
+  # mutate(PlaceOfManufacture_Sum = factor(PlaceOfManufacture_Sum)) %>%
+  # mutate(VendorIsForeign = factor(VendorIsForeign))%>%
+  # mutate(PlaceIsForeign = factor(PlaceIsForeign))
+
+def_lc<-csis360::prepare_labels_and_colors(def_data)
+
+def_ck<-csis360::get_column_key(def_data)
+
+save(def_data,def_lc,def_ck, file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
 
 
 
