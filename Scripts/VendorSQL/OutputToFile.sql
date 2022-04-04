@@ -129,6 +129,47 @@ where agencyid in ('5300')
 
 
 
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+--2h49m 5 core
+EXEC [Contract].[SP_ContractSampleCriteriaDetailsCustomer]
+@IsDefense=NULL
+
+
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+--1d6h did not yet have a plan
+--I thought this may have been b/c of contract.fpdsclassification, but the source view doesn't seem to call on that.
+--2h49m
+EXEC [Contract].[SP_ContractBucketPlatformCustomer]
+@Customer='Defense'
+	,@StartFiscalYear =2007
+
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+--1h33m ! (1h27
+EXEC [Contract].[SP_ContractUnmodifiedScope]
+	-- Add the parameters for the stored procedure here
+	@IsDefense=1
+
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+--1h 37m (or so) with errors
+EXEC [Contract].[SP_ContractUnmodifiedCompetitionVehicleCustomer]
+	@Customer='Defense'
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+--1h 37m with errors
+EXEC [Contract].[SP_ContractCompetitionVehicleCustomer]
+	@IsDefense=1
+
+
+
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 --3h38mm
@@ -212,6 +253,18 @@ DECLARE	@return_value int
 EXEC	@return_value = [Vendor].SP_EntityIDhistoryCalendar
 --EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
 		@Customer = 'Defense'
+		
+
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+
+DECLARE	@return_value int
+
+--EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
+EXEC	@return_value = [Location].[SP_ProdServPlatformAgencyPlaceOriginVendor]
+--EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
+		@Customer = NULL --'Defense'
 		
 
 
