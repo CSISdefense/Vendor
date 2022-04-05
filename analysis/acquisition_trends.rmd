@@ -19,6 +19,7 @@ library(scales)
 library(lubridate)
 library(svglite)
 library(readxl)
+library(XLConnect)
 
 axis.text.size<-10
 strip.text.size<-10
@@ -74,8 +75,8 @@ q2021<-y2021 %>% mutate(fiscal_quarter=lubridate::quarter(Date.Signed,fiscal_sta
   dplyr::summarize(Action_Obligation=sum(csis360::text_to_number(Dollars.Obligated),na.rm=TRUE),
             minSD=min(Date.Signed),
             maxSD=max(Date.Signed))%>% filter(fiscal_quarter<=3)
-y2021
-q2021<-q2021 %>% select(Fiscal_Year,fiscal_quarter,Action_Obligation,ContractingCustomer)
+
+q2021<-q2021 %>% dplyr::select(Fiscal_Year,fiscal_quarter,Action_Obligation,ContractingCustomer)
 # colnames(q2021)[colnames(q2021)=="Fiscal_Year"]<-"Fiscal_Year"
 # colnames(q2021)[colnames(q2021)=="Fiscal_Year"]<-"Fiscal_Year"
 
@@ -96,7 +97,7 @@ toa$Action_Obligation_OMB20_GDP20<-NA
 toa$ContractingCustomer<-"Defense"
 quarterlyYTD$Total_Obligation_Authority_OMB20_GDP20<-NA
 quarterlyYTD$Total_Obligation_Authority_Then_Year<-NA
-quarterlyYTD<-rbind(quarterlyYTD,toa %>% select(-Series, -dFYear))
+quarterlyYTD<-rbind(quarterlyYTD,toa %>% dplyr::select(-Series, -dFYear))
 
 ```
 
@@ -199,7 +200,7 @@ write.csv(file="..//Output//toa_topline.csv",row.names = FALSE,na="",
             #                                 labels=gsub("\\n"," ",levels(PlatformPortfolio))))%>%
                    arrange(fiscal_quarter))
 
-p
+
 ggsave600dpi(topline_q,file=file.path("..","Output","toa_quarterly.png"),  
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
@@ -208,13 +209,16 @@ ggsave600dpi(topline_q,file=file.path("..","Output","toa_quarterly.png"),
 ```{r TOAannual}
 
 
-fpds_annual<-full_data %>% group_by(Fiscal_Year,dFYear,
+fpds_annual<-full_data %>% group_by(Fiscal_Year,dFYear,IsFMS
                                     ContractingCustomer) %>% summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
                                                                       Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
 toa$Fiscal_Year<-text_to_number(toa$Fiscal_Year)
+toa$IsFMS<-0
 fpds_annual$Total_Obligation_Authority_Then_Year<-NA
 fpds_annual$Total_Obligation_Authority_OMB20_GDP20<-NA
-fpds_annual<-rbind(as.data.frame(fpds_annual),as.data.frame(toa) %>% select(-fiscal_quarter))
+fpds_annual<-rbind(as.data.frame(fpds_annual),as.data.frame(toa) %>% dplyr::select(-fiscal_quarter,-Series))
+colnames(toa)[!colnames(toa) %in% colnames(fpds_annual)]
+colnames(fpds_annual)[!colnames(fpds_annual) %in% colnames(toa)]
 
 (topline<-ggplot(data=fpds_annual %>% filter(Fiscal_Year>=2000) #rbind(quarterly,q2021,e2021),
       )+geom_col( aes(x=dFYear,
