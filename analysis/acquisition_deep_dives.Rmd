@@ -224,6 +224,15 @@ summary(sw$TopAgencyText)
 # detail_lc<-prepare_labels_and_colors(platpscintldef)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 # detail_ck<-get_column_key(platpscintldef)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 # platpsc$SubCustomer[platpsc$SubCustomer.JPO=="F-35 Joint Program Office"&SubCustomer.sum!="Navy"]
+summary(factor(platpscintldef$SubCustomer.platform))
+summary(factor(platpscintldef$SubCustomer))
+platpscintldef %>% filter(Fiscal_Year==2021) %>% group_by(SubCustomer) %>% summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
+summary(platpscintldef$SubCustomer.JPO)
+platpscintldef$SubCustomer.JPO<-as.character(platpscintldef$SubCustomer.JPO)
+platpscintldef$SubCustomer.JPO[platpscintldef$SubCustomer.JPO=="Other DoD"& platpscintldef$SubCustomer!="Uncategorized"]<-
+  platpscintldef$SubCustomer[platpscintldef$SubCustomer.JPO=="Other DoD"& platpscintldef$SubCustomer!="Uncategorized"]
+
+intl_lc<-prepare_labels_and_colors(platpscintldef)
 
 (
 SubCustomer<-build_plot(
@@ -275,12 +284,12 @@ ggsave600dpi("..//Output//topline_subcustomer_JPO_wide.png", SubCustomer+labs(ca
              )
 
 
-write.csv(file="..//Output//topline_subcustomer_JPO.csv",row.names = FALSE,
+write.csv(file="..//Output//topline_subcustomer_JPO.csv",row.names = FALSE,na = "",
           SubCustomer$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
           pivot_wider(id_cols=c(SubCustomer.sum,SubCustomer.JPO),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20))
 
-write.csv(file="..//Output//topline_subcustomer_JPO_current.csv",row.names = FALSE,
+write.csv(file="..//Output//topline_subcustomer_JPO_current.csv",row.names = FALSE,na = "",
           platpscintldef %>% group_by(SubCustomer.sum,SubCustomer.JPO,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(SubCustomer.sum,SubCustomer.JPO),
@@ -329,13 +338,13 @@ ggsave600dpi("..//Output//Archives//2020_Trends//cpsr_Services.svg", Services,
              width=6.5, height= 3.25, units="in",size=11, lineheight=1.2
              )
 
-write.csv(file="..//Output//cpsr_Services.csv",row.names = FALSE,
+write.csv(file="..//Output//cpsr_Services.csv",row.names = FALSE,na = "",
           pivot_wider(Services$data,id_cols=c(CrisisProductOrServiceArea),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>%
             arrange(CrisisProductOrServiceArea))
             
 
-write.csv(file="..//Output//psr_Services_current.csv",row.names = FALSE,
+write.csv(file="..//Output//psr_Services_current.csv",row.names = FALSE,na = "",
           full_data %>% filter(ProductServiceOrRnDarea.sum=="R&D") %>%
             format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
                                  labels_and_colors=labels_and_colors) %>%
@@ -398,7 +407,7 @@ Platform<-build_plot(
 )
   
   
-  write.csv(file="..//Output//Aircraft_project_cur.csv",row.names = FALSE,
+  write.csv(file="..//Output//Aircraft_project_cur.csv",row.names = FALSE,na = "",
             platpsc %>% filter(PlatformPortfolio=="Aircraft")  %>%
               format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "TopProject"#,
                                    # labels_and_colors=labels_and_colors
@@ -1213,7 +1222,7 @@ summary(platpscintldef$VendorSize_Intl)
   )
 
 
-write.csv(file="..//Output//jsf_vendor_intl_place.csv",row.names = FALSE,
+write.csv(file="..//Output//jsf_vendor_intl_place.csv",row.names = FALSE,na = "",
           jsf_vendor_intl_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(VendorSize_Intl,IsFMS, PlaceIsForeign),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,VendorSize_Intl))
@@ -1240,7 +1249,7 @@ ggsave600dpi(jsf_vendor_intl_place,file="../output/jsf_vendor_intl_place.png",
   )
 
 
-write.csv(file="..//Output//jsf_manufacture_intl_place.csv",row.names = FALSE,
+write.csv(file="..//Output//jsf_manufacture_intl_place.csv",row.names = FALSE,na = "",
           jsf_manufacture_intl_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(PlaceIsForeign,IsFMS, PlaceOfManufacture_Sum),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,PlaceOfManufacture_Sum))
@@ -1294,7 +1303,7 @@ summary(platpscintldef$VendorSize_Intl)
   )
 
 
-write.csv(file="..//Output//FMS_vendorplaceintl_all.csv",row.names = FALSE,
+write.csv(file="..//Output//FMS_vendorplaceintl_all.csv",row.names = FALSE,na = "",
           fpds_vendor_intl_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(VendorSize_Intl,IsFMS, PlaceIsForeign),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,VendorSize_Intl))
@@ -1324,7 +1333,7 @@ ggsave600dpi(fpds_vendor_place,file="../output/FMS_vendorplace_all.png",
              size = 12, lineheight=1, height =4.5, width=9)
 
 
-write.csv(file="..//Output//FMS_vendorplace_all.csv",row.names = FALSE,
+write.csv(file="..//Output//FMS_vendorplace_all.csv",row.names = FALSE,na = "",
           fpds_vendor_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(Shiny.VendorSize,PlaceIsForeign,IsFMS),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,Shiny.VendorSize,IsFMS))
@@ -1358,7 +1367,7 @@ summary(platpscintldef$VendorSize_Intl)
   )
 
 
-write.csv(file="..//Output//FMS_vendorplaceintl_noJSF.csv",row.names = FALSE,
+write.csv(file="..//Output//FMS_vendorplaceintl_noJSF.csv",row.names = FALSE,na = "",
           fpds_vendor_intl_place_noJSF$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(VendorSize_Intl,IsFMS, PlaceIsForeign),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,VendorSize_Intl))
@@ -1389,7 +1398,7 @@ ggsave600dpi(fpds_vendor_place_noJSF,file="../output/FMS_vendorplace_noJSF.png",
              size = 12, lineheight=1, height =4.5, width=9)
 
 
-write.csv(file="..//Output//FMS_vendorplace_noJSF.csv",row.names = FALSE,
+write.csv(file="..//Output//FMS_vendorplace_noJSF.csv",row.names = FALSE,na = "",
           fpds_vendor_place_noJSF$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(Shiny.VendorSize,PlaceIsForeign,IsFMS),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,Shiny.VendorSize,IsFMS))
@@ -1422,7 +1431,7 @@ summary(platpscintldef$VendorSize_Intl)
   )
 
 
-write.csv(file="..//Output//FMS_vendorplaceintl.csv",row.names = FALSE,
+write.csv(file="..//Output//FMS_vendorplaceintl.csv",row.names = FALSE,na = "",
           fpds_vendor_intl_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(VendorSize_Intl,IsFMS, PlaceIsForeign),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,VendorSize_Intl))
@@ -1452,7 +1461,7 @@ ggsave600dpi(fpds_vendor_place,file="../output/FMS_vendorplace.png",
              size = 12, lineheight=1, height =4.5, width=9)
 
 
-write.csv(file="..//Output//FMS_vendorplace.csv",row.names = FALSE,
+write.csv(file="..//Output//FMS_vendorplace.csv",row.names = FALSE,na = "",
           fpds_vendor_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(Shiny.VendorSize,PlaceIsForeign,IsFMS),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,Shiny.VendorSize,IsFMS))
@@ -1484,7 +1493,7 @@ write.csv(file="..//Output//FMS_vendorplace.csv",row.names = FALSE,
   )
 
 
-write.csv(file="..//Output//FMS_BAAplaceintl_all.csv",row.names = FALSE,
+write.csv(file="..//Output//FMS_BAAplaceintl_all.csv",row.names = FALSE,na = "",
           fpds_manufacture_intl_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(PlaceIsForeign,IsFMS, PlaceOfManufacture_Sum),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,PlaceOfManufacture_Sum))
@@ -1517,7 +1526,7 @@ summary(factor(platpscintldef$IsJSF))
   )
 
 
-write.csv(file="..//Output//FMS_BAAplaceintl_noJSF.csv",row.names = FALSE,
+write.csv(file="..//Output//FMS_BAAplaceintl_noJSF.csv",row.names = FALSE,na = "",
           fpds_manufacture_intl_place_noJSF$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(PlaceIsForeign,IsFMS, PlaceOfManufacture_Sum),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,PlaceOfManufacture_Sum))
@@ -1549,7 +1558,7 @@ ggsave600dpi(fpds_manufacture_intl_place_noJSF,file="../output/FMS_BAAplaceintl_
   )
 
 
-write.csv(file="..//Output//FMS_BAAplaceintl.csv",row.names = FALSE,
+write.csv(file="..//Output//FMS_BAAplaceintl.csv",row.names = FALSE,na = "",
           fpds_manufacture_intl_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(PlaceIsForeign,IsFMS, PlaceOfManufacture_Sum),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,PlaceOfManufacture_Sum))
@@ -1581,7 +1590,7 @@ summary(factor(platpscintldef$SimpleArea))
   )
 summary(platpscintldef$dFYear)
 
-write.csv(file="..//Output//fmsintl_service.csv",row.names = FALSE,
+write.csv(file="..//Output//fmsintl_service.csv",row.names = FALSE,na = "",
           fmsintl_service$data%>%# mutate(Fiscal_Year=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(PlaceIsForeign,IsFMS,CrisisProductOrServiceArea),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,CrisisProductOrServiceArea))
@@ -1609,7 +1618,7 @@ ggsave600dpi(fmsintl_service,file="../output/fmsintl_service.png",
   )
 
 
-write.csv(file="..//Output//fmsintl_service_vendor.csv",row.names = FALSE,
+write.csv(file="..//Output//fmsintl_service_vendor.csv",row.names = FALSE,na = "",
           fmsintl_service_vendor$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(IsFMSplaceIntl,VendorSize_Intl,CrisisProductOrServiceArea),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(IsFMSplaceIntl,VendorSize_Intl,CrisisProductOrServiceArea))
@@ -1718,7 +1727,7 @@ SWpscdetail<-build_plot(
 
 
 
-# write.csv(file="..//Output//Software_prodserv_comm.csv",row.names = FALSE,
+# write.csv(file="..//Output//Software_prodserv_comm.csv",row.names = FALSE,na = "",
 #           arrange(pivot_wider(SWpscdetail$data %>% 
 #                         arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
 #                       id_cols=c(SWpsc,Commercial),
@@ -1776,7 +1785,7 @@ ggsave600dpi(SWpscdetail,file="..//output//Software_Customer_Agency.eps",
              width=13, height= 6, units="in",size=16, lineheight=1.2
              )
 
-write.csv(file="..//Output//Software_Customer.csv",row.names = FALSE,
+write.csv(file="..//Output//Software_Customer.csv",row.names = FALSE,na = "",
           SWpscdetail$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
                                 bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
             arrange(Fiscal_Year)%>%
@@ -1824,7 +1833,7 @@ ggsave600dpi(SWpscDoDcomp,file="..//output//Software_Defense_Agency.eps",
              width=13, height= 6, units="in",size=16, lineheight=1.2
              )
 
-write.csv(file="..//Output//SWpscDoDcomp.csv",row.names = FALSE,
+write.csv(file="..//Output//SWpscDoDcomp.csv",row.names = FALSE,na = "",
           SWpscDoDcomp$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
                                 bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
             arrange(Fiscal_Year)%>%
@@ -1871,7 +1880,7 @@ ggsave600dpi("..//Output//Software_comp.png", SoftwareComp,
 
 
 
-write.csv(file="..//Output//Software_competition.csv",row.names = FALSE,
+write.csv(file="..//Output//Software_competition.csv",row.names = FALSE,na = "",
           SoftwareComp$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
                                 bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
             arrange(Fiscal_Year)%>%
@@ -1966,7 +1975,7 @@ ggsave600dpi("..//Output//Software_vendor.eps", SoftwareVendor+
              )
 
 # 
-# write.csv(file="..//Output//Software_vendor_cur.csv",row.names = FALSE,
+# write.csv(file="..//Output//Software_vendor_cur.csv",row.names = FALSE,na = "",
 #           sw %>% group_by(Shiny.VendorSize,Fiscal_Year)%>%
 #             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE)/1000000000)%>%
 #           pivot_wider(id_cols=c(Shiny.VendorSize),
@@ -1975,7 +1984,7 @@ ggsave600dpi("..//Output//Software_vendor.eps", SoftwareVendor+
 
 
 
-write.csv(file="..//Output//Software_vendor.csv",row.names = FALSE,
+write.csv(file="..//Output//Software_vendor.csv",row.names = FALSE,na = "",
           SoftwareVendor$data %>% mutate(Fiscal_Year=lubridate::year(dFYear),
                                 bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
             arrange(Fiscal_Year)%>%
@@ -2024,7 +2033,7 @@ ggsave600dpi("..//Output//Software_vehicle.png", SoftwareVehicle,
              width=13, height= 4.5, units="in",size=11
              )
 
-write.csv(file="..//Output//Software_vehicle.csv",row.names = FALSE,
+write.csv(file="..//Output//Software_vehicle.csv",row.names = FALSE,na = "",
           SoftwareVehicle$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
                                        bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
             pivot_wider(id_cols=c(SWpsc,Vehicle.sum,Vehicle.AwardTask),
@@ -2081,7 +2090,7 @@ ggsave600dpi("..//Output//Software_pricing.png", SoftwarePricing,
              )
 
 
-write.csv(file="..//Output//Software_pricing.csv",row.names = FALSE,
+write.csv(file="..//Output//Software_pricing.csv",row.names = FALSE,na = "",
           SoftwarePricing$data %>% mutate(Fiscal_Year=lubridate::year(dFYear),
                                 bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
             arrange(Fiscal_Year)%>%
@@ -2245,7 +2254,7 @@ ggsave600dpi("..//Output//Software_comm.png", SoftwareComm,
              )
 
 
-write.csv(file="..//Output//Software_comm.csv",row.names = FALSE,
+write.csv(file="..//Output//Software_comm.csv",row.names = FALSE,na = "",
           SoftwareComm$data %>% mutate(Fiscal_Year=lubridate::year(dFYear),
                                 bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
             arrange(Fiscal_Year)%>%
@@ -2266,7 +2275,7 @@ ggsave600dpi("..//Output//Software_DefenseGSA_comm.png", SoftwareComm,
              )
 
 
-write.csv(file="..//Output//Software_DefenseGSA_comm.csv",row.names = FALSE,
+write.csv(file="..//Output//Software_DefenseGSA_comm.csv",row.names = FALSE,na = "",
           SoftwareComm$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
                                 bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
             arrange(Fiscal_Year)%>%
@@ -2345,7 +2354,7 @@ ggsave600dpi("..//Output//SoftwareCommDefAgency.png", SoftwareCommAgency,
              width=13, height= 6, units="in",size=12, lineheight=1.2
              )
 
-write.csv(file="..//Output//SoftwareCommDefAgency.csv",row.names = FALSE,
+write.csv(file="..//Output//SoftwareCommDefAgency.csv",row.names = FALSE,na = "",
           SoftwareCommAgency$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
                                 bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
             arrange(Fiscal_Year)%>%
@@ -2466,7 +2475,7 @@ ggsave600dpi(rc_psr,file="..//output//Deep_Dives//Remotely_Crewed//Remotely_Crew
              width=13, height= 6, units="in",size=16, lineheight=1.2
              )
 
-write.csv(file="..//Output//Deep_Dives//Remotely_Crewed//Remotely_Crewed_crewed_psr.csv",row.names = FALSE,
+write.csv(file="..//Output//Deep_Dives//Remotely_Crewed//Remotely_Crewed_crewed_psr.csv",row.names = FALSE,na = "",
           dronepscdetail$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
                                 bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
             arrange(Fiscal_Year)%>%
@@ -2520,7 +2529,7 @@ ggsave600dpi(rc_customer,file="..//output//Deep_Dives//Remotely_Crewed//Remotely
              width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
              )
 
-write.csv(file="..//Output//Deep_Dives//Remotely_Crewed//Remotely_Crewed_crewed_Customer.csv",row.names = FALSE,
+write.csv(file="..//Output//Deep_Dives//Remotely_Crewed//Remotely_Crewed_crewed_Customer.csv",row.names = FALSE,na = "",
           rc_customer$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
                                 bAction_Obligation_OMB20_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
             arrange(Fiscal_Year)%>%
@@ -2647,7 +2656,7 @@ summary(platpscintldef$VendorSize_Intl)
   )
 
 
-write.csv(file="..//output//Deep_Dives//Remotely_Crewed//rc_vendor_place_FMS.csv",row.names = FALSE,
+write.csv(file="..//output//Deep_Dives//Remotely_Crewed//rc_vendor_place_FMS.csv",row.names = FALSE,na = "",
           rc_vendor_place_fms$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(VendorSize_Intl,IsFMS, PlaceIsForeign),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>% arrange(PlaceIsForeign,IsFMS,VendorSize_Intl))
@@ -2806,7 +2815,7 @@ ggsave600dpi("..//Output//Deep_Dives/Inflation/defense_fuel_place.png", fuel+lab
              )
 
 
-write.csv(file="..//Output//Deep_Dives/Inflation/defense_fuel_place.csv",row.names = FALSE,
+write.csv(file="..//Output//Deep_Dives/Inflation/defense_fuel_place.csv",row.names = FALSE,na = "",
           fuel$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
           pivot_wider(id_cols=c(PlaceIsForeign),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20))
