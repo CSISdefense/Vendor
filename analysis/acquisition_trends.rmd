@@ -543,7 +543,7 @@ ggsave600dpi("..//Output//topline_vendor.eps", ToplineVendor+
 
 write.csv(file="..//Output//topline_vendor_cur.csv",row.names = FALSE, na = "",
           full_data %>% group_by(Shiny.VendorSize,Fiscal_Year)%>%
-            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE)/1000000000)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(Shiny.VendorSize),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(Shiny.VendorSize))
 
@@ -1129,13 +1129,16 @@ write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE, na = ""
 ## R&D Phase+OTA    
 ```{r PhaseAndOTA}
 
-contract_merge<-full_data%>%filter(Fiscal_Year >=2015) %>%
+contract_merge<-full_data %>%
   group_by(Fiscal_Year,
                          ProductServiceOrRnDarea,
                          SimpleArea)%>%
-  dplyr::summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
+  dplyr::summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
+                   Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
 
 # 
+
+
 #   format_data_for_plot(contract_data,
 #                      fy_var="Fiscal_Year", #x_var
 #                      y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
@@ -1153,8 +1156,9 @@ contract_merge<-full_data%>%filter(Fiscal_Year >=2015) %>%
 ota_def<-standardize_variable_names(ota_def)
 ota_merge<-ota_def%>%filter(Fiscal_Year >=2015) %>%
   group_by(Fiscal_Year,SimpleArea)%>%
-  dplyr::summarise(Action_Obligation_OMB20_GDP20=sum(Dollars_Obligated_OMB20_GDP20))
-
+  dplyr::summarise(Action_Obligation_OMB20_GDP20=sum(Dollars_Obligated_OMB20_GDP20),
+                   Action_Obligation_Then_Year=sum(Dollars_Obligated_Then_Year)
+                   )
 
 #   format_data_for_plot(ota_def,
 #                      fy_var="Fiscal_Year", #x_var
@@ -1170,7 +1174,7 @@ merge<-rbind(ota_merge,contract_merge)
 merge$dFYear<-as.Date(paste(merge$Fiscal_Year,"1","1",sep="-"))
 (
 RnDphasePlusOTA<-build_plot(
-  data=merge %>% filter(SimpleArea=="R&D"),
+  data=merge %>% filter(SimpleArea=="R&D" & Fiscal_Year >=2015),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=prepare_labels_and_colors(merge),
@@ -1206,6 +1210,7 @@ ggsave600dpi("..//Output//RnDPhasePlusOTA.svg", RnDphasePlusOTA+labs(caption="So
 ggsave600dpi("..//Output//RnDPhasePlusOTA.emf", RnDphasePlusOTA+labs(caption="Source: FPDS and CSIS analysis."),
              width=5, height= 4.75, units="in",size=11, lineheight=1.2
              )
+
 #                            
 # 
 write.csv(file="..//Output//RnDPhasePlusOTA.csv",row.names = FALSE, na = "",
@@ -1214,14 +1219,18 @@ write.csv(file="..//Output//RnDPhasePlusOTA.csv",row.names = FALSE, na = "",
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>%
             arrange(ProductServiceOrRnDarea))
 #             
-# 
-# write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE, na = "",
-#           full_data %>% filter(SimpleArea=="R&D") %>%
-#             format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
-#                                  labels_and_colors=labels_and_colors) %>%
-#           pivot_wider(id_cols=c(ProductServiceOrRnDarea),
-#                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
-#             arrange(ProductServiceOrRnDarea))
+#  
+
+
+
+write.csv(file="..//Output//RnDPhasePlusOTA_current.csv",row.names = FALSE, na = "",
+          merge %>% filter(SimpleArea=="R&D") %>%
+            format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",
+                                 color_var = "ProductServiceOrRnDarea",
+                                 labels_and_colors=prepare_labels_and_colors(merge)) %>%
+            pivot_wider(id_cols=c(ProductServiceOrRnDarea),
+                        names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
+            arrange(ProductServiceOrRnDarea))
 
 ```
 
