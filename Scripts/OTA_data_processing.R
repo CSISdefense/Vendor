@@ -45,9 +45,9 @@ descript<-OTA_data_current$`Description of Requirement`[OTA_data_current$TopCovi
 OTA_data_current$`Dollars Obligated`<-text_to_number(OTA_data_current$`Dollars Obligated`)
 
 
-OTA_data <- read_delim(
-  "data_raw//OTA_NPS_report.csv",delim = ",",
-  col_names = TRUE, guess_max = 500000,na=c("NA","NULL"))
+# OTA_data <- read_delim(
+  # "data_raw//OTA_NPS_report.csv",delim = ",",
+  # col_names = TRUE, guess_max = 500000,na=c("NA","NULL"))
 OTA_data<-OTA_data_current
 
 nrow(OTA_data[OTA_data$`Description of Requirement` %in% descript,])

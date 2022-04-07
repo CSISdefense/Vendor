@@ -209,7 +209,7 @@ summary(sw$TopAgencyText)
 ```
 
 # Component Variant
-## SubCustomer with JPO
+z## SubCustomer with JPO
 ```{r SubCustomer}
 
 # levels(platpscintl$SubCustomer.JPO)<-list(
@@ -2323,6 +2323,8 @@ write.csv(file="..//Output//Software_comm.csv",row.names = FALSE,na = "",
                       names_from=Fiscal_Year,values_from=bAction_Obligation_OMB20_GDP20)%>%
             arrange(SWpsc,Commercial),na="")
 
+
+
 ggsave600dpi("..//Output//Software_def_comm_paper.png", DefSoftwareComm+
                labs(y="Obligations (Constant 2020 $s)"),  
              width=6.5, height= 3, units="in",size=11, lineheight=1.2
@@ -2340,6 +2342,17 @@ ggsave600dpi("..//Output//Software_comm_DefenseGSA.png", SoftwareComm+
                labs(y="Defense & GSA Obligations (Constant 2020 $s)")+theme(legend.position = "bottom"),  
              width=6.5, height= 5.5, units="in",size=12, lineheight=1.2
              )
+
+
+output_TY<-sw %>% filter(Fiscal_Year>=2002  & Customer %in% c("Defense")) %>% group_by(Commercial,SWpsc,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+  arrange(Fiscal_Year) %>%
+          pivot_wider(id_cols=c(SWpsc,Commercial),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year) %>%
+  arrange(SWpsc,Commercial)
+write.csv(file="..//Output//Software_comm_Defense_cur.csv",row.names = FALSE, na = "",
+          output_TY)
+
 
 
 write.csv(file="..//Output//Software_DefenseGSA_comm.csv",row.names = FALSE,na = "",
@@ -2560,7 +2573,7 @@ write.csv(file="..//Output//Deep_Dives//Remotely_Crewed//Remotely_Crewed_crewed_
 # drone$SubCustomer
 (
 rc_customer<-build_plot(
-  data=drone  ,
+  data=drone %>% filter(Fiscal_Year>=2005) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=intl_lc,
