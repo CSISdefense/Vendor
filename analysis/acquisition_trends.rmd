@@ -209,50 +209,69 @@ ggsave600dpi(topline_q,file=file.path("..","Output","toa_quarterly.png"),
 ```{r TOAannual}
 
 
-fpds_annual<-full_data %>% group_by(Fiscal_Year,dFYear,IsFMS
-                                    ContractingCustomer) %>% summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
-                                                                      Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
+fpds_annual<-full_data %>% group_by(Fiscal_Year,dFYear,IsFMS,
+                                    ContractingCustomer) %>% summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20,na.rm=TRUE),
+                                                                      Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))
+fpds_annual$Series<-"Contract Obligations"
 toa$Fiscal_Year<-text_to_number(toa$Fiscal_Year)
 toa$IsFMS<-0
 fpds_annual$Total_Obligation_Authority_Then_Year<-NA
 fpds_annual$Total_Obligation_Authority_OMB20_GDP20<-NA
-fpds_annual<-rbind(as.data.frame(fpds_annual),as.data.frame(toa) %>% dplyr::select(-fiscal_quarter,-Series))
+fpds_annual<-rbind(as.data.frame(fpds_annual),as.data.frame(toa) %>% dplyr::select(-fiscal_quarter))
 colnames(toa)[!colnames(toa) %in% colnames(fpds_annual)]
 colnames(fpds_annual)[!colnames(fpds_annual) %in% colnames(toa)]
 
-(topline<-ggplot(data=fpds_annual %>% filter(Fiscal_Year>=2000) #rbind(quarterly,q2021,e2021),
-      )+geom_col( aes(x=dFYear,
-           y=Action_Obligation_OMB20_GDP20/1000000000
-           # alpha=Actual,
-           # fill = fiscal_quarter
-       ))+
-    geom_path(aes(x=dFYear,y=Total_Obligation_Authority_OMB20_GDP20/1000000000),group="Series")+
+fpds_annual$FMS<-as.character(fpds_annual$IsFMS)
+fpds_annual$FMS[fpds_annual$Fiscal_Year<2012]<-"Obligations (before reliable\nFMS labels available)"
+fpds_annual$FMS[!is.na(fpds_annual$Total_Obligation_Authority_OMB20_GDP20)]<-"Obligations (no FMS)"
+fpds_annual$FMS<-factor(fpds_annual$FMS)
+levels(fpds_annual$FMS)<-list("Obligations (includes FMS)"=c("1","Obligations (includes FMS)"),
+                              "Obligations (no FMS)"=c("0","Obligations (no FMS)"),
+                              "Obligations (before reliable\nFMS labels available)"="Obligations (before reliable\nFMS labels available)")
+fpds_annual$TOA<-"Total Obligation Authority"
+
+
+(topline<-build_plot(data=fpds_annual %>% filter(Fiscal_Year>=1990),#rbind(quarterly,q2021,e2021),
+                     chart_geom="Bar Chart",
+                     x_var="dFYear",
+                     y_var="Action_Obligation_OMB20_GDP20",
+           color_var="FMS"
+       )+
+    geom_path(aes(x=dFYear,y=Total_Obligation_Authority_OMB20_GDP20,color=TOA))+
   # scale_alpha_discrete(range=c(0.4,1))+
-    labs(x="Fiscal Year",y="Constant FY 2020 $ Billions",fill="Quarter")
+    labs(x="Fiscal Year",y="Constant FY 2020 $ Billions",fill="Contract",color="Budget",
+         caption="Source: FPDS, FY 2022 DoD Greenbook, CSIS Analysis")+
+    theme(legend.position = "right")+
+    scale_x_date(breaks=as.Date(c(paste(seq(1990,2021,3),"-01-01",sep=""))),
+                                                   date_labels="'%y")
 )
 
 output_TY<-topline$data %>% mutate(source=ifelse(!is.na(Total_Obligation_Authority_Then_Year),"TOA","Contract"),
                                             Dollars=ifelse(source=="TOA",
                                                                  Total_Obligation_Authority_Then_Year,Action_Obligation_Then_Year))%>%
-            filter(Fiscal_Year>=2000)%>%
+            filter(Fiscal_Year>=1990)%>%
           format_data_for_plot(
                                fy_var="Fiscal_Year",
                                y_var="Dollars",
                                color_var="source",
-                               # facet="SubCustomer",
+                               facet="FMS",
                                # labels_and_colors = ota_lc,
                                group=TRUE) %>%
             arrange(Fiscal_Year) %>%
-          pivot_wider(id_cols=c(source),
+          pivot_wider(id_cols=c(source,FMS),
                       names_from=Fiscal_Year,values_from=Dollars) %>% 
             
             # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=ota_lc$variable[ota_lc$column=="PlatformPortfolio"]))%>%
             # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=levels(fiscal_quarter),
             #                                 labels=gsub("\\n"," ",levels(PlatformPortfolio))))%>%
-                   arrange(source)
+                   arrange(source,FMS)
 
 ggsave600dpi(topline,file=file.path("..","Output","topline_toa_annual.png"),  
              width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+ggsave600dpi(topline,file=file.path("..","Output","topline_toa_annual.emf"),  
+             width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
              )
 
 write.csv(file="..//Output//toa_annual.csv",row.names = FALSE,na="",output_TY
@@ -1157,7 +1176,7 @@ contract_merge<-full_data %>%
 #                      labels_and_colors = labels_and_colors
 # )
 ota_def<-standardize_variable_names(ota_def)
-ota_merge<-ota_def%>%filter(Fiscal_Year >=2015) %>%
+ota_merge<-ota_def%>%filter(Fiscal_Year >=2015 & Fiscal_Year <=2021) %>%
   group_by(Fiscal_Year,SimpleArea)%>%
   dplyr::summarise(Action_Obligation_OMB20_GDP20=sum(Dollars_Obligated_OMB20_GDP20),
                    Action_Obligation_Then_Year=sum(Dollars_Obligated_Then_Year)
@@ -1216,13 +1235,13 @@ ggsave600dpi("..//Output//RnDPhasePlusOTA.emf", RnDphasePlusOTA+labs(caption="So
 
 #                            
 # 
-write.csv(file="..//Output//RnDPhasePlusOTA.csv",row.names = FALSE, na = "",
-          RnDphasePlusOTA$data%>% mutate(Fiscal_Year=year(dFYear)) %>%
-          pivot_wider(id_cols=c(ProductServiceOrRnDarea),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>%
-            arrange(ProductServiceOrRnDarea))
-#             
-#  
+# write.csv(file="..//Output//RnDPhasePlusOTA.csv",row.names = FALSE, na = "",
+#           RnDphasePlusOTA$data%>% mutate(Fiscal_Year=year(dFYear)) %>%
+#           pivot_wider(id_cols=c(ProductServiceOrRnDarea),
+#                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20)%>%
+#             arrange(ProductServiceOrRnDarea))
+# #             
+# #  
 
 
 
