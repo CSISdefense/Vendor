@@ -149,7 +149,7 @@ def_lc<-csis360::prepare_labels_and_colors(def_data)
 def_ck<-csis360::get_column_key(def_data)
 
 save(def_data,def_lc,def_ck, file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
-
+load(file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
 
 
 if(all(is.na(full_data[nrow(full_data),]))){
