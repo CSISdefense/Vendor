@@ -2402,3 +2402,81 @@ summary(def_dur$Action_Obligation_OMB20_GDP18)
 
 
 
+## PALT
+```{r Palt}
+
+load(file=file.path("..","data","semi_clean","def_palt_veh.rda"))
+
+
+def_palt$Veh.SIDC<-ifelse(def_palt$Veh=="SINGLE AWARD IDC"|
+                                            (is.na(def_palt$Veh)&def_palt$IsIDV=="IDV"),
+                      "Single Award or Unlabeled Task Order",
+                      "All Other Awards and Task Orders")
+summary(factor(def_palt$Veh.SIDC))
+
+def_palt<
+def_palt_median<-def_palt %>% group_by(qLowCeiling,StartFiscal_Year,Veh.SIDC) %>%
+  summarise(med=median(PALT,na.rm=TRUE))
+                
+def_palt$Count<-1
+
+PaltCeilLabels<-
+    def_palt %>%
+    group_by(qLowCeiling,StartFiscal_Year,Veh.SIDC) %>%
+    dplyr::summarise(
+    FacetCount=paste("#:",prettyNum(sum(Count),big.mark=",")),
+    FacetValue=paste("$: $",round(sum(Action_Obligation)/1000000000,1),"B",sep=""),
+    FacetMedian=paste(FacetValue,"\nMed: ",round(median(PALT,na.rm=TRUE),1),sep=""),
+    YPos=max(hist(log10(PALT), breaks=25, plot=FALSE)$counts)
+    ) %>% group_by(qLowCeiling,Veh.SIDC)%>%
+  mutate(YPos=max(YPos)
+         )
+
+
+# (counthigh<-ggplot(def_palt, aes(x=PALT))+geom_histogram()+scale_x_log10()+facet_wrap(~qHighCeiling,scales="free_y"))
+# (countlow<-ggplot(def_palt, aes(x=PALT))+geom_histogram()+scale_x_log10()+facet_wrap(~qLowCeiling,scales="free_y"))
+# 
+# (countlow<-ggplot(def_palt, aes(x=PALT))+geom_histogram()+scale_x_log10()+facet_grid(qLowCeiling~Veh,scales="free_y"))
+# dollar<-ggplot(def_palt, aes(x=PALT,y=Action_Obligation))+geom_point()+scale_x_log10()+scale_y_log10()
+# # dollar<-ggplot(def_palt, aes(x=PALT,y=Action_Obligation))+geom_histogram()+scale_x_log10()
+
+(countlowSIDV<-ggplot(def_palt %>% filter(Veh.SIDC=="Single Award or Unlabeled Task Order"),
+                      aes(x=PALT))+geom_histogram()+
+    geom_vline(data=def_palt_median%>% filter(Veh.SIDC=="Single Award or Unlabeled Task Order"),
+               aes(xintercept=med),color="red")+
+    scale_x_log10()+facet_grid(qLowCeiling~StartFiscal_Year,scales="free_y"))
+
+
+
+(countlowOther<-ggplot(def_palt %>% filter(Veh.SIDC=="All Other Awards and Task Orders"),
+                       aes(x=PALT))+geom_histogram()+
+    geom_vline(data=def_palt_median%>% filter(Veh.SIDC=="All Other Awards and Task Orders"),
+               aes(xintercept=med),color="red")+
+    geom_text(data=PaltCeilLabels %>% filter(Veh.SIDC=="All Other Awards and Task Orders"),
+              aes(x=500,y=YPos, label=FacetMedian),#,y=Ypos),
+              # parse=TRUE,
+              hjust=0,
+              vjust=1,
+              color="black")+
+    scale_x_log10()+facet_grid(qLowCeiling~StartFiscal_Year,scales="free_y"))
+
+
+    #https://stackoverflow.com/questions/14584093/ggplot2-find-number-of-counts-in-histogram-maximum
+
+#   geom_vline(data=pChgCeilAverage,aes(xintercept=mean),color="red")
+
+# 
+# palt_hist<-build_plot(
+#   data=def_palt,
+#   chart_geom = "Histogram",
+#   share = FALSE,
+#   x_var="PALT",
+#   # y_var="hh_index", #Name of variable to plot on y-axis
+#   # color_var="PlatformPortfolio",       # name of coloration variable, as string
+#   facet_var="MinOfSolicitation_Date",        # name of facet variable, as string
+#   legend=FALSE, #Include a legend
+#   caption=FALSE, #Include a source caption
+#   # labels_and_colors=labels_and_colors,
+#   # column_key=NULL
+# )
+```
