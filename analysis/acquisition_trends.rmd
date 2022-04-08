@@ -39,6 +39,7 @@ load(file="../data/semi_clean/Defense_OTA.Rda")
 toa<-readxl::read_excel(path=file.path("..","data_raw","FY22 PB Green Book Table 6-1.xlsx"),skip=4)
 # toa<-toa["Total Current Dollars ..............................................................." ==toa[,2] & !is.na(toa[,2]),]#%in% c(toa[,1],toa[,2],toa[,3]),]
 
+load(file="../analysis/FPDS_chart_maker/unaggregated_def.Rda")
 
 #Kludge
 toa<-toa[11,c(-1,-3)]
@@ -2381,11 +2382,13 @@ write.csv(file="..//Output//topline_subcustomer.csv",row.names = FALSE, na = "",
           pivot_wider(SubCustomer$data,id_cols=c(SubCustomer.sum,SubCustomer.platform),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20))
 
-write.csv(file="..//Output//topline_subcustomer_current.csv",row.names = FALSE, na = "",
-          full_data %>% group_by(SubCustomer.sum,ContractingSubCustomer,Fiscal_Year)%>%
+write.csv(file="..//Output//subcustomer_commercial_current.csv",row.names = FALSE, na = "",
+          def_data %>% group_by(SubCustomer.sum,AnyCommercialText,Fiscal_Year)%>%
+            arrange(Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-          pivot_wider(id_cols=c(SubCustomer.sum,ContractingSubCustomer),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
+          pivot_wider(id_cols=c(SubCustomer.sum,AnyCommercialText),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
+            arrange(SubCustomer.sum,AnyCommercialText))
 
 summary(full_data$ContractingSubCustomer)
 ```
