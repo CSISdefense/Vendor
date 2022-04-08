@@ -39,6 +39,7 @@ load(file="../data/semi_clean/Defense_OTA.Rda")
 toa<-readxl::read_excel(path=file.path("..","data_raw","FY22 PB Green Book Table 6-1.xlsx"),skip=4)
 # toa<-toa["Total Current Dollars ..............................................................." ==toa[,2] & !is.na(toa[,2]),]#%in% c(toa[,1],toa[,2],toa[,3]),]
 
+load(file="../analysis/FPDS_chart_maker/unaggregated_def.Rda")
 
 #Kludge
 toa<-toa[11,c(-1,-3)]
@@ -423,6 +424,12 @@ write.csv(file="..//Output//topline_competition.csv",row.names = FALSE, na = "",
             pivot_wider(id_cols=c(Competition.sum),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20))
 
+
+write.csv(file="..//Output//topline_competition_cur.csv",row.names = FALSE, na = "",
+          full_data %>% group_by(Competition.sum,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(Competition.sum),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(Competition.sum))
 
 
 ```
@@ -2265,18 +2272,25 @@ write.csv(file="..//Output//platform_comp_line.csv",row.names = FALSE, na = "",
 
 
 # Commercial
-```{r SubCustomer}
+```{r Commercial}
+def_data$AnyCommercialText<-factor(def_data$AnyCommercial)
+levels(def_data$AnyCommercialText)<-list(
+  "Not Classified\nas Commrcial"="N",
+  "Non-Development\nor Commercial Similar"= "NonDev",
+  "Any Commercial\nClassification"="Y"
+  
+)
 
 (
-Commercial<-build_plot(
+CommercialCust<-build_plot(
   data=def_data %>% filter(Fiscal_Year>=2000),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
+  x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
-  color_var="AnyCommercial", #color_var
+  color_var="AnyCommercialText", #color_var
   facet_var="SubCustomer.platform", #facet_var
   column_key=def_ck,
   format=TRUE,
@@ -2291,11 +2305,41 @@ Commercial<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2020 $s)")
+  labs(y="Obligations (Constant 2020 $s)")+
+    scale_x_date(breaks=as.Date(c(paste(seq(2000,2021,5),"-01-01",sep=""))),
+                                                   date_labels="'%y")
 )
 
+# (
+# Commercial<-build_plot(
+#   data=def_data %>% filter(Fiscal_Year>=2000),
+#   chart_geom = "Bar Chart",
+#   share = FALSE,
+#   labels_and_colors=def_lc,
+#   # NA, #VAR.ncol
+#   x_var="Fiscal_Year", #x_var
+#   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+#   color_var="AnyCommercial", #color_var
+#   facet_var="ContractingSubCustomer", #facet_var
+#   column_key=def_ck,
+#   format=TRUE,
+#   ytextposition=FALSE
+# )+
+#   # theme(strip.text.y = element_text(angle=0))+
+#  # theme(axis.text.x = element_text(angle=90))+
+#  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+#  #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+#  #             )+labs(title=NULL,
+#   # x="Fiscal Year",
+#   # y="Percent of Obligations",
+#   # color="Competition")+
+#   theme(legend.position = "right")+
+#   labs(y="Obligations (Constant 2020 $s)")
+# )
+# 
+
 (
-Commercial<-build_plot(
+CommercialPlat<-build_plot(
   data=def_data %>% filter(Fiscal_Year>=2000),
   chart_geom = "Bar Chart",
   share = FALSE,
@@ -2303,7 +2347,7 @@ Commercial<-build_plot(
   # NA, #VAR.ncol
   x_var="Fiscal_Year", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
-  color_var="AnyCommercial", #color_var
+  color_var="AnyCommercialText", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=def_ck,
   format=TRUE,
@@ -2321,15 +2365,15 @@ Commercial<-build_plot(
   labs(y="Obligations (Constant 2020 $s)")
 )
 
-ggsave600dpi("..//Output//topline_subcustomer.png", SubCustomer, 
-             width=12, height= 6, units="in",size=12,lineheight = 1.2
+ggsave600dpi("..//Output//subcustomer_commercial.png", CommercialCust, 
+             width=6, height= 5.5, units="in",size=12,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//topline_subcustomer.svg", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
+ggsave600dpi("..//Output//subcustomer_commercial.svg", CommercialCust,#+facet_wrap(~SubCustomer.platform,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//topline_subcustomer.emf", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
+ggsave600dpi("..//Output//subcustomer_commercial.emf", CommercialCust,#+facet_wrap(~SubCustomer.platform,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
@@ -2338,11 +2382,13 @@ write.csv(file="..//Output//topline_subcustomer.csv",row.names = FALSE, na = "",
           pivot_wider(SubCustomer$data,id_cols=c(SubCustomer.sum,SubCustomer.platform),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20))
 
-write.csv(file="..//Output//topline_subcustomer_current.csv",row.names = FALSE, na = "",
-          full_data %>% group_by(SubCustomer.sum,ContractingSubCustomer,Fiscal_Year)%>%
+write.csv(file="..//Output//subcustomer_commercial_current.csv",row.names = FALSE, na = "",
+          def_data %>% group_by(SubCustomer.platform,AnyCommercialText,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-          pivot_wider(id_cols=c(SubCustomer.sum,ContractingSubCustomer),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
+            arrange(Fiscal_Year)%>%
+          pivot_wider(id_cols=c(SubCustomer.platform,AnyCommercialText),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
+            arrange(SubCustomer.platform,AnyCommercialText))
 
 summary(full_data$ContractingSubCustomer)
 ```
@@ -2410,20 +2456,25 @@ ToplineVendor_line<-build_plot(
 ```
 
 # GFE
-```{r SubCustomer}
+```{r GFE}
 
-
+def_data$gfe_gfp_value<-factor(def_data$gfe_gfp_code)
+levels(def_data$gfe_gfp_value)<-list(
+   "No Government Furnished"="N",
+  "Transaction uses\nGovernment Furnished\nEquipment or Property"="Y"
+ 
+)
 
 (
-GFE<-build_plot(
+GFEcust<-build_plot(
   data=def_data %>% filter(Fiscal_Year>=2007) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
+  x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
-  color_var="gfe_gfp_code", #color_var
+  color_var="gfe_gfp_value", #color_var
   facet_var="SubCustomer.platform", #facet_var
   column_key=def_ck,
   format=TRUE,
@@ -2438,20 +2489,22 @@ GFE<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2020 $s)")
+  labs(y="Obligations (Constant 2020 $s)")+
+    scale_x_date(breaks=as.Date(c(paste(seq(2000,2021,5),"-01-01",sep=""))),
+                                                   date_labels="'%y")
 )
 
 
 (
-GFE<-build_plot(
+GFEplat<-build_plot(
   data=def_data %>% filter(Fiscal_Year>=2007) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
+  x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
-  color_var="gfe_gfp_code", #color_var
+  color_var="gfe_gfp_value", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=def_ck,
   format=TRUE,
@@ -2465,22 +2518,24 @@ GFE<-build_plot(
   # x="Fiscal Year",
   # y="Percent of Obligations",
   # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2020 $s)")
+  theme(legend.position = "bottom")+
+  labs(y="Obligations (Constant 2020 $s)")+
+    scale_x_date(breaks=as.Date(c(paste(seq(2000,2021,4),"-01-01",sep=""))),
+                                                   date_labels="'%y")
 )
 
 
 (
-GFE<-build_plot(
+GFEcomp<-build_plot(
   data=def_data %>% filter(Fiscal_Year>=2007) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
+  x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
   color_var="Competition.detail", #color_var
-  facet_var="gfe_gfp_code", #facet_var
+  facet_var="gfe_gfp_value", #facet_var
   column_key=def_ck,
   format=TRUE,
   ytextposition=FALSE
@@ -2494,30 +2549,32 @@ GFE<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2020 $s)")
+  labs(y="Obligations (Constant 2020 $s)")+
+    scale_x_date(breaks=as.Date(c(paste(seq(2000,2021,3),"-01-01",sep=""))),
+                                                   date_labels="'%y")
 )
 
-ggsave600dpi("..//Output//topline_subcustomer.png", SubCustomer, 
+ggsave600dpi("..//Output//platform_GFE.png", GFEplat, 
              width=12, height= 6, units="in",size=12,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//topline_subcustomer.svg", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
-             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+ggsave600dpi("..//Output//platform_GFE.svg", GFEplat, 
+             width=6.5, height= 4.5, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//topline_subcustomer.emf", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
-             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+ggsave600dpi("..//Output//platform_GFE.emf", GFEplat, 
+             width=6.5, height= 4.5, units="in",size=11,lineheight = 1.2
              )
 
 
-write.csv(file="..//Output//topline_subcustomer.csv",row.names = FALSE, na = "",
-          pivot_wider(SubCustomer$data,id_cols=c(SubCustomer.sum,SubCustomer.platform),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20))
+# write.csv(file="..//Output//platform_GFE.csv",row.names = FALSE, na = "",
+#           pivot_wider(GFEplat$data,id_cols=c(PlatformPortfolio,gfe_gfp_value),
+#                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20))
 
-write.csv(file="..//Output//topline_subcustomer_current.csv",row.names = FALSE, na = "",
-          full_data %>% group_by(SubCustomer.sum,ContractingSubCustomer,Fiscal_Year)%>%
+write.csv(file="..//Output//platform_GFE_current.csv",row.names = FALSE, na = "",
+          def_data %>% group_by(PlatformPortfolio,gfe_gfp_value,Fiscal_Year)%>%filter(Fiscal_Year>=2004)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-          pivot_wider(id_cols=c(SubCustomer.sum,ContractingSubCustomer),
+          pivot_wider(id_cols=c(PlatformPortfolio,gfe_gfp_value),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
 
 summary(full_data$ContractingSubCustomer)
@@ -2535,7 +2592,7 @@ CAS<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
+  x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
   color_var="costaccountingstandardsclause", #color_var
   facet_var="SubCustomer.platform", #facet_var
@@ -2563,7 +2620,7 @@ CAS<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
+  x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
   color_var="costaccountingstandardsclause", #color_var
   facet_var="PlatformPortfolio", #facet_var
@@ -2591,7 +2648,7 @@ CAS<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
+  x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
   color_var="Competition.detail", #color_var
   facet_var="costaccountingstandardsclause", #facet_var
@@ -2619,7 +2676,7 @@ CAS<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
+  x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
   color_var="AnyCommercial", #color_var
   facet_var="costaccountingstandardsclause", #facet_var
@@ -2677,7 +2734,7 @@ EE<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
+  x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
   color_var="EnergyEfficient", #color_var
   facet_var="SubCustomer.platform", #facet_var
@@ -2705,7 +2762,7 @@ EE<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
+  x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
   color_var="EnergyEfficient", #color_var
   facet_var="PlatformPortfolio", #facet_var
@@ -3695,35 +3752,4 @@ write.csv(file=file.path("..","Output","def_entity_count_subcust.csv"),row.names
 ```
 
 
-# Contract Count
-```{r Palt}
 
-load(file=file.path("..","data","semi_clean","def_palt_veh.rda"))
-
-(counthigh<-ggplot(def_palt, aes(x=PALT))+geom_histogram()+scale_x_log10()+facet_wrap(~qHighCeiling,scales="free_y"))
-(countlow<-ggplot(def_palt, aes(x=PALT))+geom_histogram()+scale_x_log10()+facet_wrap(~qLowCeiling,scales="free_y"))
-
-(countlow<-ggplot(def_palt, aes(x=PALT))+geom_histogram()+scale_x_log10()+facet_grid(qLowCeiling~Veh,scales="free_y"))
-dollar<-ggplot(def_palt, aes(x=PALT,y=Action_Obligation))+geom_point()+scale_x_log10()+scale_y_log10()
-# dollar<-ggplot(def_palt, aes(x=PALT,y=Action_Obligation))+geom_histogram()+scale_x_log10()
-
-(countlowSIDV<-ggplot(def_palt %>% filter(Veh=="SINGLE AWARD IDC"|
-                                            (is.na(Veh)&IsIDV=="IDV")) , aes(x=PALT))+geom_histogram()+scale_x_log10()+facet_grid(qLowCeiling~StartFiscal_Year,scales="free_y"))
-
-(countlowOther<-ggplot(def_palt %>% filter(Veh!="SINGLE AWARD IDC"&!is.na(Veh)) , aes(x=PALT))+geom_histogram()+scale_x_log10()+facet_grid(qLowCeiling~StartFiscal_Year,scales="free_y"))
-
-
-palt_hist<-build_plot(
-  data=def_palt,
-  chart_geom = "Histogram",
-  share = FALSE,
-  x_var="PALT",
-  # y_var="hh_index", #Name of variable to plot on y-axis
-  # color_var="PlatformPortfolio",       # name of coloration variable, as string
-  facet_var="MinOfSolicitation_Date",        # name of facet variable, as string
-  legend=FALSE, #Include a legend
-  caption=FALSE, #Include a source caption
-  # labels_and_colors=labels_and_colors,
-  # column_key=NULL
-)
-```
