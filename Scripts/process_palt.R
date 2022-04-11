@@ -43,8 +43,8 @@ def_palt$PALT<-as.numeric(
 
 sum(ifelse(def_palt$PALT<0,1,0),na.rm=TRUE)
 def_palt$PALT[def_palt$PALT<0]<-NA
-sum(ifelse(def_palt$PALT>10000,1,0),na.rm=TRUE)
-summary(def_palt$MinOfSolicitation_Date[def_palt$PALT>10000])
+sum(ifelse(def_palt$PALT>3652,1,0),na.rm=TRUE)
+summary(def_palt$MinOfSolicitation_Date[def_palt$PALT>3652])
 old<-def_palt$MinOfSolicitation_Date[def_palt$PALT>10000 & !is.na(def_palt$PALT)]
 def_palt$PALT[def_palt$MinOfSolicitation_Date<"1945-01-01"]<-NA
 save(def_palt,file=file.path("data","semi_clean","def_palt.rda"))

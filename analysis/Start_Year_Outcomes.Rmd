@@ -2433,23 +2433,26 @@ def_palt$Veh.SIDC<-ifelse(def_palt$Veh=="SINGLE AWARD IDC"|
 summary(factor(def_palt$Veh.SIDC))
 
 
-def_palt_median<-def_palt %>% group_by(qLowCeiling,StartFiscal_Year,Veh.SIDC) %>%
-  summarise(med=median(PALT,na.rm=TRUE))
+def_palt_stat<-def_palt %>% group_by(qLowCeiling,StartFiscal_Year,Veh.SIDC) %>%
+  summarise(Median=median(PALT,na.rm=TRUE),
+            Mean=mean(PALT,na.rm=TRUE))%>% pivot_longer(cols=c(Mean,Median),names_to="Statistic")
                 
 def_palt$Count<-1
-
-PaltCeilLabels<-
-    def_palt %>%
-    group_by(qLowCeiling,StartFiscal_Year,Veh.SIDC) %>%
-    dplyr::summarise(
-    FacetCount=paste("#:",prettyNum(sum(Count),big.mark=",")),
-    FacetValue=paste("$",round(sum(Action_Obligation)/1000000000,1),"B",sep=""),
-    FacetMedian=paste(FacetValue,"\n",round(median(PALT,na.rm=TRUE),0),
-                      ifelse(round(median(PALT,na.rm=TRUE),0)==1," Day"," Days"),sep=""),
-    YPos=max(hist(log10(PALT), breaks=25, plot=FALSE)$counts)
-    ) %>% group_by(qLowCeiling,Veh.SIDC)%>%
-  mutate(YPos=max(YPos)
-         )
+  
+  PaltCeilLabels<-
+      def_palt %>%
+      group_by(qLowCeiling,StartFiscal_Year,Veh.SIDC) %>%
+      dplyr::summarise(
+      FacetCount=paste("#:",prettyNum(sum(Count),big.mark=",")),
+      FacetValue=paste("Obl.: $",round(sum(Action_Obligation)/1000000000,1),"B",sep=""),
+      FacetMedian=paste(FacetValue,"\nMed.: ",round(median(PALT,na.rm=TRUE),1),
+                        ifelse(round(median(PALT,na.rm=TRUE),1)==1," Day"," Days"),sep=""),
+      FacetMean=paste(FacetMedian,"\nAvg.: ",round(mean(PALT,na.rm=TRUE),1),
+                        ifelse(round(mean(PALT,na.rm=TRUE),1)==1," Day"," Days"),sep=""),
+      YPos=max(hist(log10(PALT), breaks=25, plot=FALSE)$counts)
+      ) %>% group_by(qLowCeiling,Veh.SIDC)%>%
+    mutate(YPos=max(YPos)
+           )
 
 
 # (counthigh<-ggplot(def_palt, aes(x=PALT))+geom_histogram()+scale_x_log10()+facet_wrap(~qHighCeiling,scales="free_y"))
@@ -2461,16 +2464,18 @@ PaltCeilLabels<-
 
 (countlowSIDV<-ggplot(def_palt %>% filter(Veh.SIDC=="Single Award or Unlabeled Task Order"& StartFiscal_Year>=2019),
                       aes(x=PALT))+geom_histogram()+
-    geom_vline(data=def_palt_median%>% filter(Veh.SIDC=="Single Award or Unlabeled Task Order"& 
+    geom_vline(data=def_palt_stat%>% filter(Veh.SIDC=="Single Award or Unlabeled Task Order"& 
                                                 StartFiscal_Year>=2019),
-               aes(xintercept=med),color="red")+
+               aes(xintercept=value, color=Statistic))+
+  
     geom_text(data=PaltCeilLabels %>% filter(Veh.SIDC=="Single Award or Unlabeled Task Order"& 
                                                StartFiscal_Year>=2019),
-              aes(x=400,y=YPos, label=FacetMedian),#,y=Ypos),
+              aes(x=400,y=YPos, label=FacetMean),#,y=Ypos),
               # parse=TRUE,
               hjust=0,
               vjust=1,
-              color="black")+
+              color="black",
+              size=0.9)+
     scale_x_log10()+facet_grid(qLowCeiling~StartFiscal_Year,scales="free_y")+labs(
       y="Number of Awards and Task Orders (Variable Scale)", x="Procurement Award Lead Time in Days\n(Logarithmic Scale)"
     ))
@@ -2482,14 +2487,15 @@ ggsave600dpi(width=6.5, height=6, size=11, lineheight=1.2, file=file.path("..","
 
 (countlowOther<-ggplot(def_palt %>% filter(Veh.SIDC=="All Other Awards and Task Orders"& StartFiscal_Year>=2019),
                        aes(x=PALT))+geom_histogram()+
-    geom_vline(data=def_palt_median%>% filter(Veh.SIDC=="All Other Awards and Task Orders"& StartFiscal_Year>=2019),
-               aes(xintercept=med),color="red")+
+    geom_vline(data=def_palt_stat%>% filter(Veh.SIDC=="All Other Awards and Task Orders"& StartFiscal_Year>=2019),
+               aes(xintercept=value, color=Statistic))+
     geom_text(data=PaltCeilLabels %>% filter(Veh.SIDC=="All Other Awards and Task Orders"& StartFiscal_Year>=2019),
-              aes(x=400,y=YPos, label=FacetMedian),#,y=Ypos),
+              aes(x=400,y=YPos, label=FacetMean),#,y=Ypos),
               # parse=TRUE,
               hjust=0,
               vjust=1,
-              color="black")+
+              color="black",
+              size=0.9)+
     scale_x_log10()+facet_grid(qLowCeiling~StartFiscal_Year,scales="free_y")+labs(
       y="Number of Awards and Task Orders (Variable Scale)", x="Procurement Award Lead Time in Days\n(Logarithmic Scale)"
     ))
@@ -2505,7 +2511,7 @@ write.csv(
   PaltCeilLabels %>% group_by(qLowCeiling,StartFiscal_Year,Veh.SIDC) %>%
     filter(StartFiscal_Year>=2018) %>%
     pivot_wider(id_cols=c(Veh.SIDC,qLowCeiling),
-                        names_from=c(StartFiscal_Year),values_from=FacetMedian) %>%
+                        names_from=c(StartFiscal_Year),values_from=FacetMean) %>%
     arrange(Veh.SIDC,qLowCeiling),row.names = FALSE, na = "",
   file=file.path("..","output","PALT.csv")
 )
