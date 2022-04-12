@@ -32,19 +32,19 @@ if(!exists("full_data"))
 load(file="../data/semi_clean/platpsc_FPDS.Rda")
 load(file="../data/semi_clean/platpscintl_FPDS.Rda")
 load(file="../data/semi_clean/sw_FPDS.Rda")
-# detail_lc<-prepare_labels_and_colors(platpsc)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
-# detail_ck<-get_column_key(platpsc)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
-# column_key<-get_column_key(platpsc,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
-# detail_lc<-prepare_labels_and_colors(platpsc,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
-# detail_ck<-get_column_key(platpsc,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+# detail_lc<-prepare_labels_and_colors(platpscintldef)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+# detail_ck<-get_column_key(platpscintldef)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+# column_key<-get_column_key(platpscintldef,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+# detail_lc<-prepare_labels_and_colors(platpscintldef,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+# detail_ck<-get_column_key(platpscintldef,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 ```
 # Preprocessing 
 ## Project
 ```{r PreprocessProject}
 
-summary(factor(platpsc$ProjectPlatform))
+summary(factor(platpscintldef$ProjectPlatform))
 
-topplat<-platpsc %>% group_by (ProjectName,PlatformPortfolio) %>%
+topplat<-platpscintldef %>% group_by (ProjectName,PlatformPortfolio) %>%
   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0)))%>%
               group_by (PlatformPortfolio) %>%
@@ -56,23 +56,23 @@ topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
 topplat$TopProject<-
   ifelse(topplat$rank_2020<=7 | topplat$rank_total<=7,topplat$ProjectName,NA)
 
-platpsc<-left_join(platpsc,topplat %>% select(-Action_Obligation_OMB20_GDP20,Action_Obligation_2020),
+platpscintldef<-left_join(platpscintldef,topplat %>% select(-Action_Obligation_OMB20_GDP20,Action_Obligation_2020),
           by=c("ProjectName","PlatformPortfolio"))
 
-platpsc$TopProject[is.na(platpsc$TopProject) & !is.na(platpsc$ProjectName)]<-
+platpscintldef$TopProject[is.na(platpscintldef$TopProject) & !is.na(platpscintldef$ProjectName)]<-
   "Other Labeled Project"
 
 
-summary(factor(platpsc$TopProject))
+summary(factor(platpscintldef$TopProject))
 
 
 ```
 ## PSC
 ```{r PreprocessPSC}
 
-summary(factor(platpsc$ProjectPlatform))
+summary(factor(platpscintldef$ProjectPlatform))
 
-topPSC<-platpsc %>% group_by (ProductOrServiceCode,ProductOrServiceCodeText,PlatformPortfolio) %>%
+topPSC<-platpscintldef %>% group_by (ProductOrServiceCode,ProductOrServiceCodeText,PlatformPortfolio) %>%
   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0)))%>%
               group_by (PlatformPortfolio) %>%
@@ -86,17 +86,17 @@ topPSC$TopPStext<-
   ifelse(topPSC$rank_2020<=7 | topPSC$rank_total<=7,topPSC$ProductOrServiceCodeText,NA)
 
 
-platpsc<-left_join(platpsc,topPSC %>% select(-Action_Obligation_OMB20_GDP20,Action_Obligation_2020),
+platpscintldef<-left_join(platpscintldef,topPSC %>% select(-Action_Obligation_OMB20_GDP20,Action_Obligation_2020),
           by=c("ProductOrServiceCode","PlatformPortfolio"))
 
-platpsc$TopPScode[is.na(platpsc$TopPScode) & !is.na(platpsc$ProductOrServiceCode)]<-
+platpscintldef$TopPScode[is.na(platpscintldef$TopPScode) & !is.na(platpscintldef$ProductOrServiceCode)]<-
   "Other Labeled PSC"
-platpsc$TopPStext[is.na(platpsc$TopPStext) & !is.na(platpsc$ProductOrServiceCode)]<-
+platpscintldef$TopPStext[is.na(platpscintldef$TopPStext) & !is.na(platpscintldef$ProductOrServiceCode)]<-
   "Other Labeled PSC"
 
-platpsc$TopPStext<-factor_wrap(platpsc$TopPStext)
+platpscintldef$TopPStext<-factor_wrap(platpscintldef$TopPStext)
 
-summary(factor(platpsc$TopPStext))
+summary(factor(platpscintldef$TopPStext))
 
 
 ```
@@ -223,7 +223,7 @@ z## SubCustomer with JPO
 # )
 # detail_lc<-prepare_labels_and_colors(platpscintldef)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 # detail_ck<-get_column_key(platpscintldef)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
-# platpsc$SubCustomer[platpsc$SubCustomer.JPO=="F-35 Joint Program Office"&SubCustomer.sum!="Navy"]
+# platpscintldef$SubCustomer[platpscintldef$SubCustomer.JPO=="F-35 Joint Program Office"&SubCustomer.sum!="Navy"]
 summary(factor(platpscintldef$SubCustomer.platform))
 summary(factor(platpscintldef$SubCustomer))
 platpscintldef %>% filter(Fiscal_Year==2021) %>% group_by(SubCustomer) %>% summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
@@ -301,10 +301,10 @@ write.csv(file="..//Output//topline_subcustomer_JPO_current.csv",row.names = FAL
 # Service variant
 ## Crisis Services
 ```{r services}
-platpsc$CrisisProductOrServiceArea
+platpscintldef$CrisisProductOrServiceArea
 (
 Services<-build_plot(
-  data=platpsc %>% filter(SimpleArea=="Services"&ProductOrServiceCode!="M183"),
+  data=platpscintldef %>% filter(SimpleArea=="Services"&ProductOrServiceCode!="M183"),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=detail_lc,
@@ -361,27 +361,27 @@ write.csv(file="..//Output//psr_Services_current.csv",row.names = FALSE,na = "",
 
 ## Aircraft System
 ```{r Aircraft}
-# summary(factor(platpsc$ProjectPlatform))
-# platpsc$Fiscal_Year
+# summary(factor(platpscintldef$ProjectPlatform))
+# platpscintldef$Fiscal_Year
 # 
-# topplat<-platpsc %>% filter(PlatformPortfolio=="Aircraft") %>% group_by (ProjectName) %>%
+# topplat<-platpscintldef %>% filter(PlatformPortfolio=="Aircraft") %>% group_by (ProjectName) %>%
 #   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
 #             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
 #                         rank_2020=rank(desc(Action_Obligation_2020)))
 # topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
 # 
-# platpsc$TopAircraftProject<-
-#   ifelse(platpsc$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
-#          platpsc$ProjectName,NA)
-# platpsc$TopAircraftProject[is.na(platpsc$TopAircraftProject) & !is.na(platpsc$ProjectName)]<-
+# platpscintldef$TopAircraftProject<-
+#   ifelse(platpscintldef$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
+#          platpscintldef$ProjectName,NA)
+# platpscintldef$TopAircraftProject[is.na(platpscintldef$TopAircraftProject) & !is.na(platpscintldef$ProjectName)]<-
 #   "Other Labeled Project"
-# summary(factor(platpsc$TopAircraftProject))
+# summary(factor(platpscintldef$TopAircraftProject))
 
 
 (
 Platform<-build_plot(
-  data=platpsc %>% filter(PlatformPortfolio=="Aircraft"),
+  data=platpscintldef %>% filter(PlatformPortfolio=="Aircraft"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -408,7 +408,7 @@ Platform<-build_plot(
   
   
   write.csv(file="..//Output//Aircraft_project_cur.csv",row.names = FALSE,na = "",
-            platpsc %>% filter(PlatformPortfolio=="Aircraft")  %>%
+            platpscintldef %>% filter(PlatformPortfolio=="Aircraft")  %>%
               format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "TopProject"#,
                                    # labels_and_colors=labels_and_colors
                                    )%>% arrange(Fiscal_Year) %>%
@@ -419,27 +419,27 @@ Platform<-build_plot(
 
 ## Ships and Submarines
 ```{r ShipsAndSubs}
-# summary(factor(platpsc$ProjectPlatform))
-# platpsc$Fiscal_Year
+# summary(factor(platpscintldef$ProjectPlatform))
+# platpscintldef$Fiscal_Year
 # 
-# topplat<-platpsc %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
+# topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
 #   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
 #             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
 #                         rank_2020=rank(desc(Action_Obligation_2020)))
 # topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
 # 
-# platpsc$TopShipProject<-
-#   ifelse(platpsc$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
-#          platpsc$ProjectName,NA)
-# platpsc$TopShipProject[is.na(platpsc$TopShipProject) & !is.na(platpsc$ProjectName)]<-
+# platpscintldef$TopShipProject<-
+#   ifelse(platpscintldef$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
+#          platpscintldef$ProjectName,NA)
+# platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$ProjectName)]<-
 #   "Other Labeled Project"
-# summary(factor(platpsc$TopShipProject))
+# summary(factor(platpscintldef$TopShipProject))
 
 
 (
 Platform<-build_plot(
-  data=platpsc %>% filter(PlatformPortfolio=="Ships & Submarines"),
+  data=platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -465,7 +465,7 @@ Platform<-build_plot(
 )
 
  write.csv(file="..//Output//ShipSub_project_current.csv",row.names = FALSE,na="",
-            platpsc %>% filter(PlatformPortfolio=="Ships & Submarines")  %>%
+            platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines")  %>%
               format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "TopProject"#,
                                    # labels_and_colors=labels_and_colors
                                    )%>% arrange(Fiscal_Year) %>%
@@ -477,27 +477,29 @@ Platform<-build_plot(
 
 ## Ordnance and Missiles
 ```{r OrdMissiles}
-summary(factor(platpsc$ProjectPlatform))
-# platpsc$Fiscal_Year
+summary(factor(platpscintldef$ProjectPlatform))
+
+
+# platpscintldef$Fiscal_Year
 # 
-# topplat<-platpsc %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
+# topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
 #   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
 #             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
 #                         rank_2020=rank(desc(Action_Obligation_2020)))
 # topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
 # 
-# platpsc$TopShipProject<-
-#   ifelse(platpsc$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
-#          platpsc$ProjectName,NA)
-# platpsc$TopShipProject[is.na(platpsc$TopShipProject) & !is.na(platpsc$ProjectName)]<-
+# platpscintldef$TopShipProject<-
+#   ifelse(platpscintldef$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
+#          platpscintldef$ProjectName,NA)
+# platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$ProjectName)]<-
 #   "Other Labeled Project"
-# summary(factor(platpsc$TopShipProject))
+summary(factor(platpscintldef$TopProject[platpscintldef$PlatformPortfolio=="Ordnance and Missiles"]))
 
 
 (
 Platform<-build_plot(
-  data=platpsc %>% filter(PlatformPortfolio=="Ordnance and Missiles"),
+  data=platpscintldef %>% filter(PlatformPortfolio=="Ordnance and Missiles"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -526,14 +528,14 @@ Platform<-build_plot(
 
 (
 PSC<-build_plot(
-  data=platpsc %>% filter(PlatformPortfolio=="Ordnance and Missiles"),
+  data=platpscintldef %>% filter(PlatformPortfolio=="Ordnance and Missiles"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
-  color_var="TopAgencyText", #color_var
+  color_var="TopPStext", #color_var
   facet_var="TopPStext", #facet_var
   # column_key=column_key,
   format=TRUE,
@@ -550,9 +552,9 @@ PSC<-build_plot(
   theme(legend.position = "none")+
   labs(y="Obligations (Constant 2020 $s)")
 )
-
+#Project ID 1916 (PATRIOT MISSILE SYS), 137 ('BALLISTIC MISSILE DEFENSE', 2240, LTAMDS should all be air and missile defense. Fixed in databse), 
 write.csv(file="..//Output//OrdMiss_psc_current.csv",row.names = FALSE,na="",
-            platpsc %>% filter(PlatformPortfolio=="Ordnance and Missiles")  %>%
+            platpscintldef %>% filter(PlatformPortfolio=="Ordnance and Missiles")  %>%
               format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "TopPStext"#,
                                    # labels_and_colors=labels_and_colors
                                    )%>% arrange(Fiscal_Year) %>%
@@ -564,27 +566,27 @@ write.csv(file="..//Output//OrdMiss_psc_current.csv",row.names = FALSE,na="",
 
 ## Air and Missile Defesnse
 ```{r Defense}
-summary(factor(platpsc$ProjectPlatform))
-# platpsc$Fiscal_Year
+summary(factor(platpscintldef$ProjectPlatform))
+# platpscintldef$Fiscal_Year
 # 
-# topplat<-platpsc %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
+# topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
 #   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
 #             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
 #                         rank_2020=rank(desc(Action_Obligation_2020)))
 # topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
 # 
-# platpsc$TopShipProject<-
-#   ifelse(platpsc$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
-#          platpsc$ProjectName,NA)
-# platpsc$TopShipProject[is.na(platpsc$TopShipProject) & !is.na(platpsc$ProjectName)]<-
+# platpscintldef$TopShipProject<-
+#   ifelse(platpscintldef$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
+#          platpscintldef$ProjectName,NA)
+# platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$ProjectName)]<-
 #   "Other Labeled Project"
-# summary(factor(platpsc$TopShipProject))
+# summary(factor(platpscintldef$TopShipProject))
 
 
 (
 Platform<-build_plot(
-  data=platpsc %>% filter(PlatformPortfolio=="Missile Defense"),
+  data=platpscintldef %>% filter(PlatformPortfolio=="Missile Defense"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -613,7 +615,7 @@ Platform<-build_plot(
 
 (
 PSC<-build_plot(
-  data=platpsc %>% filter(PlatformPortfolio=="Missile Defense"),
+  data=platpscintldef %>% filter(PlatformPortfolio=="Missile Defense"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -643,27 +645,27 @@ PSC<-build_plot(
 
 ## Electronics Comms and Sensors
 ```{r ElecCommsSensors}
-summary(factor(platpsc$ProjectPlatform))
-# platpsc$Fiscal_Year
+summary(factor(platpscintldef$ProjectPlatform))
+# platpscintldef$Fiscal_Year
 # 
-# topplat<-platpsc %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
+# topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
 #   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
 #             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
 #                         rank_2020=rank(desc(Action_Obligation_2020)))
 # topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
 # 
-# platpsc$TopShipProject<-
-#   ifelse(platpsc$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
-#          platpsc$ProjectName,NA)
-# platpsc$TopShipProject[is.na(platpsc$TopShipProject) & !is.na(platpsc$ProjectName)]<-
+# platpscintldef$TopShipProject<-
+#   ifelse(platpscintldef$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
+#          platpscintldef$ProjectName,NA)
+# platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$ProjectName)]<-
 #   "Other Labeled Project"
-# summary(factor(platpsc$TopShipProject))
+# summary(factor(platpscintldef$TopShipProject))
 
 
 (
 Platform<-build_plot(
-  data=platpsc %>% filter(PlatformPortfolio=="Electronics, Comms, & Sensors"),
+  data=platpscintldef %>% filter(PlatformPortfolio=="Electronics, Comms, & Sensors"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -692,7 +694,7 @@ Platform<-build_plot(
 
 (
 PSC<-build_plot(
-  data=platpsc %>% filter(PlatformPortfolio=="Electronics, Comms, & Sensors"),
+  data=platpscintldef %>% filter(PlatformPortfolio=="Electronics, Comms, & Sensors"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -722,27 +724,27 @@ PSC<-build_plot(
 
 ## Space Systems
 ```{r Space}
-summary(factor(platpsc$ProjectPlatform))
-# platpsc$Fiscal_Year
+summary(factor(platpscintldef$ProjectPlatform))
+# platpscintldef$Fiscal_Year
 # 
-# topplat<-platpsc %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
+# topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
 #   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
 #             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
 #                         rank_2020=rank(desc(Action_Obligation_2020)))
 # topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
 # 
-# platpsc$TopShipProject<-
-#   ifelse(platpsc$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
-#          platpsc$ProjectName,NA)
-# platpsc$TopShipProject[is.na(platpsc$TopShipProject) & !is.na(platpsc$ProjectName)]<-
+# platpscintldef$TopShipProject<-
+#   ifelse(platpscintldef$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
+#          platpscintldef$ProjectName,NA)
+# platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$ProjectName)]<-
 #   "Other Labeled Project"
-# summary(factor(platpsc$TopShipProject))
+# summary(factor(platpscintldef$TopShipProject))
 
 
 (
 Platform<-build_plot(
-  data=platpsc %>% filter(PlatformPortfolio=="Space Systems"),
+  data=platpscintldef %>% filter(PlatformPortfolio=="Space Systems"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -770,7 +772,7 @@ Platform<-build_plot(
 
 (
 PSC<-build_plot(
-  data=platpsc %>% filter(PlatformPortfolio=="Space Systems"),
+  data=platpscintldef %>% filter(PlatformPortfolio=="Space Systems"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -799,27 +801,27 @@ PSC<-build_plot(
 
 ## Land Vehicles
 ```{r Land}
-summary(factor(platpsc$ProjectPlatform))
-# platpsc$Fiscal_Year
+summary(factor(platpscintldef$ProjectPlatform))
+# platpscintldef$Fiscal_Year
 # 
-# topplat<-platpsc %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
+# topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
 #   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
 #             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
 #                         rank_2020=rank(desc(Action_Obligation_2020)))
 # topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
 # 
-# platpsc$TopShipProject<-
-#   ifelse(platpsc$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
-#          platpsc$ProjectName,NA)
-# platpsc$TopShipProject[is.na(platpsc$TopShipProject) & !is.na(platpsc$ProjectName)]<-
+# platpscintldef$TopShipProject<-
+#   ifelse(platpscintldef$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
+#          platpscintldef$ProjectName,NA)
+# platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$ProjectName)]<-
 #   "Other Labeled Project"
-# summary(factor(platpsc$TopShipProject))
+# summary(factor(platpscintldef$TopShipProject))
 
 
 (
 Platform<-build_plot(
-  data=platpsc %>% filter(PlatformPortfolio=="Land Vehicles"),
+  data=platpscintldef %>% filter(PlatformPortfolio=="Land Vehicles"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -847,7 +849,7 @@ Platform<-build_plot(
 
 (
 PSC<-build_plot(
-  data=platpsc %>% filter(PlatformPortfolio=="Land Vehicles"),
+  data=platpscintldef %>% filter(PlatformPortfolio=="Land Vehicles"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -876,27 +878,27 @@ PSC<-build_plot(
 
 ## Facility Related And Construction
 ```{r FRSnC}
-summary(factor(platpsc$ProjectPlatform))
-# platpsc$Fiscal_Year
+summary(factor(platpscintldef$ProjectPlatform))
+# platpscintldef$Fiscal_Year
 # 
-# topplat<-platpsc %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
+# topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
 #   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
 #             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
 #                         rank_2020=rank(desc(Action_Obligation_2020)))
 # topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
 # 
-# platpsc$TopShipProject<-
-#   ifelse(platpsc$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
-#          platpsc$ProjectName,NA)
-# platpsc$TopShipProject[is.na(platpsc$TopShipProject) & !is.na(platpsc$ProjectName)]<-
+# platpscintldef$TopShipProject<-
+#   ifelse(platpscintldef$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
+#          platpscintldef$ProjectName,NA)
+# platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$ProjectName)]<-
 #   "Other Labeled Project"
-# summary(factor(platpsc$TopShipProject))
+# summary(factor(platpscintldef$TopShipProject))
 
 
 (
 Platform<-build_plot(
-  data=platpsc %>% filter(PlatformPortfolio=="Facilities and Construction"),
+  data=platpscintldef %>% filter(PlatformPortfolio=="Facilities and Construction"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -924,7 +926,7 @@ Platform<-build_plot(
 
 (
 PSC<-build_plot(
-  data=platpsc %>% filter(PlatformPortfolio=="Facilities and Construction"),
+  data=platpscintldef %>% filter(PlatformPortfolio=="Facilities and Construction"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -1086,27 +1088,27 @@ PSC<-build_plot(
 
 ## Other Products
 ```{r OtherProducts}
-summary(factor(platpsc$PlatformPortfolio))
-# platpsc$Fiscal_Year
+summary(factor(platpscintldef$PlatformPortfolio))
+# platpscintldef$Fiscal_Year
 # 
-# topplat<-platpsc %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
+# topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
 #   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
 #             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
 #                         rank_2020=rank(desc(Action_Obligation_2020)))
 # topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
 # 
-# platpsc$TopShipProject<-
-#   ifelse(platpsc$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
-#          platpsc$ProjectName,NA)
-# platpsc$TopShipProject[is.na(platpsc$TopShipProject) & !is.na(platpsc$ProjectName)]<-
+# platpscintldef$TopShipProject<-
+#   ifelse(platpscintldef$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
+#          platpscintldef$ProjectName,NA)
+# platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$ProjectName)]<-
 #   "Other Labeled Project"
-# summary(factor(platpsc$TopShipProject))
+# summary(factor(platpscintldef$TopShipProject))
 
 
 (
 Platform<-build_plot(
-  data=platpsc %>% filter(PlatformPortfolio=="Other Products"),
+  data=platpscintldef %>% filter(PlatformPortfolio=="Other Products"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -1134,7 +1136,7 @@ Platform<-build_plot(
 
 (
 PSC<-build_plot(
-  data=platpsc %>% filter(PlatformPortfolio=="Other Products"),
+  data=platpscintldef %>% filter(PlatformPortfolio=="Other Products"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -1664,25 +1666,25 @@ sw %>% filter (ProductOrServiceCode %in% c("7030","D302","D307","D308","D313","D
 
 sw<-sw %>% filter(ProductOrServiceCode %in% c("D305", "D317","D319", "7030","D302","D307","D308","D313","D317","D318","D319","D399","H170","H970","J070","R413"))
 
-# platpsc$SimpleArea
-# platpsc$SWpsc<-as.character(platpsc$SimpleArea)
-# platpsc$SWpsc[substr(platpsc$ProductOrServiceCode,1,1)=="D" ]<-"Other IT and Telecomm"
-# platpsc$SWpsc[substr(platpsc$ProductOrServiceCode,1,2)=="70" ]<-"Other ADP EQPT/SOFTWARE/SUPPLIES AND EQPT"
-# # platpsc$SWpsc[platpsc$ProductOrServiceCode =="D304" ]<-"Telecomm & Transmission"
-# # platpsc$SWpsc[platpsc$ProductOrServiceCode =="D316" ]<-"Telecomm Network Mgmt."
-# platpsc$SWpsc[platpsc$ProductOrServiceCode =="D319" ]<-"Annual Software Maint."
-# platpsc$SWpsc[platpsc$ProductOrServiceCode =="D305" ]<-"Teleprocessing, Timeshare, Cloud Computing, and High Performance Computing"
-# platpsc$SWpsc[platpsc$ProductOrServiceCode =="7030" ]<-"Software as a product"
-# platpsc$SWpsc[platpsc$SWpsc =="Products" ]<-"Other Products"
-# platpsc$SWpsc[platpsc$SWpsc =="Services" ]<-"Other Services"
+# platpscintldef$SimpleArea
+# platpscintldef$SWpsc<-as.character(platpscintldef$SimpleArea)
+# platpscintldef$SWpsc[substr(platpscintldef$ProductOrServiceCode,1,1)=="D" ]<-"Other IT and Telecomm"
+# platpscintldef$SWpsc[substr(platpscintldef$ProductOrServiceCode,1,2)=="70" ]<-"Other ADP EQPT/SOFTWARE/SUPPLIES AND EQPT"
+# # platpscintldef$SWpsc[platpscintldef$ProductOrServiceCode =="D304" ]<-"Telecomm & Transmission"
+# # platpscintldef$SWpsc[platpscintldef$ProductOrServiceCode =="D316" ]<-"Telecomm Network Mgmt."
+# platpscintldef$SWpsc[platpscintldef$ProductOrServiceCode =="D319" ]<-"Annual Software Maint."
+# platpscintldef$SWpsc[platpscintldef$ProductOrServiceCode =="D305" ]<-"Teleprocessing, Timeshare, Cloud Computing, and High Performance Computing"
+# platpscintldef$SWpsc[platpscintldef$ProductOrServiceCode =="7030" ]<-"Software as a product"
+# platpscintldef$SWpsc[platpscintldef$SWpsc =="Products" ]<-"Other Products"
+# platpscintldef$SWpsc[platpscintldef$SWpsc =="Services" ]<-"Other Services"
 # 
-# platpsc %>%group_by(SWpsc)%>%
+# platpscintldef %>%group_by(SWpsc)%>%
 #   dplyr::summarise(o=sum(Action_Obligation_OMB20_GDP20))
-# levels(factor(platpsc$SWpsc))
-# any(platpsc$ProductOrServiceCode=="D305")
+# levels(factor(platpscintldef$SWpsc))
+# any(platpscintldef$ProductOrServiceCode=="D305")
 # 
-# levels(factor(platpsc$SWpsc))
-# platpsc$SWpsc<-factor(platpsc$SWpsc,
+# levels(factor(platpscintldef$SWpsc))
+# platpscintldef$SWpsc<-factor(platpscintldef$SWpsc,
 #                               levels=c("Annual Software Maint.",
 #                                        "Teleprocessing, Timeshare, Cloud Computing, and High Performance Computing",
 #                                        "Other IT and Telecomm"  ,
@@ -1722,8 +1724,8 @@ SWpscdetail<-build_plot(
   labs(y="Obligations (Constant 2020 $s)",caption="Note: Unlabeled not shown. Source: FPDS; CSIS analysis.")
 )
 
-# platpsc$ContractingAgencyText
-# platpsc$ContractingAgencyTextSwr<-factor_wrap(platpsc$ContractingAgencyText)
+# platpscintldef$ContractingAgencyText
+# platpscintldef$ContractingAgencyTextSwr<-factor_wrap(platpscintldef$ContractingAgencyText)
 
 
 
@@ -2484,7 +2486,7 @@ drone$TopProject[is.na(drone$TopProject) & !is.na(drone$ProjectName)]<-
 summary(factor(drone$TopProject))
 
 
-summary(factor(platpsc$ProjectPlatform))
+summary(factor(platpscintldef$ProjectPlatform))
 
 dronePSC<-drone %>% group_by (ProductOrServiceCode,ProductOrServiceCodeText) %>%
   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),

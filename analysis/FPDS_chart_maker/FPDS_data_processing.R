@@ -52,7 +52,8 @@ initial_clean<-function(df){
 
 
 full_data <- read_delim(
-  "Data//semi_clean//Federal_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",delim = "\t",
+  # "Data//semi_clean//Federal_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",delim = "\t",
+  "Data//semi_clean//Defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",delim = "\t",
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
 
 full_data<-initial_clean(full_data)
@@ -170,6 +171,9 @@ platpsc<-apply_standard_lookups(platpsc)
 platpscintl<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdServPlatformAgencyPlaceOriginVendor.txt"),delim="\t",na=c("NULL","NA"),
                         col_names = TRUE, guess_max = 10000000)
 colnames(platpscintl)[colnames(platpscintl)=="Customer"]<-"ContractingCustomer"
+
+n<-platpscintl %>% group_by(IsFMS,IsFMSmac,IsFMSml,fundedbyforeignentity) %>%
+  summarise(n=length(fiscal_year),min=min(fiscal_year),max=max(fiscal_year))
 
 platpscintl<-apply_standard_lookups(platpscintl)
 platpscintldef<-initial_clean(platpscintl)
