@@ -61,26 +61,28 @@ OTA_data %>% group_by(TopCovid,`Fiscal Year`) %>% dplyr::summarize(n=length(`Fis
 
 
 colnames(OTA_data)<-gsub(" ","_",colnames(OTA_data))
+# 
+# initial_clean<-function(df){
+#   if(substring(df$fiscal_year[nrow(df)],1,12)=="Completion time")
+#     df<-df[-nrow(df),]
+#   
+#   df<-standardize_variable_names(df)
+#   # coerce Amount to be a numeric variable
+#   df$Action_Obligation %<>% as.numeric()
+#   if("Number.Of.Actions" %in% colnames(df)) 
+#     df$Number.Of.Actions %<>% as.numeric()
+#   df$Fiscal.Year <- as.numeric(df$Fiscal.Year)
+#   colnames(df)[colnames(df)=="Contractingcustomer"]<-"ContractingCustomer"
+#   colnames(df)[colnames(df)=="platformportfolio"]<-"PlatformPortfolio"
+#   # discard pre-2000
+#   df %<>% filter(Fiscal.Year >= 2000 & ContractingCustomer=="Defense")
+#   colnames(df)[colnames(df)=="Action_Obligation_Then_Year"]<-"Action_Obligation"
+#   colnames(df)[colnames(df)=="Fiscal.Year"]<-"fiscal_year"
+#   df$dFYear<-as.Date(paste("1/1/",as.character(df$fiscal_year),sep=""),"%m/%d/%Y")
+#   df
+# }
 
-initial_clean<-function(df){
-  if(substring(df$fiscal_year[nrow(df)],1,12)=="Completion time")
-    df<-df[-nrow(df),]
-  
-  df<-standardize_variable_names(df)
-  # coerce Amount to be a numeric variable
-  df$Action_Obligation %<>% as.numeric()
-  if("Number.Of.Actions" %in% colnames(df)) 
-    df$Number.Of.Actions %<>% as.numeric()
-  df$Fiscal.Year <- as.numeric(df$Fiscal.Year)
-  colnames(df)[colnames(df)=="Contractingcustomer"]<-"ContractingCustomer"
-  colnames(df)[colnames(df)=="platformportfolio"]<-"PlatformPortfolio"
-  # discard pre-2000
-  df %<>% filter(Fiscal.Year >= 2000 & ContractingCustomer=="Defense")
-  colnames(df)[colnames(df)=="Action_Obligation_Then_Year"]<-"Action_Obligation"
-  colnames(df)[colnames(df)=="Fiscal.Year"]<-"fiscal_year"
-  df$dFYear<-as.Date(paste("1/1/",as.character(df$fiscal_year),sep=""),"%m/%d/%Y")
-  df
-}
+OTA_data<-apply_standard_lookups(OTA_data)
 
 OTA_data<-deflate(OTA_data,
                    money_var = "Dollars_Obligated",
@@ -291,3 +293,21 @@ levels(factor(OTA_data$Contracting_Department_ID))
 save(OTA_data,ota_lc,ota_ck, file="data/semi_clean/Federal_OTA.Rda")
 ota_def<-OTA_data %>% filter(Contracting_Department_ID=="9700")
 save(ota_def,ota_lc,ota_ck, file="data/semi_clean/Defense_OTA.Rda")
+
+
+# load(file="data/semi_clean/Defense_OTA.Rda")
+colnames(ota_contract)[colnames(ota_contract)=="Dollars_Obligated_OMB20_GDP20"]<-"Action_Obligation_OMB20_GDP20"
+colnames(ota_contract)[colnames(ota_contract)=="Dollars_Obligated_Then_Year"]<-"Action_Obligation_Then_Year"
+
+
+
+
+
+
+ota_def<-apply_standard_lookups(ota_def)
+ota_contract$IsOTA<-"OTA"
+platpscintldef$IsOTA<-"Contract"
+ota_contract<-rbind(ota_contract[,colnames(ota_contract)[colnames(ota_contract) %in% colnames(platpscintldef)]],
+                    platpscintldef[,colnames(platpscintldef)[colnames(platpscintldef) %in% colnames(ota_contract)]])
+save(ota_def,ota_lc,ota_ck, file="data/semi_clean/Defense_OTA_contract.Rda")
+save(ota_contract,ota_lc,ota_ck, file="data/semi_clean/Defense_OTA_contract.Rda")
