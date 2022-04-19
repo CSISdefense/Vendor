@@ -236,6 +236,20 @@ SET NOCOUNT ON;
 
 DECLARE	@return_value int
 
+--EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
+EXEC	@return_value = [Contract].[SP_ContractDefenseSubCustomer]
+--EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
+
+		
+--SELECT	'Return Value' = @return_value
+
+
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+
+DECLARE	@return_value int
+
 EXEC	@return_value = Contract.SP_ContractBucketPlatformCustomer
 		@Customer = NULL
 		,@StartFiscalYear = 2000
