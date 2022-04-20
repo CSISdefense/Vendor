@@ -2546,7 +2546,7 @@ summary(factor(def_palt$ContractingOfficeAgencyID))
 DTRA_palt<-def_palt %>% filter(UnmodifiedContractingOfficeAgencyID=="9761")
 
 
-DTRA_palt_stat<-DTRA_palt %>% group_by(qLowCeiling,StartFiscal_Year,Veh.SIDC) %>%
+DTRA_palt_stat<-DTRA_palt %>% group_by(qLowCeiling,StartFiscal_Year) %>%
   dplyr::summarise(Median=median(PALT,na.rm=TRUE),
             Mean=mean(PALT,na.rm=TRUE))%>% pivot_longer(cols=c(Mean,Median),names_to="Statistic")
                 
@@ -2554,7 +2554,7 @@ DTRA_palt$Count<-1
   
   PaltCeilLabels<-
       DTRA_palt %>%
-      group_by(qLowCeiling,StartFiscal_Year,Veh.SIDC) %>%
+      group_by(qLowCeiling,StartFiscal_Year) %>%
       dplyr::summarise(
       FacetCount=paste("#:",prettyNum(sum(Count),big.mark=",")),
       FacetValue=paste("Obl.: $",round(sum(Action_Obligation)/1000000000,1),"B",sep=""),
@@ -2575,57 +2575,122 @@ DTRA_palt$Count<-1
 # dollar<-ggplot(DTRA_palt, aes(x=PALT,y=Action_Obligation))+geom_point()+scale_x_log10()+scale_y_log10()
 # # dollar<-ggplot(DTRA_palt, aes(x=PALT,y=Action_Obligation))+geom_histogram()+scale_x_log10()
 
-(countlowSIDV<-ggplot(DTRA_palt %>% filter(Veh.SIDC=="Single Award or Unlabeled Task Order"& StartFiscal_Year>=2019),
+(countlow<-ggplot(DTRA_palt %>% filter( StartFiscal_Year>=2019),
                       aes(x=PALT))+geom_histogram()+
-    geom_vline(data=DTRA_palt_stat%>% filter(Veh.SIDC=="Single Award or Unlabeled Task Order"& 
-                                                StartFiscal_Year>=2019),
+    geom_vline(data=DTRA_palt_stat%>% filter(StartFiscal_Year>=2019),
                aes(xintercept=value, color=Statistic))+
-  
-    # geom_text(data=PaltCeilLabels %>% filter(Veh.SIDC=="Single Award or Unlabeled Task Order"& 
-    #                                            StartFiscal_Year>=2019),
-              # aes(x=400,y=YPos, label=FacetMean),#,y=Ypos),
-              # parse=TRUE,
-              # hjust=0,
-              # vjust=1,
-              # color="black",
-              # size=0.9)+
+
+    # geom_text(data=PaltCeilLabels %>% filter(StartFiscal_Year>=2019),
+    # aes(x=400,y=YPos, label=FacetMean),#,y=Ypos),
+    # parse=TRUE,
+    # hjust=0,
+    # vjust=1,
+    # color="black",
+    # size=0.9)+
     scale_x_log10()+facet_grid(qLowCeiling~StartFiscal_Year,scales="free_y")+labs(
       y="Number of Awards and Task Orders (Variable Scale)", x="Procurement Award Lead Time in Days\n(Logarithmic Scale)"
     ))
 
-ggsave600dpi(width=6.5, height=6, size=11, lineheight=1.2,file=file.path("..","output","DTRA_PALT_SIDV.png"),
-             countlowSIDV)
-ggsave600dpi(width=6.5, height=6, size=11, lineheight=1.2, file=file.path("..","output","DTRA_PALT_SIDV.emf"),
-             countlowSIDV)
-
-(countlowOther<-ggplot(DTRA_palt %>% filter(Veh.SIDC=="All Other Awards and Task Orders"& StartFiscal_Year>=2019),
-                       aes(x=PALT))+geom_histogram()+
-    geom_vline(data=DTRA_palt_stat%>% filter(Veh.SIDC=="All Other Awards and Task Orders"& StartFiscal_Year>=2019),
-               aes(xintercept=value, color=Statistic))+
-    # geom_text(data=PaltCeilLabels %>% filter(Veh.SIDC=="All Other Awards and Task Orders"& StartFiscal_Year>=2019),
-    #           aes(x=400,y=YPos, label=FacetMean),#,y=Ypos),
-    #           # parse=TRUE,
-    #           hjust=0,
-    #           vjust=1,
-    #           color="black",
-    #           size=0.9)+
-    scale_x_log10()+facet_grid(qLowCeiling~StartFiscal_Year,scales="free_y")+labs(
-      y="Number of Awards and Task Orders (Variable Scale)", x="Procurement Award Lead Time in Days\n(Logarithmic Scale)"
-    ))
-
-
-ggsave600dpi(width=6.5, height=6, size=11, lineheight=1.2,file=file.path("..","output","DTRA_PALT_other.png"),
-             countlowOther)
-ggsave600dpi(width=6.5, height=6, size=11, lineheight=1.2, file=file.path("..","output","DTRA_PALT_other.emf"),
-             countlowOther)
-
+ggsave600dpi(width=6.5, height=6, size=11, lineheight=1.2,file=file.path("..","output","DTRA_PALT.png"),
+             countlow)
+ggsave600dpi(width=6.5, height=6, size=11, lineheight=1.2, file=file.path("..","output","DTRA_PALT.emf"),
+             countlow)
 
 write.csv(
-  PaltCeilLabels %>% group_by(qLowCeiling,StartFiscal_Year,Veh.SIDC) %>%
+  PaltCeilLabels %>% group_by(qLowCeiling,StartFiscal_Year) %>%
     filter(StartFiscal_Year>=2018) %>%
-    pivot_wider(id_cols=c(Veh.SIDC,qLowCeiling),
+    pivot_wider(id_cols=c(qLowCeiling),
                         names_from=c(StartFiscal_Year),values_from=FacetMean) %>%
-    arrange(Veh.SIDC,qLowCeiling),row.names = FALSE, na = "",
+    arrange(qLowCeiling),row.names = FALSE, na = "",
+  file=file.path("..","output","PALT.csv")
+)
+
+
+
+    #https://stackoverflow.com/questions/14584093/ggplot2-find-number-of-counts-in-histogram-maximum
+
+#   geom_vline(data=pChgCeilAverage,aes(xintercept=mean),color="red")
+
+# 
+# palt_hist<-build_plot(
+#   data=DTRA_palt,
+#   chart_geom = "Histogram",
+#   share = FALSE,
+#   x_var="PALT",
+#   # y_var="hh_index", #Name of variable to plot on y-axis
+#   # color_var="PlatformPortfolio",       # name of coloration variable, as string
+#   facet_var="MinOfSolicitation_Date",        # name of facet variable, as string
+#   legend=FALSE, #Include a legend
+#   caption=FALSE, #Include a source caption
+#   # labels_and_colors=labels_and_colors,
+#   # column_key=NULL
+# )
+```
+
+
+
+## DTRA PALT no ceil
+```{r Palt}
+summary(factor(def_palt$ContractingOfficeAgencyID))
+
+DTRA_palt<-def_palt %>% filter(UnmodifiedContractingOfficeAgencyID=="9761")
+
+
+DTRA_palt_stat<-DTRA_palt %>% group_by(StartFiscal_Year) %>%
+  dplyr::summarise(Median=median(PALT,na.rm=TRUE),
+            Mean=mean(PALT,na.rm=TRUE))%>% pivot_longer(cols=c(Mean,Median),names_to="Statistic")
+                
+DTRA_palt$Count<-1
+  
+  PaltCeilLabels<-
+      DTRA_palt %>%
+      group_by(StartFiscal_Year) %>%
+      dplyr::summarise(
+      FacetCount=paste("#:",prettyNum(sum(Count),big.mark=",")),
+      FacetValue=paste("Obl.: $",round(sum(Action_Obligation)/1000000000,1),"B",sep=""),
+      FacetMedian=paste(FacetValue,"\nMed.: ",round(median(PALT,na.rm=TRUE),1),
+                        ifelse(round(median(PALT,na.rm=TRUE),1)==1," Day"," Days"),sep=""),
+      FacetMean=paste(FacetMedian,"\nAvg.: ",round(mean(PALT,na.rm=TRUE),1),
+                        ifelse(round(mean(PALT,na.rm=TRUE),1)==1," Day"," Days"),sep=""),
+      YPos=5#max(hist(log10(ifelse(nrow(PALT)==0,1,PALT)), breaks=25, plot=FALSE)$counts)
+      #) %>% group_by(qLowCeiling,Veh.SIDC)%>%
+    # dplyr::mutate(YPos=max(YPos)
+           )
+
+
+# (counthigh<-ggplot(DTRA_palt, aes(x=PALT))+geom_histogram()+scale_x_log10()+facet_wrap(~qHighCeiling,scales="free_y"))
+# (countlow<-ggplot(DTRA_palt, aes(x=PALT))+geom_histogram()+scale_x_log10()+facet_wrap(~qLowCeiling,scales="free_y"))
+# 
+# (countlow<-ggplot(DTRA_palt, aes(x=PALT))+geom_histogram()+scale_x_log10()+facet_grid(qLowCeiling~Veh,scales="free_y"))
+# dollar<-ggplot(DTRA_palt, aes(x=PALT,y=Action_Obligation))+geom_point()+scale_x_log10()+scale_y_log10()
+# # dollar<-ggplot(DTRA_palt, aes(x=PALT,y=Action_Obligation))+geom_histogram()+scale_x_log10()
+
+(DTRA<-ggplot(DTRA_palt %>% filter( StartFiscal_Year>=2019),
+                      aes(x=PALT))+geom_histogram()+
+    geom_vline(data=DTRA_palt_stat%>% filter(StartFiscal_Year>=2019),
+               aes(xintercept=value, color=Statistic))+
+
+    # geom_text(data=PaltCeilLabels %>% filter(StartFiscal_Year>=2019),
+    # aes(x=400,y=YPos, label=FacetMean),#,y=Ypos),
+    # parse=TRUE,
+    # hjust=0,
+    # vjust=1,
+    # color="black",
+    # size=0.9)+
+    scale_x_log10()+facet_grid(StartFiscal_Year~.,scales="free_y")+labs(
+      y="Number of Awards and Task Orders", x="Procurement Award\n Lead Time in Days\n(Logarithmic Scale)"
+    ))
+
+ggsave600dpi(width=3, height=6, size=11, lineheight=1.2,file=file.path("..","output","DTRA_PALT.png"),
+             DTRA)
+ggsave600dpi(width=3, height=6, size=11, lineheight=1.2, file=file.path("..","output","DTRA_PALT.emf"),
+             DTRA)
+
+write.csv(PaltCeilLabels, file=file.path("..","output","PALT.csv"))
+  PaltCeilLabels %>% group_by(qLowCeiling,StartFiscal_Year) %>%
+    filter(StartFiscal_Year>=2018) %>%
+    pivot_wider(names_from=c(StartFiscal_Year),values_from=FacetMean) %>%
+  row.names = FALSE, na = "",
   file=file.path("..","output","PALT.csv")
 )
 

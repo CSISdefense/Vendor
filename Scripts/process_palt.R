@@ -347,9 +347,9 @@ def_palt<-def_palt[,!colnames(def_palt) %in%
                            # "UnmodifiedNumberOfOffersReceived",
                            "unmodifiedidv_type_code",
                            "NumberOfOffersReceived",
-                           "UnmodifiedCustomer",
-                           "UnmodifiedSubCustomer",
-                           "UnmodifiedContractingOfficeAgencyID"
+                           "Customer",
+                           "SubCustomer",
+                           "ContractingOfficeAgencyID"
                          )]
 
 save(def_palt,file=file.path("data","semi_clean","def_palt_veh.rda"))
