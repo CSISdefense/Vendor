@@ -98,6 +98,20 @@ def_palt<-read_and_join_experiment(data=def_palt
 ) 
 
 
+def_palt<-read_and_join_experiment(data=def_palt
+                                       ,"Defense_Contract.SP_ContractDefenseSubCustomer.txt"
+                                       ,path=""
+                                       ,dir="data/semi_clean/"
+                                       ,by="CSIScontractID"
+                                       ,new_var_checked=FALSE
+                                       ,create_lookup_rdata=TRUE
+                                       # ,col_types="dddddddddccc"
+) 
+
+
+
+
+
 #Number of Offers
 
 #FUTURE GREG: We'll need to implement the single-award IDV fix here.
@@ -296,8 +310,22 @@ def_palt$IsIDV[
     )]<-"IDV"
 
 
+def_palt$UnmodifiedCustomer<-impute_unmodified(
+  def_palt$UnmodifiedCustomer,
+  def_palt$Customer
+)
 
+def_palt$UnmodifiedSubCustomer<-impute_unmodified(
+  def_palt$UnmodifiedSubCustomer,
+  def_palt$SubCustomer
+)
 
+def_palt$UnmodifiedContractingOfficeAgencyID<-impute_unmodified(
+  def_palt$UnmodifiedContractingOfficeAgencyID,
+  def_palt$ContractingOfficeAgencyID
+)
+
+summary(factor(def_palt$UnmodifiedContractingOfficeAgencyID))
 
 def_palt<-def_palt[,!colnames(def_palt) %in% 
                          c(
@@ -318,11 +346,14 @@ def_palt<-def_palt[,!colnames(def_palt) %in%
                            "IDV_Type_Code",
                            # "UnmodifiedNumberOfOffersReceived",
                            "unmodifiedidv_type_code",
-                           "NumberOfOffersReceived"
+                           "NumberOfOffersReceived",
+                           "UnmodifiedCustomer",
+                           "UnmodifiedSubCustomer",
+                           "UnmodifiedContractingOfficeAgencyID"
                          )]
-str(def_palt)
 
 save(def_palt,file=file.path("data","semi_clean","def_palt_veh.rda"))
+
 
 
 load(file=file.path("data","semi_clean","def_palt_veh.rda"))
