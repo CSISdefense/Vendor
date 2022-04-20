@@ -230,7 +230,7 @@ EXEC	@return_value = [Contract].[SP_UnmodifiedScopeHistory]
 		
 --SELECT	'Return Value' = @return_value
 
-
+--1h29m 2 cores 35,347,828 rows
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
