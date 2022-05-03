@@ -3046,8 +3046,117 @@ fuel_psc<-build_plot(
 
 # DTRA
 
-# Commercial
-```{r Commercial}
+## OTA
+```{r DTRAota}
+ota_def$SubCustomer.DTRA<-as.character(ota_def$SubCustomer.OTA)
+ota_def$SubCustomer.DTRA[ota_def$Contracting_Agency_ID=="9761"]<-"DTRA"
+
+summary(ota_def$Product_or_Service_Code[is.na(ota_def$SimpleArea)])
+
+
+(
+DTRAjustota<-build_plot(
+  data=ota_def %>% filter(Fiscal_Year>=2015 & Fiscal_Year<=2021 &(Contracting_Agency_ID=="9761"|Funding_Agency_ID=="9761")),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=intl_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Dollars_Obligated_OMB20_GDP20", #VAR.y.variable
+  color_var="SubCustomer.DTRA", #color_var
+  # facet_var="SimpleArea", #facet_var
+  column_key=intl_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")+
+    scale_x_date(breaks=as.Date(c(paste(seq(2000,2021,5),"-01-01",sep=""))),
+                                                   date_labels="'%y")
+)
+
+
+(
+DTRAota<-build_plot(
+  data=ota_contract %>% filter(Fiscal_Year>=2015 & Contracting_Agency_ID=="9761"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=intl_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  color_var="IsOTA", #color_var
+  facet_var="SimpleArea", #facet_var
+  column_key=intl_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)")+
+    scale_x_date(breaks=as.Date(c(paste(seq(2000,2021,5),"-01-01",sep=""))),
+                                                   date_labels="'%y")
+)
+
+ggsave600dpi("..//Output//Deep_Dives//DTRA//DTRAjustota.png", DTRAjustota, 
+             width=6, height= 5.5, units="in",size=12,lineheight = 1.2
+             )
+
+
+
+write.csv(file="..//Output//..//Output//Deep_Dives//DTRA//DTRAjustota.csv",row.names = FALSE, na = "",
+          DTRAjustota$data%>% mutate(Fiscal_Year=lubridate::year(dFYear)) %>% arrange(Fiscal_Year)
+            pivot_wider(id_cols=c(SubCustomer.DTRA),
+                      names_from=Fiscal_Year,values_from=Dollars_Obligated_OMB20_GDP20))
+
+
+
+ggsave600dpi("..//Output//Deep_Dives//DTRA//DTRAota.png", DTRAota, 
+             width=6, height= 5.5, units="in",size=12,lineheight = 1.2
+             )
+
+ggsave600dpi("..//Output//Deep_Dives//DTRA//DTRAota.svg", DTRAota,#+facet_wrap(~SubCustomer.platform,nrow=1), 
+             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+             )
+
+ggsave600dpi("..//Output//Deep_Dives//DTRA//DTRAota.emf", DTRAota,#+facet_wrap(~SubCustomer.platform,nrow=1), 
+             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+             )
+
+
+
+write.csv(file="..//Output//..//Output//Deep_Dives//DTRA//DTRAota.csv",row.names = FALSE, na = "",
+          DTRAota$data%>% mutate(Fiscal_Year=lubridate::year(dFYear)) %>% pivot_wider(id_cols=c(SimpleArea,IsOTA),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20))
+
+write.csv(file="..//Output//Deep_Dives//DTRA//DTRAota_current.csv",row.names = FALSE, na = "",
+          ota_contract %>% group_by(SimpleArea,IsOTA,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+            arrange(Fiscal_Year)%>%
+          pivot_wider(id_cols=c(SimpleArea,IsOTA),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
+            arrange(SimpleArea,IsOTA))
+
+
+```
+
+## Commercial
+```{r DTRAcommercial}
 platpscintldef$AnyCommercialText<-factor(platpscintldef$AnyCommercial)
 levels(platpscintldef$AnyCommercialText)<-list(
   "Not Classified\nas Commrcial"="N",
@@ -3086,6 +3195,8 @@ DTRAcomm<-build_plot(
  
 
 
+
+
 ggsave600dpi("..//Output//Deep_Dives//DTRA//DTRAcomm.png", DTRAcomm, 
              width=6, height= 5.5, units="in",size=12,lineheight = 1.2
              )
@@ -3100,16 +3211,19 @@ ggsave600dpi("..//Output//Deep_Dives//DTRA//DTRAcomm.emf", DTRAcomm,#+facet_wrap
 
 
 write.csv(file="..//Output//..//Output//Deep_Dives//DTRA//DTRAcomm.csv",row.names = FALSE, na = "",
-          pivot_wider(SubCustomer$data,id_cols=c(AnyCommercialText,AnyCommercialText),
+          DTRAcomm$data%>% mutate(Fiscal_Year=lubridate::year(dFYear)) %>% 
+            pivot_wider(DTRAcomm$data,id_cols=c(SimpleArea,AnyCommercialText),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20))
 
 write.csv(file="..//Output//Deep_Dives//DTRA//DTRAcomm_current.csv",row.names = FALSE, na = "",
-          def_data %>% group_by(AnyCommercialText,AnyCommercialText,Fiscal_Year)%>%
+          platpscintldef %>% group_by(SimpleArea,AnyCommercialText,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
             arrange(Fiscal_Year)%>%
-          pivot_wider(id_cols=c(AnyCommercialText,AnyCommercialText),
+          pivot_wider(id_cols=c(SimpleArea,AnyCommercialText),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
-            arrange(AnyCommercialText,AnyCommercialText))
+            arrange(SimpleArea,AnyCommercialText))
+
+
 
 summary(full_data$ContractingSubCustomer)
 ```
