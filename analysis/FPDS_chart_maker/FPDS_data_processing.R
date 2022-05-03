@@ -145,6 +145,8 @@ def_data %<>%
   # mutate(VendorIsForeign = factor(VendorIsForeign))%>%
   # mutate(PlaceIsForeign = factor(PlaceIsForeign))
 
+def_data$recoveredmaterialclauses[def_data$recoveredmaterialclauses==""]<-"Unlabeled"
+
 def_lc<-csis360::prepare_labels_and_colors(def_data)
 
 def_ck<-csis360::get_column_key(def_data)
