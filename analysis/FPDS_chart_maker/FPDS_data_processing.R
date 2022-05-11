@@ -122,6 +122,7 @@ save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/una
 summary(factor(full_data$VendorSize))
 
 
+
 #def_data
 def_data %<>%
   # select(-ClassifyNumberOfOffers) %>%
@@ -144,6 +145,8 @@ def_data %<>%
   # mutate(PlaceOfManufacture_Sum = factor(PlaceOfManufacture_Sum)) %>%
   # mutate(VendorIsForeign = factor(VendorIsForeign))%>%
   # mutate(PlaceIsForeign = factor(PlaceIsForeign))
+
+def_data$recoveredmaterialclauses[def_data$recoveredmaterialclauses==""]<-"Unlabeled"
 
 def_lc<-csis360::prepare_labels_and_colors(def_data)
 
