@@ -122,6 +122,7 @@ save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/una
 summary(factor(full_data$VendorSize))
 
 
+
 #def_data
 def_data %<>%
   # select(-ClassifyNumberOfOffers) %>%
