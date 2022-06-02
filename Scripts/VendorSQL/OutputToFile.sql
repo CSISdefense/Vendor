@@ -28,6 +28,12 @@ SET NOCOUNT ON;
 exec Summary.SP_SoftwareDetail
 @customer=NULL
 
+--9h06m
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+exec Summary.SP_JADC2detail
+@customer=NULL
+
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 --8H29m
