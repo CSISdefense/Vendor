@@ -301,6 +301,10 @@ intl_ck<-csis360::get_column_key(platpscintldef)
 
 save(platpscintldef,intl_lc, intl_ck,file="data/semi_clean/platpscintl_FPDS.Rda")
 
+jadc2_lc<-csis360::prepare_labels_and_colors(jadc2)
+jadc2_ck<-csis360::get_column_key(jadc2)
+save(jadc2,jadc2_lc, jadc2_ck,file="data/clean/jadc2.Rda")
+
 # write output to CleanedVendorSize.csv
 # save(full_data,labels_and_colors,column_key, file="Shiny Apps//FPDS_chart_maker//2018_unaggregated_FPDS.Rda")
 

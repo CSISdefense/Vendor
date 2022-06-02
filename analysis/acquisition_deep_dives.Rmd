@@ -3227,3 +3227,53 @@ write.csv(file="..//Output//Deep_Dives//DTRA//DTRAcomm_current.csv",row.names = 
 
 summary(full_data$ContractingSubCustomer)
 ```
+
+#JADC2
+
+## DoD Component 
+```{r DoDsoftware}
+
+(
+jsubcust<-build_plot(
+  data=jadc2, #%>% filter(Fiscal_Year>=2000 & Customer=="Defense")  ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=sw_lc,
+  # NA, #VAR.ncol
+  x_var="Fiscal_Year", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="SubCustomer", #color_var
+  facet_var="ProjectName", #facet_var
+  # column_key=sw_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2020 $s)",caption="Note: Unlabeled not shown. Source: FPDS; CSIS analysis.")#+
+    # facet_wrap(~ContractingAgencyTextSwr,ncol=4)
+)
+
+ggsave600dpi(jsubcust,file="..//output//Deep_Dives//Jadc2//jadc2_subcust.png",  
+             width=13, height= 6, units="in",size=8, lineheight=1.2
+             )
+ggsave600dpi(jsubcust,file="..//output//Deep_Dives//Jadc2//jadc2_subcust.eps",  
+             width=13, height= 6, units="in",size=16, lineheight=1.2
+             )
+
+write.csv(file="..//Output//Deep_Dives//Jadc2//jadc2_subcust.png",row.names = FALSE,na = "",
+          jsubcust$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB23_GDP21=Action_Obligation_OMB23_GDP21/1000000000)%>%
+            arrange(Fiscal_Year)%>%
+          pivot_wider(id_cols=c(SubCustomer,ProjectName),
+                      names_from=Fiscal_Year,values_from=bAction_Obligation_OMB23_GDP21)%>%
+            arrange(SubCustomer,ProjectName),na="")
+
+```
