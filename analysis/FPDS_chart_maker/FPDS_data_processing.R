@@ -51,6 +51,12 @@ initial_clean<-function(df){
 #   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
 
 
+jadc2 <- read_delim(
+  "Data//semi_clean//Summary.SP_JADC2detail.txt",delim = "\t",
+  col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
+
+jadc2<-apply_standard_lookups(jadc2)#,
+
 full_data <- read_delim(
   # "Data//semi_clean//Federal_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",delim = "\t",
   "Data//semi_clean//Defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",delim = "\t",
