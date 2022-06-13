@@ -51,6 +51,12 @@ initial_clean<-function(df){
 #   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
 
 
+jadc2 <- read_delim(
+  "Data//semi_clean//Summary.SP_JADC2detail.txt",delim = "\t",
+  col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
+
+jadc2<-apply_standard_lookups(jadc2)#,
+
 full_data <- read_delim(
   # "Data//semi_clean//Federal_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",delim = "\t",
   "Data//semi_clean//Defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",delim = "\t",
@@ -294,6 +300,10 @@ intl_lc<-csis360::prepare_labels_and_colors(platpscintldef)
 intl_ck<-csis360::get_column_key(platpscintldef)
 
 save(platpscintldef,intl_lc, intl_ck,file="data/semi_clean/platpscintl_FPDS.Rda")
+
+jadc2_lc<-csis360::prepare_labels_and_colors(jadc2)
+jadc2_ck<-csis360::get_column_key(jadc2)
+save(jadc2,jadc2_lc, jadc2_ck,file="data/clean/jadc2.Rda")
 
 # write output to CleanedVendorSize.csv
 # save(full_data,labels_and_colors,column_key, file="Shiny Apps//FPDS_chart_maker//2018_unaggregated_FPDS.Rda")

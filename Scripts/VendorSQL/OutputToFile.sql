@@ -27,6 +27,12 @@ SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 exec Summary.SP_SoftwareDetail
 @customer=NULL
+--Fails at 5h44m
+--9h06m
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+exec Summary.SP_JADC2detail
+@customer=NULL
 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
