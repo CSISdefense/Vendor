@@ -50,6 +50,40 @@ initial_clean<-function(df){
 #   "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerpcau.txt",delim = "\t",
 #   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
 
+pricing<- read_csv(
+    "Data_Raw//FPDS_Reports//Defense_Pricing_Mechanism_Agency.csv",
+    col_names = TRUE, guess_max = 5000000,na=c(""))
+
+pricing<-apply_standard_lookups(pricing)#,
+pricing<-standardize_variable_names(pricing)
+colnames(pricing)<-gsub(" ","",colnames(pricing))
+pricing<-standardize_variable_names(pricing)
+colnames(pricing)[colnames(pricing)=="DollarsObligated"]<-"Action_Obligation"
+colnames(pricing)[colnames(pricing)=="PricingMechanismCode"]<-"TypeOfContractPricing"
+pricing$Action_Obligation<-text_to_number(pricing$Action_Obligation)
+debug(read_and_join_experiment)
+pricing<-read_and_join_experiment(data=pricing
+                             ,"contract.TypeOfContractPricing.csv"
+                             # ,path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/"
+                             ,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\"
+                             ,dir="contract/"
+                             ,add_var = "PricingInflation"
+                             ,skip_check_var = "PricingInflation"
+                             # ,by=c("informationtechnologycommercialitemcategory"="informationtechnologycommercialitemcategory")
+                             # ,new_var_checked=FALSE
+                             # ,create_lookup_rdata=TRUE
+                             # ,col_types="dddddddddccc"
+)
+pricing<-pricing %>% select(-PricingInflation)
+pricing<-pricing %>% select(-MajorCommandName)
+pricing_lc<-csis360::prepare_labels_and_colors(pricing,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\Style\\")
+
+pricing_ck<-csis360::get_column_key(pricing,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\Style\\")
+
+save(pricing,pricing_lc,pricing_ck, file="data/clean/pricing_historical.Rda")
+
+
+
 
 jadc2 <- read_delim(
   "Data//semi_clean//Summary.SP_JADC2detail.txt",delim = "\t",
