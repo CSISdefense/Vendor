@@ -61,6 +61,7 @@ pricing<-standardize_variable_names(pricing)
 colnames(pricing)[colnames(pricing)=="DollarsObligated"]<-"Action_Obligation"
 colnames(pricing)[colnames(pricing)=="PricingMechanismCode"]<-"TypeOfContractPricing"
 pricing$Action_Obligation<-text_to_number(pricing$Action_Obligation)
+debug(read_and_join_experiment)
 pricing<-read_and_join_experiment(data=pricing
                              ,"contract.TypeOfContractPricing.csv"
                              # ,path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/"
@@ -73,7 +74,7 @@ pricing<-read_and_join_experiment(data=pricing
                              # ,create_lookup_rdata=TRUE
                              # ,col_types="dddddddddccc"
 )
-pricing<-pricing %>% select(-Pricinginflation)
+pricing<-pricing %>% select(-PricingInflation)
 pricing<-pricing %>% select(-MajorCommandName)
 pricing_lc<-csis360::prepare_labels_and_colors(pricing,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\Style\\")
 
