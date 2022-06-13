@@ -3348,3 +3348,60 @@ write.csv(file="..//Output//Deep_Dives//Jadc2//jadc2_subcust.csv",row.names = FA
 write.csv(jadc2,file="..//Output//Deep_Dives//Jadc2//jadc2.csv",row.names = FALSE,na = "")
 
 ```
+# Pricing History
+## Topline Pricing
+```{r ToplinePricing}
+load(file="data/clean/pricing_historical.Rda")
+# full_data$PricingUCA.sumlong<-full_data$PricingUCA.sum
+levels(full_data$PricingInflation)<-list("FFP"="FFP",
+                                           "Less Common"="Less Common",
+                                           "Cost-Based"="Cost-Based",
+                                           "FP-Econ. Price Adj. "="Other CB",
+                                           "Undefinitized\nContract Award"="UCA",
+                                           "Unclear"="Unclear"   )
+(
+HistoricPricing<-build_plot(
+  data=pricing %>% filter(Fiscal_Year>=1979 & Fiscal_Year<=2021 ),
+  chart_geom = "Line Chart",
+  share = TRUE,
+  labels_and_colors=pricing_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  # y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  y_var="Action_Obligation", #VAR.y.variable
+  color_var="PricingInflation", #color_var
+  # facet_var="PricingUCA.sumlong", #facet_var
+  column_key=pricing_ck,
+  format=TRUE,
+  ytextposition=FALSE,
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")#+
+  # labs(y="Obligations (Constant 2021 $s)")
+)
+
+# ggsave600dpi("..//Output//topline_pricing.png", ToplinePricing, 
+#              width=6.5, height= 4, units="in",size=11
+#              )
+
+
+ggsave600dpi("..//Output//topline_pricing.png", ToplinePricing,  
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+write.csv(file="..//Output//topline_pricing.csv",row.names = FALSE, na = "",
+  arrange(pivot_wider(ToplinePricing$data %>% 
+                        arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
+                      id_cols=c(PricingUCA.sumlong,PricingUCA),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB23_GDP21),PricingUCA.sumlong)%>%
+    arrange(PricingUCA.sumlong,PricingUCA))
+
+
+```
