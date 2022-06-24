@@ -311,3 +311,5 @@ ota_contract<-rbind(ota_contract[,colnames(ota_contract)[colnames(ota_contract) 
                     platpscintldef[,colnames(platpscintldef)[colnames(platpscintldef) %in% colnames(ota_contract)]])
 save(ota_def,ota_lc,ota_ck, file="data/semi_clean/Defense_OTA_contract.Rda")
 save(ota_contract,ota_lc,ota_ck, file="data/semi_clean/Defense_OTA_contract.Rda")
+
+load(file="data/semi_clean/Defense_OTA_contract.Rda")
