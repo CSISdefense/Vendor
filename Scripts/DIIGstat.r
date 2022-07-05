@@ -1,11 +1,11 @@
 #DIIGstat.r
-library(arm)
-library(dplyr)
-library(ggplot2)
-library(sjstats)
-library(car)
-library(scales)
-library(grid)
+require(arm)
+require(dplyr)
+require(ggplot2)
+require(sjstats)
+require(car)
+require(scales)
+require(grid)
 #This will likely be folded into CSIS360
 #But for now, using it to create and refine functions for regression analysis.
 

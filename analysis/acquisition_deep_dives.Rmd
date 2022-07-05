@@ -2546,207 +2546,46 @@ write.csv(file="..//Output//SoftwareCommDefAgency.csv",row.names = FALSE,na = ""
 
 ```
 
-#Drones
-## Preprocess
-```{r PreprocessProjectDrone}
-
-platpscintldef<-csis360::read_and_join_experiment(platpscintldef,
-                                             "ProjectID.txt",
-                                             by=c("ProjectID"),
-                                             add_var="IsRemotelyOperated",
-                                             path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                                             dir="project/",
-                                             skip_check_var = "IsRemotelyOperated"
-)
-
-drone<-platpscintldef %>% filter(ProductOrServiceCode==1550 | IsRemotelyOperated==1)
 
 
-summary(factor(drone$ProjectName))
+# Inflation
+## Fuel
+```{r Fuel}
 
-droneplat<-drone %>% group_by(ProjectName) %>%
-  dplyr::summarise(Action_Obligation_OMB23_GDP21=sum(Action_Obligation_OMB23_GDP21),
-            Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB23_GDP21,0)))%>%
-              group_by () %>%#PlatformPortfolio
-    mutate(rank_total=rank(desc(Action_Obligation_OMB23_GDP21)),
-                        rank_2020=rank(desc(Action_Obligation_2020)))
-droneplat %>% arrange(desc(Action_Obligation_OMB23_GDP21))
+# PlaceIsForeign
+# full_data$PlaceStateRegion
+# replace_nas_with_unlabeled(factor(full_data$PlaceIsForeign,levels=c(1,0),labels=c("Performed Abroad","Performed in the U.S."))
 
-
-droneplat$TopProject<-
-  ifelse(droneplat$rank_2020<=7 | droneplat$rank_total<=7,droneplat$ProjectName,NA)
-
-drone<-left_join(drone,droneplat %>% select(-Action_Obligation_OMB23_GDP21,Action_Obligation_2020),
-          by=c("ProjectName"))
-
-drone$TopProject[is.na(drone$TopProject) & !is.na(drone$ProjectName)]<-
-  "Other Labeled Project"
-
-
-summary(factor(drone$TopProject))
-
-
-summary(factor(platpscintldef$ProjectPlatform))
-
-dronePSC<-drone %>% group_by (ProductOrServiceCode,ProductOrServiceCodeText) %>%
-  summarise(Action_Obligation_OMB23_GDP21=sum(Action_Obligation_OMB23_GDP21),
-            Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB23_GDP21,0)))%>%
-              group_by () %>%
-    mutate(rank_total=rank(desc(Action_Obligation_OMB23_GDP21)),
-                        rank_2020=rank(desc(Action_Obligation_2020)))
-dronePSC %>% arrange(desc(Action_Obligation_OMB23_GDP21))
-
-dronePSC$dronePSCode<-
-  ifelse(dronePSC$rank_2020<=5 | dronePSC$rank_total<=5,dronePSC$ProductOrServiceCode,NA)
-dronePSC$TopPStext<-
-  ifelse(dronePSC$rank_2020<=5 | dronePSC$rank_total<=5,dronePSC$ProductOrServiceCodeText,NA)
-
-
-drone<-left_join(drone,dronePSC %>% select(-Action_Obligation_OMB23_GDP21,Action_Obligation_2020),
-          by=c("ProductOrServiceCode"))
-
-drone$dronePSCode[is.na(drone$dronePSCode) & !is.na(drone$ProductOrServiceCode)]<-
-  "Other Labeled PSC"
-drone$TopPStext[is.na(drone$TopPStext) & !is.na(drone$ProductOrServiceCode)]<-
-  "Other Labeled PSC"
-
-drone$TopPStext<-factor_wrap(drone$TopPStext)
-
-summary(factor(drone$TopPStext))
-
-drone %>% dplyr::group_by(ProjectName, IsRemotelyOperated)  %>% dplyr::summarise(Action_Obligation_2020.x=sum(Action_Obligation_2020.x))
-
-```
-
-
-## Simple 
-```{r drone_customer}
-
-(
-rc_psr<-build_plot(
-  data=drone  ,
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  # labels_and_colors=drone_lc,
-  # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
-  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
-  color_var="SimpleArea", #color_var
-  facet_var="SimpleArea", #facet_var
-  # column_key=drone_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(caption="Note: Unlabeled not shown. Source: FPDS; CSIS analysis.")#+
-    # facet_wrap(~ContractingAgencyTextSwr,ncol=4)
-)
-
-ggsave600dpi(rc_psr,file="..//output//Deep_Dives//Remotely_Crewed//Remotely_Crewed_psr.png",  
-             width=13, height= 6, units="in",size=8, lineheight=1.2
-             )
-ggsave600dpi(rc_psr,file="..//output//Deep_Dives//Remotely_Crewed//Remotely_Crewed_psr.eps",  
-             width=13, height= 6, units="in",size=16, lineheight=1.2
-             )
-
-write.csv(file="..//Output//Deep_Dives//Remotely_Crewed//Remotely_Crewed_crewed_psr.csv",row.names = FALSE,na = "",
-          dronepscdetail$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
-                                bAction_Obligation_OMB23_GDP21=Action_Obligation_OMB23_GDP21/1000000000)%>%
-            arrange(Fiscal_Year)%>%
-          pivot_wider(id_cols=c(SimpleArea),
-                      names_from=Fiscal_Year,values_from=bAction_Obligation_OMB23_GDP21)%>%
-            arrange(SimpleArea),na="")
-
-```
-
-## Customer 
-```{r drone_customer}
-
-# drone %>% group_by(claimantprogramcode,ClaimantProgramCodeText) %>% 
-#   summarise(Action_Obligation_OMB23_GDP21=sum(Action_Obligation_OMB23_GDP21))
-# drone$SubCustomer
-(
-rc_customer<-build_plot(
-  data=drone %>% filter(Fiscal_Year>=2005) ,
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=intl_lc,
-  # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
-  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
-  color_var="SubCustomer.sum", #color_var
-  facet_var="SubCustomer.sum", #facet_var
-  column_key=intl_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2021 $s)",caption="Note: Unlabeled not shown. Source: FPDS; CSIS analysis.")#+
-    # facet_wrap(~ContractingAgencyTextSwr,ncol=4)
-)
-
-ggsave600dpi(rc_customer,file="..//output//Deep_Dives//Remotely_Crewed//Remotely_Crewed_Customer.png",  
-             width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
-             )
-ggsave600dpi(rc_customer,file="..//output//Deep_Dives//Remotely_Crewed//Remotely_Crewed_Customer.svg",  
-             width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
-             )
-ggsave600dpi(rc_customer,file="..//output//Deep_Dives//Remotely_Crewed//Remotely_Crewed_Customer.emf",  
-             width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
-             )
-
-write.csv(file="..//Output//Deep_Dives//Remotely_Crewed//Remotely_Crewed_crewed_Customer.csv",row.names = FALSE,na = "",
-          rc_customer$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
-                                bAction_Obligation_OMB23_GDP21=Action_Obligation_OMB23_GDP21/1000000000)%>%
-            arrange(Fiscal_Year)%>%
-          pivot_wider(id_cols=c(SubCustomer.sum),
-                      names_from=Fiscal_Year,values_from=bAction_Obligation_OMB23_GDP21)%>%
-            arrange(SubCustomer.sum))
-
-
-
-output_TY<-drone %>%   group_by(SubCustomer.sum,Fiscal_Year)%>%
-            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-  arrange(Fiscal_Year) %>%
-          pivot_wider(id_cols=c(SubCustomer.sum),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year) %>%
-  arrange(SubCustomer.sum)
-write.csv(file="..//Output//Deep_Dives//Remotely_Crewed//Remotely_Crewed_crewed_Customer_cur.csv",row.names = FALSE, na = "",
-          output_TY)
-
-```
-
-## Vendor International
-```{r ToplineVendor}
+full_data$SimpleArea.fuels<- as.character( full_data$SimpleArea)
+full_data$SimpleArea.fuels[full_data$ProductServiceOrRnDarea=="Fuels"]<-"Fuels"
+summary(factor(full_data$SimpleArea.fuels))
+full_data$SimpleArea.fuels<-factor(full_data$SimpleArea.fuels,
+                                           levels=c("Services (Non-R&D)" ,
+                                                   "R&D",
+                                                   "Products (All)",
+                                                   "Fuels",
+                                                   "Unlabeled" ),
+                                           labels=c("Services (Non-R&D)" ,
+                                                   "R&D",
+                                                   "Products (Non-Fuels)",
+                                                   "Fuels",
+                                                   "Unlabeled" ))
+summary(factor(full_data$SimpleArea.fuels))
+labels_and_colors<-prepare_labels_and_colors(full_data,path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+column_key<-get_column_key(full_data,path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
 
 
 (
-RCVendorIntl<-build_plot(
-  data=drone %>% filter(Fiscal_Year<=2020),
+psrfuel<-build_plot(
+  data=full_data,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
-  color_var="VendorSize_Intl", #color_var
-  # facet_var="Competition.sum", #facet_var
+  color_var="SimpleArea.fuels", #color_var
+  # facet_var="TopPStext", #facet_var
   column_key=column_key,
   format=TRUE,
   ytextposition=FALSE
@@ -2759,193 +2598,24 @@ RCVendorIntl<-build_plot(
   # x="Fiscal Year",
   # y="Percent of Obligations",
   # color="Competition")+
-  theme(legend.position = "right")+
-  labs(
-       caption="Source: FPDS; CSIS Analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020 and thus did not make the cutoff for inclusion in FY2020.")
+  # theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2021 $s)",
+              caption = "Source: FPDS, CSIS Analysis, OMB GDP deflators.")
 )
 
-ggsave600dpi("..//Output//Deep_Dives//Remotely_Crewed//remotely_crewed_vendor_intl_square.png", RCVendorIntl+
-  labs(caption="Source: FPDS; CSIS Analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril of 2020 and thus did not make the cutoff for inclusion in FY2020."), 
-             width=6, height= 5, units="in",size=12,lineheight=1
-             )
+  ggsave600dpi(filename = "..//Output//PSRfuels.png", psrfuel,  
+               width=12, height= 5.6, units="in",size=18, lineheight=1.2,
+               bg="transparent"
+               )
+
+write.csv(file="..//Output//PSRfuels.csv",row.names = FALSE, na = "",
+  pivot_wider(psrfuel$data %>% 
+                        arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
+                      id_cols=c(SimpleArea.fuels),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB23_GDP21)%>%
+    arrange(SimpleArea.fuels))
 
 
-
-```
-
-###FMS identification
-```{r contract_identification}
-
-
-
-# undebug(build_plot)
-
-(rc_contract_identification <-  build_plot(data=drone %>% filter(ContractingCustomer=="Defense"),
-                            chart_geom="Bar Chart",
-                            share=FALSE,
-                            x_var="Fiscal_Year",
-                            y_var="Action_Obligation_OMB23_GDP21",
-                            color_var="foreign_funding_description",
-                            facet_var="IsFMS",
-                            # second_var="StateRegion",
-                            labels_and_colors=intl_lc,
-                            column_key=intl_ck,
-                            legend=TRUE,
-                            caption=FALSE,
-                        format=TRUE)+
-    # facet_grid(  IsFMS~., scales="free_y")+
-  labs(#x="Year of Delivery (Calendar or Fiscal Varies by Source)",
-       y="Constant 2020 $ Obligated",
-       caption="Source: FPDS; CSIS analysis.")+
-    guides(fill=guide_legend(ncol=3)))
-
-ggsave600dpi(rc_contract_identification,file="../output//Deep_Dives//Remotely_Crewed//figure_03_contract_identification.png",
-             size=12,lineheight=1, height =5, width=9)
-
-
-
-```
-
-
-### FMS Vendor Size/Intl and Place No JSF
-```{r FPDS_vendor_Intl}
-
-summary(factor(platpscintldef$Shiny.VendorSize[platpscintldef$VendorIsForeign==1]))
-summary(platpscintldef$VendorSize_Intl)
-
-# undebug(format_data_for_plot)
-(fpds_vendor_intl_place_noJSF <-  build_plot(data=drone ,
-                                       #IsFMS==TRUE 
-                                       chart_geom="Bar Chart",
-                            x_var="Fiscal_Year",
-                            y_var="Action_Obligation_OMB23_GDP21",
-                            color_var="VendorSize_Intl",
-                            # facet_var="PlaceIsForeign",
-                            second_var="IsFMS",
-                            labels_and_colors=intl_lc,
-                            column_key=intl_ck,
-                            legend=TRUE,
-                            caption=FALSE,
-                            format=TRUE)+theme(legend.position = "right")+
-    facet_grid( .~IsFMS )+labs(title="FMS or Performed Internationally, No JSF")#, scales="free_y"
-  )
-
-
-# platpscintldef$Shiny.VendorSize
-(rc_vendor_place_fms <-  build_plot(data=drone %>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign)&
-                                                            !is.na(IsFMS)&Fiscal_Year>2011&Fiscal_Year<=2020),#IsFMS==TRUE  
-                            chart_geom="Bar Chart",
-                            x_var="Fiscal_Year",
-                            y_var="Action_Obligation_OMB23_GDP21",
-                            color_var="VendorSize_Intl",
-                            facet_var="PlaceIsForeign",
-                            second_var="IsFMS",
-                            labels_and_colors=intl_lc,
-                            column_key=intl_ck,
-                            legend=TRUE,
-                            caption=FALSE,
-                            format=TRUE)+theme(legend.position = "right")+
-    facet_grid( .~IsFMS+PlaceIsForeign )+labs(title="FMS or Performed Internationally, No JSF")#, scales="free_y"#, scales="free_y"
-  )
-
-
-write.csv(file="..//output//Deep_Dives//Remotely_Crewed//rc_vendor_place_FMS.csv",row.names = FALSE,na = "",
-          rc_vendor_place_fms$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
-            pivot_wider(id_cols=c(VendorSize_Intl,IsFMS, PlaceIsForeign),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB23_GDP21)%>% arrange(PlaceIsForeign,IsFMS,VendorSize_Intl))
-
-ggsave600dpi(rc_vendor_place_fms,file="../output/Deep_Dives//Remotely_Crewed//rc_vendor_place_FMS.png",
-             size = 12, lineheight=1, height =4.5, width=9)
-
-
-
-```
-
-## Project
-```{r Land}
-summary(factor(drone$ProjectPlatform))
-# drone$Fiscal_Year
-# 
-# topplat<-drone %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
-#   summarise(Action_Obligation_OMB23_GDP21=sum(Action_Obligation_OMB23_GDP21),
-#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB23_GDP21,0))
-#             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB23_GDP21)),
-#                         rank_2020=rank(desc(Action_Obligation_2020)))
-# topplat %>% arrange(desc(Action_Obligation_OMB23_GDP21))
-# 
-# drone$TopShipProject<-
-#   ifelse(drone$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
-#          drone$ProjectName,NA)
-# drone$TopShipProject[is.na(drone$TopShipProject) & !is.na(drone$ProjectName)]<-
-#   "Other Labeled Project"
-# summary(factor(drone$TopShipProject))
-
-
-(
-Platform<-build_plot(
-  data=drone ,
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
-  color_var="TopProject", #color_var
-  facet_var="TopProject", #facet_var
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-# 
-# 
-(
-PSC<-build_plot(
-  data=drone,
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
-  color_var="TopPStext", #color_var
-  facet_var="TopPStext", #facet_var
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-
-```
-
-
-# Inflation
-## Fuel
-```{r Fuel}
-
-# PlaceIsForeign
-# full_data$PlaceStateRegion
-# replace_nas_with_unlabeled(factor(full_data$PlaceIsForeign,levels=c(1,0),labels=c("Performed Abroad","Performed in the U.S."))
 (
 fuel<-build_plot(
   data=full_data %>% filter(ProductOrServiceArea=="Fuels")%>% 
@@ -2971,7 +2641,8 @@ fuel<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   # theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
+  labs(y="Obligations (Constant 2021 $s)",
+       caption = "Source: FPDS, CSIS Analysis, OMB GDP deflators.")
 )
 
 
@@ -3048,14 +2719,14 @@ fuel_psc<-build_plot(
 
 ## Pricing History
 ```{r ToplinePricing}
-load(file="data/clean/pricing_historical.Rda")
+load(file="../data/clean/pricing_historical.Rda")
 # full_data$PricingUCA.sumlong<-full_data$PricingUCA.sum
-levels(full_data$PricingInflation)<-list("FFP"="FFP",
-                                           "Less Common"="Less Common",
-                                           "Cost-Based"="Cost-Based",
-                                           "FP-Econ. Price Adj. "="Other CB",
-                                           "Undefinitized\nContract Award"="UCA",
-                                           "Unclear"="Unclear"   )
+# levels(full_data$PricingInflation)<-list("FFP"="FFP",
+#                                            "Less Common"="Less Common",
+#                                            "Cost-Based"="Cost-Based",
+#                                            "FP-Econ. Price Adj. "="Other CB",
+#                                            "Undefinitized\nContract Award"="UCA",
+#                                            "Unclear"="Unclear"   )
 (
 HistoricPricing<-build_plot(
   data=pricing %>% filter(Fiscal_Year>=1979 & Fiscal_Year<=2021 ),
@@ -3080,7 +2751,7 @@ HistoricPricing<-build_plot(
   # x="Fiscal Year",
   # y="Percent of Obligations",
   # color="Competition")+
-  theme(legend.position = "right")#+
+  theme(legend.position = "right",rect = element_rect(fill = "transparent",))
   # labs(y="Obligations (Constant 2021 $s)")
 )
 
@@ -3090,15 +2761,16 @@ HistoricPricing<-build_plot(
 
 
   ggsave600dpi("..//Output//HistoricPricing.png", HistoricPricing,  
-               width=9, height= 5.5, units="in",size=16, lineheight=1.2
+               width=12, height= 5.6, units="in",size=18, lineheight=1.2,
+               bg="transparent"
                )
 
-write.csv(file="..//Output//topline_pricing.csv",row.names = FALSE, na = "",
-  arrange(pivot_wider(ToplinePricing$data %>% 
+write.csv(file="..//Output//HistoricPricing.csv",row.names = FALSE, na = "",
+  pivot_wider(HistoricPricing$data %>% 
                         arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
-                      id_cols=c(PricingUCA.sumlong,PricingUCA),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB20_GDP20),PricingUCA.sumlong)%>%
-    arrange(PricingUCA.sumlong,PricingUCA))
+                      id_cols=c(PricingInflation),
+                      names_from=Fiscal_Year,values_from=Action_Obligation)%>%
+    arrange(PricingInflation))
 
 
 ```
