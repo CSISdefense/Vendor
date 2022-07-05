@@ -52,17 +52,18 @@ library(csis360)
          "AnyEntityForeignPlaceOfPerformance",
          "IsEntityAbove2016constantOneMillionThreshold",
          "IsEntityAbove1990constantReportingThreshold",
-         "IsEntityAbove2016constantReportingThreshold")
+         "IsEntityAbove2016constantReportingThreshold"
+         )
   
   
   platform_sub<-standardize_count(platform_sub)
   check_key(platform_sub,c("SubCustomer", "PlatformPortfolio",key))
   platform_only<-standardize_count(platform_only %>% filter(Customer=="Defense"))
-  check_key(platform_only,c("PlatformPortfolio",key))
-  View(all_duplicate(platform_only,c("PlatformPortfolio",key)))
+  check_key(platform_only,c("PlatformPortfolio","IsEntityAbove2018constant10ThousandThreshold",key))
+    # write.csv(all_duplicate(platform_only,c("PlatformPortfolio","IsEntityAbove2018constant10ThousandThreshold",key)),"dupe.csv")
   
   platformUAS_only<-standardize_count(platformUAS_only)
-  check_key(platformUAS_only,c("PlatformPortfolioRemote",key))
+  check_key(platformUAS_only,c("PlatformPortfolioRemote","IsEntityAbove2018constant10ThousandThreshold",key))
   
   sub_only<-standardize_count(sub_only)
   check_key(sub_only,c("SubCustomer",key))
@@ -176,10 +177,7 @@ platformUAS_only<- deflate(platformUAS_only,money_var = "Action_Obligation")
 top_level <- deflate(top_level,money_var = "Action_Obligation")
 
 
-  # write_csv(platform_only, "platform_only.csv")
-  # write_csv(sub_only, "sub_only.csv")
-  # write_csv(platform_sub, "platform_sub.csv")
-  # write_csv(top_level, "top_level.csv")
+
 
 prepare_vendor<-function(data)
   {
@@ -257,6 +255,12 @@ platformUAS_only<-prepare_vendor(platformUAS_only)
 
 labels_and_colors<-csis360::prepare_labels_and_colors(platform_sub)
 column_key<-csis360::get_column_key(platform_sub)
+
+write_csv(platform_only, file.path("analysis","FPDS_vendor_count","platform_only.csv"))
+write_csv(sub_only, file.path("analysis","FPDS_vendor_count","sub_only.csv"))
+write_csv(platform_sub, file.path("analysis","FPDS_vendor_count","platform_sub.csv"))
+write_csv(platformUAS_only, file.path("analysis","FPDS_vendor_count","platformUAS_only.csv"))
+write_csv(top_level, file.path("analysis","FPDS_vendor_count","top_level.csv"))
 
   # write output to CleanedVendorSize.csv
   save(platform_only,sub_only,platform_sub,top_level,platformUAS_only, column_key, labels_and_colors, 
