@@ -157,13 +157,17 @@ library(csis360)
         "Large+" = "Large Vendor",
         "Large+" =  "Large: Big 5 JV")) %>%
     group_by(
-      fiscal_year, EntitySizeText, EntitySizeText.detail,
+      fiscal_year, duns, EntitySizeText, EntitySizeText.detail, #added from NE duns
       EntityCategory,
       AnyEntityUSplaceOfPerformance,
       AnyEntityForeignPlaceOfPerformance,
       IsEntityAbove2016constantOneMillionThreshold,
       IsEntityAbove1990constantReportingThreshold,
-      IsEntityAbove2016constantReportingThreshold) %>%
+      IsEntityAbove2016constantReportingThreshold, IsPresent, IsInSAM, SAMregyear, minFY_FPDS, 
+      is_absent_nextyear_FPDS, FY_absaftpres, is_present_after_absent_FPDS, FY_presaftabs)%>%
+    
+    #added from NE , IsPresent, IsInSAM, SAMregyear, minFY_FPDS, 
+    #is_absent_nextyear_FPDS, FY_absaftpres, is_present_after_absent_FPDS, FY_presaftabs
     summarize(
       EntityCount = sum(EntityCount), 
       AllContractorCount = sum(AllContractorCount),
