@@ -16,9 +16,6 @@ library(csis360)
   platform_only <- read_delim(
     "Defense_Vendor_sp_EntityCountHistoryPlatformCustomer.txt",
     na=c("NA","NULL"),delim="\t")
-  platformUAS_only <- read_delim(
-    file.path("..","..","data","semi_clean","Vendor_sp_EntityCountHistoryPlatformRemoteCustomer.txt"),
-    na=c("NA","NULL"),delim="\t")
   top_level <- read_delim(
     "Vendor_sp_EntityCountHistoryCustomer.txt",
     na=c("NA","NULL"),delim="\t")

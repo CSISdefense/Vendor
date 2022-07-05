@@ -8,57 +8,84 @@ library(forcats)
 library(csis360)
 
   platform_sub <- read_delim(
-    "Defense_Vendor_sp_EntityCountHistoryPlatformSubCustomer.txt",
+    file.path("data","semi_clean","Defense_Vendor_sp_EntityCountHistoryPlatformSubCustomer.txt"),
     na=c("NA","NULL"),delim="\t")
   sub_only <- read_delim(
-    "Defense_Vendor_sp_EntityCountHistorySubCustomer.txt",
+    file.path("data","semi_clean","Defense_Vendor_sp_EntityCountHistorySubCustomer.txt"),
     na=c("NA","NULL"),delim="\t")
   platform_only <- read_delim(
-    "Defense_Vendor_sp_EntityCountHistoryPlatformCustomer.txt",
+    file.path("data","semi_clean","Defense_Vendor_sp_EntityCountHistoryPlatformCustomer.txt"),
     na=c("NA","NULL"),delim="\t")
   platformUAS_only <- read_delim(
-    file.path("..","..","data","semi_clean","Vendor_sp_EntityCountHistoryPlatformRemoteCustomer.txt"),
+    file.path("data","semi_clean","Vendor_sp_EntityCountHistoryPlatformRemoteCustomer.txt"),
     na=c("NA","NULL"),delim="\t")
   top_level <- read_delim(
-    "Vendor_sp_EntityCountHistoryCustomer.txt",
+    file.path("data","semi_clean","Vendor_sp_EntityCountHistoryCustomer.txt"),
     na=c("NA","NULL"),delim="\t")
 
-  # remove unused variables
-  platform_sub %<>%
-    select(-Customer) %>%
-    mutate(
-      SumOfNumberOfActions = as.character(SumOfNumberOfActions),
-      SumOfObligatedAmount = as.character(SumOfObligatedAmount)) %>%
-    mutate(
-      SumOfNumberOfActions = as.integer(
-        ifelse(is.na(SumOfNumberOfActions), 0, SumOfNumberOfActions)),
-      SumOfObligatedAmount = as.numeric(
-        ifelse(is.na(SumOfObligatedAmount), 0, SumOfObligatedAmount))) %>%
-    mutate(
-      EntitySizeText.detail = EntitySizeText,
-      EntitySizeText = fct_recode(
-        EntitySizeText,
-        Small = "Always Small Vendor",
-        Small = "Sometimes Small Vendor",
-        Medium = "Medium Vendor",
-        "Large+" = "Big Five",
-        "Large+" = "Large Vendor",
-        "Large+" = "Large: Big 5 JV")) %>%
-    group_by(
-      fiscal_year, SubCustomer, PlatformPortfolio, EntitySizeText, EntitySizeText.detail,
-      EntityCategory,
-      AnyEntityUSplaceOfPerformance,
-      AnyEntityForeignPlaceOfPerformance,
-      IsEntityAbove2016constantOneMillionThreshold,
-      IsEntityAbove1990constantReportingThreshold,
-      IsEntityAbove2016constantReportingThreshold
-      ) %>%
-    summarize(
-      EntityCount = sum(EntityCount), 
-      AllContractorCount = sum(AllContractorCount),
-      SumOfNumberOfActions = sum(SumOfNumberOfActions),
-      SumOfObligatedAmount = sum(SumOfObligatedAmount)) %>%
-    filter(fiscal_year >= 2000)
+  
+  
+  standardize_count<-function(c){
+    c<-standardize_variable_names(c)
+    c%<>%
+      # select(-Customer) %>%
+      mutate(
+        NumberOfActions = text_to_number(NumberOfActions),
+        Action_Obligation = text_to_number(Action_Obligation))%>%
+      mutate(
+        EntitySizeText.detail = EntitySizeText,
+        EntitySizeText = fct_recode(
+          EntitySizeText,
+          Small = "Always Small Vendor",
+          Small = "Sometimes Small Vendor",
+          Medium = "Medium Vendor",
+          "Large+" = "Big Five",
+          "Large+" = "Large Vendor",
+          "Large+" = "Large: Big 5 JV"))%>%
+      filter(Fiscal_Year >= 2000)
+    c
+  }
+  
+  key<-c("Fiscal_Year", "EntitySizeText", "EntitySizeText.detail",
+         "EntityCategory",
+         "AnyEntityUSplaceOfPerformance",
+         "AnyEntityForeignPlaceOfPerformance",
+         "IsEntityAbove2016constantOneMillionThreshold",
+         "IsEntityAbove1990constantReportingThreshold",
+         "IsEntityAbove2016constantReportingThreshold")
+  
+  
+  platform_sub<-standardize_count(platform_sub)
+  check_key(platform_sub,c("SubCustomer", "PlatformPortfolio",key))
+  platform_only<-standardize_count(platform_only %>% filter(Customer=="Defense"))
+  check_key(platform_only,c("PlatformPortfolio",key))
+  View(all_duplicate(platform_only,c("PlatformPortfolio",key)))
+  
+  platformUAS_only<-standardize_count(platformUAS_only)
+  check_key(platformUAS_only,c("PlatformPortfolioRemote",key))
+  
+  sub_only<-standardize_count(sub_only)
+  check_key(sub_only,c("SubCustomer",key))
+  
+  top_level<-standardize_count(top_level)
+  check_key(top_level,c(key,"Customer"))
+  
+  # # remove unused variables
+  # platform_sub  %>%
+  #   group_by(
+  #     Fiscal_Year, SubCustomer, PlatformPortfolio, EntitySizeText, EntitySizeText.detail,
+  #     EntityCategory,
+  #     AnyEntityUSplaceOfPerformance,
+  #     AnyEntityForeignPlaceOfPerformance,
+  #     IsEntityAbove2016constantOneMillionThreshold,
+  #     IsEntityAbove1990constantReportingThreshold,
+  #     IsEntityAbove2016constantReportingThreshold
+  #     ) %>%
+  #   summarize(
+  #     EntityCount = sum(EntityCount), 
+  #     AllContractorCount = sum(AllContractorCount),
+  #     NumberOfActions = sum(NumberOfActions),
+  #     Action_Obligation = sum(Action_Obligation)) 
   
   
   
@@ -66,13 +93,13 @@ library(csis360)
     select(-Customer) %>%
     rename(EntityCount = EntityCount) %>%
     mutate(
-      SumOfNumberOfActions = as.character(SumOfNumberOfActions),
-      SumOfObligatedAmount = as.character(SumOfObligatedAmount)) %>%
+      NumberOfActions = as.character(NumberOfActions),
+      Action_Obligation = as.character(Action_Obligation)) %>%
     mutate(
-      SumOfNumberOfActions = as.integer(
-        ifelse(is.na(SumOfNumberOfActions), 0, SumOfNumberOfActions)),
-      SumOfObligatedAmount = as.numeric(
-        ifelse(is.na(SumOfObligatedAmount), 0, SumOfObligatedAmount))) %>%
+      NumberOfActions = as.integer(
+        ifelse(is.na(NumberOfActions), 0, NumberOfActions)),
+      Action_Obligation = as.numeric(
+        ifelse(is.na(Action_Obligation), 0, Action_Obligation))) %>%
     mutate(
       EntitySizeText.detail = EntitySizeText,
       EntitySizeText = fct_recode(
@@ -84,7 +111,7 @@ library(csis360)
         "Large+" = "Large Vendor",
         "Large+" = "Large: Big 5 JV")) %>%
     group_by(
-      fiscal_year, PlatformPortfolio, EntitySizeText, EntitySizeText.detail,
+      Fiscal_Year, PlatformPortfolio, EntitySizeText, EntitySizeText.detail,
       EntityCategory,
       AnyEntityUSplaceOfPerformance,
       AnyEntityForeignPlaceOfPerformance,
@@ -94,61 +121,25 @@ library(csis360)
     summarize(
       EntityCount = sum(EntityCount), 
       AllContractorCount = sum(AllContractorCount),
-      SumOfNumberOfActions = sum(SumOfNumberOfActions),
-      SumOfObligatedAmount = sum(SumOfObligatedAmount)) %>%
-    filter(fiscal_year >= 2000)
+      NumberOfActions = sum(NumberOfActions),
+      Action_Obligation = sum(Action_Obligation)) %>%
+    filter(Fiscal_Year >= 2000)
                              
     
-  names(sub_only)[1] <- "fiscal_year"
-  
-  sub_only %<>%
-    select(-Customer) %>%
-    mutate(
-      SumOfNumberOfActions = as.character(SumOfNumberOfActions),
-      SumOfObligatedAmount = as.character(SumOfObligatedAmount)) %>%
-    mutate(
-      SumOfNumberOfActions = as.integer(
-        ifelse(is.na(SumOfNumberOfActions), 0, SumOfNumberOfActions)),
-      SumOfObligatedAmount = as.numeric(
-        ifelse(is.na(SumOfObligatedAmount), 0, SumOfObligatedAmount))) %>%
-    mutate(
-      EntitySizeText.detail = EntitySizeText,
-      EntitySizeText = fct_recode(
-        EntitySizeText,
-        Small = "Always Small Vendor",
-        Small = "Sometimes Small Vendor",
-        Medium = "Medium Vendor",
-        "Large+" = "Big Five",
-        "Large+" = "Large Vendor",
-        "Large+" = "Large: Big 5 JV")) %>%
-    group_by(
-      fiscal_year, SubCustomer, EntitySizeText, EntitySizeText.detail,
-      EntityCategory,
-      AnyEntityUSplaceOfPerformance,
-      AnyEntityForeignPlaceOfPerformance,
-      IsEntityAbove1990constantReportingThreshold,
-      IsEntityAbove2016constantReportingThreshold) %>%
-    summarize(
-      EntityCount = sum(EntityCount), 
-      AllContractorCount = sum(AllContractorCount),
-      SumOfNumberOfActions = sum(SumOfNumberOfActions),
-      SumOfObligatedAmount = sum(SumOfObligatedAmount)) %>%
-    filter(fiscal_year >= 2000)
-  
-  names(top_level)[1] <- "fiscal_year"
+  names(top_level)[1] <- "Fiscal_Year"
   
   top_level %<>%
     filter(Customer == "Defense") %>%
     rename(EntityCount = EntityCount) %>%
     select(-Customer) %>%
     mutate(
-      SumOfNumberOfActions = as.character(SumOfNumberOfActions), 
-      SumOfObligatedAmount = as.character(SumOfObligatedAmount)) %>%
+      NumberOfActions = as.character(NumberOfActions), 
+      Action_Obligation = as.character(Action_Obligation)) %>%
     mutate(
-      SumOfNumberOfActions = as.integer(
-        ifelse(is.na(SumOfNumberOfActions), 0, SumOfNumberOfActions)),
-      SumOfObligatedAmount = as.numeric(
-        ifelse(is.na(SumOfObligatedAmount), 0, SumOfObligatedAmount))) %>%
+      NumberOfActions = as.integer(
+        ifelse(is.na(NumberOfActions), 0, NumberOfActions)),
+      Action_Obligation = as.numeric(
+        ifelse(is.na(Action_Obligation), 0, Action_Obligation))) %>%
     mutate(
       EntitySizeText.detail = EntitySizeText,
       EntitySizeText = fct_recode(
@@ -160,7 +151,7 @@ library(csis360)
         "Large+" = "Large Vendor",
         "Large+" =  "Large: Big 5 JV")) %>%
     group_by(
-      fiscal_year, EntitySizeText, EntitySizeText.detail,
+      Fiscal_Year, EntitySizeText, EntitySizeText.detail,
       EntityCategory,
       AnyEntityUSplaceOfPerformance,
       AnyEntityForeignPlaceOfPerformance,
@@ -170,57 +161,20 @@ library(csis360)
     summarize(
       EntityCount = sum(EntityCount), 
       AllContractorCount = sum(AllContractorCount),
-      SumOfNumberOfActions = sum(SumOfNumberOfActions),
-      SumOfObligatedAmount = sum(SumOfObligatedAmount)) %>%
-    filter(fiscal_year >= 2000)
+      NumberOfActions = sum(NumberOfActions),
+      Action_Obligation = sum(Action_Obligation)) %>%
+    filter(Fiscal_Year >= 2000)
   
   
   
-  deflate <- c(
-    "2000" = 0.7057,
-    "2001" = 0.7226,
-    "2002" = 0.7343,
-    "2003" = 0.7483,
-    "2004" = 0.7668,
-    "2005" = 0.7909,
-    "2006" = 0.8166,
-    "2007" = 0.8388,
-    "2008" = 0.8562,
-    "2009" = 0.8662,
-    "2010" = 0.8738,
-    "2011" = 0.8916,
-    "2012" = 0.9078,
-    "2013" = 0.9232,
-    "2014" = 0.9401,
-    "2015" = 0.9511,
-    "2016" = 0.9625,
-    "2017" = 0.9802,
-    "2018" = 1.0000,
-    "2019" = 1.0199,
-    "2020" = 1.0404,
-    "2021" = 1.0612,
-    "2022" = 1.0824)
- 
   
-  sub_only$fiscal_year <- as.character(sub_only$fiscal_year)
-  platform_only$fiscal_year <- as.character(platform_only$fiscal_year)
-  top_level$fiscal_year <- as.character(top_level$fiscal_year)
-  platform_sub$fiscal_year <- as.character(platform_sub$fiscal_year)
   
-sub_only$SumOfObligatedAmount <- as.numeric(sub_only$SumOfObligatedAmount /
-                           deflate[sub_only$fiscal_year])
-platform_only$SumOfObligatedAmount <- round(platform_only$SumOfObligatedAmount /
-                           deflate[platform_only$fiscal_year])
-platform_sub$SumOfObligatedAmount <- round(platform_sub$SumOfObligatedAmount /
-                           deflate[platform_sub$fiscal_year])
-top_level$SumOfObligatedAmount <- round(top_level$SumOfObligatedAmount /
-                           deflate[top_level$fiscal_year])
+sub_only <- deflate(sub_only,money_var = "Action_Obligation")
+platform_only <- deflate(platform_only,money_var = "Action_Obligation")
+platform_sub <- deflate(platform_sub,money_var = "Action_Obligation")
+platformUAS_only<- deflate(platformUAS_only,money_var = "Action_Obligation")
+top_level <- deflate(top_level,money_var = "Action_Obligation")
 
-sub_only$fiscal_year <- as.numeric(sub_only$fiscal_year)
-platform_only$fiscal_year <- as.numeric(platform_only$fiscal_year)
-top_level$fiscal_year <- as.numeric(top_level$fiscal_year)
-platform_sub$fiscal_year <- as.numeric(platform_sub$fiscal_year)
-  
 
   # write_csv(platform_only, "platform_only.csv")
   # write_csv(sub_only, "sub_only.csv")
@@ -239,6 +193,11 @@ prepare_vendor<-function(data)
     if(!is.factor(data$PlatformPortfolio))
       data$PlatformPortfolio<-factor(data$PlatformPortfolio)
     data<-replace_nas_with_unlabeled(data,"PlatformPortfolio")
+  }
+  if("PlatformPortfolioRemote" %in% colnames(data)){
+    if(!is.factor(data$PlatformPortfolioRemote))
+      data$PlatformPortfolioRemote<-factor(data$PlatformPortfolioRemote)
+    data<-replace_nas_with_unlabeled(data,"PlatformPortfolioRemote")
   }
   data
   if("EntitySizeText" %in% colnames(data)){
@@ -291,6 +250,8 @@ platform_sub<-prepare_vendor(platform_sub)
 top_level<-prepare_vendor(top_level)
 sub_only<-prepare_vendor(sub_only)
 platform_only<-prepare_vendor(platform_only)
+platformUAS_only<-prepare_vendor(platformUAS_only)
+
 
 
 
@@ -298,4 +259,5 @@ labels_and_colors<-csis360::prepare_labels_and_colors(platform_sub)
 column_key<-csis360::get_column_key(platform_sub)
 
   # write output to CleanedVendorSize.csv
-  save(platform_only,sub_only,platform_sub,top_level, column_key, labels_and_colors, file="2016_vendor_count.Rda")  #Shiny Apps//FPDS vendor count//
+  save(platform_only,sub_only,platform_sub,top_level,platformUAS_only, column_key, labels_and_colors, 
+       file=file.path("analysis","FPDS_vendor_count","vendor_count.Rda"))  #Shiny Apps//FPDS vendor count//
