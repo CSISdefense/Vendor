@@ -329,6 +329,21 @@ DECLARE	@return_value int
 
 EXEC	@return_value = Vendor.sp_EntityCountHistoryPlatformCustomer
 		@Customer = 'Defense'
+	
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+--9h20m
+DECLARE	@return_value int
+EXEC Summary.SP_ContractDatesSubCustomerPlatform
+	@Customer = NULL --'Defense'
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+--9h20m
+DECLARE	@return_value int
+
+EXEC	@return_value = Vendor.sp_EntityCountHistoryPlatformRemoteCustomer
+		@Customer = 'Defense'
 		
 --SELECT	'Return Value' = @return_value
 
@@ -337,9 +352,7 @@ SET NOCOUNT ON;
 
 DECLARE	@return_value int
 
---EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
 EXEC	@return_value = Vendor.sp_EntityCountHistorySubCustomer
---EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
 		@Customer = 'Defense'
 		
 --SELECT	'Return Value' = @return_value
@@ -353,9 +366,7 @@ SET NOCOUNT ON;
 
 DECLARE	@return_value int
 
---EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
 EXEC	@return_value = Vendor.sp_EntityCountHistoryPlatformSubCustomer
---EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
 		@Customer = 'Defense'
 		
 --SELECT	'Return Value' = @return_value

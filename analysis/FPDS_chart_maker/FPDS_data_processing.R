@@ -22,7 +22,7 @@ library(csis360)
 
 
 
-initial_clean<-function(df){
+initial_clean<-function(df,only_defense=TRUE){
   df<-standardize_variable_names(df)
   # colnames(df)[colnames(df)=="Fiscal.Year"]<-"Fiscal_Year"
   if(substring(df$Fiscal_Year[nrow(df)],1,12)=="Completion time")
@@ -37,7 +37,9 @@ initial_clean<-function(df){
   colnames(df)[colnames(df)=="Customer"]<-"ContractingCustomer"
   # colnames(df)[colnames(df)=="platformportfolio"]<-"PlatformPortfolio"
   # discard pre-1990
-  df %<>% filter(Fiscal_Year >= 1990 & ContractingCustomer=="Defense") #Fiscal_Year >= 2000 & 
+  df %<>% filter(Fiscal_Year >= 1990) #Fiscal_Year >= 2000 & 
+  if(only_defense)
+    df %<>% filter(Fiscal_Year >= 1990 & ContractingCustomer=="Defense") #Fiscal_Year >= 2000 & 
   # colnames(df)[colnames(df)=="Action_Obligation_Then_Year"]<-"Action_Obligation"
   # df$dFYear<-as.Date(paste("1/1/",as.character(df$Fiscal_Year),sep=""),"%m/%d/%Y")
   
@@ -333,7 +335,12 @@ save(platpsc,labels_and_colors,column_key, file="data/semi_clean/platpsc_FPDS.Rd
 intl_lc<-csis360::prepare_labels_and_colors(platpscintldef)
 intl_ck<-csis360::get_column_key(platpscintldef)
 
+fed_lc<-csis360::prepare_labels_and_colors(platpscintl)
+fed_ck<-csis360::get_column_key(platpscintl)
+
+
 save(platpscintldef,intl_lc, intl_ck,file="data/semi_clean/platpscintl_FPDS.Rda")
+save(platpscintl,fed_lc, fed_ck,file="data/clean/Federal_platpscintl_FPDS.Rda")
 
 jadc2_lc<-csis360::prepare_labels_and_colors(jadc2)
 jadc2_ck<-csis360::get_column_key(jadc2)

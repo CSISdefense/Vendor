@@ -28,6 +28,15 @@ OTA_data_current <- read_delim(
 OTA_data_current$MentionsCovid<-TRUE
 OTA_data_current$TopCovid<-FALSE
 
+sum( text_to_number(OTA_data_current$`Dollars Obligated`[grep("UNMANNED",OTA_data_current$`Description of Requirement`)]),na.rm=TRUE)
+
+OTA_data_current[grep("UNMANNED",OTA_data_current$`Description of Requirement`),] %>% group_by(`Fiscal Year`) %>%
+  dplyr::summarise(d= sum(text_to_number(`Dollars Obligated`),na.rm=TRUE))
+OTA_data_current
+OTA_data_current[grep("UNMANNED",OTA_data_current$`Description of Requirement`),] %>% group_by(`Non-traditional Government Contractor Participation Code`) %>%
+  dplyr::summarise(d= sum(text_to_number(`Dollars Obligated`),na.rm=TRUE))
+
+
 OTA_data_current$MentionsCovid[grep("COVID-19",OTA_data_current$`Description of Requirement`,invert=TRUE)]<-FALSE
 OTA_data_current$TopCovid[OTA_data_current$PIID %in% c("W15QKN1691002",
                                                        "W15QKN2191003",
@@ -310,3 +319,5 @@ platpscintldef$IsOTA<-"Contract"
 ota_contract<-rbind(ota_contract[,colnames(ota_contract)[colnames(ota_contract) %in% colnames(platpscintldef)]],
                     platpscintldef[,colnames(platpscintldef)[colnames(platpscintldef) %in% colnames(ota_contract)]])
 save(ota_contract,ota_lc,ota_ck, file="data/semi_clean/Defense_OTA_contract.Rda")
+
+
