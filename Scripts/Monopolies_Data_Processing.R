@@ -1,7 +1,7 @@
 #=================================================================================================================#
 # Data processing for Monopolies Data
 #=================================================================================================================#
-rm(list = ls())
+# rm(list = ls())
 library(tidyverse)
 library(csis360)
 library(dplyr)
@@ -54,7 +54,6 @@ defense_naics_vendor<-clean_entity(defense_naics_vendor)
 defense_vendor<-clean_entity(defense_vendor)
 defense_platform_vendor<-clean_entity(defense_platform_vendor)
 
-
 defense_naics_vendor<-label_naics_mismatch(defense_naics_vendor)
 defense_naics_vendor$exclude<-FALSE
 defense_naics_vendor$exclude[defense_naics_vendor$mismatch %in% get_exclude_list() |
@@ -90,7 +89,7 @@ annual_summary<-defense_vendor %>%
 
 
 #******************Calculate Platform Wide Values****************
-defense_platform_vendor<-defense_platform_vendor %>% group_by(platformPortfolio,Fiscal.Year)
+defense_platform_vendor<-defense_platform_vendor %>% group_by(PlatformPortfolio,Fiscal_Year)
 
 defense_platform_vendor<-defense_platform_vendor %>%
   dplyr::mutate(
@@ -107,7 +106,7 @@ annual_platform_summary<-defense_platform_vendor %>%
   dplyr::summarize(
     Action_Obligation = sum(Action_Obligation),
     # Obligation.2016 = sum(Action_Obligation.2016),
-    vendor_count=length(Fiscal.Year),
+    vendor_count=length(Fiscal_Year),
     hh_index=sum((pct*100)^2,na.rm=TRUE),
     top4=sum(ifelse(pos<=4,pct,NA),na.rm=TRUE),
     top8=sum(ifelse(pos<=8,pct,NA),na.rm=TRUE),
@@ -116,7 +115,40 @@ annual_platform_summary<-defense_platform_vendor %>%
     top50=sum(ifelse(pos<=50,pct,NA),na.rm=TRUE)
   )
 
+#******************Calculate PlatformUAV Wide Values****************
 
+defense_platform_vendor$PlatformPortfolioUAV<-as.character(defense_platform_vendor$PlatformPortfolio)
+defense_platform_vendor$PlatformPortfolioUAV[defense_platform_vendor$IsRemotelyOperated==1&
+                                               !is.na(defense_platform_vendor$IsRemotelyOperated)]<-
+  "Remotely Operated"
+summary(factor(defense_platform_vendor$PlatformPortfolioUAV))
+
+
+defense_platformUAV_vendor<-defense_platform_vendor %>% group_by(PlatformPortfolioUAV,Fiscal_Year)
+
+defense_platformUAV_vendor<-defense_platformUAV_vendor %>%
+  dplyr::mutate(
+    pos = rank(-Action_Obligation,
+               ties.method ="min"),
+    pct = ifelse(Action_Obligation>0,
+                 Action_Obligation / sum(Action_Obligation[Action_Obligation>0]),
+                 NA
+    )
+  )
+
+
+annual_platformUAV_summary<-defense_platformUAV_vendor %>%
+  dplyr::summarize(
+    Action_Obligation = sum(Action_Obligation),
+    # Obligation.2016 = sum(Action_Obligation.2016),
+    vendor_count=length(Fiscal_Year),
+    hh_index=sum((pct*100)^2,na.rm=TRUE),
+    top4=sum(ifelse(pos<=4,pct,NA),na.rm=TRUE),
+    top8=sum(ifelse(pos<=8,pct,NA),na.rm=TRUE),
+    top12=sum(ifelse(pos<=8,pct,NA),na.rm=TRUE),
+    top20=sum(ifelse(pos<=20,pct,NA),na.rm=TRUE),
+    top50=sum(ifelse(pos<=50,pct,NA),na.rm=TRUE)
+  )
 
 #*****************NAICS 6****************************
 # load(     file="data//defense_naics_vendor.Rdata")
@@ -254,6 +286,7 @@ save(defense_naics_vendor,
      defense_vendor,
      annual_summary,
      annual_platform_summary,
+     annual_platformUAV_summary,
      annual_naics6_summary,
      annual_naics5_summary,
      annual_naics4_summary,
@@ -268,6 +301,7 @@ save(defense_naics_vendor,
 write.csv(defense_naics_vendor,"data//clean//defense_naics_vendor.csv",row.names = FALSE)
 write.csv(defense_vendor,"output//defense_vendor.csv",row.names = FALSE)
 write.csv(annual_platform_summary,"output//annual_platform_summary.csv",row.names = FALSE)
+write.csv(annual_platformUAV_summary,"output//annual_platformUAV_summary.csv",row.names = FALSE)
 write.csv(annual_naics2_summary,"output//annual_naics2_summary.csv",row.names = FALSE)
 write.csv(annual_naics3_summary,"output//annual_naics3_summary.csv",row.names = FALSE)
 write.csv(annual_naics4_summary,"output//annual_naics4_summary.csv",row.names = FALSE)
@@ -276,10 +310,14 @@ write.csv(annual_naics6_summary,"output//annual_naics6_summary.csv",row.names = 
 # write.csv(annual_summary,"data//annual_summary.csv")
 
 
-load("data//clean//defense_naics_vendor.Rdata")
+# load("data//clean//defense_naics_vendor.Rdata")
 
 
-levels(factor(defense_platform_vendor$platformPortfolio))
+levels(factor(defense_platform_vendor$PlatformPortfolio))
 
-space_vendor<-subset(defense_platform_vendor,platformPortfolio=="Space Systems")
-write.csv(space_vendor,"spacevendor.csv")
+space_vendor<-subset(defense_platform_vendor,PlatformPortfolio=="Space Systems")
+write.csv(space_vendor %>% dplyr::select(-PlatformPortfolioUAV,-IsRemotelyOperated),
+          "output//spacevendor.csv",row.names = FALSE)
+
+remotely_operated<-subset(defense_platformUAV_vendor,PlatformPortfolioUAV=="Remotely Operated")
+write.csv(remotely_operated,"output//RemotelyOperatedVendor.csv",row.names = FALSE)
