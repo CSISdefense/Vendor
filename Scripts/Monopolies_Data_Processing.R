@@ -123,6 +123,8 @@ defense_platform_vendor$PlatformPortfolioUAV[defense_platform_vendor$IsRemotelyO
   "Remotely Operated"
 summary(factor(defense_platform_vendor$PlatformPortfolioUAV))
 
+summary(factor(defense_platform_vendor$PlatformPortfolioUAV))
+
 
 defense_platformUAV_vendor<-defense_platform_vendor %>% group_by(PlatformPortfolioUAV,Fiscal_Year)
 

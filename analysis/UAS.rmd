@@ -11,7 +11,7 @@ date: "Wednesday, October 6, 2021"
 First we load the data. The dataset used is a U.S. Defense Contracting dataset derived from FPDS.
 
 ```{r Libraries, echo = FALSE}
-library(csis360)
+ library(csis360)
 library(ggplot2)
 library(dplyr)
 library(tidyverse)
@@ -28,7 +28,7 @@ main.text.size<-1
 note.text.size<-1.40
 # if(!exists("full_data"))
 #   load(file="FPDS_chart_maker//unaggregated_FPDS.Rda")
-
+load(file=file.path("..","data","clean","defense_naics_vendor.rdata"))
 load(file="../data/clean/Federal_platpscintl_FPDS.Rda")
 load(file="../data/semi_clean/Defense_OTA_contract.Rda")
 load(file="../data/semi_clean/Defense_OTA.Rda")
@@ -471,8 +471,10 @@ ggsave600dpi(rc_vendor_place_fms,file="../output/Remotely_Crewed//rc_vendor_plac
 
 ```
 
+# Entities
 
-# Count
+
+## Count
 ```{r drone_count}
 load(file=file.path("..","data","clean","uav_vendor_count.Rda"))
 # platformUAS_only$
@@ -495,6 +497,208 @@ load(file=file.path("..","data","clean","uav_vendor_count.Rda"))
            caption=FALSE,
            format=TRUE)+
    facet_wrap(.~PlatformPortfolioRemote,scales="free_y"))
+
+
+
+(b<-build_plot(data=platformUAS_only %>% filter(Fiscal_Year>=2005 & PlatformPortfolioRemote %in% 
+                                                  c("Aircraft","Electronics, Comms, & Sensors",
+                                                    "Remotely Operated","Ordnance and Missiles")&
+                                                      IsEntityAbove2018constant10ThousandThreshold==1),
+           chart_geom="Bar Chart",
+           x_var="Fiscal_Year",
+           y_var="Action_Obligation_OMB23_GDP21",
+           color_var="EntitySizeText.sum",
+           facet_var="PlatformPortfolioRemote",
+           # second_var="IsEntityAbove2018constant10ThousandThreshold",
+           labels_and_colors=uav_lc,
+           column_key=uav_ck,
+           legend=TRUE,
+           caption=FALSE,
+           format=TRUE)+
+   facet_wrap(.~PlatformPortfolioRemote,scales="free_y"))
+
+
+ggsave600dpi(a,file="../output/Remotely_Crewed//uav_entity_count.png",
+             size = 12, lineheight=1, height =4.5, width=9)
+
+
+ggsave600dpi(b,file="../output/Remotely_Crewed//uav_entity_dollar.png",
+             size = 12, lineheight=1, height =4.5, width=9)
+
+```
+
+
+
+## Consolidation
+```{r drone_count}
+
+# platformUAS_only$
+
+summary(factor(annual_platformUAV_summary$PlatformPortfolioUAV))
+summary(annual_platformUAV_summary)
+# 
+# ggplot(data=annual_platformUAV_summary %>% filter(Fiscal_Year>=1991& !is.na(PlatformPortfolioUAV)),
+#        aes(x=Fiscal_Year,y=hh_index))+geom_line()+facet_wrap(~PlatformPortfolioUAV)
+# 
+# ggplot(data=annual_platformUAV_summary %>% filter(Fiscal_Year>=1991& !is.na(PlatformPortfolioUAV)),
+#        aes(x=Fiscal_Year,y=top4))+geom_line()+facet_wrap(~PlatformPortfolioUAV)
+
+annual_platformUAV_summary$Fiscal_Year
+undebug(add_preassigned_scales)
+# undebug(add_preassigned_scales)
+(hhi<-build_plot(data=annual_platformUAV_summary %>% filter(Fiscal_Year>=1991& !is.na(PlatformPortfolioUAV)),
+           chart_geom="Line Chart",
+           x_var="Fiscal_Year",
+           y_var="hh_index",
+           color_var="PlatformPortfolioUAV",
+           facet_var="PlatformPortfolioUAV",
+           # second_var="IsEntityAbove2018constant10ThousandThreshold",
+           # labels_and_colors=uav_lc,
+           # column_key=uav_ck,
+           legend=TRUE,
+           caption=FALSE,
+           format=TRUE)+
+   facet_wrap(.~PlatformPortfolioUAV))
+
+
+(top4<-build_plot(data=annual_platformUAV_summary %>% filter(Fiscal_Year>=1991& !is.na(PlatformPortfolioUAV)),
+           chart_geom="Line Chart",
+           x_var="Fiscal_Year",
+           y_var="top4",
+           color_var="PlatformPortfolioUAV",
+           facet_var="PlatformPortfolioUAV",
+           # second_var="IsEntityAbove2018constant10ThousandThreshold",
+           # labels_and_colors=uav_lc,
+           # column_key=uav_ck,
+           legend=TRUE,
+           caption=FALSE,
+           format=TRUE)+
+   facet_wrap(.~PlatformPortfolioUAV))
+
+
+
+
+(b<-build_plot(data=platformUAS_only %>% filter(Fiscal_Year>=2005 & PlatformPortfolioRemote %in% 
+                                                  c("Aircraft","Electronics, Comms, & Sensors",
+                                                    "Remotely Operated","Ordnance and Missiles")&
+                                                      IsEntityAbove2018constant10ThousandThreshold==1),
+           chart_geom="Bar Chart",
+           x_var="Fiscal_Year",
+           y_var="Action_Obligation_OMB23_GDP21",
+           color_var="EntitySizeText.sum",
+           facet_var="PlatformPortfolioRemote",
+           # second_var="IsEntityAbove2018constant10ThousandThreshold",
+           labels_and_colors=uav_lc,
+           column_key=uav_ck,
+           legend=TRUE,
+           caption=FALSE,
+           format=TRUE)+
+   facet_wrap(.~PlatformPortfolioRemote,scales="free_y"))
+
+
+ggsave600dpi(a,file="../output/Remotely_Crewed//uav_entity_count.png",
+             size = 12, lineheight=1, height =4.5, width=9)
+
+
+ggsave600dpi(b,file="../output/Remotely_Crewed//uav_entity_dollar.png",
+             size = 12, lineheight=1, height =4.5, width=9)
+
+```
+## Top List
+```{r drone_count}
+
+defense_platformUAV_vendor<-defense_platform_vendor %>% filter (PlatformPortfolioUAV=="Remotely Operated" ) %>%group_by(PlatformPortfolioUAV) %>%
+  select(-PlatformPortfolio) %>% 
+  group_by(Fiscal_Year,IsRemotelyOperated,EntityID,Small,PlatformPortfolioUAV) %>%
+  summarize(Action_Obligation=sum(Action_Obligation,na.rm=TRUE),
+            NumberOfActions=sum(NumberOfActions,na.rm=TRUE))
+
+
+
+defense_platformUAV_vendor<-defense_platformUAV_vendor %>% group_by(PlatformPortfolioUAV,Fiscal_Year) %>%
+  dplyr::mutate(
+    pos = rank(-Action_Obligation,
+               ties.method ="min"),
+    pct = ifelse(Action_Obligation>0,
+                 Action_Obligation / sum(Action_Obligation[Action_Obligation>0]),
+                 NA
+    )
+  )
+
+topUAV<-defense_platformUAV_vendor%>% filter(pos<=10)%>% arrange(Fiscal_Year,pos)
+
+FPDS_eid_fyear <- read.delim(file.path("../Data/semi_clean/Vendor.EntityIDhistory.txt"), header=TRUE,  na.strings = c("", "NULL"))
+FPDS_eid_fyear$EntityID<-text_to_number(FPDS_eid_fyear$EntityID)
+FPDS_eid_fyear<-standardize_variable_names(FPDS_eid_fyear)
+colnames(FPDS_eid_fyear)
+defense_platformUAV_vendor<-left_join(defense_platformUAV_vendor,FPDS_eid_fyear %>% dplyr::select(-Action_Obligation,-NumberOfActions),
+                                      by=c("EntityID","Fiscal_Year"))
+colnames(defense_platformUAV_vendor)
+
+
+topUAV<-defense_platformUAV_vendor %>%
+  mutate(TopEntityText=ifelse(pos<=10,EntityText,"All Other"),
+         Toppos=ifelse(pos<=10,pos,0)) %>%
+  dplyr::group_by(Fiscal_Year,PlatformPortfolioUAV,TopEntityText,Toppos) %>%
+  summarize(Action_Obligation=sum(Action_Obligation,na.rm=TRUE)) %>% arrange(Fiscal_Year,Toppos)
+
+topUAV<-deflate(topUAV,money_var="Action_Obligation")
+
+
+write.csv(topUAV,file="../output/Remotely_Crewed//topUAV.csv",row.names = FALSE)
+
+
+# topUAV<-csis360::read_and_join_experiment(topUAV,
+#                         "EntitySizeCode.csv",
+#                         by=c("EntitySizeCode"),
+#                         # add_var=c("SubCustomer.platform","SubCustomer.sum"),
+#                         path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+#                         dir="vendor/"
+# )
+# 
+# platformUAS_only$
+
+summary(factor(annual_platformUAV_summary$PlatformPortfolioUAV))
+summary(annual_platformUAV_summary)
+# 
+# ggplot(data=annual_platformUAV_summary %>% filter(Fiscal_Year>=1991& !is.na(PlatformPortfolioUAV)),
+#        aes(x=Fiscal_Year,y=hh_index))+geom_line()+facet_wrap(~PlatformPortfolioUAV)
+# 
+# ggplot(data=annual_platformUAV_summary %>% filter(Fiscal_Year>=1991& !is.na(PlatformPortfolioUAV)),
+#        aes(x=Fiscal_Year,y=top4))+geom_line()+facet_wrap(~PlatformPortfolioUAV)
+
+annual_platformUAV_summary$Fiscal_Year
+undebug(add_preassigned_scales)
+# undebug(add_preassigned_scales)
+(hhi<-build_plot(data=annual_platformUAV_summary %>% filter(Fiscal_Year>=1991& !is.na(PlatformPortfolioUAV)),
+           chart_geom="Line Chart",
+           x_var="Fiscal_Year",
+           y_var="hh_index",
+           color_var="PlatformPortfolioUAV",
+           facet_var="PlatformPortfolioUAV",
+           # second_var="IsEntityAbove2018constant10ThousandThreshold",
+           # labels_and_colors=uav_lc,
+           # column_key=uav_ck,
+           legend=TRUE,
+           caption=FALSE,
+           format=TRUE)+
+   facet_wrap(.~PlatformPortfolioUAV))
+
+
+(top4<-build_plot(data=annual_platformUAV_summary %>% filter(Fiscal_Year>=1991& !is.na(PlatformPortfolioUAV)),
+           chart_geom="Line Chart",
+           x_var="Fiscal_Year",
+           y_var="top4",
+           color_var="PlatformPortfolioUAV",
+           facet_var="PlatformPortfolioUAV",
+           # second_var="IsEntityAbove2018constant10ThousandThreshold",
+           # labels_and_colors=uav_lc,
+           # column_key=uav_ck,
+           legend=TRUE,
+           caption=FALSE,
+           format=TRUE)+
+   facet_wrap(.~PlatformPortfolioUAV))
+
 
 
 
