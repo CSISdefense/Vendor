@@ -257,7 +257,7 @@ EXEC	@return_value = Contract.SP_ContractBucketPlatformCustomer
 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
-
+--0h56m
 DECLARE	@return_value int
 
 EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
@@ -280,6 +280,7 @@ SET NOCOUNT ON;
 
 DECLARE	@return_value int
 --1h41me
+--3h16m (w/ error) with FPDS partial 
 EXEC	@return_value = [Vendor].[SP_EntityIDhistoryPlatform]
 		@Customer = 'Defense'
 
