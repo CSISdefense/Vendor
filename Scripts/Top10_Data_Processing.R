@@ -3,10 +3,53 @@
 ################################################################
 library(dplyr)
 library(tidyr)
+library(csis360)
+library(readr)
 
-data <- read.csv("Vendor.SP_TopVendorHistoryBucketSimple.csv",header = TRUE,
+data <- read.csv("data/semi_clean/Vendor.SP_TopVendorHistoryBucketSimple.csv",header = TRUE,
                  na.strings=c("NA","NULL", " "),
                  fileEncoding="UTF-8-BOM")
+data<-standardize_variable_names(data)
+
+dataplat <- read_delim("data/semi_clean/Vendor.SP_TopVendorUAVHistoryPlatformCustomer.txt",#header = TRUE,
+                 na=c("NA","NULL", " "),
+                 delim="\t"
+                 ) #fileEncoding="UTF-8-BOM"
+
+
+
+dataplat<-dataplat[,colnames(dataplat)!="WarningFlag...11"]
+colnames(dataplat)[colnames(dataplat)=="WarningFlag...7"]<-"WarningFlag"
+colnames(dataplat)[colnames(dataplat)=="PlatformPortfolioRemote"]<-"PlatformPortfolioUAV"
+
+
+dataplat<-standardize_variable_names(dataplat)
+
+dataplat$IsDefense <- NA
+dataplat$IsDefense[dataplat$Customer=="Defense"]<-TRUE
+dataplat$IsDefense[dataplat$Customer!="Defense"]<-FALSE
+summary(dataplat$IsDefense)
+dataplat <- dataplat %>%
+  group_by(Fiscal_Year,ContractorDisplayName,
+           UnknownCompany,AllContractor,
+           jointventure,WarningFlag,PlatformPortfolioUAV,
+           IsDefense
+           ) %>%
+  summarize(Action_Obligation = sum(Action_Obligation),
+            NumberOfActions = sum(NumberOfActions))
+
+dataplat<-dataplat%>% group_by(Fiscal_Year,IsDefense,PlatformPortfolioUAV,
+                     ) %>%
+  mutate(pos=rank(-Action_Obligation))%>%
+  arrange(Fiscal_Year,IsDefense,PlatformPortfolioUAV,pos)
+
+save(file="data/semi_clean/TopVendorUAVHistoryPlatformCustomer.rda",dataplat)
+colnames(dataplat)
+
+
+View(dataplat %>% filter(PlatformPortfolioUAV=="Remotely Operated" & pos<=10 & IsDefense==TRUE & Fiscal_Year>=2000))
+summary(factor(dataplat$PlatformPortfolioUAV))
+
 
 
 # Asign the column class
@@ -60,5 +103,5 @@ fulldata <- within(fulldata,rank[rank == 11]<- "other")
 #fulldata <- fulldata %>%
 #    replace_na(Simple = "Other")
 
-library(readr)
+
 write_csv(fulldata, "K:/R-Shiny/Interns/Zhian/Vendor/Top_10_v6.csv")
