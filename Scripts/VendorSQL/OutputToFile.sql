@@ -306,6 +306,7 @@ EXEC	@return_value = [Vendor].SP_TopVendorHistoryCustomer
 SET NOCOUNT ON;
 
 		--1h16m
+		--Completing with errors, may need a reboot
 DECLARE	@return_value int
 --SELECT	'Return Value' = @return_value
 EXEC	@return_value = Vendor.SP_TopVendorHistoryPlatformUAVisDefense
