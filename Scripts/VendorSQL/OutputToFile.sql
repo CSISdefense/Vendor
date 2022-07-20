@@ -292,6 +292,9 @@ DECLARE	@return_value int
 EXEC	@return_value = [Vendor].[sp_EntityCountHistoryCustomer]
 		@Customer =NULL
 
+		SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+
 --1h32m
 DECLARE	@return_value int
 --SELECT	'Return Value' = @return_value
@@ -299,6 +302,16 @@ EXEC	@return_value = [Vendor].SP_TopVendorHistoryCustomer
 		@Customer ='Defense',
 		@IsService=NULL
 		
+		SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+
+		--1h16m
+DECLARE	@return_value int
+--SELECT	'Return Value' = @return_value
+EXEC	@return_value = Vendor.SP_TopVendorHistoryPlatformUAVisDefense
+		@IsDefense =NULL
+	
+
 
 --SET ANSI_WARNINGS OFF;
 --SET NOCOUNT ON;
