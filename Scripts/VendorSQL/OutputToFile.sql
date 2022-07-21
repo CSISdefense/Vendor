@@ -43,6 +43,7 @@ exec Summary.SP_SoftwareC2Detail
 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
+--1h03m 2,939,179 rows
 /****** Script for SelectTopNRows command from SSMS  ******/
 SELECT  [EntityID]
       ,[fiscal_year]
