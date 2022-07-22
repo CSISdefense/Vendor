@@ -43,6 +43,7 @@ exec Summary.SP_SoftwareC2Detail
 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
+--1h03m 2,939,179 rows
 /****** Script for SelectTopNRows command from SSMS  ******/
 SELECT  [EntityID]
       ,[fiscal_year]
@@ -306,6 +307,7 @@ EXEC	@return_value = [Vendor].SP_TopVendorHistoryCustomer
 SET NOCOUNT ON;
 
 		--1h16m
+		--Completing with errors, may need a reboot
 DECLARE	@return_value int
 --SELECT	'Return Value' = @return_value
 EXEC	@return_value = Vendor.SP_TopVendorHistoryPlatformUAVisDefense
