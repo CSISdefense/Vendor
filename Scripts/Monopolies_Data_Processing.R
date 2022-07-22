@@ -61,6 +61,12 @@ defense_naics_vendor$exclude[defense_naics_vendor$mismatch %in% get_exclude_list
 
 
 #******************Calculate Defense Wide Values****************
+#*
+if(!check_key(defense_platform_vendor,c("EntityID","Small","CalendarYear")))
+  stop("Duplicate EntityID listings for defense_vendor")
+
+#Known issue b/c we classify vendors by fiscal year. Pondering how to fix.
+
 defense_vendor<-defense_vendor %>% group_by(CalendarYear)
 
 defense_vendor<-defense_vendor %>%
@@ -72,7 +78,6 @@ defense_vendor<-defense_vendor %>%
                  NA
     )
   )
-
 
 annual_summary<-defense_vendor %>%
   dplyr::summarize(
@@ -88,7 +93,33 @@ annual_summary<-defense_vendor %>%
 )
 
 
+#******************Separate Platform values ****************
+defense_platformUAV_vendor<-defense_platform_vendor
+defense_platformUAV_vendor$PlatformPortfolioUAV<-as.character(defense_platformUAV_vendor$PlatformPortfolio)
+defense_platformUAV_vendor$PlatformPortfolioUAV[defense_platformUAV_vendor$IsRemotelyOperated==1&
+                                               !is.na(defense_platformUAV_vendor$IsRemotelyOperated)]<-
+  "Remotely Operated"
+
+  defense_platform_vendor<-defense_platform_vendor%>%
+    group_by(Fiscal_Year,PlatformPortfolio,EntityID) %>%
+    dplyr::summarise(Action_Obligation=sum(Action_Obligation),
+              NumberOfActions=sum(NumberOfActions),
+              AnySmall=max(Small),
+              AllSmall=min(Small))
+  
+  defense_platformUAV_vendor<-defense_platformUAV_vendor%>%
+    group_by(Fiscal_Year,PlatformPortfolioUAV,IsRemotelyOperated,EntityID) %>%
+    dplyr::summarise(Action_Obligation=sum(Action_Obligation),
+                     NumberOfActions=sum(NumberOfActions),
+                     AnySmall=max(Small),
+                     AllSmall=min(Small))
+
 #******************Calculate Platform Wide Values****************
+
+  
+if(!check_key(defense_platform_vendor,c("PlatformPortfolio","EntityID","Fiscal_Year")))
+  stop("Duplicate EntityID listings for defense_platform_vendor")
+  
 defense_platform_vendor<-defense_platform_vendor %>% group_by(PlatformPortfolio,Fiscal_Year)
 
 defense_platform_vendor<-defense_platform_vendor %>%
@@ -117,16 +148,14 @@ annual_platform_summary<-defense_platform_vendor %>%
 
 #******************Calculate PlatformUAV Wide Values****************
 
-defense_platform_vendor$PlatformPortfolioUAV<-as.character(defense_platform_vendor$PlatformPortfolio)
-defense_platform_vendor$PlatformPortfolioUAV[defense_platform_vendor$IsRemotelyOperated==1&
-                                               !is.na(defense_platform_vendor$IsRemotelyOperated)]<-
-  "Remotely Operated"
-summary(factor(defense_platform_vendor$PlatformPortfolioUAV))
 
-summary(factor(defense_platform_vendor$PlatformPortfolioUAV))
+summary(factor(defense_platformUAV_vendor$PlatformPortfolioUAV))
+
+if(!check_key(defense_platformUAV_vendor,c("PlatformPortfolioUAV","EntityID","Fiscal_Year")))
+  stop("Duplicate EntityID listings for defense_platformUAV_vendor")
 
 
-defense_platformUAV_vendor<-defense_platform_vendor %>% group_by(PlatformPortfolioUAV,Fiscal_Year)
+defense_platformUAV_vendor<-defense_platformUAV_vendor %>% group_by(PlatformPortfolioUAV,Fiscal_Year)
 
 defense_platformUAV_vendor<-defense_platformUAV_vendor %>%
   dplyr::mutate(
@@ -137,7 +166,6 @@ defense_platformUAV_vendor<-defense_platformUAV_vendor %>%
                  NA
     )
   )
-
 
 annual_platformUAV_summary<-defense_platformUAV_vendor %>%
   dplyr::summarize(
@@ -282,6 +310,21 @@ annual_naics4_summary<-join_economic(annual_naics4_summary,core,4)
 annual_naics5_summary<-join_economic(annual_naics5_summary,core,5)
 annual_naics6_summary<-join_economic(annual_naics6_summary,core,6)
 
+#***********COre entityID data
+FPDS_eid_fyear <- read.delim(file.path("Data/semi_clean/Vendor.EntityIDhistory.txt"), header=TRUE,  na.strings = c("", "NULL"))
+FPDS_eid_fyear$EntityID<-text_to_number(FPDS_eid_fyear$EntityID)
+FPDS_eid_fyear<-standardize_variable_names(FPDS_eid_fyear)
+colnames(FPDS_eid_fyear)
+defense_platformUAV_vendor<-left_join(defense_platformUAV_vendor,FPDS_eid_fyear %>% dplyr::select(-Action_Obligation,-NumberOfActions),
+                                      by=c("EntityID","Fiscal_Year"))
+colnames(defense_platformUAV_vendor)
+summary(factor(defense_platformUAV_vendor$EntitySizeCode))
+summary(factor(defense_platformUAV_vendor$IsEntityAbove2018constant10ThousandThreshold))
+
+
+defense_platformUAV_vendor<-apply_standard_lookups(defense_platformUAV_vendor)
+defense_platformUAV_vendor$EntityCount<-1
+
 #************Saving********************
 save(defense_naics_vendor,
      defense_platform_vendor,
@@ -318,8 +361,8 @@ write.csv(annual_naics6_summary,"output//annual_naics6_summary.csv",row.names = 
 levels(factor(defense_platform_vendor$PlatformPortfolio))
 
 space_vendor<-subset(defense_platform_vendor,PlatformPortfolio=="Space Systems")
-write.csv(space_vendor %>% dplyr::select(-PlatformPortfolioUAV,-IsRemotelyOperated),
-          "output//spacevendor.csv",row.names = FALSE)
+write.csv(space_vendor , file="output//spacevendor.csv",row.names = FALSE)
 
 remotely_operated<-subset(defense_platformUAV_vendor,PlatformPortfolioUAV=="Remotely Operated")
+platformUAS_only<-subset(annual_platformUAV_summary,PlatformPortfolioUAV=="Remotely Operated")
 write.csv(remotely_operated,"output//RemotelyOperatedVendor.csv",row.names = FALSE)
