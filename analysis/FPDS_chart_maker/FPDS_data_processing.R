@@ -17,7 +17,8 @@
 library(tidyverse)
 library(magrittr)
 library(csis360)
-
+#This is a kludge until the FMS repo is public
+source(file.path("..","FMS","Scripts","Trade_Standardize.r"))
 # read in data
 
 
@@ -94,12 +95,13 @@ jadc2 <- read_delim(
 jadc2<-apply_standard_lookups(jadc2)#,
 
 full_data <- read_delim(
+  "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerInternational.txt",delim = "\t",
   # "Data//semi_clean//Federal_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",delim = "\t",
-  "Data//semi_clean//Defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",delim = "\t",
+  # "Data//semi_clean//Defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",delim = "\t",
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
-
-full_data<-initial_clean(full_data)
-full_data<-apply_standard_lookups(full_data)#,
+full_data<-initial_clean(full_data,only_defense=FALSE)
+fed_data<- apply_standard_lookups(full_data)#,
+full_data<-initial_clean(fed_data,only_defense=TRUE)
 # path="K:/Users/Greg/Repositories/Lookup-Tables/style")
 
 #AnyCommercial 
@@ -110,7 +112,7 @@ def_data<-initial_clean(def_data)
 def_data<-apply_standard_lookups(def_data)#,
 
 
-full_data <- full_data %>% select(-PlaceIsForeign,-VendorIsForeign) 
+full_data <- full_data %>% dplyr::select(-PlaceIsForeign,-VendorIsForeign) 
 full_data %<>% add_alliance(isoAlpha3_col= "PlaceISOalpha3", drop_col = TRUE,prefix="Place")
 full_data$VendorISOalpha3[full_data$VendorISOalpha3=="~NJ"]<-NA
 full_data %<>% add_alliance(isoAlpha3_col= "VendorISOalpha3", drop_col = TRUE,prefix="Vendor")
@@ -139,6 +141,7 @@ full_data %<>%
   mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
   mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
   mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
+  mutate(PlatformPortfolioUAV = factor(PlatformPortfolioUAV)) %>%
   mutate(Shiny.VendorSize = factor(Shiny.VendorSize)) %>%
   mutate(SimpleArea = factor(SimpleArea)) %>%
   mutate(Competition.sum = factor(Competition.sum)) %>%
@@ -162,6 +165,37 @@ column_key<-csis360::get_column_key(full_data)
 save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
 
 summary(factor(full_data$VendorSize))
+
+
+fed_data %<>%
+  # select(-ClassifyNumberOfOffers) %>%
+  mutate(ContractingSubCustomer = factor(ContractingSubCustomer)) %>%
+  mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
+  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
+  mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
+  mutate(PlatformPortfolioUAV = factor(PlatformPortfolioUAV)) %>%
+  mutate(Shiny.VendorSize = factor(Shiny.VendorSize)) %>%
+  mutate(SimpleArea = factor(SimpleArea)) %>%
+  mutate(Competition.sum = factor(Competition.sum)) %>%
+  mutate(Competition.effective.only = factor(Competition.effective.only)) %>%
+  mutate(Competition.multisum = factor(Competition.multisum))  %>%
+  mutate(No.Competition.sum = factor(No.Competition.sum)) %>%
+  mutate(Vehicle = factor(Vehicle)) %>%
+  mutate(Vehicle.sum = factor(Vehicle.sum)) %>%
+  mutate(Vehicle.sum7 = factor(Vehicle.sum7)) %>%
+  mutate(Vehicle.AwardTask = factor(Vehicle.AwardTask)) %>%
+  mutate(PricingUCA = factor(PricingUCA)) %>%
+  mutate(IsFMS = factor(IsFMS)) %>%
+  mutate(PlaceOfManufacture_Sum = factor(PlaceOfManufacture_Sum)) %>%
+  mutate(VendorIsForeign = factor(VendorIsForeign))%>%
+  mutate(PlaceIsForeign = factor(PlaceIsForeign))
+
+
+fed_lc<-csis360::prepare_labels_and_colors(full_data)
+
+fed_ck<-csis360::get_column_key(full_data)
+
+save(fed_data,fed_lc,fed_ck, file="data/clean/fed_summary_FPDS.Rda")
 
 
 
@@ -232,7 +266,7 @@ sw<-apply_standard_lookups(sw)
 sw_lc<-prepare_labels_and_colors(sw)
 sw_ck<-get_column_key(sw)
 
-save(sw,sw_lc,sw_ck, file="data/semi_clean/sw_FPDS.Rda")
+save(sw,sw_lc,sw_ck, file="data/clean/sw_FPDS.Rda")
 
 
 
@@ -330,7 +364,7 @@ platpsc %<>%
 detail_lc<-csis360::prepare_labels_and_colors(platpsc)
 detail_ck<-csis360::get_column_key(platpsc)
 
-save(platpsc,labels_and_colors,column_key, file="data/semi_clean/platpsc_FPDS.Rda")
+save(platpsc,labels_and_colors,column_key, file="data/clean/platpsc_FPDS.Rda")
 
 intl_lc<-csis360::prepare_labels_and_colors(platpscintldef)
 intl_ck<-csis360::get_column_key(platpscintldef)
@@ -339,7 +373,7 @@ fed_lc<-csis360::prepare_labels_and_colors(platpscintl)
 fed_ck<-csis360::get_column_key(platpscintl)
 
 
-save(platpscintldef,intl_lc, intl_ck,file="data/semi_clean/platpscintl_FPDS.Rda")
+save(platpscintldef,intl_lc, intl_ck,file="data/clean/platpscintl_FPDS.Rda")
 save(platpscintl,fed_lc, fed_ck,file="data/clean/Federal_platpscintl_FPDS.Rda")
 
 jadc2_lc<-csis360::prepare_labels_and_colors(jadc2)

@@ -285,6 +285,7 @@ DECLARE	@return_value int
 EXEC	@return_value = [Vendor].[SP_EntityIDhistoryPlatform]
 		@Customer = 'Defense'
 
+
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 

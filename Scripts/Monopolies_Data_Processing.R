@@ -134,6 +134,7 @@ defense_platform_vendor<-defense_platform_vendor %>%
 
 
 annual_platform_summary<-defense_platform_vendor %>%
+  group_by(PlatformPortfolio,Fiscal_Year) %>%
   dplyr::summarize(
     Action_Obligation = sum(Action_Obligation),
     # Obligation.2016 = sum(Action_Obligation.2016),
@@ -145,6 +146,21 @@ annual_platform_summary<-defense_platform_vendor %>%
     top20=sum(ifelse(pos<=20,pct,NA),na.rm=TRUE),
     top50=sum(ifelse(pos<=50,pct,NA),na.rm=TRUE)
   )
+
+#***********COre entityID data
+FPDS_eid_fyear <- read.delim(file.path("Data/semi_clean/Vendor.EntityIDhistory.txt"), header=TRUE,  na.strings = c("", "NULL"))
+FPDS_eid_fyear$EntityID<-text_to_number(FPDS_eid_fyear$EntityID)
+FPDS_eid_fyear<-standardize_variable_names(FPDS_eid_fyear)
+colnames(FPDS_eid_fyear)
+defense_platformUAV_vendor<-left_join(defense_platformUAV_vendor,FPDS_eid_fyear %>% dplyr::select(-Action_Obligation,-NumberOfActions),
+                                      by=c("EntityID","Fiscal_Year"))
+colnames(defense_platformUAV_vendor)
+summary(factor(defense_platformUAV_vendor$EntitySizeCode))
+summary(factor(defense_platformUAV_vendor$IsEntityAbove2018constant10ThousandThreshold))
+
+
+defense_platformUAV_vendor<-apply_standard_lookups(defense_platformUAV_vendor)
+defense_platformUAV_vendor$EntityCount<-1
 
 #******************Calculate PlatformUAV Wide Values****************
 
@@ -168,11 +184,13 @@ defense_platformUAV_vendor<-defense_platformUAV_vendor %>%
   )
 
 annual_platformUAV_summary<-defense_platformUAV_vendor %>%
+  group_by(PlatformPortfolioUAV,Fiscal_Year) %>%
   dplyr::summarize(
-    Action_Obligation = sum(Action_Obligation),
-    # Obligation.2016 = sum(Action_Obligation.2016),
+    Action_Obligation_Then_Year = sum(Action_Obligation_Then_Year),
+    Action_Obligation_OMB23_GDP21 = sum(Action_Obligation_OMB23_GDP21),
     vendor_count=length(Fiscal_Year),
     hh_index=sum((pct*100)^2,na.rm=TRUE),
+    big5=sum(ifelse(EntitySizeCode %in% c("B","J"),pct,NA),na.rm=TRUE),
     top4=sum(ifelse(pos<=4,pct,NA),na.rm=TRUE),
     top8=sum(ifelse(pos<=8,pct,NA),na.rm=TRUE),
     top12=sum(ifelse(pos<=8,pct,NA),na.rm=TRUE),
@@ -310,20 +328,7 @@ annual_naics4_summary<-join_economic(annual_naics4_summary,core,4)
 annual_naics5_summary<-join_economic(annual_naics5_summary,core,5)
 annual_naics6_summary<-join_economic(annual_naics6_summary,core,6)
 
-#***********COre entityID data
-FPDS_eid_fyear <- read.delim(file.path("Data/semi_clean/Vendor.EntityIDhistory.txt"), header=TRUE,  na.strings = c("", "NULL"))
-FPDS_eid_fyear$EntityID<-text_to_number(FPDS_eid_fyear$EntityID)
-FPDS_eid_fyear<-standardize_variable_names(FPDS_eid_fyear)
-colnames(FPDS_eid_fyear)
-defense_platformUAV_vendor<-left_join(defense_platformUAV_vendor,FPDS_eid_fyear %>% dplyr::select(-Action_Obligation,-NumberOfActions),
-                                      by=c("EntityID","Fiscal_Year"))
-colnames(defense_platformUAV_vendor)
-summary(factor(defense_platformUAV_vendor$EntitySizeCode))
-summary(factor(defense_platformUAV_vendor$IsEntityAbove2018constant10ThousandThreshold))
 
-
-defense_platformUAV_vendor<-apply_standard_lookups(defense_platformUAV_vendor)
-defense_platformUAV_vendor$EntityCount<-1
 
 #************Saving********************
 save(defense_naics_vendor,
