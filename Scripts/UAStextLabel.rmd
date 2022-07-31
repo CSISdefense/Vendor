@@ -1,0 +1,106 @@
+---
+title: "UAS Text Label"
+author: "Greg Sanders"
+date: "2022-07-31"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(RTextTools)
+library(readr)
+library(csis360)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+### OTA description UAS labeling
+
+```{r cars}
+
+
+d<-read_csv(file.path("..","data","semi_clean","ota_description_UAS.csv"),na ="",col_types="ccccc")
+problems(d)
+d<-standardize_variable_names(d)
+grep("UAS|Unmanned|Uninhabited|Uncrewed|Remotely Crewed",d$Description_of_Requirement)
+d$UAS<-NA
+d$CUAS<-NA
+d$Maritime<-NA
+d$mq<-NA
+d$rq<-NA
+d$UAS[grep("UAS",d$Description_of_Requirement)]<-TRUE
+sum(d$UAS,na.rm=TRUE)
+
+d$UAS[grep("QUASAR",d$Description_of_Requirement)]<-NA
+sum(d$UAS,na.rm=TRUE)
+d$UAS[grep("UAV",d$Description_of_Requirement)]<-TRUE
+sum(d$UAS,na.rm=TRUE)
+d$UAS[grep("Unmanned",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
+sum(d$UAS,na.rm=TRUE)
+d$UAS[grep("Remotely Crewed",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
+sum(d$UAS,na.rm=TRUE)
+d$UAS[grep("Uninhabited",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
+sum(d$UAS,na.rm=TRUE)
+
+d$UAS[grep("Uncrewed",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
+sum(d$UAS,na.rm=TRUE)
+
+# Excluding Counter UAS
+d$CUAS[grep("Counter Unmanned",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
+sum(d$CUAS,na.rm=TRUE)
+d$CUAS[grep("C-UAS",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
+d$CUAS[grep("CSUAS",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
+d$CUAS[grep("Counter UAS",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
+d$CUAS[grep("Counter-UAS",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
+
+d$CUAS[grep("Counter-Unmanned",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
+sum(d$CUAS,na.rm=TRUE)
+
+
+d$Maritime[grep("Unmanned Surface",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
+d$Maritime[grep("Unmanned Maritime",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
+
+d$Maritime[grep("UNDERWATER UNMANNED",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
+d$Maritime[grep("UNMANNED UNDERWATER",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
+
+d$Maritime[grep("UNMANNED UNDERSEA",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
+sum(d$CUAS,na.rm=TRUE)
+
+
+d$UAS[d$CUAS==TRUE]<-NA
+
+d$UAS[d$Maritime==TRUE]<-NA
+sum(d$UAS,na.rm=TRUE)
+
+
+
+d$mq[grep("MQ",d$Description_of_Requirement,ignore.case = TRUE)]
+d$mq[grep("MQT",d$Description_of_Requirement,ignore.case = TRUE)]<-NA
+sum(d$mq,na.rm = TRUE)
+d$rq[grep("RQ",d$Description_of_Requirement,ignore.case = TRUE)]
+d$rq[grep("SRQ",d$Description_of_Requirement,ignore.case = TRUE)]<-NA
+sum(d$rq,na.rm=TRUE)
+
+d$any_uas<-NA
+d$any_uas<-d$UAS|d$mq|d$rq
+
+write_csv(d,file.path("..","data","semi_clean","ota_description_UAS.csv"),na = "")
+
+#UUVSS maritime
+#MORFIUS counter-uas uas
+#SUAS Small uas
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
