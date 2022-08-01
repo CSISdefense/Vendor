@@ -42,9 +42,11 @@ load(file=file.path("..","data","clean","uav_vendor_count.Rda"))
 # load(file="../data/clean/jadc2.Rda")
 
 platpscintl$SubCustomer.sum[platpscintl$Customer!="Defense"]<-"Civilian"
-fed_lc<-prepare_labels_and_colors(platpscintl)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
-fed_ck<-get_column_key(platpscintl)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+
+fed_lc<-prepare_labels_and_colors(fed_data)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+fed_ck<-get_column_key(fed_data)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 uav_lc<-prepare_labels_and_colors(defense_platformUAV_vendor)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+def_data<-def_data %>% filter(ContractingCustomer=="Defense")
 uav_ck<-get_column_key(defense_platformUAV_vendor)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 # column_key<-get_column_key(platpscintl,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 # detail_lc<-prepare_labels_and_colors(platpscintl,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
@@ -888,21 +890,25 @@ ggsave600dpi("..//Output//Remotely_Crewed//remotely_crewed_vendor_intl_square.pn
 
 ### FMS
 ```{r ToplineFMS}
-summary(fed_data$Competition.effective.only)
-fed_data <- fed_data %>% group_by(Fiscal_Year,PlatformPortfolioUAV)  %>%
-  dplyr::mutate(pctFYPlat=Action_Obligation_Then_Year/sum(Action_Obligation_Then_Year,na.rm=TRUE))
+summary(def_data$Competition.effective.only)
+def_data <- def_data %>% group_by(Fiscal_Year,PlatformPortfolioUAV)  %>%
+  dplyr::mutate(pctFYPlatCustomer=Action_Obligation_Then_Year/sum(Action_Obligation_Then_Year,na.rm=TRUE))
 
 
 (
 FMSplatUAV<-build_plot(
-  data=fed_data %>% filter(Fiscal_Year>=2012,IsFMS==1 & PlatformPortfolioUAV!="Unlabeled"),
+  data=def_data %>% filter(Fiscal_Year>=2012,IsFMS==1 & PlatformPortfolioUAV!="Unlabeled"& 
+                                                                    !PlatformPortfolioUAV %in% c("Facilities and Construction",
+                                                                                                 "Other Products",
+                                                                                                 "Other R&D and Knowledge Based",
+                                                                                                 "Other Services")),
   chart_geom = "Line Chart",
   share = FALSE,
   labels_and_colors=fed_lc,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
   y_var="pctFYPlat", #VAR.y.variable
-  # color_var="SimpleArea", #color_var
+  color_var="PlatformPortfolioUAV", #color_var
   facet_var="PlatformPortfolioUAV", #facet_var
   column_key=fed_ck,
   format=TRUE,
@@ -916,15 +922,16 @@ FMSplatUAV<-build_plot(
   # 
   # y="Percent of Obligations",
   # color="Competition")+
-  theme(legend.position = "bottom")+
+  theme(legend.position = "none")+
   labs(x="Fiscal Year",
-       y="Percent of Obligations")
+       y="Percent of Portfolio Obligations")+
+    scale_y_continuous(labels=scales::percent)+facet_wrap(~PlatformPortfolioUAV,nrow=2)
 )
 
 
 (
 FMSplatUAVbar<-build_plot(
-  data=fed_data %>% filter(Fiscal_Year>=2012 & PlatformPortfolioUAV!="Unlabeled"),
+  data=def_data %>% filter(Fiscal_Year>=2012 & PlatformPortfolioUAV!="Unlabeled"),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=fed_lc,
@@ -947,7 +954,7 @@ FMSplatUAVbar<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
     facet_wrap(PlatformPortfolioUAV~.,scale="free_y")+
-  theme(legend.position = "bottom")+
+  theme(legend.position = "none")+
   labs(x="Fiscal Year",
        y="Percent of Obligations")
 )
@@ -963,15 +970,16 @@ ggsave600dpi(FMSplatUAVbar,file="../output/Remotely_Crewed//FMSplatUAVbar.png",
 
 write.csv(file="..//Output//Remotely_Crewed//FMSplatUAV.csv",row.names = FALSE, na = "",
           FMSplatUAV$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
-            pivot_wider(id_cols=c(SimpleArea,PlatformPortfolioUAV),
-                        names_from=Fiscal_Year,values_from=pctFYsimpleareaPlat))
+            pivot_wider(id_cols=c(PlatformPortfolioUAV),
+                        names_from=Fiscal_Year,values_from=pctFYPlat))
 
 
-# write.csv(file="..//Output//Remotely_Crewed//FMSplatUAV_cur.csv",row.names = FALSE, na = "",
-#           full_data %>% group_by(No.Competition.sum,Fiscal_Year)%>%
-#             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-#           pivot_wider(id_cols=c(No.Competition.sum),
-#                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(No.Competition.sum))
+write.csv(file="..//Output//Remotely_Crewed//FMSplatUAV_cur.csv",row.names = FALSE, na = "",
+          def_data %>% group_by(IsFMS,PlatformPortfolioUAV,Fiscal_Year)%>% filter(Fiscal_Year>=2000) %>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+             arrange(Fiscal_Year) %>%
+          pivot_wider(id_cols=c(PlatformPortfolioUAV,IsFMS),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(PlatformPortfolioUAV,IsFMS))
 
 
 ```
