@@ -361,12 +361,38 @@ save(ota_def,ota_lc,ota_ck, file="data/clean/Defense_OTA.Rda")
 if(!exists("fed_data")){
   load(file=file.path("data","clean","fed_summary_FPDS.rda"))
 }
+
+colnames(OTA_data)[colnames(OTA_data)=="Non-traditionalGovernmentContractorParticipationDescription"]<-
+  "NontraditionalGovernmentContractorParticipationDescription"
+colnames(OTA_data)[colnames(OTA_data)=="Non-traditionalGovernmentContractorParticipationCode"]<-
+  "NontraditionalGovernmentContractorParticipationCode"
+
 ota_contract<-OTA_data
 ota_contract$IsOTA<-"OTA"
 fed_data$IsOTA<-"Contract"
+
+
+summary(factor(OTA_data$NontraditionalGovernmentContractorParticipationDescription))
+colnames(ota_contract)[colnames(ota_contract)=="Customer"]<-"ContractingCustomer"
+
+
+summary(factor(OTA_data$NontraditionalGovernmentContractorParticipationCode))
+ota_contract$AnyCommercial<-factor(ota_contract$NontraditionalGovernmentContractorParticipationCode)
+levels(ota_contract$AnyCommercial)=list(
+  "Y"="NSP",
+  "N"=c("CS","DEC")
+)
+
+
+
 ota_contract<-rbind(ota_contract[,colnames(ota_contract)[colnames(ota_contract) %in% colnames(fed_data)]],
                     fed_data[,colnames(fed_data)[colnames(fed_data) %in% colnames(ota_contract)]])
 # platpscintldef$IsOTA<-"Contract"
+
+ota_contract$SubCustomer.sum<-as.character(ota_contract$SubCustomer.sum)
+ota_contract$SubCustomer.sum[ota_contract$ContractingCustomer!="Defense"]<-"Civilian"
+
+
 # ota_contract<-rbind(ota_contract[,colnames(ota_contract)[colnames(ota_contract) %in% colnames(platpscintldef)]],
 #                     platpscintldef[,colnames(platpscintldef)[colnames(platpscintldef) %in% colnames(ota_contract)]])
 save(ota_contract,ota_lc,ota_ck, file="data/clean/OTA_contract.Rda")
