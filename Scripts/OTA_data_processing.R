@@ -32,7 +32,7 @@ OTA_data_current<-apply_standard_lookups(OTA_data_current)
 OTA_data_current$MentionsCovid<-TRUE
 OTA_data_current$TopCovid<-FALSE
 
-# sum( text_to_number(OTA_data_current$Action_Obligation_OMB23_GDP21[grep("UNMANNED",OTA_data_current$Description_of_Requirement)]),na.rm=TRUE)
+sum( text_to_number(OTA_data_current$Action_Obligation_OMB23_GDP21[grep("UNMANNED",OTA_data_current$Description_of_Requirement)]),na.rm=TRUE)
 # 
 # OTA_data_current[grep("UNMANNED",OTA_data_current$Description_of_Requirement),] %>% group_by(`Fiscal Year`) %>%
 #   dplyr::summarise(d= sum(text_to_number(Action_Obligation_OMB23_GDP21),na.rm=TRUE))
@@ -263,8 +263,27 @@ OTA_data<-read_and_join_experiment(OTA_data,
                                            add_var="Remotely_Crewed",
                                            skip_check_var = "Remotely_Crewed",
                                            by="Description_of_Requirement",
-                                           col_types = "ccccc",
-                                   case_sensitive = FALSE)
+                                           col_types = "ccccc")
+
+OTA_data<-read_and_join_experiment(OTA_data,
+                                   path="data//semi_clean//",dir="",lookup_file = "ota_description_UAS.csv",
+                                   add_var="CUAS",
+                                   skip_check_var = "CUAS",
+                                   by="Description_of_Requirement",
+                                   col_types = "ccccc")
+sum(OTA_data$Action_Obligation_OMB23_GDP21[OTA_data$CUAS],na.rm=TRUE)
+
+
+missing_money<-OTA_data[grep("UNMANNED",OTA_data_current$Description_of_Requirement),] %>%
+  filter(Remotely_Crewed==""| is.na(Remotely_Crewed)) 
+summary(factor(missing_money$Remotely_Crewed))
+sum(missing_money$Action_Obligation_OMB23_GDP21)
+
+missing_money<-missing_money %>%  filter(!CUAS| is.na(CUAS)) 
+sum(missing_money$Action_Obligation_OMB23_GDP21)
+
+View(missing_money %>% arrange(-Action_Obligation_OMB23_GDP21) %>% select(Description_of_Requirement,Action_Obligation_OMB23_GDP21,Remotely_Crewed))
+
 
 summary(factor(OTA_data$Remotely_Crewed))
 nrow(unique(OTA_data %>% filter (Remotely_Crewed!="") %>% select(Description_of_Requirement,Remotely_Crewed)))
@@ -339,7 +358,7 @@ save(ota_def,ota_lc,ota_ck, file="data/semi_clean/Defense_OTA.Rda")
 
 
 # load(file="data/semi_clean/Defense_OTA.Rda")
-if(!exists()){
+if(!exists("fed_data")){
   load(file=file.path("data","clean","fed_summary_FPDS.rda"))
 }
 ota_contract<-OTA_data
