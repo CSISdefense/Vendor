@@ -10,6 +10,9 @@ knitr::opts_chunk$set(echo = TRUE)
 library(RTextTools)
 library(readr)
 library(csis360)
+library(dplyr)
+
+library(tidyr)
 ```
 
 ## R Markdown
@@ -95,12 +98,107 @@ write_csv(d,file.path("..","data","semi_clean","ota_description_UAS.csv"),na = "
 #SUAS Small uas
 ```
 
-## Including Plots
+### Expanding labels to contracs
 
 You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r pressure}
+
+OTA_data_current <- read_delim(
+  "..//data_raw//OTA_All_Fields.csv",delim = ",",
+  col_names = TRUE, guess_max = 500000,na=c("NA","NULL"),skip = 2)
+OTA_data_current<-standardize_variable_names(OTA_data_current)
+
+OTA_data_current<-read_and_join_experiment(OTA_data_current,
+                         path="..//data//semi_clean//",dir="",lookup_file = "ota_description_UAS.csv",
+                         add_var="Remotely_Crewed",
+                         skip_check_var = "Remotely_Crewed",
+                         by="Description_of_Requirement",
+                         col_types = "ccccc")
+
+OTA_data_current$Remotely_Crewed[
+OTA_data_current$Remotely_Crewed %in% c("","FALSE")]<-NA
+
+
+sum(text_to_number(OTA_data_current$Action_Obligation)[OTA_data_current$Remotely_Crewed %in% c("UAS","UAS/CUAS")])
+
+
+#This is incredibly slow ~20m, perhaps because of all the warning it prints.
+# OTA_data_current<-OTA_data_current %>% group_by(`PIIDAgencyID`,PIID,`ReferencedIDVAgencyID`,Referenced_IDV_PIID) %>%
+#   mutate(max_rc=max(Remotely_Crewed,na.rm=TRUE),
+#          min_rc=min(Remotely_Crewed,na.rm=TRUE))
+
+Remotely_Crewed_CAU<-OTA_data_current %>% filter(Remotely_Crewed %in% c("UAS","UAS/CUAS"))%>%
+  group_by(`PIIDAgencyID`,PIID,`ReferencedIDVAgencyID`,Referenced_IDV_PIID,
+           Remotely_Crewed) %>% summarise()
+
+Remotely_Crewed_CAU$`ReferencedIDVAgencyID`[is.na(Remotely_Crewed_CAU$`ReferencedIDVAgencyID`)]<-""
+
+# Training and Readiness Accelerator (TReX) does include UAS, but is a  broader OTA.
+Remotely_Crewed_CAU<-Remotely_Crewed_CAU %>% filter(PIID!="W900KK1890005") 
+
+colnames(Remotely_Crewed_CAU)[colnames(Remotely_Crewed_CAU)=="Remotely_Crewed"]<-"Remotely_Crewed_CAU"
+write_csv(Remotely_Crewed_CAU,file.path("..","data","semi_clean","ota_CAU_UAS.csv"))
+
+
+# 
+# write.csv(OTA_data_current %>% select(`PIIDAgencyID`,PIID,`ReferencedIDVAgencyID`,Referenced_IDV_PIID,
+#                                  Description_of_Requirement,Remotely_Crewed,max_rc,min_rc,Action_Obligation)
+#      %>% filter(max_rc=='UAS'|min_rc=="UAS"),"CUA_OTA_check.csv")
+# 
+# 
+# write.csv(OTA_data_current %>% select(`PIIDAgencyID`,PIID,`ReferencedIDVAgencyID`,Referenced_IDV_PIID,
+#                                  Description_of_Requirement,Remotely_Crewed,max_rc,min_rc,Action_Obligation,
+#                                  ProductOrServiceCode)
+#      %>% filter(!is.na(max_rc) | ProductOrServiceCode=="1550"),"CUA_OTA_rc_check.csv")
+# 
+# summary(factor(OTA_data_current$Remotely_Crewed[OTA_data_current$ProductOrServiceCode=="1550"]))
+
+
+
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+# Test labeling language
+```{r OTA_UAS_test}
+
+OTA_data_current <- read_delim(
+  "..//data_raw//OTA_All_Fields.csv",delim = ",",
+  col_names = TRUE, guess_max = 500000,na=c("NA","NULL"),skip = 2)
+OTA_data_current<-standardize_variable_names(OTA_data_current)
+OTA_data_current<-apply_standard_lookups(OTA_data_current)
+
+OTA_data_current$IsRemotelyOperated<-FALSE
+OTA_data_current$IsRemotelyOperated[OTA_data_current$ProductOrServiceCode=="1550"]<-TRUE
+sum(OTA_data_current$Action_Obligation_OMB23_GDP21[OTA_data_current$IsRemotelyOperated],na.rm=TRUE)
+
+
+
+
+OTA_data_current<-read_and_join_experiment(OTA_data_current,
+                         path="..//data//semi_clean//",dir="",lookup_file = "ota_description_UAS.csv",
+                         add_var="Remotely_Crewed",
+                         skip_check_var = "Remotely_Crewed",
+                         by="Description_of_Requirement",
+                         col_types = "ccccc")
+
+OTA_data_current$IsRemotelyOperated[OTA_data_current$Remotely_Crewed %in% c("UAS","UAS/CUAS")]<-TRUE
+sum(OTA_data_current$Action_Obligation_OMB23_GDP21[OTA_data_current$IsRemotelyOperated],na.rm=TRUE)
+
+OTA_data_current$`ReferencedIDVAgencyID`[is.na(OTA_data_current$`ReferencedIDVAgencyID`)]<-""
+OTA_data_current<-read_and_join_experiment(OTA_data_current,
+                         path="..//data//semi_clean//",dir="",lookup_file = "ota_CAU_UAS.csv",
+                         add_var="Remotely_Crewed_CAU",
+                         skip_check_var = "Remotely_Crewed_CAU",
+                         by=c("PIIDAgencyID","PIID","ReferencedIDVAgencyID","Referenced_IDV_PIID"),col_types="dcccc")
+
+summary(factor(OTA_data_current$Remotely_Crewed_CAU))
+
+
+OTA_data_current$IsRemotelyOperated[OTA_data_current$Remotely_Crewed_CAU %in% c("UAS","UAS/CUAS")]<-TRUE
+
+sum(OTA_data_current$Action_Obligation_OMB23_GDP21[OTA_data_current$IsRemotelyOperated],na.rm=TRUE)
+
+
+```

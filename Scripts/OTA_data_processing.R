@@ -23,21 +23,25 @@ OTA_data_current <- read_delim(
   "data_raw//OTA_All_Fields.csv",delim = ",",
   col_names = TRUE, guess_max = 500000,na=c("NA","NULL"),skip = 2)
 
+OTA_data_current<-standardize_variable_names(OTA_data_current,
+                                             path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+OTA_data_current<-apply_standard_lookups(OTA_data_current)
 
+# colnames(OTA_data)<-gsub(" ","_",colnames(OTA_data))
 
 OTA_data_current$MentionsCovid<-TRUE
 OTA_data_current$TopCovid<-FALSE
 
-sum( text_to_number(OTA_data_current$`Dollars Obligated`[grep("UNMANNED",OTA_data_current$`Description of Requirement`)]),na.rm=TRUE)
+# sum( text_to_number(OTA_data_current$Action_Obligation_OMB23_GDP21[grep("UNMANNED",OTA_data_current$Description_of_Requirement)]),na.rm=TRUE)
+# 
+# OTA_data_current[grep("UNMANNED",OTA_data_current$Description_of_Requirement),] %>% group_by(`Fiscal Year`) %>%
+#   dplyr::summarise(d= sum(text_to_number(Action_Obligation_OMB23_GDP21),na.rm=TRUE))
+# OTA_data_current
+# OTA_data_current[grep("UNMANNED",OTA_data_current$Description_of_Requirement),] %>% group_by(`Non-traditional Government Contractor Participation Code`) %>%
+#   dplyr::summarise(d= sum(text_to_number(Action_Obligation_OMB23_GDP21),na.rm=TRUE))
 
-OTA_data_current[grep("UNMANNED",OTA_data_current$`Description of Requirement`),] %>% group_by(`Fiscal Year`) %>%
-  dplyr::summarise(d= sum(text_to_number(`Dollars Obligated`),na.rm=TRUE))
-OTA_data_current
-OTA_data_current[grep("UNMANNED",OTA_data_current$`Description of Requirement`),] %>% group_by(`Non-traditional Government Contractor Participation Code`) %>%
-  dplyr::summarise(d= sum(text_to_number(`Dollars Obligated`),na.rm=TRUE))
 
-
-OTA_data_current$MentionsCovid[grep("COVID-19",OTA_data_current$`Description of Requirement`,invert=TRUE)]<-FALSE
+OTA_data_current$MentionsCovid[grep("COVID-19",OTA_data_current$Description_of_Requirement,invert=TRUE)]<-FALSE
 OTA_data_current$TopCovid[OTA_data_current$PIID %in% c("W15QKN1691002",
                                                        "W15QKN2191003",
                                                        "W911QY2190001",
@@ -49,9 +53,8 @@ OTA_data_current$TopCovid[OTA_data_current$PIID %in% c("W15QKN1691002",
                      OTA_data_current$MentionsCovid]<-TRUE
 
 summary(OTA_data_current$TopCovid)
-View(OTA_data_current$`Description of Requirement`[OTA_data_current$TopCovid==TRUE])
-descript<-OTA_data_current$`Description of Requirement`[OTA_data_current$TopCovid==TRUE]
-OTA_data_current$`Dollars Obligated`<-text_to_number(OTA_data_current$`Dollars Obligated`)
+View(OTA_data_current$Description_of_Requirement[OTA_data_current$TopCovid==TRUE])
+descript<-OTA_data_current$Description_of_Requirement[OTA_data_current$TopCovid==TRUE]
 
 
 # OTA_data <- read_delim(
@@ -59,17 +62,16 @@ OTA_data_current$`Dollars Obligated`<-text_to_number(OTA_data_current$`Dollars O
   # col_names = TRUE, guess_max = 500000,na=c("NA","NULL"))
 OTA_data<-OTA_data_current
 
-nrow(OTA_data[OTA_data$`Description of Requirement` %in% descript,])
+nrow(OTA_data[OTA_data$Description_of_Requirement %in% descript,])
 # OTA_data$TopCovid<-FALSE
-# OTA_data$TopCovid[OTA_data$`Description of Requirement` %in% descript]<-TRUE
+# OTA_data$TopCovid[OTA_data$Description_of_Requirement %in% descript]<-TRUE
 
-OTA_data_current %>% group_by(TopCovid,`Fiscal Year`) %>% dplyr::summarize(n=length(`Fiscal Year`),
-                                                                            o=sum(`Dollars Obligated`))
-OTA_data %>% group_by(TopCovid,`Fiscal Year`) %>% dplyr::summarize(n=length(`Fiscal Year`),
-                                                                            o=sum(`Dollars Obligated`))
+OTA_data_current %>% group_by(TopCovid,Fiscal_Year) %>% dplyr::summarize(n=length(Fiscal_Year),
+                                                                            o=sum(Action_Obligation_OMB23_GDP21))
+OTA_data %>% group_by(TopCovid,Fiscal_Year) %>% dplyr::summarize(n=length(Fiscal_Year),
+                                                                            o=sum(Action_Obligation_OMB23_GDP21))
 
 
-colnames(OTA_data)<-gsub(" ","_",colnames(OTA_data))
 # 
 # initial_clean<-function(df){
 #   if(substring(df$fiscal_year[nrow(df)],1,12)=="Completion time")
@@ -90,16 +92,6 @@ colnames(OTA_data)<-gsub(" ","_",colnames(OTA_data))
 #   df$dFYear<-as.Date(paste("1/1/",as.character(df$fiscal_year),sep=""),"%m/%d/%Y")
 #   df
 # }
-
-OTA_data<-apply_standard_lookups(OTA_data)
-
-OTA_data<-deflate(OTA_data,
-                   money_var = "Dollars_Obligated",
-                   fy_var="Fiscal_Year",
-                   deflator_var="OMB20_GDP20"
-)
-
-OTA_data$dFYear<-as.Date(paste("1/1/",as.character(OTA_data$Fiscal_Year),sep=""),"%m/%d/%Y")
 
 #Consolidate categories for Vendor Size
 
@@ -139,6 +131,8 @@ OTA_data$dFYear<-as.Date(paste("1/1/",as.character(OTA_data$Fiscal_Year),sep="")
 #                                   dir="Lookups/"
 # )
 
+
+
 if("PlatformPortfolio" %in% colnames(OTA_data)){
   colnames(OTA_data)[colnames(OTA_data)=="PlatformPortfolio"]<-"OrigPlat"
   OTA_data$OrigPlat<-factor(OTA_data$OrigPlat)
@@ -158,32 +152,20 @@ if("PlatformPortfolio" %in% colnames(OTA_data)){
   
 }
 
-levels(factor(OTA_data$Contracting_Agency_Name))
+levels(factor(OTA_data$ContractingAgencyName))
 #Classify Product or Service Codes
+
+write.csv(colnames(OTA_data),"OTA_names.csv")
+
 OTA_data<-csis360::read_and_join_experiment(OTA_data,
                                   "ProductOrServiceCodes.csv",
-                                  by=c("Product_or_Service_Code"="ProductOrServiceCode"),
+                                  by=c("ProductOrServiceCode"="ProductOrServiceCode"),
                                   # replace_na_var="ProductServiceOrCode",
-                                  add_var=c("PlatformPortfolio","ProductServiceOrRnDarea"),
+                                  add_var=c("PlatformPortfolio"),
                                   path=#"C:\\Users\\gsand\\Repositories\\Lookup-Tables\\",
                                     "https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
                                   dir=""
 )
-
-
-
-
-#Classify Product or Service Codes
-OTA_data<-csis360::read_and_join(OTA_data,
-  "LOOKUP_Buckets.csv",
-  # by="ProductOrServiceArea",
-  by="ProductServiceOrRnDarea",
-  replace_na_var="ProductServiceOrRnDarea",
-  add_var="ProductServiceOrRnDarea.sum",
-  path="https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/",
-  dir="Lookups/"
-)
-
 
 
 colnames(OTA_data)[colnames(OTA_data)=="PlatformPortfolio"]<-"PSCPlatformPortfolio"
@@ -198,24 +180,18 @@ OTA_data<-read_and_join_experiment(OTA_data,
 OTA_data$PlatformPortfolio[is.na(OTA_data$PlatformPortfolio)]<-OTA_data$PSCPlatformPortfolio[is.na(OTA_data$PlatformPortfolio)]
 
 levels(factor(OTA_data$PlatformPortfolio))
-OTA_data$Dollars_Obligated_OMB20_GDP20
+
 # View(OTA_data %>% filter(as.character(PlatformPortfolio)!=as.character(OrigPlat)) %>%
 #        group_by(Product_or_Service_Code,Product_or_Service_Description,PlatformPortfolio,OrigPlat) %>% 
 #        summarise(Dollars_Obligated_OMB20_GDP20=sum(Dollars_Obligated_OMB20_GDP20)))
 
 
 # 
-OTA_data<-replace_nas_with_unlabeled(OTA_data,"SubCustomer","Uncategorized")
-OTA_data<-csis360::read_and_join_experiment(OTA_data,
-                        "SubCustomer.csv",
-                        by=c("Customer"="Customer","SubCustomer"="SubCustomer"),
-                        add_var=c("SubCustomer.platform","SubCustomer.sum"),
-                        path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                        dir="office/"
-)
+# OTA_data<-replace_nas_with_unlabeled(OTA_data,"SubCustomer","Uncategorized")
+# summary(factor(OTA_data$SubCustomer)
 
-OTA_data %>% group_by(Contracting_Agency_Name ,Contracting_Agency_ID) %>% 
-  filter(Customer=="Defense") %>%summarise(Dollars_Obligated_OMB20_GDP20=sum(Dollars_Obligated_OMB20_GDP20))
+OTA_data %>% group_by(ContractingAgencyName ,Contracting_Agency_ID) %>% 
+  filter(Customer=="Defense") %>%summarise(Action_Obligation_OMB23_GDP21=sum(Action_Obligation_OMB23_GDP21))
 OTA_data$SubCustomer.OTA<-OTA_data$SubCustomer
 OTA_data$SubCustomer.OTA[OTA_data$Contracting_Agency_ID=="97AE"]<-"DARPA"
 
@@ -267,10 +243,65 @@ OTA_data$SubCustomer.OTA[OTA_data$Contracting_Agency_ID=="97AE"]<-"DARPA"
 # )
 # 
 
-OTA_data$ProductServiceOrRnDarea.covid<-as.character(OTA_data$ProductServiceOrRnDarea.sum)
+######### Covid Labeling ##############
+
+OTA_data$ProductServiceOrRnDarea.covid<-as.character(OTA_data$SimpleArea)
 OTA_data$ProductServiceOrRnDarea.covid[OTA_data$TopCovid==TRUE]<-"R&D (Top OTAs responding to Covid-19)"
 OTA_data$ProductServiceOrRnDarea.covid[OTA_data$ProductServiceOrRnDarea.covid=="R&D"]<-"R&D (Other)"
 
+######### Remotely Crewed lbeling
+
+OTA_data$IsRemotelyOperated<-FALSE
+OTA_data$IsRemotelyOperated[OTA_data$ProductOrServiceCode=="1550"]<-TRUE
+sum(OTA_data$Action_Obligation_OMB23_GDP21[OTA_data$IsRemotelyOperated],na.rm=TRUE)
+
+
+
+
+OTA_data<-read_and_join_experiment(OTA_data,
+                                           path="data//semi_clean//",dir="",lookup_file = "ota_description_UAS.csv",
+                                           add_var="Remotely_Crewed",
+                                           skip_check_var = "Remotely_Crewed",
+                                           by="Description_of_Requirement",
+                                           col_types = "ccccc",
+                                   case_sensitive = FALSE)
+
+summary(factor(OTA_data$Remotely_Crewed))
+nrow(unique(OTA_data %>% filter (Remotely_Crewed!="") %>% select(Description_of_Requirement,Remotely_Crewed)))
+
+ota_description_UAS_test<-read.csv("data//semi_clean//ota_description_UAS.csv") %>% filter (Remotely_Crewed!="")
+
+#Kluldge fix, I'm guessing the write to csv and read back in process broke something somewhere.
+
+missing<-ota_description_UAS_test[!ota_description_UAS_test$Description_of_Requirement %in% OTA_data$
+                                    Description_of_Requirement[!is.na(OTA_data$Remotely_Crewed)],]
+summary(factor(OTA_data$Remotely_Crewed[OTA_data$Description_of_Requirement %in% ota_description_UAS_test$Description_of_Requirement]))
+misalign<-OTA_data[OTA_data$Description_of_Requirement %in% ota_description_UAS_test$Description_of_Requirement & is.na(OTA_data$Remotely_Crewed),]
+sum(misalign$Action_Obligation_OMB23_GDP21)
+summary(factor(missing$Remotely_Crewed))
+OTA_data$Remotely_Crewed[OTA_data$Description_of_Requirement %in% missing$Description_of_Requirement[missing$Remotely_Crewed=="UAS"]]<-"UAS"
+
+nrow(unique(OTA_data %>% filter (Remotely_Crewed!="") %>% select(Description_of_Requirement,Remotely_Crewed)))
+
+OTA_data$IsRemotelyOperated[OTA_data$Remotely_Crewed %in% c("UAS","UAS/CUAS")]<-TRUE
+sum(OTA_data$Action_Obligation_OMB23_GDP21[OTA_data$IsRemotelyOperated],na.rm=TRUE)
+OTA_data$PIIDAgencyID
+OTA_data$ReferencedIDVAgencyID[is.na(OTA_data$ReferencedIDVAgencyID)]<-""
+OTA_data<-read_and_join_experiment(OTA_data,
+                                           path="data//semi_clean//",dir="",lookup_file = "ota_CAU_UAS.csv",
+                                           add_var="Remotely_Crewed_CAU",
+                                           skip_check_var = "Remotely_Crewed_CAU",
+                                           by=c("PIIDAgencyID","PIID","ReferencedIDVAgencyID","Referenced_IDV_PIID"),col_types="dcccc")
+
+summary(factor(OTA_data$Remotely_Crewed_CAU))
+
+
+OTA_data$IsRemotelyOperated[OTA_data$Remotely_Crewed_CAU %in% c("UAS","UAS/CUAS")]<-TRUE
+
+sum(OTA_data$Action_Obligation_OMB23_GDP21[OTA_data$IsRemotelyOperated],na.rm=TRUE)
+
+OTA_data$PlatformPortfolioUAV<-as.character(OTA_data$PlatformPortfolio)
+OTA_data$PlatformPortfolioUAV[OTA_data$IsRemotelyOperated]<-"Remotely Crewed"
 
 
 # set correct data types
@@ -282,9 +313,10 @@ OTA_data %<>%
   mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
   mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
   mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
+  mutate(PlatformPortfolioUAV = factor(PlatformPortfolioUAV)) %>%
   mutate(ProductServiceOrRnDarea.covid = factor(ProductServiceOrRnDarea.covid)) %>%
   # mutate(Shiny.VendorSize = factor(Shiny.VendorSize)) %>%
-  mutate(ProductServiceOrRnDarea.sum = factor(ProductServiceOrRnDarea.sum))# %>%
+  mutate(SimpleArea = factor(SimpleArea))# %>%
   # mutate(Competition.sum = factor(Competition.sum)) %>%
   # mutate(Competition.effective.only = factor(Competition.effective.only)) %>%
   # mutate(Competition.multisum = factor(Competition.multisum))  %>%
@@ -292,32 +324,33 @@ OTA_data %<>%
   # mutate(Vehicle = factor(Vehicle)) %>%
   # mutate(PricingUCA = factor(PricingUCA))
 
+str(OTA_data$ContractingOfficeName)
+OTA_data$MajorCommandName[OTA_data$MajorCommandName==""]<-"Unlabeled"
 
+ota_lc<-csis360::prepare_labels_and_colors(OTA_data,
+                                           path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+ota_ck<-csis360::get_column_key(OTA_data,
+                                path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
 
-ota_lc<-csis360::prepare_labels_and_colors(OTA_data)
-ota_ck<-csis360::get_column_key(OTA_data)
-
-levels(factor(OTA_data$Contracting_Department_ID))
 
 save(OTA_data,ota_lc,ota_ck, file="data/semi_clean/Federal_OTA.Rda")
-ota_def<-OTA_data %>% filter(Contracting_Department_ID=="9700")
+ota_def<-OTA_data %>% filter(DepartmentID=="9700")
 save(ota_def,ota_lc,ota_ck, file="data/semi_clean/Defense_OTA.Rda")
 
 
 # load(file="data/semi_clean/Defense_OTA.Rda")
-colnames(ota_contract)[colnames(ota_contract)=="Dollars_Obligated_OMB20_GDP20"]<-"Action_Obligation_OMB20_GDP20"
-colnames(ota_contract)[colnames(ota_contract)=="Dollars_Obligated_Then_Year"]<-"Action_Obligation_Then_Year"
-
-
-
-
-
-
-ota_def<-apply_standard_lookups(ota_def)
+if(!exists()){
+  load(file=file.path("data","clean","fed_summary_FPDS.rda"))
+}
+ota_contract<-OTA_data
 ota_contract$IsOTA<-"OTA"
-platpscintldef$IsOTA<-"Contract"
-ota_contract<-rbind(ota_contract[,colnames(ota_contract)[colnames(ota_contract) %in% colnames(platpscintldef)]],
-                    platpscintldef[,colnames(platpscintldef)[colnames(platpscintldef) %in% colnames(ota_contract)]])
+fed_data$IsOTA<-"Contract"
+ota_contract<-rbind(ota_contract[,colnames(ota_contract)[colnames(ota_contract) %in% colnames(fed_data)]],
+                    fed_data[,colnames(fed_data)[colnames(fed_data) %in% colnames(ota_contract)]])
+# platpscintldef$IsOTA<-"Contract"
+# ota_contract<-rbind(ota_contract[,colnames(ota_contract)[colnames(ota_contract) %in% colnames(platpscintldef)]],
+#                     platpscintldef[,colnames(platpscintldef)[colnames(platpscintldef) %in% colnames(ota_contract)]])
 save(ota_contract,ota_lc,ota_ck, file="data/semi_clean/Defense_OTA_contract.Rda")
 
+summary(fed_data$PlatformPortfolioUAV)
 
