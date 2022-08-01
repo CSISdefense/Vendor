@@ -282,7 +282,7 @@ sum(missing_money$Action_Obligation_OMB23_GDP21)
 missing_money<-missing_money %>%  filter(!CUAS| is.na(CUAS)) 
 sum(missing_money$Action_Obligation_OMB23_GDP21)
 
-View(missing_money %>% arrange(-Action_Obligation_OMB23_GDP21) %>% select(Description_of_Requirement,Action_Obligation_OMB23_GDP21,Remotely_Crewed))
+# View(missing_money %>% arrange(-Action_Obligation_OMB23_GDP21) %>% select(Description_of_Requirement,Action_Obligation_OMB23_GDP21,Remotely_Crewed))
 
 
 summary(factor(OTA_data$Remotely_Crewed))
