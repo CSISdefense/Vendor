@@ -352,9 +352,9 @@ ota_ck<-csis360::get_column_key(OTA_data,
                                 path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
 
 
-save(OTA_data,ota_lc,ota_ck, file="data/semi_clean/Federal_OTA.Rda")
+save(OTA_data,ota_lc,ota_ck, file="data/clean/Federal_OTA.Rda")
 ota_def<-OTA_data %>% filter(DepartmentID=="9700")
-save(ota_def,ota_lc,ota_ck, file="data/semi_clean/Defense_OTA.Rda")
+save(ota_def,ota_lc,ota_ck, file="data/clean/Defense_OTA.Rda")
 
 
 # load(file="data/semi_clean/Defense_OTA.Rda")
@@ -369,7 +369,7 @@ ota_contract<-rbind(ota_contract[,colnames(ota_contract)[colnames(ota_contract) 
 # platpscintldef$IsOTA<-"Contract"
 # ota_contract<-rbind(ota_contract[,colnames(ota_contract)[colnames(ota_contract) %in% colnames(platpscintldef)]],
 #                     platpscintldef[,colnames(platpscintldef)[colnames(platpscintldef) %in% colnames(ota_contract)]])
-save(ota_contract,ota_lc,ota_ck, file="data/semi_clean/Defense_OTA_contract.Rda")
+save(ota_contract,ota_lc,ota_ck, file="data/clean/OTA_contract.Rda")
 
 summary(fed_data$PlatformPortfolioUAV)
 
