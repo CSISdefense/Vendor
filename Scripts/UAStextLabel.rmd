@@ -31,10 +31,10 @@ descrip$descrip_row_number<-seq(1,nrow(descrip))
 
 # descrip<-descrip%>%mutate(descrip_hasp=rlang::hash(descrip$Description_of_Requirement))
 #Write the file preserving descrip_row_number (leave this one alone)
-write_delim(descrip,file="..//data_raw//OTA_descrip_hash.csv",delim = ",")#,fileEncoding = "UTF-16LE")
+write_delim(descrip,file="..//data_raw//OTA_descrip_row_number.csv",delim = ",")#,fileEncoding = "UTF-16LE")
 #Add the descrip_row_number back to the main dataframe
 OTA_data_current<-read_and_join_experiment(OTA_data_current,
-                         path="..//data_raw//",dir="",lookup_file = "OTA_descrip_hash.csv",
+                         path="..//data_raw//",dir="",lookup_file = "OTA_descrip_row_number.csv",
                          add_var="descrip_row_number",
                          # skip_check_var = "Remotely_Crewed",
                          by="Description_of_Requirement")
@@ -45,7 +45,7 @@ OTA_data_current<-read_and_join_experiment(OTA_data_current,
 
 
 OTA_data_current<-read_and_join_experiment(OTA_data_current,
-                         path="..//data_raw//",dir="",lookup_file = "OTA_descrip_hash.csv",
+                         path="..//data_raw//",dir="",lookup_file = "OTA_descrip_row_number.csv",
                          add_var="descrip_row_number",
                          # skip_check_var = "Remotely_Crewed",
                          by="Description_of_Requirement")
@@ -55,6 +55,14 @@ summary(OTA_data_current$descrip_row_number)
 #Instead, adding am auto_number so we can join on that rather than these complex text strings
 #IDeally we'd use a reproducible hash, but oen problem at a time.
 
+d<-read_and_join_experiment(descrip,
+                         path="..//data//semi_clean//",dir="",lookup_file = "ota_description_UAS.txt",
+                         add_var="Remotely_Crewed",
+                         # skip_check_var = "Remotely_Crewed",
+                         by="Description_of_Requirement")
+
+
+write_delim(d,file.path("..","data","semi_clean","ota_description_UAS.csv"),na = "",delim=",")
 ```
 
 # Setup
@@ -67,7 +75,7 @@ When you click the **Knit** button a document will be generated that includes bo
 
 ```{r setup}
 
-d<-read_delim(file.path("..","data","semi_clean","ota_description_UAS.txt"),na ="",col_types="ccccc",delim="\t")
+d<-read_delim(file.path("..","data","semi_clean","ota_description_UAS.csv"),na ="",col_types="ccccc",delim=",")
 problems(d)
 d<-standardize_variable_names(d)
 # grep("UAS|Unmanned|Uninhabited|Uncrewed|Remotely Crewed",d$Description_of_Requirement)
@@ -132,7 +140,7 @@ sum(d$rq,na.rm=TRUE)
 d$any_uas<-NA
 d$any_uas<-d$UAS|d$mq|d$rq
 
-write_delim(d,file.path("..","data","semi_clean","ota_description_UAS.txt"),na = "",delim="\t",eol="\r\n")
+write_delim(d,file.path("..","data","semi_clean","ota_description_UAS.csv"),na = "",delim=",")
 
 #UUVSS maritime
 #MORFIUS counter-uas uas
@@ -151,17 +159,23 @@ OTA_data_current <- read_delim(
 OTA_data_current<-standardize_variable_names(OTA_data_current)
 
 OTA_data_current<-read_and_join_experiment(OTA_data_current,
+                         path="..//data_raw//",dir="",lookup_file = "OTA_descrip_row_number.csv",
+                         add_var="descrip_row_number",
+                         # skip_check_var = "Remotely_Crewed",
+                         by="Description_of_Requirement")
+
+OTA_data_current<-read_and_join_experiment(OTA_data_current,
                          path="..//data//semi_clean//",dir="",lookup_file = "ota_description_UAS.csv",
                          add_var="Remotely_Crewed",
-                         skip_check_var = "Remotely_Crewed",
-                         by="Description_of_Requirement",
-                         col_types = "ccccc")
+                         # skip_check_var = "Remotely_Crewed",
+                         by="descrip_row_number",
+                         col_types = "cnccccccccc")
 
 OTA_data_current$Remotely_Crewed[
 OTA_data_current$Remotely_Crewed %in% c("","FALSE")]<-NA
 
 
-sum(text_to_number(OTA_data_current$Action_Obligation)[OTA_data_current$Remotely_Crewed %in% c("UAS","UAS/CUAS")])
+sum(text_to_number(OTA_data_current$Action_Obligation)[OTA_data_current$Remotely_Crewed %in% c("UAS","UAS/C-UAS")])
 
 
 #This is incredibly slow ~20m, perhaps because of all the warning it prints.
@@ -169,7 +183,7 @@ sum(text_to_number(OTA_data_current$Action_Obligation)[OTA_data_current$Remotely
 #   mutate(max_rc=max(Remotely_Crewed,na.rm=TRUE),
 #          min_rc=min(Remotely_Crewed,na.rm=TRUE))
 
-Remotely_Crewed_CAU<-OTA_data_current %>% filter(Remotely_Crewed %in% c("UAS","UAS/CUAS"))%>%
+Remotely_Crewed_CAU<-OTA_data_current %>% filter(Remotely_Crewed %in% c("UAS","UAS/C-UAS"))%>%
   group_by(`PIIDAgencyID`,PIID,`ReferencedIDVAgencyID`,Referenced_IDV_PIID,
            Remotely_Crewed) %>% summarise()
 
@@ -220,11 +234,11 @@ sum(OTA_data_current$Action_Obligation_OMB23_GDP21[OTA_data_current$IsRemotelyOp
 OTA_data_current<-read_and_join_experiment(OTA_data_current,
                          path="..//data//semi_clean//",dir="",lookup_file = "ota_description_UAS.csv",
                          add_var="Remotely_Crewed",
-                         skip_check_var = "Remotely_Crewed",
+                         # skip_check_var = "Remotely_Crewed",
                          by="Description_of_Requirement",
                          col_types = "ccccc")
 
-OTA_data_current$IsRemotelyOperated[OTA_data_current$Remotely_Crewed %in% c("UAS","UAS/CUAS")]<-TRUE
+OTA_data_current$IsRemotelyOperated[OTA_data_current$Remotely_Crewed %in% c("UAS","UAS/C-UAS")]<-TRUE
 sum(OTA_data_current$Action_Obligation_OMB23_GDP21[OTA_data_current$IsRemotelyOperated],na.rm=TRUE)
 
 OTA_data_current$`ReferencedIDVAgencyID`[is.na(OTA_data_current$`ReferencedIDVAgencyID`)]<-""
@@ -237,7 +251,7 @@ OTA_data_current<-read_and_join_experiment(OTA_data_current,
 summary(factor(OTA_data_current$Remotely_Crewed_CAU))
 
 
-OTA_data_current$IsRemotelyOperated[OTA_data_current$Remotely_Crewed_CAU %in% c("UAS","UAS/CUAS")]<-TRUE
+OTA_data_current$IsRemotelyOperated[OTA_data_current$Remotely_Crewed_CAU %in% c("UAS","UAS/C-UAS")]<-TRUE
 
 sum(OTA_data_current$Action_Obligation_OMB23_GDP21[OTA_data_current$IsRemotelyOperated],na.rm=TRUE)
 
