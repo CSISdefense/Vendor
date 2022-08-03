@@ -13,9 +13,51 @@ library(csis360)
 library(dplyr)
 
 library(tidyr)
+
+
+OTA_data_current <- read_delim(
+  "..//data_raw//OTA_All_Fields.csv",delim = ",",
+  col_names = TRUE, guess_max = 500000,na=c("NA","NULL"),skip = 2)
+
+
+
+OTA_data_current<-standardize_variable_names(OTA_data_current)
+
+descrip<-data.frame(Description_of_Requirement=unique(OTA_data_current$Description_of_Requirement),
+              second="Second")
+
+#Create the descrip_row_number 
+descrip$descrip_row_number<-seq(1,nrow(descrip))
+
+# descrip<-descrip%>%mutate(descrip_hasp=rlang::hash(descrip$Description_of_Requirement))
+#Write the file preserving descrip_row_number (leave this one alone)
+write_delim(descrip,file="..//data_raw//OTA_descrip_hash.csv",delim = ",")#,fileEncoding = "UTF-16LE")
+#Add the descrip_row_number back to the main dataframe
+OTA_data_current<-read_and_join_experiment(OTA_data_current,
+                         path="..//data_raw//",dir="",lookup_file = "OTA_descrip_hash.csv",
+                         add_var="descrip_row_number",
+                         # skip_check_var = "Remotely_Crewed",
+                         by="Description_of_Requirement")
+
+#I have tested this, importing into excel and saving or importing into google sheets and savings seems to corrupt matters.
+#Through dropping of quotes or the like.
+
+
+
+OTA_data_current<-read_and_join_experiment(OTA_data_current,
+                         path="..//data_raw//",dir="",lookup_file = "OTA_descrip_hash.csv",
+                         add_var="descrip_row_number",
+                         # skip_check_var = "Remotely_Crewed",
+                         by="Description_of_Requirement")
+
+summary(OTA_data_current$descrip_row_number)
+
+#Instead, adding am auto_number so we can join on that rather than these complex text strings
+#IDeally we'd use a reproducible hash, but oen problem at a time.
+
 ```
 
-## R Markdown
+# Setup
 
 This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
@@ -23,13 +65,12 @@ When you click the **Knit** button a document will be generated that includes bo
 
 ### OTA description UAS labeling
 
-```{r cars}
+```{r setup}
 
-
-d<-read_csv(file.path("..","data","semi_clean","ota_description_UAS.csv"),na ="",col_types="ccccc")
+d<-read_delim(file.path("..","data","semi_clean","ota_description_UAS.txt"),na ="",col_types="ccccc",delim="\t")
 problems(d)
 d<-standardize_variable_names(d)
-grep("UAS|Unmanned|Uninhabited|Uncrewed|Remotely Crewed",d$Description_of_Requirement)
+# grep("UAS|Unmanned|Uninhabited|Uncrewed|Remotely Crewed",d$Description_of_Requirement)
 d$UAS<-NA
 d$CUAS<-NA
 d$Maritime<-NA
@@ -91,7 +132,7 @@ sum(d$rq,na.rm=TRUE)
 d$any_uas<-NA
 d$any_uas<-d$UAS|d$mq|d$rq
 
-write_csv(d,file.path("..","data","semi_clean","ota_description_UAS.csv"),na = "")
+write_delim(d,file.path("..","data","semi_clean","ota_description_UAS.txt"),na = "",delim="\t",eol="\r\n")
 
 #UUVSS maritime
 #MORFIUS counter-uas uas
