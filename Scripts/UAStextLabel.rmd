@@ -171,8 +171,7 @@ OTA_data_current<-read_and_join_experiment(OTA_data_current,
                          by="descrip_row_number",
                          col_types = "cnccccccccc")
 
-OTA_data_current$Remotely_Crewed[
-OTA_data_current$Remotely_Crewed %in% c("","FALSE")]<-NA
+OTA_data_current$Remotely_Crewed[OTA_data_current$Remotely_Crewed %in% c("","FALSE")]<-NA
 
 
 sum(text_to_number(OTA_data_current$Action_Obligation)[OTA_data_current$Remotely_Crewed %in% c("UAS","UAS/C-UAS")])
@@ -184,10 +183,10 @@ sum(text_to_number(OTA_data_current$Action_Obligation)[OTA_data_current$Remotely
 #          min_rc=min(Remotely_Crewed,na.rm=TRUE))
 
 Remotely_Crewed_CAU<-OTA_data_current %>% filter(Remotely_Crewed %in% c("UAS","UAS/C-UAS"))%>%
-  group_by(`PIIDAgencyID`,PIID,`ReferencedIDVAgencyID`,Referenced_IDV_PIID,
-           Remotely_Crewed) %>% summarise()
+  group_by(PIIDAgencyID,PIID,ReferencedIDVAgencyID,Referenced_IDV_PIID,
+           Remotely_Crewed) %>% dplyr::summarise()
 
-Remotely_Crewed_CAU$`ReferencedIDVAgencyID`[is.na(Remotely_Crewed_CAU$`ReferencedIDVAgencyID`)]<-""
+Remotely_Crewed_CAU$ReferencedIDVAgencyID[is.na(Remotely_Crewed_CAU$ReferencedIDVAgencyID)]<-""
 
 # Training and Readiness Accelerator (TReX) does include UAS, but is a  broader OTA.
 Remotely_Crewed_CAU<-Remotely_Crewed_CAU %>% filter(PIID!="W900KK1890005") 
@@ -228,15 +227,18 @@ OTA_data_current$IsRemotelyOperated<-FALSE
 OTA_data_current$IsRemotelyOperated[OTA_data_current$ProductOrServiceCode=="1550"]<-TRUE
 sum(OTA_data_current$Action_Obligation_OMB23_GDP21[OTA_data_current$IsRemotelyOperated],na.rm=TRUE)
 
-
-
+OTA_data_current<-read_and_join_experiment(OTA_data_current,
+                         path="..//data_raw//",dir="",lookup_file = "OTA_descrip_row_number.csv",
+                         add_var="descrip_row_number",
+                         # skip_check_var = "Remotely_Crewed",
+                         by="Description_of_Requirement")
 
 OTA_data_current<-read_and_join_experiment(OTA_data_current,
                          path="..//data//semi_clean//",dir="",lookup_file = "ota_description_UAS.csv",
                          add_var="Remotely_Crewed",
                          # skip_check_var = "Remotely_Crewed",
-                         by="Description_of_Requirement",
-                         col_types = "ccccc")
+                         by="descrip_row_number",
+                         col_types = "cnccccccccc")
 
 OTA_data_current$IsRemotelyOperated[OTA_data_current$Remotely_Crewed %in% c("UAS","UAS/C-UAS")]<-TRUE
 sum(OTA_data_current$Action_Obligation_OMB23_GDP21[OTA_data_current$IsRemotelyOperated],na.rm=TRUE)
