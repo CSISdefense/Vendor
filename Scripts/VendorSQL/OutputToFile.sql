@@ -188,6 +188,7 @@ SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 --11h30m w / 4,529,207 rows
 --No plan shown until the very end.
+--1023 completed with errors 4,532,322
 
 DECLARE	@return_value int
 --11h25m  fail

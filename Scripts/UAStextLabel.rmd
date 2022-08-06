@@ -23,8 +23,7 @@ OTA_data_current <- read_delim(
 
 OTA_data_current<-standardize_variable_names(OTA_data_current)
 
-descrip<-data.frame(Description_of_Requirement=unique(OTA_data_current$Description_of_Requirement),
-              second="Second")
+descrip<-data.frame(Description_of_Requirement=unique(OTA_data_current$Description_of_Requirement))
 
 #Create the descrip_row_number 
 descrip$descrip_row_number<-seq(1,nrow(descrip))
@@ -61,6 +60,8 @@ d<-read_and_join_experiment(descrip,
                          # skip_check_var = "Remotely_Crewed",
                          by="Description_of_Requirement")
 
+m<-read_csv(file.path("..","data","semi_clean","contract_MajorProgramCode.csv"))
+
 
 write_delim(d,file.path("..","data","semi_clean","ota_description_UAS.csv"),na = "",delim=",")
 ```
@@ -78,69 +79,84 @@ When you click the **Knit** button a document will be generated that includes bo
 d<-read_delim(file.path("..","data","semi_clean","ota_description_UAS.csv"),na ="",col_types="ccccc",delim=",")
 problems(d)
 d<-standardize_variable_names(d)
-# grep("UAS|Unmanned|Uninhabited|Uncrewed|Remotely Crewed",d$Description_of_Requirement)
-d$UAS<-NA
-d$CUAS<-NA
-d$Maritime<-NA
-d$mq<-NA
-d$rq<-NA
-d$UAS[grep("UAS",d$Description_of_Requirement)]<-TRUE
-sum(d$UAS,na.rm=TRUE)
 
-d$UAS[grep("QUASAR",d$Description_of_Requirement)]<-NA
-sum(d$UAS,na.rm=TRUE)
-d$UAS[grep("UAV",d$Description_of_Requirement)]<-TRUE
-sum(d$UAS,na.rm=TRUE)
-d$UAS[grep("Unmanned",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
-sum(d$UAS,na.rm=TRUE)
-d$UAS[grep("Remotely Crewed",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
-sum(d$UAS,na.rm=TRUE)
-d$UAS[grep("Uninhabited",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
-sum(d$UAS,na.rm=TRUE)
+label_UAS<-function(x,col="Description_of_Requirement"){
+  x<-as.data.frame(x)
+  # grep("UAS|Unmanned|Uninhabited|Uncrewed|Remotely Crewed",x$Description_of_Requirement)
+  x$UAS<-NA
+  x$CUAS<-NA
+  x$Maritime<-NA
+  x$mq<-NA
+  x$rq<-NA
+  x$UAS[grep("UAS",x[,col])]<-TRUE
+  sum(x$UAS,na.rm=TRUE)
+  
+  x$UAS[grep("QUASAR",x[,col])]<-NA
+  x$UAS[grep("QUASI",x[,col])]<-NA
+  sum(x$UAS,na.rm=TRUE)
+  x$UAS[grep("UAV",x[,col])]<-TRUE
+  sum(x$UAS,na.rm=TRUE)
+  x$UAS[grep("Unmanned",x[,col],ignore.case = TRUE)]<-TRUE
+  sum(x$UAS,na.rm=TRUE)
+  x$UAS[grep("Remotely Crewed",x[,col],ignore.case = TRUE)]<-TRUE
+  sum(x$UAS,na.rm=TRUE)
+  x$UAS[grep("Remotely Piloted",x[,col],ignore.case = TRUE)]<-TRUE
+  sum(x$UAS,na.rm=TRUE)
+  x$UAS[grep("RPS",x[,col],ignore.case = TRUE)]<-TRUE
+  sum(x$UAS,na.rm=TRUE)
+  x$UAS[grep("Uninhabited",x[,col],ignore.case = TRUE)]<-TRUE
+  sum(x$UAS,na.rm=TRUE)
+  
+  x$UAS[grep("Uncrewed",x[,col],ignore.case = TRUE)]<-TRUE
+  sum(x$UAS,na.rm=TRUE)
+  
+  # Excluding Counter UAS
+  x$CUAS[grep("Counter Unmanned",x[,col],ignore.case = TRUE)]<-TRUE
+  sum(x$CUAS,na.rm=TRUE)
+  x$CUAS[grep("C-UAS",x[,col],ignore.case = TRUE)]<-TRUE
+  x$CUAS[grep("CSUAS",x[,col],ignore.case = TRUE)]<-TRUE
+  x$CUAS[grep("Counter UAS",x[,col],ignore.case = TRUE)]<-TRUE
+  x$CUAS[grep("Counter-UAS",x[,col],ignore.case = TRUE)]<-TRUE
+  
+  x$CUAS[grep("Counter-Unmanned",x[,col],ignore.case = TRUE)]<-TRUE
+  sum(x$CUAS,na.rm=TRUE)
+  
+  
+  x$Maritime[grep("Unmanned Surface",x[,col],ignore.case = TRUE)]<-TRUE
+  x$Maritime[grep("Unmanned Maritime",x[,col],ignore.case = TRUE)]<-TRUE
+  
+  x$Maritime[grep("UNDERWATER UNMANNED",x[,col],ignore.case = TRUE)]<-TRUE
+  x$Maritime[grep("UNMANNED UNDERWATER",x[,col],ignore.case = TRUE)]<-TRUE
+  
+  x$Maritime[grep("UNMANNED UNDERSEA",x[,col],ignore.case = TRUE)]<-TRUE
+  sum(x$CUAS,na.rm=TRUE)
+  
+  
+  x$UAS[x$CUAS==TRUE]<-NA
+  
+  x$UAS[x$Maritime==TRUE]<-NA
+  sum(x$UAS,na.rm=TRUE)
+  
+  
+  
+  x$mq[grep("MQ",x[,col],ignore.case = TRUE)]
+  x$mq[grep("MQT",x[,col],ignore.case = TRUE)]<-NA
+  sum(x$mq,na.rm = TRUE)
+  x$rq[grep("RQ",x[,col],ignore.case = TRUE)]
+  x$rq[grep("SRQ",x[,col],ignore.case = TRUE)]<-NA
+  sum(x$rq,na.rm=TRUE)
+  
+  x$any_uas<-NA
+  x$any_uas<-x$UAS|x$mq|x$rq
+  x
+}
 
-d$UAS[grep("Uncrewed",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
-sum(d$UAS,na.rm=TRUE)
 
-# Excluding Counter UAS
-d$CUAS[grep("Counter Unmanned",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
-sum(d$CUAS,na.rm=TRUE)
-d$CUAS[grep("C-UAS",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
-d$CUAS[grep("CSUAS",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
-d$CUAS[grep("Counter UAS",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
-d$CUAS[grep("Counter-UAS",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
-
-d$CUAS[grep("Counter-Unmanned",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
-sum(d$CUAS,na.rm=TRUE)
-
-
-d$Maritime[grep("Unmanned Surface",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
-d$Maritime[grep("Unmanned Maritime",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
-
-d$Maritime[grep("UNDERWATER UNMANNED",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
-d$Maritime[grep("UNMANNED UNDERWATER",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
-
-d$Maritime[grep("UNMANNED UNDERSEA",d$Description_of_Requirement,ignore.case = TRUE)]<-TRUE
-sum(d$CUAS,na.rm=TRUE)
-
-
-d$UAS[d$CUAS==TRUE]<-NA
-
-d$UAS[d$Maritime==TRUE]<-NA
-sum(d$UAS,na.rm=TRUE)
-
-
-
-d$mq[grep("MQ",d$Description_of_Requirement,ignore.case = TRUE)]
-d$mq[grep("MQT",d$Description_of_Requirement,ignore.case = TRUE)]<-NA
-sum(d$mq,na.rm = TRUE)
-d$rq[grep("RQ",d$Description_of_Requirement,ignore.case = TRUE)]
-d$rq[grep("SRQ",d$Description_of_Requirement,ignore.case = TRUE)]<-NA
-sum(d$rq,na.rm=TRUE)
-
-d$any_uas<-NA
-d$any_uas<-d$UAS|d$mq|d$rq
+d<-label_UAS(d,"Description_of_Requirement")
+m<-label_UAS(m,"majorprogramcode")
 
 write_delim(d,file.path("..","data","semi_clean","ota_description_UAS.csv"),na = "",delim=",")
+write_delim(m,file.path("..","data","semi_clean","contract_MajorProgramCode.csv"),na = "",delim=",")
 
 #UUVSS maritime
 #MORFIUS counter-uas uas
