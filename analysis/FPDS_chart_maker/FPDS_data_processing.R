@@ -158,7 +158,7 @@ full_data %<>%
   mutate(VendorIsForeign = factor(VendorIsForeign))%>%
   mutate(PlaceIsForeign = factor(PlaceIsForeign))
 
-labels_and_colors<-csis360::prepare_labels_and_colors(full_data)
+dcrlabels_and_colors<-csis360::prepare_labels_and_colors(full_data)
 
 column_key<-csis360::get_column_key(full_data)
 

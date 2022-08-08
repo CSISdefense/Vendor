@@ -60,9 +60,61 @@ d<-read_and_join_experiment(descrip,
                          # skip_check_var = "Remotely_Crewed",
                          by="Description_of_Requirement")
 
-
-
 write_delim(d,file.path("..","data","semi_clean","ota_description_UAS.csv"),na = "",delim=",")
+
+#Filter out the failed imports. Not great, but keeps things moving.
+#Thankfully 124849 rows out of 41,802,808
+#Bizarell, 41639827 to 41,577,967 when grouping down. Not suer where the 60k dupes come from, must be a difference between R/SQL
+dcr<-dcr %>% filter(PlatformPortfolioRemote %in% pp |  is.na(PlatformPortfolioRemote) )
+dcr_num<-dcr %>% group_by(descriptionofcontractrequirement,PlatformPortfolioRemote)%>%
+  summarise()
+  # summarise(obligatedAmount=sum(obligatedAmount,na.rm=TRUE))
+dcr_num$descrip_plat_row_number<-seq(1,nrow(dcr_num))
+write_delim(dcr_num,file="..//data_raw//FPDS_descrip_plat_row_number.csv",delim = ",")#,fileEncoding = "UTF-16LE")
+rm(dcr_num)
+
+
+#Paranoia check that we can retain integrity when just reading and writing.
+dcr1m<-dcr %>% filter(obligatedamount>=1000000)
+dcr10m<-dcr %>% filter(obligatedamount>=10000000)
+dcr1m<-read_and_join_experiment(dcr1m,
+                         path="..//data_raw//",dir="",lookup_file = "FPDS_descrip_plat_row_number.csv",
+                         add_var="descrip_plat_row_number",
+                         # skip_check_var = "Remotely_Crewed",
+                         by=c("descriptionofcontractrequirement","PlatformPortfolioRemote"))
+#102,085 before sumamarize
+dcr10m<-dcr10m %>% mutate(descriptionofcontractrequirement=trimws(descriptionofcontractrequirement)) %>%
+   mutate(descriptionofcontractrequirement=ifelse(is.na(descriptionofcontractrequirement)|
+                                                    is.null(descriptionofcontractrequirement) |
+                                                    descriptionofcontractrequirement %in% c("NA","NULL"),
+                                                  "Unlabeled",descriptionofcontractrequirement)) %>%
+     
+  group_by(descriptionofcontractrequirement,PlatformPortfolioRemote)%>%
+  summarise(obligatedamount=sum(obligatedamount,na.rm=TRUE))
+dcr10m$descrip_plat_row_number<-seq(1,nrow(dcr10m))
+
+write_delim(dcr10m%>% select(descriptionofcontractrequirement,PlatformPortfolioRemote,descrip_plat_row_number),
+            file="..//data_raw//FPDS10m_descrip_plat_row_number.csv",delim = ",")#,fileEncoding = "UTF-16LE")
+dcr10m<-dcr10m %>% select(-descrip_plat_row_number)
+debug(read_and_join_experiment)
+dcr10m<-read_and_join_experiment(dcr10m,
+                         path="..//data_raw//",dir="",lookup_file = "FPDS10m_descrip_plat_row_number.csv",
+                         add_var="descrip_plat_row_number",
+                         # skip_check_var = "Remotely_Crewed",
+                         by=c("descriptionofcontractrequirement","PlatformPortfolioRemote"))
+anyDuplicated(dcr10m%>%select(descriptionofcontractrequirement,PlatformPortfolioRemote))
+
+write_delim(dcr10m,file="..//data//semi_clean//FPDS10m_descrip_plat.csv",delim = ",")
+dcr10m<-read_delim(file="..//data//semi_clean//FPDS10m_descrip_plat.csv",delim = ",")
+anyDuplicated(test%>%as.data.frame()%>%select(descriptionofcontractrequirement,PlatformPortfolioRemote))
+
+
+
+dcr1m$PlatformPortfolioRemote<-factor(dcr1m$PlatformPortfolioRemote)
+  
+
+duplicated()
+
 ```
 
 # Setup
@@ -73,12 +125,8 @@ When you click the **Knit** button a document will be generated that includes bo
 
 ### OTA description UAS labeling
 
-```{r setup}
-
-d<-read_delim(file.path("..","data","semi_clean","ota_description_UAS.csv"),na ="",col_types="ccccc",delim=",")
-m<-read_csv(file.path("..","data","semi_clean","contract_MajorProgramCode.csv"))
-problems(d)
-d<-standardize_variable_names(d)
+#### label function
+```{r labeling_function}
 
 label_UAS<-function(x,col="Description_of_Requirement"){
   x<-as.data.frame(x)
@@ -123,6 +171,7 @@ label_UAS<-function(x,col="Description_of_Requirement"){
   x$CUAS[grep("Counter-Unmanned",x[,col],ignore.case = TRUE)]<-TRUE
   sum(x$CUAS,na.rm=TRUE)
   
+  x$UGS[grep("Unmanned Ground",x[,col],ignore.case = TRUE)]<-TRUE
   
   x$Maritime[grep("Unmanned Surface",x[,col],ignore.case = TRUE)]<-TRUE
   x$Maritime[grep("Unmanned Maritime",x[,col],ignore.case = TRUE)]<-TRUE
@@ -137,15 +186,29 @@ label_UAS<-function(x,col="Description_of_Requirement"){
   x$UAS[x$CUAS==TRUE]<-NA
   
   x$UAS[x$Maritime==TRUE]<-NA
+  x$UAS[x$UGS==TRUE]<-NA
   sum(x$UAS,na.rm=TRUE)
   
   
   
-  x$mq[grep("MQ",x[,col],ignore.case = TRUE)]
-  x$mq[grep("MQT",x[,col],ignore.case = TRUE)]<-NA
+  x$mq[grep("MQ-",x[,col],ignore.case = TRUE)]<-TRUE
+  # x$mq[grep("MQT",x[,col],ignore.case = TRUE)]<-NA
+  # x$mq[grep("MQSA",x[,col],ignore.case = TRUE)]<-NA
+  # x$mq[grep("MESSAGE QUEUE",x[,col],ignore.case = TRUE)]<-NA
+  # x$mq[grep("WEBSPHERE MQ",x[,col],ignore.case = TRUE)]<-NA
+  # x$mq[grep("CMQA",x[,col],ignore.case = TRUE)]<-NA
+  # x$mq[grep("NMQ",x[,col],ignore.case = TRUE)]<-NA
+  # x$mq[grep("MQU",x[,col],ignore.case = TRUE)]<-NA #Covers most proper words
+  # x$mq[grep("OFMQ",x[,col],ignore.case = TRUE)]<-NA
   sum(x$mq,na.rm = TRUE)
-  x$rq[grep("RQ",x[,col],ignore.case = TRUE)]
-  x$rq[grep("SRQ",x[,col],ignore.case = TRUE)]<-NA
+  x$rq[grep("RQ-",x[,col],ignore.case = TRUE)]<-TRUE
+  # x$rq[grep("RQU",x[,col],ignore.case = TRUE)]<-NA #Covers most proper words
+  # x$rq[grep("RQMT",x[,col],ignore.case = TRUE)]<-NA
+   x$rq[grep("AN/SRQ-",x[,col],ignore.case = TRUE)]<-NA
+   x$rq[grep("AN/ARQ-",x[,col],ignore.case = TRUE)]<-NA
+  # x$rq[grep("TRQ",x[,col],ignore.case = TRUE)]<-NA
+  # x$rq[grep("SRQ",x[,col],ignore.case = TRUE)]<-NA
+  # x$rq[grep("AHRQ",x[,col],ignore.case = TRUE)]<-NA
   sum(x$rq,na.rm=TRUE)
   
   x$any_uas<-NA
@@ -153,13 +216,48 @@ label_UAS<-function(x,col="Description_of_Requirement"){
   x
 }
 
+```
 
+#### Assign labels
+
+```{r assign labels}
+
+d<-read_delim(file.path("..","data","semi_clean","ota_description_UAS.csv"),na ="",col_types="ccccc",delim=",")
+m<-read_csv(file.path("..","data","semi_clean","contract_MajorProgramCode.csv"))
+# dcr<-read_delim(file.path("..","data","semi_clean","DescriptionOfContractRequirement_Portfolio.csv"),"\t")
+
+dcr10m<-read_delim(file="..//data//semi_clean//FPDS10m_descrip_plat.csv",delim = ",")
+problems(d)
+d<-standardize_variable_names(d)
+dcr10m<-standardize_variable_names(dcr10m)
+colnames(dcr10m)<-trimws(colnames(dcr10m))
+dcr10m$obligatedamount<-text_to_number(dcr10m$obligatedamount)
+
+
+dcr10m<-label_UAS(dcr10m,"descriptionofcontractrequirement")
 d<-label_UAS(d,"Description_of_Requirement")
 m<-label_UAS(m,"majorprogramcode")
 
 write_delim(d,file.path("..","data","semi_clean","ota_description_UAS.csv"),na = "",delim=",")
 write_delim(m,file.path("..","data","semi_clean","contract_MajorProgramCode.csv"),na = "",delim=",")
+write_delim(dcr10m,file="..//data//semi_clean//FPDS10m_descrip_plat.csv",na = "",delim = ",")
+summary(d)
+summary(m)
+summary(dcr10m)
+levels(dcr10m$PlatformPortfolioRemote)
+dcr10m %>% group_by(any_uas,PlatformPortfolioRemote) %>% filter(any_uas  | PlatformPortfolioRemote=="Remotely Operated") %>%
+  mutate(gt100m=ifelse(obligatedamount>100000000,obligatedamount,0),
+         gt10m=ifelse(obligatedamount> 10000000,obligatedamount,0)) %>%
+  summarise(obligatedamount=sum(obligatedamount, na.rm = TRUE),
+            gt100m=sum(gt100m),
+            gt10m=sum(gt10m))
 
+
+dcr10m %>% group_by(Remotely_Crewed) %>% filter(Remotely_Crewed!=""  | PlatformPortfolioRemote=="Remotely Operated") %>%
+  summarise(obligatedamount=sum(obligatedamount, na.rm = TRUE))
+
+
+summary(dcr10m %>% filter (obligatedamount> 10000000))
 #UUVSS maritime
 #MORFIUS counter-uas uas
 #SUAS Small uas
