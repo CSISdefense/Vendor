@@ -23,8 +23,8 @@ OTA_data_current <- read_delim(
   "data_raw//OTA_All_Fields.csv",delim = ",",
   col_names = TRUE, guess_max = 500000,na=c("NA","NULL"),skip = 2)
 
-OTA_data_current<-standardize_variable_names(OTA_data_current,
-                                             path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+OTA_data_current<-standardize_variable_names(OTA_data_current)#,
+                                             # path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
 OTA_data_current<-apply_standard_lookups(OTA_data_current)
 
 # colnames(OTA_data)<-gsub(" ","_",colnames(OTA_data))
@@ -155,7 +155,7 @@ if("PlatformPortfolio" %in% colnames(OTA_data)){
 levels(factor(OTA_data$ContractingAgencyName))
 #Classify Product or Service Codes
 
-write.csv(colnames(OTA_data),"OTA_names.csv")
+# write.csv(colnames(OTA_data),"OTA_names.csv")
 
 OTA_data<-csis360::read_and_join_experiment(OTA_data,
                                   "ProductOrServiceCodes.csv",
@@ -249,7 +249,7 @@ OTA_data$ProductServiceOrRnDarea.covid<-as.character(OTA_data$SimpleArea)
 OTA_data$ProductServiceOrRnDarea.covid[OTA_data$TopCovid==TRUE]<-"R&D (Top OTAs responding to Covid-19)"
 OTA_data$ProductServiceOrRnDarea.covid[OTA_data$ProductServiceOrRnDarea.covid=="R&D"]<-"R&D (Other)"
 
-######### Remotely Crewed lbeling
+######### Remotely Crewed labeling
 
 OTA_data$IsRemotelyOperated<-FALSE
 OTA_data$IsRemotelyOperated[OTA_data$ProductOrServiceCode=="1550"]<-TRUE
@@ -257,54 +257,22 @@ sum(OTA_data$Action_Obligation_OMB23_GDP21[OTA_data$IsRemotelyOperated],na.rm=TR
 
 
 
+OTA_data<-read_and_join_experiment(OTA_data,
+                                           path="data_raw//",dir="",lookup_file = "OTA_descrip_row_number.csv",
+                                           add_var="descrip_row_number",
+                                           # skip_check_var = "Remotely_Crewed",
+                                           by="Description_of_Requirement")
 
 OTA_data<-read_and_join_experiment(OTA_data,
                                            path="data//semi_clean//",dir="",lookup_file = "ota_description_UAS.csv",
                                            add_var="Remotely_Crewed",
-                                           skip_check_var = "Remotely_Crewed",
-                                           by="Description_of_Requirement",
-                                           col_types = "ccccc")
+                                           # skip_check_var = "Remotely_Crewed",
+                                           by="descrip_row_number",
+                                           col_types = "cnccccccccc")
 
-OTA_data<-read_and_join_experiment(OTA_data,
-                                   path="data//semi_clean//",dir="",lookup_file = "ota_description_UAS.csv",
-                                   add_var="CUAS",
-                                   skip_check_var = "CUAS",
-                                   by="Description_of_Requirement",
-                                   col_types = "ccccc")
-sum(OTA_data$Action_Obligation_OMB23_GDP21[OTA_data$CUAS],na.rm=TRUE)
-
-
-missing_money<-OTA_data[grep("UNMANNED",OTA_data_current$Description_of_Requirement),] %>%
-  filter(Remotely_Crewed==""| is.na(Remotely_Crewed)) 
-summary(factor(missing_money$Remotely_Crewed))
-sum(missing_money$Action_Obligation_OMB23_GDP21)
-
-missing_money<-missing_money %>%  filter(!CUAS| is.na(CUAS)) 
-sum(missing_money$Action_Obligation_OMB23_GDP21)
-
-# View(missing_money %>% arrange(-Action_Obligation_OMB23_GDP21) %>% select(Description_of_Requirement,Action_Obligation_OMB23_GDP21,Remotely_Crewed))
-
-
-summary(factor(OTA_data$Remotely_Crewed))
-nrow(unique(OTA_data %>% filter (Remotely_Crewed!="") %>% select(Description_of_Requirement,Remotely_Crewed)))
-
-ota_description_UAS_test<-read.csv("data//semi_clean//ota_description_UAS.csv") %>% filter (Remotely_Crewed!="")
-
-#Kluldge fix, I'm guessing the write to csv and read back in process broke something somewhere.
-
-missing<-ota_description_UAS_test[!ota_description_UAS_test$Description_of_Requirement %in% OTA_data$
-                                    Description_of_Requirement[!is.na(OTA_data$Remotely_Crewed)],]
-summary(factor(OTA_data$Remotely_Crewed[OTA_data$Description_of_Requirement %in% ota_description_UAS_test$Description_of_Requirement]))
-misalign<-OTA_data[OTA_data$Description_of_Requirement %in% ota_description_UAS_test$Description_of_Requirement & is.na(OTA_data$Remotely_Crewed),]
-sum(misalign$Action_Obligation_OMB23_GDP21)
-summary(factor(missing$Remotely_Crewed))
-OTA_data$Remotely_Crewed[OTA_data$Description_of_Requirement %in% missing$Description_of_Requirement[missing$Remotely_Crewed=="UAS"]]<-"UAS"
-
-nrow(unique(OTA_data %>% filter (Remotely_Crewed!="") %>% select(Description_of_Requirement,Remotely_Crewed)))
-
-OTA_data$IsRemotelyOperated[OTA_data$Remotely_Crewed %in% c("UAS","UAS/CUAS")]<-TRUE
+OTA_data$IsRemotelyOperated[OTA_data$Remotely_Crewed %in% c("UAS","UAS/C-UAS")]<-TRUE
 sum(OTA_data$Action_Obligation_OMB23_GDP21[OTA_data$IsRemotelyOperated],na.rm=TRUE)
-OTA_data$PIIDAgencyID
+
 OTA_data$ReferencedIDVAgencyID[is.na(OTA_data$ReferencedIDVAgencyID)]<-""
 OTA_data<-read_and_join_experiment(OTA_data,
                                            path="data//semi_clean//",dir="",lookup_file = "ota_CAU_UAS.csv",
@@ -346,10 +314,10 @@ OTA_data %<>%
 str(OTA_data$ContractingOfficeName)
 OTA_data$MajorCommandName[OTA_data$MajorCommandName==""]<-"Unlabeled"
 
-ota_lc<-csis360::prepare_labels_and_colors(OTA_data,
-                                           path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
-ota_ck<-csis360::get_column_key(OTA_data,
-                                path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+ota_lc<-csis360::prepare_labels_and_colors(OTA_data)#,
+                                           # path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+ota_ck<-csis360::get_column_key(OTA_data)#,
+                                # path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
 
 
 save(OTA_data,ota_lc,ota_ck, file="data/clean/Federal_OTA.Rda")
@@ -361,12 +329,38 @@ save(ota_def,ota_lc,ota_ck, file="data/clean/Defense_OTA.Rda")
 if(!exists("fed_data")){
   load(file=file.path("data","clean","fed_summary_FPDS.rda"))
 }
+
+colnames(OTA_data)[colnames(OTA_data)=="Non-traditionalGovernmentContractorParticipationDescription"]<-
+  "NontraditionalGovernmentContractorParticipationDescription"
+colnames(OTA_data)[colnames(OTA_data)=="Non-traditionalGovernmentContractorParticipationCode"]<-
+  "NontraditionalGovernmentContractorParticipationCode"
+
 ota_contract<-OTA_data
 ota_contract$IsOTA<-"OTA"
 fed_data$IsOTA<-"Contract"
+
+
+summary(factor(OTA_data$NontraditionalGovernmentContractorParticipationDescription))
+colnames(ota_contract)[colnames(ota_contract)=="Customer"]<-"ContractingCustomer"
+
+
+summary(factor(OTA_data$NontraditionalGovernmentContractorParticipationCode))
+ota_contract$AnyCommercial<-factor(ota_contract$NontraditionalGovernmentContractorParticipationCode)
+levels(ota_contract$AnyCommercial)=list(
+  "Y"="NSP",
+  "N"=c("CS","DEC")
+)
+
+
+
 ota_contract<-rbind(ota_contract[,colnames(ota_contract)[colnames(ota_contract) %in% colnames(fed_data)]],
                     fed_data[,colnames(fed_data)[colnames(fed_data) %in% colnames(ota_contract)]])
 # platpscintldef$IsOTA<-"Contract"
+
+ota_contract$SubCustomer.sum<-as.character(ota_contract$SubCustomer.sum)
+ota_contract$SubCustomer.sum[ota_contract$ContractingCustomer!="Defense"]<-"Civilian"
+
+
 # ota_contract<-rbind(ota_contract[,colnames(ota_contract)[colnames(ota_contract) %in% colnames(platpscintldef)]],
 #                     platpscintldef[,colnames(platpscintldef)[colnames(platpscintldef) %in% colnames(ota_contract)]])
 save(ota_contract,ota_lc,ota_ck, file="data/clean/OTA_contract.Rda")
