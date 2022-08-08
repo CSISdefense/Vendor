@@ -44,7 +44,7 @@ load(file=file.path("..","data","clean","uav_vendor_count.Rda"))
 # load(file="../data/clean/jadc2.Rda")
 
 platpscintl$SubCustomer.sum[platpscintl$Customer!="Defense"]<-"Civilian"
-
+OTA_data$SubCustomer.sum<-as.character(OTA_data$SubCustomer.sum)
 OTA_data$SubCustomer.sum[OTA_data$Customer!="Defense"]<-"Civilian"
 
 ota_lc<-prepare_labels_and_colors(OTA_data)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
@@ -402,7 +402,7 @@ colnames(OTA_data)[colnames(OTA_data)=="Non-traditionalGovernmentContractorParti
 
 
 (
-  co_pp_sub<-build_plot(
+  uas_ota_subcust<-build_plot(
     data=OTA_data %>% filter(PlatformPortfolioUAV=="Remotely Crewed") ,
     chart_geom = "Bar Chart",
     share = FALSE,
@@ -429,6 +429,24 @@ colnames(OTA_data)[colnames(OTA_data)=="Non-traditionalGovernmentContractorParti
     labs(y="Obligations (Constant 2021 $s)",caption="Note: Unlabeled not shown. Source: FPDS; CSIS analysis.")#+
    # facet_wrap(~PlatformPortfolioUAV,scale="free_y")
 )
+
+
+
+ggsave600dpi(uas_ota_subcust,file="..//output//Remotely_Crewed//uas_ota_subcust.png",  
+             width=3.25, height= 3, units="in",size=12, lineheight=1.2
+)
+ggsave600dpi(uas_ota_subcust,file="..//output//Remotely_Crewed//uas_ota_subcustsvg",  
+             width=3.25, height= 3, units="in",size=12, lineheight=1.2
+)
+
+write.csv(file="..//Output//Remotely_Crewed//uas_ota_subcust.csv",row.names = FALSE,na = "",
+          uas_ota_subcust$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
+            bAction_Obligation_OMB23_GDP21=Action_Obligation_OMB23_GDP21/1000000000)%>%
+            arrange(Fiscal_Year)%>%
+            pivot_wider(id_cols=c(SubCustomer.sum),
+                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB23_GDP21)%>%
+            arrange(SubCustomer.sum),na="")
+
 
 ```
 
@@ -573,13 +591,20 @@ write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_crewed_Customer_cur
 #   summarise(Action_Obligation_OMB23_GDP21=sum(Action_Obligation_OMB23_GDP21))
 # drone$SubCustomer
 
-drone$TopProject<-u
+# drone$TopProject<-u
 drone$TopProject<-factor(drone$TopProject,
                          levels=c("Other Labeled Project","TACTICAL UAV" ,"MQ-1C Gray Eagle",
                                   "BAMS","VTUAV",
                                   "GLOBAL HAWK" ,"MQ-9 Reaper"  
                                   ))
-levels(factor(drone$TopProject))
+levels(drone$TopProject)<-list(
+  "Other Labeled Project"="Other Labeled Project",
+  "TACTICAL UAV" ="Tactical UAV",
+   "MQ-9 Reaper" = "MQ-9 Reaper",
+  "MQ-8 Fire Scout"=c("VTUAV","MQ-8 Fire Scout"),
+      "MQ-4C Triton"=c("BAMS","MQ-4C Triton"),
+     "RQ-4 Global Hawk" =c("GLOBAL HAWK", "RQ-4 Global Hawk"),
+  "MQ-1C Gray Eagle"="MQ-1C Gray Eagle")
 
 (
   rc_custproj<-build_plot(
