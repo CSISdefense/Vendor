@@ -215,7 +215,7 @@ summary(factor(platpscintldef$TopPStext))
 
 # Budget Pull in
 Read in the Reaching Farther, Risking Less Budget report.
-##
+## Budget
 ```{r budget}
 procurement_uas<-readr::read_delim(file = file.path("..","data","semi_clean","Procurement_Uncrewed_Labeled.txt"),delim="\t",guess_max=3000)
 # procurement_remote<-readr::read_delim(file = file.path("..","data","semi_clean","Procurement_Just_Remote.txt"),delim="\t",guess_max=3000)
@@ -279,7 +279,11 @@ write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_budget.csv",row.nam
 ### Platform Compare
 ```{r}
 
-load(file="../data/semi_clean/Federal_OTA.Rda")
+load(file="../data/clean/Federal_OTA.Rda")
+
+write.csv(file="DIU.csv",(OTA_data[grep("DIU", OTA_data$Description_of_Requirement),]%>% filter(PlatformPortfolioUAV=="Remotely Crewed")))
+
+write.csv(file="ArmyUAS.csv",(OTA_data[grep("DIU", OTA_data$Description_of_Requirement),]%>% filter(PlatformPortfolioUAV=="Remotely Crewed")))
 
 (
   co_pp_simplearea<-build_plot(
@@ -1416,60 +1420,6 @@ ggsave600dpi(rc_vendor_place_fms,file="../output/Remotely_Crewed//rc_vendor_plac
 
 # Entities
 
-```{r Entities}
-
-
-# undebug(add_preassigned_scales)
-(a<-build_plot(data=platformUAS_only %>% filter(Fiscal_Year>=2010 & PlatformPortfolioRemote %in% 
-                                                  c(#"Aircraft","Electronics, Comms, & Sensors",
-                                                    #"Ordnance and Missiles",
-                                                    "Remotely Operated")&
-                                                      IsEntityAbove2018constant10ThousandThreshold==1),
-           chart_geom="Bar Chart",
-           x_var="dFYear",
-           y_var="EntityCount",
-           color_var="EntitySizeText.sum",
-           facet_var="PlatformPortfolioRemote",
-           # second_var="IsEntityAbove2018constant10ThousandThreshold",
-           labels_and_colors=uav_lc,
-           column_key=uav_ck,
-           legend=TRUE,
-           caption=FALSE,
-           format=TRUE)+
-   facet_wrap(.~PlatformPortfolioRemote,scales="free_y"))
-
-
-
-(b<-build_plot(data=platformUAS_only %>% filter(Fiscal_Year>=2010 & PlatformPortfolioRemote %in% 
-                                                  c(#"Aircraft","Electronics, Comms, & Sensors",
-                                                    #,"Ordnance and Missiles"
-                                                    "Remotely Operated")&
-                                                      IsEntityAbove2018constant10ThousandThreshold==1),
-           chart_geom="Bar Chart",
-           x_var="dFYear",
-           y_var="Action_Obligation_OMB23_GDP21",
-           color_var="EntitySizeText.sum",
-           facet_var="PlatformPortfolioRemote",
-           # second_var="IsEntityAbove2018constant10ThousandThreshold",
-           labels_and_colors=uav_lc,
-           column_key=uav_ck,
-           legend=TRUE,
-           caption=FALSE,
-           format=TRUE)+
-   facet_wrap(.~PlatformPortfolioRemote,scales="free_y"))
-
-
-ggsave600dpi(a,file="../output/Remotely_Crewed//uav_entity_count.png",
-             size = 12, lineheight=1, height =4.5, width=9)
-
-
-ggsave600dpi(b,file="../output/Remotely_Crewed//uav_entity_dollar.png",
-             size = 12, lineheight=1, height =4.5, width=9)
-
-```
-
-
-
 ## Consolidation
 ```{r drone_count}
 
@@ -1768,7 +1718,7 @@ write.csv(contractorUAVwide,file="../output/Remotely_Crewed//contractorUAVwide.c
 
 ```
 
-## Reproduce Vendor Size
+## Vendor Sizeand Count via Entity
 ```{r drone_count}
 
 # undebug(add_preassigned_scales)
@@ -1786,28 +1736,6 @@ defense_UAV_both<-defense_UAV_vendor %>% pivot_longer(cols=c(EntityCount,Action_
 
 
 
-
-
-
-(a<-build_plot(data=defense_UAV_both %>% filter(Fiscal_Year>=2010 &
-                                                    IsEntityAbove2018constant10ThousandThreshold==1),# & PlatformPortfolioUAV %in% 
-                                                  c(#"Aircraft","Electronics, Comms, & Sensors",
-                                                    #"Remotely Operated","Ordnance and Missiles")&
-                                                      ),
-           chart_geom="Bar Chart",
-           x_var="dFYear",
-           y_var="EntityCount",
-           color_var="EntitySizeText.sum",
-           facet_var="None",
-           # second_var="IsEntityAbove2018constant10ThousandThreshold",
-           labels_and_colors=uav_lc,
-           column_key=uav_ck,
-           legend=TRUE,
-           caption=FALSE,
-           format=TRUE,
-           share=FALSE)+
-    labs(y="Number of Entities"))#+
-   #facet_wrap(.~PlatformPortfolioUAV,scales="free_y"))
 
 
 
@@ -1830,8 +1758,6 @@ defense_UAV_both<-defense_UAV_vendor %>% pivot_longer(cols=c(EntityCount,Action_
            share=FALSE)+
     labs(y="Number of Entities"))#+
    #facet_wrap(.~PlatformPortfolioUAV,scales="free_y"))
-
-
 
 
 
@@ -1894,185 +1820,6 @@ ggsave600dpi(ab,
 
 ```
 
-## Count and Size compare
-```{r drone_count}
 
-# undebug(add_preassigned_scales)
-
-defense_UAV_vendor$EntitySizeText.GA<-as.character(defense_UAV_vendor$EntitySizeText)
-defense_UAV_vendor$EntitySizeText.GA[defense_UAV_vendor$EntityText=="GENERAL ATOMICS"&
-                                       !is.na(defense_UAV_vendor$EntityText)]<-"General Atomics"
-
-
-uav_lc<-prepare_labels_and_colors(defense_UAV_vendor)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
-uav_ck<-get_column_key(defense_UAV_vendor)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
-
-defense_UAV_both<-defense_UAV_vendor %>% pivot_longer(cols=c(EntityCount,Action_Obligation_OMB23_GDP21),names_to = "Metric")
-
-
-
-
-
-
-
-(a<-build_plot(data=annual_platformUAV_summary %>% filter(Fiscal_Year>=2010 &
-                                                    IsEntityAbove2018constant10ThousandThreshold==1),# & PlatformPortfolioUAV %in% 
-                                                  c(#"Aircraft","Electronics, Comms, & Sensors",
-                                                    #"Remotely Operated","Ordnance and Missiles")&
-                                                      ),
-           chart_geom="Bar Chart",
-           x_var="dFYear",
-           y_var="EntityCount",
-           color_var="EntitySizeText.sum",
-           facet_var="None",
-           # second_var="IsEntityAbove2018constant10ThousandThreshold",
-           labels_and_colors=uav_lc,
-           column_key=uav_ck,
-           legend=TRUE,
-           caption=FALSE,
-           format=TRUE,
-           share=FALSE)+
-    labs(y="Number of Entities"))#+
-   #facet_wrap(.~PlatformPortfolioUAV,scales="free_y"))
-
-
-
-(a<-build_plot(data=defense_UAV_vendor %>% filter(Fiscal_Year>=2010 &
-                                                    IsEntityAbove2018constant10ThousandThreshold==1),# & PlatformPortfolioUAV %in% 
-                                                  c(#"Aircraft","Electronics, Comms, & Sensors",
-                                                    #"Remotely Operated","Ordnance and Missiles")&
-                                                      ),
-           chart_geom="Bar Chart",
-           x_var="dFYear",
-           y_var="EntityCount",
-           color_var="EntitySizeText.sum",
-           facet_var="None",
-           # second_var="IsEntityAbove2018constant10ThousandThreshold",
-           labels_and_colors=uav_lc,
-           column_key=uav_ck,
-           legend=TRUE,
-           caption=FALSE,
-           format=TRUE,
-           share=FALSE)+
-    labs(y="Number of Entities"))#+
-   #facet_wrap(.~PlatformPortfolioUAV,scales="free_y"))
-
-
-
-
-
-summary(factor(defense_UAV_vendor$EntitySizeText.GA))
-
-(b<-build_plot(data=defense_UAV_vendor %>% filter(Fiscal_Year>=2010 ),
-           chart_geom="Bar Chart",
-           x_var="dFYear",
-           y_var="Action_Obligation_OMB23_GDP21",
-           color_var="EntitySizeText.GA",
-           # facet_var="PlatformPortfolioRemote",
-           # second_var="IsEntityAbove2018constant10ThousandThreshold",
-           labels_and_colors=uav_lc,
-           column_key=uav_ck,
-           legend=TRUE,
-           caption=FALSE,
-           format=TRUE)#+
-   # facet_wrap(.~PlatformPortfolioRemote,scales="free_y"))
-)
-
-
-ggsave600dpi(a,file="../output/Remotely_Crewed//uav_entity_count.png",
-             size = 12, lineheight=1, height =4.5, width=9)
-
-
-ggsave600dpi(b,file="../output/Remotely_Crewed//uav_entity_dollar.png",
-             size = 12, lineheight=1, height =4.5, width=9)
-
-
-(ab<-build_plot(data=defense_UAV_both %>% filter(Fiscal_Year>=2010 &
-                                                    IsEntityAbove2018constant10ThousandThreshold==1),# & PlatformPortfolioUAV %in% 
-                                                  c(#"Aircraft","Electronics, Comms, & Sensors",
-                                                    #"Remotely Operated","Ordnance and Missiles")&
-                                                      ),
-           chart_geom="Bar Chart",
-           x_var="dFYear",
-           y_var="value",
-           color_var="EntitySizeText.GA",
-           facet_var="Metric",
-           # second_var="IsEntityAbove2018constant10ThousandThreshold",
-           labels_and_colors=prepare_labels_and_colors(defense_UAV_both),
-           column_key=get_column_key(defense_UAV_both),
-           legend=TRUE,
-           caption=FALSE,
-           format=TRUE,
-           share=FALSE)+
-    labs(y=NULL)+
-   facet_wrap(.~Metric,scales="free_y")+
-    theme(legend.position = "right"))
-
-
-ggsave600dpi(ab,
-                          file="../output/Remotely_Crewed//uav_entity_count_size.png",
-              size = 12, lineheight=1,height =3.5, width=6.5)
-
-ggsave600dpi(ab,
-                          file="../output/Remotely_Crewed//uav_entity_count_size_slide.png",
-              size = 16, lineheight=1,height =5.5, width=12)
-
-
-ggsave600dpi(ab,
-                          file="../output/Remotely_Crewed//uav_entity_count_size.svg",
-              size = 12, lineheight=1,height =3.5, width=6.5)
-
-```
-
-
-```{r drone_count}
-
-# undebug(add_preassigned_scales)
-(a<-build_plot(data=platformUAS_only %>% filter(Fiscal_Year>=2010 & PlatformPortfolioRemote %in% 
-                                                  c("Aircraft","Electronics, Comms, & Sensors",
-                                                    "Remotely Operated","Ordnance and Missiles")&
-                                                      IsEntityAbove2018constant10ThousandThreshold==1),
-           chart_geom="Bar Chart",
-           x_var="dFYear",
-           y_var="EntityCount",
-           color_var="EntitySizeText.sum",
-           # facet_var="PlatformPortfolioRemote",
-           # second_var="IsEntityAbove2018constant10ThousandThreshold",
-           labels_and_colors=uav_lc,
-           column_key=uav_ck,
-           legend=TRUE,
-           caption=FALSE,
-           format=TRUE)+
-   labs(xlab="Number of Entities")+
-   facet_wrap(.~PlatformPortfolioRemote,scales="free_y"))
-
-
-
-
-(b<-build_plot(data=defense_UAV_vendor %>% filter(Fiscal_Year>=2010 & 
-                                                      IsEntityAbove2018constant10ThousandThreshold==1),
-           chart_geom="Bar Chart",
-           x_var="dFYear",
-           y_var="Action_Obligation_OMB23_GDP21",
-           color_var="EntitySizeText.sum",
-           facet_var="None",
-           # second_var="IsEntityAbove2018constant10ThousandThreshold",
-           labels_and_colors=uav_lc,
-           column_key=uav_ck,
-           legend=TRUE,
-           caption=FALSE,
-           format=TRUE))#+
-  # facet_wrap(.~PlatformPortfolioUAV,scales="free_y"))
-
-
-ggsave600dpi(a,file="../output/Remotely_Crewed//uav_entity_count.png",
-             size = 12, lineheight=1, height =4.5, width=9)
-
-
-ggsave600dpi(b,file="../output/Remotely_Crewed//uav_entity_dollar.png",
-             size = 12, lineheight=1, height =4.5, width=9)
-
-
-```
 
 
