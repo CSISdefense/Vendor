@@ -303,6 +303,7 @@ SET NOCOUNT ON;
 DECLARE	@return_value int
 --1h41me
 --3h16m (w/ error) with FPDS partial 
+--1h306 m 2,391k
 EXEC	@return_value = [Vendor].[SP_EntityIDhistoryPlatform]
 		@Customer = 'Defense'
 
