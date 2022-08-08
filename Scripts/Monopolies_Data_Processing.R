@@ -62,7 +62,7 @@ defense_naics_vendor$exclude[defense_naics_vendor$mismatch %in% get_exclude_list
 
 #******************Calculate Defense Wide Values****************
 #*
-if(!check_key(defense_platform_vendor,c("EntityID","Small","CalendarYear")))
+if(!check_key(defense_vendor,c("EntityID","Small","CalendarYear")))
   stop("Duplicate EntityID listings for defense_vendor")
 
 #Known issue b/c we classify vendors by fiscal year. Pondering how to fix.
@@ -175,10 +175,10 @@ defense_platformUAV_vendor<-defense_platformUAV_vendor %>% group_by(PlatformPort
 
 defense_platformUAV_vendor<-defense_platformUAV_vendor %>%
   dplyr::mutate(
-    pos = rank(-Action_Obligation,
+    pos = rank(-Action_Obligation_Then_Year,
                ties.method ="min"),
-    pct = ifelse(Action_Obligation>0,
-                 Action_Obligation / sum(Action_Obligation[Action_Obligation>0]),
+    pct = ifelse(Action_Obligation_Then_Year>0,
+                 Action_Obligation_Then_Year / sum(Action_Obligation_Then_Year[Action_Obligation_Then_Year>0]),
                  NA
     )
   )
@@ -321,7 +321,7 @@ defense_naics_vendor$NAICS_Code[substr(defense_naics_vendor$NAICS_Code,1,5)=="54
 
 # View()
 # debug(join_economic)
-  
+  annual_naics2_summary$NAICS_Code
 annual_naics2_summary<-join_economic(annual_naics2_summary,core,2)
 annual_naics3_summary<-join_economic(annual_naics3_summary,core,3)
 annual_naics4_summary<-join_economic(annual_naics4_summary,core,4)
