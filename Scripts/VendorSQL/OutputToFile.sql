@@ -162,6 +162,7 @@ SET NOCOUNT ON;
 --2h12m
 --8h58m 15,656,547 rows
 --10h53m 15,871,392 rows, 3 cores.
+--11h05m 15,872,583 rows. Erros
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
  EXEC [Location].[SP_ProdServPlatformAgencyPlaceOriginVendor]
@@ -207,6 +208,7 @@ EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCus
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 --11h30m w / 4,529,207 rows
+--10h49m
 --No plan shown until the very end.
 --1023 completed with errors 4,532,322
 
