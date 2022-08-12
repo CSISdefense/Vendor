@@ -32,6 +32,8 @@ if(!exists("full_data"))
 load(file="../data/clean/platpscintl_FPDS.Rda")
 load(file="../data/clean/sw_FPDS.Rda")
 load(file="../data/clean/jadc2.Rda")
+
+load(file=file.path("..","data","clean","defense_naics_vendor.rdata"))
 # detail_lc<-prepare_labels_and_colors(platpscintldef)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 # detail_ck<-get_column_key(platpscintldef)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 # column_key<-get_column_key(platpscintldef,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
@@ -980,6 +982,116 @@ PSC<-build_plot(
 )
 
 ```
+
+
+### Vendor Size and Count via Entity
+```{r drone_count}
+
+# undebug(add_preassigned_scales)
+
+# defense_land_vendor$EntitySizeText.GA<-as.character(defense_land_vendor$EntitySizeText)
+# defense_land_vendor$EntitySizeText.GA[defense_land_vendor$EntityText=="GENERAL ATOMICS"&
+#                                        !is.na(defense_land_vendor$EntityText)]<-"General Atomics"
+
+entity_lc<-prepare_labels_and_colors(defense_platformUAV_vendor)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+entity_ck<-get_column_key(defense_platformUAV_vendor)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+defense_platformUAV_vendor$EntityCount<-1
+
+
+defense_entity_both<-defense_platformUAV_vendor %>% filter(PlatformPortfolioUAV=="Land Vehicles")%>% pivot_longer(cols=c(EntityCount,Action_Obligation_OMB23_GDP21),names_to = "Metric")
+
+
+
+
+
+
+
+(a<-build_plot(data=defense_platformUAV_vendor %>% filter(Fiscal_Year>=2005& Fiscal_Year<=2020 & 
+                                                       PlatformPortfolioUAV=="Land Vehicles" &
+                                                    IsEntityAbove2018constant10ThousandThreshold==1),# & PlatformPortfolioUAV %in% 
+                                                  c(#"Aircraft","Electronics, Comms, & Sensors",
+                                                    #"Remotely Operated","Ordnance and Missiles")&
+                                                      ),
+           chart_geom="Bar Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           color_var="EntitySizeText.sum",
+           facet_var="None",
+           # second_var="IsEntityAbove2018constant10ThousandThreshold",
+           labels_and_colors=entity_lc,
+           column_key=entity_ck,
+           legend=TRUE,
+           caption=FALSE,
+           format=TRUE,
+           share=FALSE)+
+    labs(y="Number of Entities"))#+
+   #facet_wrap(.~PlatformPortfolioUAV,scales="free_y"))
+
+
+
+# summary(factor(defense_platformUAV_vendor$EntitySizeText))
+
+(b<-build_plot(data=defense_platformUAV_vendor %>% filter(Fiscal_Year>=2005& Fiscal_Year<=2020 &
+                                                       PlatformPortfolioUAV=="Land Vehicles"),
+           chart_geom="Bar Chart",
+           x_var="dFYear",
+           y_var="Action_Obligation_OMB23_GDP21",
+           color_var="EntitySizeText",
+           # facet_var="PlatformPortfolioUAVRemote",
+           # second_var="IsEntityAbove2018constant10ThousandThreshold",
+           labels_and_colors=entity_lc,
+           column_key=entity_ck,
+           legend=TRUE,
+           caption=FALSE,
+           format=TRUE)#+
+   # facet_wrap(.~PlatformPortfolioUAVRemote,scales="free_y"))
+)
+
+
+ggsave600dpi(a,file="../output/land//land_entity_count.png",
+             size = 12, lineheight=1, height =4.5, width=9)
+
+
+ggsave600dpi(b,file="../output/land//land_entity_dollar.png",
+             size = 12, lineheight=1, height =4.5, width=9)
+
+
+(ab<-build_plot(data=defense_entity_both %>% filter(Fiscal_Year>=2005&
+                                                    IsEntityAbove2018constant10ThousandThreshold==1& Fiscal_Year<=2020 &
+                                                       PlatformPortfolioUAV=="Land Vehicles"),# & PlatformPortfolioUAV %in% 
+                                                  c(#"Aircraft","Electronics, Comms, & Sensors",
+                                                    #"Remotely Operated","Ordnance and Missiles")&
+                                                      ),
+           chart_geom="Bar Chart",
+           x_var="dFYear",
+           y_var="value",
+           color_var="EntitySizeText",
+           facet_var="Metric",
+           # second_var="IsEntityAbove2018constant10ThousandThreshold",
+           labels_and_colors=prepare_labels_and_colors(defense_entity_both),
+           column_key=get_column_key(defense_entity_both),
+           legend=TRUE,
+           caption=FALSE,
+           format=TRUE,
+           share=FALSE)+
+    labs(y=NULL)+
+   facet_wrap(.~Metric,scales="free_y")+
+    theme(legend.position = "right"))
+
+
+ggsave600dpi(ab,
+                          file="../output/land//land_entity_count_size.png",
+              size = 12, lineheight=1,height =3.5, width=6.5)
+
+
+ggsave600dpi(ab,
+                          file="../output/land//land_entity_count_size.svg",
+              size = 12, lineheight=1,height =3.5, width=6.5)
+
+```
+
+
+
 
 ## Facility Related And Construction
 ```{r FRSnC}

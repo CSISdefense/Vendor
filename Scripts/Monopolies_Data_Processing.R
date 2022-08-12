@@ -333,6 +333,7 @@ annual_naics6_summary<-join_economic(annual_naics6_summary,core,6)
 #************Saving********************
 save(defense_naics_vendor,
      defense_platform_vendor,
+     defense_platformUAV_vendor,
      defense_vendor,
      annual_summary,
      annual_platform_summary,
