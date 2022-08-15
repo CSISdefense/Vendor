@@ -26,8 +26,13 @@ source(file.path("..","FMS","Scripts","Trade_Standardize.r"))
 initial_clean<-function(df,only_defense=TRUE){
   df<-standardize_variable_names(df)
   # colnames(df)[colnames(df)=="Fiscal.Year"]<-"Fiscal_Year"
-  if(substring(df$Fiscal_Year[nrow(df)],1,12)=="Completion time")
+  if(substring(df$Fiscal_Year[nrow(df)],1,15) %in% c(
+    "Completion time",
+    "An error occurr"))#ed while executing batch. Error message is: One or more errors occurred
     df<-df[-nrow(df),]
+  
+  
+  
   
   # coerce Amount to be a numeric variable
   # if("Action_Obligation" %in% colnames(df)) 
@@ -104,6 +109,7 @@ fed_data<- apply_standard_lookups(full_data)#,
 full_data<-initial_clean(fed_data,only_defense=TRUE)
 # path="K:/Users/Greg/Repositories/Lookup-Tables/style")
 
+
 #AnyCommercial 
 def_data<- read_delim(
   "Data//semi_clean//Defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",delim = "\t",
@@ -158,7 +164,7 @@ full_data %<>%
   mutate(VendorIsForeign = factor(VendorIsForeign))%>%
   mutate(PlaceIsForeign = factor(PlaceIsForeign))
 
-dcrlabels_and_colors<-csis360::prepare_labels_and_colors(full_data)
+labels_and_colors<-csis360::prepare_labels_and_colors(full_data)
 
 column_key<-csis360::get_column_key(full_data)
 
