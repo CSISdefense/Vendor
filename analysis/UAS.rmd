@@ -47,7 +47,7 @@ platpscintl$SubCustomer.sum[platpscintl$Customer!="Defense"]<-"Civilian"
 OTA_data$SubCustomer.sum<-as.character(OTA_data$SubCustomer.sum)
 
 
-summary(factor(ota_contract$SubCustomer.sum))
+# summary(factor(ota_contract$SubCustomer.sum))
 
 OTA_data$SubCustomer.sum[OTA_data$Customer!="Defense"]<-"Civilian"
 
@@ -76,17 +76,6 @@ ota_def %>% filter(Product_or_Service_Code=="1550") %>% group_by(Fiscal_Year)%>%
 ## Preprocess
 ```{r PreprocessProjectDrone}
 
-
-
-
-platpscintl<-csis360::read_and_join_experiment(platpscintl,
-                                                  "ProjectID.txt",
-                                                  by=c("ProjectID"),
-                                                  add_var="IsRemotelyOperated",
-                                                  path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                                                  dir="project/",
-                                                  skip_check_var = "IsRemotelyOperated"
-)
 
 drone<-platpscintl %>% filter(ProductOrServiceCode==1550 | IsRemotelyOperated==1)
 
@@ -153,7 +142,7 @@ drone %>% dplyr::group_by(ProjectName, IsRemotelyOperated)  %>% dplyr::summarise
 summary(factor(drone$SubCustomer.sum))
 
 topcust<-drone %>% group_by (ProjectName,SubCustomer.sum) %>%
-  summarise(Action_Obligation_OMB23_GDP21=sum(Action_Obligation_OMB23_GDP21),
+  summarise(Action_Obligation_OMB23_GDP21=sum(Action_Obligation_OMB23_GDP21,na.rm=TRUE),
             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB23_GDP21,0)))%>%
               group_by (SubCustomer.sum) %>%
     mutate(rank_total=rank(desc(Action_Obligation_OMB23_GDP21)),
@@ -701,12 +690,12 @@ write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_crewed_Customer_cur
 # drone %>% group_by(claimantprogramcode,ClaimantProgramCodeText) %>% 
 #   summarise(Action_Obligation_OMB23_GDP21=sum(Action_Obligation_OMB23_GDP21))
 # drone$SubCustomer
-
+summary(factor(drone$TopProject))
 # drone$TopProject<-u
 drone$TopProject<-factor(drone$TopProject,
                          levels=c("Other Labeled Project","TACTICAL UAV" ,"MQ-1C Gray Eagle",
                                   "BAMS","VTUAV",
-                                  "GLOBAL HAWK" ,"MQ-9 Reaper"  
+                                  "GLOBAL HAWK" ,"MQ-9 Reaper"  ,"Other UAS"
                                   ))
 levels(drone$TopProject)<-list(
   "Other Labeled Project"="Other Labeled Project",
@@ -715,7 +704,8 @@ levels(drone$TopProject)<-list(
   "MQ-8 Fire Scout"=c("VTUAV","MQ-8 Fire Scout"),
       "MQ-4C Triton"=c("BAMS","MQ-4C Triton"),
      "RQ-4 Global Hawk" =c("GLOBAL HAWK", "RQ-4 Global Hawk"),
-  "MQ-1C Gray Eagle"="MQ-1C Gray Eagle")
+  "MQ-1C Gray Eagle"="MQ-1C Gray Eagle",
+  "Other UAS"="Other UAS")
 
 (
   rc_custproj<-build_plot(
@@ -756,7 +746,7 @@ ggsave600dpi(rc_custproj,file="..//output//Remotely_Crewed//Remotely_Crewed_Cust
 )
 
 write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_Customer_Project.csv",row.names = FALSE,na = "",
-          rc_customer$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
+          rc_custproj$data %>% mutate(Fiscal_Year=lubridate::year(dFYear),
             bAction_Obligation_OMB23_GDP21=Action_Obligation_OMB23_GDP21/1000000000)%>%
             arrange(Fiscal_Year)%>%
             pivot_wider(id_cols=c(SubCustomer.sum,TopProject),

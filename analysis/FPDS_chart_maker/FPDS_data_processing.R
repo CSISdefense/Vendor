@@ -26,8 +26,12 @@ source(file.path("..","FMS","Scripts","Trade_Standardize.r"))
 initial_clean<-function(df,only_defense=TRUE){
   df<-standardize_variable_names(df)
   # colnames(df)[colnames(df)=="Fiscal.Year"]<-"Fiscal_Year"
-  if(substring(df$Fiscal_Year[nrow(df)],1,12)=="Completion time")
+  if(substring(df[nrow(df),1],1,12)=="Completion time")
     df<-df[-nrow(df),]
+  #Empty rows
+  if((df[nrow(df),1]=="" | is.na(df[nrow(df),1]))  & is.na(df$Fiscal_Year[nrow(df)]))
+    df<-df[-nrow(df),]
+  
   
   # coerce Amount to be a numeric variable
   # if("Action_Obligation" %in% colnames(df)) 
@@ -238,7 +242,20 @@ if(all(is.na(full_data[nrow(full_data),]))){
 }
 
 
+##############Software #############
+sw<-read_delim(file.path("data","semi_clean","Summary.SP_SoftwareDetail.txt"),delim="\t",na=c("NULL","NA"),
+               col_names = TRUE, guess_max = 10000000)
 
+
+
+sw<-apply_standard_lookups(sw)
+
+sw_lc<-prepare_labels_and_colors(sw)
+sw_ck<-get_column_key(sw)
+
+save(sw,sw_lc,sw_ck, file="data/clean/sw_FPDS.Rda")
+
+###########Product Service Code, Agency, Platform ############
 
 
 platpsc<-read_delim(file.path("data","semi_clean","Federal_ProdservPlatform.txt"),delim="\t",na=c("NULL","NA"),
@@ -251,24 +268,20 @@ platpscintl<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdS
                         col_names = TRUE, guess_max = 10000000)
 colnames(platpscintl)[colnames(platpscintl)=="Customer"]<-"ContractingCustomer"
 
-save(platpscintl, file="temp.rdata")
-platpscintl<-apply_standard_lookups(platpscintl)
+#Weird cludge for duplicate
+if(colnames(platpscintl)[1]=="productorservicecode" & colnames(platpscintl)[5]=="ProductOrServiceCode"){
+  platpscintl<-platpscintl %>% select(-productorservicecode)
+}
+# View(platpscintl[(nrow(platpscintl)-3):nrow(platpscintl),])
+# View(platpscintldef[(nrow(platpscintldef)-3):nrow(platpscintldef),])
+# debug(initial_clean)
+platpscintl<-initial_clean(platpscintl,only_defense=FALSE)
+platpscintl<-apply_standard_lookups(platpscintl,path="F:\\Users\\gsanders\\Documents\\Repositories\\Lookup-Tables\\")
 platpscintldef<-initial_clean(platpscintl)
 
 
 n<-platpscintl %>% group_by(IsFMS,IsFMSmac,IsFMSml,fundedbyforeignentity) %>%
   summarise(n=length(fiscal_year),min=min(fiscal_year),max=max(fiscal_year))
-
-sw<-read_delim(file.path("data","semi_clean","Summary.SP_SoftwareDetail.txt"),delim="\t",na=c("NULL","NA"),
-                    col_names = TRUE, guess_max = 10000000)
-
-sw<-apply_standard_lookups(sw)
-
-sw_lc<-prepare_labels_and_colors(sw)
-sw_ck<-get_column_key(sw)
-
-save(sw,sw_lc,sw_ck, file="data/clean/sw_FPDS.Rda")
-
 
 
 
@@ -297,14 +310,6 @@ platpscintldef %<>% read_and_join_experiment(lookup_file="Budget_FundedByForeign
                                         skip_check_var = c("foreign_funding_description","IsFMS")
 )
 
-
-platpscintldef %<>% read_and_join_experiment(lookup_file="ProjectID.txt",
-                                             path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="project/",
-                                             add_var = c("ProjectName","IsUnknown"),
-                                             by=c("ProjectID")#,
-                                             # missing_file="missing_iso.csv",
-                                             # skip_check_var = c("ProjectName","IsUnidentified	")
-)
 
 
 platpscintldef$IsJSF[platpscintldef$ProjectID==87]<-"JSF (F-35)"
