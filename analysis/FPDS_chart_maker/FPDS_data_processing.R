@@ -251,12 +251,13 @@ platpscintl<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdS
                         col_names = TRUE, guess_max = 10000000)
 colnames(platpscintl)[colnames(platpscintl)=="Customer"]<-"ContractingCustomer"
 
-n<-platpscintl %>% group_by(IsFMS,IsFMSmac,IsFMSml,fundedbyforeignentity) %>%
-  summarise(n=length(fiscal_year),min=min(fiscal_year),max=max(fiscal_year))
-
+save(platpscintl, file="temp.rdata")
 platpscintl<-apply_standard_lookups(platpscintl)
 platpscintldef<-initial_clean(platpscintl)
 
+
+n<-platpscintl %>% group_by(IsFMS,IsFMSmac,IsFMSml,fundedbyforeignentity) %>%
+  summarise(n=length(fiscal_year),min=min(fiscal_year),max=max(fiscal_year))
 
 sw<-read_delim(file.path("data","semi_clean","Summary.SP_SoftwareDetail.txt"),delim="\t",na=c("NULL","NA"),
                     col_names = TRUE, guess_max = 10000000)
