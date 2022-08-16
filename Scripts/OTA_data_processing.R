@@ -352,10 +352,8 @@ ota_contract$AnyCommercial<-factor(ota_contract$NontraditionalGovernmentContract
 levels(ota_contract$AnyCommercial)=list(
   "Y"="NSP",
   "NonDev"="NonDev",
-  "Other OTA"=c("CS","DEC")
-  "N"="N",
-  
-  
+  "Other OTA"=c("CS","DEC"),
+  "N"="N"
 )
 
 

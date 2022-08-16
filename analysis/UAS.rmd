@@ -773,15 +773,15 @@ write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_crewed_Customer_Pro
 ### Commercial Subcustomer
 ```{r drone_customer}
 
-drone<-fed_data%>% filter(PlatformPortfolioUAV=="Remotely Crewed")
 
-drone<-drone %>% group_by(SubCustomer.sum,Fiscal_Year) %>%
+fed_data<-fed_data %>% group_by(SubCustomer.sum,Fiscal_Year) %>%
   dplyr::mutate(pAction_Obligation_SubCustomer=
                      Action_Obligation_Then_Year/sum(Action_Obligation_Then_Year,rm=TRUE))
 
 (
   rc_customer<-build_plot(
-    data=drone %>% filter(Fiscal_Year>=2010&AnyCommercial=='Y'&ContractingCustomer=="Defense") ,
+    data=fed_data %>% filter(Fiscal_Year>=2010&AnyCommercial %in% c('Y',"NonDev","Other OTA")&ContractingCustomer=="Defense"&
+                            PlatformPortfolioUAV=="Remotely Crewed") ,
     chart_geom = "Line Chart",
     share = FALSE,
     labels_and_colors=fed_lc,
@@ -810,7 +810,8 @@ drone<-drone %>% group_by(SubCustomer.sum,Fiscal_Year) %>%
 
 (
   rc_commercial<-build_plot(
-    data=drone %>% filter(Fiscal_Year>=2010&AnyCommercial %in% c('Y',"NonDev")),
+    data=fed_data %>% filter(Fiscal_Year>=2010&AnyCommercial %in% c('Y',"NonDev","Other OTA")&
+                            PlatformPortfolioUAV=="Remotely Crewed"),
     chart_geom = "Line Chart",
     share = FALSE,
     labels_and_colors=fed_lc,
@@ -902,7 +903,7 @@ ggsave600dpi(rc_commercial,file="..//output//Remotely_Crewed//Remotely_Crewed_Co
   (
     uas_ota_contract_comm_sub<-build_plot(
       data=ota_contract %>% filter(PlatformPortfolioUAV=="Remotely Crewed" & Fiscal_Year<=2021& 
-                                     AnyCommercial %in% c('Y',"NonDev")&
+                                     AnyCommercial %in% c('Y',"NonDev","Other OTA")&
                                      Fiscal_Year>=2011) ,
       chart_geom = "Bar Chart",
       share = FALSE,
@@ -942,7 +943,7 @@ ggsave600dpi(uas_ota_contract_comm_sub,file="..//output//Remotely_Crewed//uas_ot
 
 
 write.csv(file="..//Output//Remotely_Crewed//uas_ota_contract_comm_sub.csv",row.names = FALSE,na = "",
-          uas_ota_contract_sub$data %>% mutate(Fiscal_Year=lubridate::year(dFYear),
+          uas_ota_contract_comm_sub$data %>% mutate(Fiscal_Year=lubridate::year(dFYear),
             bAction_Obligation_OMB23_GDP21=Action_Obligation_OMB23_GDP21/1000000000)%>%
             arrange(Fiscal_Year)%>%
             pivot_wider(id_cols=c(SubCustomer.sum,IsOTA),
@@ -955,9 +956,10 @@ write.csv(file="..//Output//Remotely_Crewed//uas_ota_contract_comm_sub.csv",row.
 summary(fed_data$Competition.effective.only)
 fed_data <- fed_data %>% group_by(Fiscal_Year,PlatformPortfolioUAV)  %>%
   dplyr::mutate(pctFYPlat=Action_Obligation_Then_Year/sum(Action_Obligation_Then_Year,na.rm=TRUE))
+fed_data$platfor
 (
 CommPlatUAV<-build_plot(
-  data=fed_data %>% filter(Fiscal_Year>=2010,AnyCommercial=='Y' & PlatformPortfolioUAV!="Unlabeled"),
+  data=fed_data %>% filter(Fiscal_Year>=2010,AnyCommercial %in% c('Y',"NonDev","Other OTA") & PlatformPortfolioUAV!="Unlabeled"),
   chart_geom = "Line Chart",
   share = FALSE,
   labels_and_colors=fed_lc,
@@ -1022,11 +1024,11 @@ ggsave600dpi(CommPlatUAVbar,file="../output/Remotely_Crewed//CommPlatUAVbar.png"
              size = 12, lineheight=1, height =8.64, width=6.5)
 
 
-
 write.csv(file="..//Output//Remotely_Crewed//CommPlatUAV.csv",row.names = FALSE, na = "",
           CommPlatUAV$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
-            pivot_wider(id_cols=c(SimpleArea,PlatformPortfolioUAV),
-                        names_from=Fiscal_Year,values_from=pctFYsimpleareaPlat))
+            pivot_wider(id_cols=c(PlatformPortfolioUAV),
+                        names_from=Fiscal_Year,values_from=pctFYPlat)%>%
+            arrange(PlatformPortfolioUAV))
 
 
 # write.csv(file="..//Output//Remotely_Crewed//CommPlatUAV_cur.csv",row.names = FALSE, na = "",
