@@ -42,6 +42,8 @@ load(file=file.path("..","data","clean","uav_vendor_count.Rda"))
 # load(file="../data/semi_clean/sw_FPDS.Rda")
 # load(file="../data/clean/jadc2.Rda")
 
+platpscintl<-apply_standard_lookups(platpscintl)
+
 platpscintl$SubCustomer.sum[platpscintl$Customer!="Defense"]<-"Civilian"
 
 fed_data$SubCustomer.sum[fed_data$ContractingCustomer!="Defense"]<-"Civilian"
@@ -54,6 +56,9 @@ OTA_data$SubCustomer.sum[OTA_data$Customer!="Defense"]<-"Civilian"
 
 ota_lc<-prepare_labels_and_colors(OTA_data)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 ota_ck<-get_column_key(OTA_data)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+
+ota_contract_lc<-prepare_labels_and_colors(ota_contract)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+ota_contract_ck<-get_column_key(ota_contract)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 
 
 fed_lc<-prepare_labels_and_colors(fed_data)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
@@ -78,7 +83,7 @@ ota_def %>% filter(Product_or_Service_Code=="1550") %>% group_by(Fiscal_Year)%>%
 ```{r PreprocessProjectDrone}
 
 
-drone<-platpscintl %>% filter(ProductOrServiceCode==1550 | IsRemotelyOperated==1)
+drone<-platpscintl %>% filter(PlatformPortfolioUAV)
 
 
 summary(factor(drone$ProjectName))
@@ -773,7 +778,6 @@ write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_crewed_Customer_Pro
 ### Commercial Subcustomer
 ```{r drone_customer}
 
-
 fed_data<-fed_data %>% group_by(SubCustomer.sum,Fiscal_Year) %>%
   dplyr::mutate(pAction_Obligation_SubCustomer=
                      Action_Obligation_Then_Year/sum(Action_Obligation_Then_Year,rm=TRUE))
@@ -907,14 +911,14 @@ ggsave600dpi(rc_commercial,file="..//output//Remotely_Crewed//Remotely_Crewed_Co
                                      Fiscal_Year>=2011) ,
       chart_geom = "Bar Chart",
       share = FALSE,
-      labels_and_colors=ota_lc,
+      labels_and_colors=ota_contract_lc,
       # NA, #VAR.ncol
       x_var="dFYear", #x_var
       y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
       color_var="IsOTA", #color_var
       facet_var="SubCustomer.sum", #facet_var
       # second_var="IsOTA", #facet_var
-      column_key=ota_lc,
+      column_key=ota_contract_lc,
       format=TRUE,
       ytextposition=FALSE
     )+
@@ -930,8 +934,11 @@ ggsave600dpi(rc_commercial,file="..//output//Remotely_Crewed//Remotely_Crewed_Co
       labs(y="Obligations (Constant 2021 $s)",caption="Source: FPDS; CSIS analysis.")+
      facet_grid(.~SubCustomer.sum)
   )
-
-
+OTA_data$LegalBusinessName
+OTA_data %>% filter(SubCustomer.sum=="Army"& PlatformPortfolioUAV=="Remotely Crewed"& Fiscal_Year<=2014)%>%
+  group_by(Description_of_Requirement,LegalBusinessName,NontraditionalGovernmentContractorParticipationDescription)%>%
+       summarise(Action_Obligation_OMB23_GDP21=sum(Action_Obligation_OMB23_GDP21,na.rm=TRUE))%>%
+  arrange(-Action_Obligation_OMB23_GDP21)
 
 ggsave600dpi(uas_ota_contract_comm_sub,file="..//output//Remotely_Crewed//uas_ota_contract_comm_sub.png",
              width=6.5, height= 3, units="in",size=11, lineheight=1.2)

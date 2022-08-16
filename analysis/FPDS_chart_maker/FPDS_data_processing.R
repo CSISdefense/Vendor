@@ -384,6 +384,33 @@ detail_ck<-csis360::get_column_key(platpsc)
 
 save(platpsc,detail_lc,detail_ck, file="data/clean/platpsc_FPDS.Rda")
 
+
+platpscintl %<>%
+  # select(-ContractingCustomer) %>%
+  # select(-ClassifyNumberOfOffers) %>%
+  mutate(SubCustomer = factor(SubCustomer)) %>%
+  mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
+  mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
+  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
+  mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
+  mutate(PlatformPortfolioUAV = factor(PlatformPortfolioUAV)) %>%
+  mutate(CrisisProductOrServiceArea = factor(CrisisProductOrServiceArea))
+
+
+
+platpscintldef %<>%
+  # select(-ContractingCustomer) %>%
+  # select(-ClassifyNumberOfOffers) %>%
+  mutate(SubCustomer = factor(SubCustomer)) %>%
+  mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
+  mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
+  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
+  mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
+  mutate(PlatformPortfolioUAV = factor(PlatformPortfolioUAV)) %>%
+  mutate(CrisisProductOrServiceArea = factor(CrisisProductOrServiceArea))
+
+
+
 intl_lc<-csis360::prepare_labels_and_colors(platpscintldef)
 intl_ck<-csis360::get_column_key(platpscintldef)
 
