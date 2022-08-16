@@ -94,11 +94,6 @@ save(pricing,pricing_lc,pricing_ck, file="data/clean/pricing_historical.Rda")
 
 
 
-jadc2 <- read_delim(
-  "Data//semi_clean//Summary.SP_JADC2detail.txt",delim = "\t",
-  col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
-
-jadc2<-apply_standard_lookups(jadc2)#,
 
 full_data <- read_delim(
   "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerInternational.txt",delim = "\t",
@@ -258,6 +253,20 @@ sw_ck<-get_column_key(sw)
 
 save(sw,sw_lc,sw_ck, file="data/clean/sw_FPDS.Rda")
 
+#############JADC2##########
+
+jadc2 <- read_delim(
+  "Data//semi_clean//Summary.SP_JADC2detail.txt",delim = "\t",
+  col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
+
+jadc2<-apply_standard_lookups(jadc2)#,
+
+
+jadc2_lc<-csis360::prepare_labels_and_colors(jadc2)
+jadc2_ck<-csis360::get_column_key(jadc2)
+save(jadc2,jadc2_lc, jadc2_ck,file="data/clean/jadc2.Rda")
+
+
 ###########Product Service Code, Agency, Platform ############
 
 
@@ -279,12 +288,12 @@ if(colnames(platpscintl)[1]=="productorservicecode" & colnames(platpscintl)[5]==
 # View(platpscintldef[(nrow(platpscintldef)-3):nrow(platpscintldef),])
 # debug(initial_clean)
 platpscintl<-initial_clean(platpscintl,only_defense=FALSE)
-platpscintl<-apply_standard_lookups(platpscintl,path="F:\\Users\\gsanders\\Documents\\Repositories\\Lookup-Tables\\")
+platpscintl<-apply_standard_lookups(platpscintl)#,path="F:\\Users\\gsanders\\Documents\\Repositories\\Lookup-Tables\\")
 platpscintldef<-initial_clean(platpscintl)
 
 
-n<-platpscintl %>% group_by(IsFMS,IsFMSmac,IsFMSml,fundedbyforeignentity) %>%
-  summarise(n=length(fiscal_year),min=min(fiscal_year),max=max(fiscal_year))
+# n<-platpscintl %>% group_by(IsFMS,IsFMSmac,IsFMSml,fundedbyforeignentity) %>%
+#   summarise(n=length(fiscal_year),min=min(fiscal_year),max=max(fiscal_year))
 
 
 
@@ -361,9 +370,9 @@ levels(platpscintldef$IsFMSplaceIntl)=list(
 platpsc %<>%
   # select(-ContractingCustomer) %>%
   # select(-ClassifyNumberOfOffers) %>%
-  mutate(ContractingSubCustomer = factor(ContractingSubCustomer)) %>%
+  mutate(SubCustomer = factor(SubCustomer)) %>%
   mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
-  mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
+  # mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
   mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
   mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
   mutate(CrisisProductOrServiceArea = factor(CrisisProductOrServiceArea))
@@ -373,7 +382,7 @@ platpsc %<>%
 detail_lc<-csis360::prepare_labels_and_colors(platpsc)
 detail_ck<-csis360::get_column_key(platpsc)
 
-save(platpsc,labels_and_colors,column_key, file="data/clean/platpsc_FPDS.Rda")
+save(platpsc,detail_lc,detail_ck, file="data/clean/platpsc_FPDS.Rda")
 
 intl_lc<-csis360::prepare_labels_and_colors(platpscintldef)
 intl_ck<-csis360::get_column_key(platpscintldef)
@@ -385,9 +394,6 @@ fed_ck<-csis360::get_column_key(platpscintl)
 save(platpscintldef,intl_lc, intl_ck,file="data/clean/platpscintl_FPDS.Rda")
 save(platpscintl,fed_lc, fed_ck,file="data/clean/Federal_platpscintl_FPDS.Rda")
 
-jadc2_lc<-csis360::prepare_labels_and_colors(jadc2)
-jadc2_ck<-csis360::get_column_key(jadc2)
-save(jadc2,jadc2_lc, jadc2_ck,file="data/clean/jadc2.Rda")
 
 # write output to CleanedVendorSize.csv
 # save(full_data,labels_and_colors,column_key, file="Shiny Apps//FPDS_chart_maker//2018_unaggregated_FPDS.Rda")
