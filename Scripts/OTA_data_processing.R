@@ -263,12 +263,13 @@ OTA_data<-read_and_join_experiment(OTA_data,
                                            # skip_check_var = "Remotely_Crewed",
                                            by="Description_of_Requirement")
 
-OTA_data<-read_and_join_experiment(OTA_data,
+OTA_data_current<-read_and_join_experiment(OTA_data,
                                            path="data//semi_clean//",dir="",lookup_file = "ota_description_UAS.csv",
                                            add_var="Remotely_Crewed",
                                            # skip_check_var = "Remotely_Crewed",
                                            by="descrip_row_number",
                                            col_types = "cnccccccccc")
+
 
 OTA_data$IsRemotelyOperated[OTA_data$Remotely_Crewed %in% c("UAS","UAS/C-UAS")]<-TRUE
 sum(OTA_data$Action_Obligation_OMB23_GDP21[OTA_data$IsRemotelyOperated],na.rm=TRUE)
@@ -345,10 +346,16 @@ colnames(ota_contract)[colnames(ota_contract)=="Customer"]<-"ContractingCustomer
 
 
 summary(factor(OTA_data$NontraditionalGovernmentContractorParticipationCode))
+
+summary(factor(ota_contract$AnyCommercial))
 ota_contract$AnyCommercial<-factor(ota_contract$NontraditionalGovernmentContractorParticipationCode)
 levels(ota_contract$AnyCommercial)=list(
   "Y"="NSP",
-  "N"=c("CS","DEC")
+  "NonDev"="NonDev",
+  "Other OTA"=c("CS","DEC")
+  "N"="N",
+  
+  
 )
 
 

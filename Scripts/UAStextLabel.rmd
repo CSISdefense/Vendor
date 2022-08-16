@@ -21,15 +21,18 @@ OTA_data_current <- read_delim(
 
 
 
+
 OTA_data_current<-standardize_variable_names(OTA_data_current)
 
-descrip<-data.frame(Description_of_Requirement=unique(OTA_data_current$Description_of_Requirement))
+descrip<-data.frame(Description_of_Requirement=unique(OTA_data_current$Description_of_Requirement),
+                                                      second="Second")
 
 #Create the descrip_row_number 
 descrip$descrip_row_number<-seq(1,nrow(descrip))
 
 # descrip<-descrip%>%mutate(descrip_hasp=rlang::hash(descrip$Description_of_Requirement))
 #Write the file preserving descrip_row_number (leave this one alone)
+
 write_delim(descrip,file="..//data_raw//OTA_descrip_row_number.csv",delim = ",")#,fileEncoding = "UTF-16LE")
 #Add the descrip_row_number back to the main dataframe
 OTA_data_current<-read_and_join_experiment(OTA_data_current,
@@ -55,12 +58,12 @@ summary(OTA_data_current$descrip_row_number)
 #IDeally we'd use a reproducible hash, but oen problem at a time.
 
 d<-read_and_join_experiment(descrip,
-                         path="..//data//semi_clean//",dir="",lookup_file = "ota_description_UAS.txt",
+                         path="..//data//semi_clean//",dir="",lookup_file = "ota_description_UAS.csv",
                          add_var="Remotely_Crewed",
                          # skip_check_var = "Remotely_Crewed",
-                         by="Description_of_Requirement")
+                         by="descrip_row_number")
 
-write_delim(d,file.path("..","data","semi_clean","ota_description_UAS.csv"),na = "",delim=",")
+# write_delim(d %>% select(-second),file.path("..","data","semi_clean","ota_description_UAS.csv"),na = "",delim=",")
 
 #Filter out the failed imports. Not great, but keeps things moving.
 #Thankfully 124849 rows out of 41,802,808
