@@ -32,8 +32,7 @@ load(file=file.path("..","data","clean","defense_naics_vendor.rdata"))
 load(file=file.path("..","data","clean","fed_summary_FPDS.rda"))
 load(file="../data/clean/Federal_platpscintl_FPDS.Rda")
 load(file="../data/clean/OTA_contract.Rda")
-load(file="../data/clean/Defense_OTA.Rda")
-
+# load(file="../data/clean/Defense_OTA.Rda")
 load(file="../data/clean/Federal_OTA.Rda")
 load(file=file.path("..","data","clean","uav_vendor_count.Rda"))
 # platformUAS_only$
@@ -44,6 +43,8 @@ load(file=file.path("..","data","clean","uav_vendor_count.Rda"))
 # load(file="../data/clean/jadc2.Rda")
 
 platpscintl$SubCustomer.sum[platpscintl$Customer!="Defense"]<-"Civilian"
+
+fed_data$SubCustomer.sum[fed_data$ContractingCustomer!="Defense"]<-"Civilian"
 OTA_data$SubCustomer.sum<-as.character(OTA_data$SubCustomer.sum)
 
 
@@ -558,7 +559,7 @@ write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_crewed_Customer_psr
 
 (
   rc_psr_plat<-build_plot(
-    data=def_data %>% filter(Fiscal_Year>=2010,PlatformPortfolioUAV!="Unlabeled"& 
+    data=fed_data %>% filter(Fiscal_Year>=2010,PlatformPortfolioUAV!="Unlabeled"& ContractingCustomer=="Defense"&
                                !PlatformPortfolioUAV %in% c("Facilities and Construction",
                                                             "Other Products",
                                                             "Other R&D and Knowledge Based",
@@ -603,7 +604,7 @@ write.csv(file="..//Output//Remotely_Crewed//def_platUAS_psr.csv",row.names = FA
                         names_from=Fiscal_Year,values_from=bAction_Obligation_OMB23_GDP21)%>%
             arrange(PlatformPortfolioUAV,SimpleArea))
 
-output_TY<-def_data %>%   group_by(SimpleArea,PlatformPortfolioUAV,Fiscal_Year)%>%
+output_TY<-fed_data %>% filter(ContractingCustomer=="Defense") %>%   group_by(SimpleArea,PlatformPortfolioUAV,Fiscal_Year)%>%
   dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
   arrange(Fiscal_Year) %>%
   pivot_wider(id_cols=c(PlatformPortfolioUAV,SimpleArea),
@@ -772,7 +773,7 @@ write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_crewed_Customer_Pro
 ### Commercial Subcustomer
 ```{r drone_customer}
 
-
+drone<-fed_data%>% filter(PlatformPortfolioUAV=="Remotely Crewed")
 
 drone<-drone %>% group_by(SubCustomer.sum,Fiscal_Year) %>%
   dplyr::mutate(pAction_Obligation_SubCustomer=
@@ -780,7 +781,7 @@ drone<-drone %>% group_by(SubCustomer.sum,Fiscal_Year) %>%
 
 (
   rc_customer<-build_plot(
-    data=drone %>% filter(Fiscal_Year>=2010&AnyCommercial=='Y'&Customer=="Defense") ,
+    data=drone %>% filter(Fiscal_Year>=2010&AnyCommercial=='Y'&ContractingCustomer=="Defense") ,
     chart_geom = "Line Chart",
     share = FALSE,
     labels_and_colors=fed_lc,
