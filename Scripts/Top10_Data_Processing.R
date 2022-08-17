@@ -46,7 +46,7 @@ dataplat<-dataplat%>% group_by(Fiscal_Year,IsDefense,PlatformPortfolioUAV,
   dplyr::mutate(pos=rank(-Action_Obligation))%>%
   arrange(Fiscal_Year,IsDefense,PlatformPortfolioUAV,pos)
 
-save(file="data/semi_clean/TopVendorUAVHistoryPlatformCustomer.rda",dataplat)
+save(file="data/clean/TopVendorUAVHistoryPlatformCustomer.rda",dataplat)
 colnames(dataplat)
 
 
