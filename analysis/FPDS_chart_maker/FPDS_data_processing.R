@@ -343,15 +343,7 @@ levels(platpscintldef$IsFMSplaceIntl)=list(
 
 
 
-if(!"OriginIsForeign" %in% colnames(full_data)){
-  full_data<-read_and_join_experiment(full_data,lookup_file="Location_CountryCodes.csv",
-                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="location/",
-                                      add_var = c("isforeign"),#"USAID region",
-                                      by=c("OriginISOalpha3"="alpha-3"),
-                                      # skip_check_var=c("NATOyear",	"MajorNonNATOyear","NTIByear"	,"SEATOendYear","RioTreatyStartYear","RioTreatyEndYear","FiveEyes","OtherTreatyName"	,"OtherTreatyStartYear","OtherTreatyEndYear","isforeign"),
-                                      missing_file="missing_DSCA_iso.csv")
-  colnames(full_data)[colnames(full_data)=="isforeign"]<-"OriginIsForeign"
-}
+
 
 
 
@@ -422,12 +414,13 @@ platpscintldef %<>%
 intl_lc<-csis360::prepare_labels_and_colors(platpscintldef)
 intl_ck<-csis360::get_column_key(platpscintldef)
 
+save(platpscintldef,intl_lc, intl_ck,file="data/clean/platpscintl_FPDS.Rda")
+
 fed_lc<-csis360::prepare_labels_and_colors(platpscintl)
 fed_ck<-csis360::get_column_key(platpscintl)
 
-
-save(platpscintldef,intl_lc, intl_ck,file="data/clean/platpscintl_FPDS.Rda")
 save(platpscintl,fed_lc, fed_ck,file="data/clean/Federal_platpscintl_FPDS.Rda")
+
 
 
 # write output to CleanedVendorSize.csv
@@ -636,6 +629,13 @@ save(platpscintl,fed_lc, fed_ck,file="data/clean/Federal_platpscintl_FPDS.Rda")
 #                                            dir="office/"
 # )
 
+# SubCustomer.JPO
+platpscintldef$SubCustomer.JPO<-as.character(platpscintldef$SubCustomer.platform)
+platpscintldef$SubCustomer.JPO[platpscintldef$ProjectName=="JSF (F-35)" & !is.na(platpscintldef$ProjectName)&platpscintldef$SubCustomer.platform=="Navy"]<-"F-35 JPO"
+platpscintldef$SubCustomer.JPO<-factor(platpscintldef$SubCustomer.JPO)
+summary(factor(platpscintldef$SubCustomer.JPO))
+any(as.character(platpscintldef$ProjectName)=="JSF (F-35)"& !is.na(platpscintldef$ProjectName))
+
 
 # platpscintldef$IsUnlabeledMAC<-is.na(platpscintldef$mainaccountcode) | is.na(platpscintldef$treasuryagencycode)
 # platpscintldef$IsFMS<-NA
@@ -646,4 +646,34 @@ save(platpscintl,fed_lc, fed_ck,file="data/clean/Federal_platpscintl_FPDS.Rda")
 # platpscintldef$IsFMS[is.na(platpscintldef$IsFMS) & platpscintldef$IsFMSmac==0]<-0
 # # platpscintldef$IsFMS[is.na(platpscintldef$IsFMS) & platpscintldef$IsUnlabeledMAC==0]<-0
 
+# 
+# if(!"PlaceIsForeign" %in% colnames(platpscintldef)){
+#   platpscintldef<-read_and_join_experiment(platpscintldef,lookup_file="Location_CountryCodes.csv",
+#                                            path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="location/",
+#                                            add_var = c("isforeign"),#"USAID region",
+#                                            by=c("PlaceISOalpha3"="alpha-3"),
+#                                            # skip_check_var=c("NATOyear",	"MajorNonNATOyear","NTIByear"	,"SEATOendYear","RioTreatyStartYear","RioTreatyEndYear","FiveEyes","OtherTreatyName"	,"OtherTreatyStartYear","OtherTreatyEndYear","isforeign"),
+#                                            missing_file="missing_DSCA_iso.csv")
+#   colnames(platpscintldef)[colnames(platpscintldef)=="isforeign"]<-"PlaceIsForeign"
+# }
+# 
+if(!"OriginIsForeign" %in% colnames(full_data)){
+  full_data<-read_and_join_experiment(full_data,lookup_file="Location_CountryCodes.csv",
+                                           path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="location/",
+                                           add_var = c("isforeign"),#"USAID region",
+                                           by=c("OriginISOalpha3"="alpha-3"),
+                                           # skip_check_var=c("NATOyear",	"MajorNonNATOyear","NTIByear"	,"SEATOendYear","RioTreatyStartYear","RioTreatyEndYear","FiveEyes","OtherTreatyName"	,"OtherTreatyStartYear","OtherTreatyEndYear","isforeign"),
+                                           missing_file="missing_DSCA_iso.csv")
+  colnames(full_data)[colnames(full_data)=="isforeign"]<-"OriginIsForeign"
+}
 
+# if(!"VendorIsForeign" %in% colnames(platpscintldef)){
+#   platpscintldef<-read_and_join_experiment(platpscintldef,lookup_file="Location_CountryCodes.csv",
+#                                            path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="location/",
+#                                            add_var = c("isforeign"),#"USAID region",
+#                                            by=c("VendorISOalpha3"="alpha-3"),
+#                                            # skip_check_var=c("NATOyear",	"MajorNonNATOyear","NTIByear"	,"SEATOendYear","RioTreatyStartYear","RioTreatyEndYear","FiveEyes","OtherTreatyName"	,"OtherTreatyStartYear","OtherTreatyEndYear","isforeign"),
+#                                            missing_file="missing_DSCA_iso.csv")
+#   colnames(platpscintldef)[colnames(platpscintldef)=="isforeign"]<-"VendorIsForeign"
+# }
+# 
