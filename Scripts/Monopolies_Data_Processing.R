@@ -332,12 +332,8 @@ annual_naics6_summary<-join_economic(annual_naics6_summary,core,6)
 
 #************Saving********************
 save(defense_naics_vendor,
-     defense_platform_vendor,
-     defense_platformUAV_vendor,
      defense_vendor,
      annual_summary,
-     annual_platform_summary,
-     annual_platformUAV_summary,
      annual_naics6_summary,
      annual_naics5_summary,
      annual_naics4_summary,
@@ -346,7 +342,11 @@ save(defense_naics_vendor,
      core,
      file="data//clean//defense_naics_vendor.Rdata")
 
-
+save(defense_platform_vendor,
+     defense_platformUAV_vendor,
+     annual_platform_summary,
+     annual_platformUAV_summary,
+     file="data//clean//defense_platfom_vendor.Rdata")
 
 
 write.csv(defense_naics_vendor,"data//clean//defense_naics_vendor.csv",row.names = FALSE)
