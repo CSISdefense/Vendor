@@ -69,7 +69,7 @@ ota_contract_ck<-get_column_key(ota_contract)#,path="K:\\Users\\Greg\\Repositori
 
 fed_lc<-prepare_labels_and_colors(fed_data)#,path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
                                   #)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
-fed_ck<-get_column_key(fed_data)#path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+fed_ck<-get_column_key(fed_data)#,path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
 uav_lc<-prepare_labels_and_colors(defense_platformUAV_vendor)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 uav_ck<-get_column_key(defense_platformUAV_vendor)#,path#="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 def_data<-fed_data %>% filter(ContractingCustomer=="Defense")
@@ -541,12 +541,57 @@ write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_crewed_Customer_psr
     facet_wrap(~PlatformPortfolioUAV,ncol=4,scale="free_y")
 )
 
+(
+  rc_psr_plat_share<-build_plot(
+    data=fed_data %>% filter(Fiscal_Year>=2010,PlatformPortfolioUAV!="Unlabeled"& ContractingCustomer=="Defense"&
+                               !PlatformPortfolioUAV %in% c("Facilities and Construction",
+                                                            "Other Products",
+                                                            "Other R&D and Knowledge Based",
+                                                            "Other Services")),
+    chart_geom = "Line Chart",
+    share = TRUE,
+    labels_and_colors=fed_lc,
+    # NA, #VAR.ncol
+    x_var="dFYear", #x_var
+    y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+    color_var="SimpleArea", #color_var
+    facet_var="PlatformPortfolioUAV", #facet_var
+    column_key=fed_ck,
+    format=TRUE,
+    ytextposition=FALSE
+  )+
+    # theme(strip.text.y = element_text(angle=0))+
+    # theme(axis.text.x = element_text(angle=90))+
+    #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+    #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+    #             )+labs(title=NULL,
+    # x="Fiscal Year",
+    # y="Percent of Obligations",
+    # color="Competition")+
+    theme(legend.position = "bottom")+
+    labs(y="Share of Obligations",caption="Note: Unlabeled not shown. Source: FPDS; CSIS analysis.")+
+    facet_wrap(~PlatformPortfolioUAV,ncol=4)
+)
+
+
 ggsave600dpi(rc_psr_plat,file="..//output//Remotely_Crewed//def_platUAS_psr.png",  
              width=6.5, height= 3.5, units="in",size=12, lineheight=1.2
 )
 ggsave600dpi(rc_psr_plat,file="..//output//Remotely_Crewed//def_platUAS_psr.emf",  
              width=6.5, height= 3.5, units="in",size=12, lineheight=1.2
 )
+
+(gridExtra::grid.arrange(rc_psr_plat+labs(caption=NULL),
+                                    rc_psr_plat_share))
+
+ggsave(gridExtra::grid.arrange(rc_psr_plat+labs(caption=NULL),
+                                    rc_psr_plat_share),file="..//output//Remotely_Crewed//def_platUAS_psr_share.png",  
+             width=6.5, height= 7, units="in")#,size=12, lineheight=1.2
+
+ggsave(gridExtra::grid.arrange(rc_psr_plat+labs(caption=NULL),
+                                    rc_psr_plat_share),file="..//output//Remotely_Crewed//def_platUAS_psr_share.emf",  
+             width=6.5, height= 7, units="in")#,size=12, lineheight=1.2
+
 
 write.csv(file="..//Output//Remotely_Crewed//def_platUAS_psr.csv",row.names = FALSE,na = "",
           rc_psr_plat$data %>% mutate(Fiscal_Year=lubridate::year(dFYear),
