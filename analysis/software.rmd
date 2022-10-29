@@ -1,0 +1,1134 @@
+c---
+title: "Software"
+author: "Greg Sanders"
+date: "2022-10-29"
+output: html_document
+---
+
+# Setup
+First we load the data. The dataset used is a U.S. Defense Contracting dataset derived from FPDS.
+
+```{r Libraries, echo = FALSE}
+library(csis360)
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(scales)
+
+axis.text.size<-10
+strip.text.size<-10
+legend.text.size<-8
+# table.text.size<-5.75
+title.text.size<-12
+geom.text.size<-12
+
+main.text.size<-1
+note.text.size<-1.40
+
+load(file="../data/clean/sw_FPDS.Rda")
+
+# detail_lc<-prepare_labels_and_colors(platpscintldef)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+# detail_ck<-get_column_key(platpscintldef)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+# column_key<-get_column_key(platpscintldef,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+# detail_lc<-prepare_labels_and_colors(platpscintldef,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+# detail_ck<-get_column_key(platpscintldef,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+```
+
+## SW agency
+```{r PreprocessPSC}
+
+
+topAgency<-sw %>% group_by (Contracting_Agency_ID,ContractingAgencyName,Customer) %>% #,PlatformPortfolio
+  summarise(Action_Obligation_OMB23_GDP21=sum(Action_Obligation_OMB23_GDP21),
+            Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB23_GDP21,0)))%>%
+              group_by (Customer) %>%
+    mutate(rank_total=rank(desc(Action_Obligation_OMB23_GDP21)),
+                        rank_2020=rank(desc(Action_Obligation_2020)))
+topAgency %>% arrange(desc(Action_Obligation_OMB23_GDP21))
+
+topAgency$TopAgencyID<-
+  ifelse(topAgency$rank_2020<=7 | topAgency$rank_total<=7,topAgency$Contracting_Agency_ID,NA)
+topAgency$TopAgencyText<-
+  ifelse(topAgency$rank_2020<=7 | topAgency$rank_total<=7,topAgency$ContractingAgencyName,NA)
+
+
+sw<-left_join(sw,topAgency %>% select(-Action_Obligation_OMB23_GDP21,Action_Obligation_2020),
+          by=c("Contracting_Agency_ID","Customer"))
+
+sw$TopAgencyID[is.na(sw$TopAgencyID) & !is.na(sw$Contracting_Agency_ID)]<-
+  "Other Labeled Agency"
+sw$TopAgencyText[is.na(sw$TopAgencyText) & !is.na(sw$Contracting_Agency_ID)]<-
+  "Other Labeled Agency"
+
+sw$TopAgencyText<-factor_wrap(factor(sw$TopAgencyText))
+
+summary(sw$TopAgencyText)
+
+
+```
+
+#Software
+
+## Product vs. Service
+```{r ProdServ}
+
+
+sw$SWpsc<-as.character(sw$SimpleArea)
+sw$SWpsc[sw$ProductOrServiceCode =="D319" ]<-"Annual Software Maint."
+# sw$SWpsc[sw$ProductOrServiceCode =="D317" ]<-"Annual Software Maint."
+sw$SWpsc[sw$ProductOrServiceCode =="7030" ]<-"Software as a product"
+sw$SWpsc[sw$ProductOrServiceCode =="D305" ]<-"Teleprocessing / Cloud Computing"
+sw$SWpsc[sw$ProductOrServiceCode %in% c("D302","D307","D308","D313","D317","D318","D399","H170","H970","J070","R413")]<-"Software Development Related"
+sw$SWpsc[sw$SWpsc =="Services" ]<-"Other ADP Services"
+sw$SWpsc<-factor(sw$SWpsc)
+#D317
+#D399, R413
+
+sw %>% 
+  group_by(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText)%>% summarise(o=sum(Action_Obligation_OMB23_GDP21))
+
+write.csv(sw %>% filter(Fiscal_Year>=2000) %>%
+  group_by(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText,Fiscal_Year)%>% summarise(o=sum(Action_Obligation_OMB23_GDP21))%>%#/1000000000
+    arrange(Fiscal_Year)%>%pivot_wider(id_cols=c(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText),
+                names_from=Fiscal_Year,values_from=o)%>%arrange(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText)
+  ,file="..\\output\\Software_Prodserv.csv",row.names = FALSE)
+
+
+sw %>% filter (ProductOrServiceCode %in% c("D317","D319")) %>%  #D317 not included
+  group_by(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText)%>% summarise(o=sum(Action_Obligation_OMB23_GDP21))
+
+
+sw %>% filter (ProductOrServiceCode %in% c("7030","D302","D307","D308","D313","D317","D318","D319","H170","J070","R413")) %>% 
+  group_by(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText)%>% summarise(o=sum(Action_Obligation_OMB23_GDP21))
+
+sw<-sw %>% filter(ProductOrServiceCode %in% c("D305", "D317","D319", "7030","D302","D307","D308","D313","D317","D318","D319","D399","H170","H970","J070","R413"))
+
+# platpscintldef$SimpleArea
+# platpscintldef$SWpsc<-as.character(platpscintldef$SimpleArea)
+# platpscintldef$SWpsc[substr(platpscintldef$ProductOrServiceCode,1,1)=="D" ]<-"Other IT and Telecomm"
+# platpscintldef$SWpsc[substr(platpscintldef$ProductOrServiceCode,1,2)=="70" ]<-"Other ADP EQPT/SOFTWARE/SUPPLIES AND EQPT"
+# # platpscintldef$SWpsc[platpscintldef$ProductOrServiceCode =="D304" ]<-"Telecomm & Transmission"
+# # platpscintldef$SWpsc[platpscintldef$ProductOrServiceCode =="D316" ]<-"Telecomm Network Mgmt."
+# platpscintldef$SWpsc[platpscintldef$ProductOrServiceCode =="D319" ]<-"Annual Software Maint."
+# platpscintldef$SWpsc[platpscintldef$ProductOrServiceCode =="D305" ]<-"Teleprocessing, Timeshare, Cloud Computing, and High Performance Computing"
+# platpscintldef$SWpsc[platpscintldef$ProductOrServiceCode =="7030" ]<-"Software as a product"
+# platpscintldef$SWpsc[platpscintldef$SWpsc =="Products" ]<-"Other Products"
+# platpscintldef$SWpsc[platpscintldef$SWpsc =="Services" ]<-"Other Services"
+# 
+# platpscintldef %>%group_by(SWpsc)%>%
+#   dplyr::summarise(o=sum(Action_Obligation_OMB23_GDP21))
+# levels(factor(platpscintldef$SWpsc))
+# any(platpscintldef$ProductOrServiceCode=="D305")
+# 
+# levels(factor(platpscintldef$SWpsc))
+# platpscintldef$SWpsc<-factor(platpscintldef$SWpsc,
+#                               levels=c("Annual Software Maint.",
+#                                        "Teleprocessing, Timeshare, Cloud Computing, and High Performance Computing",
+#                                        "Other IT and Telecomm"  ,
+#                                        "Other Services" ,
+#                                        "Software as a product" ,
+#                                        "Other ADP EQPT/SOFTWARE/SUPPLIES AND EQPT",
+#                                        "Other Products"  ,
+#                                        "R&D"))
+#                              
+
+
+(
+SWpscdetail<-build_plot(
+  data=sw %>% filter(Fiscal_Year>=2002 & ProductServiceOrRnDarea!="Unlabeled" &
+                            !SWpsc %in% c("Other Services" ,"Other Products","R&D" ))  ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=sw_lc,
+  # NA, #VAR.ncol
+  x_var="Fiscal_Year", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="ProductOrServiceCode", #color_var
+  facet_var="SWpsc", #facet_var
+  # column_key=sw_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(caption="Note: Unlabeled not shown. Source: FPDS; CSIS analysis.")
+)
+
+# platpscintldef$ContractingAgencyText
+# platpscintldef$ContractingAgencyTextSwr<-factor_wrap(platpscintldef$ContractingAgencyText)
+
+
+
+# write.csv(file="..//Output//Software_prodserv_comm.csv",row.names = FALSE,na = "",
+#           arrange(pivot_wider(SWpscdetail$data %>% 
+#                         arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
+#                       id_cols=c(SWpsc,Commercial),
+#                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB23_GDP21),SWpsc,Commercial))
+
+ggsave600dpi(SWpscdetail,file="..//output//Software_prodserv.png",  
+             width=13, height= 6, units="in",size=16, lineheight=1.2
+             )
+# ggsave600dpi(SWpscdetail,file="..//output//Software_prodserv.eps",  
+#              width=13, height= 6, units="in",size=16, lineheight=1.2
+#              )
+```
+
+
+
+## Customer 
+```{r DoDsoftware}
+summary(factor(sw$Customer))
+
+sw %>% filter(Customer=="Other Agencies") %>% group_by(ProductOrServiceCodeText,TopAgencyText) %>% 
+  summarise(Action_Obligation_OMB23_GDP21=sum(Action_Obligation_OMB23_GDP21))
+
+(
+SWpscdetail<-build_plot(
+  data=sw %>% filter(Fiscal_Year>=2000 )  ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=sw_lc,
+  # NA, #VAR.ncol
+  x_var="Fiscal_Year", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="SWpsc", #color_var
+  facet_var="Customer", #facet_var
+  # column_key=sw_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(caption="Note: Unlabeled not shown. Source: FPDS; CSIS analysis.")#+
+    # facet_wrap(~ContractingAgencyTextSwr,ncol=4)
+)
+
+ggsave600dpi(SWpscdetail,file="..//output//Software_Customer.png",  
+             width=13, height= 6, units="in",size=8, lineheight=1.2
+             )
+ggsave600dpi(SWpscdetail,file="..//output//Software_Customer_Agency.eps",  
+             width=13, height= 6, units="in",size=16, lineheight=1.2
+             )
+
+write.csv(file="..//Output//Software_Customer.csv",row.names = FALSE,na = "",
+          SWpscdetail$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB23_GDP21=Action_Obligation_OMB23_GDP21/1000000000)%>%
+            arrange(Fiscal_Year)%>%
+          pivot_wider(id_cols=c(Customer,SWpsc),
+                      names_from=Fiscal_Year,values_from=bAction_Obligation_OMB23_GDP21)%>%
+            arrange(Customer,SWpsc),na="")
+
+```
+## DoD Component 
+```{r DoDsoftware}
+
+
+(
+SWpscDoDcomp<-build_plot(
+  data=sw %>% filter(Fiscal_Year>=2000 & Customer=="Defense")  ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=sw_lc,
+  # NA, #VAR.ncol
+  x_var="Fiscal_Year", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="SWpsc", #color_var
+  facet_var="TopAgencyText", #facet_var
+  # column_key=sw_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(caption="Note: Unlabeled not shown. Source: FPDS; CSIS analysis.")#+
+    # facet_wrap(~ContractingAgencyTextSwr,ncol=4)
+)
+
+ggsave600dpi(SWpscDoDcomp,file="..//output//Software_Defense_Agency.png",  
+             width=13, height= 6, units="in",size=8, lineheight=1.2
+             )
+ggsave600dpi(SWpscDoDcomp,file="..//output//Software_Defense_Agency.eps",  
+             width=13, height= 6, units="in",size=16, lineheight=1.2
+             )
+
+write.csv(file="..//Output//SWpscDoDcomp.csv",row.names = FALSE,na = "",
+          SWpscDoDcomp$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB23_GDP21=Action_Obligation_OMB23_GDP21/1000000000)%>%
+            arrange(Fiscal_Year)%>%
+          pivot_wider(id_cols=c(TopAgencyText,SWpsc),
+                      names_from=Fiscal_Year,values_from=bAction_Obligation_OMB20_GDP20)%>%
+            arrange(TopAgencyText,SWpsc))
+
+```
+
+
+##  Competition
+```{r SoftwareComp}
+
+(
+SoftwareComp<-build_plot(
+  data=sw %>% filter(Fiscal_Year>=2000),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=sw_lc,
+  # NA, #VAR.ncol
+  x_var="Fiscal_Year", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="Competition.sum", #color_var
+  facet_var="SWpsc", #facet_var
+  column_key=sw_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+
+  labs(y="Obligations (Constant 2021 $s)")
+)
+
+ggsave600dpi("..//Output//Software_comp.png", SoftwareComp,  
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+
+
+write.csv(file="..//Output//Software_competition.csv",row.names = FALSE,na = "",
+          SoftwareComp$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB23_GDP21=Action_Obligation_OMB23_GDP21/1000000000)%>%
+            arrange(Fiscal_Year)%>%
+          pivot_wider(id_cols=c(SWpsc,Competition.sum),
+                      names_from=Fiscal_Year,values_from=bAction_Obligation_OMB23_GDP21)%>%
+            arrange(SWpsc,Competition.sum),na="")
+
+```
+
+
+##  Vendor Size
+```{r SoftwareVendor}
+library(scales)
+(
+SoftwareVendor<-build_plot(
+  data=sw %>% filter(Fiscal_Year>=2000),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=sw_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="Shiny.VendorSize", #color_var
+  facet_var="SWpsc", #facet_var
+  column_key=sw_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(
+       caption="Source: FPDS; CSIS Analysis.\nNote: The Merger of Raytheon and United Technologies took place in April of 2020 and thus did not make the cutoff for inclusion in FY2020.")
+)
+
+(
+SoftwareVendor_line<-build_plot(
+  data=sw,
+  chart_geom = "Line Chart",
+  labels_and_colors=sw_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="Shiny.VendorSize", #color_var
+  facet_var="SWpsc", #facet_var
+  column_key=sw_ck,
+  format=TRUE,
+  ytextposition=FALSE,
+  share=TRUE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(caption="Source: FPDS; CSIS Analysis.\nNote: The Merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutoff for inclusion in FY2020.")
+)
+
+ggsave600dpi("..//Output//Software_vendor_wide.png", SoftwareVendor+
+  labs(caption="Source: FPDS; CSIS Analysis.\nNote: The Merger of Raytheon and United Technologies took place in April of 2020 and thus did not make the cutoff for inclusion in FY2020."), 
+             width=12, height= 6, units="in",size=12,lineheight=1
+             )
+
+
+ggsave600dpi("..//Output//Software_vendor_cq.png", SoftwareVendor+
+  labs(caption="Source: FPDS; CSIS Analysis.\nNote: The Merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutoff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+
+ggsave600dpi("..//Output//Software_vendor_Federal.png", SoftwareVendor+theme(legend.position = "bottom")+
+               labs(y="Federal Obligations (Constant 2021 $s)",caption="Source: FPDS; CSIS Analysis.\nNote: The Merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutoff for inclusion in FY2020."),  
+             width=6, height= 5.5, units="in",size=12, lineheight=1.2
+             )
+
+ggsave600dpi("..//Output//Software_vendor_cq.eps", SoftwareVendor+
+  labs(caption="Source: FPDS; CSIS Analysis.\nNote: The Merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutoff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+ggsave600dpi("..//Output//Software_vendor.png", SoftwareVendor, 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+ggsave600dpi("..//Output//Software_vendor.eps", SoftwareVendor+
+  labs(caption="Source: FPDS; CSIS Analysis.\nNote: The Merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutoff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+# 
+# write.csv(file="..//Output//Software_vendor_cur.csv",row.names = FALSE,na = "",
+#           sw %>% group_by(Shiny.VendorSize,Fiscal_Year)%>%
+#             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE)/1000000000)%>%
+#           pivot_wider(id_cols=c(Shiny.VendorSize),
+#                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(Shiny.VendorSize))
+# 
+
+
+
+write.csv(file="..//Output//Software_vendor.csv",row.names = FALSE,na = "",
+          SoftwareVendor$data %>% mutate(Fiscal_Year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB23_GDP21=Action_Obligation_OMB23_GDP21/1000000000)%>%
+            arrange(Fiscal_Year)%>%
+          pivot_wider(id_cols=c(SWpsc,Shiny.VendorSize),
+                      names_from=Fiscal_Year,values_from=bAction_Obligation_OMB23_GDP21)%>%
+            arrange(SWpsc,Shiny.VendorSize),na="")
+
+
+```
+##  Vehicle
+```{r SoftwareVehicle}
+
+
+(
+SoftwareVehicle<-build_plot(
+  data=sw %>% filter(!is.na(Vehicle.AwardTask)),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=sw_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="Vehicle.sum", #color_var
+  second_var="Vehicle.AwardTask", #facet_var
+  facet_var="SWpsc",
+  column_key=sw_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(
+       caption="Note: Unlabeled not shown. Source: FPDS; CSIS Analysis.")
+)
+
+summary(sw$Vehicle)
+
+ggsave600dpi("..//Output//Software_vehicle.png", SoftwareVehicle, 
+             width=13, height= 4.5, units="in",size=11
+             )
+
+write.csv(file="..//Output//Software_vehicle.csv",row.names = FALSE,na = "",
+          SoftwareVehicle$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
+                                       bAction_Obligation_OMB23_GDP21=Action_Obligation_OMB23_GDP21/1000000000)%>%
+            pivot_wider(id_cols=c(SWpsc,Vehicle.sum,Vehicle.AwardTask),
+                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB23_GDP21)%>%arrange(SWpsc,Vehicle.sum,Vehicle.AwardTask))
+
+```
+
+
+##  Pricing
+```{r SoftwarePricing}
+
+sw$PricingUCA.sumlong<-sw$PricingUCA.sum
+levels(sw$PricingUCA.sumlong)<-list("Firm-Fixed-Price"="FFP",
+                                           "Less Common"="Less Common",
+                                           "Incentive"="Incentive",
+                                           "Other Cost-Based"="Other CB",
+                                           "Undefinitized\nContract Award"="UCA",
+                                           "Unclear"="Unclear"   )
+  (
+SoftwarePricing<-build_plot(
+  data=sw %>% filter(Fiscal_Year>=2000),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=sw_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="PricingUCA", #color_var
+  # second_var="PricingUCA.sumlong", #facet_var
+  facet_var="SWpsc",
+  column_key=sw_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2021 $s)")
+)
+
+# ggsave600dpi("..//Output//Software_pricing.png", SoftwarePricing, 
+#              width=6.5, height= 4, units="in",size=11
+#              )
+
+
+ggsave600dpi("..//Output//Software_pricing.png", SoftwarePricing,  
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+
+write.csv(file="..//Output//Software_pricing.csv",row.names = FALSE,na = "",
+          SoftwarePricing$data %>% mutate(Fiscal_Year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB23_GDP21=Action_Obligation_OMB23_GDP21/1000000000)%>%
+            arrange(Fiscal_Year)%>%
+          pivot_wider(id_cols=c(SWpsc,PricingUCA),
+                      names_from=Fiscal_Year,values_from=bAction_Obligation_OMB23_GDP21)%>%
+            arrange(SWpsc,PricingUCA),na="")
+```
+
+
+## Info Tech Commercial
+```{r Softwarecomm}
+
+(
+SoftwareComm<-build_plot(
+  data=sw %>% filter(Fiscal_Year>=2002 & Customer %in% c("GSA")),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=sw_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="Commercial", #color_var
+  facet_var="SWpsc", #facet_var
+  column_key=sw_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Defense & GSA Obligations (Constant 2021 $s)")
+)
+
+
+(
+SoftwareComm<-build_plot(
+  data=sw %>% filter(Fiscal_Year>=2002),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=sw_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="Commercial", #color_var
+  facet_var="SWpsc", #facet_var
+  column_key=sw_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Defense & GSA Obligations (Constant 2021 $s)")
+)
+
+(
+DefSoftwareComm<-build_plot(
+  data=sw %>% filter(Fiscal_Year>=2002 & Customer %in% c("Defense")),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=sw_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="Commercial", #color_var
+  facet_var="SWpsc", #facet_var
+  column_key=sw_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Defense Obligations (Constant 2021 $s)")
+)
+
+
+(
+SoftwareCommLine<-build_plot(
+  data=sw %>% filter(Fiscal_Year>=2002 & Customer %in% c("Defense","GSA")),
+  chart_geom = "Line Chart",
+  share = TRUE,
+  labels_and_colors=sw_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="Commercial", #color_var
+  facet_var="SWpsc", #facet_var
+  column_key=sw_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Defense & GSA Obligations (Constant 2021 $s)")
+)
+
+
+(
+SoftwareCommDetail<-build_plot(
+  data=sw %>% filter(Fiscal_Year>=2002 & Customer %in% c("Defense","GSA")),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="informationtechnologycommercialitemcategoryText", #color_var
+  facet_var="Commercial", #facet_var
+  column_key=sw_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Defense & GSA Obligations (Constant 2021 $s)")
+)
+
+(
+SoftwareCommIT<-build_plot(
+  data=sw %>% filter(Fiscal_Year>=2002  & Customer %in% c("Defense","GSA")),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="informationtechnologycommercialitemcategoryText", #color_var
+  facet_var="ITcategory", #facet_var
+  second_var = "SWpsc",
+  column_key=sw_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2021 $s)")
+)
+
+
+(
+SoftwarecommPSCdetail<-build_plot(
+  data=sw %>% filter(Fiscal_Year>=2002  & Customer %in% c("Defense","GSA")),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="informationtechnologycommercialitemcategoryText", #color_var
+  second_var="SWpsc", #facet_var
+  facet_var="Commercial",
+  column_key=sw_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Defense & GSA Obligations (Constant 2021 $s)")
+)
+
+
+# ggsave600dpi("..//Output//Software_pricing.png", SoftwareComm, 
+#              width=6.5, height= 4, units="in",size=11
+#              )
+
+
+ggsave600dpi("..//Output//Software_comm.png", SoftwareComm,  
+             width=13, height= 6, units="in",size=16, lineheight=1.2
+             )
+
+
+write.csv(file="..//Output//Software_comm.csv",row.names = FALSE,na = "",
+          SoftwareComm$data %>% mutate(Fiscal_Year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB23_GDP21=Action_Obligation_OMB23_GDP21/1000000000)%>%
+            arrange(Fiscal_Year)%>%
+          pivot_wider(id_cols=c(SWpsc,Commercial),
+                      names_from=Fiscal_Year,values_from=bAction_Obligation_OMB23_GDP21)%>%
+            arrange(SWpsc,Commercial),na="")
+
+
+
+ggsave600dpi("..//Output//Software_def_comm_paper.png", DefSoftwareComm+
+               labs(y="Obligations (Constant 2021 $s)"),  
+             width=6.5, height= 3, units="in",size=11, lineheight=1.2
+             )
+# ggsave600dpi("..//Output//Software_comm_paper.eps", SoftwareComm,  
+#              width=13, height= 3.75, units="in",size=16, lineheight=1.2
+#              )
+
+ggsave600dpi("..//Output//Software_comm_Defense.png", DefSoftwareComm+
+               labs(y="Defense Obligations (Constant 2021 $s)")+theme(legend.position = "bottom"),  
+             width=6.5, height= 5.5, units="in",size=12, lineheight=1.2
+             )
+
+ggsave600dpi("..//Output//Software_comm_DefenseGSA.png", SoftwareComm+
+               labs(y="Defense & GSA Obligations (Constant 2021 $s)")+theme(legend.position = "bottom"),  
+             width=6.5, height= 5.5, units="in",size=12, lineheight=1.2
+             )
+
+
+output_TY<-sw %>% filter(Fiscal_Year>=2002  & Customer %in% c("Defense")) %>% group_by(Commercial,SWpsc,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+  arrange(Fiscal_Year) %>%
+          pivot_wider(id_cols=c(SWpsc,Commercial),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year) %>%
+  arrange(SWpsc,Commercial)
+write.csv(file="..//Output//Software_comm_Defense_cur.csv",row.names = FALSE, na = "",
+          output_TY)
+
+
+
+write.csv(file="..//Output//Software_DefenseGSA_comm.csv",row.names = FALSE,na = "",
+          SoftwareComm$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB23_GDP21=Action_Obligation_OMB23_GDP21/1000000000)%>%
+            arrange(Fiscal_Year)%>%
+          pivot_wider(id_cols=c(Commercial,SWpsc),
+                      names_from=Fiscal_Year,values_from=bAction_Obligation_OMB23_GDP21)%>%
+            arrange(Commercial,SWpsc),na="")
+
+```
+
+#### Commercial Component
+```{r Softwarecomm}
+
+(
+SoftwareCommAgency<-build_plot(
+  data=sw %>% filter(Fiscal_Year>=2002 & Customer %in% c("Defense")),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=sw_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="Commercial", #color_var
+  second_var="SWpsc", #facet_var
+  facet_var="TopAgencyText",
+  column_key=sw_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Defense Obligations (Constant 2021 $s)")+
+   theme(strip.text.y = element_text(angle=0))
+)
+
+
+(
+SoftwareCommAgencyLine<-build_plot(
+  data=sw %>% filter(Fiscal_Year>=2002 & Customer %in% c("Defense")),
+  chart_geom = "Line Chart",
+  share = TRUE,
+  labels_and_colors=sw_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="Commercial", #color_var
+  second_var="SWpsc", #facet_var
+  facet_var="TopAgencyText",
+  column_key=sw_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Defense Obligations (Constant 2021 $s)")+
+     theme(strip.text.y = element_text(angle=0))
+)
+
+         
+
+# 
+ggsave600dpi("..//Output//SoftwareCommDefAgency.png", SoftwareCommAgency,
+             width=13, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+write.csv(file="..//Output//SoftwareCommDefAgency.csv",row.names = FALSE,na = "",
+          SoftwareCommAgency$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
+                                bAction_Obligation_OMB23_GDP21=Action_Obligation_OMB23_GDP21/1000000000)%>%
+            arrange(Fiscal_Year)%>%
+          pivot_wider(id_cols=c(TopAgencyText,SWpsc,Commercial),
+                      names_from=Fiscal_Year,values_from=bAction_Obligation_OMB23_GDP21)%>%
+            arrange(TopAgencyText,SWpsc,Commercial),na="")
+
+```
+
+
+## Project
+```{r Land}
+summary(factor(drone$ProjectPlatform))
+# drone$Fiscal_Year
+# 
+# topplat<-drone %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (ProjectName) %>%
+#   summarise(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20),
+#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB20_GDP20,0))
+#             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB20_GDP20)),
+#                         rank_2020=rank(desc(Action_Obligation_2020)))
+# topplat %>% arrange(desc(Action_Obligation_OMB20_GDP20))
+# 
+# drone$TopShipProject<-
+#   ifelse(drone$ProjectName %in% topplat$ProjectName[topplat$rank_2020<=7 | topplat$rank_total<=7],
+#          drone$ProjectName,NA)
+# drone$TopShipProject[is.na(drone$TopShipProject) & !is.na(drone$ProjectName)]<-
+#   "Other Labeled Project"
+# summary(factor(drone$TopShipProject))
+
+
+
+# Inflation
+## Fuel
+```{r Fuel}
+
+# PlaceIsForeign
+# full_data$PlaceStateRegion
+# replace_nas_with_unlabeled(factor(full_data$PlaceIsForeign,levels=c(1,0),labels=c("Performed Abroad","Performed in the U.S."))
+
+full_data$SimpleArea.fuels<- as.character( full_data$SimpleArea)
+full_data$SimpleArea.fuels[full_data$ProductServiceOrRnDarea=="Fuels"]<-"Fuels"
+summary(factor(full_data$SimpleArea.fuels))
+full_data$SimpleArea.fuels<-factor(full_data$SimpleArea.fuels,
+                                           levels=c("Services (Non-R&D)" ,
+                                                   "R&D",
+                                                   "Products (All)",
+                                                   "Fuels",
+                                                   "Unlabeled" ),
+                                           labels=c("Services (Non-R&D)" ,
+                                                   "R&D",
+                                                   "Products (Non-Fuels)",
+                                                   "Fuels",
+                                                   "Unlabeled" ))
+summary(factor(full_data$SimpleArea.fuels))
+labels_and_colors<-prepare_labels_and_colors(full_data,path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+column_key<-get_column_key(full_data,path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+
+
+(
+psrfuel<-build_plot(
+  data=full_data,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="SimpleArea.fuels", #color_var
+  # facet_var="TopPStext", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  # theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2021 $s)",
+              caption = "Source: FPDS, CSIS Analysis, OMB GDP deflators.")
+)
+
+  ggsave600dpi(filename = "..//Output//PSRfuels.png", psrfuel,  
+               width=12, height= 5.6, units="in",size=18, lineheight=1.2,
+               bg="transparent"
+               )
+
+write.csv(file="..//Output//PSRfuels.csv",row.names = FALSE, na = "",
+  pivot_wider(psrfuel$data %>% 
+                        arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
+                      id_cols=c(SimpleArea.fuels),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB23_GDP21)%>%
+    arrange(SimpleArea.fuels))
+
+
+(
+fuel<-build_plot(
+  data=full_data %>% filter(ProductOrServiceArea=="Fuels")%>% 
+    mutate(PlaceIsForeign=factor(PlaceIsForeign,levels=c(1,0),labels=c("Performed Abroad","Performed in the U.S."))),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="PlaceStateRegion", #color_var
+  # facet_var="TopPStext", #facet_var
+  # column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  # theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2021 $s)",
+       caption = "Source: FPDS, CSIS Analysis, OMB GDP deflators.")
+)
+
+
+(
+fuel<-build_plot(
+  data=full_data %>% filter(ProductOrServiceArea=="Fuels")%>% 
+    mutate(PlaceIsForeign=factor(PlaceIsForeign,levels=c(1,0),labels=c("Performed Abroad","Performed in the U.S."))),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="PlaceIsForeign", #color_var
+  # facet_var="TopPStext", #facet_var
+  # column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  # theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2021 $s)")
+)
+
+ggsave600dpi("..//Output//Deep_Dives/Inflation/defense_fuel_place.png", fuel+labs(title="DoD Contract Obligations for Fuels", caption="Source: FPDS and CSIS analysis."), 
+             width=6.5, height= 3.5, units="in",size=12,lineheight = 1
+             )
+
+
+write.csv(file="..//Output//Deep_Dives/Inflation/defense_fuel_place.csv",row.names = FALSE,na = "",
+          fuel$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
+          pivot_wider(id_cols=c(PlaceIsForeign),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB23_GDP21))
+
+
+
+(
+fuel_psc<-build_plot(
+  data=platpscintldef %>% filter(ProductOrServiceArea=="Fuels")%>% 
+    mutate(PlaceIsForeign=factor(PlaceIsForeign,levels=c(1,0),labels=c("Performed Abroad","Performed in the U.S."))),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="ProductOrServiceCodeText", #color_var
+  # facet_var="TopPStext", #facet_var
+  # column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  # theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2021 $s)")
+)
+
+```
+
+
+## Pricing History
+```{r ToplinePricing}
+load(file="../data/clean/pricing_historical.Rda")
+# full_data$PricingUCA.sumlong<-full_data$PricingUCA.sum
+# levels(full_data$PricingInflation)<-list("FFP"="FFP",
+#                                            "Less Common"="Less Common",
+#                                            "Cost-Based"="Cost-Based",
+#                                            "FP-Econ. Price Adj. "="Other CB",
+#                                            "Undefinitized\nContract Award"="UCA",
+#                                            "Unclear"="Unclear"   )
+(
+HistoricPricing<-build_plot(
+  data=pricing %>% filter(Fiscal_Year>=1979 & Fiscal_Year<=2021 ),
+  chart_geom = "Line Chart",
+  share = TRUE,
+  labels_and_colors=pricing_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  # y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  y_var="Action_Obligation", #VAR.y.variable
+  color_var="PricingInflation", #color_var
+  # facet_var="PricingUCA.sumlong", #facet_var
+  column_key=pricing_ck,
+  format=TRUE,
+  ytextposition=FALSE,
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right",rect = element_rect(fill = "transparent",))
+  # labs(y="Obligations (Constant 2021 $s)")
+)
+
+# ggsave600dpi("..//Output//topline_pricing.png", ToplinePricing, 
+#              width=6.5, height= 4, units="in",size=11
+#              )
+
+
+  ggsave600dpi("..//Output//HistoricPricing.png", HistoricPricing,  
+               width=12, height= 5.6, units="in",size=18, lineheight=1.2,
+               bg="transparent"
+               )
+
+write.csv(file="..//Output//HistoricPricing.csv",row.names = FALSE, na = "",
+  pivot_wider(HistoricPricing$data %>% 
+                        arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
+                      id_cols=c(PricingInflation),
+                      names_from=Fiscal_Year,values_from=Action_Obligation)%>%
+    arrange(PricingInflation))
+
+
+```
+
