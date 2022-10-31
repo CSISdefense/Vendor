@@ -230,7 +230,7 @@ DECLARE	@return_value int
 --10h25m
 EXEC	@return_value = [budget].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS]
 --EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
-		@Customer = NULL -- 'Defense'
+		@Customer =  'Defense'
 
 
 SET ANSI_WARNINGS OFF;
