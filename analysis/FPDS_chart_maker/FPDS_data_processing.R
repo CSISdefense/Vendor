@@ -108,7 +108,7 @@ full_data<-initial_clean(fed_data,only_defense=TRUE)
 
 #AnyCommercial 
 def_data<- read_delim(
-  "Data//semi_clean//Defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",delim = "\t",
+  "Data//semi_clean//defense_budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",delim = "\t",
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
 def_data<-initial_clean(def_data)
 def_data<-apply_standard_lookups(def_data)#,
