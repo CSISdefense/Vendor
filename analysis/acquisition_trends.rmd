@@ -32,7 +32,7 @@ main.text.size<-1
 note.text.size<-1.40
 if(!exists("full_data"))
   # load(file="..//data//clean//unaggregated_FPDS_2020.Rda")
-load(file="FPDS_chart_maker//unaggregated_FPDS.Rda")
+  load(file="FPDS_chart_maker//unaggregated_FPDS.Rda")
 
 # full_data<-deflate(full_data, "Action_Obligation_Then_Year",deflator_var="OMB23_GDP21")
 
@@ -41,13 +41,6 @@ load(file="../data/clean/Defense_OTA.Rda")
 toa<-readxl::read_excel(path=file.path("..","data_raw","FY22 PB Green Book Table 6-1.xlsx"),skip=4)
 # toa<-toa["Total Current Dollars ..............................................................." ==toa[,2] & !is.na(toa[,2]),]#%in% c(toa[,1],toa[,2],toa[,3]),]
 
-
-
-load(file="../analysis/FPDS_chart_maker/unaggregated_def.Rda")
-platpscintldef<-deflate(platpscintldef, "Action_Obligation_Then_Year",deflator_var="OMB23_GDP21")
-colnames(platpscintldef)[colnames(platpscintldef)=="Action_Obligation_Then_Year_OMB23_GDP21"]<-"Action_Obligation_OMB23_GDP21"
-colnames(platpscintldef)[colnames(platpscintldef)=="Action_Obligation_Then_Year_Then_Year"]<-"Action_Obligation_Then_Year"
-
 if(!"Action_Obligation_OMB23_GDP21" %in% colnames(ota_def))
   ota_def<-deflate(ota_def, "Dollars_Obligated_Then_Year",deflator_var="OMB23_GDP21")
 colnames(ota_def)[colnames(ota_def)=="Dollars_Obligated_Then_Year_OMB23_GDP21"]<-"Dollars_Obligated_OMB23_GDP21"
@@ -55,6 +48,9 @@ colnames(ota_def)[colnames(ota_def)=="Dollars_Obligated_Then_Year_Then_Year"]<-"
 
 #Kludge
 toa<-toa[11,c(-1,-3)]
+colnames(def_data)[colnames(def_data)=="Action_Obligation_Then_Year_OMB23_GDP21"]<-"Action_Obligation_OMB23_GDP21"
+colnames(def_data)[colnames(def_data)=="Action_Obligation_Then_Year_Then_Year"]<-"Action_Obligation_Then_Year"
+
 
 
 colnames(toa)<-gsub("FY ","",colnames(toa))
@@ -65,11 +61,6 @@ toa<-deflate(toa,money_var = "Total_Obligation_Authority",deflator_var="OMB20_GD
 toa$dFYear<-as.Date(paste(toa$Fiscal_Year,1,1,sep="-"))
 labels_and_colors<-prepare_labels_and_colors(full_data)
 
-
-
-# write.csv(platpscintldef %>% filter(Contracting_Agency_ID=='9776')%>% group_by(Fiscal_Year,Contracting_Agency_ID,ContractingAgencyName) %>%
-#   summarise(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year_Then_Year)),
-#   file = "UStranscom.csv")
 ```
 ## Quarterly YTD
 
@@ -2399,8 +2390,9 @@ ggsave600dpi("..//Output//subcustomer_commercial.emf", CommercialCust,#+facet_wr
              )
 
 
-write.csv(file="..//Output//topline_subcustomer.csv",row.names = FALSE, na = "",
-          pivot_wider(SubCustomer$data,id_cols=c(SubCustomer.sum,SubCustomer.platform),
+write.csv(file="..//Output//subcustomer_commercial.csv",row.names = FALSE, na = "",
+          CommercialCust$data%>%mutate(Fiscal_Year=year(dFYear)) %>%
+          pivot_wider(id_cols=c(SubCustomer.platform,AnyCommercialText),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB23_GDP21))
 
 write.csv(file="..//Output//subcustomer_commercial_current.csv",row.names = FALSE, na = "",
