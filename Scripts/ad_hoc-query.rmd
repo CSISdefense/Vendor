@@ -1,0 +1,99 @@
+---
+title: "Ad-hoc query processing"
+author: "Greg Sanders"
+date: "2022-10-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(tidyverse)
+library(csis360)
+
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r MajCom}
+
+MajCom<-NULL
+path<-"..\\Data_Raw\\SAM\\DoD_Office_Info\\"
+files<-list.files(path) 
+
+for(f in unique(files)){
+  m<-read_csv(file=file.path(path,f),skip=5)
+  MajCom<-rbind(MajCom,m)
+}
+
+MajCom<-standardize_variable_names(MajCom)
+key<-colnames(MajCom)
+# [1]                            "AgencyIDtext"                                     
+#  [5] "DepartmentIDtext"               "ContractingOfficeID"            "ContractingOfficeName"          "ContractingOfficeRegion"       
+#  [9] "Country Where Award Was Issued" "MajorCommandCode"               "MajorCommandID"                 "MajorCommandName"              
+# [13] "Organization Code"              "OrganizationID"                 "ParentMacom Code"                "SubCommand1Code"               
+# [17] "SubCommand1ID"                  "SubCommand1Name"                "SubCommand2Code"                "SubCommand2ID"                 
+# [21] "SubCommand2Name"                "SubCommand3Code"                "SubCommand3ID"                  "SubCommand3Name"               
+# [25] "SubCommand4Code"                "SubCommand4ID"                  "SubCommand4Name"                "Action_Obligation"             
+# [29] "NumberofRecords"  
+
+#True
+check_derived(MajCom,c( "Contracting_Agency_ID"),derived_col="DepartmentID")
+check_derived(MajCom,c( "DepartmentID"),derived_col="DepartmentIDtext")
+check_derived(MajCom,c("MajorCommandID"  ),derived_col="MajorCommandName")
+check_derived(MajCom,c("MajorCommandID"  ),derived_col="MajorCommandCode")
+check_derived(MajCom %>% filter(!is.na(MajorCommandID)),c("MajorCommandID"  ),derived_col="Contracting_Agency_ID")
+check_derived(MajCom %>% filter(!is.na(MajorCommandID)),c("MajorCommandID"  ),derived_col="DepartmentID")
+check_derived(MajCom,c("MajorCommandCode"  ),derived_col="MajorCommandName")
+check_derived(MajCom,c("Fiscal_Year","Contracting_Agency_ID","ContractingOfficeID" , "MajorCommandID"  ),derived_col="ParentMacomCode")
+
+#False
+check_derived(MajCom %>% filter(!is.na(MajorCommandID)),c("MajorCommandID"  ),derived_col="ContractingOfficeID")
+check_derived(MajCom,c("Fiscal_Year", "Contracting_Agency_ID"),derived_col="AgencyIDtext",na.rm=TRUE)
+check_derived(MajCom,c("Fiscal_Year", "Contracting_Agency_ID","ContractingOfficeID"  ),derived_col="ContractingOfficeName",na.rm=TRUE)
+check_derived(MajCom,c("Fiscal_Year", "Contracting_Agency_ID","ContractingOfficeID"  ),derived_col="MajorCommandID",na.rm=TRUE)
+check_derived(MajCom  %>% filter(!is.na(MajorCommandID)),c("Fiscal_Year", "Contracting_Agency_ID","ContractingOfficeID"),
+                                 derived_col="MajorCommandID",na.rm=TRUE)
+check_derived(MajCom,c("Fiscal_Year", "Contracting_Agency_ID","ContractingOfficeID"  ),derived_col="MajorCommandCode",na.rm=TRUE)
+check_derived(MajCom,c("Fiscal_Year", "MajorCommandCode"  ),derived_col="MajorCommandID",na.rm=TRUE)
+check_derived(MajCom,c("Fiscal_Year", "MajorCommandCode"  ),derived_col="ParentMacomCode",na.rm=TRUE)
+
+
+MajComID<-MajCom %>% group_by(Fiscal_Year,Contracting_Agency_ID,ContractingOfficeID) %>% filter(!is.na(MajorCommandID)) %>%
+  summarise(MajorCommandID=ifelse(min(MajorCommandID)==max(MajorCommandID),max(MajorCommandID),NA)) %>%
+  arrange(Fiscal_Year,Contracting_Agency_ID,ContractingOfficeID)
+
+MajComSum<-MajCom %>% group_by(MajorCommandID,MajorCommandName,MajorCommandCode) %>% summarise() %>%
+  # summarise(MajorCommandID=ifelse(min(MajorCommandID)==max(MajorCommandID),max(MajorCommandID),NA)) %>%
+  arrange(MajorCommandID)
+
+MajComMissing<-MajComID %>% select(-MajorCommandID) %>% mutate(AnyMajComID=TRUE) %>%
+  right_join(MajCom) %>% filter(is.na(AnyMajComID)) %>% select(-AnyMajComID) 
+
+check_key(MajComMissing,key=c("Fiscal_Year","Contracting_Agency_ID","ContractingOfficeID"))
+check_key(MajComID,key=c("Fiscal_Year","Contracting_Agency_ID","ContractingOfficeID"))
+
+MajComID <- rbind(MajComID,MajComMissing %>% group_by(Fiscal_Year,Contracting_Agency_ID,ContractingOfficeID,MajorCommandID))
+check_key(MajComID,key=c("Fiscal_Year","Contracting_Agency_ID","ContractingOfficeID"))
+
+MajComDup<-MajComMissing %>% filter(!is.na(MajorCommandID)) %>%
+  arrange(Contracting_Agency_ID,ContractingOfficeID,Fiscal_Year)
+
+write.csv(MajComSum,file=file.path("..","data","semi_clean","MajComSum.csv"))
+write.csv(MajComID,file=file.path("..","data","semi_clean","MajComID.csv"))
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
