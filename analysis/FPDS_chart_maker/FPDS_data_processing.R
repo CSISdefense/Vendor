@@ -110,6 +110,7 @@ full_data<-initial_clean(fed_data,only_defense=TRUE)
 def_data<- read_delim(
   "Data//semi_clean//defense_budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",delim = "\t",
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
+debug(initial_clean)
 def_data<-initial_clean(def_data)
 def_data<-apply_standard_lookups(def_data)#,
 
@@ -224,7 +225,7 @@ def_data %<>%
   # mutate(VendorIsForeign = factor(VendorIsForeign))%>%
   # mutate(PlaceIsForeign = factor(PlaceIsForeign))
 
-def_data$recoveredmaterialclauses[def_data$recoveredmaterialclauses==""]<-"Unlabeled"
+# def_data$recoveredmaterialclauses[def_data$recoveredmaterialclauses==""]<-"Unlabeled"
 
 def_lc<-csis360::prepare_labels_and_colors(def_data)
 
