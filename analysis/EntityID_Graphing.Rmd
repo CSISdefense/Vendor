@@ -832,6 +832,65 @@ ecp %>% group_by(IsEntityAbove2016constantOneMillionThreshold,Fiscal_Year) %>%
 
 ```
 
+
+### Platform Portfolio HHI
+```{r Platform, fig.width=6.5 , fig.height=3.25}
+
+library(readr)
+annual_platform_summary<-read_csv(file="..//Output//annual_platform_summary.csv")
+colnames(annual_platform_summary)[colnames(annual_platform_summary)=="platformPortfolio"]<-"PlatformPortfolio"
+
+platform_no_na<-subset(annual_platform_summary,!is.na(PlatformPortfolio))
+labels_and_colors<-csis360::prepare_labels_and_colors(platform_no_na,"PlatformPortfolio")
+
+
+
+platform_no_na$plat_short <-swr(platform_no_na$PlatformPortfolio,nwrap = 21)
+platform_no_na<-subset(platform_no_na,Fiscal_Year>=2000 & Fiscal_Year<=2020)
+
+ 
+
+# plat<-ggplot(platform_no_na,
+#        aes(x=Fiscal_Year,y=hh_index))+#color=NAICS_Code
+#   geom_line()+
+#   scale_y_continuous(label=scales::comma)+ 
+#   # scale_x_continuous(breaks=c(2006,2009,2011,2014))+
+#   labs(x="Fiscal Year",y="Herfindahl-Herschman Index")+ 
+#   geom_hline(yintercept=c(1500,2500),linetype="dotted")+
+#   facet_wrap(~plat_short)
+# add_preassigned_scales(plat,labels_and_colors = labels_and_colors)
+
+# str(platform_no_na)
+# summary(platform_no_na$Fiscal_Year)
+#
+# undebug(add_preassigned_scales)
+plat<-build_plot(
+  data=platform_no_na,
+  chart_geom = "Line Chart",
+  share = FALSE,
+  x_var="Fiscal_Year",
+  y_var="hh_index", #Name of variable to plot on y-axis
+  color_var="PlatformPortfolio",       # name of coloration variable, as string
+  facet_var="PlatformPortfolio",        # name of facet variable, as string
+  legend=FALSE, #Include a legend
+  caption=FALSE, #Include a source caption
+  labels_and_colors=labels_and_colors,
+  column_key=NULL
+)
+
+
+# add_preassigned_scales(plat, labels_and_colors,  var="PlatformPortfolio"
+
+plat<-plat+geom_hline(yintercept=c(1500,2500),linetype="dotted")+
+  labs(x="Fiscal Year",y="Herfindahl-Herschman Indetx")
+plat
+ggsave(plat+geom_line(aes(x=Fiscal_Year,y=hh_index,color=PlatformPortfolio),size=1),filename="..//Output//platform_hhi.png",height=3.25, width=6.5)
+ggsave(plat+geom_line(aes(x=Fiscal_Year,y=hh_index)),filename="..//Output//platform_hhi_bw.png",height=3.25, width=6.5)
+ggsave(plat+geom_line(aes(x=Fiscal_Year,y=hh_index,color=PlatformPortfolio),size=1),filename="..//Output//platform_hhi.eps",height=3.25, width=6.5)
+ggsave(plat+geom_line(aes(x=Fiscal_Year,y=hh_index)),filename="..//Output//platform_hhi_bw.eps",height=3.25, width=6.5)
+
+```
+
 ## SubCustomer
 ```{r SubCustEntityCount}
 

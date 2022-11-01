@@ -53,12 +53,15 @@ NAICS2_Freq$Percent_Freq <- round(NAICS2_Freq$Freq/sum(NAICS2_Freq$Freq),4)*100
 colnames(NAICS2_Freq) <- c("NAICS_Code", "Count_Freq", "Percent_Freq")
 
 #Get detail description for NAICS2 code
+summary(NAICS2_Freq$NAICS_Code)
 NAICS2_Freq<-read_and_join_experiment(NAICS2_Freq,
                                            lookup_file = "Lookup_PrincipalNAICScode.csv",
-                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                      # path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                      path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\",
                                       dir="economic\\",
                                       by=c("NAICS_Code"="principalnaicscode"),
-                                      add_var = "principalnaicscodeText"
+                                      add_var = "principalnaicscodeText",
+                                      guess_max=5000
                                       )
 
 Percent_Obli <- c()
@@ -98,7 +101,6 @@ NAICS2_barplot <- ggplot(data = NAICS2_Freq,
                          plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm"))
 NAICS2_barplot
 
-xlabel<-paste("Calendar Year (",min(NAICS_summary$CY),"-",max(NAICS_summary$CY),")",sep="")
 ```
 
 #### NAICS 3
@@ -107,6 +109,7 @@ xlabel<-paste("Calendar Year (",min(NAICS_summary$CY),"-",max(NAICS_summary$CY),
 NAICS_summary<-def %>% group_by(NAICS3,StartCY,def3_HHI_lag1,def3_obl_lag1,def3_ratio_lag1,US3_avg_sal_lag1) %>%
   dplyr::summarise(annual_action_obligation=sum(Action_Obligation_Then_Year),
                    annual_count=length(StartCY)) 
+xlabel<-paste("Calendar Year (",min(NAICS_summary$CY),"-",max(NAICS_summary$CY),")",sep="")
 
 top_NAICS <- NAICS_summary %>% group_by(NAICS3) %>% 
   dplyr::summarise(naics_action_obligation=sum(annual_action_obligation),
@@ -131,7 +134,8 @@ NAICS_summary<-read_and_join_experiment(NAICS_summary,
                                       skip_check_var=c("principalnaicscodeText",
                                                        "NAICS_shorthand",
                                                        "NAICS_unabbreviated",
-                                                       "principalNAICS4DigitCode")
+                                                       "principalNAICS4DigitCode"),
+                                      guess_max = 5000
                                       )
 
 # https://stackoverflow.com/questions/37174316/how-to-fit-long-text-into-ggplot2-facet-titles
@@ -269,14 +273,15 @@ colnames(NAICS_summary)[colnames(NAICS_summary)=="NAICS"]<-"principalnaicscode"
 NAICS_summary$principalnaicscode<-as.character(NAICS_summary$principalnaicscode)
 NAICS_summary<-as.data.frame(NAICS_summary)
 
-NAICS_summary<-read_and_join(NAICS_summary,
+NAICS_summary<-read_and_join_experiment(NAICS_summary,
                         lookup_file = "Lookup_PrincipalNAICScode.csv",
                         path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
                                       dir="economic\\",
                         by="principalnaicscode",
                         skip_check_var=c("principalnaicscodeText",
                                          "NAICS_shorthand",
-                                         "NAICS_unabbreviated")
+                                         "NAICS_unabbreviated"),
+                        guess_max=5000
                )
 
 
@@ -459,63 +464,6 @@ Office_barplot
 ```
 
 
-### Platform Portfolio
-```{r Platform, fig.width=6.5 , fig.height=3.25}
-
-library(readr)
-annual_platform_summary<-read_csv(file="..//Output//annual_platform_summary.csv")
-colnames(annual_platform_summary)[colnames(annual_platform_summary)=="platformPortfolio"]<-"PlatformPortfolio"
-
-platform_no_na<-subset(annual_platform_summary,!is.na(PlatformPortfolio))
-labels_and_colors<-csis360::prepare_labels_and_colors(platform_no_na,"PlatformPortfolio")
-
-
-
-platform_no_na$plat_short <-swr(platform_no_na$PlatformPortfolio,nwrap = 21)
-platform_no_na<-subset(platform_no_na,Fiscal.Year>=2000 & Fiscal.Year<=2017)
-
- 
-
-# plat<-ggplot(platform_no_na,
-#        aes(x=Fiscal.Year,y=hh_index))+#color=NAICS_Code
-#   geom_line()+
-#   scale_y_continuous(label=scales::comma)+ 
-#   # scale_x_continuous(breaks=c(2006,2009,2011,2014))+
-#   labs(x="Fiscal Year",y="Herfindahl-Herschman Index")+ 
-#   geom_hline(yintercept=c(1500,2500),linetype="dotted")+
-#   facet_wrap(~plat_short)
-# add_preassigned_scales(plat,labels_and_colors = labels_and_colors)
-
-# str(platform_no_na)
-# summary(platform_no_na$Fiscal.Year)
-#
-# undebug(add_preassigned_scales)
-plat<-build_plot(
-  data=platform_no_na,
-  chart_geom = "Line Chart",
-  share = FALSE,
-  x_var="Fiscal.Year",
-  y_var="hh_index", #Name of variable to plot on y-axis
-  color_var="PlatformPortfolio",       # name of coloration variable, as string
-  facet_var="PlatformPortfolio",        # name of facet variable, as string
-  legend=FALSE, #Include a legend
-  caption=FALSE, #Include a source caption
-  labels_and_colors=labels_and_colors,
-  column_key=NULL
-)
-
-
-# add_preassigned_scales(plat, labels_and_colors,  var="PlatformPortfolio"
-
-plat<-plat+geom_hline(yintercept=c(1500,2500),linetype="dotted")+
-  labs(x="Fiscal Year",y="Herfindahl-Herschman Indetx")
-plat
-ggsave(plat+geom_line(aes(x=Fiscal.Year,y=hh_index,color=PlatformPortfolio),size=1),filename="..//Output//platform_hhi.png",height=3.25, width=6.5)
-ggsave(plat+geom_line(aes(x=Fiscal.Year,y=hh_index)),filename="..//Output//platform_hhi_bw.png",height=3.25, width=6.5)
-ggsave(plat+geom_line(aes(x=Fiscal.Year,y=hh_index,color=PlatformPortfolio),size=1),filename="..//Output//platform_hhi.eps",height=3.25, width=6.5)
-ggsave(plat+geom_line(aes(x=Fiscal.Year,y=hh_index)),filename="..//Output//platform_hhi_bw.eps",height=3.25, width=6.5)
-
-```
 
 ### Variable examination
 ```{r VarGraph}
