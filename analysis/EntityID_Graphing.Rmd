@@ -14,6 +14,11 @@ library(ggplot2)
 library(csis360)
 load(file="../data/clean/FPDS_eid_fyear.rda")
 load(file="../data//clean//defense_naics_vendor.Rdata")
+
+# style_path<-"https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/style/"
+# style_path<-"K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\"
+style_path<-"C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\"
+
 eid_lc<-prepare_labels_and_colors(FPDS_eid_fyear)
 
 
@@ -87,7 +92,6 @@ def_eid_fyear_plat<-standardize_variable_names(def_eid_fyear_plat)
 def_eid_fyear_plat$EntityCount<-1
 def_eid_fyear_plat$dFYear<-as.Date(paste("1/1/",as.character(def_eid_fyear_plat$Fiscal_Year),sep=""),"%m/%d/%Y")
 
-# ecp_lc<-prepare_labels_and_colors(ecp,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 ecp$EntitySizeText<-factor(ecp$EntitySizeText)
 ecp$thresh<-factor(ecp$IsEntityAbove2016constantOneMillionThreshold,
                    levels=c(0,1), labels=c("Vendor only receives smaller contracts","Vendor receives contracts over $1 million in 2016 $"))
@@ -96,6 +100,8 @@ ecp$thresh<-factor(ecp$IsEntityAbove2016constantOneMillionThreshold,
 ecp<-replace_nas_with_unlabeled(ecp,"EntitySmall","Unlabeled Vendor")
 ecp<-replace_nas_with_unlabeled(ecp,"EntitySizeText","Unlabeled Vendor")
 
+
+# ecp_lc<-prepare_labels_and_colors(ecp,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 ecp_lc<-prepare_labels_and_colors(ecp)
 
 ecp_ck<-get_column_key(ecp)
@@ -117,9 +123,10 @@ ecsub<-csis360::read_and_join(ecsub,
   path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
   dir="vendor/"
 )
-
-eid_lc<-prepare_labels_and_colors(def_eid_fyear_plat)
-
+eid_lc<-prepare_labels_and_colors(FPDS_eid_fyear)
+eid_ck<-get_column_key(FPDS_eid_fyear)
+ecp_lc<-prepare_labels_and_colors(defense_platform_vendor)
+ecp_ck<-get_column_key(defense_platform_vendor)
 
 ```
 ## Join up new entrants
@@ -129,6 +136,13 @@ entrant_lookup<-FPDS_eid_fyear %>% select(EntityID,fiscal_year,
                                           IsEntityAbove2018constant10ThousandThreshold) %>%
   standardize_variable_names()
 # defense_platform_vendor <- defense_platform_vendor%>%select(-entrant,-entrant_2018T)
+defense_platform_vendor<-defense_platform_vendor[,!colnames(defense_platform_vendor)%in% 
+                                                   c("entrant","entrant_2018T",
+                                                     "entrant.x","entrant_2018T/x",
+                                                     "entrant.y","entrant_2018T.y",
+                                                     "IsEntityAbove2018constant10ThousandThreshold",
+                                                     "IsEntityAbove2018constant10ThousandThreshold.x",
+                                                     "IsEntityAbove2018constant10ThousandThreshold.y")]
 defense_platform_vendor<-left_join(defense_platform_vendor,entrant_lookup,
                                    by=c("Fiscal_Year","EntityID"))
 defense_platform_vendor$count<-1
@@ -136,9 +150,9 @@ defense_platform_vendor<-apply_standard_lookups(defense_platform_vendor)
 defense_platform_vendor<-replace_nas_with_unlabeled(defense_platform_vendor,"entrant_2018T")
 defense_platform_vendor$entrant_2018T<-factor(defense_platform_vendor$entrant_2018T,
                                               levels=c("TRUE","FALSE","Unlabeled"),
-                                              labels=c("Unlabeled",
+                                              labels=c("New Entrant",
                                                        "Pre-established Vendor",
-                                                       "New Entrant",
+                                                       "Unlabeled"
                                                        ))
 
 ```
@@ -235,7 +249,7 @@ build_plot(
     chart_geom = "Histogram",
     # share = FALSE,
     x_var="fiscal_year",
-    # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+    # y_var="ObligatedAmount_OMB20_GDP20", #Name of variable to plot on y-axis
     color_var="status",       # name of coloration variable, as string
     facet_var="status",        # name of facet variable, as string
     legend=TRUE, #Include a legend
@@ -250,7 +264,7 @@ build_plot(
     chart_geom = "Histogram",
     # share = FALSE,
     x_var="fiscal_year",
-    # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+    # y_var="ObligatedAmount_OMB20_GDP20", #Name of variable to plot on y-axis
     color_var="status",       # name of coloration variable, as string
     facet_var="status",        # name of facet variable, as string
     legend=TRUE, #Include a legend
@@ -285,7 +299,7 @@ build_plot(
   chart_geom = "Histogram",
   # share = FALSE,
   x_var="fiscal_year",
-  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  # y_var="ObligatedAmount_OMB20_GDP20", #Name of variable to plot on y-axis
   color_var="entrant",       # name of coloration variable, as string
   facet_var="entrant",        # name of facet variable, as string
   legend=TRUE, #Include a legend
@@ -300,7 +314,7 @@ build_plot(
   chart_geom = "Histogram",
   # share = FALSE,
   x_var="fiscal_year",
-  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  # y_var="ObligatedAmount_OMB20_GDP20", #Name of variable to plot on y-axis
   color_var="status",       # name of coloration variable, as string
   facet_var="entrant",        # name of facet variable, as string
   legend=TRUE, #Include a legend
@@ -317,7 +331,7 @@ build_plot(
   chart_geom = "Histogram",
   # share = FALSE,
   x_var="fiscal_year",
-  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  # y_var="ObligatedAmount_OMB20_GDP20", #Name of variable to plot on y-axis
   color_var="sample_year",       # name of coloration variable, as string
   # facet_var="sample_year",        # name of facet variable, as string
   legend=TRUE, #Include a legend
@@ -337,7 +351,7 @@ build_plot(
   chart_geom = "Histogram",
   # share = FALSE,
   x_var="fiscal_year",
-  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  # y_var="ObligatedAmount_OMB20_GDP20", #Name of variable to plot on y-axis
   color_var="sample_year",       # name of coloration variable, as string
   # facet_var="sample_year",        # name of facet variable, as string
   legend=TRUE, #Include a legend
@@ -353,7 +367,7 @@ build_plot(
 ##drop those not in sample 
 #1. make not in sample binary
 table(FPDS_eid_fyear$sample_year)
-FPDS_eid_fyear$sample_year_bin <- revalue(FPDS_eid_fyear$sample_year, c("Not in sample"="0", "2001"="1", "2002"="2", "2003"="3", "2004"="4", "2005"="5", "2006"="6"))
+FPDS_eid_fyear$sample_year_bin <- plyr::revalue(FPDS_eid_fyear$sample_year, c("Not in sample"="0", "2001"="1", "2002"="2", "2003"="3", "2004"="4", "2005"="5", "2006"="6"))
 str(FPDS_eid_fyear$sample_year_bin)
 table(FPDS_eid_fyear$sample_year_bin)
 FPDS_eid_fyear$sample_year_bin <- as.numeric(as.character(FPDS_eid_fyear$sample_year_bin))
@@ -376,7 +390,7 @@ build_plot(
   chart_geom = "Histogram",
   # share = FALSE,
   x_var="fiscal_year",
-  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  # y_var="ObligatedAmount_OMB20_GDP20", #Name of variable to plot on y-axis
   color_var="sample_year",       # name of coloration variable, as string
   facet_var="sample_year",        # name of facet variable, as string
   legend=TRUE, #Include a legend
@@ -393,7 +407,7 @@ build_plot(
   chart_geom = "Histogram",
   # share = FALSE,
   x_var="fiscal_year",
-  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  # y_var="ObligatedAmount_OMB20_GDP20", #Name of variable to plot on y-axis
   color_var="sample_year",       # name of coloration variable, as string
   facet_var="sample_year",        # name of facet variable, as string
   legend=TRUE, #Include a legend
@@ -411,7 +425,7 @@ build_plot(
   chart_geom = "Histogram",
   # share = FALSE,
   x_var="years_in_sample",
-  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  # y_var="ObligatedAmount_OMB20_GDP20", #Name of variable to plot on y-axis
   color_var="sample_year",       # name of coloration variable, as string
   facet_var="sample_year",        # name of facet variable, as string
   legend=TRUE, #Include a legend
@@ -430,7 +444,7 @@ build_plot(
   chart_geom = "Histogram",
   # share = FALSE,
   x_var="fiscal_year",
-  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  # y_var="ObligatedAmount_OMB20_GDP20", #Name of variable to plot on y-axis
   color_var="status",       # name of coloration variable, as string
   facet_var="sample_year",        # name of facet variable, as string
   legend=TRUE, #Include a legend
@@ -444,11 +458,11 @@ build_plot(
 
 
 build_plot(
-  data=FPDS_cleaned_unique,
+  data=FPDS_cleaned_unique %>% filter(fiscal_year>2000),
   chart_geom = "Histogram",
   # share = FALSE,
   x_var="FYear",
-  # y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  # y_var="ObligatedAmount_OMB20_GDP20", #Name of variable to plot on y-axis
   # color_var="entrant",       # name of coloration variable, as string
   # facet_var="entrant",        # name of facet variable, as string
   legend=TRUE, #Include a legend
@@ -465,18 +479,18 @@ Then the vendor spend.
 ```{r dollars, fig.width=7, fig.height=7}
 
 build_plot(
-  data=FPDS_eid_fyear,
+  data=FPDS_eid_fyear %>% filter(fiscal_year>2000),
   chart_geom = "Bar Chart",
   # share = FALSE,
   x_var="fiscal_year",
-  y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  y_var="ObligatedAmount_OMB20_GDP20", #Name of variable to plot on y-axis
   color_var="entrant",       # name of coloration variable, as string
   # facet_var="entrant",        # name of facet variable, as string
   legend=TRUE, #Include a legend
   caption=TRUE, #Include a source caption
   labels_and_colors=eid_lc,
   column_key=NULL
-)+labs(x="Fiscal Year of Transaction",y="Obligations 2017 $")
+)+labs(x="Fiscal Year of Transaction",y="Obligations 2020 $")
 
 
 ##fiscal year of transaction
@@ -485,29 +499,29 @@ build_plot(
   chart_geom = "Bar Chart",
   # share = FALSE,
   x_var="fiscal_year",
-  y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  y_var="ObligatedAmount_OMB20_GDP20", #Name of variable to plot on y-axis
   color_var="entrant",       # name of coloration variable, as string
   facet_var="entrant",        # name of facet variable, as string
   legend=TRUE, #Include a legend
   caption=TRUE, #Include a source caption
   labels_and_colors=eid_lc,
   column_key=NULL
-)+facet_wrap(~entrant,scales="free_y",ncol=1)+labs(x="Fiscal Year of Transaction",y="Obligations 2017 $")
+)+facet_wrap(~entrant,scales="free_y",ncol=1)+labs(x="Fiscal Year of Transaction",y="Obligations 2020 $")
 
 
 build_plot(
-  data=FPDS_eid_fyear,
+  data=FPDS_eid_fyear ,
   chart_geom = "Bar Chart",
   # share = FALSE,
   x_var="fiscal_year",
-  y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  y_var="ObligatedAmount_OMB20_GDP20", #Name of variable to plot on y-axis
   color_var="sample_year",       # name of coloration variable, as string
   # facet_var="sample_year",        # name of facet variable, as string
   legend=TRUE, #Include a legend
   caption=TRUE, #Include a source caption
   labels_and_colors=eid_lc,
   column_key=NULL
-)+labs(x="Fiscal Year of Transaction",y="Obligations 2017 $")
+)+labs(x="Fiscal Year of Transaction",y="Obligations 2020 $")
 
 
 build_plot(
@@ -515,7 +529,7 @@ build_plot(
   chart_geom = "Bar Chart",
   # share = FALSE,
   x_var="fiscal_year",
-  y_var="obligatedAmount.2017", #Name of variable to plot on y-axis
+  y_var="ObligatedAmount_OMB20_GDP20", #Name of variable to plot on y-axis
   color_var="sample_year",       # name of coloration variable, as string
   facet_var="sample_year",        # name of facet variable, as string
   legend=TRUE, #Include a legend
@@ -523,7 +537,7 @@ build_plot(
   labels_and_colors=eid_lc,
   column_key=NULL
 )+facet_wrap(~sample_year,scales="free_y",space="free_y",ncol=1)+
-  labs(x="Fiscal Year of Transaction",y="Obligations 2017 $")
+  labs(x="Fiscal Year of Transaction",y="Obligations 2020 $")
 
 
 
@@ -539,7 +553,7 @@ build_plot(
   caption=TRUE, #Include a source caption
   labels_and_colors=eid_lc,
   column_key=NULL
-)labs(x="Fiscal Year of Contractor First Appearance",y="Obligations 2017 $")
+)labs(x="Fiscal Year of Contractor First Appearance",y="Obligations 2020 $")
 
 
 ```
@@ -576,7 +590,7 @@ write.csv(file=file.path("..","Output","def_entity_new_plat.csv"),row.names = FA
           eplatnew$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(PlatformPortfolio,entrant_2018T),
                         names_from=Fiscal_Year,values_from=count)%>%
-            arrange(PlatformPortfolio,entrant_2018T)))
+            arrange(PlatformPortfolio,entrant_2018T))
 
 ggsave600dpi(file=file.path("..","Output","def_entity_new_plat_line.png"), eplatnew, 
              width=6.5, height= 4, units="in",size=9,lineheight = 0.75
@@ -625,7 +639,7 @@ ggsave600dpi(file=file.path("..","Output","def_ecs_entity_new_plat_line.svg"), e
 # Summary Trends
 ## Defense Count
 ```{r EntityCount}
-
+eid_lc<-prepare_labels_and_colors(ec)
   
   (edef<-build_plot(ec %>% filter(Fiscal_Year>=2005 & Customer=="Defense"),
              chart_geom = "Line Chart",
@@ -715,7 +729,7 @@ ggsave600dpi(file=file.path("..","Output","def_ecs_entity_new_plat_line.svg"), e
              color_var="EntitySizeText",
              facet_var="IsEntityAbove2016constantOneMillionThreshold",
              labels_and_colors = eid_lc,
-             format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+             format=TRUE)+labs(x="Fiscal Year",y="Obligations")
   )#+facet_wrap(~PlatformPortfolio,scale="free_y")
   
   (build_plot(ec %>% filter(Fiscal_Year>=2005 &
@@ -728,7 +742,7 @@ ggsave600dpi(file=file.path("..","Output","def_ecs_entity_new_plat_line.svg"), e
              facet_var="IsEntityAbove2016constantOneMillionThreshold",
              labels_and_colors = eid_lc,
              share=TRUE,
-             format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+             format=TRUE)+labs(x="Fiscal Year",y="Obligations")
   )#+facet_wrap(~PlatformPortfolio,scale="free_y")
   
   
@@ -775,7 +789,7 @@ ggsave600dpi(file=file.path("..","Output","def_ecs_entity_new_plat_line.svg"), e
            # second_var="",
            labels_and_colors = ecp_lc,
            format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
-)+facet_wrap(~PlatformPortfolio,ncol=6)+scale_x_date("Fiscal Year",labels = date_format("'%y"),date_breaks = "3 years")
+)+facet_wrap(~PlatformPortfolio,ncol=6)+scale_x_date("Fiscal Year",labels = scales::label_date("'%y"),date_breaks = "3 years")
 
 (eplatline<-build_plot(ecp %>% filter(Fiscal_Year>=2005 &
                                     IsEntityAbove2018constant10ThousandThreshold==1),
@@ -787,7 +801,7 @@ ggsave600dpi(file=file.path("..","Output","def_ecs_entity_new_plat_line.svg"), e
            # second_var="",
            labels_and_colors = ecp_lc,
            format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")+
-    facet_wrap(~PlatformPortfolio,ncol=6)+scale_x_date("Fiscal Year",labels = date_format("'%y"),date_breaks = "3 years")
+    facet_wrap(~PlatformPortfolio,ncol=6)+scale_x_date("Fiscal Year",labels = scales::label_date("'%y"),date_breaks = "3 years")
 )
 
 write.csv(file=file.path("..","Output","def_entity_count_plat.csv"),row.names = FALSE, na = "",
@@ -815,21 +829,6 @@ ggsave600dpi(file=file.path("..","Output","def_entity_count_plat_line.png"), epl
 
 ecp %>% group_by(IsEntityAbove2016constantOneMillionThreshold,Fiscal_Year) %>%
           dplyr::summarise(act=sum(Action_Obligation))%>%group_by(Fiscal_Year)%>%mutate(act=act/sum(act))
-
-(eplat<-build_plot(def_eid_fyear_plat %>% dplyr::filter(Fiscal_Year>=2005),
-           chart_geom = "Line Chart",
-           x_var="dFYear",
-           y_var="EntityCount",
-           facet_var="PlatformPortfolio",
-           # color_var="PlatformPortfolio",
-           labels_and_colors = eid_lc,
-           format=TRUE)+facet_wrap(~PlatformPortfolio)+labs(x="Fiscal Year",y="Vendor Count")
-)
-ggsave600dpi(file.path("..","Output","def_entity_count_plat.png"), eplat, 
-             width=6.5, height= 4, units="in",size=11,lineheight = 0.75
-             )
-
-
 
 ```
 
