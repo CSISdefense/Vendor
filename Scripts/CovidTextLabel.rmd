@@ -1,0 +1,76 @@
+---
+title: "Covid Text Label"
+author: "Gregory Sanders"
+date: "2022-11-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Label Covid related OTAs
+
+## Function and update script
+
+The idea here is to create a function that will automatically fill some columns and then to manually fill in those that cannot be adjudicated by the function while tuning the function to handle easy cases as they are identified.
+
+We assume that any transactions involving Covid-19 will mention Covid. We've added cleaning and sanitation search terms as that is a common form of funding, especially for airports. The funding of most interest is that for vaccines/theraputics/operation warp speed.
+
+What we do not want to include are contracts that are extended or otherwise face challenges because of covid but are not part of the covid response.
+
+```{r label_covid}
+
+label_covid<-function(x,col="Description_of_Requirement"){
+  x<-as.data.frame(x)
+  # grep("UAS|Unmanned|Uninhabited|Uncrewed|Remotely Crewed",x$Description_of_Requirement)
+  x$Mentions_Covid<-NA
+  if(!"Covid_Cleaning" %in% colnames(x))
+    x$Covid_Cleaning<-NA
+  if(!"Covid_Medicine" %in% colnames(x))    
+    x$Covid_Medicine<-NA
+  
+  x$Cleaning<-NA
+  x$Medicine<-NA
+  
+  x$Mentions_Covid[grep("Covid",x[,col],ignore.case = TRUE)]<-TRUE
+  x$Covid_Cleaning[grep("Covid-19 Cleaning",x[,col],ignore.case = TRUE)]<-TRUE
+  x$Cleaning[grep("SANITATION",x[,col],ignore.case = TRUE)]<-TRUE
+  x$Cleaning[grep("SANITIZATION",x[,col],ignore.case = TRUE)]<-TRUE
+  x$Cleaning[grep("CLEANING",x[,col],ignore.case = TRUE)]<-TRUE
+  x$Cleaning[grep("CLEAN AND SANITIZE",x[,col],ignore.case = TRUE)]<-TRUE
+  x$Medicine[grep("Vaccine",x[,col],ignore.case = TRUE)]<-TRUE
+  x$Medicine[grep("theraputics",x[,col],ignore.case = TRUE)]<-TRUE
+  
+  x$Covid_Cleaning[is.na(x$Covid_Cleaning) & x$Mentions_Covid & x$Cleaning]<-TRUE
+  x$Covid_Medicine[is.na(x$Covid_Medicine) & x$Mentions_Covid & x$Medicine]<-TRUE
+  
+  
+  x$Covid_Confirmed[x$Covid_Cleaning==TRUE & 
+                      is.na(x$Covid_Confirmed)]<-TRUE
+  x$Covid_Confirmed[x$Covid_Medicine==TRUE & 
+                      is.na(x$Covid_Confirmed)]<-TRUE
+  
+  
+  x
+  
+}
+
+
+#### Assign labels to COVID
+
+d<-read_delim(file.path("..","data","semi_clean","ota_description_covid.csv"),na ="",col_types="ccccc",delim=",")
+d<-standardize_variable_names(d)
+# debug(label_covid)
+d<-label_covid(d,"Description_of_Requirement")
+sum(as.logical(as.character(d$Mentions_Covid)),na.rm=TRUE)
+sum(as.logical(as.character(d$Covid_Medicine)),na.rm=TRUE)
+sum(as.logical(as.character(d$Covid_Cleaning)),na.rm=TRUE)
+sum(as.logical(as.character(d$Covid_Confirmed)),na.rm=TRUE)
+
+
+
+
+write_delim(d,file.path("..","data","semi_clean","ota_description_covid.csv"),na = "",delim=",")
+
+```
