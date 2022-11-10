@@ -17,6 +17,7 @@
 library(tidyverse)
 library(magrittr)
 library(csis360)
+library(readr)
 #This is a kludge until the FMS repo is public
 source(file.path("..","FMS","Scripts","Trade_Standardize.r"))
 # read in data
@@ -108,9 +109,8 @@ full_data<-initial_clean(fed_data,only_defense=TRUE)
 
 #AnyCommercial 
 def_data<- read_delim(
-  "Data//semi_clean//defense_budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",delim = "\t",
+  "Data//semi_clean//defense.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.txt",delim = "\t",
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
-debug(initial_clean)
 def_data<-initial_clean(def_data)
 def_data<-apply_standard_lookups(def_data)#,
 
@@ -225,7 +225,7 @@ def_data %<>%
   # mutate(VendorIsForeign = factor(VendorIsForeign))%>%
   # mutate(PlaceIsForeign = factor(PlaceIsForeign))
 
-# def_data$recoveredmaterialclauses[def_data$recoveredmaterialclauses==""]<-"Unlabeled"
+def_data$recoveredmaterialclauses[def_data$recoveredmaterialclauses==""]<-"Unlabeled"
 
 def_lc<-csis360::prepare_labels_and_colors(def_data)
 

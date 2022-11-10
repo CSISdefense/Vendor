@@ -193,6 +193,21 @@ EXEC	@return_value = Contract.SP_ContractUnmodifiedScope
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
+--4h05m
+DECLARE	@return_value int
+
+--EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
+EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength
+--EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
+		@Customer = 'Defense',-- [Summary].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer]
+		@SubCustomer = NULL,
+		@PlatformPortfolio =NULL
+
+
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+
 --4h48m
 --2h32m (with 5 cores)
 --8h55m 1m rows (5 cores)
