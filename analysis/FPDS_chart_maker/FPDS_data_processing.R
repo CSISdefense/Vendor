@@ -422,11 +422,11 @@ pricing<-standardize_variable_names(pricing)
 colnames(pricing)[colnames(pricing)=="DollarsObligated"]<-"Action_Obligation"
 colnames(pricing)[colnames(pricing)=="PricingMechanismCode"]<-"TypeOfContractPricing"
 pricing$Action_Obligation<-text_to_number(pricing$Action_Obligation)
-pricing<-pricing %>% select(-PricingInflation)
+# pricing<-pricing %>% select(-PricingInflation)
 pricing<-pricing %>% select(-MajorCommandName)
-pricing_lc<-csis360::prepare_labels_and_colors(pricing,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\Style\\")
+pricing_lc<-csis360::prepare_labels_and_colors(pricing  %>% select(-ContractingOfficeName,-PricingMechanism ))
 
-pricing_ck<-csis360::get_column_key(pricing,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\Style\\")
+pricing_ck<-csis360::get_column_key(pricing)
 
 save(pricing,pricing_lc,pricing_ck, file="data/clean/pricing_historical.Rda")
 
