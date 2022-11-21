@@ -926,6 +926,70 @@ write.csv(file="..//Output//topline_pricing.csv",row.names = FALSE, na = "",
 ```
 
 
+### Pricing History
+```{r ToplinePricing}
+
+(
+PricingHistory<-build_plot(
+  data=pricing,
+  chart_geom = "Line Chart",
+  share = TRUE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="PricingInflation", #color_var
+  # facet_var="PricingUCA.sumlong", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2021 $s)")
+)
+
+# ggsave600dpi("..//Output//Topline_Pricing_History.png", PricingHistory, 
+#              width=6.5, height= 4, units="in",size=11
+#              )
+
+
+ggsave600dpi("..//Output//Topline_Pricing_History.png", PricingHistory,  
+             width=6.5, height= 3, units="in",size=12, lineheight=1.2
+             )
+
+
+ggsave600dpi("..//Output//Topline_Pricing_History.svg", PricingHistory,  
+             width=6.5, height= 3, units="in",size=12, lineheight=1.2
+             )
+
+
+write.csv(file="..//Output//Topline_Pricing_History.csv",row.names = FALSE, na = "",
+  arrange(pivot_wider(PricingHistory$data %>% 
+                        arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
+                      id_cols=c(PricingInflation),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB23_GDP21),PricingInflation)%>%
+    arrange(PricingInflation))
+
+write.csv(file="..//Output//Topline_Pricing_History.csv",row.names = FALSE, na = "",
+  pricing %>% group_by(Fiscal_Year,PricingInflation)%>%
+                        summarise(Action_Obligation_OMB23_GDP21=sum(Action_Obligation_OMB23_GDP21,na.rm=TRUE)) %>%
+                        arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
+                        pivot_wider(
+                      id_cols=c(PricingInflation),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB23_GDP21)%>%
+    arrange(PricingInflation)
+
+```
+
+
 ## Topline Commercial
 ```{r Commercial}
 def_data$AnyCommercialText<-factor(def_data$AnyCommercial)
