@@ -60,41 +60,9 @@ initial_clean<-function(df,only_defense=TRUE){
 #   "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerpcau.txt",delim = "\t",
 #   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
 
-pricing<- read_csv(
-    "Data_Raw//FPDS_Reports//Defense_Pricing_Mechanism_Agency.csv",
-    col_names = TRUE, guess_max = 5000000,na=c(""))
-
-pricing<-apply_standard_lookups(pricing)#,
-pricing<-standardize_variable_names(pricing)
-colnames(pricing)<-gsub(" ","",colnames(pricing))
-pricing<-standardize_variable_names(pricing)
-colnames(pricing)[colnames(pricing)=="DollarsObligated"]<-"Action_Obligation"
-colnames(pricing)[colnames(pricing)=="PricingMechanismCode"]<-"TypeOfContractPricing"
-pricing$Action_Obligation<-text_to_number(pricing$Action_Obligation)
-debug(read_and_join_experiment)
-pricing<-read_and_join_experiment(data=pricing
-                             ,"contract.TypeOfContractPricing.csv"
-                             # ,path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/"
-                             ,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\"
-                             ,dir="contract/"
-                             ,add_var = "PricingInflation"
-                             ,skip_check_var = "PricingInflation"
-                             # ,by=c("informationtechnologycommercialitemcategory"="informationtechnologycommercialitemcategory")
-                             # ,new_var_checked=FALSE
-                             # ,create_lookup_rdata=TRUE
-                             # ,col_types="dddddddddccc"
-)
-pricing<-pricing %>% select(-PricingInflation)
-pricing<-pricing %>% select(-MajorCommandName)
-pricing_lc<-csis360::prepare_labels_and_colors(pricing,path=local_path)
-
-pricing_ck<-csis360::get_column_key(pricing,path=local_path)
-
-save(pricing,pricing_lc,pricing_ck, file="data/clean/pricing_historical.Rda")
 
 
-
-
+#############Full Data and Fed Data##########
 
 full_data <- read_delim(
   # "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerInternational.txt",delim = "\t",
@@ -106,13 +74,21 @@ fed_data<- apply_standard_lookups(full_data)#,
 full_data<-initial_clean(fed_data,only_defense=TRUE)
 # path="K:/Users/Greg/Repositories/Lookup-Tables/style")
 
+if(!"OriginIsForeign" %in% colnames(full_data)){
+  full_data<-read_and_join_experiment(full_data,lookup_file="Location_CountryCodes.csv",
+                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="location/",
+                                      add_var = c("isforeign"),#"USAID region",
+                                      by=c("OriginISOalpha3"="alpha-3"),
+                                      # skip_check_var=c("NATOyear",	"MajorNonNATOyear","NTIByear"	,"SEATOendYear","RioTreatyStartYear","RioTreatyEndYear","FiveEyes","OtherTreatyName"	,"OtherTreatyStartYear","OtherTreatyEndYear","isforeign"),
+                                      missing_file="missing_DSCA_iso.csv")
+  colnames(full_data)[colnames(full_data)=="isforeign"]<-"OriginIsForeign"
+  
 
-#AnyCommercial 
-def_data<- read_delim(
-  "Data//semi_clean//defense.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.txt",delim = "\t",
-  col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
-def_data<-initial_clean(def_data)
-def_data<-apply_standard_lookups(def_data)#,
+if(all(is.na(full_data[nrow(full_data),]))){
+  full_data<-full_data[1:nrow(full_data)-1,]
+  warning("Echo row dropped")
+}
+
 
 
 full_data <- full_data %>% dplyr::select(-PlaceIsForeign,-VendorIsForeign) 
@@ -201,6 +177,13 @@ fed_ck<-csis360::get_column_key(full_data)
 save(fed_data,fed_lc,fed_ck, file="data/clean/fed_summary_FPDS.Rda")
 
 
+#############Defense Data (faster query run)##########
+def_data<- read_delim(
+  "Data//semi_clean//defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",delim = "\t",
+  col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
+def_data<-initial_clean(def_data)
+def_data<-apply_standard_lookups(def_data)#,
+
 
 #def_data
 def_data %<>%
@@ -227,52 +210,24 @@ def_data %<>%
 
 def_data$recoveredmaterialclauses[def_data$recoveredmaterialclauses==""]<-"Unlabeled"
 
-def_lc<-csis360::prepare_labels_and_colors(def_data)
 
-def_ck<-csis360::get_column_key(def_data)
+def_data$PricingInflation.1yearUCA<-as.character(def_data$PricingInflation.1year)
+def_data$PricingInflation.1yearUCA[def_data$PricingUCA.sum=="UCA"]<-"UCA"
+def_data$PricingMechanism<-as.character(def_data$PricingMechanism)
+def_lc<-csis360::prepare_labels_and_colors(def_data %>% select(-PricingMechanism))
+
+def_ck<-csis360::get_column_key(def_data %>% select(-PricingMechanism))
 
 save(def_data,def_lc,def_ck, file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
 # load(file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
 
-
-if(all(is.na(full_data[nrow(full_data),]))){
-  full_data<-full_data[1:nrow(full_data)-1,]
-  warning("Echo row dropped")
-}
-
-
-##############Software #############
-sw<-read_delim(file.path("data","semi_clean","Summary.SP_SoftwareDetail.txt"),delim="\t",na=c("NULL","NA"),
-               col_names = TRUE, guess_max = 10000000)
-
-
-
-sw<-apply_standard_lookups(sw)
-
-sw_lc<-prepare_labels_and_colors(sw)
-sw_ck<-get_column_key(sw)
-
-save(sw,sw_lc,sw_ck, file="data/clean/sw_FPDS.Rda")
-
-#############JADC2##########
-
-jadc2 <- read_delim(
-  "Data//semi_clean//Summary.SP_JADC2detail.txt",delim = "\t",
-  col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
-
-jadc2<-apply_standard_lookups(jadc2)#,
-
-
-jadc2_lc<-csis360::prepare_labels_and_colors(jadc2)
-jadc2_ck<-csis360::get_column_key(jadc2)
-save(jadc2,jadc2_lc, jadc2_ck,file="data/clean/jadc2.Rda")
 
 
 ###########Product Service Code, Agency, Platform ############
 
 
 platpsc<-read_delim(file.path("data","semi_clean","Federal_ProdservPlatform.txt"),delim="\t",na=c("NULL","NA"),
-              col_names = TRUE, guess_max = 10000000)
+                    col_names = TRUE, guess_max = 10000000)
 
 platpsc<-initial_clean(platpsc)
 platpsc<-apply_standard_lookups(platpsc)
@@ -316,11 +271,11 @@ platpscintldef$VendorSize_Intl[is.na(platpscintldef$VendorIsForeign)]<-"Unlabele
 
 
 platpscintldef %<>% read_and_join_experiment(lookup_file="Budget_FundedByForeignEntity.csv",
-                                        path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="budget/",
-                                        add_var = c("foreign_funding_description","IsFMS"),
-                                        by=c("fundedbyforeignentity"),
-                                        # missing_file="missing_iso.csv",
-                                        skip_check_var = c("foreign_funding_description","IsFMS")
+                                             path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="budget/",
+                                             add_var = c("foreign_funding_description","IsFMS"),
+                                             by=c("fundedbyforeignentity"),
+                                             # missing_file="missing_iso.csv",
+                                             skip_check_var = c("foreign_funding_description","IsFMS")
 )
 
 
@@ -377,7 +332,7 @@ platpsc %<>%
   mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
   mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
   mutate(CrisisProductOrServiceArea = factor(CrisisProductOrServiceArea))
-  
+
 
 
 detail_lc<-csis360::prepare_labels_and_colors(platpsc)
@@ -421,6 +376,60 @@ fed_lc<-csis360::prepare_labels_and_colors(platpscintl)
 fed_ck<-csis360::get_column_key(platpscintl)
 
 save(platpscintl,fed_lc, fed_ck,file="data/clean/Federal_platpscintl_FPDS.Rda")
+
+##############Software #############
+sw<-read_delim(file.path("data","semi_clean","Summary.SP_SoftwareDetail.txt"),delim="\t",na=c("NULL","NA"),
+               col_names = TRUE, guess_max = 10000000)
+
+
+
+sw<-apply_standard_lookups(sw)
+
+sw_lc<-prepare_labels_and_colors(sw)
+sw_ck<-get_column_key(sw)
+
+save(sw,sw_lc,sw_ck, file="data/clean/sw_FPDS.Rda")
+
+#############JADC2##########
+
+jadc2 <- read_delim(
+  "Data//semi_clean//Summary.SP_JADC2detail.txt",delim = "\t",
+  col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
+
+jadc2<-apply_standard_lookups(jadc2)#,
+
+
+jadc2_lc<-csis360::prepare_labels_and_colors(jadc2)
+jadc2_ck<-csis360::get_column_key(jadc2)
+save(jadc2,jadc2_lc, jadc2_ck,file="data/clean/jadc2.Rda")
+
+
+
+
+
+
+
+##############Pricing History 1980-2021 #############
+
+pricing<- read_csv(
+  "Data_Raw//FPDS_Reports//Defense_Pricing_Mechanism_Agency.csv",
+  col_names = TRUE, guess_max = 5000000,na=c(""))
+
+pricing<-apply_standard_lookups(pricing)#,
+pricing<-standardize_variable_names(pricing)
+colnames(pricing)<-gsub(" ","",colnames(pricing))
+pricing<-standardize_variable_names(pricing)
+colnames(pricing)[colnames(pricing)=="DollarsObligated"]<-"Action_Obligation"
+colnames(pricing)[colnames(pricing)=="PricingMechanismCode"]<-"TypeOfContractPricing"
+pricing$Action_Obligation<-text_to_number(pricing$Action_Obligation)
+# pricing<-pricing %>% select(-PricingInflation)
+pricing<-pricing %>% select(-MajorCommandName)
+pricing_lc<-csis360::prepare_labels_and_colors(pricing  %>% select(-ContractingOfficeName,-PricingMechanism ))
+
+pricing_ck<-csis360::get_column_key(pricing)
+
+save(pricing,pricing_lc,pricing_ck, file="data/clean/pricing_historical.Rda")
+
 
 
 
@@ -631,11 +640,11 @@ save(platpscintl,fed_lc, fed_ck,file="data/clean/Federal_platpscintl_FPDS.Rda")
 # )
 
 # SubCustomer.JPO
-platpscintldef$SubCustomer.JPO<-as.character(platpscintldef$SubCustomer.platform)
-platpscintldef$SubCustomer.JPO[platpscintldef$ProjectName=="JSF (F-35)" & !is.na(platpscintldef$ProjectName)&platpscintldef$SubCustomer.platform=="Navy"]<-"F-35 JPO"
-platpscintldef$SubCustomer.JPO<-factor(platpscintldef$SubCustomer.JPO)
-summary(factor(platpscintldef$SubCustomer.JPO))
-any(as.character(platpscintldef$ProjectName)=="JSF (F-35)"& !is.na(platpscintldef$ProjectName))
+# platpscintldef$SubCustomer.JPO<-as.character(platpscintldef$SubCustomer.platform)
+# platpscintldef$SubCustomer.JPO[platpscintldef$ProjectName=="JSF (F-35)" & !is.na(platpscintldef$ProjectName)&platpscintldef$SubCustomer.platform=="Navy"]<-"F-35 JPO"
+# platpscintldef$SubCustomer.JPO<-factor(platpscintldef$SubCustomer.JPO)
+# summary(factor(platpscintldef$SubCustomer.JPO))
+# any(as.character(platpscintldef$ProjectName)=="JSF (F-35)"& !is.na(platpscintldef$ProjectName))
 
 
 # platpscintldef$IsUnlabeledMAC<-is.na(platpscintldef$mainaccountcode) | is.na(platpscintldef$treasuryagencycode)
@@ -658,14 +667,6 @@ any(as.character(platpscintldef$ProjectName)=="JSF (F-35)"& !is.na(platpscintlde
 #   colnames(platpscintldef)[colnames(platpscintldef)=="isforeign"]<-"PlaceIsForeign"
 # }
 # 
-if(!"OriginIsForeign" %in% colnames(full_data)){
-  full_data<-read_and_join_experiment(full_data,lookup_file="Location_CountryCodes.csv",
-                                           path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="location/",
-                                           add_var = c("isforeign"),#"USAID region",
-                                           by=c("OriginISOalpha3"="alpha-3"),
-                                           # skip_check_var=c("NATOyear",	"MajorNonNATOyear","NTIByear"	,"SEATOendYear","RioTreatyStartYear","RioTreatyEndYear","FiveEyes","OtherTreatyName"	,"OtherTreatyStartYear","OtherTreatyEndYear","isforeign"),
-                                           missing_file="missing_DSCA_iso.csv")
-  colnames(full_data)[colnames(full_data)=="isforeign"]<-"OriginIsForeign"
 }
 
 # if(!"VendorIsForeign" %in% colnames(platpscintldef)){
@@ -678,3 +679,4 @@ if(!"OriginIsForeign" %in% colnames(full_data)){
 #   colnames(platpscintldef)[colnames(platpscintldef)=="isforeign"]<-"VendorIsForeign"
 # }
 # 
+
