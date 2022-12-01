@@ -28,12 +28,16 @@ legend.text.size<-8
 title.text.size<-12
 geom.text.size<-12
 
+local_path<-"K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\"
+
 main.text.size<-1
 note.text.size<-1.40
 if(!exists("full_data"))
   # load(file="..//data//clean//unaggregated_FPDS_2020.Rda")
   load(file="FPDS_chart_maker//unaggregated_FPDS.Rda")
 
+if(!exists("def_data"))
+  load(file="FPDS_chart_maker/unaggregated_def.Rda")
 # full_data<-deflate(full_data, "Action_Obligation_Then_Year",deflator_var="OMB23_GDP21")
 
 load(file="../data/clean/Defense_OTA.Rda")
@@ -51,7 +55,7 @@ toa<-toa[11,c(-1,-3)]
 colnames(def_data)[colnames(def_data)=="Action_Obligation_Then_Year_OMB23_GDP21"]<-"Action_Obligation_OMB23_GDP21"
 colnames(def_data)[colnames(def_data)=="Action_Obligation_Then_Year_Then_Year"]<-"Action_Obligation_Then_Year"
 
-
+ 
 
 colnames(toa)<-gsub("FY ","",colnames(toa))
 colnames(toa)[colnames(toa)=="...2"]<-"Series"
@@ -928,22 +932,26 @@ write.csv(file="..//Output//topline_pricing.csv",row.names = FALSE, na = "",
 
 ### Pricing History
 ```{r ToplinePricing}
+if(!exists("pricing"))
+  load(file="../data/clean/pricing_historical.Rda")
+
+hist_lc<-prepare_labels_and_colors(pricing %>% select(-ContractingOfficeName,-PricingMechanism),path=local_path)
 
 (
 PricingHistory<-build_plot(
   data=pricing,
   chart_geom = "Line Chart",
   share = TRUE,
-  labels_and_colors=labels_and_colors,
+  labels_and_colors=hist_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="Fiscal_Year", #x_var
   y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
   color_var="PricingInflation", #color_var
   # facet_var="PricingUCA.sumlong", #facet_var
   column_key=column_key,
   format=TRUE,
   ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+)+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
@@ -952,24 +960,25 @@ PricingHistory<-build_plot(
   # x="Fiscal Year",
   # y="Percent of Obligations",
   # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2021 $s)")
+  theme(legend.position = "right",
+        plot.caption = element_text(hjust = 0,face="plain"))+
+  labs(y="Share of Obligations",caption="Source: Federal Procurement Data System (FPDS) and CSIS analysis.")
 )
 
 # ggsave600dpi("..//Output//Topline_Pricing_History.png", PricingHistory, 
 #              width=6.5, height= 4, units="in",size=11
 #              )
 
-
-ggsave600dpi("..//Output//Topline_Pricing_History.png", PricingHistory,  
-             width=6.5, height= 3, units="in",size=12, lineheight=1.2
-             )
-
-
-ggsave600dpi("..//Output//Topline_Pricing_History.svg", PricingHistory,  
-             width=6.5, height= 3, units="in",size=12, lineheight=1.2
-             )
-
+  
+  ggsave600dpi("..//Output//Topline_Pricing_History.png", PricingHistory,  
+               width=6.5, height= 3, units="in",size=12, lineheight=1.2
+               )
+  
+  
+  ggsave600dpi("..//Output//Topline_Pricing_History.svg", PricingHistory,  
+               width=6.5, height= 3, units="in",size=12, lineheight=1.2
+               )
+  
 
 write.csv(file="..//Output//Topline_Pricing_History_share.csv",row.names = FALSE, na = "",
   arrange(pivot_wider(PricingHistory$data %>% 
@@ -2832,98 +2841,7 @@ VendorSizePricing<-build_plot(
 
 
   
-  
-  (
-  VendorSizePricing2021<-build_plot(
-    data=def_data %>% filter(Fiscal_Year==2021& Shiny.VendorSize!="Unlabeled" & CurrentDurationIsYear!="Unlabeled"&
-                               PricingUCA.sum!="Unclear"),
-    chart_geom = "Bar Chart",
-    # share = TRUE,
-    labels_and_colors=def_lc,
-    # NA, #VAR.ncol
-    x_var="PricingUCA.sum", #x_var
-    y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
-    color_var="PricingUCA.sum", #color_var
-    facet_var="Shiny.VendorSize", #facet_var
-    second_var="CurrentDurationIsYear",
-    column_key=def_ck,
-    format=TRUE,
-    ytextposition=FALSE
-  )+coord_flip()+
-    # theme(strip.text.y = element_text(angle=0))+
-   # theme(axis.text.x = element_text(angle=90))+
-   #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
-   #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
-   #             )+labs(title=NULL,
-    # x="Fiscal Year",
-    # y="Percent of Obligations",
-    # color="Competition")+
-    # theme(legend.position = "right")+
-    labs(y="Obligations (Constant 2021 $s)",
-         caption="Source: FPDS and CSIS analysis. Unlabeled data is not shown.")
-  )
-
-
-(
-VendorSizePricing2021share<-build_plot(
-  data=def_data %>% filter(Fiscal_Year==2021& Shiny.VendorSize!="Unlabeled" & CurrentDurationIsYear!="Unlabeled"&
-                             PricingUCA.sum!="Unclear"),
-  chart_geom = "Bar Chart",
-  share = TRUE,
-  # NA, #VAR.ncol
-  x_var="PricingUCA.1year", #x_var
-  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
-  color_var="PricingUCA.1year", #color_var
-  facet_var="Shiny.VendorSize", #facet_var
-  # second_var="CurrentDurationIsYear",
-  labels_and_colors=def_lc,
-  column_key=def_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+coord_flip()+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)",
-       caption="Source: FPDS and CSIS analysis. Unlabeled data is not shown.")
-)
-
-(
-VendorSizePricing2021share<-build_plot(
-  data=def_data %>% filter(Fiscal_Year==2021& Shiny.VendorSize!="Unlabeled" & CurrentDurationIsYear!="Unlabeled"&
-                             PricingUCA.sum!="Unclear"),
-  chart_geom = "Bar Chart",
-  share = TRUE,
-  # NA, #VAR.ncol
-  x_var="PricingInflation.1year", #x_var
-  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
-  color_var="PricingInflation.1year", #color_var
-  facet_var="Shiny.VendorSize", #facet_var
-  # second_var="CurrentDurationIsYear",
-  labels_and_colors=def_lc,
-  column_key=def_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+coord_flip()+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)",
-       caption="Source: FPDS and CSIS analysis. Unlabeled data is not shown.")
-)
-
+def_lc<-prepare_labels_and_colors(def_data %>% select(-PricingMechanism),path=local_path)
 
 (
 VendorSizePricing2021share<-build_plot(
@@ -2950,85 +2868,28 @@ VendorSizePricing2021share<-build_plot(
   # x="Fiscal Year",
   # y="Percent of Obligations",
   # color="Competition")+
-  theme(legend.position = "none")+
+    scale_y_continuous(breaks=c(0,0.2,0.4), labels=scales::percent)+
+  theme(legend.position = "none",
+        plot.caption = element_text(hjust = 0,face="plain"),
+        axis.text.x=element_text(angle=0))+
+    
   labs(y="Share of Obligations",
-       x="Pricing Mechanism]n(For contract planned to last more than a yaer",
-       caption="Source: FPDS and CSIS analysis. Categories are mutully exclusive.\nLess than 0.1 percent of data is unlabeled and not shown.")
+       x="Pricing Mechanism for Contracts\nPlanned to Last More Than a Year",
+       caption="Note: Categories are mutully exclusive. Less than 0.1 percent of data is unlabeled and not shown.\nSource: FPDS and CSIS analysis.")
 )
 
 
 
 ggsave600dpi("..//Output//VendorSize_Pricing2021share.png", VendorSizePricing2021share+
-               facet_wrap(~Shiny.VendorSize,nrow=1)+#scale_y_discrete(name ="Share of Obligations", 
-                    # breaks=c(0,0.15,0.30,0.45))+
-  labs(y="Share of Obligations",
-       x="Pricing Mechanism\n(For contract planned to\nlast more than a year",
-       caption="Source: FPDS and CSIS analysis. Categories are mutully exclusive.\nLess than 0.1 percent of data is unlabeled and not shown."),
-             width=6.5, height= 2.5, units="in",size=10,lineheight=1
+               facet_wrap(~Shiny.VendorSize,nrow=1),
+             width=6.5, height= 3, units="in",size=10,lineheight=1
              )
 
 ggsave600dpi("..//Output//VendorSize_Pricing2021share.svg", VendorSizePricing2021share+
-               facet_wrap(~Shiny.VendorSize,nrow=1)+#scale_y_discrete(name ="Share of Obligations", 
-labs(y="Share of Obligations",
-       x="Pricing Mechanism\n(For contract planned to\nlast more than a year)",
-       caption="Source: FPDS and CSIS analysis. Categories are mutully exclusive.\nLess than 0.1 percent of data is unlabeled and not shown."),
+               facet_wrap(~Shiny.VendorSize,nrow=1),
+             width=6.5, height= 3, units="in",size=10,lineheight=1)
 
-             width=6.5, height= 2.5, units="in",size=10,lineheight=1)
-# (
-# VendorSizePricing<-build_plot(
-#   data=full_data %>% filter(Fiscal_Year<=2020 & Fiscal_Year>2000 & !is.na(VendorSize_Intl)),
-#   chart_geom = "Bar Chart",
-#   share = FALSE,
-#   labels_and_colors=labels_and_colors,
-#   # NA, #VAR.ncol
-#   x_var="dFYear", #x_var
-#   y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
-#   color_var="PricingUCA.sum", #color_var
-#   facet_var="VendorSize_Intl", #facet_var
-#   column_key=column_key,
-#   format=TRUE,
-#   ytextposition=FALSE
-# )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-#   # theme(strip.text.y = element_text(angle=0))+
-#  # theme(axis.text.x = element_text(angle=90))+
-#  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
-#  #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
-#  #             )+labs(title=NULL,
-#   # x="Fiscal Year",
-#   # y="Percent of Obligations",
-#   # color="Competition")+
-#   theme(legend.position = "right")+
-#   labs(y="Obligations (Constant 2021 $s)",
-#        caption="Source: FPDS; CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020.]nUnlabeled vendor size excluded.")
-# )
 
-# (
-# VendorSizePricing<-build_plot(
-#   data=full_data %>% filter(Fiscal_Year<=2020 & Fiscal_Year>2000),
-#   chart_geom = "Line Chart",
-#   share = TRUE,
-#   labels_and_colors=labels_and_colors,
-#   # NA, #VAR.ncol
-#   x_var="dFYear", #x_var
-#   y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
-#   color_var="PricingUCA.sum", #color_var
-#   facet_var="VendorSize_Intl", #facet_var
-#   column_key=column_key,
-#   format=TRUE,
-#   ytextposition=FALSE
-# )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-#   # theme(strip.text.y = element_text(angle=0))+
-#  # theme(axis.text.x = element_text(angle=90))+
-#  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
-#  #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
-#  #             )+labs(title=NULL,
-#   # x="Fiscal Year",
-#   # y="Percent of Obligations",
-#   # color="Competition")+
-#   theme(legend.position = "right")+
-#   labs(y="Obligations (Constant 2021 $s)",
-#        caption="Source: FPDS; CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020.")
-# )
 
 ggsave600dpi("..//Output//vendorsize_pricing.png", VendorSizePricing+
   labs(y="Obligations (Constant 2021 $s)",caption="Source: FPDS; CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020."),
