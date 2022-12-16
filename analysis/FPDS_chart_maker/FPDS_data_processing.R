@@ -21,7 +21,7 @@ library(readr)
 #This is a kludge until the FMS repo is public
 source(file.path("..","FMS","Scripts","Trade_Standardize.r"))
 # read in data
-
+local_path<-"K:\\Users\\Greg\\Repositories\\Lookup-Tables\\Style\\"
 
 
 initial_clean<-function(df,only_defense=TRUE){
@@ -65,11 +65,11 @@ initial_clean<-function(df,only_defense=TRUE){
 #############Full Data and Fed Data##########
 
 full_data <- read_delim(
-  "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerInternational.txt",delim = "\t",
+  # "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerInternational.txt",delim = "\t",
   # "Data//semi_clean//Federal_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",delim = "\t",
-  # "Data//semi_clean//Defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",delim = "\t",
+  "Data//semi_clean//Defense_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",delim = "\t",
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
-full_data<-initial_clean(full_data,only_defense=FALSE)
+# full_data<-initial_clean(full_data,only_defense=FALSE)
 fed_data<- apply_standard_lookups(full_data)#,
 full_data<-initial_clean(fed_data,only_defense=TRUE)
 # path="K:/Users/Greg/Repositories/Lookup-Tables/style")

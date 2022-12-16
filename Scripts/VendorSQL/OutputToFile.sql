@@ -235,6 +235,18 @@ EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCus
 		@PlatformPortfolio =NULL
 
 		
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+--12h23m w / 4,582,038 rows
+--10h49m
+--No plan shown until the very end.
+--1023 completed with errors 4,532,322
+
+DECLARE	@return_value int
+--11h25m  fail
+EXEC	@return_value = [budget].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS]
+		@Customer = 'Defense'
+		
 
 		
 SET ANSI_WARNINGS OFF;
