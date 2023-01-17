@@ -65,16 +65,18 @@ initial_clean<-function(df,only_defense=TRUE){
 #############Full Data and Fed Data##########
 
 full_data <- read_delim(
-  # "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerInternational.txt",delim = "\t",
-  # "Data//semi_clean//Federal_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",delim = "\t",
-  "Data//semi_clean//Defense_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",delim = "\t",
+  # "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerInternational.txt",
+  "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",
+  # "Data//semi_clean//Federal_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",
+  # "Data//semi_clean//Defense_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",
+  delim = "\t",
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
 # full_data<-initial_clean(full_data,only_defense=FALSE)
 fed_data<- apply_standard_lookups(full_data)#,
 full_data<-initial_clean(fed_data,only_defense=TRUE)
 # path="K:/Users/Greg/Repositories/Lookup-Tables/style")
 
-if(!"OriginIsForeign" %in% colnames(full_data)){
+if(!"OriginIsForeign" %in% colnames(full_data) & "OriginISOalpha3" %in% colnames(full_data) ){
   full_data<-read_and_join_experiment(full_data,lookup_file="Location_CountryCodes.csv",
                                       path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="location/",
                                       add_var = c("isforeign"),#"USAID region",
@@ -83,6 +85,25 @@ if(!"OriginIsForeign" %in% colnames(full_data)){
                                       missing_file="missing_DSCA_iso.csv")
   colnames(full_data)[colnames(full_data)=="isforeign"]<-"OriginIsForeign"
   
+  full_data <- full_data %>% dplyr::select(-PlaceIsForeign,-VendorIsForeign) 
+  full_data %<>% add_alliance(isoAlpha3_col= "PlaceISOalpha3", drop_col = TRUE,prefix="Place")
+  full_data$VendorISOalpha3[full_data$VendorISOalpha3=="~NJ"]<-NA
+  full_data %<>% add_alliance(isoAlpha3_col= "VendorISOalpha3", drop_col = TRUE,prefix="Vendor")
+  full_data %<>% add_alliance(isoAlpha3_col= "OriginISOalpha3", drop_col = TRUE,prefix="Origin")
+  
+  
+  full_data$VendorSize_Intl<-factor(full_data$Shiny.VendorSize)
+  levels(full_data$VendorSize_Intl)<-list(
+    "Unlabeled"="Unlabeled",
+    "International"="International",
+    "U.S. Big Five"=c("Big Five","U.S. Big Five"),
+    "U.S. Large"=c("Large","U.S. Large"),
+    "U.S. Medium"=c("Medium","U.S. Medium"),
+    "U.S. Small"=c("Small","U.S. Small")
+  )
+  full_data$VendorSize_Intl[full_data$VendorIsForeign==1]<-"International"
+  full_data$VendorSize_Intl[is.na(full_data$VendorIsForeign)]<-"Unlabeled"
+}
 
 if(all(is.na(full_data[nrow(full_data),]))){
   full_data<-full_data[1:nrow(full_data)-1,]
@@ -91,24 +112,6 @@ if(all(is.na(full_data[nrow(full_data),]))){
 
 
 
-full_data <- full_data %>% dplyr::select(-PlaceIsForeign,-VendorIsForeign) 
-full_data %<>% add_alliance(isoAlpha3_col= "PlaceISOalpha3", drop_col = TRUE,prefix="Place")
-full_data$VendorISOalpha3[full_data$VendorISOalpha3=="~NJ"]<-NA
-full_data %<>% add_alliance(isoAlpha3_col= "VendorISOalpha3", drop_col = TRUE,prefix="Vendor")
-full_data %<>% add_alliance(isoAlpha3_col= "OriginISOalpha3", drop_col = TRUE,prefix="Origin")
-
-
-full_data$VendorSize_Intl<-factor(full_data$Shiny.VendorSize)
-levels(full_data$VendorSize_Intl)<-list(
-  "Unlabeled"="Unlabeled",
-  "International"="International",
-  "U.S. Big Five"=c("Big Five","U.S. Big Five"),
-  "U.S. Large"=c("Large","U.S. Large"),
-  "U.S. Medium"=c("Medium","U.S. Medium"),
-  "U.S. Small"=c("Small","U.S. Small")
-)
-full_data$VendorSize_Intl[full_data$VendorIsForeign==1]<-"International"
-full_data$VendorSize_Intl[is.na(full_data$VendorIsForeign)]<-"Unlabeled"
 
 
 # if("ContractingCustomer" %in% colnames(full_data))
