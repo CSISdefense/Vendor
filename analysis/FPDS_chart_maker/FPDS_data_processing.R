@@ -103,6 +103,11 @@ if(!"OriginIsForeign" %in% colnames(full_data) & "OriginISOalpha3" %in% colnames
   )
   full_data$VendorSize_Intl[full_data$VendorIsForeign==1]<-"International"
   full_data$VendorSize_Intl[is.na(full_data$VendorIsForeign)]<-"Unlabeled"
+
+  full_data %<>%
+    mutate(IsFMS = factor(IsFMS)) %>%
+    mutate(VendorIsForeign = factor(VendorIsForeign))%>%
+    mutate(PlaceIsForeign = factor(PlaceIsForeign))
 }
 
 if(all(is.na(full_data[nrow(full_data),]))){
@@ -135,11 +140,12 @@ full_data %<>%
   mutate(Vehicle.sum7 = factor(Vehicle.sum7)) %>%
   mutate(Vehicle.AwardTask = factor(Vehicle.AwardTask)) %>%
   mutate(PricingUCA = factor(PricingUCA)) %>%
-  mutate(IsFMS = factor(IsFMS)) %>%
-  mutate(PlaceOfManufacture_Sum = factor(PlaceOfManufacture_Sum)) %>%
-  mutate(VendorIsForeign = factor(VendorIsForeign))%>%
-  mutate(PlaceIsForeign = factor(PlaceIsForeign))
+  # mutate(IsFMS = factor(IsFMS)) %>%
+  mutate(PlaceOfManufacture_Sum = factor(PlaceOfManufacture_Sum))
+  # mutate(VendorIsForeign = factor(VendorIsForeign))%>%
+  # mutate(PlaceIsForeign = factor(PlaceIsForeign))
 
+full_data$recoveredmaterialclauses[full_data$recoveredmaterialclauses==""]<-"Unlabeled"
 labels_and_colors<-csis360::prepare_labels_and_colors(full_data)
 
 column_key<-csis360::get_column_key(full_data)
