@@ -19,6 +19,7 @@ library(scales)
 library(lubridate)
 library(svglite)
 library(readxl)
+
 # library(XLConnect)
 
 axis.text.size<-10
@@ -2681,12 +2682,12 @@ write.csv(file="..//Output//subcustomer_commercial_current.csv",row.names = FALS
 
 ## Platform Multiyear
 ```{r ToplinePricing}
-    def_data<-def_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
-                              labels=c("Not Multiyear","Multiyear Contract")))
+    # def_data<-def_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
+    #                           labels=c("Not Multiyear","Multiyear Contract")))
 
 (
 PlatformMultiYear<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2000),
+  data=full_data %>% filter(Fiscal_Year>=2000),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -2711,12 +2712,12 @@ PlatformMultiYear<-build_plot(
   labs(y="Obligations (Constant 2021 $s)")
 )
 
-def_data<-def_data %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
+full_data<-full_data %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
   mutate(pPlatFYear=Action_Obligation_OMB23_GDP21/sum(Action_Obligation_OMB23_GDP21,na.rm=TRUE))
 (
 PlatformMultiYearShare<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2000 & PlatformPortfolio!="Unlabeled"&
-                             (is.na(multiyearcontract)|multiyearcontract==1)),
+  data=full_data %>% filter(Fiscal_Year>=2000 & !PlatformPortfolio %in% c("Unlabeled","Other Products","Other Services","Other R&D and Knowledge Based")&
+                             (multiyearcontract==1)), #is.na(multiyearcontract)|
   chart_geom = "Line Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -2738,7 +2739,8 @@ PlatformMultiYearShare<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "bottom")+
-  labs(y="Share of Obligations")+
+  labs(y="Share of Obligations",
+       caption="Other products / services / R&D not shown.\nWhen the multiyear is blank, transactions are treated as not multiyear.")+
     scale_y_continuous(labels = percent)
 )
 
@@ -2747,8 +2749,10 @@ ggsave600dpi("..//Output//Platform_MultiYear.png", PlatformMultiYear,
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//Platform_MultiYearShare.png", PlatformMultiYearShare,  
-             width=6.5, height= 4, units="in",size=12, lineheight=1.2
+ggsave600dpi("..//Output//Platform_MultiYearShare.png", PlatformMultiYearShare+facet_wrap(PlatformPortfolio~.,nrow=2)+
+                labs(y="Share of Obligations",
+       caption="Other products / services / R&D not shown. When the multiyear column is empty, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis"),  
+             width=12, height= 6, units="in",size=16, lineheight=1.2
              )
 
 write.csv(file="..//Output//PlatformMultiYearShare.csv",row.names = FALSE, na = "",
@@ -2872,7 +2876,7 @@ ggsave600dpi("..//Output//vendorsize_awardtask.svg", VendorSizeVehicleSum
 
 
 write.csv(file="..//Output//vendorsize_vehicle_current.csv",row.names = FALSE, na = "",
-          def_data %>% group_by(Shiny.VendorSize,Vehicle.sum,Fiscal_Year)%>%
+          full_data %>% group_by(Shiny.VendorSize,Vehicle.sum,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
             arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(Shiny.VendorSize,Vehicle.sum),
@@ -2881,7 +2885,7 @@ write.csv(file="..//Output//vendorsize_vehicle_current.csv",row.names = FALSE, n
 
 
 write.csv(file="..//Output//vendorsize_AwardTask_current.csv",row.names = FALSE, na = "",
-          def_data %>% group_by(Shiny.VendorSize,Vehicle.AwardTask,Fiscal_Year)%>%
+          full_data %>% group_by(Shiny.VendorSize,Vehicle.AwardTask,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
             arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(Shiny.VendorSize,Vehicle.AwardTask),
@@ -3076,6 +3080,186 @@ write.csv(file="..//Output//VendorSize_Pricing2021.csv",row.names = FALSE, na = 
 
 
 ```
+# Multiyear
+## Multiyear Vehicle
+
+```{r ToplinePricing}
+    full_data<-full_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
+                              labels=c("Not Multiyear","Multiyear Contract")))
+
+full_data$multiyearcontracttext[is.na(full_data$multiyearcontract)&
+                             full_data$Vehicle %in% c("BOA","BPA","FSS","GWAC","PO","DO") ]<-"Not Multiyear"
+  # "MULTIPLE AWARD IDC"  "SINGLE AWARD IDC"   "Unlabeled IDC"        "DCA"    "DO"   
+
+
+# full_data %>% group_by(Vehicle) %>%
+#   dplyr::summarise(multiyearcontracttext=sum(
+#     ifelse(multiyearcontracttext=="Multiyear Contract",Action_Obligation_OMB23_GDP21,0),na.rm=TRUE))
+
+full_data %>% group_by(Vehicle,multiyearcontracttext) %>%
+  dplyr::summarise(Action_Obligation_OMB23_GDP21=sum(Action_Obligation_OMB23_GDP21,na.rm=TRUE))
+
+levels(factor(full_data$Vehicle))
+
+(
+VehicleMultiYear<-build_plot(
+  data=full_data %>% filter(Fiscal_Year>=2000),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="multiyearcontracttext", #color_var
+  facet_var="Vehicle",
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2021 $s)")
+)
+
+full_data<-full_data %>% group_by(Fiscal_Year,Vehicle.sum7)%>%
+  mutate(pPlatFYear=Action_Obligation_OMB23_GDP21/sum(Action_Obligation_OMB23_GDP21,na.rm=TRUE))
+(
+VehicleMultiYearShare<-build_plot(
+  data=full_data %>% filter(Fiscal_Year>=2000 & Vehicle.sum7!="Unlabeled"&
+                             (is.na(multiyearcontract)|multiyearcontract==1)),
+  chart_geom = "Line Chart",
+  share = FALSE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="pPlatFYear", #VAR.y.variable
+  color_var="multiyearcontracttext", #color_var
+  facet_var="Vehicle.sum7",
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+
+  labs(y="Share of Obligations")+
+    scale_y_continuous(labels = percent)
+)
+
+
+ggsave600dpi("..//Output//Vehicle_MultiYear.png", VehicleMultiYear,  
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+ggsave600dpi("..//Output//Vehicle_MultiYearShare.png", VehicleMultiYearShare,  
+             width=6.5, height= 4, units="in",size=12, lineheight=1.2
+             )
+
+write.csv(file="..//Output//VehicleMultiYearShare.csv",row.names = FALSE, na = "",
+  pivot_wider(VehicleMultiYearShare$data %>% 
+                        arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
+                      id_cols=c(Vehicle.sum7,multiyearcontracttext),
+                      names_from=Fiscal_Year,values_from=pPlatFYear)%>%
+  arrange(Vehicle.sum7,multiyearcontracttext))
+  
+
+
+```
+## PSR Multiyear
+```{r ToplinePricing}
+
+(
+PSRMultiYear<-build_plot(
+  data=full_data %>% filter(Fiscal_Year>=2000),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="multiyearcontracttext", #color_var
+  facet_var="SimpleArea",
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2021 $s)")
+)
+
+full_data<-full_data %>% group_by(Fiscal_Year,SimpleArea)%>%
+  mutate(pPlatFYear=Action_Obligation_OMB23_GDP21/sum(Action_Obligation_OMB23_GDP21,na.rm=TRUE))
+(
+PSRMultiYearShare<-build_plot(
+  data=full_data %>% filter(Fiscal_Year>=2000 & SimpleArea!="Unlabeled"&
+                             (is.na(multiyearcontract)|multiyearcontract==1)),
+  chart_geom = "Line Chart",
+  share = FALSE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="pPlatFYear", #VAR.y.variable
+  color_var="multiyearcontracttext", #color_var
+  facet_var="SimpleArea",
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+
+  labs(y="Share of Obligations")+
+    scale_y_continuous(labels = percent)
+)
+
+
+ggsave600dpi("..//Output//PSR_MultiYear.png", PSRMultiYear,  
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+ggsave600dpi("..//Output//PSR_MultiYearShare.png", PSRMultiYearShare,  
+             width=6.5, height= 4, units="in",size=12, lineheight=1.2
+             )
+
+write.csv(file="..//Output//PSRMultiYearShare.csv",row.names = FALSE, na = "",
+  pivot_wider(PSRMultiYearShare$data %>% 
+                        arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
+                      id_cols=c(SimpleArea,multiyearcontracttext),
+                      names_from=Fiscal_Year,values_from=pPlatFYear)%>%
+  arrange(SimpleArea,multiyearcontracttext))
+  
+
+
+```
+
+
 # GFE
 ```{r GFE}
 

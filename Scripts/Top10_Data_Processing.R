@@ -6,23 +6,24 @@ library(tidyr)
 library(csis360)
 library(readr)
 
-data <- read.csv("data/semi_clean/Vendor.SP_TopVendorHistoryBucketSimple.csv",header = TRUE,
-                 na.strings=c("NA","NULL", " "),
-                 fileEncoding="UTF-8-BOM")
-data<-standardize_variable_names(data)
+# data <- read.csv("data/semi_clean/Vendor.SP_TopVendorHistoryBucketSimple.csv",header = TRUE,
+#                  na.strings=c("NA","NULL", " "),
+#                  fileEncoding="UTF-8-BOM")
+# data<-standardize_variable_names(data)
 
-dataplat <- read_delim("data/semi_clean/Vendor.SP_TopVendorHistoryPlatformUAVisDefense.txt",#header = TRUE,
+dataplat <- read_delim("data/semi_clean/Vendor.SP_TopVendorHistoryPlatformUAVsubCustomer.txt",#header = TRUE,
                  na=c("NA","NULL", " "),
                  delim="\t"
                  ) #fileEncoding="UTF-8-BOM"
 dataplat<-remove_bom(dataplat)
 
 dataplat<-dataplat %>% filter(fiscal_year!="An error occurred while executing batch. Error message is: One or more errors occurred.\r")
+
 dataplat$fiscal_year[nrow(dataplat)]
 
 
-dataplat<-dataplat[,colnames(dataplat)!="WarningFlag...11"]
-colnames(dataplat)[colnames(dataplat)=="WarningFlag...7"]<-"WarningFlag"
+# dataplat<-dataplat[,colnames(dataplat)!="WarningFlag...11"]
+# colnames(dataplat)[colnames(dataplat)=="WarningFlag...7"]<-"WarningFlag"
 colnames(dataplat)[colnames(dataplat)=="PlatformPortfolioRemote"]<-"PlatformPortfolioUAV"
 
 
@@ -41,10 +42,15 @@ dataplat<-standardize_variable_names(dataplat)
 #   summarize(Action_Obligation = sum(Action_Obligation),
 #             NumberOfActions = sum(NumberOfActions))
 
-dataplat<-dataplat%>% group_by(Fiscal_Year,IsDefense,PlatformPortfolioUAV,
-                     ) %>%
-  dplyr::mutate(pos=rank(-Action_Obligation))%>%
-  arrange(Fiscal_Year,IsDefense,PlatformPortfolioUAV,pos)
+# dataplat<-dataplat%>% group_by(Fiscal_Year,IsDefense,PlatformPortfolioUAV,
+#                      ) %>%
+#   dplyr::mutate(pos=rank(-Action_Obligation))%>%
+#   arrange(Fiscal_Year,IsDefense,PlatformPortfolioUAV,pos)
+
+dataplat<-dataplat %>% mutate(
+  SubCustomer=factor(SubCustomer),
+  PlatformPortfolioUAV=factor(PlatformPortfolioUAV)
+)
 
 save(file="data/clean/TopVendorUAVHistoryPlatformCustomer.rda",dataplat)
 colnames(dataplat)

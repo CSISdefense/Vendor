@@ -109,21 +109,17 @@ if(all(is.na(full_data[nrow(full_data),]))){
   full_data<-full_data[1:nrow(full_data)-1,]
   warning("Echo row dropped")
 }
-
-
-
-
-
-# if("ContractingCustomer" %in% colnames(full_data))
-# full_data %<>%  select(-ContractingCustomer)
-# set correct data types
+  
+  # if("ContractingCustomer" %in% colnames(full_data))
+  # full_data %<>%  select(-ContractingCustomer)
+  # set correct data types
 full_data %<>%
   # select(-ClassifyNumberOfOffers) %>%
   mutate(ContractingSubCustomer = factor(ContractingSubCustomer)) %>%
   mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
   mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
   mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
-  mutate(PlatformPortfolioUAV = factor(PlatformPortfolioUAV)) %>%
+  # mutate(PlatformPortfolioUAV = factor(PlatformPortfolioUAV)) %>%
   mutate(Shiny.VendorSize = factor(Shiny.VendorSize)) %>%
   mutate(SimpleArea = factor(SimpleArea)) %>%
   mutate(Competition.sum = factor(Competition.sum)) %>%
@@ -140,11 +136,13 @@ full_data %<>%
   mutate(VendorIsForeign = factor(VendorIsForeign))%>%
   mutate(PlaceIsForeign = factor(PlaceIsForeign))
 
-labels_and_colors<-csis360::prepare_labels_and_colors(full_data)
+full_data$recoveredmaterialclauses[full_data$recoveredmaterialclauses==""]<-"Unlabeled"
 
-column_key<-csis360::get_column_key(full_data)
-
-save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
+  labels_and_colors<-csis360::prepare_labels_and_colors(full_data %>% select(-recoveredmaterialclauses ))
+  
+  column_key<-csis360::get_column_key(full_data)
+  
+  save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
 
 summary(factor(full_data$VendorSize))
 

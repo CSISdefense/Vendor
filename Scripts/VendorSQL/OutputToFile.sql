@@ -355,17 +355,19 @@ EXEC	@return_value = [Vendor].SP_TopVendorHistoryCustomer
 		@Customer ='Defense',
 		@IsService=NULL
 		
+	
+
+	
 		SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
-
-		--1h16m
+--1h22m
+--1h37m one or more errors, with simplearea included
 		--Completing with errors, may need a reboot. No errors this time!
 DECLARE	@return_value int
 --SELECT	'Return Value' = @return_value
-EXEC	@return_value = Vendor.SP_TopVendorHistoryPlatformUAVisDefense
+EXEC	@return_value = [Vendor].SP_TopVendorHistoryPlatformUAVsubCustomer
 		@IsDefense =NULL
 	
-
 
 --SET ANSI_WARNINGS OFF;
 --SET NOCOUNT ON;
