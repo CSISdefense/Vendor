@@ -1187,6 +1187,68 @@ write.csv(file="..//Output//topline_UmdDuration_current.csv",row.names = FALSE, 
 
 #Product/Service/R&D
 
+
+## SAM Product/Service/R&D
+```{r ToplinePSR}
+def_psc<-read_csv("..\\Data_Raw\\SAM\\PSC_code_2011_2022.csv")
+
+def_psc<-standardize_variable_names(def_psc)
+debug(apply_standard_lookups)
+undebug(na_check)
+def_psc<-apply_standard_lookups(def_psc,path="..\\..\\Lookup-Tables\\")
+sam_lc<-prepare_labels_and_colors(def_psc)
+summary(factor(def_psc$SimpleArea))
+(
+ToplinePSRsam<-build_plot(
+  data=def_psc,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="Fiscal_Year", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  color_var="SimpleArea", #color_var
+  # facet_var="Competition.sum", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2021 $s)")
+)
+
+ggsave600dpi("..//Output//topline_sam_psr.png", ToplinePSR, 
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+ggsave600dpi("..//Output//topline_sam_psr.emf", ToplinePSR, 
+             width=6.5, height= 3, units="in",size=11, lineheight=1.2
+             )
+
+
+output_TY<-full_data %>% group_by(SimpleArea,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(SimpleArea),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)
+write.csv(file="..//Output//topline_psr.csv",row.names = FALSE, na = "",
+          output_TY)
+
+
+wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+createSheet(wb, name = "Area")
+writeWorksheet(wb, output_TY, sheet = "Area", startRow = 14, startCol = 14)
+saveWorkbook(wb)
+
+```
+
 ## Topline Product/Service/R&D
 ```{r ToplinePSR}
 
