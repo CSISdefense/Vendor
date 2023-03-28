@@ -23,14 +23,22 @@ OTA_data_current <- read_delim(
   "data_raw//OTA_All_Fields.csv",delim = ",",
   col_names = TRUE, guess_max = 500000,na=c("NA","NULL"),skip = 2)
 
+
+
 OTA_data_current<-standardize_variable_names(OTA_data_current)#,
                                              # path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+
+OTA_data_current$ProductOrServiceCode[OTA_data_current$ProductOrServiceCode=="7.00E+21"]<-"7E21"
+
+
 OTA_data_current<-apply_standard_lookups(OTA_data_current)
 
 # colnames(OTA_data)<-gsub(" ","_",colnames(OTA_data))
 
 OTA_data_current$MentionsCovid<-TRUE
 OTA_data_current$TopCovid<-FALSE
+
+
 
 sum( text_to_number(OTA_data_current$Action_Obligation_OMB23_GDP21[grep("UNMANNED",OTA_data_current$Description_of_Requirement)]),na.rm=TRUE)
 # 
@@ -195,6 +203,8 @@ OTA_data %>% group_by(ContractingAgencyName ,Contracting_Agency_ID) %>%
 OTA_data$SubCustomer.OTA<-OTA_data$SubCustomer
 OTA_data$SubCustomer.OTA[OTA_data$Contracting_Agency_ID=="97AE"]<-"DARPA"
 
+
+
 # OTA_data<-csis360::read_and_join_experiment(OTA_data,
 #                                              "Vehicle.csv",
 #                                              by=c("Vehicle"="Vehicle.detail"),
@@ -260,13 +270,13 @@ sum(OTA_data$Action_Obligation_OMB23_GDP21[OTA_data$IsRemotelyOperated],na.rm=TR
 OTA_data<-read_and_join_experiment(OTA_data,
                                            path="data_raw//",dir="",lookup_file = "OTA_descrip_row_number.csv",
                                            add_var="descrip_row_number",
-                                           # skip_check_var = "Remotely_Crewed",
+                                           skip_check_var = "descrip_row_number",
                                            by="Description_of_Requirement")
 
 OTA_data_current<-read_and_join_experiment(OTA_data,
                                            path="data//semi_clean//",dir="",lookup_file = "ota_description_UAS.csv",
                                            add_var="Remotely_Crewed",
-                                           # skip_check_var = "Remotely_Crewed",
+                                           skip_check_var = "Remotely_Crewed",
                                            by="descrip_row_number",
                                            col_types = "cnccccccccc")
 
@@ -315,7 +325,7 @@ OTA_data %<>%
 str(OTA_data$ContractingOfficeName)
 OTA_data$MajorCommandName[OTA_data$MajorCommandName==""]<-"Unlabeled"
 
-ota_lc<-csis360::prepare_labels_and_colors(OTA_data)#,
+ota_lc<-csis360::prepare_labels_and_colors(OTA_data %>% select(-ContractingOfficeName,-MajorCommandName))#,
                                            # path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
 ota_ck<-csis360::get_column_key(OTA_data)#,
                                 # path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
