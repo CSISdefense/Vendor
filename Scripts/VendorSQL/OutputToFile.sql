@@ -163,6 +163,7 @@ SET NOCOUNT ON;
 --8h58m 15,656,547 rows
 --10h53m 15,871,392 rows, 3 cores.
 --11h05m 15,872,583 rows. Erros
+--2h31m; 16,497,747 (new desktop?)
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
  EXEC [Location].[SP_ProdServPlatformAgencyPlaceOriginVendor]
@@ -219,24 +220,13 @@ EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCus
 		@Customer = 'Defense',-- [Summary].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer]
 		@SubCustomer = NULL,
 		@PlatformPortfolio =NULL
+		
 
-SET ANSI_WARNINGS OFF;
-SET NOCOUNT ON;
---11h30m w / 4,529,207 rows
---10h49m
---No plan shown until the very end.
---1023 completed with errors 4,532,322
-
-DECLARE	@return_value int
---11h25m  fail
-EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerInternational
-		@Customer = NULL, --'Defense',
-		@SubCustomer = NULL,
-		@PlatformPortfolio =NULL
 
 		
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
+--Note we store this over in FMS repo, not vendor repo
 --12h23m w / 4,582,038 rows
 --10h49m
 --No plan shown until the very end.
@@ -249,15 +239,6 @@ EXEC	@return_value = [budget].[SP_CompetitionVendorSizeHistoryBucketPlatformSubC
 		
 
 		
-SET ANSI_WARNINGS OFF;
-SET NOCOUNT ON;
-
-DECLARE	@return_value int
---13h20m
---10h25m
-EXEC	@return_value = [budget].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS]
---EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
-		@Customer =  'Defense'
 
 
 SET ANSI_WARNINGS OFF;
