@@ -22,6 +22,7 @@ library(readr)
 source(file.path("..","FMS","Scripts","Trade_Standardize.r"))
 # read in data
 local_path<-"K:\\Users\\Greg\\Repositories\\Lookup-Tables\\Style\\"
+local_path<-"F:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\"
 
 
 initial_clean<-function(df,only_defense=TRUE){

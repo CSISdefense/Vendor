@@ -231,6 +231,7 @@ SET NOCOUNT ON;
 --10h49m
 --No plan shown until the very end.
 --1023 completed with errors 4,532,322
+--4h41 4,656,745
 
 DECLARE	@return_value int
 --11h25m  fail
