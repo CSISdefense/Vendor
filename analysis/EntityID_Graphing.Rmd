@@ -14,6 +14,7 @@ library(ggplot2)
 library(csis360)
 load(file="../data/clean/FPDS_eid_fyear.rda")
 load(file="../data//clean//defense_naics_vendor.Rdata")
+load(file="../data//clean//TopVendorUAVHistoryPlatformCustomer.rda")
 
 # style_path<-"https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/style/"
 # style_path<-"K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\"
@@ -929,3 +930,199 @@ write.csv(file=file.path("..","Output","def_entity_count_subcust.csv"),row.names
 
 
 
+# Top Vendors
+## Dunsnumber
+### Defense Portfolio
+```{r TopDefensePortfolio}
+# 
+# dataplat$ContractorDisplayName[dataplat$ContractorDisplayName=="087689394^"]<-"DEPARTMENT OF ENERGY^"
+#Label
+# 
+# dataplat$ContractorDisplayName[dataplat$ContractorDisplayName=="020016718^"]<-"ROLLS ROYCE SOLUTIONS AMERICA^" # Label
+
+
+#https://spacenews.com/aerojet-rocketdyne-buying-target-missile-maker-coleman-aerospace/
+
+defense_platformUAV_contractor<-dataplat
+
+
+defense_platformUAV_contractor<-defense_platformUAV_contractor %>%
+  group_by(PlatformPortfolioUAV,Fiscal_Year,IsDefense,ContractorDisplayName) %>%
+  dplyr::summarise(Action_Obligation=sum(Action_Obligation))%>%
+  group_by(PlatformPortfolioUAV,Fiscal_Year,IsDefense) %>%
+  dplyr::mutate(
+    pos = rank(-Action_Obligation,
+               ties.method ="min"),
+    pct = ifelse(Action_Obligation>0,
+                 Action_Obligation / sum(Action_Obligation[Action_Obligation>0]),
+                 NA
+    )
+  )
+
+topplatduns<-defense_platformUAV_contractor%>% filter(pos<=10)%>% arrange(Fiscal_Year,pos)
+
+# FPDS_eid_fyear <- read.delim(file.path("../Data/semi_clean/Vendor.EntityIDhistory.txt"), header=TRUE,  na.strings = c("", "NULL"))
+# FPDS_eid_fyear$EntityID<-text_to_number(FPDS_eid_fyear$EntityID)
+# FPDS_eid_fyear<-standardize_variable_names(FPDS_eid_fyear)
+# colnames(FPDS_eid_fyear)
+# defense_platformUAV_contractor<-left_join(defense_platformUAV_contractor,FPDS_eid_fyear %>% dplyr::select(-Action_Obligation,-NumberOfActions),
+#                                       by=c("EntityID","Fiscal_Year"))
+# colnames(defense_platformUAV_contractor)
+
+topplatannualduns<-defense_platformUAV_contractor %>%
+  dplyr::mutate(TopVendText=ifelse(pos<=10,ContractorDisplayName,"All Other"),
+         Toppos=ifelse(pos<=10,pos,0)) %>%
+  dplyr::group_by(Fiscal_Year,PlatformPortfolioUAV,IsDefense,TopVendText,Toppos) %>%
+  dplyr::summarize(Action_Obligation=sum(Action_Obligation,na.rm=TRUE)) %>%
+  arrange(Fiscal_Year,IsDefense,PlatformPortfolioUAV,Toppos)
+
+topplatannualduns<-deflate(topplatannualduns,money_var="Action_Obligation")
+
+
+top5platannualduns<-defense_platformUAV_contractor %>%
+  dplyr::mutate(TopVendText=ifelse(pos<=5,ContractorDisplayName,"All Other"),
+                Toppos=ifelse(pos<=5,pos,NA)) %>%
+  dplyr::group_by(Fiscal_Year,PlatformPortfolioUAV,IsDefense,TopVendText,Toppos) %>%
+  dplyr::summarize(Action_Obligation=sum(Action_Obligation,na.rm=TRUE)) %>% 
+  arrange(Fiscal_Year,IsDefense,PlatformPortfolioUAV,Toppos)
+
+write.csv(file=file.path("..","Output","Defense_TopVendorPlatform.csv"),
+          top5platannualduns %>% filter(IsDefense==1 & !is.na(PlatformPortfolioUAV) & Fiscal_Year==2021 ),
+          row.names = FALSE)
+
+
+write.csv(file=file.path("..","Output","Defense_TopVendorPlatform.csv"),
+          topplatannualduns %>% filter(IsDefense==1 & !is.na(PlatformPortfolioUAV) & Fiscal_Year==2021 ),
+          row.names = FALSE)
+
+```
+
+### Army Portfolio
+```{r ArmyDefensePortfolio}
+
+# 
+# dataplat$ContractorDisplayName[dataplat$ContractorDisplayName=="087689394^"]<-"DEPARTMENT OF ENERGY^"
+#Label
+# 
+# dataplat$ContractorDisplayName[dataplat$ContractorDisplayName=="020016718^"]<-"ROLLS ROYCE SOLUTIONS AMERICA^" # Label
+
+army_platformUAV_contractor$
+
+army_platformUAV_contractor<-dataplat %>% filter(SubCustomer=="Army")
+
+
+army_platformUAV_contractor<-army_platformUAV_contractor %>%
+  group_by(PlatformPortfolioUAV,Fiscal_Year,SubCustomer,ContractorDisplayName) %>%
+  dplyr::summarise(Action_Obligation=sum(Action_Obligation,
+                                         max()))%>%
+  group_by(PlatformPortfolioUAV,Fiscal_Year,SubCustomer) %>%
+  dplyr::mutate(
+    pos = rank(-Action_Obligation,
+               ties.method ="min"),
+    pct = ifelse(Action_Obligation>0,
+                 Action_Obligation / sum(Action_Obligation[Action_Obligation>0]),
+                 NA
+    )
+  )
+
+topplatduns<-army_platformUAV_contractor%>% filter(pos<=10)%>% arrange(Fiscal_Year,pos)
+
+# FPDS_eid_fyear <- read.delim(file.path("../Data/semi_clean/Vendor.EntityIDhistory.txt"), header=TRUE,  na.strings = c("", "NULL"))
+# FPDS_eid_fyear$EntityID<-text_to_number(FPDS_eid_fyear$EntityID)
+# FPDS_eid_fyear<-standardize_variable_names(FPDS_eid_fyear)
+# colnames(FPDS_eid_fyear)
+# army_platformUAV_contractor<-left_join(army_platformUAV_contractor,FPDS_eid_fyear %>% dplyr::select(-Action_Obligation,-NumberOfActions),
+#                                       by=c("EntityID","Fiscal_Year"))
+# colnames(army_platformUAV_contractor)
+
+topplatannualduns<-army_platformUAV_contractor %>%
+  dplyr::mutate(TopVendText=ifelse(pos<=10,ContractorDisplayName,"All Other"),
+         Toppos=ifelse(pos<=10,pos,0)) %>%
+  dplyr::group_by(Fiscal_Year,PlatformPortfolioUAV,SubCustomer,TopVendText,Toppos) %>%
+  dplyr::summarize(Action_Obligation=sum(Action_Obligation,na.rm=TRUE)) %>%
+  arrange(Fiscal_Year,SubCustomer,PlatformPortfolioUAV,Toppos)
+
+topplatannualduns<-deflate(topplatannualduns,money_var="Action_Obligation")
+
+
+top5platannualduns<-army_platformUAV_contractor %>%
+  dplyr::mutate(TopVendText=ifelse(pos<=5,ContractorDisplayName,"All Other"),
+                Toppos=ifelse(pos<=5,pos,NA)) %>%
+  dplyr::group_by(Fiscal_Year,PlatformPortfolioUAV,SubCustomer,TopVendText,Toppos) %>%
+  dplyr::summarize(Action_Obligation=sum(Action_Obligation,na.rm=TRUE)) %>% 
+  arrange(Fiscal_Year,SubCustomer,PlatformPortfolioUAV,Toppos)
+
+write.csv(file=file.path("..","Output","Army_TopVendorPlatform.csv"),
+          top5platannualduns %>% filter(SubCustomer=="Army" & !is.na(PlatformPortfolioUAV) & Fiscal_Year==2021 ),
+          row.names = FALSE)
+
+  
+  write.csv(file=file.path("..","Output","Army_TopVendorPlatform.csv"),
+            topplatannualduns %>% filter(SubCustomer=="Army" & !is.na(PlatformPortfolioUAV) & Fiscal_Year==2021 ),
+            row.names = FALSE)
+
+```
+
+
+### Army Small Business Portfolio
+```{r ArmyDefensePortfolio}
+
+# 
+# dataplat$ContractorDisplayName[dataplat$ContractorDisplayName=="087689394^"]<-"DEPARTMENT OF ENERGY^"
+#Label
+# 
+# dataplat$ContractorDisplayName[dataplat$ContractorDisplayName=="020016718^"]<-"ROLLS ROYCE SOLUTIONS AMERICA^" # Label
+
+army_platformUAV_contractor<-dataplat %>% filter(SubCustomer=="Army")
+
+
+army_platformUAV_contractor<-army_platformUAV_contractor %>%
+  group_by(PlatformPortfolioUAV,Fiscal_Year,SubCustomer,ContractorDisplayName) %>%
+  dplyr::summarise(Action_Obligation=sum(Action_Obligation))%>%
+  group_by(PlatformPortfolioUAV,Fiscal_Year,SubCustomer) %>%
+  dplyr::mutate(
+    pos = rank(-Action_Obligation,
+               ties.method ="min"),
+    pct = ifelse(Action_Obligation>0,
+                 Action_Obligation / sum(Action_Obligation[Action_Obligation>0]),
+                 NA
+    )
+  )
+
+topplatduns<-army_platformUAV_contractor%>% filter(pos<=10)%>% arrange(Fiscal_Year,pos)
+
+# FPDS_eid_fyear <- read.delim(file.path("../Data/semi_clean/Vendor.EntityIDhistory.txt"), header=TRUE,  na.strings = c("", "NULL"))
+# FPDS_eid_fyear$EntityID<-text_to_number(FPDS_eid_fyear$EntityID)
+# FPDS_eid_fyear<-standardize_variable_names(FPDS_eid_fyear)
+# colnames(FPDS_eid_fyear)
+# army_platformUAV_contractor<-left_join(army_platformUAV_contractor,FPDS_eid_fyear %>% dplyr::select(-Action_Obligation,-NumberOfActions),
+#                                       by=c("EntityID","Fiscal_Year"))
+# colnames(army_platformUAV_contractor)
+
+topplatannualduns<-army_platformUAV_contractor %>%
+  dplyr::mutate(TopVendText=ifelse(pos<=10,ContractorDisplayName,"All Other"),
+         Toppos=ifelse(pos<=10,pos,0)) %>%
+  dplyr::group_by(Fiscal_Year,PlatformPortfolioUAV,SubCustomer,TopVendText,Toppos) %>%
+  dplyr::summarize(Action_Obligation=sum(Action_Obligation,na.rm=TRUE)) %>%
+  arrange(Fiscal_Year,SubCustomer,PlatformPortfolioUAV,Toppos)
+
+topplatannualduns<-deflate(topplatannualduns,money_var="Action_Obligation")
+
+
+top5platannualduns<-army_platformUAV_contractor %>%
+  dplyr::mutate(TopVendText=ifelse(pos<=5,ContractorDisplayName,"All Other"),
+                Toppos=ifelse(pos<=5,pos,NA)) %>%
+  dplyr::group_by(Fiscal_Year,PlatformPortfolioUAV,SubCustomer,TopVendText,Toppos) %>%
+  dplyr::summarize(Action_Obligation=sum(Action_Obligation,na.rm=TRUE)) %>% 
+  arrange(Fiscal_Year,SubCustomer,PlatformPortfolioUAV,Toppos)
+
+write.csv(file=file.path("..","Output","Army_TopVendorPlatform.csv"),
+          top5platannualduns %>% filter(SubCustomer=="Army" & !is.na(PlatformPortfolioUAV) & Fiscal_Year==2021 ),
+          row.names = FALSE)
+
+  
+  write.csv(file=file.path("..","Output","Army_TopVendorPlatform.csv"),
+            topplatannualduns %>% filter(SubCustomer=="Army" & !is.na(PlatformPortfolioUAV) & Fiscal_Year==2021 ),
+            row.names = FALSE)
+
+```
