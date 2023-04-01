@@ -211,6 +211,7 @@ SET NOCOUNT ON;
 
 --4h48m
 --2h32m (with 5 cores)
+--2h58m
 --8h55m 1m rows (5 cores)
 DECLARE	@return_value int
 

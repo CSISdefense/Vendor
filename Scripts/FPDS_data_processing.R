@@ -22,7 +22,6 @@ library(readr)
 source(file.path("..","FMS","Scripts","Trade_Standardize.r"))
 # read in data
 local_path<-"K:\\Users\\Greg\\Repositories\\Lookup-Tables\\Style\\"
-local_path<-"F:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\"
 
 
 initial_clean<-function(df,only_defense=TRUE){
@@ -110,10 +109,10 @@ if(all(is.na(full_data[nrow(full_data),]))){
   full_data<-full_data[1:nrow(full_data)-1,]
   warning("Echo row dropped")
 }
-  
-  # if("ContractingCustomer" %in% colnames(full_data))
-  # full_data %<>%  select(-ContractingCustomer)
-  # set correct data types
+
+# if("ContractingCustomer" %in% colnames(full_data))
+# full_data %<>%  select(-ContractingCustomer)
+# set correct data types
 full_data %<>%
   # select(-ClassifyNumberOfOffers) %>%
   mutate(ContractingSubCustomer = factor(ContractingSubCustomer)) %>%
@@ -139,11 +138,11 @@ full_data %<>%
 
 full_data$recoveredmaterialclauses[full_data$recoveredmaterialclauses==""]<-"Unlabeled"
 
-  labels_and_colors<-csis360::prepare_labels_and_colors(full_data %>% select(-recoveredmaterialclauses ))
-  
-  column_key<-csis360::get_column_key(full_data)
-  
-  save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
+labels_and_colors<-csis360::prepare_labels_and_colors(full_data %>% select(-recoveredmaterialclauses ))
+
+column_key<-csis360::get_column_key(full_data)
+
+save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
 
 summary(factor(full_data$VendorSize))
 
@@ -205,10 +204,10 @@ def_data %<>%
   mutate(Vehicle.sum7 = factor(Vehicle.sum7)) %>%
   mutate(Vehicle.AwardTask = factor(Vehicle.AwardTask)) %>%
   mutate(PricingUCA = factor(PricingUCA)) #%>%
-  # mutate(IsFMS = factor(IsFMS)) %>%
-  # mutate(PlaceOfManufacture_Sum = factor(PlaceOfManufacture_Sum)) %>%
-  # mutate(VendorIsForeign = factor(VendorIsForeign))%>%
-  # mutate(PlaceIsForeign = factor(PlaceIsForeign))
+# mutate(IsFMS = factor(IsFMS)) %>%
+# mutate(PlaceOfManufacture_Sum = factor(PlaceOfManufacture_Sum)) %>%
+# mutate(VendorIsForeign = factor(VendorIsForeign))%>%
+# mutate(PlaceIsForeign = factor(PlaceIsForeign))
 
 def_data$recoveredmaterialclauses[def_data$recoveredmaterialclauses==""]<-"Unlabeled"
 
