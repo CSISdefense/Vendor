@@ -27,15 +27,6 @@ local_path<-"K:\\Users\\Greg\\Repositories\\Lookup-Tables\\Style\\"
 initial_clean<-function(df,only_defense=TRUE){
   df<-standardize_variable_names(df)
   # colnames(df)[colnames(df)=="Fiscal.Year"]<-"Fiscal_Year"
-  if(substring(df$Fiscal_Year[nrow(df)],1,15) %in% c(
-    "Completion time",
-    "An error occurr"))#ed while executing batch. Error message is: One or more errors occurred
-    df<-df[-nrow(df),]
-  #Empty rows
-  if((df[nrow(df),1]=="" | is.na(df[nrow(df),1]))  & is.na(df$Fiscal_Year[nrow(df)]))
-    df<-df[-nrow(df),]
-  
-  
   # coerce Amount to be a numeric variable
   # if("Action_Obligation" %in% colnames(df)) 
   #   df$Action_Obligation %<>% text_to_number()
@@ -65,12 +56,17 @@ initial_clean<-function(df,only_defense=TRUE){
 #############Full Data and Fed Data##########
 
 full_data <- read_delim(
+  # "Data//semi_clean//Defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.txt",
   # "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerInternational.txt",
-  "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",
-  # "Data//semi_clean//Federal_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",
+  # "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",
+  "Data//semi_clean//Federal_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",
   # "Data//semi_clean//Defense_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",
   delim = "\t",
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
+full_data<-full_data%>% select(-`UnmodifiedUltimateDurationCategory...29`,-`CurrentDurationCategory...30`)
+colnames(full_data)[colnames(full_data)=="UnmodifiedUltimateDurationCategory...13"]<-"UnmodifiedUltimateDurationCategory"
+colnames(full_data)[colnames(full_data)=="CurrentDurationCategory...14"]<-"CurrentDurationCategory"
+
 # full_data<-initial_clean(full_data,only_defense=FALSE)
 fed_data<- apply_standard_lookups(full_data)#,
 full_data<-initial_clean(fed_data,only_defense=TRUE)
@@ -136,15 +132,13 @@ full_data %<>%
   mutate(VendorIsForeign = factor(VendorIsForeign))%>%
   mutate(PlaceIsForeign = factor(PlaceIsForeign))
 
-full_data$recoveredmaterialclauses[full_data$recoveredmaterialclauses==""]<-"Unlabeled"
 
-labels_and_colors<-csis360::prepare_labels_and_colors(full_data %>% select(-recoveredmaterialclauses ))
+labels_and_colors<-csis360::prepare_labels_and_colors(full_data %>% select(-recoveredmaterialclauses))
 
 column_key<-csis360::get_column_key(full_data)
 
 save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
 
-summary(factor(full_data$VendorSize))
 
 
 fed_data %<>%
@@ -208,8 +202,6 @@ def_data %<>%
 # mutate(PlaceOfManufacture_Sum = factor(PlaceOfManufacture_Sum)) %>%
 # mutate(VendorIsForeign = factor(VendorIsForeign))%>%
 # mutate(PlaceIsForeign = factor(PlaceIsForeign))
-
-def_data$recoveredmaterialclauses[def_data$recoveredmaterialclauses==""]<-"Unlabeled"
 
 
 def_data$PricingInflation.1yearUCA<-as.character(def_data$PricingInflation.1year)
@@ -548,136 +540,4 @@ save(pricing,pricing_lc,pricing_ck, file="data/clean/pricing_historical.Rda")
 
 # ***** Handled in apply_standard_lookups
 
-#Consolidate categories for Vendor Size
-
-# full_data<-csis360::read_and_join(full_data,
-#                                   "LOOKUP_Contractor_Size.csv",
-#                                   by="Vendor.Size",
-#                                   add_var="Shiny.VendorSize",
-#                                   path="https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/",
-#                                   dir="Lookups/"
-# )
-
-# classify competition
-# full_data<-csis360::read_and_join(full_data,
-#                                   "Lookup_SQL_CompetitionClassification.csv",
-#                                   by=c("CompetitionClassification","ClassifyNumberOfOffers"),
-#                                   replace_na_var="ClassifyNumberOfOffers",
-#                                   add_var=c("Competition.sum",
-#                                             "Competition.multisum",
-#                                             "Competition.effective.only",
-#                                             "No.Competition.sum"),
-#                                   path="https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/",
-#                                   dir="Lookups/"
-# )
-# full_data<-csis360::read_and_join_experiment(full_data,
-#                                              "Vehicle.csv",
-#                                              by=c("Vehicle"="Vehicle.detail"),
-#                                              add_var=c("Vehicle.sum","Vehicle.sum7","Vehicle.AwardTask"),
-#                                              path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-#                                              # path="K:/Users/Greg/Repositories/Lookup-Tables/",
-#                                              dir="contract/"
-# )
-# full_data<-replace_nas_with_unlabeled(full_data,"ContractingSubCustomer","Uncategorized")
-# full_data<-csis360::read_and_join_experiment(full_data,
-#                                              "SubCustomer.csv",
-#                                              by=c("ContractingCustomer"="Customer","ContractingSubCustomer"="SubCustomer"),
-#                                              add_var=c("SubCustomer.platform","SubCustomer.sum"),
-#                                              path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-#                                              dir="office/"
-# )
-
-# full_data$PricingUCA.sum<-factor(full_data$PricingUCA)
-# full_data<-replace_nas_with_unlabeled(full_data,"PricingUCA.sum")
-# levels(full_data$PricingUCA.sum)<-
-#   list("FFP"="FFP",
-#        "Less Common"=c("Other FP","T&M/LH/FPLOE"),
-#        "Incentive"="Incentive",
-#        "Other CB"="Other CB",
-#        "UCA"="UCA",
-#        "Unclear"=c("Combination/Other","Unlabeled"))
-
-# sw<-read_and_join_experiment(data=sw
-#                              ,"InformationTechnologyCommercialItemCategory.csv"
-#                              # ,path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/"
-#                              ,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\"
-#                              ,dir="productorservice/"
-#                              ,by=c("informationtechnologycommercialitemcategory"="informationtechnologycommercialitemcategory")
-#                              # ,new_var_checked=FALSE
-#                              # ,create_lookup_rdata=TRUE
-# )
-
-
-# full_data<-replace_nas_with_unlabeled(full_data,"PlatformPortfolio")
-# platpscintldef$dFYear<-as.Date(paste("1/1/",as.character(platpscintldef$Fiscal.Year),sep=""),"%m/%d/%Y")
-
-# platpsc<-csis360::read_and_join_experiment(platpsc,
-#                                            "ProductOrServiceCodes.csv",
-#                                            by=c("ProductOrServiceCode"="ProductOrServiceCode"),
-#                                            add_var=c("CrisisProductOrServiceArea","Simple"),
-#                                            # path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\",
-#                                            path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-#                                            skip_check_var = c("CrisisProductOrServiceArea","Simple"),
-#                                            dir=""
-# )
-
-# platpsc<-read_and_join_experiment(platpsc,
-#                                   path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-#                                   "Agency_AgencyID.csv",
-#                                   dir="",
-#                                   by=c("Contracting.Agency.ID"="AgencyID"),
-#                                   add_var=c("SubCustomer"),#Contracting.Agency.ID
-#                                   skip_check_var=c("Platform","SubCustomer"),
-#                                   guess_max=2000)
-# colnames(platpsc)[colnames(platpsc)=="SubCustomer"]<-"ContractingSubCustomer"
-# 
-# platpsc<-replace_nas_with_unlabeled(platpsc,"ContractingSubCustomer","Uncategorized")
-# platpsc<-csis360::read_and_join_experiment(platpsc,
-#                                            "SubCustomer.csv",
-#                                            by=c("ContractingCustomer"="Customer","ContractingSubCustomer"="SubCustomer"),
-#                                            add_var=c("SubCustomer.platform","SubCustomer.sum"),
-#                                            path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-#                                            dir="office/"
-# )
-
-# SubCustomer.JPO
-# platpscintldef$SubCustomer.JPO<-as.character(platpscintldef$SubCustomer.platform)
-# platpscintldef$SubCustomer.JPO[platpscintldef$ProjectName=="JSF (F-35)" & !is.na(platpscintldef$ProjectName)&platpscintldef$SubCustomer.platform=="Navy"]<-"F-35 JPO"
-# platpscintldef$SubCustomer.JPO<-factor(platpscintldef$SubCustomer.JPO)
-# summary(factor(platpscintldef$SubCustomer.JPO))
-# any(as.character(platpscintldef$ProjectName)=="JSF (F-35)"& !is.na(platpscintldef$ProjectName))
-
-
-# platpscintldef$IsUnlabeledMAC<-is.na(platpscintldef$mainaccountcode) | is.na(platpscintldef$treasuryagencycode)
-# platpscintldef$IsFMS<-NA
-# platpscintldef$IsFMS[platpscintldef$foreign_funding_description %in% c("Foreign Funds FMS")]<-1
-# platpscintldef$IsFMS[platpscintldef$foreign_funding_description %in% c("Foreign Funds non-FMS", "Not Applicable")]<-0
-# platpscintldef$IsFMS[is.na(platpscintldef$IsFMS)]<-platpscintldef$IsFMSml[is.na(platpscintldef$IsFMS)]
-# platpscintldef$IsFMS[is.na(platpscintldef$IsFMS) & platpscintldef$IsFMSmac==1]<-1
-# platpscintldef$IsFMS[is.na(platpscintldef$IsFMS) & platpscintldef$IsFMSmac==0]<-0
-# # platpscintldef$IsFMS[is.na(platpscintldef$IsFMS) & platpscintldef$IsUnlabeledMAC==0]<-0
-
-# 
-# if(!"PlaceIsForeign" %in% colnames(platpscintldef)){
-#   platpscintldef<-read_and_join_experiment(platpscintldef,lookup_file="Location_CountryCodes.csv",
-#                                            path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="location/",
-#                                            add_var = c("isforeign"),#"USAID region",
-#                                            by=c("PlaceISOalpha3"="alpha-3"),
-#                                            # skip_check_var=c("NATOyear",	"MajorNonNATOyear","NTIByear"	,"SEATOendYear","RioTreatyStartYear","RioTreatyEndYear","FiveEyes","OtherTreatyName"	,"OtherTreatyStartYear","OtherTreatyEndYear","isforeign"),
-#                                            missing_file="missing_DSCA_iso.csv")
-#   colnames(platpscintldef)[colnames(platpscintldef)=="isforeign"]<-"PlaceIsForeign"
-# }
-# 
-}
-
-# if(!"VendorIsForeign" %in% colnames(platpscintldef)){
-#   platpscintldef<-read_and_join_experiment(platpscintldef,lookup_file="Location_CountryCodes.csv",
-#                                            path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="location/",
-#                                            add_var = c("isforeign"),#"USAID region",
-#                                            by=c("VendorISOalpha3"="alpha-3"),
-#                                            # skip_check_var=c("NATOyear",	"MajorNonNATOyear","NTIByear"	,"SEATOendYear","RioTreatyStartYear","RioTreatyEndYear","FiveEyes","OtherTreatyName"	,"OtherTreatyStartYear","OtherTreatyEndYear","isforeign"),
-#                                            missing_file="missing_DSCA_iso.csv")
-#   colnames(platpscintldef)[colnames(platpscintldef)=="isforeign"]<-"VendorIsForeign"
-# }
-# 
 

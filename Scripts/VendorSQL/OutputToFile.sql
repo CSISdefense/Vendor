@@ -163,7 +163,7 @@ SET NOCOUNT ON;
 --8h58m 15,656,547 rows
 --10h53m 15,871,392 rows, 3 cores.
 --11h05m 15,872,583 rows. Erros
---2h31m; 16,497,747 (new desktop?)
+--2h45m; 16,497,747 (new desktop?)
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
  EXEC [Location].[SP_ProdServPlatformAgencyPlaceOriginVendor]
@@ -211,7 +211,6 @@ SET NOCOUNT ON;
 
 --4h48m
 --2h32m (with 5 cores)
---2h58m
 --8h55m 1m rows (5 cores)
 DECLARE	@return_value int
 

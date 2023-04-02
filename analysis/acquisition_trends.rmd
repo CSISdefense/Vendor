@@ -20,7 +20,7 @@ library(lubridate)
 library(svglite)
 library(readxl)
 
-# library(XLConnect)
+library(openxlsx)
 
 axis.text.size<-10
 strip.text.size<-10
@@ -49,7 +49,7 @@ toa<-readxl::read_excel(path=file.path("..","data_raw","FY22 PB Green Book Table
 
 if(!"Action_Obligation_OMB24_GDP22" %in% colnames(ota_def))
   ota_def<-deflate(ota_def, "Dollars_Obligated_Then_Year",deflator_var="OMB23_GDP21")
-colnames(ota_def)[colnames(ota_def)=="Dollars_Obligated_Then_Year_OMB23_GDP21"]<-"Dollars_Obligated_OMB23_GDP21"
+colnames(ota_def)[colnames(ota_def)=="Dollars_Obligated_Then_Year_OMB23_GDP21"]<-"Action_Obligation_OMB24_GDP22"
 colnames(ota_def)[colnames(ota_def)=="Dollars_Obligated_Then_Year_Then_Year"]<-"Dollars_Obligated_Then_Year"
 
 #Kludge
@@ -417,12 +417,12 @@ write.csv(file="..//Output//toa_sam_annual.csv",row.names = FALSE,na="",output_T
 
 ## Topline Competition
 ```{r ToplineComp}
-full_data %>% group_by(Fiscal_Year) %>% summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
-full_data %>% filter(Fiscal_Year==2021) %>% group_by(Competition.sum) %>% summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
+def_data %>% group_by(Fiscal_Year) %>% summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
+def_data %>% filter(Fiscal_Year==2021) %>% group_by(Competition.sum) %>% summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
 
 (
 ToplineCompMulti<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=1991),
+  data=def_data %>% filter(Fiscal_Year>=1991),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -450,7 +450,7 @@ ToplineCompMulti<-build_plot(
 
 (
 ToplineComp<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=1997),
+  data=def_data %>% filter(Fiscal_Year>=1997),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -480,7 +480,7 @@ ToplineComp<-build_plot(
 
 (
 ToplineCompLine<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=1997),
+  data=def_data %>% filter(Fiscal_Year>=1997),
   chart_geom = "Line Chart",
   share = TRUE,
   labels_and_colors=labels_and_colors,
@@ -506,7 +506,7 @@ ToplineCompLine<-build_plot(
        y="Obligations (Constant 2022 $s)")
 )
 
-full_data %>% filter(Competition.sum =="Unlabeled" & Fiscal_Year>=2019) %>% group_by(CompetitionClassification)%>%
+def_data %>% filter(Competition.sum =="Unlabeled" & Fiscal_Year>=2019) %>% group_by(CompetitionClassification)%>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
 
 ggsave600dpi("..//Output//topline_comp.png", ToplineComp,  
@@ -549,7 +549,7 @@ write.csv(file="..//Output//topline_competition.csv",row.names = FALSE, na = "",
 
 
 write.csv(file="..//Output//topline_competition_cur.csv",row.names = FALSE, na = "",
-          full_data %>% group_by(Competition.sum,Fiscal_Year)%>%
+          def_data %>% group_by(Competition.sum,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(Competition.sum),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(Competition.sum))
@@ -564,7 +564,7 @@ write.csv(file="..//Output//topline_competition_cur.csv",row.names = FALSE, na =
 
 (
 UnlabeledComp<-build_plot(
-  data=full_data %>% filter(Competition.sum =="Unlabeled"),
+  data=def_data %>% filter(Competition.sum =="Unlabeled"),
   chart_geom = "Bar Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -589,7 +589,7 @@ UnlabeledComp<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-full_data %>% filter(Competition.sum =="Unlabeled" & Fiscal_Year>=2019) %>% group_by(CompetitionClassification)%>%
+def_data %>% filter(Competition.sum =="Unlabeled" & Fiscal_Year>=2019) %>% group_by(CompetitionClassification)%>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
 
 ggsave600dpi("..//Output//unlabeled_comp.png", UnlabeledComp,  
@@ -984,8 +984,8 @@ write.csv(file="..//Output//topline_vehicle.csv",row.names = FALSE, na = "",
 
 ## Topline Pricing
 ```{r ToplinePricing}
-full_data$PricingUCA.sumlong<-full_data$PricingUCA.sum
-levels(full_data$PricingUCA.sumlong)<-list("Firm-Fixed-Price"="FFP",
+def_data$PricingUCA.sumlong<-def_data$PricingUCA.sum
+levels(def_data$PricingUCA.sumlong)<-list("Firm-Fixed-Price"="FFP",
                                            "Less Common"="Less Common",
                                            "Incentive"="Incentive",
                                            "Other Cost-Based"="Other CB",
@@ -993,7 +993,7 @@ levels(full_data$PricingUCA.sumlong)<-list("Firm-Fixed-Price"="FFP",
                                            "Unclear"="Unclear"   )
 (
 ToplinePricing<-build_plot(
-  data=full_data,
+  data=def_data %>% filter(Fiscal_Year>=2000),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -1052,8 +1052,8 @@ PricingHistory<-build_plot(
   share = TRUE,
   labels_and_colors=hist_lc,
   # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
   color_var="PricingInflation", #color_var
   # facet_var="PricingUCA.sumlong", #facet_var
   column_key=column_key,
@@ -1092,16 +1092,16 @@ write.csv(file="..//Output//Topline_Pricing_History_share.csv",row.names = FALSE
   arrange(pivot_wider(PricingHistory$data %>% 
                         arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
                       id_cols=c(PricingInflation),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22),PricingInflation)%>%
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB23_GDP21),PricingInflation)%>%
     arrange(PricingInflation))
 
 write.csv(file="..//Output//Topline_Pricing_History.csv",row.names = FALSE, na = "",
   pricing %>% group_by(Fiscal_Year,PricingInflation)%>%
-                        summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE)) %>%
+                        summarise(Action_Obligation_OMB23_GDP21=sum(Action_Obligation_OMB23_GDP21,na.rm=TRUE)) %>%
                         arrange(Fiscal_Year) %>%# mutate(Fiscal_Year=lubridate::year(dFYear)) %>%
                         pivot_wider(
                       id_cols=c(PricingInflation),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB23_GDP21)%>%
     arrange(PricingInflation))
 
 ```
@@ -1167,8 +1167,6 @@ write.csv(file="..//Output//topline_commercial_current.csv",row.names = FALSE, n
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
             arrange(AnyCommercialText))
 
-summary(full_data$ContractingSubCustomer)
-def_data$
 
 def_data %>% filter(SubCustomer.sum=="Army", PlatformPortfolio=="Other Products", Fiscal_Year==2021) %>%
   group_by(AnyCommercialText,Competition.multisum) %>% summarise(
@@ -1356,7 +1354,7 @@ ggsave600dpi("..//Output//topline_sam_psr.emf", ToplinePSRsam,
              )
 
 
-output_TY<-full_data %>% group_by(SimpleArea,Fiscal_Year)%>%
+output_TY<-def_data %>% group_by(SimpleArea,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(SimpleArea),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)
@@ -1376,7 +1374,7 @@ write.csv(file="..//Output//topline_sam_psr.csv",row.names = FALSE, na = "",
 
 (
 ToplinePSR<-build_plot(
-  data=full_data,
+  data=def_data,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -1405,12 +1403,12 @@ ggsave600dpi("..//Output//topline_psr.png", ToplinePSR,
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//topline_psr.emf", ToplinePSR, 
+ggsave600dpi("..//Output//topline_psr.svg", ToplinePSR, 
              width=6.5, height= 3, units="in",size=11, lineheight=1.2
              )
 
 
-output_TY<-full_data %>% group_by(SimpleArea,Fiscal_Year)%>%
+output_TY<-def_data %>% group_by(SimpleArea,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(SimpleArea),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)
@@ -1418,10 +1416,10 @@ write.csv(file="..//Output//topline_psr.csv",row.names = FALSE, na = "",
           output_TY)
 
 
-wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
-createSheet(wb, name = "Area")
-writeWorksheet(wb, output_TY, sheet = "Area", startRow = 14, startCol = 14)
-saveWorkbook(wb)
+# wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+# createSheet(wb, name = "Area")
+# writeWorksheet(wb, output_TY, sheet = "Area", startRow = 14, startCol = 14)
+# saveWorkbook(wb)
 
 ```
 
@@ -1431,7 +1429,7 @@ saveWorkbook(wb)
 
 (
 RnDphase<-build_plot(
-  data=full_data %>% filter(SimpleArea=="R&D"),
+  data=def_data %>% filter(SimpleArea=="R&D"),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -1467,7 +1465,7 @@ write.csv(file="..//Output//psr_RnDPhase.csv",row.names = FALSE, na = "",
             arrange(ProductServiceOrRnDarea))
             
 
-output_TY<-full_data %>% filter(SimpleArea=="R&D") %>%
+output_TY<-def_data %>% filter(SimpleArea=="R&D") %>%
             format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
                                  labels_and_colors=labels_and_colors) %>%
           pivot_wider(id_cols=c(ProductServiceOrRnDarea),
@@ -1477,69 +1475,19 @@ output_TY<-full_data %>% filter(SimpleArea=="R&D") %>%
 write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE, na = "",
           output_TY)
 
-wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
-createSheet(wb, name = "R&D")
-writeWorksheet(wb, output_TY, sheet = "R&D", startRow = 15, startCol = 13)
-saveWorkbook(wb)
+# wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+# createSheet(wb, name = "R&D")
+# writeWorksheet(wb, output_TY, sheet = "R&D", startRow = 15, startCol = 13)
+# saveWorkbook(wb)
 
 ```
 
 
-## R&D phase Count
-```{r RnD}
-
-(
-RnDphase<-build_plot(
-  data=full_data %>% filter(SimpleArea=="R&D"),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="ProductServiceOrRnDarea", #color_var
-  # facet_var="Competition.sum", #facet_var
-  column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
-)
-
-ggsave600dpi("..//Output//psr_RnDPhase.png", RnDphase, 
-             width=12, height= 6, units="in",size=12, lineheight=1.2
-             )
-                           
-
-write.csv(file="..//Output//psr_RnDPhase.csv",row.names = FALSE, na = "",
-          pivot_wider(RnDphase$data,id_cols=c(ProductServiceOrRnDarea),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
-            arrange(ProductServiceOrRnDarea))
-            
-
-write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE, na = "",
-          full_data %>% filter(SimpleArea=="R&D") %>%
-            format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
-                                 labels_and_colors=labels_and_colors) %>%
-          pivot_wider(id_cols=c(ProductServiceOrRnDarea),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
-            arrange(ProductServiceOrRnDarea))
-
-```
 
 ## R&D Phase+OTA    
 ```{r PhaseAndOTA}
 
-contract_merge<-full_data %>%
+contract_merge<-def_data %>%
   group_by(Fiscal_Year,
                          ProductServiceOrRnDarea,
                          SimpleArea)%>%
@@ -1558,21 +1506,21 @@ contract_merge<-full_data %>%
 # )
 # ota_merge<-format_data_for_plot(ota_def,
 #                      fy_var="Fiscal_Year", #x_var
-#                      y_var="Dollars_Obligated_OMB23_GDP21", #VAR.y.variable
+#                      y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
 #                      color_var="ProductServiceOrRnDarea", #color_var
 #                      facet_var = "SimpleArea",
 #                      labels_and_colors = labels_and_colors
 # )
-ota_def<-standardize_variable_names(ota_def)
-ota_merge<-ota_def%>%filter(Fiscal_Year >=2015 & Fiscal_Year <=2021) %>%
+
+ota_merge<-ota_def%>%filter(Fiscal_Year >=2015 & Fiscal_Year <=2022) %>%
   group_by(Fiscal_Year,SimpleArea)%>%
-  dplyr::summarise(Action_Obligation_OMB24_GDP22=sum(Dollars_Obligated_OMB23_GDP21),
-                   Action_Obligation_Then_Year=sum(Dollars_Obligated_Then_Year)
+  dplyr::summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
+                   Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year)
                    )
 
 #   format_data_for_plot(ota_def,
 #                      fy_var="Fiscal_Year", #x_var
-#                      y_var="Dollars_Obligated_OMB23_GDP21", #VAR.y.variable
+#                      y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
 #                      color_var="ProductServiceOrRnDarea", #color_var
 #                      facet_var = "SimpleArea",
 #                      labels_and_colors = labels_and_colors
@@ -1647,7 +1595,7 @@ write.csv(file="..//Output//RnDPhasePlusOTA_current.csv",row.names = FALSE, na =
 ## Phase: Contract and OTA
 ```{r PhaseBoth}
 
-contract_merge<-full_data%>%filter(Fiscal_Year >=2015) %>%
+contract_merge<-def_data%>%filter(Fiscal_Year >=2015) %>%
   group_by(Fiscal_Year,
                          ProductServiceOrRnDarea,
                          SimpleArea)%>%
@@ -1663,7 +1611,7 @@ contract_merge<-full_data%>%filter(Fiscal_Year >=2015) %>%
 # )
 # ota_merge<-format_data_for_plot(ota_def,
 #                      fy_var="Fiscal_Year", #x_var
-#                      y_var="Dollars_Obligated_OMB23_GDP21", #VAR.y.variable
+#                      y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
 #                      color_var="ProductServiceOrRnDarea", #color_var
 #                      facet_var = "SimpleArea",
 #                      labels_and_colors = labels_and_colors
@@ -1673,12 +1621,12 @@ ota_merge<-standardize_variable_names(ota_def)%>%filter(Fiscal_Year >=2015) %>%
   group_by(Fiscal_Year,
                          ProductServiceOrRnDarea,
                          SimpleArea)%>%
-  dplyr::summarise(Action_Obligation_OMB24_GDP22=sum(Dollars_Obligated_OMB23_GDP21))
+  dplyr::summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
 
 
 #   format_data_for_plot(ota_def,
 #                      fy_var="Fiscal_Year", #x_var
-#                      y_var="Dollars_Obligated_OMB23_GDP21", #VAR.y.variable
+#                      y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
 #                      color_var="ProductServiceOrRnDarea", #color_var
 #                      facet_var = "SimpleArea",
 #                      labels_and_colors = labels_and_colors
@@ -1728,7 +1676,7 @@ write.csv(file="..//Output//contractota_RnDPhase.csv",row.names = FALSE, na = ""
 #             
 # 
 # write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE, na = "",
-#           full_data %>% filter(SimpleArea=="R&D") %>%
+#           def_data %>% filter(SimpleArea=="R&D") %>%
 #             format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
 #                                  labels_and_colors=labels_and_colors) %>%
 #           pivot_wider(id_cols=c(ProductServiceOrRnDarea),
@@ -1742,7 +1690,7 @@ write.csv(file="..//Output//contractota_RnDPhase.csv",row.names = FALSE, na = ""
 
 (
 Services<-build_plot(
-  data=full_data %>% filter(SimpleArea=="Services (Non-R&D)"),
+  data=def_data %>% filter(SimpleArea=="Services (Non-R&D)"),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -1780,7 +1728,7 @@ write.csv(file="..//Output//psr_Services.csv",row.names = FALSE, na = "",
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
             arrange(ProductServiceOrRnDarea))
             
-output_TY<-full_data %>% 
+output_TY<-def_data %>% 
   format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ServicesCategory.detail",
                                  labels_and_colors=labels_and_colors) %>%
           pivot_wider(id_cols=c(ServicesCategory.detail),
@@ -1806,7 +1754,7 @@ saveWorkbook(wb)
 
 (
 SimpleVendor_dollar<-build_plot(
-  data=full_data %>% filter(Fiscal_Year<=2020 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
+  data=def_data %>% filter(Fiscal_Year<=2020 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
   chart_geom = "Bar Chart",
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
@@ -1838,7 +1786,7 @@ ggsave600dpi("..//Output//psr_vendorsize_dollar.png", SimpleVendor_dollar,
 
 (
 SimpleVendor_share<-build_plot(
-  data=full_data %>% filter(Fiscal_Year<=2020 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
+  data=def_data %>% filter(Fiscal_Year<=2020 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
   chart_geom = "Bar Chart",
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
@@ -1875,7 +1823,7 @@ ggsave600dpi("..//Output//psr_vendorsize_share.png", SimpleVendor_share,
 
 (
 PSRComp_line<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=1991 & SimpleArea!="Unlabeled"),
+  data=def_data %>% filter(Fiscal_Year>=1991 & SimpleArea!="Unlabeled"),
   chart_geom = "Line Chart",
   share = TRUE,
   labels_and_colors=labels_and_colors,
@@ -1905,7 +1853,7 @@ PSRComp_line<-build_plot(
 
 (
 PSRComp_bar<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=1991 & SimpleArea!="Unlabeled"),
+  data=def_data %>% filter(Fiscal_Year>=1991 & SimpleArea!="Unlabeled"),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -1934,7 +1882,7 @@ PSRComp_bar<-build_plot(
 
 (
 PSRComp_line<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=1991 & SimpleArea!="Unlabeled"),
+  data=def_data %>% filter(Fiscal_Year>=1991 & SimpleArea!="Unlabeled"),
   chart_geom = "Line Chart",
   share = TRUE,
   labels_and_colors=labels_and_colors,
@@ -1972,7 +1920,7 @@ ggsave600dpi("..//Output/PSRComp_line.png", PSRComp_line,
 
 (
 SubCustomer<-build_plot(
-  data=full_data,
+  data=def_data,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -2015,12 +1963,12 @@ write.csv(file="..//Output//topline_subcustomer.csv",row.names = FALSE, na = "",
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
 
 write.csv(file="..//Output//topline_subcustomer_current.csv",row.names = FALSE, na = "",
-          full_data %>% group_by(SubCustomer.sum,ContractingSubCustomer,Fiscal_Year)%>%
+          def_data %>% group_by(SubCustomer.sum,ContractingSubCustomer,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(SubCustomer.sum,ContractingSubCustomer),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
 
-summary(full_data$ContractingSubCustomer)
+summary(def_data$ContractingSubCustomer)
 ```
 
 ## SubCustomer Product/Service/R&D
@@ -2063,10 +2011,10 @@ ggsave600dpi("..//Output//subcustomer_PSR.png", SubCustomerPSR,
 
 ## SubCustomer Competition
 ```{r SubCustomerComp}
-full_data$SubCustomer.platform
+def_data$SubCustomer.platform
 (
 SubCustomerComp_line<-build_plot(
-  data=full_data,
+  data=def_data,
   chart_geom = "Line Chart",
   share = TRUE,
   labels_and_colors=labels_and_colors,
@@ -2100,7 +2048,7 @@ ggsave600dpi("..//Output//subcustomer_Comp_line.png", SubCustomerComp_line,
 
 (
 SubCustomerComp_bar<-build_plot(
-  data=full_data,
+  data=def_data,
   chart_geom = "Bar Chart",
   share = TRUE,
   labels_and_colors=labels_and_colors,
@@ -2138,7 +2086,7 @@ write.csv(file="..//Output//subcustomer_competition.csv",row.names = FALSE, na =
 
 ```
 
-### Subcustomer Pricing History
+## Subcustomer Pricing History
 ```{r SubCustomerPricing}
 
 (
@@ -2871,7 +2819,7 @@ write.csv(file="..//Output//subcustomer_commercial_current.csv",row.names = FALS
 
 (
 PlatformMultiYear<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=2000),
+  data=def_data %>% filter(Fiscal_Year>=2000),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -2896,11 +2844,11 @@ PlatformMultiYear<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-full_data<-full_data %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
+def_data<-def_data %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
   mutate(pPlatFYear=Action_Obligation_OMB24_GDP22/sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))
 (
 PlatformMultiYearShare<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=2000 & !PlatformPortfolio %in% c("Unlabeled","Other Products","Other Services","Other R&D and Knowledge Based")&
+  data=def_data %>% filter(Fiscal_Year>=2000 & !PlatformPortfolio %in% c("Unlabeled","Other Products","Other Services","Other R&D and Knowledge Based")&
                              (multiyearcontract==1)), #is.na(multiyearcontract)|
   chart_geom = "Line Chart",
   share = FALSE,
