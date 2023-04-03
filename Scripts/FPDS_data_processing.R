@@ -133,13 +133,17 @@ full_data %<>%
   mutate(PlaceIsForeign = factor(PlaceIsForeign))
 
 
-labels_and_colors<-csis360::prepare_labels_and_colors(full_data %>% select(-recoveredmaterialclauses))
+fpds_lc<-csis360::prepare_labels_and_colors(full_data %>% select(-recoveredmaterialclauses))
 
-column_key<-csis360::get_column_key(full_data)
+fpds_ck<-csis360::get_column_key(full_data)
 
 save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
 
+fpds_data<-full_data %>% filter(ContractingCustomer=="Defense"&
+                                  Fiscal_Year>=2010)
 
+save(fpds_data,fpds_lc, fpds_ck,file = "..\\FMS\\data\\clean\\fpds_transaction_summary.rda")
+rm(fpds_data)
 
 fed_data %<>%
   # select(-ClassifyNumberOfOffers) %>%
