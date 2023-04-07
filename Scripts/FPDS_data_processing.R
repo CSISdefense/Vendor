@@ -21,8 +21,9 @@ library(readr)
 #This is a kludge until the FMS repo is public
 source(file.path("..","FMS","Scripts","Trade_Standardize.r"))
 # read in data
-local_path<-"K:\\Users\\Greg\\Repositories\\Lookup-Tables\\Style\\"
-
+# local_path<-"K:\\Users\\Greg\\Repositories\\Lookup-Tables\\"
+# local_path<-"F:\\Users\\gsanders\\Documents\\Repositories\\Lookup-Tables\\"
+local_path<-"F:\\Users\\Greg\\Repositories\\Lookup-Tables\\"
 
 initial_clean<-function(df,only_defense=TRUE){
   df<-standardize_variable_names(df)
@@ -233,7 +234,7 @@ platpscintl<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdS
                         col_names = TRUE, guess_max = 10000000)
 colnames(platpscintl)[colnames(platpscintl)=="Customer"]<-"ContractingCustomer"
 
-#Weird cludge for duplicate
+#Weird kludge for duplicate
 if(colnames(platpscintl)[1]=="productorservicecode" & colnames(platpscintl)[5]=="ProductOrServiceCode"){
   platpscintl<-platpscintl %>% select(-productorservicecode)
 }
@@ -241,7 +242,7 @@ if(colnames(platpscintl)[1]=="productorservicecode" & colnames(platpscintl)[5]==
 # View(platpscintldef[(nrow(platpscintldef)-3):nrow(platpscintldef),])
 # debug(initial_clean)
 platpscintl<-initial_clean(platpscintl,only_defense=FALSE)
-platpscintl<-apply_standard_lookups(platpscintl)#,path="F:\\Users\\gsanders\\Documents\\Repositories\\Lookup-Tables\\")
+platpscintl<-apply_standard_lookups(platpscintl)#,path=local_path
 platpscintldef<-initial_clean(platpscintl)
 
 
