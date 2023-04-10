@@ -718,7 +718,7 @@ write.csv(file="..//Output//topline_vendor.csv",row.names = FALSE, na = "",
 
 (
 ToplineVendorIntl<-build_plot(
-  data=full_data %>% filter(Fiscal_Year<=2020),
+  data=full_data %>% filter(Fiscal_Year>=2000 & Fiscal_Year<=2021),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -729,7 +729,8 @@ ToplineVendorIntl<-build_plot(
   # facet_var="Competition.sum", #facet_var
   column_key=column_key,
   format=TRUE,
-  ytextposition=FALSE
+  ytextposition=FALSE,
+  reverse_color=TRUE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
@@ -748,6 +749,12 @@ ggsave600dpi("..//Output//topline_vendor_intl_square.png", ToplineVendorIntl+
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020."), 
              width=6, height= 5, units="in",size=12,lineheight=1
              )
+
+ggsave600dpi("..//Output//topline_vendor_intl.svg", ToplineVendorIntl+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=12,lineheight=1
+             )
+
 
 
 
@@ -1056,17 +1063,23 @@ write.csv(file="..//Output//topline_pricing.csv",row.names = FALSE, na = "",
 if(!exists("pricing"))
   load(file="../data/clean/pricing_historical.Rda")
 
-hist_lc<-prepare_labels_and_colors(pricing %>% select(-ContractingOfficeName,-PricingMechanism),path=local_path)
+hist_lc<-prepare_labels_and_colors(pricing %>% select(-ContractingOfficeName,-PricingMechanism))#,path=local_path
+
+PricingUpdate<-rbind(pricing[,colnames(pricing) %in% colnames(def_data)],
+                     def_data[def_data$Fiscal_Year==2022,
+                              colnames(def_data) %in% colnames(pricing)]
+                     )
+
 
 (
 PricingHistory<-build_plot(
-  data=pricing,
+  data=PricingUpdate,
   chart_geom = "Line Chart",
   share = TRUE,
   labels_and_colors=hist_lc,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB23_GDP21", #VAR.y.variable
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="PricingInflation", #color_var
   # facet_var="PricingUCA.sumlong", #facet_var
   column_key=column_key,
@@ -1105,16 +1118,16 @@ write.csv(file="..//Output//Topline_Pricing_History_share.csv",row.names = FALSE
   arrange(pivot_wider(PricingHistory$data %>% 
                         arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
                       id_cols=c(PricingInflation),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB23_GDP21),PricingInflation)%>%
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22),PricingInflation)%>%
     arrange(PricingInflation))
 
 write.csv(file="..//Output//Topline_Pricing_History.csv",row.names = FALSE, na = "",
   pricing %>% group_by(Fiscal_Year,PricingInflation)%>%
-                        summarise(Action_Obligation_OMB23_GDP21=sum(Action_Obligation_OMB23_GDP21,na.rm=TRUE)) %>%
+                        summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE)) %>%
                         arrange(Fiscal_Year) %>%# mutate(Fiscal_Year=lubridate::year(dFYear)) %>%
                         pivot_wider(
                       id_cols=c(PricingInflation),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB23_GDP21)%>%
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
     arrange(PricingInflation))
 
 ```

@@ -134,11 +134,15 @@ full_data %<>%
   mutate(PlaceIsForeign = factor(PlaceIsForeign))
 
 
+labels_and_colors<-csis360::prepare_labels_and_colors(full_data %>% select(-recoveredmaterialclauses))
+
+column_key<-csis360::get_column_key(full_data)
+
+save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
+
 fpds_lc<-csis360::prepare_labels_and_colors(full_data %>% select(-recoveredmaterialclauses))
 
 fpds_ck<-csis360::get_column_key(full_data)
-
-save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
 
 fpds_data<-full_data %>% filter(ContractingCustomer=="Defense"&
                                   Fiscal_Year>=2010)
@@ -245,24 +249,32 @@ platpscintl<-initial_clean(platpscintl,only_defense=FALSE)
 platpscintl<-apply_standard_lookups(platpscintl)#,path=local_path
 platpscintldef<-initial_clean(platpscintl)
 
+write.csv(platpscintldef %>% filter(PlatformPortfolio=="Ordnance and Missiles"), 
+          file="Output//Munitions//OM.csv",
+          row.names = FALSE)
+
+summary(platpscintldef$PlatformPortfolio)
+
+write.csv(platpscintldef %>% filter(PlatformPortfolio=="Other Products"&SubCustomer=="Army"), 
+          file="Output//Munitions//ArmyOtherProducts.csv",
+          row.names = FALSE)
 
 # n<-platpscintl %>% group_by(IsFMS,IsFMSmac,IsFMSml,fundedbyforeignentity) %>%
 #   summarise(n=length(fiscal_year),min=min(fiscal_year),max=max(fiscal_year))
 
 
-
 #Vendor Size
-platpscintldef$VendorSize_Intl<-factor(platpscintldef$Shiny.VendorSize)
-levels(platpscintldef$VendorSize_Intl)<-list(
-  "Unlabeled"="Unlabeled",
-  "International"="International",
-  "U.S. Big Five"=c("Big Five","U.S. Big Five"),
-  "U.S. Large"=c("Large","U.S. Large"),
-  "U.S. Medium"=c("Medium","U.S. Medium"),
-  "U.S. Small"=c("Small","U.S. Small")
-)
-platpscintldef$VendorSize_Intl[platpscintldef$VendorIsForeign==1]<-"International"
-platpscintldef$VendorSize_Intl[is.na(platpscintldef$VendorIsForeign)]<-"Unlabeled"
+# platpscintldef$VendorSize_Intl<-factor(platpscintldef$Shiny.VendorSize)
+# levels(platpscintldef$VendorSize_Intl)<-list(
+#   "Unlabeled"="Unlabeled",
+#   "International"="International",
+#   "U.S. Big Five"=c("Big Five","U.S. Big Five"),
+#   "U.S. Large"=c("Large","U.S. Large"),
+#   "U.S. Medium"=c("Medium","U.S. Medium"),
+#   "U.S. Small"=c("Small","U.S. Small")
+# )
+# platpscintldef$VendorSize_Intl[platpscintldef$VendorIsForeign==1]<-"International"
+# platpscintldef$VendorSize_Intl[is.na(platpscintldef$VendorIsForeign)]<-"Unlabeled"
 
 #foreign_funding_description
 
