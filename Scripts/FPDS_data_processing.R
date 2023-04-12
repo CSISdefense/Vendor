@@ -223,6 +223,47 @@ def_ck<-csis360::get_column_key(def_data %>% select(-PricingMechanism))
 save(def_data,def_lc,def_ck, file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
 # load(file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
 
+#############Defense Data including Ukraine##########
+ukr_data<- read_delim(
+  "Data//semi_clean//defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",delim = "\t",
+  col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
+ukr_data<-initial_clean(ukr_data)
+ukr_data<-apply_standard_lookups(ukr_data)#,
+
+#ukr_data
+ukr_data %<>%
+  # select(-ClassifyNumberOfOffers) %>%
+  mutate(ContractingSubCustomer = factor(ContractingSubCustomer)) %>%
+  mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
+  mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
+  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
+  mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
+  mutate(Shiny.VendorSize = factor(Shiny.VendorSize)) %>%
+  mutate(SimpleArea = factor(SimpleArea)) %>%
+  mutate(Competition.sum = factor(Competition.sum)) %>%
+  mutate(Competition.effective.only = factor(Competition.effective.only)) %>%
+  mutate(Competition.multisum = factor(Competition.multisum))  %>%
+  mutate(No.Competition.sum = factor(No.Competition.sum)) %>%
+  mutate(Vehicle = factor(Vehicle)) %>%
+  mutate(Vehicle.sum = factor(Vehicle.sum)) %>%
+  mutate(Vehicle.sum7 = factor(Vehicle.sum7)) %>%
+  mutate(Vehicle.AwardTask = factor(Vehicle.AwardTask)) %>%
+  mutate(PricingUCA = factor(PricingUCA)) #%>%
+# mutate(IsFMS = factor(IsFMS)) %>%
+# mutate(PlaceOfManufacture_Sum = factor(PlaceOfManufacture_Sum)) %>%
+# mutate(VendorIsForeign = factor(VendorIsForeign))%>%
+# mutate(PlaceIsForeign = factor(PlaceIsForeign))
+
+
+ukr_data$PricingInflation.1yearUCA<-as.character(ukr_data$PricingInflation.1year)
+ukr_data$PricingInflation.1yearUCA[ukr_data$PricingUCA.sum=="UCA"]<-"UCA"
+ukr_data$PricingMechanism<-as.character(ukr_data$PricingMechanism)
+ukr_lc<-csis360::prepare_labels_and_colors(ukr_data %>% select(-PricingMechanism))
+
+ukr_ck<-csis360::get_column_key(ukr_data %>% select(-PricingMechanism))
+
+save(ukr_data,def_lc,def_ck, file="data/clean/def_ukr_FPDS.Rda")
+# load(file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
 
 
 ###########Product Service Code, Agency, Platform ############

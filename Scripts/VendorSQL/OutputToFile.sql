@@ -184,12 +184,41 @@ SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
 DECLARE	@return_value int
-
---EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
+--1h21m
 EXEC	@return_value = Contract.SP_ContractUnmodifiedScope
---EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
-		@IsDefense = 1
+		@IsDefense = NULL
 
+
+		SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+--1h25m
+DECLARE	@return_value int
+EXEC	@return_value = Contract.SP_ContractCeilingBreachCustomer
+		@Customer = NULL
+
+		SET ANSI_WARNINGS OFF;
+		--1h15m
+SET NOCOUNT ON;
+DECLARE	@return_value int
+EXEC	@return_value = Contract.SP_ContractUnmodifiedCompetitionvehicleCustomer
+		@Customer = NULL
+
+
+		SET ANSI_WARNINGS OFF;
+		--1h15m
+SET NOCOUNT ON;
+DECLARE	@return_value int
+EXEC	@return_value = Contract.SP_ContractUnmodifiedCompetitionvehicleCustomer
+		@Customer = NULL
+
+		SET ANSI_WARNINGS OFF;
+		--1h15m
+SET NOCOUNT ON;
+DECLARE	@return_value int
+EXEC	@return_value = Contract.SP_ContractCompetitionVehicleCustomer
+		@IsDefense = NULL
+
+		
 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
@@ -197,9 +226,7 @@ SET NOCOUNT ON;
 --4h05m
 DECLARE	@return_value int
 
---EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
 EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength
---EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
 		@Customer = 'Defense',-- [Summary].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer]
 		@SubCustomer = NULL,
 		@PlatformPortfolio =NULL
@@ -213,6 +240,7 @@ SET NOCOUNT ON;
 --2h32m (with 5 cores)
 --2h58m
 --8h55m 1m rows (5 cores)
+--3h21m 1637944 rows (with all national interest action codes
 DECLARE	@return_value int
 
 --EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
@@ -640,3 +668,15 @@ group by  productorservicecode
 --	  	  ,PricingFee
 --		  , PricingUCA
 --		  ,VehicleClassificationpl
+
+
+
+--Defense Contract Dataset
+--2h49m 38.5m rows
+EXEC	
+ [Contract].[SP_ContractSampleCriteriaDetailsCustomer]
+		@IsDefense = 1
+		
+
+--SELECT	'Return Value' = @return_value
+
