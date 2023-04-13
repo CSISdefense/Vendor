@@ -2014,7 +2014,8 @@ ggsave600dpi("..//Output//topline_subcustomer.emf", SubCustomer+facet_wrap(~SubC
 
 
 write.csv(file="..//Output//topline_subcustomer.csv",row.names = FALSE, na = "",
-          pivot_wider(SubCustomer$data,id_cols=c(SubCustomer.sum,SubCustomer.JPO),
+          SubCustomer$data %>% mutate(Fiscal_Year=lubridate::year(dFYear)) %>%
+          pivot_wider(id_cols=c(SubCustomer.sum,SubCustomer.JPO),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
 
 write.csv(file="..//Output//topline_subcustomer_current.csv",row.names = FALSE, na = "",
@@ -2980,6 +2981,64 @@ write.csv(file="..//Output//PlatformMultiYearShare.csv",row.names = FALSE, na = 
 
 ```
 
+## Platform  Ukraine
+```{r Platform}
+
+ukr_data$IsUkraine<-ifelse(ukr_data$nationalinterestactioncode=="O22U" &
+                             !is.na(ukr_data$nationalinterestactioncode=="O22U"),"UKRAINE MISSION SUPPORT","All Other")
+
+ukr_data %>% group_by(nationalinterestactioncode)%>%
+  filter(Fiscal_Year==2022) %>% summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
+
+(
+Platform_Ukr_Bar<-build_plot(
+  data=ukr_data %>% filter(Fiscal_Year>=1990),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=ukr_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="IsUkraine", #color_var
+  facet_var="PlatformPortfolio", #facet_var
+  column_key=ukr_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2022 $s)")
+)
+
+ggsave600dpi("..//Output//Munitions//ukraine_platform_bar.png", Platform_Ukr_Bar, 
+             width=11, height= 5.5, units="in",size=14,lineheight = 1.2
+             )
+
+ggsave600dpi("..//Output//Munitions//ukraine_platform_bar.emf", Platform_Ukr_Bar,
+             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+             )
+
+output_TY<-ukr_data %>% group_by(PlatformPortfolio,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(PlatformPortfolio,IsUkraine),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%arrange(PlatformPortfolio,IsUkraine)
+
+write.csv(file="..//Output//Munitions//ukraine_platform_current.csv",row.names = FALSE, na = "",
+          output_TY)
+
+# wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+# createSheet(wb, name = "Platform Portfolio")
+# writeWorksheet(wb, output_TY, sheet = "Platform Portfolio", startRow = 15, startCol = 1)
+# saveWorkbook(wb)
+# rm(wb)
+
+```
 
 # Vendor Size
 ### Vendor Size Vehicle

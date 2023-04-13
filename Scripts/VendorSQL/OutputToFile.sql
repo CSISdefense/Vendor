@@ -212,13 +212,27 @@ EXEC	@return_value = Contract.SP_ContractUnmodifiedCompetitionvehicleCustomer
 		@Customer = NULL
 
 		SET ANSI_WARNINGS OFF;
-		--1h15m
 SET NOCOUNT ON;
+--1h28m
 DECLARE	@return_value int
 EXEC	@return_value = Contract.SP_ContractCompetitionVehicleCustomer
 		@IsDefense = NULL
 
-		
+			SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+--0h05m This is probably dependent on automated contract update runes.
+DECLARE	@return_value int
+EXEC	@return_value = Contract.SP_ContractTopPSCofficeNAICS
+		@IsDefense = NULL
+
+			SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+--1h24m
+DECLARE	@return_value int
+EXEC	@return_value = Contract.SP_ContractLocationCustomer
+		@IsDefense = NULL
+
+					
 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
