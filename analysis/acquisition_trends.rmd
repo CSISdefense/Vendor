@@ -760,6 +760,11 @@ ggsave600dpi("..//Output//topline_vendor_intl.svg", ToplineVendorIntl+
 
 
 
+write.csv(file="..//Output//topline_vendor_intl_cur.csv",row.names = FALSE, na = "",
+          full_data %>% group_by(VendorSize_Intl,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(VendorSize_Intl),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(VendorSize_Intl))
 
 ```
 
@@ -1068,7 +1073,7 @@ if(!exists("pricing"))
 
 hist_lc<-prepare_labels_and_colors(pricing %>% select(-ContractingOfficeName,-PricingMechanism))#,path=local_path
 
-PricingUpdate<-rbind(pricing[,colnames(pricing) %in% colnames(def_data)],
+PricingUpdate<-rbind(pricing[pricing$Fiscal_Year<2022,colnames(pricing) %in% colnames(def_data)],
                      def_data[def_data$Fiscal_Year==2022,
                               colnames(def_data) %in% colnames(pricing)]
                      )
@@ -1099,7 +1104,7 @@ PricingHistory<-build_plot(
   # color="Competition")+
   theme(legend.position = "right",
         plot.caption = element_text(hjust = 0,face="plain"))+
-    xlim(c(as.Date("1980-01-01"), as.Date("2022-12-30")))+
+    xlim(c(as.Date("1979-01-01"), as.Date("2022-12-30")))+
     # coord_cartesian(xlim = c(as.Date("1980-01-01"), as.Date("2022-01-01"))
   labs(y="Share of Obligations",caption="Source: Federal Procurement Data System (FPDS) and CSIS analysis.")
 )
@@ -1119,20 +1124,20 @@ PricingHistory<-build_plot(
                )
   
 
-write.csv(file="..//Output//Topline_Pricing_History_share.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//Topline_Pricing_History.csv",row.names = FALSE, na = "",
   arrange(pivot_wider(PricingHistory$data %>% 
                         arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
                       id_cols=c(PricingInflation),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22),PricingInflation)%>%
     arrange(PricingInflation))
 
-write.csv(file="..//Output//Topline_Pricing_History.csv",row.names = FALSE, na = "",
-  pricing %>% group_by(Fiscal_Year,PricingInflation)%>%
-                        summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE)) %>%
+write.csv(file="..//Output//Topline_Pricing_History_cur.csv",row.names = FALSE, na = "",
+  PricingUpdate %>% group_by(Fiscal_Year,PricingInflation)%>%
+                        summarise(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE)) %>%
                         arrange(Fiscal_Year) %>%# mutate(Fiscal_Year=lubridate::year(dFYear)) %>%
                         pivot_wider(
                       id_cols=c(PricingInflation),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
     arrange(PricingInflation))
 
 ```
@@ -1181,14 +1186,10 @@ ggsave600dpi("..//Output//topline_commercial.png", Commercial,
              width=11, height= 5.5, units="in",size=14,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//topline_commercial.svg", Commercial,#+facet_wrap(~SubCustomer.platform,nrow=1), 
-             width=6.5, height= 3, units="in",size=11,lineheight = 1.2
+ggsave600dpi("..//Output//topline_commercial.svg", Commercial+
+  labs(y="Obligations\n(Constant 2022 $s)"),#+facet_wrap(~SubCustomer.platform,nrow=1), 
+             width=6.5, height= 2.25, units="in",size=11,lineheight = 1.2
              )
-
-ggsave600dpi("..//Output//topline_commercial.emf", Commercial,#+facet_wrap(~SubCustomer.platform,nrow=1), 
-             width=6.5, height= 3, units="in",size=11,lineheight = 1.2
-             )
-
 
 write.csv(file="..//Output//topline_commercial_current.csv",row.names = FALSE, na = "",
           def_data %>% group_by(AnyCommercialText,Fiscal_Year)%>%
@@ -1247,7 +1248,7 @@ CurDuration<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")+
+  labs(y="Share of Obligations")+
     scale_x_date(breaks=as.Date(c(paste(seq(2000,2021,5),"-01-01",sep=""))),
                                                    date_labels="'%y")
 )
@@ -1276,7 +1277,7 @@ UnmDuration<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")+
+  labs(y="Share of Obligations")+
     scale_x_date(breaks=as.Date(c(paste(seq(2000,2021,5),"-01-01",sep=""))),
                                                    date_labels="'%y")
 )
@@ -2931,7 +2932,7 @@ full_data<-full_data %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
   mutate(pPlatFYear=Action_Obligation_OMB24_GDP22/sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))
 (
 PlatformMultiYearShare<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=2000 & !PlatformPortfolio %in% c("Unlabeled","Other Products","Other Services","Other R&D and Knowledge Based")&
+  data=full_data %>% filter(Fiscal_Year>=2000 )&
                              (multiyearcontract==1)), #is.na(multiyearcontract)|
   chart_geom = "Line Chart",
   share = FALSE,
@@ -2959,6 +2960,15 @@ PlatformMultiYearShare<-build_plot(
     scale_y_continuous(labels = percent)
 )
 
+
+
+write.csv(file="..//Output//platform_multiyear_cur.csv",row.names = FALSE, na = "",
+          def_data %>% group_by(PlatformPortfolio,multiyearcontracttext,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+            arrange(Fiscal_Year)%>%
+          pivot_wider(id_cols=c(PlatformPortfolio,multiyearcontracttext),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
+            arrange(PlatformPortfolio,multiyearcontracttext))
 
 ggsave600dpi("..//Output//Platform_MultiYear.png", PlatformMultiYear,  
              width=12, height= 6, units="in",size=12, lineheight=1.2
@@ -4208,6 +4218,20 @@ full_data$PlaceOfManufacture_DoD09<-factor_wrap(full_data$PlaceOfManufacture_DoD
               pivot_wider(id_cols=c(PlaceOfManufacture_DoD09,Service),
                           names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)
             %>% arrange(PlaceOfManufacture_DoD09,Service))
+    
+      
+    write.csv(file="..//Output//waiversimple.csv",row.names = FALSE, na = "",
+            waiversimple$data %>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
+              pivot_wider(id_cols=c(PlaceOfManufacture_DoD09,Service),
+                          names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)
+            %>% arrange(PlaceOfManufacture_DoD09,Service))
+    
+    write.csv(full_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
+                                                                          "Manufactured Outside U.S.",
+                                                                          "Performed/Manufactured Outside U.S.")|
+                                                   VendorIsForeign==1|OriginIsForeign==1)  %>%
+                               filter(!is.na(SimpleArea) & SimpleArea!="Unlabeled")%>%
+                               filter(Fiscal_Year>=2009),"intl_data.csv")
 ```
 
 
