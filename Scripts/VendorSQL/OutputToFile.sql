@@ -232,13 +232,44 @@ DECLARE	@return_value int
 EXEC	@return_value = Contract.SP_ContractLocationCustomer
 		@IsDefense = NULL
 
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+DECLARE	@return_value int
+EXEC	@return_value = Contract.SP_ContractPricingCustomer
+		@IsDefense = NULL
 					
+
+					Contract.SP_ContractBucketPlatformCustomer
+
+--Do we really need both of these?
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+DECLARE	@return_value int
+EXEC	@return_value = Contract.SP_ContractPricingUCA
+		@IsDefense = NULL
+
+
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+
+DECLARE	@return_value int
+
+EXEC	@return_value = Contract.SP_ContractBucketPlatformCustomer
+		@Customer = NULL
+		,@StartFiscalYear = 2000
+		
+		
+--SELECT	'Return Value' = @return_value
+
+
 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
 --4h05m
 DECLARE	@return_value int
+
 
 EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength
 		@Customer = 'Defense',-- [Summary].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer]
@@ -249,13 +280,13 @@ EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCus
 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
+DECLARE	@return_value int
 
 --4h48m
 --2h32m (with 5 cores)
 --2h58m
 --8h55m 1m rows (5 cores)
 --3h21m 1637944 rows (with all national interest action codes
-DECLARE	@return_value int
 
 --EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
 EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer
@@ -279,7 +310,7 @@ SET NOCOUNT ON;
 DECLARE	@return_value int
 --11h25m  fail
 EXEC	@return_value = [budget].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS]
-		@Customer = 'Defense'
+		@Customer = NULL
 		
 
 		
@@ -317,18 +348,6 @@ EXEC	@return_value = [Contract].[SP_ContractDefenseSubCustomer]
 --SELECT	'Return Value' = @return_value
 
 
-
-SET ANSI_WARNINGS OFF;
-SET NOCOUNT ON;
-
-DECLARE	@return_value int
-
-EXEC	@return_value = Contract.SP_ContractBucketPlatformCustomer
-		@Customer = NULL
-		,@StartFiscalYear = 2000
-		
-		
---SELECT	'Return Value' = @return_value
 
 
 SET ANSI_WARNINGS OFF;

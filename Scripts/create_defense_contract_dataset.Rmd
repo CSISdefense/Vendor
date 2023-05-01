@@ -43,22 +43,26 @@ def_all<-input_sample_criteria(def_all,
                       file="Defense_Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
                       last_date=as.Date("2017-12-31"),
                       drop_incomplete=FALSE)
-
+# def_all$Customer<-"Defense"
 def_all<-def_all %>% filter(StartFiscal_Year<2018 & StartFiscal_Year>=2007 & Customer=="Defense")
   
 #I'm intending to eventually incorporate this into sample criteria
 #Although maybe it's faster to keep it as a tiny stand alone file.
-def_all<-read_and_join_experiment(def_all,
-                                         "Contract.IsParentContractID.txt",
-                                         by="CSIScontractID",
-                                         # replace_na_var="AgencyID",
-                                         add_var=c("IsParentCSIScontractID"),
-                                  skip_check_var = "IsParentCSIScontractID",
-                                         path ="", 
-                                  directory = "..\\data\\semi_clean\\"
-)
-summary(def_all$IsParentCSIScontractID)
-
+# def_all<-read_and_join_experiment(def_all,
+#                                          "Contract.IsParentContractID.txt",
+#                                          by="CSIScontractID",
+#                                          # replace_na_var="AgencyID",
+#                                          add_var=c("IsParentCSIScontractID"),
+#                                   skip_check_var = "IsParentCSIScontractID",
+#                                          path ="", 
+#                                   directory = "..\\data\\semi_clean\\"
+# )
+# summary(def_all$IsParentCSIScontractID)
+def_all$CSIScontractID<-text_to_number(def_all$CSIScontractID)
+def_all<-filter(def_all, !is.na(CSIScontractID))
+#It appears there's some garbage at the end of the files, I do need to find a way to
+#turn off the time stamps, but adding a pruge function called from read_and_join_experiment
+#is probably a good idea.
 save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 
 ```
@@ -72,8 +76,7 @@ def_all<-input_contract_psc_office_naics(def_all,
                                          file="Contract.SP_ContractTopPSCofficeNAICS.txt")
 
 
-if(!"Customer" %in% colnames(data))
-  debug(read_and_join_experiment)
+if(!"Customer" %in% colnames(def_all))
   def_all<-read_and_join_experiment(def_all,
                                     "Agency_AgencyID.csv",
                                     by=c("topContractingOfficeAgencyID"="AgencyID"),
