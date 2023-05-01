@@ -327,7 +327,161 @@ write.csv(file="..//Output//psr_Services_current.csv",row.names = FALSE,na = "",
             arrange(ProductServiceOrRnDarea))
 
 ```
+# Estimates
+## Quarterly YTD
 
+```{r}
+write.csv(
+  full_data %>% group_by(SubCustomer.sum,PlatformPortfolio,SimpleArea,Competition.sum,
+                       VendorSize,Fiscal_Year) %>% filter(Fiscal_Year<=2020) %>%
+  summarise(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE),
+            Action_Obligation_OMB24_GDP22=sum(Action_Obligation_Then_Year,na.rm=TRUE)),"contracting.csv",row.names = FALSE)
+  
+
+```
+
+Read in quarterly data from the CSIS database and the current year data from SAM.gov.
+
+```{r EstimatePrep}
+y2021<-read.csv(file.path("..","Data_Raw","SAM","Defense_Agency_SignedDate_2021.csv"),skip = 2)
+y2021<-standardize_variable_names(y2021)
+y2021$Date.Signed<-as.Date(y2021$Date.Signed,"%m/%d/%Y")
+
+q2021<-y2021 %>% mutate(fiscal_quarter=lubridate::quarter(Date.Signed,fiscal_start=10),
+                        ContractingCustomer=ifelse(Contracting.Department.ID=="9700","Defense","Non-Defense")) %>%
+  group_by(Fiscal_Year,fiscal_quarter,ContractingCustomer) %>%
+  dplyr::summarize(Action_Obligation=sum(csis360::text_to_number(Dollars.Obligated),na.rm=TRUE),
+            minSD=min(Date.Signed),
+            maxSD=max(Date.Signed))%>% filter(fiscal_quarter<=3)
+
+q2021<-q2021 %>% dplyr::select(Fiscal_Year,fiscal_quarter,Action_Obligation,ContractingCustomer)
+# colnames(q2021)[colnames(q2021)=="Fiscal_Year"]<-"Fiscal_Year"
+# colnames(q2021)[colnames(q2021)=="Fiscal_Year"]<-"Fiscal_Year"
+
+
+quarterly<-read.csv(file.path("..","Data","Semi_Clean","Defense_Contract.FiscalQuarter.csv"),na.strings = "NULL")
+quarterly<-standardize_variable_names(quarterly)
+quarterly<-remove_bom(quarterly)
+quarterly$fiscal_quarter<-as.numeric(quarterly$fiscal_quarter)-1
+quarterly <- quarterly %>% filter(Fiscal_Year>=2000)  %>% arrange(Fiscal_Year,fiscal_quarter)
+if(any(is.na(quarterly$Fiscal_Year))) stop("NA Quarters")
+
+quarterlyYTD<-rbind(as.data.frame(quarterly),as.data.frame(q2021 ))
+quarterlyYTD<-deflate(quarterlyYTD,money_var = "Action_Obligation",deflator_var="OMB20_GDP20")
+colnames(quarterlyYTD)
+toa$fiscal_quarter<-NA
+toa$Action_Obligation_Then_Year<-NA
+toa$Action_Obligation_OMB24_GDP22<-NA
+toa$ContractingCustomer<-"Defense"
+quarterlyYTD$Total_Obligation_Authority_OMB20_GDP20<-NA
+quarterlyYTD$Total_Obligation_Authority_Then_Year<-NA
+quarterlyYTD<-rbind(quarterlyYTD,toa %>% dplyr::select(-Series, -dFYear))
+
+```
+
+## Estimate last quarter
+Create a univariate model that estimates the fourth quarter based on the first three quarters.
+
+This isn't a perfect representation, as the spending in the first three quarters will continue to fluctuate even well after the 90 day delay for DoD has expired. In theory, there could be slightly greater precision by tracking the first three quarters at a consistent point in each year. However, that's not a level of history that can be straightforwardly reconstructed.  
+```{r Model}
+
+
+a<-quarterlyYTD %>% group_by(Fiscal_Year) %>% filter(Fiscal_Year<2021 & !is.na(fiscal_quarter))%>% dplyr::summarise(
+  q1toq3=sum(ifelse(fiscal_quarter<=3,Action_Obligation_OMB24_GDP22,0)),
+  q4=sum(ifelse(fiscal_quarter==4,Action_Obligation_OMB24_GDP22,0)),
+             total=sum(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
+)
+a$NewAdmin<-0
+a$NewAdmin[a$Fiscal_Year %in% c(2001,2009,2017,2021)]<-1
+
+m<-lm(data=a,q4~q1toq3)
+m2<-lm(data=a,q4~q1toq3+NewAdmin)
+summary(m)
+summary(m2)
+# plot(m)
+
+q1to13_2021<-sum(ifelse(quarterlyYTD$fiscal_quarter<=3 & !is.na(quarterlyYTD$fiscal_quarter) & quarterlyYTD$Fiscal_Year==2021,quarterlyYTD$Action_Obligation_OMB24_GDP22,0))
+
+cvalues<-data.frame(q1toq3=q1to13_2021)
+
+p<-predict(m,cvalues,interval="prediction")
+e2021<-data.frame(Fiscal_Year=2021,
+           fiscal_quarter=4,
+           Action_Obligation_Then_Year=NA,
+           Action_Obligation_OMB24_GDP22=NA,
+           yest=p[1]+q1to13_2021,
+           lwr=p[2]+q1to13_2021,
+           upr=p[3]+q1to13_2021,
+           ContractingCustomer="Defense",
+           Actual="Estimate",
+           Total_Obligation_Authority_OMB20_GDP20=NA,
+           Total_Obligation_Authority_Then_Year=NA
+           )
+rm(q1to13_2021,cvalues)
+```
+The first three years made a pretty good estimator. However, adding a variable based on whether it was the first year of a new adminsitration added nothing to the model.
+
+
+## TOA Topline Quarterly
+```{r TOA}
+
+quarterlyYTD$Actual<-"Actual"
+quarterlyYTD$lwr<-NA
+quarterlyYTD$upr<-NA
+quarterlyYTD$yest<-NA
+
+# build_plot(data=rbind(quarterly,q2021,e2021),
+#            x_var="Fiscal_Year",
+#            y_var="Action_Obligation_OMB24_GDP22",
+#            color_var = "fiscal_quarter",
+#            facet_var="Actual",
+#            chart_geom="Bar Chart")+facet_wrap(~)
+quarterlyEst<-rbind(quarterlyYTD,e2021)
+quarterlyEst$Actual<-factor(quarterlyEst$Actual,levels=c("Estimate","Actual"))
+quarterlyEst$fiscal_quarter<-factor(quarterlyEst$fiscal_quarter,c("4","3","2","1"))
+quarterlyEst$dFYear<-as.Date(paste("1/1/",as.character(quarterlyEst$Fiscal_Year),sep=""),"%m/%d/%Y")
+
+(topline_q<-ggplot(data=quarterlyEst %>% filter(Fiscal_Year>=2000) #rbind(quarterly,q2021,e2021),
+      )+geom_col( aes(x=dFYear,
+           y=Action_Obligation_OMB24_GDP22/1000000000,
+           # alpha=Actual,
+           fill = fiscal_quarter
+       ))+
+    geom_path(aes(x=dFYear,y=Total_Obligation_Authority_OMB20_GDP20/1000000000),group="Quarter")+
+  # scale_alpha_discrete(range=c(0.4,1))+
+  geom_errorbar(aes(x=dFYear,ymin=lwr/1000000000,ymax=upr/1000000000,y=yest/1000000000,color = fiscal_quarter))+
+    geom_point(aes(x=dFYear,ymin=lwr/1000000000,ymax=upr/1000000000,y=yest/1000000000,color = fiscal_quarter))+
+    scale_color_discrete("Estimate")+
+    labs(x="Fiscal Year",y="Constant FY 2020 $ Billions",fill="Quarter")
+)
+
+write.csv(file="..//Output//toa_topline.csv",row.names = FALSE,na="",
+          quarterlyEst %>% mutate(fiscal_quarter=ifelse(!is.na(Total_Obligation_Authority_OMB20_GDP20),"TOA",fiscal_quarter),
+                                            Dollars_GDP20=ifelse(fiscal_quarter=="TOA",
+                                                                 Total_Obligation_Authority_OMB20_GDP20,Action_Obligation_OMB24_GDP22))%>%
+            filter(Fiscal_Year>=2000)%>%
+          format_data_for_plot(
+                               fy_var="Fiscal_Year",
+                               y_var="Dollars_GDP20",
+                               color_var="fiscal_quarter",
+                               # facet="SubCustomer",
+                               # labels_and_colors = ota_lc,
+                               group=TRUE) %>%
+            arrange(Fiscal_Year) %>%
+            mutate(Dollars_GDP20=Dollars_GDP20/1000000000)%>%
+          pivot_wider(id_cols=c(fiscal_quarter),
+                      names_from=Fiscal_Year,values_from=Dollars_GDP20) %>% 
+            
+            # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=ota_lc$variable[ota_lc$column=="PlatformPortfolio"]))%>%
+            # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=levels(fiscal_quarter),
+            #                                 labels=gsub("\\n"," ",levels(PlatformPortfolio))))%>%
+                   arrange(fiscal_quarter))
+
+
+ggsave600dpi(topline_q,file=file.path("..","Output","toa_quarterly.png"),  
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+```
 
 # Top Projects Annual
 

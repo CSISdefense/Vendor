@@ -68,160 +68,45 @@ toa$dFYear<-as.Date(paste(toa$Fiscal_Year,1,1,sep="-"))
 labels_and_colors<-prepare_labels_and_colors(full_data)
 
 ```
-## Quarterly YTD
-
-```{r}
-write.csv(
-  full_data %>% group_by(SubCustomer.sum,PlatformPortfolio,SimpleArea,Competition.sum,
-                       VendorSize,Fiscal_Year) %>% filter(Fiscal_Year<=2020) %>%
-  summarise(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE),
-            Action_Obligation_OMB24_GDP22=sum(Action_Obligation_Then_Year,na.rm=TRUE)),"contracting.csv",row.names = FALSE)
-  
-
-```
-
-Read in quarterly data from the CSIS database and the current year data from SAM.gov.
-
-```{r EstimatePrep}
-y2021<-read.csv(file.path("..","Data_Raw","SAM","Defense_Agency_SignedDate_2021.csv"),skip = 2)
-y2021<-standardize_variable_names(y2021)
-y2021$Date.Signed<-as.Date(y2021$Date.Signed,"%m/%d/%Y")
-
-q2021<-y2021 %>% mutate(fiscal_quarter=lubridate::quarter(Date.Signed,fiscal_start=10),
-                        ContractingCustomer=ifelse(Contracting.Department.ID=="9700","Defense","Non-Defense")) %>%
-  group_by(Fiscal_Year,fiscal_quarter,ContractingCustomer) %>%
-  dplyr::summarize(Action_Obligation=sum(csis360::text_to_number(Dollars.Obligated),na.rm=TRUE),
-            minSD=min(Date.Signed),
-            maxSD=max(Date.Signed))%>% filter(fiscal_quarter<=3)
-
-q2021<-q2021 %>% dplyr::select(Fiscal_Year,fiscal_quarter,Action_Obligation,ContractingCustomer)
-# colnames(q2021)[colnames(q2021)=="Fiscal_Year"]<-"Fiscal_Year"
-# colnames(q2021)[colnames(q2021)=="Fiscal_Year"]<-"Fiscal_Year"
-
-
-quarterly<-read.csv(file.path("..","Data","Semi_Clean","Defense_Contract.FiscalQuarter.csv"),na.strings = "NULL")
-quarterly<-standardize_variable_names(quarterly)
-quarterly<-remove_bom(quarterly)
-quarterly$fiscal_quarter<-as.numeric(quarterly$fiscal_quarter)-1
-quarterly <- quarterly %>% filter(Fiscal_Year>=2000)  %>% arrange(Fiscal_Year,fiscal_quarter)
-if(any(is.na(quarterly$Fiscal_Year))) stop("NA Quarters")
-
-quarterlyYTD<-rbind(as.data.frame(quarterly),as.data.frame(q2021 ))
-quarterlyYTD<-deflate(quarterlyYTD,money_var = "Action_Obligation",deflator_var="OMB20_GDP20")
-colnames(quarterlyYTD)
-toa$fiscal_quarter<-NA
-toa$Action_Obligation_Then_Year<-NA
-toa$Action_Obligation_OMB24_GDP22<-NA
-toa$ContractingCustomer<-"Defense"
-quarterlyYTD$Total_Obligation_Authority_OMB20_GDP20<-NA
-quarterlyYTD$Total_Obligation_Authority_Then_Year<-NA
-quarterlyYTD<-rbind(quarterlyYTD,toa %>% dplyr::select(-Series, -dFYear))
-
-```
-
-## Estimate last quarter
-Create a univariate model that estimates the fourth quarter based on the first three quarters.
-
-This isn't a perfect representation, as the spending in the first three quarters will continue to fluctuate even well after the 90 day delay for DoD has expired. In theory, there could be slightly greater precision by tracking the first three quarters at a consistent point in each year. However, that's not a level of history that can be straightforwardly reconstructed.  
-```{r Model}
-
-
-a<-quarterlyYTD %>% group_by(Fiscal_Year) %>% filter(Fiscal_Year<2021 & !is.na(fiscal_quarter))%>% dplyr::summarise(
-  q1toq3=sum(ifelse(fiscal_quarter<=3,Action_Obligation_OMB24_GDP22,0)),
-  q4=sum(ifelse(fiscal_quarter==4,Action_Obligation_OMB24_GDP22,0)),
-             total=sum(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
-)
-a$NewAdmin<-0
-a$NewAdmin[a$Fiscal_Year %in% c(2001,2009,2017,2021)]<-1
-
-m<-lm(data=a,q4~q1toq3)
-m2<-lm(data=a,q4~q1toq3+NewAdmin)
-summary(m)
-summary(m2)
-# plot(m)
-
-q1to13_2021<-sum(ifelse(quarterlyYTD$fiscal_quarter<=3 & !is.na(quarterlyYTD$fiscal_quarter) & quarterlyYTD$Fiscal_Year==2021,quarterlyYTD$Action_Obligation_OMB24_GDP22,0))
-
-cvalues<-data.frame(q1toq3=q1to13_2021)
-
-p<-predict(m,cvalues,interval="prediction")
-e2021<-data.frame(Fiscal_Year=2021,
-           fiscal_quarter=4,
-           Action_Obligation_Then_Year=NA,
-           Action_Obligation_OMB24_GDP22=NA,
-           yest=p[1]+q1to13_2021,
-           lwr=p[2]+q1to13_2021,
-           upr=p[3]+q1to13_2021,
-           ContractingCustomer="Defense",
-           Actual="Estimate",
-           Total_Obligation_Authority_OMB20_GDP20=NA,
-           Total_Obligation_Authority_Then_Year=NA
-           )
-rm(q1to13_2021,cvalues)
-```
-The first three years made a pretty good estimator. However, adding a variable based on whether it was the first year of a new adminsitration added nothing to the model.
 
 # Topline
 
-## TOA Topline Quarterly
+## Topline Quarterly
 ```{r TOA}
 
-quarterlyYTD$Actual<-"Actual"
-quarterlyYTD$lwr<-NA
-quarterlyYTD$upr<-NA
-quarterlyYTD$yest<-NA
 
-# build_plot(data=rbind(quarterly,q2021,e2021),
-#            x_var="Fiscal_Year",
-#            y_var="Action_Obligation_OMB24_GDP22",
-#            color_var = "fiscal_quarter",
-#            facet_var="Actual",
-#            chart_geom="Bar Chart")+facet_wrap(~)
-quarterlyEst<-rbind(quarterlyYTD,e2021)
-quarterlyEst$Actual<-factor(quarterlyEst$Actual,levels=c("Estimate","Actual"))
-quarterlyEst$fiscal_quarter<-factor(quarterlyEst$fiscal_quarter,c("4","3","2","1"))
-quarterlyEst$dFYear<-as.Date(paste("1/1/",as.character(quarterlyEst$Fiscal_Year),sep=""),"%m/%d/%Y")
 
-(topline_q<-ggplot(data=quarterlyEst %>% filter(Fiscal_Year>=2000) #rbind(quarterly,q2021,e2021),
-      )+geom_col( aes(x=dFYear,
-           y=Action_Obligation_OMB24_GDP22/1000000000,
-           # alpha=Actual,
-           fill = fiscal_quarter
-       ))+
-    geom_path(aes(x=dFYear,y=Total_Obligation_Authority_OMB20_GDP20/1000000000),group="Quarter")+
+
+(toplineq<-build_plot(data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2023.1),#rbind(quarterly,q2021,e2021),
+                     chart_geom="Bar Chart",
+                     x_var="dFYear",
+                     y_var="Action_Obligation_OMB24_GDP22",
+           color_var="fiscal_quarter",
+           format = TRUE,
+           labels_and_colors = def_lc,
+           column_key=def_ck
+       )+date_x_year_breaks(2000,2023,2)+
+    # geom_path(aes(x=dFYear,y=Action_Obligation_OMB24_GDP22,color=TOA))+
   # scale_alpha_discrete(range=c(0.4,1))+
-  geom_errorbar(aes(x=dFYear,ymin=lwr/1000000000,ymax=upr/1000000000,y=yest/1000000000,color = fiscal_quarter))+
-    geom_point(aes(x=dFYear,ymin=lwr/1000000000,ymax=upr/1000000000,y=yest/1000000000,color = fiscal_quarter))+
-    scale_color_discrete("Estimate")+
-    labs(x="Fiscal Year",y="Constant FY 2020 $ Billions",fill="Quarter")
+    # labs(x="Fiscal Year",y="Constant FY 2022 $ Billions",fill="Contract",color="Budget",
+    #      caption="Source: FPDS, CSIS Analysis")+
+    theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)")
 )
 
-write.csv(file="..//Output//toa_topline.csv",row.names = FALSE,na="",
-          quarterlyEst %>% mutate(fiscal_quarter=ifelse(!is.na(Total_Obligation_Authority_OMB20_GDP20),"TOA",fiscal_quarter),
-                                            Dollars_GDP20=ifelse(fiscal_quarter=="TOA",
-                                                                 Total_Obligation_Authority_OMB20_GDP20,Action_Obligation_OMB24_GDP22))%>%
-            filter(Fiscal_Year>=2000)%>%
-          format_data_for_plot(
-                               fy_var="Fiscal_Year",
-                               y_var="Dollars_GDP20",
-                               color_var="fiscal_quarter",
-                               # facet="SubCustomer",
-                               # labels_and_colors = ota_lc,
-                               group=TRUE) %>%
-            arrange(Fiscal_Year) %>%
-            mutate(Dollars_GDP20=Dollars_GDP20/1000000000)%>%
-          pivot_wider(id_cols=c(fiscal_quarter),
-                      names_from=Fiscal_Year,values_from=Dollars_GDP20) %>% 
-            
-            # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=ota_lc$variable[ota_lc$column=="PlatformPortfolio"]))%>%
-            # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=levels(fiscal_quarter),
-            #                                 labels=gsub("\\n"," ",levels(PlatformPortfolio))))%>%
-                   arrange(fiscal_quarter))
-
-
-ggsave600dpi(topline_q,file=file.path("..","Output","toa_quarterly.png"),  
-             width=12, height= 6, units="in",size=12, lineheight=1.2
+ggsave600dpi(toplineq,file=file.path("..","Output","toplineq.svg"),  
+             width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
              )
+
+ggsave600dpi(toplineq,file=file.path("..","Output","toplineq.png"),  
+             width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
+             )
+
+ggsave600dpi("..//Output//toplineqr_keynote.svg", toplineq+
+               labs(title="DOD Contract Obligations, 2000-2023Q1"),
+             width=13, height= 5.5, units="in", size=20, lineheight = 0.75
+             )
+
 ```
 ## TOA annual
 ```{r TOAannual}
@@ -1455,13 +1340,59 @@ write.csv(file="..//Output//topline_psr.csv",row.names = FALSE, na = "",
 
 ```
 
+## PSR Quarterly
+```{r PSR_Q}
+
+(
+PSR_Q<-build_plot(
+  data=def_data %>% filter(Fiscal_Year>=2000&  Fiscal_YQ<=2023.1 & SimpleArea!="Unlabeled"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="fiscal_quarter", #color_var
+  facet_var="SimpleArea", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2023,3)+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)")
+)
+
+ggsave600dpi("..//Output//PSR_Q.png", PSR_Q, 
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+ggsave600dpi("..//Output//PSR_Q.svg", PSR_Q, 
+             width=6.5, height= 3, units="in",size=11, lineheight=1.2
+             )
+
+
+output_TY<-def_data %>% filter(Fiscal_YQ<2023) %>% group_by(SimpleArea,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(SimpleArea),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)
+write.csv(file="..//Output//PSR_Q.csv",row.names = FALSE, na = "",
+          output_TY)
+
+
+# wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+# createSheet(wb, name = "Area")
+# writeWorksheet(wb, output_TY, sheet = "Area", startRow = 14, startCol = 14)
+# saveWorkbook(wb)
+
+```
+
 
 ## R&D phase
 ```{r RnD}
 
 (
 RnDphase<-build_plot(
-  data=def_data %>% filter(SimpleArea=="R&D"),
+  data=def_data %>% filter(Fiscal_YQ<2023) %>% filter(SimpleArea=="R&D"),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -1497,7 +1428,7 @@ write.csv(file="..//Output//psr_RnDPhase.csv",row.names = FALSE, na = "",
             arrange(ProductServiceOrRnDarea))
             
 
-output_TY<-def_data %>% filter(SimpleArea=="R&D") %>%
+output_TY<-def_data %>% filter(Fiscal_YQ<2023) %>% filter(SimpleArea=="R&D") %>%
             format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
                                  labels_and_colors=labels_and_colors) %>%
           pivot_wider(id_cols=c(ProductServiceOrRnDarea),
@@ -1519,7 +1450,7 @@ write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE, na = ""
 ## R&D Phase+OTA    
 ```{r PhaseAndOTA}
 
-contract_merge<-def_data %>%
+contract_merge<-def_data %>% filter(Fiscal_YQ<2023) %>%
   group_by(Fiscal_Year,
                          ProductServiceOrRnDarea,
                          SimpleArea)%>%
@@ -1627,7 +1558,7 @@ write.csv(file="..//Output//RnDPhasePlusOTA_current.csv",row.names = FALSE, na =
 ## Phase: Contract and OTA
 ```{r PhaseBoth}
 
-contract_merge<-def_data%>%filter(Fiscal_Year >=2015) %>%
+contract_merge<-def_data%>%filter(Fiscal_Year >=2015 & Fiscal_YQ<2022) %>%
   group_by(Fiscal_Year,
                          ProductServiceOrRnDarea,
                          SimpleArea)%>%
@@ -1722,7 +1653,7 @@ write.csv(file="..//Output//contractota_RnDPhase.csv",row.names = FALSE, na = ""
 
 (
 Services<-build_plot(
-  data=def_data %>% filter(SimpleArea=="Services (Non-R&D)"),
+  data=def_data %>% filter(SimpleArea=="Services (Non-R&D)" & Fiscal_YQ<2023),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -1760,7 +1691,7 @@ write.csv(file="..//Output//psr_Services.csv",row.names = FALSE, na = "",
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
             arrange(ProductServiceOrRnDarea))
             
-output_TY<-def_data %>% 
+output_TY<-def_data %>% filter(Fiscal_YQ<2023) %>% 
   format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ServicesCategory.detail",
                                  labels_and_colors=labels_and_colors) %>%
           pivot_wider(id_cols=c(ServicesCategory.detail),
@@ -1855,7 +1786,7 @@ ggsave600dpi("..//Output//psr_vendorsize_share.png", SimpleVendor_share,
 summary(def_data$SimpleArea)
 (
 PSRComp_line<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=1991 & SimpleArea!="Unlabeled"),
+  data=def_data %>% filter(Fiscal_Year>=1991 & Fiscal_YQ<2023 & SimpleArea!="Unlabeled"),
   chart_geom = "Line Chart",
   share = TRUE,
   labels_and_colors=def_lc,
@@ -1886,7 +1817,7 @@ PSRComp_line<-build_plot(
 
 (
 PSRComp_bar<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=1991 & SimpleArea!="Unlabeled"),
+  data=def_data %>% filter(Fiscal_Year>=1991 & Fiscal_YQ<2023 & SimpleArea!="Unlabeled"),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -1916,7 +1847,7 @@ PSRComp_bar<-build_plot(
 
 (
 PSRComp_line<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=1991 & SimpleArea!="Unlabeled"),
+  data=def_data %>% filter(Fiscal_Year>=1991 & Fiscal_YQ<2023 & SimpleArea!="Unlabeled"),
   chart_geom = "Line Chart",
   share = TRUE,
   labels_and_colors=def_lc,
@@ -1976,7 +1907,7 @@ ggsave("..//Output/PSRComp_both.svg",
 
 (
 SubCustomer<-build_plot(
-  data=def_data,
+  data=def_data %>% filter(Fiscal_YQ<2023),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -2009,6 +1940,20 @@ ggsave600dpi("..//Output//topline_subcustomer.svg", SubCustomer+facet_wrap(~SubC
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
+ggsave600dpi("..//Output//topline_subcustomer_keynote.svg", SubCustomer+
+               facet_wrap(~SubCustomer.sum,nrow=1)+
+               labs(title="DOD Contract Obligations by Component, 1990-2022")+
+               date_x_year_breaks(1990,2022, by=5), 
+             width=13, height= 5.5, units="in", size=20, lineheight = 0.75
+             )
+
+
+ggsave600dpi("..//Output//topline_platform_bar_keynote.svg", Platform_Bar+
+               labs(title="DOD Contract Obligations by Platform Portfolio, 2000-2022"),
+             width=13, height= 5.5, units="in", size=20, lineheight = 0.75
+             )
+
+
 ggsave600dpi("..//Output//topline_subcustomer.emf", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
@@ -2020,7 +1965,7 @@ write.csv(file="..//Output//topline_subcustomer.csv",row.names = FALSE, na = "",
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
 
 write.csv(file="..//Output//topline_subcustomer_current.csv",row.names = FALSE, na = "",
-          def_data %>% group_by(SubCustomer.sum,SubCustomer.JPO,Fiscal_Year) %>%
+          def_data %>% filter(Fiscal_YQ<2023) %>% group_by(SubCustomer.sum,SubCustomer.JPO,Fiscal_Year) %>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(SubCustomer.sum,SubCustomer.JPO),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
@@ -2029,7 +1974,7 @@ write.csv(file="..//Output//topline_subcustomer_current.csv",row.names = FALSE, 
 ```
 ## SubCustomer Covid19
 ```{r SubCustomer}
-cust_covid<-def_data %>% group_by(SubCustomer.JPO,SubCustomer.sum,Fiscal_Year) %>%
+cust_covid<-def_data %>% filter(Fiscal_YQ<2023) %>% group_by(SubCustomer.JPO,SubCustomer.sum,Fiscal_Year) %>%
   summarise(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm = TRUE),
             COVID19obligated=sum(COVID19obligated,na.rm = TRUE))%>%
   mutate(Action_other=Action_Obligation_Then_Year-COVID19obligated) 
@@ -2135,7 +2080,7 @@ ggsave600dpi("..//Output//subcustomer_PSR.png", SubCustomerPSR,
 def_data$SubCustomer.platform
 (
 SubCustomerComp_line<-build_plot(
-  data=def_data,
+  data=def_data %>% filter(Fiscal_YQ<2023),
   chart_geom = "Line Chart",
   share = TRUE,
   labels_and_colors=labels_and_colors,
@@ -2169,7 +2114,7 @@ ggsave600dpi("..//Output//subcustomer_Comp_line.png", SubCustomerComp_line,
 
 (
 SubCustomerComp_bar<-build_plot(
-  data=def_data,
+  data=def_data %>% filter(Fiscal_YQ<2023),
   chart_geom = "Bar Chart",
   share = TRUE,
   labels_and_colors=labels_and_colors,
@@ -2283,7 +2228,7 @@ levels(def_data$AnyCommercialText)<-list(
 
 (
 CommercialCust<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2000),
+  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2023),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -2357,7 +2302,7 @@ write.csv(file="..//Output//subcustomer_commercial.csv",row.names = FALSE, na = 
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
 
 write.csv(file="..//Output//subcustomer_commercial_current.csv",row.names = FALSE, na = "",
-          def_data %>% group_by(SubCustomer.platform,AnyCommercialText,Fiscal_Year)%>%
+          def_data %>% filter(Fiscal_YQ<2023) %>% group_by(SubCustomer.platform,AnyCommercialText,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
             arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(SubCustomer.platform,AnyCommercialText),
@@ -2372,16 +2317,16 @@ write.csv(file="..//Output//subcustomer_commercial_current.csv",row.names = FALS
 
 (
 Platform<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=1990),
+  data=def_data %>% filter(Fiscal_Year>=1990 & Fiscal_YQ<2023),
   chart_geom = "Line Chart",
   share = FALSE,
-  labels_and_colors=labels_and_colors,
+  labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="PlatformPortfolio", #color_var
   facet_var="PlatformPortfolio", #facet_var
-  column_key=column_key,
+  column_key=def_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -2413,16 +2358,16 @@ ggsave600dpi("..//Output//topline_platform.emf", Platform+geom_line(
 
 (
 Platform_Bar<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=1990),
+  data=def_data %>% filter(Fiscal_Year>=1990 & Fiscal_YQ<2023),
   chart_geom = "Bar Chart",
   share = FALSE,
-  labels_and_colors=labels_and_colors,
+  labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="PlatformPortfolio", #color_var
   facet_var="PlatformPortfolio", #facet_var
-  column_key=column_key,
+  column_key=def_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -2445,6 +2390,12 @@ ggsave600dpi("..//Output//topline_platform_bar.png", Platform_Bar,
 ggsave600dpi("..//Output//topline_platform_bar.emf", Platform_Bar,
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
+
+ggsave600dpi("..//Output//topline_platform_bar_keynote.svg", Platform_Bar+
+               labs(title="DOD Contract Obligations by Platform Portfolio, 2000-2022"),
+             width=13, height= 5.5, units="in", size=20, lineheight = 0.75
+             )
+
 
 output_TY<-full_data %>% group_by(PlatformPortfolio,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
@@ -2662,6 +2613,85 @@ ggsave600dpi("..//Output//PlatformRnD.png", PlatformPSR,
 
 ```
 
+## Platform Quarter
+```{r PlatformQ}
+(
+PlatformQ<-build_plot(
+  data=def_data %>% filter(Fiscal_Year>=2013 & Fiscal_YQ<=2023.1),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="fiscal_quarter", #color_var
+  facet_var="PlatformPortfolio", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = label_date("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)")
+)
+
+(
+OnMQ<-build_plot(
+  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2023.1 &
+                             PlatformPortfolio=="Ordnance and Missiles"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="fiscal_quarter", #color_var
+  facet_var="PlatformPortfolio", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = label_date("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+    theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)")
+)
+
+
+ggsave600dpi("..//Output//PlatformQ.png", PlatformQ, 
+             width=6.5, height= 4, units="in",size=11,lineheight = 0.75
+             )
+
+ggsave600dpi("..//Output//PlatformQ_slide.svg", PlatformQ+
+               labs(title="Defense Contract Obligations by Platform Portfolio, FY2013-FY2023Q1")+
+               theme(plot.title = element_text(margin=margin(t=0.1,r=0,b=0.1,l=0,"inches")),
+                     plot.margin = margin(t=0,r=0.1,b=0.1,l=0.1,"inches")), 
+             width=10, height= 5.5, units="in", size=11, lineheight = 0.75
+             )
+
+ggsave600dpi("..//Output//PlatformQ_keynote.svg", PlatformQ+
+               labs(title="DOD Contract Obligations by Platform Portfolio, 2013-2023Q1"),
+             width=10, height= 5.5, units="in", size=20, lineheight = 0.75
+             )
+
+
+ggsave600dpi("..//Output//OnMQ.png", OnMQ, 
+             width=6.5, height= 4, units="in",size=11,lineheight = 0.75
+             )
+```
 
 
 ## Platform Vendor
@@ -2751,7 +2781,7 @@ write.csv(file="..//Output//platform_vendor.csv",row.names = FALSE, na = "",
 # column_key<-def_ck
 (
 PlatformComp_bar<-build_plot(
-  data=def_data %>% filter(PlatformPortfolio!="Unlabeled"  &Fiscal_Year>=1991),
+  data=def_data %>% filter(PlatformPortfolio!="Unlabeled"  &Fiscal_Year>=1991 & Fiscal_YQ<2023),
   chart_geom = "Bar Chart",
   share = TRUE,
   labels_and_colors=labels_and_colors,
@@ -2779,7 +2809,7 @@ PlatformComp_bar<-build_plot(
 
 (
 PlatformComp_line<-build_plot(
-  data=def_data %>% filter(PlatformPortfolio!="Unlabeled" &Fiscal_Year>=1991),
+  data=def_data %>% filter(PlatformPortfolio!="Unlabeled" &Fiscal_Year>=1991 & Fiscal_YQ<2023),
   chart_geom = "Line Chart",
   share = TRUE,
   labels_and_colors=labels_and_colors,
@@ -2963,7 +2993,7 @@ PlatformMultiYearShare<-build_plot(
 
 
 write.csv(file="..//Output//platform_multiyear_cur.csv",row.names = FALSE, na = "",
-          def_data %>% group_by(PlatformPortfolio,multiyearcontracttext,Fiscal_Year)%>%
+          def_data %>% filter(Fiscal_YQ<2023) %>% group_by(PlatformPortfolio,multiyearcontracttext,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
             arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(PlatformPortfolio,multiyearcontracttext),
@@ -3191,7 +3221,7 @@ write.csv(file="..//Output//vendorsize_AwardTask_current.csv",row.names = FALSE,
 
 (
 ToplineVendor_line<-build_plot(
-  data=def_data %>% filter(Fiscal_Year<=2020 &  Fiscal_Year>=2000 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
+  data=def_data %>% filter(Fiscal_Year<=2021 &  Fiscal_Year>=2000 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
   chart_geom = "Line Chart",
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
@@ -3218,7 +3248,7 @@ ToplineVendor_line<-build_plot(
 
 (
 ToplineVendor_line<-build_plot(
-  data=def_data %>% filter(Fiscal_Year<=2020 &  Fiscal_Year>=2000 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
+  data=def_data %>% filter(Fiscal_Year<=2021 &  Fiscal_Year>=2000 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
   chart_geom = "Bar Chart",
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
@@ -3257,7 +3287,7 @@ def_data$PricingUCA.1year[def_data$CurrentDurationIsYear=="<=1 year"]<-"<=1 Year
 
 (
 VendorSizePricing<-build_plot(
-  data=def_data %>% filter(Fiscal_Year<=2020 & Fiscal_Year>2000 & Shiny.VendorSize!="Unlabeled" &
+  data=def_data %>% filter(Fiscal_Year<=2021 & Fiscal_Year>2000 & Shiny.VendorSize!="Unlabeled" &
                              PricingUCA.sum!="Unclear"),
   chart_geom = "Bar Chart",
   share = FALSE,
@@ -3350,7 +3380,7 @@ ggsave600dpi("..//Output//vendorsize_pricing_2021.png", VendorSizePricing2021+th
 
 write.csv(file="..//Output//vendorsize_pricing_current.csv",row.names = FALSE, na = "",
           def_data %>% group_by(Shiny.VendorSize,PricingUCA.sum,Fiscal_Year)%>%
-            filter(Fiscal_Year>=2000)%>%
+            filter(Fiscal_Year>=2000 & Fiscal_YQ<2023)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
             arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(Shiny.VendorSize,PricingUCA.sum),
@@ -3360,7 +3390,7 @@ write.csv(file="..//Output//vendorsize_pricing_current.csv",row.names = FALSE, n
 
 write.csv(file="..//Output//VendorSize_Pricing2021.csv",row.names = FALSE, na = "",
           def_data %>% group_by(Shiny.VendorSize,PricingUCA.1year,Fiscal_Year)%>%
-            filter(Fiscal_Year>=2007) %>%
+            filter(Fiscal_Year>=2007 & Fiscal_YQ<2023) %>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
             arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(Shiny.VendorSize,PricingUCA.1year),
@@ -3562,7 +3592,7 @@ levels(def_data$gfe_gfp_value)<-list(
 
 (
 GFEcust<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007) ,
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2023) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -3592,7 +3622,7 @@ GFEcust<-build_plot(
 
 (
 GFEplat<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007) ,
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2023) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -3622,7 +3652,7 @@ GFEplat<-build_plot(
 
 (
 GFEcomp<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007) ,
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2023) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -3667,7 +3697,8 @@ ggsave600dpi("..//Output//platform_GFE.emf", GFEplat,
 #                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
 
 write.csv(file="..//Output//platform_GFE_current.csv",row.names = FALSE, na = "",
-          def_data %>% group_by(PlatformPortfolio,gfe_gfp_value,Fiscal_Year)%>%filter(Fiscal_Year>=2004)%>%
+          def_data %>% group_by(PlatformPortfolio,gfe_gfp_value,Fiscal_Year)%>%
+            filter(Fiscal_Year>=2004 & Fiscal_YQ<2023)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(PlatformPortfolio,gfe_gfp_value),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
@@ -3682,7 +3713,7 @@ summary(full_data$ContractingSubCustomer)
 
 (
 CAS<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007) ,
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2023) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -3710,7 +3741,7 @@ CAS<-build_plot(
 
 (
 CAS<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007) ,
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2023) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -3738,7 +3769,7 @@ CAS<-build_plot(
 
 (
 CAS<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007) ,
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2023) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -3766,7 +3797,7 @@ CAS<-build_plot(
 
 (
 CAS<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007) ,
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2023) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -3824,7 +3855,7 @@ summary(full_data$ContractingSubCustomer)
 
 (
 EE<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007) ,
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2023) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -3852,7 +3883,7 @@ EE<-build_plot(
 
 (
 EE<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007) ,
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2023) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,

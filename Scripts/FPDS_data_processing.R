@@ -21,9 +21,7 @@ library(readr)
 #This is a kludge until the FMS repo is public
 source(file.path("..","FMS","Scripts","Trade_Standardize.r"))
 # read in data
-# local_path<-"K:\\Users\\Greg\\Repositories\\Lookup-Tables\\"
-# local_path<-"F:\\Users\\gsanders\\Documents\\Repositories\\Lookup-Tables\\"
-local_path<-"F:\\Users\\Greg\\Repositories\\Lookup-Tables\\"
+local_path<-get_local_lookup_path()
 
 initial_clean<-function(df,only_defense=TRUE){
   df<-standardize_variable_names(df)
@@ -206,19 +204,23 @@ def_data %<>%
   mutate(Vehicle.sum = factor(Vehicle.sum)) %>%
   mutate(Vehicle.sum7 = factor(Vehicle.sum7)) %>%
   mutate(Vehicle.AwardTask = factor(Vehicle.AwardTask)) %>%
+  mutate(fiscal_quarter = factor(fiscal_quarter)) %>%
   mutate(PricingUCA = factor(PricingUCA)) #%>%
 # mutate(IsFMS = factor(IsFMS)) %>%
 # mutate(PlaceOfManufacture_Sum = factor(PlaceOfManufacture_Sum)) %>%
 # mutate(VendorIsForeign = factor(VendorIsForeign))%>%
 # mutate(PlaceIsForeign = factor(PlaceIsForeign))
 
+def_data$Fiscal_YQ<-text_to_number(paste(def_data$Fiscal_Year,
+                                         text_to_number(def_data$fiscal_quarter),sep="."))
+def_data$Fiscal_YQ[is.na(def_data$Fiscal_YQ)]<-def_data$Fiscal_Year[is.na(def_data$Fiscal_YQ)]
 
 def_data$PricingInflation.1yearUCA<-as.character(def_data$PricingInflation.1year)
 def_data$PricingInflation.1yearUCA[def_data$PricingUCA.sum=="UCA"]<-"UCA"
 def_data$PricingMechanism<-as.character(def_data$PricingMechanism)
-def_lc<-csis360::prepare_labels_and_colors(def_data %>% select(-PricingMechanism))
+def_lc<-csis360::prepare_labels_and_colors(def_data %>% select(-PricingMechanism),path=file.path(local_path,"style\\"))
 
-def_ck<-csis360::get_column_key(def_data %>% select(-PricingMechanism))
+def_ck<-csis360::get_column_key(def_data %>% select(-PricingMechanism),path=file.path(local_path,"style\\"))
 
 save(def_data,def_lc,def_ck, file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
 # load(file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
