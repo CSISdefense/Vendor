@@ -2622,6 +2622,54 @@ ggsave600dpi("..//Output//platform_PSR.png", PlatformPSR,
 
 ```
 
+
+## Platform Products
+```{r PlatformPSR}
+summary(full_data$SimpleArea)
+(
+PlatformProducts<-build_plot(
+  data=full_data %>% filter(SimpleArea=="Products (All)"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="SimpleArea", #color_var
+  facet_var="PlatformPortfolio", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+
+  labs(y="Obligations (Constant 2022 $s)")
+)
+
+ggsave600dpi("..//Output//platform_products.png", PlatformProducts, 
+             width=6.5, height= 4, units="in",size=11,lineheight = 0.75
+             )
+
+write.csv(file="..//Output//platform_products_cur.csv",row.names = FALSE, na = "",
+          full_data%>% filter(SimpleArea=="Products (All)") %>% 
+            mutate(Fiscal_Year=lubridate::year(dFYear))%>%
+            group_by(PlatformPortfolio, SimpleArea,Fiscal_Year) %>%
+            summarise(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE)) %>%
+            pivot_wider(id_cols=c(PlatformPortfolio, SimpleArea),
+                        names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
+            arrange(PlatformPortfolio,SimpleArea))
+
+
+
+```
+
 ## Platform R&D
 ```{r PlatformPSR}
 (
