@@ -202,7 +202,8 @@ OTA_data %>% group_by(ContractingAgencyName ,Contracting_Agency_ID) %>%
   filter(Customer=="Defense") %>%summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
 OTA_data$SubCustomer.OTA<-OTA_data$SubCustomer
 OTA_data$SubCustomer.OTA[OTA_data$Contracting_Agency_ID=="97AE"]<-"DARPA"
-
+OTA_data$SubCustomer.OTA[OTA_data$Contracting_Agency_ID=="97F5"]<-"WHS"
+OTA_data$SubCustomer.OTA[OTA_data$SubCustomer  %in% c("DLA","DISA")]<-"Other DoD"
 
 
 # OTA_data<-csis360::read_and_join_experiment(OTA_data,
@@ -325,7 +326,8 @@ OTA_data %<>%
 str(OTA_data$ContractingOfficeName)
 OTA_data$MajorCommandName[OTA_data$MajorCommandName==""]<-"Unlabeled"
 
-ota_lc<-csis360::prepare_labels_and_colors(OTA_data %>% select(-ContractingOfficeName,-MajorCommandName))#,
+ota_lc<-csis360::prepare_labels_and_colors(OTA_data %>% select(-ContractingOfficeName,-MajorCommandName),
+                                           path=file.path(get_local_lookup_path(),"style\\"))
                                            # path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
 ota_ck<-csis360::get_column_key(OTA_data)#,
                                 # path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")

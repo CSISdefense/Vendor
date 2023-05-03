@@ -959,7 +959,7 @@ if(!exists("pricing"))
 hist_lc<-prepare_labels_and_colors(pricing %>% select(-ContractingOfficeName,-PricingMechanism))#,path=local_path
 
 PricingUpdate<-rbind(pricing[pricing$Fiscal_Year<2022,colnames(pricing) %in% colnames(def_data)],
-                     def_data[def_data$Fiscal_Year==2022,
+                     def_data[def_data$Fiscal_Year>=2022,
                               colnames(def_data) %in% colnames(pricing)]
                      )
 
@@ -989,7 +989,7 @@ PricingHistory<-build_plot(
   # color="Competition")+
   theme(legend.position = "right",
         plot.caption = element_text(hjust = 0,face="plain"))+
-    xlim(c(as.Date("1979-01-01"), as.Date("2022-12-30")))+
+    xlim(c(as.Date("1979-01-01"), as.Date("2023-12-30")))+
     # coord_cartesian(xlim = c(as.Date("1980-01-01"), as.Date("2022-01-01"))
   labs(y="Share of Obligations",caption="Source: Federal Procurement Data System (FPDS) and CSIS analysis.")
 )
@@ -1877,6 +1877,8 @@ ggsave600dpi("..//Output/PSRComp_line.png", PSRComp_line,
              width=6.5, height= 5, units="in",size=12, lineheight=1.2
              )
 
+
+
 write.csv(file="..//Output//PSRComp_cur.csv",row.names = FALSE, na = "",
           def_data %>% group_by(Competition.multisum,SimpleArea,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
@@ -1896,6 +1898,31 @@ ggsave("..//Output/PSRComp_both.svg",
                PSRComp_line), 
              width=6.5, height= 6, units="in"
 )
+
+
+ggsave("..//Output//PSRComp_both_keynote.png", 
+             gridExtra::grid.arrange(
+               PSRComp_bar+labs(
+                 title="DOD Contract Obligations by Commercial Categorization, 2000-2022",
+                  y="Obligations\n(Const. 2022 $s)",
+               caption = NULL,x=NULL)+theme(legend.position = "none",text=element_text(size=20)),
+               PSRComp_line+labs(y="Share of\nObl.")+theme(text=element_text(size=20),
+               plot.caption = element_text(size=round(20 * 5/6,0))
+               )),
+             width=13, height= 5.5, units="in" #, size=20, lineheight = 0.75
+             )
+
+ggsave("..//Output//PSRComp_both_keynote.svg", 
+             gridExtra::grid.arrange(
+               PSRComp_bar+labs(
+                 title="DOD Contract Obligations by Commercial Categorization, 2000-2022",
+                  y="Obligations\n(Const. 2022 $s)",
+               caption = NULL,x=NULL)+theme(legend.position = "none",text=element_text(size=20)),
+               PSRComp_line+labs(y="Share of\nObl.")+theme(text=element_text(size=20),
+               plot.caption = element_text(size=round(20 * 5/6,0))
+               )),
+             width=13, height= 5.5, units="in" #, size=20, lineheight = 0.75
+             )
 
 
 ```
@@ -2291,8 +2318,14 @@ ggsave600dpi("..//Output//subcustomer_commercial.svg", CommercialCust,#+facet_wr
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//subcustomer_commercial.emf", CommercialCust,#+facet_wrap(~SubCustomer.platform,nrow=1), 
-             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+ggsave600dpi("..//Output//subcustomer_commercial_keynote.png", CommercialCust+
+               labs(title="DOD Contract Obligations by  Commercial Categorization, 2000-2022"),
+             width=13, height= 5.5, units="in", size=20, lineheight = 0.75
+             )
+
+ggsave600dpi("..//Output//subcustomer_commercial_keynote.svg", CommercialCust+
+               labs(title="DOD Contract Obligations by  Commercial Categorization, 2000-2022"),
+             width=13, height= 5.5, units="in", size=20, lineheight = 0.75
              )
 
 
@@ -2731,14 +2764,53 @@ ggsave600dpi("..//Output//PlatformQ_slide.svg", PlatformQ+
              )
 
 ggsave600dpi("..//Output//PlatformQ_keynote.svg", PlatformQ+
-               labs(title="DOD Contract Obligations by Platform Portfolio, 2013-2023Q1"),
-             width=10, height= 5.5, units="in", size=20, lineheight = 0.75
+               labs(title="Ordnance & Missile Contract Obligations, 2000-2023Q1"),
+             width=9, height= 5.5, units="in", size=20, lineheight = 0.75
              )
+
+
+ggsave600dpi("..//Output//OnMQ_keynote.png", OnMQ+
+               labs(title="Ordnance & Missile Contract Obligations, 2000-2023Q1"),
+             width=9, height= 5.5, units="in", size=20, lineheight = 0.75
+             )
+
+ggsave600dpi("..//Output//OnMQ_keynote.svg", OnMQ+
+               labs(title="Ordnance & Missile Contract Obligations, 2000-2023Q1"),
+             width=9, height= 5.5, units="in", size=20, lineheight = 0.75
+             )
+
 
 
 ggsave600dpi("..//Output//OnMQ.png", OnMQ, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
+
+
+output_TY<-def_data %>% group_by(PlatformPortfolio,Fiscal_Year,fiscal_quarter)%>%
+  filter(Fiscal_Year>=2000 & as.character(fiscal_quarter)<=1)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=
+                               sum(Action_Obligation_Then_Year,na.rm=TRUE),
+                             max_fq=max(as.character(fiscal_quarter)))%>%
+          pivot_wider(id_cols=c(PlatformPortfolio,max_fq),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
+  arrange(PlatformPortfolio,max_fq)
+
+write.csv(file="..//Output//platform_YTD_current.csv",row.names = FALSE, na = "",
+          output_TY)
+
+
+
+output_TY<-def_data %>% group_by(PlatformPortfolio,Fiscal_Year,fiscal_quarter)%>%
+  filter(Fiscal_Year>=2000)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=
+                               sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(PlatformPortfolio,fiscal_quarter),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
+  arrange(PlatformPortfolio,fiscal_quarter)
+
+write.csv(file="..//Output//platform_quarter_current.csv",row.names = FALSE, na = "",
+          output_TY)
+
 ```
 
 
@@ -2976,12 +3048,12 @@ write.csv(file="..//Output//platform_commercial_current.csv",row.names = FALSE, 
 ## Platform Multiyear
 ```{r ToplinePricing}
 
-    full_data<-full_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
+    full_data<-def_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
                               labels=c("Not Multiyear","Multiyear Contract")))
 
 (
 PlatformMultiYear<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=2000),
+  data=def_data %>% filter(Fiscal_Year>=2000),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -3010,7 +3082,7 @@ full_data<-full_data %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
   mutate(pPlatFYear=Action_Obligation_OMB24_GDP22/sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))
 (
 PlatformMultiYearShare<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=2000 )&
+  data=full_data %>% filter(Fiscal_Year>=2000 &
                              (multiyearcontract==1)), #is.na(multiyearcontract)|
   chart_geom = "Line Chart",
   share = FALSE,
@@ -3056,6 +3128,24 @@ ggsave600dpi("..//Output//Platform_MultiYearShare.png", PlatformMultiYearShare+f
                 labs(y="Share of Obligations",
        caption="Other products / services / R&D not shown. When the multiyear column is empty, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis"),  
              width=12, height= 6, units="in",size=16, lineheight=1.2
+             )
+
+ggsave("..//Output//Platform_MultiYearShare_keynote.png", 
+               PlatformMultiYearShare+labs(
+                 title="DOD Share of Contract Obligations to Multiyear Contracts, 2000-2023Q1")+
+                 facet_wrap(PlatformPortfolio~.,nrow=2)+
+                labs(y="Share of Obligations",
+       caption="Other products / services / R&D not shown. When the multiyear column is empty, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis"),  
+             width=13, height= 5.5, units="in",size=20, lineheight=1.2
+             )
+
+ggsave("..//Output//Platform_MultiYearShare_keynote.svg", 
+               PlatformMultiYearShare+labs(
+                 title="DOD Share of Contract Obligations to Multiyear Contracts, 2000-2023Q1")+
+                 facet_wrap(PlatformPortfolio~.,nrow=2)+
+                labs(y="Share of Obligations",
+       caption="Other products / services / R&D not shown. When the multiyear column is empty, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis"),  
+             width=13, height= 5.5, units="in",size=20, lineheight=1.2
              )
 
 write.csv(file="..//Output//PlatformMultiYearShare.csv",row.names = FALSE, na = "",
