@@ -32,6 +32,8 @@ load(file="../data/clean/Defense_OTA.Rda")
 
 ```
 
+# Estimates
+
 ## Estimate Prep
 ```{r EstimatePrep}
 OTAquarterly<-read.csv(file.path("..","Data_Raw","OTA_All_FIelds.csv"),skip = 2)
@@ -40,18 +42,18 @@ OTAquarterly$Date.Signed<-as.Date(OTAquarterly$Date.Signed,"%m/%d/%Y")
 
 OTAquarterly<-OTAquarterly %>% mutate(fiscal_quarter=lubridate::quarter(Date.Signed,fiscal_start=10),
                         ContractingCustomer=ifelse(Contracting.Department.ID=="9700","Defense","Non-Defense")) %>%
-  group_by(Fiscal.Year,fiscal_quarter,ContractingCustomer) %>%
+  group_by(Fiscal_Year,fiscal_quarter,ContractingCustomer) %>%
   dplyr::summarize(Action_Obligation=sum(csis360::text_to_number(Dollars.Obligated),na.rm=TRUE)#,
             # minSD=min(Date.Signed),
             # maxSD=max(Date.Signed)
-            )%>% filter((fiscal_quarter<=3 | Fiscal.Year<2021)&
-                                                Fiscal.Year>=2015 & ContractingCustomer=="Defense") %>%
-  arrange(Fiscal.Year,fiscal_quarter)
+            )%>% filter((fiscal_quarter<=3 | Fiscal_Year<2021)&
+                                                Fiscal_Year>=2015 & ContractingCustomer=="Defense") %>%
+  arrange(Fiscal_Year,fiscal_quarter)
 
 
 
 
-if(any(is.na(OTAquarterly$Fiscal.Year))) stop("NA Quarters")
+if(any(is.na(OTAquarterly$Fiscal_Year))) stop("NA Quarters")
 
 
 OTAquarterly<-deflate(OTAquarterly,money_var = "Action_Obligation",deflator_var="OMB20_GDP20")
@@ -67,10 +69,10 @@ This is also a tiny n, only 6 or so years, and thus an incredibly crude estimate
 ```{r Model}
 
 
-a<-OTAquarterly %>% group_by(Fiscal.Year) %>% filter(Fiscal.Year<2021 & !is.na(fiscal_quarter))%>% summarise(
-  q1toq3=sum(ifelse(fiscal_quarter<=3,Action_Obligation_OMB20_GDP20,0)),
-  q4=sum(ifelse(fiscal_quarter==4,Action_Obligation_OMB20_GDP20,0)),
-             total=sum(Action_Obligation_OMB20_GDP20=sum(Action_Obligation_OMB20_GDP20))
+a<-OTAquarterly %>% group_by(Fiscal_Year) %>% filter(Fiscal_Year<2021 & !is.na(fiscal_quarter))%>% summarise(
+  q1toq3=sum(ifelse(fiscal_quarter<=3,Action_Obligation_OMB24_GDP22,0)),
+  q4=sum(ifelse(fiscal_quarter==4,Action_Obligation_OMB24_GDP22,0)),
+             total=sum(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
 )
 
 
@@ -79,15 +81,15 @@ summary(m)
 
 plot(m)
 
-q1to13_2021<-sum(ifelse(OTAquarterly$fiscal_quarter<=3 & !is.na(OTAquarterly$fiscal_quarter) & OTAquarterly$Fiscal.Year==2021,OTAquarterly$Action_Obligation_OMB20_GDP20,0))
+q1to13_2021<-sum(ifelse(OTAquarterly$fiscal_quarter<=3 & !is.na(OTAquarterly$fiscal_quarter) & OTAquarterly$Fiscal_Year==2021,OTAquarterly$Action_Obligation_OMB24_GDP22,0))
 
 cvalues<-data.frame(q1toq3=q1to13_2021)
 
 p<-predict(m,cvalues,interval="prediction")
-e2021<-data.frame(Fiscal.Year=2021,
+e2021<-data.frame(Fiscal_Year=2021,
            fiscal_quarter=4,
            Action_Obligation_Then_Year=NA,
-           Action_Obligation_OMB20_GDP20=NA,
+           Action_Obligation_OMB24_GDP22=NA,
            yest=p[1]+q1to13_2021,
            lwr=p[2]+q1to13_2021,
            upr=p[3]+q1to13_2021,
@@ -97,7 +99,6 @@ e2021<-data.frame(Fiscal.Year=2021,
 rm(q1to13_2021,cvalues)
 ```
 
-# Topline
 
 ## Topline Estimate
 ```{r Topline}
@@ -108,19 +109,19 @@ OTAquarterly$upr<-NA
 OTAquarterly$yest<-NA
 
 # build_plot(data=rbind(OTAquarterly,q2021,e2021),
-#            x_var="Fiscal.Year",
-#            y_var="Action_Obligation_OMB20_GDP20",
+#            x_var="dFYear",
+#            y_var="Action_Obligation_OMB24_GDP22",
 #            color_var = "fiscal_quarter",
 #            facet_var="Actual",
 #            chart_geom="Bar Chart")+facet_wrap(~)
 OTAquarterlyEst<-rbind(OTAquarterly,e2021)
 OTAquarterlyEst$Actual<-factor(OTAquarterlyEst$Actual,levels=c("Estimate","Actual"))
 OTAquarterlyEst$fiscal_quarter<-factor(OTAquarterlyEst$fiscal_quarter,c("4","3","2","1"))
-OTAquarterlyEst$dFYear<-as.Date(paste("1/1/",as.character(OTAquarterlyEst$Fiscal.Year),sep=""),"%m/%d/%Y")
+OTAquarterlyEst$dFYear<-as.Date(paste("1/1/",as.character(OTAquarterlyEst$Fiscal_Year),sep=""),"%m/%d/%Y")
 
-(ota_topline_qest<-ggplot(data=OTAquarterlyEst %>% filter(Fiscal.Year>=2000) #rbind(OTAquarterly,q2021,e2021),
+(ota_topline_qest<-ggplot(data=OTAquarterlyEst %>% filter(Fiscal_Year>=2000) #rbind(OTAquarterly,q2021,e2021),
       )+geom_col( aes(x=dFYear,
-           y=Action_Obligation_OMB20_GDP20/1000000000,
+           y=Action_Obligation_OMB24_GDP22/1000000000,
            # alpha=Actual,
            fill = fiscal_quarter
        ))+
@@ -135,9 +136,9 @@ ggsave600dpi(ota_topline_qest,file=file.path("..","Output","ota_quarterly_est.pn
              width=12, height= 6, units="in",size=16, lineheight=1.2
              )
 
-(ota_topline_q<-ggplot(data=OTAquarterlyEst %>% filter(Fiscal.Year>=2000) #rbind(OTAquarterly,q2021,e2021),
+(ota_topline_q<-ggplot(data=OTAquarterlyEst %>% filter(Fiscal_Year>=2000) #rbind(OTAquarterly,q2021,e2021),
       )+geom_col( aes(x=dFYear,
-           y=Action_Obligation_OMB20_GDP20/1000000000,
+           y=Action_Obligation_OMB24_GDP22/1000000000,
            # alpha=Actual,
            fill = fiscal_quarter
        ))+
@@ -150,19 +151,19 @@ ggsave600dpi(ota_topline_qest,file=file.path("..","Output","ota_quarterly_est.pn
 
 
 
-write.csv(file="..//Output//ota_topline.csv",row.names = FALSE,na="",
-          OTAquarterlyEst %>%  filter(Fiscal.Year>=2015)%>%
+write.csv(file="..//Output//OTA//ota_topline_qest.csv",row.names = FALSE,na="",
+          OTAquarterlyEst %>%  filter(Fiscal_Year>=2015)%>%
           format_data_for_plot(
-                               fy_var="Fiscal.Year",
-                               y_var="Action_Obligation_OMB20_GDP20",
+                               fy_var="Fiscal_Year",
+                               y_var="Action_Obligation_OMB24_GDP22",
                                color_var="fiscal_quarter",
                                # facet="SubCustomer",
                                # labels_and_colors = ota_lc,
                                group=TRUE) %>%
-            arrange(Fiscal.Year) %>%
-            mutate(Dollars_GDP20=Action_Obligation_OMB20_GDP20/1000000000)%>%
+            arrange(Fiscal_Year) %>%
+            mutate(Dollars_GDP20=Action_Obligation_OMB24_GDP22/1000000000)%>%
           pivot_wider(id_cols=c(fiscal_quarter),
-                      names_from=Fiscal.Year,values_from=Dollars_GDP20) %>% 
+                      names_from=Fiscal_Year,values_from=Dollars_GDP20) %>% 
             
             # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=ota_lc$variable[ota_lc$column=="PlatformPortfolio"]))%>%
             # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=levels(fiscal_quarter),
@@ -175,26 +176,35 @@ ggsave600dpi(ota_topline_q,file=file.path("..","Output","ota_quarterly.png"),
              )
 ```
 
+
+# Topline
+
+
 ## Topline spend 
 ```{r}
-
-output_TY<-ota_def  %>% select(Fiscal_Year,Action_Obligation_Then_Year,`Base_and_All_Options_Value_(Total_Contract_Value)`)%>%
+ota_def$`BaseandAllOptionsValue(TotalContractValue)`
+output_TY<-ota_def  %>% select(Fiscal_Year,Action_Obligation_Then_Year,`BaseandAllOptionsValue(TotalContractValue)`)%>%
   group_by(Fiscal_Year)%>%  
   summarise(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE),
-            `Base_and_All_Options_Value_(Total_Contract_Value)`=sum(text_to_number(`Base_and_All_Options_Value_(Total_Contract_Value)`),
+            `BaseandAllOptionsValue(TotalContractValue)`=sum(text_to_number(`BaseandAllOptionsValue(TotalContractValue)`),
                                                                     na.rm=TRUE))%>%
-  pivot_longer(cols=c(Action_Obligation_Then_Year,`Base_and_All_Options_Value_(Total_Contract_Value)`)) %>%
+  pivot_longer(cols=c(Action_Obligation_Then_Year,`BaseandAllOptionsValue(TotalContractValue)`)) %>%
   pivot_wider(names_from=c(Fiscal_Year))
                                       
 
-wb <- loadWorkbook("..//Output//DoD_Acq_Trends_OTA.xlsx", create = TRUE)
-createSheet(wb, name = "Topline")
-writeWorksheet(wb, output_TY, sheet = "Topline", startRow = 1, startCol = 1)
-saveWorkbook(wb)
+wb <- loadWorkbook("..//Output//OTA//DoD_Acq_Trends_OTA.xlsx")
+if(!"Topline" %in% getSheetNames("..//Output//OTA//DoD_Acq_Trends_OTA.xlsx"))
+  addWorksheet(wb, sheetName = "Topline")
+writeData(wb, output_TY, sheet = "Topline", startRow = 1, startCol = 1)
+saveWorkbook(wb,"..//Output//OTA//DoD_Acq_Trends_OTA.xlsx",overwrite = TRUE)
 rm(wb)
 xlcFreeMemory()
             
 
+
+write.csv(file="..//Output//OTA//ota_topline.csv",row.names = FALSE,na="",
+          output_TY)
+            
 ```
 
 ## Topline Competition
@@ -207,7 +217,7 @@ ToplineComp<-build_plot(
   share = FALSE,
   labels_and_colors=ota_lc,
   # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
+  x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Competition.sum", #color_var
   # facet_var="Competition.sum", #facet_var
@@ -227,15 +237,15 @@ ToplineComp<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//topline_comp.png", ToplineComp,  
+ggsave600dpi("..//Output//OTA//topline_comp.png", ToplineComp,  
              width=12, height= 6, units="in",size=11, lineheight=1.2
              )
 
 View(ToplineComp$data)
 
-write.csv(file="..//Output//topline_competition.csv",row.names = FALSE,
+write.csv(file="..//Output//OTA//topline_competition.csv",row.names = FALSE,
           # ToplineComp$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
-            pivot_wider(ToplineComp$data,id_cols=c(Competition.sum),
+            pivot_wider(ToplineComp$data%>%mutate(Fiscal_Year=year(dFYear)),id_cols=c(Competition.sum),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
 
 
@@ -273,7 +283,7 @@ ToplineVendor<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//topline_vendor.png", ToplineVendor, 
+ggsave600dpi("..//Output//OTA//topline_vendor.png", ToplineVendor, 
              width=6.5, height= 4, units="in",size=11
              )
 
@@ -339,7 +349,7 @@ ToplineVehicle<-build_plot(
 
 summary(ota_def$Vehicle)
 
-ggsave600dpi("..//Output//topline_vehicle.png", ToplineVehicle, 
+ggsave600dpi("..//Output//OTA//topline_vehicle.png", ToplineVehicle, 
              width=13, height= 4.5, units="in",size=11
              )
 
@@ -382,16 +392,16 @@ ToplinePricing<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-# ggsave600dpi("..//Output//topline_pricing.png", ToplinePricing, 
+# ggsave600dpi("..//Output//OTA//topline_pricing.png", ToplinePricing, 
 #              width=6.5, height= 4, units="in",size=11
 #              )
 
 
-ggsave600dpi("..//Output//topline_pricing.png", ToplinePricing,  
+ggsave600dpi("..//Output//OTA//topline_pricing.png", ToplinePricing,  
              width=12, height= 6, units="in",size=11, lineheight=1.2
              )
 lubridate::year(ota_def$dFYear)
-write.csv(file="..//Output//topline_pricing.csv",row.names = FALSE,
+write.csv(file="..//Output//OTA//topline_pricing.csv",row.names = FALSE,
           ToplinePricing$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(PricingUCA,PricingUCA.sumlong),
                         names_from=dFYear,values_from=Action_Obligation_OMB24_GDP22))
@@ -433,15 +443,15 @@ ToplineType<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-# ggsave600dpi("..//Output//topline_Type.png", ToplineType, 
+# ggsave600dpi("..//Output//OTA//topline_Type.png", ToplineType, 
 #              width=6.5, height= 4, units="in",size=11
 #              )
 
 
-ggsave600dpi("..//Output//topline_Type.png", ToplineType,  
+ggsave600dpi("..//Output//OTA//topline_Type.png", ToplineType,  
              width=12, height= 6, units="in",size=11, lineheight=1.2
              )
-write.csv(file="..//Output//topline_Type.csv",row.names = FALSE,
+write.csv(file="..//Output//OTA//topline_Type.csv",row.names = FALSE,
           ToplineType$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(Type_Of_Agreement_sum),
                         names_from=dFYear,values_from=Action_Obligation_OMB24_GDP22))
@@ -481,11 +491,21 @@ ToplinePSR<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//ota_topline_psr.png", ToplinePSR, 
+ggsave600dpi("..//Output//OTA//ota_topline_psr.png", ToplinePSR, 
              width=5, height= 6, units="in",size=16, lineheight=1.2
              )
 
-write.csv(file="..//Output//ota_topline_psr_cur.csv",row.names = FALSE,
+ggsave600dpi("..//Output//OTA//ota_topline_psr_keynote.svg", ToplinePSR+
+               labs(title="DOD OTAs Obligations\nby Area, 2015-2022"),
+             width=6, height= 5.5, units="in", size=20, lineheight = 0.75
+             )
+
+ggsave600dpi("..//Output//OTA//ota_topline_psr_keynote.png", ToplinePSR+
+               labs(title="DOD OTAs Obligations\nby Area, 2015-2022"),
+             width=6, height= 5.5, units="in", size=20, lineheight = 0.75
+             )
+
+write.csv(file="..//Output//OTA//ota_topline_psr_cur.csv",row.names = FALSE,
           ota_def %>% group_by(SimpleArea,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(SimpleArea),
@@ -507,7 +527,7 @@ ToplinePSRcovid<-build_plot(
   share = FALSE,
   labels_and_colors=ota_lc,
   # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
+  x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="ProductServiceOrRnDarea.covid", #color_var
   # facet_var="Competition.sum", #facet_var
@@ -527,11 +547,11 @@ ToplinePSRcovid<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//ota_psr_covid.png", ToplinePSRcovid, 
+ggsave600dpi("..//Output//OTA//ota_psr_covid.png", ToplinePSRcovid, 
              width=12, height= 6, units="in",size=11, lineheight=1.2
              )
 
-write.csv(file="..//Output//ota_psr_covid.csv",row.names = FALSE,
+write.csv(file="..//Output//OTA//ota_psr_covid.csv",row.names = FALSE,
           ota_def %>% group_by(ProductServiceOrRnDarea.covid,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(ProductServiceOrRnDarea.covid),
@@ -570,18 +590,18 @@ RnDphase<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//psr_RnDPhase.png", RnDphase, 
+ggsave600dpi("..//Output//OTA//psr_RnDPhase.png", RnDphase, 
              width=12, height= 6, units="in",size=11, lineheight=1.2
              )
                            
 
-write.csv(file="..//Output//psr_RnDPhase.csv",row.names = FALSE,
-          pivot_wider(RnDphase$data,id_cols=c(ProductServiceOrRnDarea),
+write.csv(file="..//Output//OTA//psr_RnDPhase.csv",row.names = FALSE,
+          pivot_wider(RnDphase$data%>%mutate(Fiscal_Year=year(dFYear)),id_cols=c(ProductServiceOrRnDarea),
                       names_from=dFYear,values_from=Action_Obligation_OMB24_GDP22)%>%
             arrange(ProductServiceOrRnDarea))
             
 
-write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE,
+write.csv(file="..//Output//OTA//psr_RnDPhase_current.csv",row.names = FALSE,
           ota_def %>% filter(SimpleArea=="R&D") %>%
             format_data_for_plot(fy_var="dFYear",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
                                  labels_and_colors=ota_lc) %>%
@@ -643,7 +663,7 @@ RnDphase<-build_plot(
   share = FALSE,
   # labels_and_colors=ota_lc,
   # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
+  x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="type", #color_var
   facet_var="ProductServiceOrRnDarea", #facet_var
@@ -663,18 +683,18 @@ RnDphase<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-# ggsave600dpi("..//Output//contractota_RnDPhase.png", RnDphase, 
+# ggsave600dpi("..//Output//OTA//contractota_RnDPhase.png", RnDphase, 
 #              width=12, height= 6, units="in",size=11, lineheight=1.2
 #              )
 #                            
 # 
-write.csv(file="..//Output//contractota_RnDPhase.csv",row.names = FALSE,
-          pivot_wider(RnDphase$data,id_cols=c(ProductServiceOrRnDarea,type),
+write.csv(file="..//Output//OTA//contractota_RnDPhase.csv",row.names = FALSE,
+          pivot_wider(RnDphase$data%>%mutate(Fiscal_Year=year(dFYear)),id_cols=c(ProductServiceOrRnDarea,type),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
             arrange(ProductServiceOrRnDarea,type))
 #             
 # 
-# write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE,
+# write.csv(file="..//Output//OTA//psr_RnDPhase_current.csv",row.names = FALSE,
 #           ota_def %>% filter(SimpleArea=="R&D") %>%
 #             format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
 #                                  labels_and_colors=ota_lc) %>%
@@ -694,7 +714,7 @@ Services<-build_plot(
   share = FALSE,
   labels_and_colors=ota_lc,
   # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
+  x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="ProductServiceOrRnDarea", #color_var
   # facet_var="Competition.sum", #facet_var
@@ -714,18 +734,18 @@ Services<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//psr_Services.png", Services, 
+ggsave600dpi("..//Output//OTA//psr_Services.png", Services, 
              width=12, height= 6, units="in",size=11, lineheight=1.2
              )
                            
 
-write.csv(file="..//Output//psr_Services.csv",row.names = FALSE,
-          pivot_wider(Services$data,id_cols=c(ProductServiceOrRnDarea),
+write.csv(file="..//Output//OTA//psr_Services.csv",row.names = FALSE,
+          pivot_wider(Services$data%>%mutate(Fiscal_Year=year(dFYear)),id_cols=c(ProductServiceOrRnDarea),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
             arrange(ProductServiceOrRnDarea))
             
 
-write.csv(file="..//Output//psr_Services_current.csv",row.names = FALSE,
+write.csv(file="..//Output//OTA//psr_Services_current.csv",row.names = FALSE,
           ota_def %>% filter(SimpleArea=="R&D") %>%
             format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
                                  labels_and_colors=ota_lc) %>%
@@ -767,42 +787,40 @@ SubCustomer<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//ota_subcustomer.png", SubCustomer, 
+ggsave600dpi("..//Output//OTA//ota_subcustomer.png", SubCustomer, 
              width=4.5, height= 6, units="in",size=16,lineheight = 1.2
              )
 
-write.csv(file="..//Output//ota_subcustomer.csv",row.names = FALSE,
-          pivot_wider(SubCustomer$data,id_cols=c(SubCustomer.sum,SubCustomer.platform),
+write.csv(file="..//Output//OTA//ota_subcustomer.csv",row.names = FALSE,
+          pivot_wider(SubCustomer$data %>% mutate(Fiscal_Year=year(dFYear)),
+                      id_cols=c(SubCustomer.OTA),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
 
-write.csv(file="..//Output//ota_subcustomer_current.csv",row.names = FALSE,
+write.csv(file="..//Output//OTA//ota_subcustomer_current.csv",row.names = FALSE,
           ota_def %>% group_by(SubCustomer.OTA,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(SubCustomer.OTA),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)
           ,na="")
 
-summary(ota_def$ContractingSubCustomer)
+summary(ota_def$SubCustomer)
 ```
 
 ## Topline SubCustomer Variant
 ```{r SubCustomer}
 # platpsc$SubCustomer.platform[platpsc$Contracting.Agency.ID==]
-platpsc$Action_Obligation_OMB24_GDP22
-summary(factor(platpsc$Contracting.Agency.ID))
-platpsc %>% group_by(Fiscal_Year,Contracting.Agency.ID) %>% filter(Contracting.Agency.ID=="571S")%>%
-  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
+
 
 (
 SubCustomer<-build_plot(
-  data=platpsc,
+  data=ota_def,
   chart_geom = "Bar Chart",
   share = FALSE,
-  # labels_and_colors=detail_lc,
+  labels_and_colors=ota_lc,
   # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
+  x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="SubCustomer.platform", #color_var
+  color_var="SubCustomer.OTA", #color_var
   facet_var="SubCustomer.sum", #facet_var
   column_key=ota_ck,
   format=TRUE,
@@ -820,21 +838,21 @@ SubCustomer<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//subcustomer.png", SubCustomer, 
-             width=12, height= 6, units="in",size=11,lineheight = 1.2
+ggsave600dpi("..//Output//OTA//ota_subcustomer_detail.png", SubCustomer, 
+             width=6.5, height= 5.5, units="in",size=11,lineheight = 1.2
              )
 
-write.csv(file="..//Output//topline_subcustomer.csv",row.names = FALSE,
-          pivot_wider(SubCustomer$data,id_cols=c(SubCustomer.sum,SubCustomer.platform),
+write.csv(file="..//Output//OTA//topline_subcustomer.csv",row.names = FALSE,
+          pivot_wider(SubCustomer$data%>%mutate(Fiscal_Year=year(dFYear)),id_cols=c(SubCustomer.sum,SubCustomer.OTA),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
 
-write.csv(file="..//Output//topline_subcustomer_current.csv",row.names = FALSE,
-          ota_def %>% group_by(SubCustomer.sum,ContractingSubCustomer,Fiscal_Year)%>%
+write.csv(file="..//Output//OTA//topline_subcustomer_current.csv",row.names = FALSE,
+          ota_def %>% group_by(SubCustomer.sum,SubCustomer,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-          pivot_wider(id_cols=c(SubCustomer.sum,ContractingSubCustomer),
+          pivot_wider(id_cols=c(SubCustomer.sum,SubCustomer),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
 
-summary(ota_def$ContractingSubCustomer)
+summary(ota_def$SubCustomer)
 ```
 
 
@@ -848,7 +866,7 @@ SubCustomerPSR<-build_plot(
   share = FALSE,
   labels_and_colors=ota_lc,
   # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
+  x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="SimpleArea", #color_var
   facet_var="SubCustomer.sum", #facet_var
@@ -868,10 +886,10 @@ SubCustomerPSR<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-# ggsave600dpi("..//Output//subcustomer_PSR.png", SubCustomerPSR, 
+# ggsave600dpi("..//Output//OTA//subcustomer_PSR.png", SubCustomerPSR, 
 #              width=6.5, height= 4, units="in",size=11
 #              )
-ggsave600dpi("..//Output//subcustomer_PSR.png", SubCustomerPSR, 
+ggsave600dpi("..//Output//OTA//subcustomer_PSR.png", SubCustomerPSR, 
              width=12, height= 6, units="in",size=11,lineheight = 1.2
              )
 ```
@@ -896,7 +914,7 @@ Platform<-build_plot(
   column_key=ota_ck,
   format=TRUE,
   ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+)+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
@@ -909,12 +927,23 @@ Platform<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//ota_platform.png", Platform, 
+ggsave600dpi("..//Output//OTA//ota_platform.png", Platform, 
              width=6, height= 6, units="in",size=14,lineheight = 1.2
              )
 
+
+
+ggsave600dpi("..//Output//OTA//ota_platform_keynote.png", Platform+
+               labs(title="DOD OTAs Obligations by\nPlatform, 2015-2022"),
+             width=6.5, height= 5.5, units="in", size=20, lineheight = 0.75
+             )
+
+ggsave600dpi("..//Output//OTA//ota_platform_keynote.svg", Platform+
+               labs(title="DOD OTAs Obligations by\nPlatform, 2015-2022"),
+             width=6.5, height= 5.5, units="in", size=20, lineheight = 0.75
+             )
   
-write.csv(file="..//Output//ota_platform_current.csv",row.names = FALSE,na="",
+write.csv(file="..//Output//OTA//ota_platform_current.csv",row.names = FALSE,na="",
           format_data_for_plot(ota_def,
                                fy_var="Fiscal_Year",
                                y_var="Action_Obligation_Then_Year",
@@ -928,6 +957,7 @@ write.csv(file="..//Output//ota_platform_current.csv",row.names = FALSE,na="",
             mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=levels(PlatformPortfolio),
                                             labels=gsub("\\n"," ",levels(PlatformPortfolio))))%>%
                    arrange(desc(PlatformPortfolio)))
+
 
 ```
 
@@ -949,8 +979,7 @@ PlatformSubCustomer<-build_plot(
   column_key=ota_ck,
   format=TRUE,
   ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
+)+# theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
  #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
@@ -962,9 +991,10 @@ PlatformSubCustomer<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//platform_subcustomer.png", PlatformSubCustomer, 
+ggsave600dpi("..//Output//OTA//platform_subcustomer.png", PlatformSubCustomer, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
+
 
 ```
 
@@ -998,7 +1028,7 @@ PlatformPSR<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//platform_PSR.png", PlatformPSR, 
+ggsave600dpi("..//Output//OTA//platform_PSR.png", PlatformPSR, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
@@ -1038,7 +1068,7 @@ PlatformVendor<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//platform_vendor.png", PlatformVendor, 
+ggsave600dpi("..//Output//OTA//platform_vendor.png", PlatformVendor, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
@@ -1076,7 +1106,7 @@ PlatformComp<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//platform_comp.png", PlatformComp, 
+ggsave600dpi("..//Output//OTA//platform_comp.png", PlatformComp, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
@@ -1113,12 +1143,12 @@ ArmyPlatform<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//ota_army_platform.png", ArmyPlatform, 
+ggsave600dpi("..//Output//OTA//ota_army_platform.png", ArmyPlatform, 
              width=12, height= 6, units="in",size=11,lineheight = 1.2
              )
 
   
-write.csv(file="..//Output//ota_army_platform_current.csv",row.names = FALSE,na="",
+write.csv(file="..//Output//OTA//ota_army_platform_current.csv",row.names = FALSE,na="",
           format_data_for_plot(ota_def %>% filter(SubCustomer=="Army"),
                                fy_var="Fiscal_Year",
                                y_var="Action_Obligation_Then_Year",
@@ -1168,12 +1198,12 @@ NavyPlatform<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//ota_Navy_platform.png", NavyPlatform, 
+ggsave600dpi("..//Output//OTA//ota_Navy_platform.png", NavyPlatform, 
              width=12, height= 6, units="in",size=11,lineheight = 1.2
              )
 
   
-write.csv(file="..//Output//ota_Navy_platform_current.csv",row.names = FALSE,na="",
+write.csv(file="..//Output//OTA//ota_Navy_platform_current.csv",row.names = FALSE,na="",
           format_data_for_plot(ota_def %>% filter(SubCustomer=="Navy"),
                                fy_var="Fiscal_Year",
                                y_var="Action_Obligation_Then_Year",
@@ -1223,12 +1253,12 @@ AirForcePlatform<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//ota_air_force_platform.png", AirForcePlatform, 
+ggsave600dpi("..//Output//OTA//ota_air_force_platform.png", AirForcePlatform, 
              width=12, height= 6, units="in",size=11,lineheight = 1.2
              )
 
   
-write.csv(file="..//Output//ota_air_force_platform_current.csv",row.names = FALSE,na="",
+write.csv(file="..//Output//OTA//ota_air_force_platform_current.csv",row.names = FALSE,na="",
           format_data_for_plot(ota_def %>% filter(SubCustomer=="Air Force"),
                                fy_var="Fiscal_Year",
                                y_var="Action_Obligation_Then_Year",

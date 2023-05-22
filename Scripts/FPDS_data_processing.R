@@ -218,7 +218,7 @@ def_data$Fiscal_YQ[is.na(def_data$Fiscal_YQ)]<-def_data$Fiscal_Year[is.na(def_da
 def_data$PricingInflation.1yearUCA<-as.character(def_data$PricingInflation.1year)
 def_data$PricingInflation.1yearUCA[def_data$PricingUCA.sum=="UCA"]<-"UCA"
 def_data$PricingMechanism<-as.character(def_data$PricingMechanism)
-def_lc<-csis360::prepare_labels_and_colors(def_data %>% select(-PricingMechanism),path=file.path(local_path,"style\\"))
+def_lc<-csis360::prepare_labels_and_colors(def_data, path=file.path(local_path,"style\\"))
 
 def_ck<-csis360::get_column_key(def_data %>% select(-PricingMechanism),path=file.path(local_path,"style\\"))
 
