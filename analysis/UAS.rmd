@@ -24,7 +24,7 @@ legend.text.size<-8
 title.text.size<-12
 geom.text.size<-12
 
-local_path<-"F:\\Users\\gsanders\\Documents\\Repositories\\Lookup-Tables\\style\\"
+local_path<-get_local_lookup_path()
 
 
 main.text.size<-1
@@ -83,15 +83,13 @@ ota_contract_lc<-prepare_labels_and_colors(ota_contract)#,path="K:\\Users\\Greg\
 ota_contract_ck<-get_column_key(ota_contract)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 
 
-fed_lc<-prepare_labels_and_colors(fed_data)#,path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+fed_lc<-prepare_labels_and_colors(platpscintl)#,path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
                                   #)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
-fed_ck<-get_column_key(fed_data)#,path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+fed_ck<-get_column_key(platpscintl)#,path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
 uav_lc<-prepare_labels_and_colors(defense_platformUAV_vendor)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 uav_ck<-get_column_key(defense_platformUAV_vendor)#,path#="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 def_data<-fed_data %>% filter(ContractingCustomer=="Defense")
 
-
-# column_key<-get_column_key(platpscintl,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 # detail_lc<-prepare_labels_and_colors(platpscintl,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 # detail_ck<-get_column_key(platpscintl,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 
@@ -108,6 +106,7 @@ def_data<-fed_data %>% filter(ContractingCustomer=="Defense")
 drone<-platpscintl %>% filter(PlatformPortfolioUAV=="Remotely Crewed")
 # drone <-drone %>% select(-ProductOrServiceCodeText.y,-TopPScode,-TopPStext)
 colnames(drone)[colnames(drone)=="ProductOrServiceCodeText.x"]<-"ProductOrServiceCodeText"
+colnames(drone)[colnames(drone)=="Project.Name"]<-"ProjectName"
 
 summary(factor(drone$ProjectName))
 
@@ -492,7 +491,7 @@ ggsave600dpi(rc_psr,file="..//output//Remotely_Crewed//Remotely_Crewed_psr.eps",
              width=13, height= 6, units="in",size=16, lineheight=1.2
 )
 
-write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_crewed_psr.csv",row.names = FALSE,na = "",
+write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_psr.csv",row.names = FALSE,na = "",
           dronepscdetail$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
             bAction_Obligation_OMB23_OUT21=Action_Obligation_OMB23_OUT21/1000000000)%>%
             arrange(Fiscal_Year)%>%
@@ -506,7 +505,7 @@ output_TY<-drone %>%   group_by(SimpleArea,Fiscal_Year)%>%
   pivot_wider(id_cols=c(SimpleArea),
               names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year) %>%
   arrange(SimpleArea)
-write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_crewed_psr_cur.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_psr_cur.csv",row.names = FALSE, na = "",
           output_TY)
 
 
@@ -516,7 +515,7 @@ output_TY<-drone %>%   group_by(SubCustomer.DoD,SimpleArea,Fiscal_Year)%>%
   pivot_wider(id_cols=c(SubCustomer.DoD,SimpleArea),
               names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year) %>%
   arrange(SubCustomer.DoD,SimpleArea)
-write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_crewed_Customer_psr_cur.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_Customer_psr_cur.csv",row.names = FALSE, na = "",
           output_TY)
 
 ```
@@ -643,13 +642,13 @@ write.csv(file="..//Output//Remotely_Crewed//def_platUAS_cur.csv",row.names = FA
     data=drone %>% filter(Fiscal_Year>=2010) ,
     chart_geom = "Bar Chart",
     share = FALSE,
-    labels_and_colors=fed_lc,
+    labels_and_colors=uav_lc,
+    column_key=uav_ck,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
     y_var="Action_Obligation_OMB23_OUT21", #VAR.y.variable
     color_var="SubCustomer.DoD", #color_var
     facet_var="SubCustomer.DoD", #facet_var
-    column_key=fed_ck,
     format=TRUE,
     ytextposition=FALSE
   )+
@@ -676,8 +675,8 @@ ggsave600dpi(rc_customer,file="..//output//Remotely_Crewed//Remotely_Crewed_Cust
              width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
 )
 
-write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_crewed_Customer.csv",row.names = FALSE,na = "",
-          rc_customer$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
+write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_Customer.csv",row.names = FALSE,na = "",
+          rc_customer$data %>% mutate(Fiscal_Year=lubridate::year(dFYear),
             bAction_Obligation_OMB23_OUT21=Action_Obligation_OMB23_OUT21/1000000000)%>%
             arrange(Fiscal_Year)%>%
             pivot_wider(id_cols=c(SubCustomer.DoD),
@@ -692,7 +691,7 @@ output_TY<-drone %>%   group_by(SubCustomer.DoD,Fiscal_Year)%>%
   pivot_wider(id_cols=c(SubCustomer.DoD),
               names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year) %>%
   arrange(SubCustomer.DoD)
-write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_crewed_Customer_cur.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_Customer_cur.csv",row.names = FALSE, na = "",
           output_TY)
 
 ```
@@ -726,12 +725,12 @@ levels(drone$TopProjectLabel)<-list(
     chart_geom = "Bar Chart",
     share = FALSE,
     labels_and_colors=fed_lc,
+    column_key=fed_ck,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
     y_var="Action_Obligation_OMB23_OUT21", #VAR.y.variable
     color_var="TopProjectLabel", #color_var
     facet_var="SubCustomer.DoD", #facet_var
-    column_key=fed_ck,
     format=TRUE,
     ytextposition=FALSE
   )+
@@ -774,7 +773,7 @@ output_TY<-drone %>%   group_by(SubCustomer.DoD,TopProjectLabel,Fiscal_Year)%>%
   pivot_wider(id_cols=c(SubCustomer.DoD,TopProjectLabel),
               names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year) %>%
   arrange(SubCustomer.DoD,TopProjectLabel)
-write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_crewed_Customer_Proj_cur.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_Customer_Proj_cur.csv",row.names = FALSE, na = "",
           output_TY)
 
 ```
@@ -861,7 +860,7 @@ ggsave600dpi(rc_commercial,file="..//output//Remotely_Crewed//Remotely_Crewed_Co
 #              width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
 # )
 # 
-# write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_crewed_Customer.csv",row.names = FALSE,na = "",
+# write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_Customer.csv",row.names = FALSE,na = "",
 #           rc_customer$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
 #             bAction_Obligation_OMB23_OUT21=Action_Obligation_OMB23_OUT21/1000000000)%>%
 #             arrange(Fiscal_Year)%>%
@@ -877,7 +876,7 @@ ggsave600dpi(rc_commercial,file="..//output//Remotely_Crewed//Remotely_Crewed_Co
 #   pivot_wider(id_cols=c(SubCustomer.DoD),
 #               names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year) %>%
 #   arrange(SubCustomer.DoD)
-# write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_crewed_Customer_cur.csv",row.names = FALSE, na = "",
+# write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_Customer_cur.csv",row.names = FALSE, na = "",
 #           output_TY)
 
 
