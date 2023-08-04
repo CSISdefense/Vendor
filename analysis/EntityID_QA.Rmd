@@ -10,6 +10,8 @@ library(readr)
 library(tidyverse)
 
 RU2duns<-read_tsv(file.path("..","data","semi_clean","Vendor.RecipientUEItopDunsnumber.txt"),na="NULL")
+RUh2duns<-read_tsv(file.path("..","data","semi_clean","Vendor.RecipientUEIhistoryTopDunsnumber.txt"),na="NULL")
+problems(RUh2duns)
 ```
 
 ## QA check
@@ -28,23 +30,77 @@ RU2duns <- RU2duns %>% mutate(
   pMatch=ifelse(!is.nan(pDollar)&!is.na(pDollar),pDollar,pCount)
 )
 
+RUh2duns<-RUh2duns %>% filter(!is.na(TotalCount))
+
+if(any(RUh2duns$TopDunsnumberCount>RUh2duns$TotalCount))
+  stop("Misaligned counts")
+
+
+RUh2duns <- RUh2duns %>% mutate(
+  pCount=TopDunsnumberCount/TotalCount,
+  pDollar=TopDunsnumberAmount/TotalAmount,
+  pMatch=ifelse(!is.nan(pDollar)&!is.na(pDollar),pDollar,pCount)
+)
+
+
 ```
 
-## Including Plots
+## Recipient UEI alone
 
-You can also embed plots, for example:
+```{r ru}
 
-```{r pressure, echo=FALSE}
+nrow(RU2duns %>% filter(pMatch==1))/nrow(RU2duns)
+sum((RU2duns %>% filter(pMatch==1))$TotalCount)/sum(RU2duns$TotalCount)
+sum((RU2duns %>% filter(pMatch==1))$totalamount)/sum(RU2duns$totalamount)
+
+nrow(RU2duns %>% filter(abs(pMatch-1)<0.1))/nrow(RU2duns)
+sum((RU2duns %>% filter(abs(pMatch-1)<0.1))$TotalCount)/sum(RU2duns$TotalCount)
+sum((RU2duns %>% filter(abs(pMatch-1)<0.1))$totalamount)/sum(RU2duns$totalamount)
 
 ggplot(RU2duns %>% filter(pMatch<=1&pMatch>=0 ),aes(x=pMatch))+geom_histogram()+coord_cartesian(xlim=c(0,1))+
-  scale_y_log10(label=scales::comma)+scale_x_continuous(labels=scales::percent)
+  scale_x_continuous(labels=scales::percent)#scale_y_log10(label=scales::comma)+
 
 
 ggplot(RU2duns %>% filter(pMatch<=1&pMatch>=0 ),aes(x=pMatch,weight=TotalCount))+geom_histogram()+coord_cartesian(xlim=c(0,1))+
-  scale_y_log10(label=scales::comma)+scale_x_continuous(labels=scales::percent)
+  scale_x_continuous(labels=scales::percent)#scale_y_log10(label=scales::comma)
+
 
 ggplot(RU2duns %>% filter(pMatch<=1&pMatch>=0 ),aes(x=pMatch,weight=totalamount))+geom_histogram()+coord_cartesian(xlim=c(0,1))+
-  scale_y_log10(label=scales::comma)+scale_x_continuous(labels=scales::percent)
+  scale_x_continuous(labels=scales::percent)#scale_y_log10(label=scales::comma)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+## Recipient UEI and fiscal year
+
+```{r ruh}
+
+nrow(RUh2duns %>% filter(pMatch==1))/nrow(RUh2duns)
+sum((RUh2duns %>% filter(pMatch==1))$TotalCount)/sum(RUh2duns$TotalCount)
+sum((RUh2duns %>% filter(pMatch==1))$TotalAmount)/sum(RUh2duns$TotalAmount)
+
+nrow(RUh2duns %>% filter(abs(pMatch-1)<0.1))/nrow(RUh2duns)
+sum((RUh2duns %>% filter(abs(pMatch-1)<0.1))$TotalCount)/sum(RUh2duns$TotalCount)
+sum((RUh2duns %>% filter(abs(pMatch-1)<0.1))$TotalAmount)/sum(RUh2duns$TotalAmount)
+
+ggplot(RUh2duns %>% filter(pMatch<=1&pMatch>=0 ),aes(x=pMatch))+geom_histogram()+coord_cartesian(xlim=c(0,1))+
+  scale_x_continuous(labels=scales::percent)#scale_y_log10(label=scales::comma)
+
+ggplot(RUh2duns %>% filter(pMatch<=1&pMatch>=0 ),aes(x=pMatch))+geom_histogram()+coord_cartesian(xlim=c(0,1))+
+  scale_x_continuous(labels=scales::percent)+facet_wrap(~Fiscal_Year)
+
+
+ggplot(RUh2duns %>% filter(pMatch<=1&pMatch>=0 ),aes(x=pMatch,weight=TotalCount))+geom_histogram()+coord_cartesian(xlim=c(0,1))+
+  scale_x_continuous(labels=scales::percent)#scale_y_log10(label=scales::comma)+
+
+
+ggplot(RUh2duns %>% filter(pMatch<=1&pMatch>=0 ),aes(x=pMatch,weight=TotalCount))+geom_histogram()+coord_cartesian(xlim=c(0,1))+
+  scale_x_continuous(labels=scales::percent)+facet_wrap(~Fiscal_Year)
+
+
+ggplot(RUh2duns %>% filter(pMatch<=1&pMatch>=0 ),aes(x=pMatch,weight=TotalAmount))+geom_histogram()+coord_cartesian(xlim=c(0,1))+
+ scale_x_continuous(labels=scales::percent)# scale_y_log10(label=scales::comma)+
+
+ggplot(RUh2duns %>% filter(pMatch<=1&pMatch>=0 ),aes(x=pMatch,weight=TotalAmount))+geom_histogram()+coord_cartesian(xlim=c(0,1))+
+ scale_x_continuous(labels=scales::percent)+facet_wrap(~Fiscal_Year)
+```
