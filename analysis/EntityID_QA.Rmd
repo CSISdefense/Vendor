@@ -7,18 +7,27 @@ output: html_document
 
 ```{r setup, include=FALSE}
 library(readr)
+library(tidyverse)
 
-RU2duns<-read_csv(file.path("..","data","semi_clean","Vendor.RecipientUEItopDunsnumber.txt"))
+RU2duns<-read_tsv(file.path("..","data","semi_clean","Vendor.RecipientUEItopDunsnumber.txt"),na="NULL")
 ```
 
-## R Markdown
+## QA check
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r cars}
-summary(cars)
+RU2duns<-RU2duns %>% filter(!is.na(TotalCount))
+
+if(any(RU2duns$TopDunsnumberCount>RU2duns$TotalCount))
+  stop("Misaligned counts")
+
+RU2duns <- RU2duns %>% mutate(
+  pCount=TopDunsnumberCount/TotalCount,
+  pDollar=TopDunsnumberAmount/totalamount,
+  pMatch=ifelse(!is.nan(pDollar)&!is.na(pDollar),pDollar,pCount)
+)
+
 ```
 
 ## Including Plots
@@ -26,7 +35,16 @@ summary(cars)
 You can also embed plots, for example:
 
 ```{r pressure, echo=FALSE}
-plot(pressure)
+
+ggplot(RU2duns %>% filter(pMatch<=1&pMatch>=0 ),aes(x=pMatch))+geom_histogram()+coord_cartesian(xlim=c(0,1))+
+  scale_y_log10(label=scales::comma)+scale_x_continuous(labels=scales::percent)
+
+
+ggplot(RU2duns %>% filter(pMatch<=1&pMatch>=0 ),aes(x=pMatch,weight=TotalCount))+geom_histogram()+coord_cartesian(xlim=c(0,1))+
+  scale_y_log10(label=scales::comma)+scale_x_continuous(labels=scales::percent)
+
+ggplot(RU2duns %>% filter(pMatch<=1&pMatch>=0 ),aes(x=pMatch,weight=totalamount))+geom_histogram()+coord_cartesian(xlim=c(0,1))+
+  scale_y_log10(label=scales::comma)+scale_x_continuous(labels=scales::percent)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
