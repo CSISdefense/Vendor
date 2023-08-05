@@ -2,7 +2,9 @@
 title: "Entity ID quality checks"
 author: "Gregory Sanders"
 date: "2023-08-03"
-output: html_document
+output: 
+  html_document: 
+    keep_md: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -11,6 +13,7 @@ library(tidyverse)
 
 RU2duns<-read_tsv(file.path("..","data","semi_clean","Vendor.RecipientUEItopDunsnumber.txt"),na="NULL")
 RUh2duns<-read_tsv(file.path("..","data","semi_clean","Vendor.RecipientUEIhistoryTopDunsnumber.txt"),na="NULL")
+problems(RU2duns)
 problems(RUh2duns)
 ```
 
@@ -21,14 +24,29 @@ problems(RUh2duns)
 ```{r calculation}
 RU2duns<-RU2duns %>% filter(!is.na(TotalCount))
 
+nrow(RU2duns %>% filter(TopDunsnumber=='' | is.na(TopDunsnumber)))
+
+nrow(RUh2duns %>% filter(TopDunsnumber=='' | is.na(TopDunsnumber)))
+
+
 if(any(RU2duns$TopDunsnumberCount>RU2duns$TotalCount))
   stop("Misaligned counts")
 
+# 
+# RU2duns <- RU2duns %>% mutate(
+#   pCount=TopDunsnumberCount/TotalCount,
+#   pDollar=TopDunsnumberAmount/TotalAmount,
+#   pMatch=ifelse(!is.nan(pDollar)&!is.na(pDollar),pDollar,pCount)
+# )
+
 RU2duns <- RU2duns %>% mutate(
-  pCount=TopDunsnumberCount/TotalCount,
-  pDollar=TopDunsnumberAmount/totalamount,
+  DunsnumberNullCount=ifelse(is.na(DunsnumberNullCount),0,DunsnumberNullCount),
+  DunsnumberNullAmount=ifelse(is.na(DunsnumberNullAmount),0,DunsnumberNullCount),
+  pCount=ifelse(TopDunsnumber=='' | is.na(TopDunsnumber),0,( TopDunsnumberCount+DunsnumberNullCount)/TotalCount),
+  pDollar=ifelse(TopDunsnumber=='' | is.na(TopDunsnumber),0,( TopDunsnumberAmount+DunsnumberNullAmount)/TotalAmount),
   pMatch=ifelse(!is.nan(pDollar)&!is.na(pDollar),pDollar,pCount)
 )
+
 
 RUh2duns<-RUh2duns %>% filter(!is.na(TotalCount))
 
@@ -37,11 +55,12 @@ if(any(RUh2duns$TopDunsnumberCount>RUh2duns$TotalCount))
 
 
 RUh2duns <- RUh2duns %>% mutate(
-  pCount=TopDunsnumberCount/TotalCount,
-  pDollar=TopDunsnumberAmount/TotalAmount,
+  # DunsnumberNullCount=ifelse(is.na(DunsnumberNullCount),0,DunsnumberNullCount),
+  # DunsnumberNullAmount=ifelse(is.na(DunsnumberNullAmount),0,DunsnumberNullCount),
+  pCount=ifelse(TopDunsnumber=='' | is.na(TopDunsnumber),0,( TopDunsnumberCount)/TotalCount),#DunsnumberNullCount
+  pDollar=ifelse(TopDunsnumber=='' | is.na(TopDunsnumber),0,( TopDunsnumberAmount)/TotalAmount),#+DunsnumberNullAmount
   pMatch=ifelse(!is.nan(pDollar)&!is.na(pDollar),pDollar,pCount)
 )
-
 
 ```
 
@@ -49,16 +68,17 @@ RUh2duns <- RUh2duns %>% mutate(
 
 Percent of EntityIDs with an uncontroversial match `sum((RU2duns %>% filter(pMatch==1))$TotalCount)/sum(RU2duns$TotalCount)`
 Percent of transactions with an uncontroversial match `sum((RU2duns %>% filter(pMatch==1))$TotalCount)/sum(RU2duns$TotalCount)`
-Percent of dollars with an uncontroversial match `sum((RU2duns %>% filter(pMatch==1))$totalamount)/sum(RU2duns$totalamount)`
+Percent of dollars with an uncontroversial match `sum((RU2duns %>% filter(pMatch==1))$TotalAmount)/sum(RU2duns$TotalAmount)`
+
 ```{r ru}
 
 nrow(RU2duns %>% filter(pMatch==1))/nrow(RU2duns)
 sum((RU2duns %>% filter(pMatch==1))$TotalCount)/sum(RU2duns$TotalCount)
-sum((RU2duns %>% filter(pMatch==1))$totalamount)/sum(RU2duns$totalamount)
+sum((RU2duns %>% filter(pMatch==1))$TotalAmount)/sum(RU2duns$TotalAmount)
 
 nrow(RU2duns %>% filter(abs(pMatch-1)<0.1))/nrow(RU2duns)
 sum((RU2duns %>% filter(abs(pMatch-1)<0.1))$TotalCount)/sum(RU2duns$TotalCount)
-sum((RU2duns %>% filter(abs(pMatch-1)<0.1))$totalamount)/sum(RU2duns$totalamount)
+sum((RU2duns %>% filter(abs(pMatch-1)<0.1))$TotalAmount)/sum(RU2duns$TotalAmount)
 
 ggplot(RU2duns %>% filter(pMatch<=1&pMatch>=0 ),aes(x=pMatch))+geom_histogram()+coord_cartesian(xlim=c(0,1))+
   scale_x_continuous(labels=scales::percent)#scale_y_log10(label=scales::comma)+
@@ -68,13 +88,18 @@ ggplot(RU2duns %>% filter(pMatch<=1&pMatch>=0 ),aes(x=pMatch,weight=TotalCount))
   scale_x_continuous(labels=scales::percent)#scale_y_log10(label=scales::comma)
 
 
-ggplot(RU2duns %>% filter(pMatch<=1&pMatch>=0 ),aes(x=pMatch,weight=totalamount))+geom_histogram()+coord_cartesian(xlim=c(0,1))+
+ggplot(RU2duns %>% filter(pMatch<=1&pMatch>=0 ),aes(x=pMatch,weight=TotalAmount))+geom_histogram()+coord_cartesian(xlim=c(0,1))+
   scale_x_continuous(labels=scales::percent)#scale_y_log10(label=scales::comma)
 ```
 
 
 
 ## Recipient UEI and fiscal year
+
+Percent of EntityIDs with an uncontroversial annual match `sum((RUh2duns %>% filter(pMatch==1))$TotalCount)/sum(RUh2duns$TotalCount)`
+Percent of transactions with an uncontroversial annual match `sum((RUh2duns %>% filter(pMatch==1))$TotalCount)/sum(RUh2duns$TotalCount)`
+Percent of dollars with an uncontroversial annual match `sum((RUh2duns %>% filter(pMatch==1))$TotalAmount)/sum(RUh2duns$TotalAmount)`
+
 
 ```{r ruh}
 
