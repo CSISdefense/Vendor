@@ -30,7 +30,18 @@ WHERE ErrorTable.recipient_uei is not null and PKTable.dunsnumber is null and
  len(errortable.dunsnumber)=12 and len(errortable.recipient_uei) in (8,9)
 GROUP BY ErrorTable.recipient_uei
 
+SELECT
+ErrorTable.recipient_uei
+FROM
+contract.fpds AS ErrorTable
+LEFT OUTER JOIN [Contractor].[dunsnumber]  AS PKTable
+ON
+PKTable.dunsnumber=ErrorTable.recipient_uei
+WHERE PKTable.dunsnumber is null and
+ len(errortable.dunsnumber)=12 and len(errortable.recipient_uei) in (8,9)
+
 -- 'Insert new dunsnumber and fiscal_year into [Contractor].[DunsnumberToParentContractorHistory]'
+--3h56m
 INSERT INTO [Contractor].DunsnumberToParentContractorHistory(dunsnumber,FiscalYear)
 SELECT
 Errortable.recipient_uei,
@@ -44,7 +55,7 @@ WHERE ErrorTable.recipient_uei is not null and PKTable.dunsnumber is null and
  len(errortable.dunsnumber)=12 and len(errortable.recipient_uei) in (8,9)
 GROUP BY ErrorTable.recipient_uei, errortable.fiscal_year
 
---Stopped here from home.
+--Finished!
 
 -- Insert new [parent_recipient_uei] into Vendor.recipient_uei
 INSERT INTO Vendor.recipient_uei
@@ -53,20 +64,23 @@ SELECT fk.UEItemp
 FROM contract.fpds as fk
 LEFT OUTER JOIN Vendor.recipient_uei as pk
 On pk.recipient_uei=fk.UEItemp
-WHERE pk.recipient_uei is NULL
+WHERE pk.recipient_uei is NULL and fk.UEItemp is not null and
+ len(fk.dunsnumber)=12 and len(fk.recipient_uei) in (8,9)
 GROUP BY fk.UEItemp
 
 	-- Insert new [recipient_uei] into Vendor.Recipient_UEIhistory
 INSERT INTO Vendor.Recipient_UEIhistory
-(fiscal_year,UEItemp)
-SELECT fk.fiscal_year,fk.recipient_uei
+(fiscal_year,recipient_uei)
+SELECT fk.fiscal_year,fk.UEItemp
 FROM contract.fpds as fk
 LEFT OUTER JOIN Vendor.Recipient_UEIhistory as pk
 On pk.recipient_uei=fk.recipient_uei and
 		pk.fiscal_year=fk.fiscal_year 
-WHERE pk.recipient_uei is NULL 
+WHERE pk.recipient_uei is NULL and
+ len(fk.dunsnumber)=12 and len(fk.recipient_uei) in (8,9)
 GROUP BY fk.UEItemp,fk.fiscal_year
 
+--Stopping run here
 update f
 set dunsnumber=recipient_uei
 	,recipient_uei=UEItemp
