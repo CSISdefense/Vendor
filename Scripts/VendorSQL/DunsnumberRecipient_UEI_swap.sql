@@ -74,16 +74,23 @@ INSERT INTO Vendor.Recipient_UEIhistory
 SELECT fk.fiscal_year,fk.UEItemp
 FROM contract.fpds as fk
 LEFT OUTER JOIN Vendor.Recipient_UEIhistory as pk
-On pk.recipient_uei=fk.recipient_uei and
+On pk.recipient_uei=fk.UEItemp and
 		pk.fiscal_year=fk.fiscal_year 
 WHERE pk.recipient_uei is NULL and
  len(fk.dunsnumber)=12 and len(fk.recipient_uei) in (8,9)
 GROUP BY fk.UEItemp,fk.fiscal_year
 
+select top 1000 recipient_uei, UEItemp, dunsnumber
+from contract.fpds f
+where len(dunsnumber)=12 and len(recipient_uei) in (8,9)
+
 --Stopping run here
+--Seems dramatically faster. 
+--The UPDATE statement conflicted with the FOREIGN KEY constraint "fk_contract_fpds_recipient_UEIhistory". The conflict occurred in database "CSIS360", table "Vendor.Recipient_UEIhistory".
+
+--Termianted at 1hr6m
 update f
 set dunsnumber=recipient_uei
 	,recipient_uei=UEItemp
 from contract.fpds f
 where len(dunsnumber)=12 and len(recipient_uei) in (8,9)
-and UEItemp is not null
