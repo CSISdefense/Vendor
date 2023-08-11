@@ -58,6 +58,7 @@ GROUP BY ErrorTable.recipient_uei, errortable.fiscal_year
 --Finished!
 
 -- Insert new [parent_recipient_uei] into Vendor.recipient_uei
+--1hr46m
 INSERT INTO Vendor.recipient_uei
 (recipient_uei)
 SELECT fk.UEItemp
