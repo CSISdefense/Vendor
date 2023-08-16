@@ -109,3 +109,8 @@ set parentdunsnumber=recipient_parent_uei
 	,recipient_parent_uei=parent_UEItemp
 from contract.fpds f
 where len(parentdunsnumber)=12 and len(recipient_parent_uei) in (8,9)
+
+
+--Takes at least 10 hours, still running.
+alter table contract.fpds
+alter column mod_parent nvarchar(150)
