@@ -191,6 +191,8 @@ and UEItemp is not null
 --)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 --GO
 
+--alter table vendor.UEI
+--add constraint fk_vendor_UEI_length check (len(UEI) in (0,12))
 
 
 --ALTER TABLE [Vendor].[UEI]  WITH CHECK ADD FOREIGN KEY([Parent_UEI])
