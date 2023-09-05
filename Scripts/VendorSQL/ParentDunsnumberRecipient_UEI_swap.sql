@@ -111,6 +111,6 @@ from contract.fpds f
 where len(parentdunsnumber)=12 and len(recipient_parent_uei) in (8,9)
 
 
---Takes at least 10 hours, still running.
+--18h21m
 alter table contract.fpds
 alter column mod_parent nvarchar(150)
