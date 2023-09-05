@@ -1543,10 +1543,297 @@ armyDB<-platpscintldef %>% filter(SubCustomer=="Army" & PlatformPortfolio=="Othe
 
 ```
 
+#Inflation
+## Fuel
+```{r Fuel}
+
+# PlaceIsForeign
+# full_data$PlaceStateRegion
+# replace_nas_with_unlabeled(factor(full_data$PlaceIsForeign,levels=c(1,0),labels=c("Performed Abroad","Performed in the U.S."))
+
+full_data$SimpleArea.fuels<- as.character( full_data$SimpleArea)
+full_data$SimpleArea.fuels[full_data$ProductServiceOrRnDarea=="Fuels"]<-"Fuels"
+summary(factor(full_data$SimpleArea.fuels))
+full_data$SimpleArea.fuels<-factor(full_data$SimpleArea.fuels,
+                                           levels=c("Services (Non-R&D)" ,
+                                                   "R&D",
+                                                   "Products (All)",
+                                                   "Fuels",
+                                                   "Unlabeled" ),
+                                           labels=c("Services (Non-R&D)" ,
+                                                   "R&D",
+                                                   "Products (Non-Fuels)",
+                                                   "Fuels",
+                                                   "Unlabeled" ))
+summary(factor(full_data$SimpleArea.fuels))
+labels_and_colors<-prepare_labels_and_colors(full_data,path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+column_key<-get_column_key(full_data,path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+
+
+(
+psrfuel<-build_plot(
+  data=full_data,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="SimpleArea.fuels", #color_var
+  # facet_var="TopPStext", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  # theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2021 $s)",
+              caption = "Source: FPDS, CSIS Analysis, OMB GDP deflators.")
+)
+
+  ggsave600dpi(filename = "..//Output//PSRfuels.png", psrfuel,  
+               width=12, height= 5.6, units="in",size=18, lineheight=1.2,
+               bg="transparent"
+               )
+
+write.csv(file="..//Output//PSRfuels.csv",row.names = FALSE, na = "",
+  pivot_wider(psrfuel$data %>% 
+                        arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
+                      id_cols=c(SimpleArea.fuels),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
+    arrange(SimpleArea.fuels))
+
+
+(
+fuel<-build_plot(
+  data=full_data %>% filter(ProductOrServiceArea=="Fuels")%>% 
+    mutate(PlaceIsForeign=factor(PlaceIsForeign,levels=c(1,0),labels=c("Performed Abroad","Performed in the U.S."))),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="PlaceStateRegion", #color_var
+  # facet_var="TopPStext", #facet_var
+  # column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  # theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2021 $s)",
+       caption = "Source: FPDS, CSIS Analysis, OMB GDP deflators.")
+)
+
+
+(
+fuel<-build_plot(
+  data=full_data %>% filter(ProductOrServiceArea=="Fuels")%>% 
+    mutate(PlaceIsForeign=factor(PlaceIsForeign,levels=c(1,0),labels=c("Performed Abroad","Performed in the U.S."))),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="PlaceIsForeign", #color_var
+  # facet_var="TopPStext", #facet_var
+  # column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  # theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2021 $s)")
+)
+
+ggsave600dpi("..//Output//Deep_Dives/Inflation/defense_fuel_place.png", fuel+labs(title="DoD Contract Obligations for Fuels", caption="Source: FPDS and CSIS analysis."), 
+             width=6.5, height= 3.5, units="in",size=12,lineheight = 1
+             )
+
+
+write.csv(file="..//Output//Deep_Dives/Inflation/defense_fuel_place.csv",row.names = FALSE,na = "",
+          fuel$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
+          pivot_wider(id_cols=c(PlaceIsForeign),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
+
+
+
+(
+fuel_psc<-build_plot(
+  data=platpscintldef %>% filter(ProductOrServiceArea=="Fuels")%>% 
+    mutate(PlaceIsForeign=factor(PlaceIsForeign,levels=c(1,0),labels=c("Performed Abroad","Performed in the U.S."))),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="ProductOrServiceCodeText", #color_var
+  # facet_var="TopPStext", #facet_var
+  # column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  # theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2021 $s)")
+)
+
+```
+
+
+
+## Pricing History
+```{r ToplinePricing}
+load(file="../data/clean/pricing_historical.Rda")
+# full_data$PricingUCA.sumlong<-full_data$PricingUCA.sum
+# levels(full_data$PricingInflation)<-list("FFP"="FFP",
+#                                            "Less Common"="Less Common",
+#                                            "Cost-Based"="Cost-Based",
+#                                            "FP-Econ. Price Adj. "="Other CB",
+#                                            "Undefinitized\nContract Award"="UCA",
+#                                            "Unclear"="Unclear"   )
+(
+HistoricPricing<-build_plot(
+  data=pricing %>% filter(Fiscal_Year>=1979 & Fiscal_Year<=2021 ),
+  chart_geom = "Line Chart",
+  share = TRUE,
+  labels_and_colors=pricing_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  # y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  y_var="Action_Obligation", #VAR.y.variable
+  color_var="PricingInflation", #color_var
+  # facet_var="PricingUCA.sumlong", #facet_var
+  column_key=pricing_ck,
+  format=TRUE,
+  ytextposition=FALSE,
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right",rect = element_rect(fill = "transparent",))
+  # labs(y="Obligations (Constant 2021 $s)")
+)
+
+# ggsave600dpi("..//Output//topline_pricing.png", ToplinePricing, 
+#              width=6.5, height= 4, units="in",size=11
+#              )
+
+
+  ggsave600dpi("..//Output//HistoricPricing.png", HistoricPricing,  
+               width=12, height= 5.6, units="in",size=18, lineheight=1.2,
+               bg="transparent"
+               )
+
+write.csv(file="..//Output//HistoricPricing.csv",row.names = FALSE, na = "",
+  pivot_wider(HistoricPricing$data %>% 
+                        arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
+                      id_cols=c(PricingInflation),
+                      names_from=Fiscal_Year,values_from=Action_Obligation)%>%
+    arrange(PricingInflation))
+
+
+```
+
 
 # International
 ##FMS 
+#### Service Category
+```{r FPDS_vendor_Intl}
 
+summary(factor(platpscintldef$SimpleArea))
+# undebug(format_data_for_plot)
+(fmsintl_service <-  build_plot(data=platpscintldef%>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign) &
+                                                                            Fiscal_Year>2011 & !is.na(IsFMS)&
+                                                                  SimpleArea=="Services"),#IsFMS==TRUE                             
+                                            chart_geom="Bar Chart",
+                            x_var="Fiscal_Year",
+                            y_var="Action_Obligation_OMB24_GDP22",
+                            color_var="CrisisProductOrServiceArea",
+                            facet_var="PlaceIsForeign",
+                            second_var="IsFMS",
+                            labels_and_colors=intl_lc,
+                            column_key=intl_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE)+theme(legend.position = "right")+
+    facet_grid( .~IsFMS+PlaceIsForeign )+labs(title="Services FMS or Performed Internationally")#, scales="free_y"#, scales="free_y"
+  )
+summary(platpscintldef$dFYear)
+
+write.csv(file="..//Output//fmsintl_service.csv",row.names = FALSE,na = "",
+          fmsintl_service$data%>%# mutate(Fiscal_Year=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(PlaceIsForeign,IsFMS,CrisisProductOrServiceArea),
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(PlaceIsForeign,IsFMS,CrisisProductOrServiceArea))
+
+ggsave600dpi(fmsintl_service,file="../output/fmsintl_service.png",
+             size = 12, lineheight=1, height =6, width=9)
+
+
+(fmsintl_service_vendor <-  build_plot(data=platpscintldef%>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign) &
+                                                                            Fiscal_Year>2011 & !is.na(IsFMS)&
+                                                                  SimpleArea=="Services"),#IsFMS==TRUE                             
+                                            chart_geom="Bar Chart",
+                            x_var="dFYear",
+                            y_var="Action_Obligation_OMB24_GDP22",
+                            color_var="CrisisProductOrServiceArea",
+                            facet_var="IsFMSplaceIntl",
+                            second_var="VendorSize_Intl",
+                            labels_and_colors=intl_lc,
+                            column_key=intl_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE)+theme(legend.position = "right")+
+    facet_grid( IsFMSplaceIntl~VendorSize_Intl , scales="free_y", space="free_y")+labs(title="Services FMS or Performed Internationally")+
+    theme(  strip.text.y=element_text(angle=0))
+  )
+
+
+write.csv(file="..//Output//fmsintl_service_vendor.csv",row.names = FALSE,na = "",
+          fmsintl_service_vendor$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(IsFMSplaceIntl,VendorSize_Intl,CrisisProductOrServiceArea),
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(IsFMSplaceIntl,VendorSize_Intl,CrisisProductOrServiceArea))
+
+ggsave600dpi(fmsintl_service_vendor,file="../output/fmsintl_service_vendor.png",
+             size = 12, lineheight=1, height =6, width=9)
+
+```z
 
 ###FMS identification
 ```{r contract_identification}
@@ -1579,7 +1866,66 @@ ggsave600dpi(contract_identification,file="../output/figure_03_contract_identifi
 
 
 ```
+#### Service Category
+```{r FPDS_vendor_Intl}
 
+summary(factor(platpscintldef$SimpleArea))
+# undebug(format_data_for_plot)
+(fmsintl_service <-  build_plot(data=platpscintldef%>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign) &
+                                                                            Fiscal_Year>2011 & !is.na(IsFMS)&
+                                                                  SimpleArea=="Services"),#IsFMS==TRUE                             
+                                            chart_geom="Bar Chart",
+                            x_var="Fiscal_Year",
+                            y_var="Action_Obligation_OMB24_GDP22",
+                            color_var="CrisisProductOrServiceArea",
+                            facet_var="PlaceIsForeign",
+                            second_var="IsFMS",
+                            labels_and_colors=intl_lc,
+                            column_key=intl_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE)+theme(legend.position = "right")+
+    facet_grid( .~IsFMS+PlaceIsForeign )+labs(title="Services FMS or Performed Internationally")#, scales="free_y"#, scales="free_y"
+  )
+summary(platpscintldef$dFYear)
+
+write.csv(file="..//Output//fmsintl_service.csv",row.names = FALSE,na = "",
+          fmsintl_service$data%>%# mutate(Fiscal_Year=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(PlaceIsForeign,IsFMS,CrisisProductOrServiceArea),
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(PlaceIsForeign,IsFMS,CrisisProductOrServiceArea))
+
+ggsave600dpi(fmsintl_service,file="../output/fmsintl_service.png",
+             size = 12, lineheight=1, height =6, width=9)
+
+
+(fmsintl_service_vendor <-  build_plot(data=platpscintldef%>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign) &
+                                                                            Fiscal_Year>2011 & !is.na(IsFMS)&
+                                                                  SimpleArea=="Services"),#IsFMS==TRUE                             
+                                            chart_geom="Bar Chart",
+                            x_var="dFYear",
+                            y_var="Action_Obligation_OMB24_GDP22",
+                            color_var="CrisisProductOrServiceArea",
+                            facet_var="IsFMSplaceIntl",
+                            second_var="VendorSize_Intl",
+                            labels_and_colors=intl_lc,
+                            column_key=intl_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE)+theme(legend.position = "right")+
+    facet_grid( IsFMSplaceIntl~VendorSize_Intl , scales="free_y", space="free_y")+labs(title="Services FMS or Performed Internationally")+
+    theme(  strip.text.y=element_text(angle=0))
+  )
+
+
+write.csv(file="..//Output//fmsintl_service_vendor.csv",row.names = FALSE,na = "",
+          fmsintl_service_vendor$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(IsFMSplaceIntl,VendorSize_Intl,CrisisProductOrServiceArea),
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(IsFMSplaceIntl,VendorSize_Intl,CrisisProductOrServiceArea))
+
+ggsave600dpi(fmsintl_service_vendor,file="../output/fmsintl_service_vendor.png",
+             size = 12, lineheight=1, height =6, width=9)
+
+```
 ### JSF International
 ```{r FPDS_JSF}
 
