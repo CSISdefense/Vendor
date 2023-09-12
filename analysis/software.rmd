@@ -109,23 +109,20 @@ label_SWpsc<-function(x){
   x$SWpsc<-as.character(x$SimpleArea)
   x$SWpsc[x$ProductOrServiceCode ==c("D317","D319","DA10")]<-"Annual Software Maint."
   
-  
-  
-  
-  
   # x$SWpsc[x$ProductOrServiceCode =="D317" ]<-"Annual Software Maint."
   x$SWpsc[x$ProductOrServiceCode %in% c("7030","7A20","7A21","7H20","7F20") ]<-"Software as a product"
   
   x$SWpsc[x$ProductOrServiceCode %in% c("7010","7020","7021","7022","7025") ]<-"ADP Hardware as a product"
-  x$IsPossibleSoftwareEngineering[x$ProductOrServiceCode %in%  c("7010","7020","7021","7022","7025")]<-0
+  # x$IsPossibleSoftwareEngineering[x$ProductOrServiceCode %in% 
+  # c("7010","7020","7021","7022","7025")]<-0
   x$SWpsc[x$ProductOrServiceCode %in% c("7040","7042","7045","7050","7435") ]<-"IT as a product"
-  x$IsPossibleSoftwareEngineering[x$ProductOrServiceCode %in% c("7040","7042","7045","7050","7435") ]<-0
+  # x$IsPossibleSoftwareEngineering[x$ProductOrServiceCode %in% c("7040","7042","7045","7050","7435") ]<-0
   x$SWpsc[x$ProductOrServiceCode %in% c("7B20","7B21","7B22","7C20","7C21","7E21","7K20") ]<-"ADP Hardware+ as a product"
-  x$IsPossibleSoftwareEngineering[x$ProductOrServiceCode %in% c("7B20","7B21","7B22","7C20","7C21","7E21","7K20")]<-0
+  # x$IsPossibleSoftwareEngineering[x$ProductOrServiceCode %in% c("7B20","7B21","7B22","7C20","7C21","7E21","7K20")]<-0
   x$SWpsc[x$ProductOrServiceCode %in% c("7E21","7G20","7G21","7G22","7J20") ]<-"Telcom+ as a product"
-  x$IsPossibleSoftwareEngineering[x$ProductOrServiceCode %in%  c("7E21","7G20","7G21","7G22")]<-0
+  # x$IsPossibleSoftwareEngineering[x$ProductOrServiceCode %in%  c("7E21","7G20","7G21","7G22")]<-0
   x$SWpsc[x$ProductOrServiceCode %in% c("7D20","7E20","7F20","7K20") ]<-"IT+ as a product"
-  x$IsPossibleSoftwareEngineering[x$ProductOrServiceCode %in%  c("7D20","7E20","7F20","7K20")]<-0
+  # x$IsPossibleSoftwareEngineering[x$ProductOrServiceCode %in%  c("7D20","7E20","7F20","7K20")]<-0
   x$SWpsc[x$ProductOrServiceCode ==c("D305","DB10","DC10") ]<-"Teleprocessing / Cloud Computing"
   x$SWpsc[x$ProductOrServiceCode %in% c("D302","D307","D308","D313","D318","D399","H170","H970","J070","R413",
                                         "DA01")]<-"Software Development Related"
@@ -147,9 +144,9 @@ platpscintldef %>% filter(IsPossibleSoftwareEngineering==1) %>%
 
 
 write.csv(platpscintldef %>% filter(Fiscal_Year>=2000 & !is.na(IsPossibleSoftwareEngineering)) %>%
-  group_by(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText,IsPossibleSoftwareEngineering,AsAServiceLaborProduct,Fiscal_Year)%>% summarise(o=sum(Action_Obligation_OMB24_GDP22))%>%#/1000000000
-    arrange(Fiscal_Year)%>%pivot_wider(id_cols=c(SWpsc,ProductOrServiceCode,ProductOrServiceCodeText,IsPossibleSoftwareEngineering,AsAServiceLaborProduct),
-                names_from=Fiscal_Year,values_from=o)%>%arrange(IsPossibleSoftwareEngineering,AsAServiceLaborProduct,SWpsc,ProductOrServiceCode,ProductOrServiceCodeText)
+  group_by(IsPossibleSoftwareEngineering,AsAServiceLaborProduct,ProductOrServiceCode,ProductOrServiceCodeText,Fiscal_Year)%>% summarise(o=sum(Action_Obligation_OMB24_GDP22))%>%#/1000000000
+    arrange(Fiscal_Year)%>%pivot_wider(id_cols=c(ProductOrServiceCode,ProductOrServiceCodeText,IsPossibleSoftwareEngineering,AsAServiceLaborProduct),
+                names_from=Fiscal_Year,values_from=o)%>%arrange(IsPossibleSoftwareEngineering,AsAServiceLaborProduct,ProductOrServiceCode,ProductOrServiceCodeText)
   ,file="..\\output\\Software_Prodserv.csv",row.names = FALSE)
 
 
@@ -327,6 +324,37 @@ SWpscdetail<-build_plot(
   # color="Competition")+
   theme(legend.position = "right")+
   labs(caption="Note: Unlabeled not shown. Source: FPDS; CSIS analysis.")
+)
+
+
+(
+SWpscdetail<-build_plot(
+  data=platpscintldef %>% filter(Fiscal_Year>=2002 & ProductServiceOrRnDarea!="Unlabeled" & !is.na(IsPossibleSoftwareEngineering) & IsPossibleSoftwareEngineering!="Other Electrical and Light")%>%
+    mutate(IsPossibleSoftwareEngineering=factor_wrap(IsPossibleSoftwareEngineering)),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=sw_lc,
+  # NA, #VAR.ncol
+  x_var="Fiscal_Year", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="AsAServiceLaborProduct", #color_var
+  facet_var="IsPossibleSoftwareEngineering", #facet_var
+  # column_key=sw_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(caption="Note: Other electric and lighting not shown. Source: FPDS; CSIS analysis.",
+       y="Defense Prime Contract Obligations (2022 $s)",x="Fiscal Year")+
+    facet_wrap(~IsPossibleSoftwareEngineering, ncol=3)
 )
 
 # platpscintldef$ContractingAgencyText
