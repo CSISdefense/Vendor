@@ -13,21 +13,21 @@ library(DBI)
 
 # path<-"C:\\Users\\grego\\Repositories\\USAspending-local\\"
 # path<-"F:\\Users\\Greg\\Repositories\\USAspending-local\\"
-base<-"F:\\Users\\gsanders\\Documents\\Repositories\\USAspending-local\\"
+path<-"F:\\Users\\gsanders\\Documents\\Repositories\\USAspending-local\\"
 dir<-"Assistance"
 
 
-dir.exists(file.path(base,dir,"XIMB"))
+dir.exists(file.path(path,dir,"XIMB"))
 Agencies<-c("XIMB","Commerce","SBA")
 
 
 
 for(agency in Agencies){
-  if(!dir.exists(file.path(base,dir,agency)))
-    stop(paste("Missing Directory"),file.path(base,dir,agency))
-  path<-file.path(base,dir,agency)
-  files<-list.files(path) 
-  files<-files[!files %in% gsub(paste(path,"/",sep=""),"",list.dirs(path))]
+  if(!dir.exists(file.path(path,dir,agency)))
+    stop(paste("Missing Directory"),file.path(path,dir,agency))
+  full_path<-file.path(path,dir,agency)
+  files<-list.files(full_path) 
+  files<-files[!files %in% gsub(paste(full_path,"/",sep=""),"",list.dirs(full_path))]
   flen<-nchar(files)
   
   # extension<-gsub("^.*\\.","",files)
@@ -50,23 +50,23 @@ for(agency in Agencies){
   # dirs<-safe_name(dirs)
   # 
   # 
-  # file.rename(from=file.path(path,files),
-  #             to=file.path(path,dirs,shorten_name(files)))
+  # file.rename(from=file.path(full_path,files),
+  #             to=file.path(full_path,shorten_name(files)))
   # 
   
-  dirs<-list.dirs(file.path(path,dir,agency),recursive = FALSE)
-  file<-list.files(path)
+  dirs<-list.dirs(file.path(full_path,dir,agency),recursive = FALSE)
+  file<-list.files(full_path)
   file<-file[gsub("^.*\\.","",file)=="zip"]
   
   #Extract all the attachments
   for(f in file){
-    unzip(file.path(path,f),overwrite=FALSE,junkpaths=TRUE,exdir=path)
+    unzip(file.path(full_path,f),overwrite=FALSE,junkpaths=TRUE,exdir=full_path)
     
   }
 }
 
 
-i<-read_csv(file.path(path,dir,agency,"FY2023_All_Contracts_Full_20230811_1.csv"),n_max=1000000,guess_max=1000000)
+i<-read_csv(file.path(full_path,dir,agency,"FY2023_All_Contracts_Full_20230811_1.csv"),n_max=1000000,guess_max=1000000)
 # f<-read_delim("C:\\Users\\grego\\Repositories\\DIIGsql\\data_raw\\Errorlogging.FlatFileErrors.csv",delim=",",skip=1,col_names=FALSE)
 
 max(nchar(i$prime_award_transaction_place_of_performance_cd_original),na.rm=TRUE)
@@ -93,12 +93,14 @@ con <- dbConnect(odbc(),
                  PWD =pwd)
 
 
-file.list<-list.files(file.path(base,dir,agency))
+agency<-"SBA"
+file.list<-list.files(file.path(path,dir,agency))
 file.list<-file.list[gsub("^.*\\.","",file.list)=="csv"]
 # Error: nanodbc/nanodbc.cpp:1769: 22001: [Microsoft][ODBC SQL Server Driver]String data, right truncation 
 #My working theory is that in the absence of name matches, it assigns columns to the database
 #table in order, and that this lead to a truncation error that disappeared once all the names
 #matched.
+
 
 
 #6:41 am run  8/29
@@ -108,7 +110,9 @@ file.list<-file.list[gsub("^.*\\.","",file.list)=="csv"]
 #Error: nanodbc/nanodbc.cpp:1769: 22001: [Microsoft][ODBC SQL Server Driver]String data, right truncation 
 for (file.name in 1:length(file.list)){
   print(file.list[file.name])
-  i<-read_csv(file.path(base,dir,agency,file.list[file.name]),n_max=1000000,guess_max=1000000)
+  i<-read_csv(file.path(path,dir,agency,file.list[file.name]),n_max=1000000,guess_max=1000000)
+  #Only loans, using code because the name field is often blank
+  i %>% filter(assistance_type_code %in% c(7,9))
   i$USAspending_file_name<-file.list[file.name]
   filecheck<-data.frame(colname=colnames(i))
   filecheck$maxlen<-NULL
@@ -116,12 +120,19 @@ for (file.name in 1:length(file.list)){
     if (numbers::mod(c,10) == 0) print(c)
     filecheck$maxlen[c]<-max(sapply(i[,filecheck$colname[c]],nchar),na.rm=TRUE)
   }
-  t<-read_and_join_experiment(filecheck,"ErrorLogging_FAADCstage1_size.csv",directory="ImportAids//")
+  filecheck$importtype<-sapply(i,class)
+  t<-read_and_join_experiment(filecheck,"ErrorLogging_FAADCstage1_size.csv",directory="ImportAids//",skip_check_var = "stage1size")
   t$stage1size<-text_to_number(t$stage1size)
   if(nrow(t %>% filter (maxlen>=stage1size))>0){
     t %>% filter (maxlen>=stage1size)
     stop("Column length will lead to truncation")
   }
+  distinct(t %>% select(stage1type,importtype))
+  if(nrow(t %>% filter (stage1type %in% c("decimal","date")&importtype=="character" ))){
+    t %>% filter (stage1type %in% c("decimal","date")&importtype=="character" )
+    stop("Column type mismatch")
+  }
+  
   # write_csv(t %>% filter(!is.na(stage1size)),"match.csv")
   #started running at 10:09 pm finished by 6 am, 3/4 done by 12:30 am
   #5:10
