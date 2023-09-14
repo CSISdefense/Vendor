@@ -21,7 +21,7 @@ nrow(RU2duns %>% filter(TopDunsnumber=='' | is.na(TopDunsnumber)))
 ```
 
 ```
-## [1] 48031
+## [1] 47942
 ```
 
 ```r
@@ -45,7 +45,7 @@ if(any(RU2duns$TopDunsnumberCount>RU2duns$TotalCount))
 
 RU2duns <- RU2duns %>% mutate(
   DunsnumberNullCount=ifelse(is.na(DunsnumberNullCount),0,DunsnumberNullCount),
-  DunsnumberNullAmount=ifelse(is.na(DunsnumberNullAmount),0,DunsnumberNullCount),
+  DunsnumberNullAmount=ifelse(is.na(DunsnumberNullAmount),0,DunsnumberNullAmount),
   pCount=ifelse(TopDunsnumber=='' | is.na(TopDunsnumber),0,( TopDunsnumberCount+DunsnumberNullCount)/TotalCount),
   pDollar=ifelse(TopDunsnumber=='' | is.na(TopDunsnumber),0,( TopDunsnumberAmount+DunsnumberNullAmount)/TotalAmount),
   pMatch=ifelse(!is.nan(pDollar)&!is.na(pDollar),pDollar,pCount)
@@ -79,15 +79,15 @@ nrow(RU2duns %>% filter(pMatch==1))/nrow(RU2duns)
 ```
 
 ```
-## [1] 0.8795927
+## [1] 0.9342575
 ```
 
 ```r
-sum((RU2duns %>% filter(pMatch==1))$TotalCount)/sum(RU2duns$TotalCount)
+sum((RU2duns %>% filter(pCount==1))$TotalCount)/sum(RU2duns$TotalCount)
 ```
 
 ```
-## [1] 0.4887694
+## [1] 0.9305424
 ```
 
 ```r
@@ -95,7 +95,7 @@ sum((RU2duns %>% filter(pMatch==1))$TotalAmount)/sum(RU2duns$TotalAmount)
 ```
 
 ```
-## [1] 0.4862155
+## [1] 0.8417633
 ```
 
 ```r
@@ -103,7 +103,7 @@ nrow(RU2duns %>% filter(abs(pMatch-1)<0.1))/nrow(RU2duns)
 ```
 
 ```
-## [1] 0.8970242
+## [1] 0.9442716
 ```
 
 ```r
@@ -111,7 +111,7 @@ sum((RU2duns %>% filter(abs(pMatch-1)<0.1))$TotalCount)/sum(RU2duns$TotalCount)
 ```
 
 ```
-## [1] 0.595811
+## [1] 0.9305424
 ```
 
 ```r
@@ -119,7 +119,7 @@ sum((RU2duns %>% filter(abs(pMatch-1)<0.1))$TotalAmount)/sum(RU2duns$TotalAmount
 ```
 
 ```
-## [1] 0.6302717
+## [1] 0.9309447
 ```
 
 ```r

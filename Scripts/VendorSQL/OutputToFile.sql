@@ -24,7 +24,46 @@ SET NOCOUNT ON;
   where f.fiscal_year >= 2000 and f.obligatedamount>=5000000
   
   
-
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+  SELECT [recipient_uei]
+      ,[Fiscal_Year]
+      --,[ParentID]
+      --,[StandardizedTopContractor]
+      --,[TopVendorNameTotalAmount]
+      --,[Recipient_Parent_UEI]
+      --,[Recipient_Parent_UEIFirstDate]
+      --,[Dunsnumber]
+      --,[ParentDUNSnumber]
+      --,[HeadquarterCode]
+      --,[Cage]
+      --,[ObligatedAmount]
+      --,[fed_funding_amount]
+      --,[topISO3countrycode]
+      --,[topISO3countrytotalamount]
+      --,[MaxOfCAUobligatedAmount]
+      --,[AnyIsSmall]
+      --,[AlwaysIsSmall]
+      --,[ObligatedAmountIsSmall]
+      --,[IsOnePercentPlusSmall]
+      --,[EntitySizeCode]
+      --,[IsEntityAbove1990constantReportingThreshold]
+      --,[IsEntityAbove2016constantReportingThreshold]
+      --,[IsEntityAbove2018constant10ThousandThreshold]
+      --,[IsEntityAbove2016constantOneMillionThreshold]
+      --,[AnyEntityUSplaceOfPerformance]
+      --,[AnyEntityForeignPlaceOfPerformance]
+      --,[ChildCount]
+      --,[IsPresent]
+      --,[CSISmodifiedDate]
+      --,[CSIScreateddate]
+      --,[CSISmodifiedBy]
+      ,[TopDunsnumber]
+      ,[TopDunsnumberAmount]
+      ,[TotalAmount]
+      ,[TopDunsnumberCount]
+      ,[TotalCount]
+  FROM [Vendor].[Recipient_UEIhistory]
 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
