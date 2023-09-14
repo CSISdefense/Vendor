@@ -136,6 +136,7 @@ for (file.name in 1:length(file.list)){
   # write_csv(t %>% filter(!is.na(stage1size)),"match.csv")
   #started running at 10:09 pm finished by 6 am, 3/4 done by 12:30 am
   #5:10
+  print(nrow(i))
   for (r in 0:9){
     start<-(r*100000)+1
     end<-((r+1)*100000)
