@@ -108,11 +108,11 @@ file.list<-file.list[gsub("^.*\\.","",file.list)=="csv"]
 #8:00 am run? on to set three by 8:43
 #1 million rows finished at 10:44Am, so may 2h45m
 #Error: nanodbc/nanodbc.cpp:1769: 22001: [Microsoft][ODBC SQL Server Driver]String data, right truncation 
-for (file.name in 1:length(file.list)){
+for (file.name in 24:length(file.list)){
   print(file.list[file.name])
   i<-read_csv(file.path(path,dir,agency,file.list[file.name]),n_max=1000000,guess_max=1000000)
   #Only loans, using code because the name field is often blank
-  i %>% filter(assistance_type_code %in% c(7,9))
+  i <-i %>% filter(assistance_type_code %in% c(7,9))
   i$USAspending_file_name<-file.list[file.name]
   filecheck<-data.frame(colname=colnames(i))
   filecheck$maxlen<-NULL
