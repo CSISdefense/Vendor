@@ -112,7 +112,7 @@ for (file.name in 24:length(file.list)){
   print(file.list[file.name])
   i<-read_csv(file.path(path,dir,agency,file.list[file.name]),n_max=1000000,guess_max=1000000)
   #Only loans, using code because the name field is often blank
-  i <-i %>% filter(assistance_type_code %in% c(7,9))
+  i <-i %>% as.data.frame(filter(assistance_type_code %in% c(7,9)))
   i$USAspending_file_name<-file.list[file.name]
   filecheck<-data.frame(colname=colnames(i))
   filecheck$maxlen<-NULL
