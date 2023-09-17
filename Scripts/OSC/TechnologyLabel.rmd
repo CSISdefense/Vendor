@@ -1,0 +1,311 @@
+---
+title: "hightech Text Label"
+author: "Greg Sanders"
+date: "2022-07-31"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(RTextTools)
+library(readr)
+library(csis360)
+library(dplyr)
+
+library(tidyr)
+dir.exists(file.path("..","..","Data","semi_clean","OSC"))
+file.exists(file.path("..","..","Data","semiclean","OSC","FAADCloanDataSet.rda"))
+load("C:\\Users\\grego\\Repositories\\Vendor\\Data\\semi_clean\\OSC\\FAADCloanDataSet.rda")
+
+list.files(file.path("..","..","Data","semi_clean","OSC"))
+load(file=file.path("..","..","Data","semiclean","OSC","FAADCloanDataSet.rda"))
+
+
+loan<-standardize_variable_names(loan)
+descrip<-loan %>% group_by(transaction_description) %>%
+  summarise(n=nrow(total_obligated_amount),
+    federal_action_obligation=sum(federal_action_obligation),
+              total_obligated_amount=sum(total_obligated_amount))
+
+
+#Paranoia check that we can retain integrity when just reading and writing.
+# dcr1m<-dcr %>% filter(obligatedamount>=1000000)
+# dcr10m<-dcr %>% filter(obligatedamount>=10000000)
+
+
+```
+
+# Setup
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+### OTA description hightech labeling
+
+#### label function
+```{r labeling_function}
+
+label_UAS<-function(x,col="Description_of_Requirement"){
+  x<-as.data.frame(x)
+  # grep("hightech|Unmanned|Uninhabited|Uncrewed|Remotely Crewed",x$Description_of_Requirement)
+  x$hightech<-NA
+  x$deeptech<-NA
+  x$Maritime<-NA
+  x$mq<-NA
+  x$rq<-NA
+  
+  # x$hightech[grep("RPA",x[,col],ignore.case = TRUE)]<-TRUE Doesn't seem to be any.
+  
+  x$hightech[grep("hightech",x[,col])]<-TRUE
+  sum(x$hightech,na.rm=TRUE)
+  
+  x$hightech[grep("QUASAR",x[,col])]<-NA
+  x$hightech[grep("QUASI",x[,col])]<-NA
+  x$hightech[grep("EXHUAST",x[,col])]<-NA
+  sum(x$hightech,na.rm=TRUE)
+  x$hightech[grep("UAV",x[,col])]<-TRUE
+  sum(x$hightech,na.rm=TRUE)
+  x$hightech[grep("Unmanned",x[,col],ignore.case = TRUE)]<-TRUE
+  sum(x$hightech,na.rm=TRUE)
+  x$hightech[grep("Remotely Crewed",x[,col],ignore.case = TRUE)]<-TRUE
+  sum(x$hightech,na.rm=TRUE)
+  x$hightech[grep("Remotely Piloted",x[,col],ignore.case = TRUE)]<-TRUE
+  sum(x$hightech,na.rm=TRUE)
+  x$hightech[grep("Uninhabited",x[,col],ignore.case = TRUE)]<-TRUE
+  sum(x$hightech,na.rm=TRUE)
+  
+  x$hightech[grep("Uncrewed",x[,col],ignore.case = TRUE)]<-TRUE
+  sum(x$hightech,na.rm=TRUE)
+  
+  # Excluding Counter hightech
+  x$deeptech[grep("Counter Unmanned",x[,col],ignore.case = TRUE)]<-TRUE
+  sum(x$deeptech,na.rm=TRUE)
+  x$deeptech[grep("C-hightech",x[,col],ignore.case = TRUE)]<-TRUE
+  x$deeptech[grep("CSUAS",x[,col],ignore.case = TRUE)]<-TRUE
+  x$deeptech[grep("Counter hightech",x[,col],ignore.case = TRUE)]<-TRUE
+  x$deeptech[grep("Counter-hightech",x[,col],ignore.case = TRUE)]<-TRUE
+  
+  x$deeptech[grep("Counter-Unmanned",x[,col],ignore.case = TRUE)]<-TRUE
+  sum(x$deeptech,na.rm=TRUE)
+  
+  x$UGS[grep("Unmanned Ground",x[,col],ignore.case = TRUE)]<-TRUE
+  
+  x$Maritime[grep("Unmanned Surface",x[,col],ignore.case = TRUE)]<-TRUE
+  x$Maritime[grep("Unmanned Maritime",x[,col],ignore.case = TRUE)]<-TRUE
+  
+  x$Maritime[grep("UNDERWATER UNMANNED",x[,col],ignore.case = TRUE)]<-TRUE
+  x$Maritime[grep("UNMANNED UNDERWATER",x[,col],ignore.case = TRUE)]<-TRUE
+  
+  x$Maritime[grep("UNMANNED UNDERSEA",x[,col],ignore.case = TRUE)]<-TRUE
+  sum(x$deeptech,na.rm=TRUE)
+  
+  
+  x$hightech[x$deeptech==TRUE]<-NA
+  
+  x$hightech[x$Maritime==TRUE]<-NA
+  x$hightech[x$UGS==TRUE]<-NA
+  sum(x$hightech,na.rm=TRUE)
+  
+  
+  
+  x$mq[grep("MQ-",x[,col],ignore.case = TRUE)]<-TRUE
+  # x$mq[grep("MQT",x[,col],ignore.case = TRUE)]<-NA
+  # x$mq[grep("MQSA",x[,col],ignore.case = TRUE)]<-NA
+  # x$mq[grep("MESSAGE QUEUE",x[,col],ignore.case = TRUE)]<-NA
+  # x$mq[grep("WEBSPHERE MQ",x[,col],ignore.case = TRUE)]<-NA
+  # x$mq[grep("CMQA",x[,col],ignore.case = TRUE)]<-NA
+  # x$mq[grep("NMQ",x[,col],ignore.case = TRUE)]<-NA
+  # x$mq[grep("MQU",x[,col],ignore.case = TRUE)]<-NA #Covers most proper words
+  # x$mq[grep("OFMQ",x[,col],ignore.case = TRUE)]<-NA
+  sum(x$mq,na.rm = TRUE)
+  x$rq[grep("RQ-",x[,col],ignore.case = TRUE)]<-TRUE
+  # x$rq[grep("RQU",x[,col],ignore.case = TRUE)]<-NA #Covers most proper words
+  # x$rq[grep("RQMT",x[,col],ignore.case = TRUE)]<-NA
+   x$rq[grep("AN/SRQ-",x[,col],ignore.case = TRUE)]<-NA
+   x$rq[grep("AN/ARQ-",x[,col],ignore.case = TRUE)]<-NA
+  # x$rq[grep("TRQ",x[,col],ignore.case = TRUE)]<-NA
+  # x$rq[grep("SRQ",x[,col],ignore.case = TRUE)]<-NA
+  # x$rq[grep("AHRQ",x[,col],ignore.case = TRUE)]<-NA
+  sum(x$rq,na.rm=TRUE)
+  
+  x$any_uas<-NA
+  x$any_uas<-x$hightech|x$mq|x$rq
+  x
+}
+
+
+
+```
+
+
+#### Assign labels
+
+```{r assign labels}
+
+d<-read_delim(file.path("..","data","semi_clean","ota_description_UAS.csv"),na ="",col_types="ccccc",delim=",")
+m<-read_csv(file.path("..","data","semi_clean","contract_MajorProgramCode.csv"))
+# dcr<-read_delim(file.path("..","data","semi_clean","DescriptionOfContractRequirement_Portfolio.csv"),"\t")
+
+dcr10m<-read_delim(file="..//data//semi_clean//FPDS10m_descrip_plat.csv",delim = ",")
+problems(d)
+d<-standardize_variable_names(d)
+dcr10m<-standardize_variable_names(dcr10m)
+colnames(dcr10m)<-trimws(colnames(dcr10m))
+dcr10m$obligatedamount<-text_to_number(dcr10m$obligatedamount)
+
+
+dcr10m<-label_UAS(dcr10m,"descriptionofcontractrequirement")
+d<-label_UAS(d,"Description_of_Requirement")
+m<-label_UAS(m,"majorprogramcode")
+
+write_delim(d,file.path("..","data","semi_clean","ota_description_UAS.csv"),na = "",delim=",")
+write_delim(m,file.path("..","data","semi_clean","contract_MajorProgramCode.csv"),na = "",delim=",")
+write_delim(dcr10m,file="..//data//semi_clean//FPDS10m_descrip_plat.csv",na = "",delim = ",")
+summary(d)
+summary(m)
+summary(dcr10m)
+levels(dcr10m$PlatformPortfolioRemote)
+dcr10m %>% group_by(any_uas,PlatformPortfolioRemote) %>% filter(any_uas  | PlatformPortfolioRemote=="Remotely Operated") %>%
+  mutate(gt100m=ifelse(obligatedamount>100000000,obligatedamount,0),
+         gt10m=ifelse(obligatedamount> 10000000,obligatedamount,0)) %>%
+  summarise(obligatedamount=sum(obligatedamount, na.rm = TRUE),
+            gt100m=sum(gt100m),
+            gt10m=sum(gt10m))
+
+
+dcr10m %>% group_by(Remotely_Crewed) %>% filter(Remotely_Crewed!=""  | PlatformPortfolioRemote=="Remotely Operated") %>%
+  summarise(obligatedamount=sum(obligatedamount, na.rm = TRUE))
+
+
+summary(dcr10m %>% filter (obligatedamount> 10000000))
+#UUVSS maritime
+#MORFIUS counter-hightech hightech
+#SUAS Small hightech
+```
+### Reverting text for output
+```{r}
+
+dcr10m<-read_delim(file="..//data//semi_clean//FPDS10m_descrip_plat.csv",delim = ",")
+
+dcr10m<-dcr10m %>% select(-descriptionofcontractrequirement) %>% read_and_join_experiment(
+                         path="..//data_raw//",dir="",lookup_file = "FPDS10m_descrip_plat_row_number.csv",
+                         add_var="descriptionofcontractrequirement",
+                         # skip_check_var = "Remotely_Crewed",
+                         by=c("descrip_plat_row_number"))
+
+write_delim(dcr10m,file="..//data//semi_clean//FPDS10m_descrip_plat.csv",na = "",delim = ",")
+```
+
+### Expanding labels to contracts
+
+You can also embed plots, for example:
+
+```{r contract_expansion}
+
+loan <- read_delim(
+  "..//data_raw//OTA_All_Fields.csv",delim = ",",
+  col_names = TRUE, guess_max = 500000,na=c("NA","NULL"),skip = 2)
+loan<-standardize_variable_names(loan)
+
+loan<-read_and_join_experiment(loan,
+                         path="..//data_raw//",dir="",lookup_file = "OTA_descrip_row_number.csv",
+                         add_var="descrip_row_number",
+                         # skip_check_var = "Remotely_Crewed",
+                         by="Description_of_Requirement")
+
+loan<-read_and_join_experiment(loan,
+                         path="..//data//semi_clean//",dir="",lookup_file = "ota_description_UAS.csv",
+                         add_var="Remotely_Crewed",
+                         # skip_check_var = "Remotely_Crewed",
+                         by="descrip_row_number",
+                         col_types = "cnccccccccc")
+
+loan$Remotely_Crewed[loan$Remotely_Crewed %in% c("","FALSE")]<-NA
+
+
+sum(text_to_number(loan$Action_Obligation)[loan$Remotely_Crewed %in% c("hightech","hightech/C-hightech")])
+
+
+#This is incredibly slow ~20m, perhaps because of all the warning it prints.
+# loan<-loan %>% group_by(`PIIDAgencyID`,PIID,`ReferencedIDVAgencyID`,Referenced_IDV_PIID) %>%
+#   mutate(max_rc=max(Remotely_Crewed,na.rm=TRUE),
+#          min_rc=min(Remotely_Crewed,na.rm=TRUE))
+
+Remotely_Crewed_CAU<-loan %>% filter(Remotely_Crewed %in% c("hightech","hightech/C-hightech"))%>%
+  group_by(PIIDAgencyID,PIID,ReferencedIDVAgencyID,Referenced_IDV_PIID,
+           Remotely_Crewed) %>% dplyr::summarise()
+
+Remotely_Crewed_CAU$ReferencedIDVAgencyID[is.na(Remotely_Crewed_CAU$ReferencedIDVAgencyID)]<-""
+
+# Training and Readiness Accelerator (TReX) does include hightech, but is a  broader OTA.
+Remotely_Crewed_CAU<-Remotely_Crewed_CAU %>% filter(PIID!="W900KK1890005") 
+
+colnames(Remotely_Crewed_CAU)[colnames(Remotely_Crewed_CAU)=="Remotely_Crewed"]<-"Remotely_Crewed_CAU"
+write_csv(Remotely_Crewed_CAU,file.path("..","data","semi_clean","ota_CAU_UAS.csv"))
+
+
+# 
+# write.csv(loan %>% select(`PIIDAgencyID`,PIID,`ReferencedIDVAgencyID`,Referenced_IDV_PIID,
+#                                  Description_of_Requirement,Remotely_Crewed,max_rc,min_rc,Action_Obligation)
+#      %>% filter(max_rc=='hightech'|min_rc=="hightech"),"CUA_OTA_check.csv")
+# 
+# 
+# write.csv(loan %>% select(`PIIDAgencyID`,PIID,`ReferencedIDVAgencyID`,Referenced_IDV_PIID,
+#                                  Description_of_Requirement,Remotely_Crewed,max_rc,min_rc,Action_Obligation,
+#                                  ProductOrServiceCode)
+#      %>% filter(!is.na(max_rc) | ProductOrServiceCode=="1550"),"CUA_OTA_rc_check.csv")
+# 
+# summary(factor(loan$Remotely_Crewed[loan$ProductOrServiceCode=="1550"]))
+
+
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+# Test labeling language
+```{r OTA_UAS_test}
+
+loan <- read_delim(
+  "..//data_raw//OTA_All_Fields.csv",delim = ",",
+  col_names = TRUE, guess_max = 500000,na=c("NA","NULL"),skip = 2)
+loan<-standardize_variable_names(loan)
+loan<-apply_standard_lookups(loan)
+
+loan$IsRemotelyOperated<-FALSE
+loan$IsRemotelyOperated[loan$ProductOrServiceCode=="1550"]<-TRUE
+sum(loan$Action_Obligation_OMB23_GDP21[loan$IsRemotelyOperated],na.rm=TRUE)
+
+loan<-read_and_join_experiment(loan,
+                         path="..//data_raw//",dir="",lookup_file = "OTA_descrip_row_number.csv",
+                         add_var="descrip_row_number",
+                         # skip_check_var = "Remotely_Crewed",
+                         by="Description_of_Requirement")
+
+loan<-read_and_join_experiment(loan,
+                         path="..//data//semi_clean//",dir="",lookup_file = "ota_description_UAS.csv",
+                         add_var="Remotely_Crewed",
+                         # skip_check_var = "Remotely_Crewed",
+                         by="descrip_row_number",
+                         col_types = "cnccccccccc")
+
+loan$IsRemotelyOperated[loan$Remotely_Crewed %in% c("hightech","hightech/C-hightech")]<-TRUE
+sum(loan$Action_Obligation_OMB23_GDP21[loan$IsRemotelyOperated],na.rm=TRUE)
+
+loan$`ReferencedIDVAgencyID`[is.na(loan$`ReferencedIDVAgencyID`)]<-""
+loan<-read_and_join_experiment(loan,
+                         path="..//data//semi_clean//",dir="",lookup_file = "ota_CAU_UAS.csv",
+                         add_var="Remotely_Crewed_CAU",
+                         skip_check_var = "Remotely_Crewed_CAU",
+                         by=c("PIIDAgencyID","PIID","ReferencedIDVAgencyID","Referenced_IDV_PIID"),col_types="dcccc")
+
+summary(factor(loan$Remotely_Crewed_CAU))
+
+
+loan$IsRemotelyOperated[loan$Remotely_Crewed_CAU %in% c("hightech","hightech/C-hightech")]<-TRUE
+
+sum(loan$Action_Obligation_OMB23_GDP21[loan$IsRemotelyOperated],na.rm=TRUE)
+
+
+```
