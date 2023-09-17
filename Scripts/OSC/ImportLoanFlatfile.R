@@ -12,13 +12,13 @@ library(askpass)
 library(DBI)
 
 # path<-"C:\\Users\\grego\\Repositories\\USAspending-local\\"
-# path<-"F:\\Users\\Greg\\Repositories\\USAspending-local\\"
-path<-"F:\\Users\\gsanders\\Documents\\Repositories\\USAspending-local\\"
-dir<-"Assistance"
+path<-"F:\\Users\\Greg\\Repositories\\USAspending-local\\"
+# path<-"F:\\Users\\gsanders\\Documents\\Repositories\\USAspending-local\\"
+dir<-"Agency Assistance"
 
 
 dir.exists(file.path(path,dir,"XIMB"))
-Agencies<-c("XIMB","Commerce","SBA")
+Agencies<-c("XIMB","Commerce","SBA","DoD","Energy")
 
 
 
@@ -108,11 +108,14 @@ file.list<-file.list[gsub("^.*\\.","",file.list)=="csv"]
 #8:00 am run? on to set three by 8:43
 #1 million rows finished at 10:44Am, so may 2h45m
 #Error: nanodbc/nanodbc.cpp:1769: 22001: [Microsoft][ODBC SQL Server Driver]String data, right truncation 
-for (file.name in 24:length(file.list)){
+for (file.name in 29:length(file.list)){
   print(file.list[file.name])
   i<-read_csv(file.path(path,dir,agency,file.list[file.name]),n_max=1000000,guess_max=1000000)
   #Only loans, using code because the name field is often blank
-  i <-i %>% as.data.frame(filter(assistance_type_code %in% c(7,9)))
+  i <-i %>% filter(assistance_type_code %in% c("07","09","7","9"))
+  if(nrow(i)==0)
+    next
+  i<- as.data.frame(i)
   i$USAspending_file_name<-file.list[file.name]
   filecheck<-data.frame(colname=colnames(i))
   filecheck$maxlen<-NULL
@@ -145,7 +148,7 @@ for (file.name in 24:length(file.list)){
     if(end>nrow(i)) {end<-nrow(i)}
     print(c(start,end))
     dbAppendTable(conn = con, 
-                 name = SQL('"ErrorLogging"."FAADC"'), 
+                 name = SQL('"ErrorLogging"."FAADCstage1"'), 
                  value = i[start:end,])  ## x is any data frame
     #https://stackoverflow.com/questions/66864660/r-dbi-sql-server-dbwritetable-truncates-rows-field-types-parameter-does-not-w
     # values <- DBI::sqlAppendTable(
