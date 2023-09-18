@@ -28,16 +28,16 @@ load(file=file.path("..","..","Data","semiclean","OSC","FAADCloanDataSet.rda"))
   loan<-loan %>% filter(cfda_title!="DISASTER ASSISTANCE LOANS")
 
 loan<-standardize_variable_names(loan)
-descrip<-loan %>% group_by(transaction_description) %>%
-  summarise(n=nrow(total_obligated_amount),
-    federal_action_obligation=sum(federal_action_obligation),
-              total_obligated_amount=sum(total_obligated_amount))
 
 
 #Paranoia check that we can retain integrity when just reading and writing.
 # dcr1m<-dcr %>% filter(obligatedamount>=1000000)
 # dcr10m<-dcr %>% filter(obligatedamount>=10000000)
 
+descrip<-loan %>% group_by(transaction_description) %>%
+  summarise(n=nrow(total_obligated_amount),
+    federal_action_obligation=sum(federal_action_obligation),
+              total_obligated_amount=sum(total_obligated_amount))
 
 ```
 
@@ -77,10 +77,10 @@ label_keyword<-function(x,keyword,col="transaction_description"){
 
 keyword<-read_csv("..//..//data//semi_clean//OSC//osc_keyword_list.csv")
 col<-"transaction_description"
-x<-label_keyword(descrip,keyword)
-summary(x)
+labeled<-label_keyword(descrip,keyword)
+summary(labeled)
 
-labeled<-left_join(loan,x,by="transaction_description")
+labeled<-left_join(loan,labeled,by="transaction_description")
 labeled$HighTech[labeled$cfda_number %in% c("81.112","81.126","59.058")|
                    labeled$cfda_title %in% c("STEWARDSHIP SCIENCE GRANT PROGRAM",
                                      "FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES",
@@ -90,8 +90,8 @@ labeled$AnyTag[labeled$cfda_number %in% c("81.112","81.126","59.058")|
                                      "FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES",
                                      "FEDERAL AND STATE TECHNOLOGY PARTNERSHIP PROGRAM")]<-TRUE
 
-write_csv(labeled %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="OSCtagged.csv")
-write_csv(cfda,file="cfda.csv")
+write_csv(labeled %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../Output/OSC/OSCtagged.csv")
+write_csv(cfda,file="../../Output/OSC/cfda.csv")
   
 #   # grep("hightech|Unmanned|Uninhabited|Uncrewed|Remotely Crewed",x$Description_of_Requirement)
 #   x$hightech<-NA
