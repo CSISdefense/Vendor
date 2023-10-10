@@ -201,10 +201,10 @@ platpscintldef$TopCountryISO[is.na(platpscintldef$TopCountryISO) & !is.na(platps
 summary(factor(platpscintldef$SubCustomer.platform))
 summary(factor(platpscintldef$SubCustomer))
 platpscintldef %>% filter(Fiscal_Year==2021) %>% group_by(SubCustomer) %>% summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
-summary(platpscintldef$SubCustomer.JPO)
+summary(factor(platpscintldef$SubCustomer.JPO))
 platpscintldef$SubCustomer.JPO<-as.character(platpscintldef$SubCustomer.JPO)
-platpscintldef$SubCustomer.JPO[platpscintldef$SubCustomer.JPO=="Other DoD"& platpscintldef$SubCustomer!="Uncategorized"]<-
-  platpscintldef$SubCustomer[platpscintldef$SubCustomer.JPO=="Other DoD"& platpscintldef$SubCustomer!="Uncategorized"]
+platpscintldef$SubCustomer.JPO[platpscintldef$SubCustomer.JPO %in% c("Other DoD","3","6","8")& platpscintldef$SubCustomer!="Uncategorized"]<-
+  as.character(platpscintldef$SubCustomer[platpscintldef$SubCustomer.JPO %in% c("Other DoD","3","6","8")& platpscintldef$SubCustomer!="Uncategorized"])
 
 intl_lc<-prepare_labels_and_colors(platpscintldef)
 
@@ -816,10 +816,10 @@ output_TY<-full_data %>% group_by(PlatformPortfolio,Fiscal_Year)%>%
 write.csv(file="..//Output//topline_platform_current.csv",row.names = FALSE, na = "",
           output_TY)
 
-wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
-createSheet(wb, name = "Platform Portfolio")
-writeWorksheet(wb, output_TY, sheet = "Platform Portfolio", startRow = 15, startCol = 1)
-saveWorkbook(wb)
+wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx")
+# addWorksheet(wb, sheetName = "Platform Portfolio")
+ writeData(wb, output_TY, sheet = "Platform Portfolio", startRow = 1, startCol = 1)
+saveWorkbook(wb,file="..//Output//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
 rm(wb)
 
 ```
@@ -1837,7 +1837,7 @@ ggsave600dpi(fmsintl_service_vendor,file="../output/fmsintl_service_vendor.png",
 
 #### NTIB
 ```{r FPDS_vendor_Intl}
-ntibisoalpha3<-c("AUS","NZL","CAN","GBR")
+ntibisoalpha3<-c("AUS","CAN","GBR")#"NZL",
 platpscintldef$VendorNTIB<-"All Other"
 platpscintldef$VendorNTIB[platpscintldef$VendorISOalpha3=="USA"]<-"United States"
 platpscintldef$VendorNTIB[platpscintldef$VendorISOalpha3=="AUS"]<-"Australia"
@@ -1848,22 +1848,26 @@ platpscintldef$VendorNTIB[platpscintldef$VendorISOalpha3=="GBR"]<-"United Kingdo
 
 summary(factor(platpscintldef$VendorNTIB))
 # undebug(format_data_for_plot)
-(ntibintl <-  build_plot(data=platpscintldef%>% filter((PlaceISOalpha3 %in% ntibisoalpha3|
+
+summary(platpscintldef$dFYear)
+
+(ntibintl <-  build_plot(data=platpscintldef%>% filter((#PlaceISOalpha3 %in% ntibisoalpha3|
                                                                   VendorISOalpha3 %in% ntibisoalpha3)&!is.na(PlaceIsForeign) &
                                                                             Fiscal_Year>2011 & !is.na(VendorISOalpha3)),#VendorISOalpha3==TRUE                             
                                             chart_geom="Bar Chart",
-                            x_var="Fiscal_Year",
+                            x_var="dFYear",
                             y_var="Action_Obligation_OMB24_GDP22",
                             color_var="CrisisProductOrServiceArea",
-                            facet_var="PlaceIsForeign",
-                            second_var="VendorNTIB",
+                            facet_var="VendorNTIB",
+                            second_var="PlaceIsForeign",
                             labels_and_colors=intl_lc,
                             column_key=intl_ck,
                             legend=TRUE,
                             caption=FALSE,
                             format=TRUE)+theme(legend.position = "right")+
-    facet_grid( .~VendorNTIB~PlaceIsForeign )+labs(title="Present NTIB Vendor or Location Internationally")#, scales="free_y"#, scales="free_y"
-  )
+    facet_grid( VendorNTIB~. )+labs(title="Present NTIB Vendor",
+                                    y="Action Obligation (Constant 2022 $s")#, scales="free_y"#, scales="free_y"
+  )+scale_x_date("Fiscal Year",labels = date_format("'%y"))
 summary(platpscintldef$dFYear)
 
 write.csv(file="..//Output//ntibintl_contract.csv",row.names = FALSE,na = "",
@@ -1872,33 +1876,33 @@ write.csv(file="..//Output//ntibintl_contract.csv",row.names = FALSE,na = "",
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(PlaceIsForeign,VendorNTIB,CrisisProductOrServiceArea))
 
 ggsave600dpi(ntibintl,file="../output/ntibintl.png",
-             size = 12, lineheight=1, height =6, width=9)
+             size = 12, lineheight=1, height =5.5, width=12)
 
 
-(ntibintl_vendor <-  build_plot(data=platpscintldef%>% filter((PlaceISOalpha3 %in% ntibisoalpha3|VendorISOalpha3 %in% ntibisoalpha3)&!is.na(PlaceIsForeign) &
-                                                                            Fiscal_Year>2011 & !is.na(VendorISOalpha3)),#VendorISOalpha3==TRUE                             
-                                            chart_geom="Bar Chart",
-                            x_var="dFYear",
-                            y_var="Action_Obligation_OMB24_GDP22",
-                            color_var="CrisisProductOrServiceArea",
-                            facet_var="PlaceIsForeign",
-                            second_var="VendorSize_Intl",
-                            labels_and_colors=intl_lc,
-                            column_key=intl_ck,
-                            legend=TRUE,
-                            caption=FALSE,
-                            format=TRUE)+theme(legend.position = "right")+
-    facet_grid( PlaceIsForeign~VendorSize_Intl , scales="free_y", space="free_y")+labs(title="Vendor or Performed Internationally")+
-    theme(  strip.text.y=element_text(angle=0))
-  )
-
-# write.csv(file="..//Output//ntibintl_service_vendor.csv",row.names = FALSE,na = "",
+# (ntibintl_vendor <-  build_plot(data=platpscintldef%>% filter((PlaceISOalpha3 %in% ntibisoalpha3|VendorISOalpha3 %in% ntibisoalpha3)&!is.na(PlaceIsForeign) &
+#                                                                             Fiscal_Year>2011 & !is.na(VendorISOalpha3)),#VendorISOalpha3==TRUE                             
+#                                             chart_geom="Bar Chart",
+#                             x_var="dFYear",
+#                             y_var="Action_Obligation_OMB24_GDP22",
+#                             color_var="CrisisProductOrServiceArea",
+#                             facet_var="PlaceIsForeign",
+#                             second_var="VendorSize_Intl",
+#                             labels_and_colors=intl_lc,
+#                             column_key=intl_ck,
+#                             legend=TRUE,
+#                             caption=FALSE,
+#                             format=TRUE)+theme(legend.position = "right")+
+#     facet_grid( PlaceIsForeign~VendorSize_Intl , scales="free_y", space="free_y")+labs(title="Vendor or Performed Internationally")+
+#     theme(  strip.text.y=element_text(angle=0))
+#   )
+# 
+# write.csv(file="..//Output//ntibintl_vendor.csv",row.names = FALSE,na = "",
 #           ntibintl_vendor$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
 #             pivot_wider(id_cols=c(VendorNTIB,VendorSize_Intl,CrisisProductOrServiceArea),
 #                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(VendorNTIB,VendorSize_Intl,CrisisProductOrServiceArea))
 
-ggsave600dpi(ntibintl_service_vendor,file="../output/ntibintl_service_vendor.png",
-             size = 12, lineheight=1, height =6, width=9)
+# ggsave600dpi(ntibintl_vendor,file="../output/ntibintl_vendor.png",
+#              size = 12, lineheight=1, height =6, width=9)
 
 ```
 
@@ -2689,8 +2693,8 @@ write.csv(file="..//Output//Deep_Dives//Himars//Himars_psr.csv",row.names = FALS
 
 
 # wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
-# createSheet(wb, name = "Area")
-# writeWorksheet(wb, output_TY, sheet = "Area", startRow = 14, startCol = 14)
+# addWorksheet(wb, name = "Area")
+#  writeData(wb, output_TY, sheet = "Area", startRow = 14, startCol = 14)
 # saveWorkbook(wb)
 
 
