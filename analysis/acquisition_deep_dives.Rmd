@@ -16,7 +16,7 @@ library(ggplot2)
 library(dplyr)
 library(tidyverse)
 library(scales)
-
+library(openxlsx)
 axis.text.size<-10
 strip.text.size<-10
 legend.text.size<-8
@@ -1779,7 +1779,7 @@ write.csv(file="..//Output//HistoricPricing.csv",row.names = FALSE, na = "",
 
 summary(factor(platpscintldef$SimpleArea))
 # undebug(format_data_for_plot)
-(fmsintl_service <-  build_plot(data=platpscintldef%>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign) &
+(fmsintl_service <-  build_plot(data=platpscintldef%>% filter((PlaceIsForeign==1|VendorIsForeign==TRUE)&!is.na(PlaceIsForeign) &
                                                                             Fiscal_Year>2011 & !is.na(IsFMS)&
                                                                   SimpleArea=="Services"),#IsFMS==TRUE                             
                                             chart_geom="Bar Chart",
@@ -1833,7 +1833,75 @@ write.csv(file="..//Output//fmsintl_service_vendor.csv",row.names = FALSE,na = "
 ggsave600dpi(fmsintl_service_vendor,file="../output/fmsintl_service_vendor.png",
              size = 12, lineheight=1, height =6, width=9)
 
-```z
+```
+
+#### NTIB
+```{r FPDS_vendor_Intl}
+ntibisoalpha3<-c("AUS","NZL","CAN","GBR")
+platpscintldef$VendorNTIB<-"All Other"
+platpscintldef$VendorNTIB[platpscintldef$VendorISOalpha3=="USA"]<-"United States"
+platpscintldef$VendorNTIB[platpscintldef$VendorISOalpha3=="AUS"]<-"Australia"
+platpscintldef$VendorNTIB[platpscintldef$VendorISOalpha3=="NZL"]<-"New Zealand"
+platpscintldef$VendorNTIB[platpscintldef$VendorISOalpha3=="CAN"]<-"Canada"
+platpscintldef$VendorNTIB[platpscintldef$VendorISOalpha3=="GBR"]<-"United Kingdom"
+
+
+summary(factor(platpscintldef$VendorNTIB))
+# undebug(format_data_for_plot)
+(ntibintl <-  build_plot(data=platpscintldef%>% filter((PlaceISOalpha3 %in% ntibisoalpha3|
+                                                                  VendorISOalpha3 %in% ntibisoalpha3)&!is.na(PlaceIsForeign) &
+                                                                            Fiscal_Year>2011 & !is.na(VendorISOalpha3)),#VendorISOalpha3==TRUE                             
+                                            chart_geom="Bar Chart",
+                            x_var="Fiscal_Year",
+                            y_var="Action_Obligation_OMB24_GDP22",
+                            color_var="CrisisProductOrServiceArea",
+                            facet_var="PlaceIsForeign",
+                            second_var="VendorNTIB",
+                            labels_and_colors=intl_lc,
+                            column_key=intl_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE)+theme(legend.position = "right")+
+    facet_grid( .~VendorNTIB~PlaceIsForeign )+labs(title="Present NTIB Vendor or Location Internationally")#, scales="free_y"#, scales="free_y"
+  )
+summary(platpscintldef$dFYear)
+
+write.csv(file="..//Output//ntibintl_contract.csv",row.names = FALSE,na = "",
+          ntibintl$data%>%# mutate(Fiscal_Year=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(PlaceIsForeign,VendorNTIB,CrisisProductOrServiceArea),
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(PlaceIsForeign,VendorNTIB,CrisisProductOrServiceArea))
+
+ggsave600dpi(ntibintl,file="../output/ntibintl.png",
+             size = 12, lineheight=1, height =6, width=9)
+
+
+(ntibintl_vendor <-  build_plot(data=platpscintldef%>% filter((PlaceISOalpha3 %in% ntibisoalpha3|VendorISOalpha3 %in% ntibisoalpha3)&!is.na(PlaceIsForeign) &
+                                                                            Fiscal_Year>2011 & !is.na(VendorISOalpha3)),#VendorISOalpha3==TRUE                             
+                                            chart_geom="Bar Chart",
+                            x_var="dFYear",
+                            y_var="Action_Obligation_OMB24_GDP22",
+                            color_var="CrisisProductOrServiceArea",
+                            facet_var="PlaceIsForeign",
+                            second_var="VendorSize_Intl",
+                            labels_and_colors=intl_lc,
+                            column_key=intl_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE)+theme(legend.position = "right")+
+    facet_grid( PlaceIsForeign~VendorSize_Intl , scales="free_y", space="free_y")+labs(title="Vendor or Performed Internationally")+
+    theme(  strip.text.y=element_text(angle=0))
+  )
+
+# write.csv(file="..//Output//ntibintl_service_vendor.csv",row.names = FALSE,na = "",
+#           ntibintl_vendor$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
+#             pivot_wider(id_cols=c(VendorNTIB,VendorSize_Intl,CrisisProductOrServiceArea),
+#                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(VendorNTIB,VendorSize_Intl,CrisisProductOrServiceArea))
+
+ggsave600dpi(ntibintl_service_vendor,file="../output/ntibintl_service_vendor.png",
+             size = 12, lineheight=1, height =6, width=9)
+
+```
+
 
 ###FMS identification
 ```{r contract_identification}
@@ -2230,6 +2298,7 @@ ggsave600dpi(fpds_manufacture_intl_place,file="../output/FMS_BAAplaceintl_all.pn
              size = 12, lineheight=1, height =4.5, width=9)
 
 ```
+
 
 #### Place No JSF
 ```{r FPDS_vendor_Intl}
