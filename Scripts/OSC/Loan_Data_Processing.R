@@ -29,5 +29,4 @@ con <- dbConnect(odbc(),
 loan<-dbReadTable(con,  name = SQL('"Assistance"."OSCloanDataSet"'))
 save(loan,file="data/semi_clean/OSC/FAADCloanDataSet.rda")
 
-
 View(loan %>% select(action_date_fiscal_year,transaction_description))
