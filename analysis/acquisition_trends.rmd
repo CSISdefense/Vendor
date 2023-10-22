@@ -77,7 +77,7 @@ labels_and_colors<-prepare_labels_and_colors(full_data,path=file.path(local_path
 
 
 
-(toplineq<-build_plot(data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2023.1),#rbind(quarterly,q2021,e2021),
+(toplineq<-build_plot(data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2023.2),#rbind(quarterly,q2021,e2021),
                      chart_geom="Bar Chart",
                      x_var="dFYear",
                      y_var="Action_Obligation_OMB24_GDP22",
@@ -107,6 +107,21 @@ ggsave600dpi("..//Output//toplineqr_keynote.svg", toplineq+
              width=13, height= 5.5, units="in", size=20, lineheight = 0.75
              )
 
+ggsave600dpi(toplineq+labs(caption=NULL),
+            file="../output/AcqTrends/acq_fig2_1_fq.svg",size=12,caption_fraction=8/12,lineheight=1, height =3, width=6.5)
+
+
+
+output_TY<-def_data %>% mutate(Source="Contract") %>%  group_by(Source,fiscal_quarter,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+  arrange(Fiscal_Year)%>% 
+          pivot_wider(id_cols=c(Source,fiscal_quarter),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year) %>%arrange(Source,fiscal_quarter)
+
+wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
+# addWorksheet(wb, sheetName = "2-1 TOA")
+ writeData(wb, output_TY, sheet = "2-1 TOA", startRow = 1, startCol = 9)
+saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
 ```
 ## TOA annual
 ```{r TOAannual}
@@ -177,13 +192,13 @@ ggsave600dpi(topline,file=file.path("..","Output","topline_toa_annual.emf"),
              width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
              )
 
+
 write.csv(file="..//Output//toa_annual.csv",row.names = FALSE,na="",output_TY
           )
 
 
 
-
-wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
 createSheet(wb, name = "TOA")
 writeWorksheet(wb, output_TY, sheet = "TOA", startRow = 2, startCol = 1)
 saveWorkbook(wb)
@@ -289,7 +304,7 @@ write.csv(file="..//Output//toa_sam_annual.csv",row.names = FALSE,na="",output_T
 
 
 # 
-# wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+# wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
 # createSheet(wb, name = "TOA")
 # writeWorksheet(wb, output_TY, sheet = "TOA", startRow = 2, startCol = 1)
 # saveWorkbook(wb)
@@ -1279,7 +1294,7 @@ write.csv(file="..//Output//topline_sam_psr.csv",row.names = FALSE, na = "",
           output_TY)
 
 
-# wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+# wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
 # createSheet(wb, name = "Area")
 # writeWorksheet(wb, output_TY, sheet = "Area", startRow = 14, startCol = 14)
 # saveWorkbook(wb)
@@ -1333,7 +1348,7 @@ write.csv(file="..//Output//topline_psr.csv",row.names = FALSE, na = "",
           output_TY)
 
 
-# wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+# wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
 # createSheet(wb, name = "Area")
 # writeWorksheet(wb, output_TY, sheet = "Area", startRow = 14, startCol = 14)
 # saveWorkbook(wb)
@@ -1345,7 +1360,7 @@ write.csv(file="..//Output//topline_psr.csv",row.names = FALSE, na = "",
 
 (
 PSR_Q<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2000&  Fiscal_YQ<=2023.1 & SimpleArea!="Unlabeled"),
+  data=def_data %>% filter(Fiscal_Year>=2000&  Fiscal_YQ<=2023.2 & SimpleArea!="Unlabeled"),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -1379,7 +1394,7 @@ write.csv(file="..//Output//PSR_Q.csv",row.names = FALSE, na = "",
           output_TY)
 
 
-# wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+# wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
 # createSheet(wb, name = "Area")
 # writeWorksheet(wb, output_TY, sheet = "Area", startRow = 14, startCol = 14)
 # saveWorkbook(wb)
@@ -1395,13 +1410,13 @@ RnDphase<-build_plot(
   data=def_data %>% filter(Fiscal_YQ<2023) %>% filter(SimpleArea=="R&D"),
   chart_geom = "Bar Chart",
   share = FALSE,
-  labels_and_colors=labels_and_colors,
+  labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="Fiscal_Year", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="ProductServiceOrRnDarea", #color_var
   # facet_var="Competition.sum", #facet_var
-  column_key=column_key,
+  column_key=def_ck,
   format=TRUE,
   ytextposition=FALSE
 )+
@@ -1438,7 +1453,7 @@ output_TY<-def_data %>% filter(Fiscal_YQ<2023) %>% filter(SimpleArea=="R&D") %>%
 write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE, na = "",
           output_TY)
 
-# wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+# wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
 # createSheet(wb, name = "R&D")
 # writeWorksheet(wb, output_TY, sheet = "R&D", startRow = 15, startCol = 13)
 # saveWorkbook(wb)
@@ -1701,7 +1716,7 @@ output_TY<-def_data %>% filter(Fiscal_YQ<2023) %>%
 write.csv(file="..//Output//psr_Services_current.csv",row.names = FALSE, na = "",
           output_TY)
 
-wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
 createSheet(wb, name = "Area")
 writeWorksheet(wb, output_TY, sheet = "Area", startRow = 2, startCol = 14)
 createSheet(wb, name = "Services")
@@ -1934,7 +1949,7 @@ ggsave("..//Output//PSRComp_both_keynote.svg",
 
 (
 SubCustomer<-build_plot(
-  data=def_data %>% filter(Fiscal_YQ<2023),
+  data=def_data %>% filter(Fiscal_YQ<=2023.2),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -1967,6 +1982,11 @@ ggsave600dpi("..//Output//topline_subcustomer.svg", SubCustomer+facet_wrap(~SubC
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
+
+ggsave600dpi(SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1)+labs(caption=NULL,title=NULL),
+            file="../output/AcqTrends/acq_fig3_2_subcustomer.svg",size=12,caption_fraction=8/12,lineheight=1, height =3, width=6.5)
+
+
 ggsave600dpi("..//Output//topline_subcustomer_keynote.svg", SubCustomer+
                facet_wrap(~SubCustomer.sum,nrow=1)+
                labs(title="DOD Contract Obligations by Component, 1990-2022")+
@@ -1985,20 +2005,20 @@ ggsave600dpi("..//Output//topline_subcustomer.emf", SubCustomer+facet_wrap(~SubC
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
-
-write.csv(file="..//Output//topline_subcustomer.csv",row.names = FALSE, na = "",
-          SubCustomer$data %>% mutate(Fiscal_Year=lubridate::year(dFYear)) %>%
-          pivot_wider(id_cols=c(SubCustomer.sum,SubCustomer.JPO),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
-
-write.csv(file="..//Output//topline_subcustomer_current.csv",row.names = FALSE, na = "",
-          def_data %>% filter(Fiscal_YQ<2023) %>% group_by(SubCustomer.sum,SubCustomer.JPO,Fiscal_Year) %>%
+output_TY<-def_data %>% filter(Fiscal_YQ<=2023.2) %>% group_by(SubCustomer.sum,SubCustomer.JPO,Fiscal_Year) %>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(SubCustomer.sum,SubCustomer.JPO),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)
 
+write.csv(output_TY,file="..//Output//topline_subcustomer_current.csv",row.names = FALSE, na = "",
+          )
+
+wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
+ writeData(wb, output_TY, sheet = "2-2 Cust", startRow = 1, startCol = 10)
+saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
 
 ```
+
 ## SubCustomer Covid19
 ```{r SubCustomer}
 cust_covid<-def_data %>% filter(Fiscal_YQ<2023) %>% group_by(SubCustomer.JPO,SubCustomer.sum,Fiscal_Year) %>%
@@ -2438,7 +2458,7 @@ output_TY<-full_data %>% group_by(PlatformPortfolio,Fiscal_Year)%>%
 write.csv(file="..//Output//topline_platform_current.csv",row.names = FALSE, na = "",
           output_TY)
 
-wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
 createSheet(wb, name = "Platform Portfolio")
 writeWorksheet(wb, output_TY, sheet = "Platform Portfolio", startRow = 15, startCol = 1)
 saveWorkbook(wb)
@@ -2532,7 +2552,7 @@ for(s in c("Army","Navy","Air Force")){
 #           pivot_wider(id_cols=c(PlatformPortfolio),
 #                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%arrange(PlatformPortfolio))
 # 
-# wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+# wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
 # createSheet(wb, name = "Platform Portfolio")
 # writeWorksheet(wb, output_TY, sheet = "Platform Portfolio", startRow = 15, startCol = 13)
 # saveWorkbook(wb)
@@ -2698,7 +2718,7 @@ ggsave600dpi("..//Output//PlatformRnD.png", PlatformPSR,
 ```{r PlatformQ}
 (
 PlatformQ<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2013 & Fiscal_YQ<=2023.1),
+  data=def_data %>% filter(Fiscal_Year>=2013 & Fiscal_YQ<=2023.2),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -2725,7 +2745,7 @@ PlatformQ<-build_plot(
 
 (
 OnMQ<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2023.1 &
+  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2023.2 &
                              PlatformPortfolio=="Ordnance and Missiles"),
   chart_geom = "Bar Chart",
   share = FALSE,
@@ -3210,7 +3230,7 @@ output_TY<-ukr_data %>% group_by(PlatformPortfolio,Fiscal_Year)%>%
 write.csv(file="..//Output//Munitions//ukraine_platform_current.csv",row.names = FALSE, na = "",
           output_TY)
 
-# wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+# wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
 # createSheet(wb, name = "Platform Portfolio")
 # writeWorksheet(wb, output_TY, sheet = "Platform Portfolio", startRow = 15, startCol = 1)
 # saveWorkbook(wb)

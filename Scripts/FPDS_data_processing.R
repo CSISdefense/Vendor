@@ -19,7 +19,7 @@ library(magrittr)
 library(csis360)
 library(readr)
 #This is a kludge until the FMS repo is public
-source(file.path("..","FMS","Scripts","Trade_Standardize.r"))
+source(file.path("..","Trade","Scripts","Trade_Standardize.r"))
 # read in data
 local_path<-get_local_lookup_path()
 
@@ -181,9 +181,11 @@ save(fed_data,fed_lc,fed_ck, file="data/clean/fed_summary_FPDS.Rda")
 
 #############Defense Data (faster query run)##########
 def_data<- read_delim(
-  "Data//semi_clean//defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.txt",delim = "\t",
+  "Data//semi_clean//Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.csv",delim = "\t",
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
-def_data<-initial_clean(def_data)
+problems(def_data[nrow(def_data),])
+
+def_data<-initial_clean(def_data,only_defense = TRUE)
 def_data<-apply_standard_lookups(def_data)#,
 
 #def_data
@@ -211,8 +213,9 @@ def_data %<>%
 # mutate(VendorIsForeign = factor(VendorIsForeign))%>%
 # mutate(PlaceIsForeign = factor(PlaceIsForeign))
 
-def_data$Fiscal_YQ<-text_to_number(paste(def_data$Fiscal_Year,
-                                         text_to_number(def_data$fiscal_quarter),sep="."))
+def_data$Fiscal_YQ<-NA
+def_data$Fiscal_YQ[!is.na(def_data$fiscal_quarter)]<-text_to_number(paste(def_data$Fiscal_Year[!is.na(def_data$fiscal_quarter)],
+                                         text_to_number(def_data$fiscal_quarter[!is.na(def_data$fiscal_quarter)]),sep="."))
 def_data$Fiscal_YQ[is.na(def_data$Fiscal_YQ)]<-def_data$Fiscal_Year[is.na(def_data$Fiscal_YQ)]
 
 def_data$PricingInflation.1yearUCA<-as.character(def_data$PricingInflation.1year)
