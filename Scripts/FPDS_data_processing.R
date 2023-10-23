@@ -62,7 +62,7 @@ full_data <- read_delim(
   # "Data//semi_clean//Defense_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",
   delim = "\t",
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
-full_data<-full_data%>% select(-`UnmodifiedUltimateDurationCategory...29`,-`CurrentDurationCategory...30`)
+
 colnames(full_data)[colnames(full_data)=="UnmodifiedUltimateDurationCategory...13"]<-"UnmodifiedUltimateDurationCategory"
 colnames(full_data)[colnames(full_data)=="CurrentDurationCategory...14"]<-"CurrentDurationCategory"
 
