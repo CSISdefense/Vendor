@@ -457,7 +457,11 @@ write.csv(file="..//Output//topline_competition_cur.csv",row.names = FALSE, na =
           pivot_wider(id_cols=c(Competition.sum),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(Competition.sum))
 
-
+# log_plot(plot=ToplineCompMulti, df=def_data,
+#                      filename="acq_fig4_X_vehicle",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+#                      sheet="4-X Veh",path="../output/AcqTrends/", height=4,
+#                      startRow=1,startCol=10,format=TRUE,
+#          var_list=c("Vehicle.AwardTask","Vehicle.sum7"))
 ```
 
 
@@ -512,161 +516,6 @@ write.csv(file="..//Output//unlabeled_competition.csv",row.names = FALSE, na = "
 ```
 
 
-## Topline Vendor Size
-```{r ToplineVendor}
-
-(
-ToplineVendor<-build_plot(
-  data=full_data %>% filter(Fiscal_Year<=2021),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="Shiny.VendorSize", #color_var
-  # facet_var="Competition.sum", #facet_var
-  column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = scales::date_format("'%y"),date_breaks = "2 years")+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",
-       caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020.")
-)
-
-(
-ToplineVendor_line<-build_plot(
-  data=full_data %>% filter(Fiscal_Year<=2021),
-  chart_geom = "Line Chart",
-  labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="Shiny.VendorSize", #color_var
-  # facet_var="Competition.sum", #facet_var
-  column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE,
-  share=TRUE
-)+scale_x_date("Fiscal Year",labels = scales::date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
-)
-
-ggsave600dpi("..//Output//topline_vendor_wide.png", ToplineVendor+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020."), 
-             width=12, height= 6, units="in",size=12,lineheight=1
-             )
-
-
-ggsave600dpi("..//Output//topline_vendor_cq.png", ToplineVendor+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
-             width=6.5, height= 4, units="in",size=11,lineheight=1
-             )
-
-ggsave600dpi("..//Output//topline_vendor_cq.svg", ToplineVendor+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
-             width=6.5, height= 4, units="in",size=11,lineheight=1
-             )
-
-ggsave600dpi("..//Output//topline_vendor.png", ToplineVendor, 
-             width=6.5, height= 4, units="in",size=11,lineheight=1
-             )
-
-ggsave600dpi("..//Output//topline_vendor.eps", ToplineVendor+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
-             width=6.5, height= 4, units="in",size=11,lineheight=1
-             )
-
-
-write.csv(file="..//Output//topline_vendor_cur.csv",row.names = FALSE, na = "",
-          full_data %>% group_by(Shiny.VendorSize,Fiscal_Year)%>%
-            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-          pivot_wider(id_cols=c(Shiny.VendorSize),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(Shiny.VendorSize))
-
-
-write.csv(file="..//Output//topline_vendor.csv",row.names = FALSE, na = "",
-          ToplineVendor$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
-                                       bAction_Obligation_OMB24_GDP22=Action_Obligation_OMB24_GDP22/1000000000)%>%
-            pivot_wider(id_cols=c(Shiny.VendorSize),
-                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%arrange(Shiny.VendorSize))
-
-```
-
-
-
-
-
-### Topline Vendor International
-```{r ToplineVendor}
-
-
-(
-ToplineVendorIntl<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=2000 & Fiscal_Year<=2021),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="VendorSize_Intl", #color_var
-  # facet_var="Competition.sum", #facet_var
-  column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE,
-  reverse_color=TRUE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",
-       caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020.")
-)
-
-ggsave600dpi("..//Output//topline_vendor_intl_square.png", ToplineVendorIntl+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020."), 
-             width=6, height= 5, units="in",size=12,lineheight=1
-             )
-
-ggsave600dpi("..//Output//topline_vendor_intl.svg", ToplineVendorIntl+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020."), 
-             width=6.5, height= 4, units="in",size=12,lineheight=1
-             )
-
-
-
-write.csv(file="..//Output//topline_vendor_intl_cur.csv",row.names = FALSE, na = "",
-          full_data %>% group_by(VendorSize_Intl,Fiscal_Year)%>%
-            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-          pivot_wider(id_cols=c(VendorSize_Intl),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(VendorSize_Intl))
-
-```
 
 ### Big 5 Breakout
 ```{r ToplineVendor}
@@ -907,24 +756,29 @@ write.csv(file="..//Output//topline_vehicle.csv",row.names = FALSE, na = "",
                         names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%
             arrange(Vehicle.sum,Vehicle.AwardTask))
 
-
-ggsave600dpi(ToplineVehicle7+labs(caption=NULL,title=NULL),
-            file="../output/AcqTrends/acq_fig4_2_vehicle.svg",size=12,caption_fraction=8/12,lineheight=1, height =4, width=6.5)
-
-output_TY<-def_data %>% group_by(Vehicle.sum7,Vehicle.AwardTask,Fiscal_Year)%>%
-            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-  arrange(Fiscal_Year)%>%
-          pivot_wider(id_cols=c(Vehicle.AwardTask,Vehicle.sum7),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%arrange(Vehicle.AwardTask,Vehicle.sum7)
-
-
-write.csv(output_TY,file="..//Output//AcqTrends//then_year_csv//acq_fig4_2_vehicle.csv",row.names = FALSE, na = "",
-          )
-
-wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
-writeData(wb, output_TY, sheet = "4-2 Veh", startRow = 1, startCol = 10)
-saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
-rm(wb)
+log_plot(plot=ToplineVehicle7, df=def_data,
+                     filename="acq_fig4_X_vehicle",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+                     sheet="4-X Veh",path="../output/AcqTrends/", height=4,
+                     startRow=1,startCol=10,format=TRUE,
+         var_list=c("Vehicle.AwardTask","Vehicle.sum7"))
+#   
+# ggsave600dpi(ToplineVehicle7+labs(caption=NULL,title=NULL),
+#             file="../output/AcqTrends/acq_fig4_2_vehicle.svg",size=12,caption_fraction=8/12,lineheight=1, height =4, width=6.5)
+# 
+# output_TY<-def_data %>% group_by(Vehicle.sum7,Vehicle.AwardTask,Fiscal_Year)%>%
+#             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+#   arrange(Fiscal_Year)%>%
+#           pivot_wider(id_cols=c(Vehicle.AwardTask,Vehicle.sum7),
+#                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%arrange(Vehicle.AwardTask,Vehicle.sum7)
+# 
+# 
+# write.csv(output_TY,file="..//Output//AcqTrends//then_year_csv//acq_fig4_2_vehicle.csv",row.names = FALSE, na = "",
+#           )
+# 
+# wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
+# writeData(wb, output_TY, sheet = "4-2 Veh", startRow = 1, startCol = 10)
+# saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
+# rm(wb)
 
 ```
 
@@ -1088,7 +942,7 @@ levels(def_data$AnyCommercialText)<-list(
 
 (
 Commercial<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2000),
+  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2023.2),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -1124,13 +978,23 @@ ggsave600dpi("..//Output//topline_commercial.svg", Commercial+
              width=6.5, height= 2.25, units="in",size=11,lineheight = 1.2
              )
 
-write.csv(file="..//Output//topline_commercial_current.csv",row.names = FALSE, na = "",
-          def_data %>% group_by(AnyCommercialText,Fiscal_Year)%>%
+ggsave600dpi(Commercial+labs(caption=NULL,title=NULL,y="Obligations\n(Constant 2022 $s)"),
+            file="../output/AcqTrends/acq_fig5_4_commercial.svg",size=12,caption_fraction=8/12,lineheight=1, height =2.25, width=6.5)
+
+
+output_TY<-def_data %>% group_by(AnyCommercialText,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-            arrange(Fiscal_Year)%>%
+  arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(AnyCommercialText),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
-            arrange(AnyCommercialText))
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%arrange(AnyCommercialText)
+
+
+write.csv(output_TY,file="..//Output//AcqTrends//then_year_csv//acq_fig5_4_commercial.csv",row.names = FALSE, na = "",
+          )
+
+wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
+writeData(wb, output_TY, sheet = "5-4 Comm", startRow = 1, startCol = 11)
+saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
 
 
 def_data %>% filter(SubCustomer.sum=="Army", PlatformPortfolio=="Other Products", Fiscal_Year==2021) %>%
@@ -1411,7 +1275,7 @@ write.csv(file="..//Output//psr_RnDPhase.csv",row.names = FALSE, na = "",
 
 output_TY<-def_data %>% filter(Fiscal_YQ<=2023.2) %>% filter(SimpleArea=="R&D") %>%
             format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
-                                 labels_and_colors=labels_and_colors) %>%
+                                 labels_and_colors=def_lc) %>%
           pivot_wider(id_cols=c(ProductServiceOrRnDarea),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
             arrange(ProductServiceOrRnDarea)
@@ -3208,7 +3072,164 @@ write.csv(file="..//Output//Munitions//ukraine_platform_current.csv",row.names =
 ```
 
 # Vendor Size
-### Vendor Size Vehicle
+## Topline Vendor Size
+```{r ToplineVendor}
+
+(
+ToplineVendor<-build_plot(
+  data=full_data %>% filter(Fiscal_Year<=2021),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="Shiny.VendorSize", #color_var
+  # facet_var="Competition.sum", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = scales::date_format("'%y"),date_breaks = "2 years")+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)",
+       caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020.")
+)
+
+(
+ToplineVendor_line<-build_plot(
+  data=full_data %>% filter(Fiscal_Year<=2021),
+  chart_geom = "Line Chart",
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="Shiny.VendorSize", #color_var
+  # facet_var="Competition.sum", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE,
+  share=TRUE
+)+scale_x_date("Fiscal Year",labels = scales::date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
+)
+
+ggsave600dpi("..//Output//topline_vendor_wide.png", ToplineVendor+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=12, height= 6, units="in",size=12,lineheight=1
+             )
+
+
+ggsave600dpi("..//Output//topline_vendor_cq.png", ToplineVendor+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+ggsave600dpi("..//Output//topline_vendor_cq.svg", ToplineVendor+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+ggsave600dpi("..//Output//topline_vendor.png", ToplineVendor, 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+ggsave600dpi("..//Output//topline_vendor.eps", ToplineVendor+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+
+write.csv(file="..//Output//topline_vendor_cur.csv",row.names = FALSE, na = "",
+          full_data %>% group_by(Shiny.VendorSize,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(Shiny.VendorSize),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(Shiny.VendorSize))
+
+
+write.csv(file="..//Output//topline_vendor.csv",row.names = FALSE, na = "",
+          ToplineVendor$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
+                                       bAction_Obligation_OMB24_GDP22=Action_Obligation_OMB24_GDP22/1000000000)%>%
+            pivot_wider(id_cols=c(Shiny.VendorSize),
+                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%arrange(Shiny.VendorSize))
+
+```
+
+
+
+
+
+### Topline Vendor International
+```{r ToplineVendor}
+
+
+(
+ToplineVendorIntl<-build_plot(
+  data=full_data %>% filter(Fiscal_Year>=2000 & Fiscal_Year<=2021),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="VendorSize_Intl", #color_var
+  # facet_var="Competition.sum", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE,
+  reverse_color=TRUE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)",
+       caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020.")
+)
+
+ggsave600dpi("..//Output//topline_vendor_intl_square.png", ToplineVendorIntl+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6, height= 5, units="in",size=12,lineheight=1
+             )
+
+ggsave600dpi("..//Output//topline_vendor_intl.svg", ToplineVendorIntl+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=12,lineheight=1
+             )
+
+
+
+write.csv(file="..//Output//topline_vendor_intl_cur.csv",row.names = FALSE, na = "",
+          full_data %>% group_by(VendorSize_Intl,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(VendorSize_Intl),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(VendorSize_Intl))
+
+```
+
+
+## Vendor Size Vehicle
 ```{r ToplineVendor}
 
 
