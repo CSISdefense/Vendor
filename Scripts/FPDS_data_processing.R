@@ -238,8 +238,29 @@ platpsc<-read_delim(file.path("data","semi_clean","Federal_ProdservPlatform.txt"
 platpsc<-initial_clean(platpsc)
 platpsc<-apply_standard_lookups(platpsc)
 
+
+
+platpsc %<>%
+  # select(-ContractingCustomer) %>%
+  # select(-ClassifyNumberOfOffers) %>%
+  mutate(SubCustomer = factor(SubCustomer)) %>%
+  mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
+  # mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
+  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
+  mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
+  mutate(CrisisProductOrServiceArea = factor(CrisisProductOrServiceArea))
+
+
+
+detail_lc<-csis360::prepare_labels_and_colors(platpsc)
+detail_ck<-csis360::get_column_key(platpsc)
+
+save(platpsc,detail_lc,detail_ck, file="data/clean/platpsc_FPDS.Rda")
+
+
 platpscintl<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdServPlatformAgencyPlaceOriginVendor.txt"),delim="\t",na=c("NULL","NA"),
                         col_names = TRUE, guess_max = 10000000)
+problems(platpscintl)
 colnames(platpscintl)[colnames(platpscintl)=="Customer"]<-"ContractingCustomer"
 
 #Weird kludge for duplicate
@@ -249,9 +270,9 @@ if(colnames(platpscintl)[1]=="productorservicecode" & colnames(platpscintl)[5]==
 # View(platpscintl[(nrow(platpscintl)-3):nrow(platpscintl),])
 # View(platpscintldef[(nrow(platpscintldef)-3):nrow(platpscintldef),])
 # debug(initial_clean)
-platpscintl<-initial_clean(platpscintl,only_defense=FALSE)
 platpscintl<-apply_standard_lookups(platpscintl)#,path=local_path
-platpscintldef<-initial_clean(platpscintl)
+platpscintl<-initial_clean(platpscintl)
+platpscintldef<-initial_clean(platpscintl,only_defense=FALSE)
 
 write.csv(platpscintldef %>% filter(PlatformPortfolio=="Ordnance and Missiles"), 
           file="Output//Munitions//OM.csv",
@@ -335,24 +356,6 @@ levels(platpscintldef$IsFMSplaceIntl)=list(
 # load("Shiny Apps/FPDS_chart_maker/2016_unaggregated_FPDS.Rda")
 
 
-
-
-platpsc %<>%
-  # select(-ContractingCustomer) %>%
-  # select(-ClassifyNumberOfOffers) %>%
-  mutate(SubCustomer = factor(SubCustomer)) %>%
-  mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
-  # mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
-  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
-  mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
-  mutate(CrisisProductOrServiceArea = factor(CrisisProductOrServiceArea))
-
-
-
-detail_lc<-csis360::prepare_labels_and_colors(platpsc)
-detail_ck<-csis360::get_column_key(platpsc)
-
-save(platpsc,detail_lc,detail_ck, file="data/clean/platpsc_FPDS.Rda")
 
 
 platpscintl %<>%

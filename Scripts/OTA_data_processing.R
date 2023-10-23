@@ -35,50 +35,8 @@ OTA_data_current<-apply_standard_lookups(OTA_data_current)
 
 # colnames(OTA_data)<-gsub(" ","_",colnames(OTA_data))
 
-OTA_data_current$MentionsCovid<-TRUE
-OTA_data_current$TopCovid<-FALSE
 
-
-
-sum( text_to_number(OTA_data_current$Action_Obligation_OMB24_GDP22[grep("UNMANNED",OTA_data_current$Description_of_Requirement)]),na.rm=TRUE)
-# 
-# OTA_data_current[grep("UNMANNED",OTA_data_current$Description_of_Requirement),] %>% group_by(`Fiscal Year`) %>%
-#   dplyr::summarise(d= sum(text_to_number(Action_Obligation_OMB24_GDP22),na.rm=TRUE))
-# OTA_data_current
-# OTA_data_current[grep("UNMANNED",OTA_data_current$Description_of_Requirement),] %>% group_by(`Non-traditional Government Contractor Participation Code`) %>%
-#   dplyr::summarise(d= sum(text_to_number(Action_Obligation_OMB24_GDP22),na.rm=TRUE))
-
-
-OTA_data_current$MentionsCovid[grep("COVID-19",OTA_data_current$Description_of_Requirement,invert=TRUE)]<-FALSE
-OTA_data_current$TopCovid[OTA_data_current$PIID %in% c("W15QKN1691002",
-                                                       "W15QKN2191003",
-                                                       "W911QY2190001",
-                                                       "W911QY2190002",
-                                                       "W911QY2190003",
-                                                       "W911NF2190001",
-                                                       "W911NF2190003",
-                                                       "W912CG2190001") & 
-                     OTA_data_current$MentionsCovid]<-TRUE
-
-summary(OTA_data_current$TopCovid)
-View(OTA_data_current$Description_of_Requirement[OTA_data_current$TopCovid==TRUE])
-descript<-OTA_data_current$Description_of_Requirement[OTA_data_current$TopCovid==TRUE]
-
-
-# OTA_data <- read_delim(
-  # "data_raw//OTA_NPS_report.csv",delim = ",",
-  # col_names = TRUE, guess_max = 500000,na=c("NA","NULL"))
 OTA_data<-OTA_data_current
-
-nrow(OTA_data[OTA_data$Description_of_Requirement %in% descript,])
-# OTA_data$TopCovid<-FALSE
-# OTA_data$TopCovid[OTA_data$Description_of_Requirement %in% descript]<-TRUE
-
-OTA_data_current %>% group_by(TopCovid,Fiscal_Year) %>% dplyr::summarize(n=length(Fiscal_Year),
-                                                                            o=sum(Action_Obligation_OMB24_GDP22))
-OTA_data %>% group_by(TopCovid,Fiscal_Year) %>% dplyr::summarize(n=length(Fiscal_Year),
-                                                                            o=sum(Action_Obligation_OMB24_GDP22))
-
 
 # 
 # initial_clean<-function(df){
@@ -139,7 +97,7 @@ OTA_data %>% group_by(TopCovid,Fiscal_Year) %>% dplyr::summarize(n=length(Fiscal
 #                                   dir="Lookups/"
 # )
 
-
+#### Standard additions ####
 
 if("PlatformPortfolio" %in% colnames(OTA_data)){
   colnames(OTA_data)[colnames(OTA_data)=="PlatformPortfolio"]<-"OrigPlat"
@@ -254,13 +212,43 @@ OTA_data$SubCustomer.OTA[OTA_data$SubCustomer  %in% c("DLA","DISA")]<-"Other DoD
 # )
 # 
 
-######### Covid Labeling ##############
+#### Covid Labeling ####
+
+
+OTA_data_current$MentionsCovid<-TRUE
+OTA_data_current$TopCovid<-FALSE
+
+# OTA_data$TopCovid<-FALSE
+
+
+OTA_data_current %>% group_by(TopCovid,Fiscal_Year) %>% dplyr::summarize(n=length(Fiscal_Year),
+                                                                         o=sum(Action_Obligation_OMB24_GDP22))
+
+
+# OTA_data_current$MentionsCovid[grep("COVID-19",OTA_data_current$Description_of_Requirement,invert=TRUE)]<-FALSE
+OTA_data_current$TopCovid[OTA_data_current$PIID %in% c("W15QKN1691002",
+                                                       "W15QKN2191003",
+                                                       "W911QY2190001",
+                                                       "W911QY2190002",
+                                                       "W911QY2190003",
+                                                       "W911NF2190001",
+                                                       "W911NF2190003",
+                                                       "W912CG2190001") & 
+                            OTA_data_current$MentionsCovid]<-TRUE
+
+summary(OTA_data_current$TopCovid)
+View(OTA_data_current$Description_of_Requirement[OTA_data_current$TopCovid==TRUE])
+descript<-OTA_data_current$Description_of_Requirement[OTA_data_current$TopCovid==TRUE]
+# OTA_data$TopCovid[OTA_data$Description_of_Requirement %in% descript]<-TRUE
+
+nrow(OTA_data[OTA_data$Description_of_Requirement %in% descript,])
 
 OTA_data$ProductServiceOrRnDarea.covid<-as.character(OTA_data$SimpleArea)
 OTA_data$ProductServiceOrRnDarea.covid[OTA_data$TopCovid==TRUE]<-"R&D (Top OTAs responding to Covid-19)"
 OTA_data$ProductServiceOrRnDarea.covid[OTA_data$ProductServiceOrRnDarea.covid=="R&D"]<-"R&D (Other)"
 
-######### Remotely Crewed labeling
+#### Remotely Crewed labeling ####
+# sum( text_to_number(OTA_data_current$Action_Obligation_OMB24_GDP22[grep("UNMANNED",OTA_data_current$Description_of_Requirement)]),na.rm=TRUE)
 
 OTA_data$IsRemotelyOperated<-FALSE
 OTA_data$IsRemotelyOperated[OTA_data$ProductOrServiceCode=="1550"]<-TRUE
@@ -300,9 +288,24 @@ OTA_data$IsRemotelyOperated[OTA_data$Remotely_Crewed_CAU %in% c("UAS","UAS/CUAS"
 sum(OTA_data$Action_Obligation_OMB24_GDP22[OTA_data$IsRemotelyOperated],na.rm=TRUE)
 
 OTA_data$PlatformPortfolioUAV<-as.character(OTA_data$PlatformPortfolio)
-OTA_data$PlatformPortfolioUAV[OTA_data$IsRemotelyOperated]<-"Remotely Crewed"
+OTA_data$PlatformPortfolioUAV[OTA_data$IsRemotelyOperated==TRUE]<-"Remotely Crewed"
+#### International #####
 
 
+
+if("PrincipalPlaceofPerformanceCountryCode" %in% colnames(df) & !"PlaceISOalpha3" %in% colnames(df)){
+  if("ISOalpha3" %in% colnames(df))
+    df<-subset(df,select=-c(ISOalpha3))
+  df<-read_and_join_experiment(df,lookup_file="Location_CountryCodes.csv",
+                               path=path,dir="location/",
+                               add_var = c("ISOalpha3"),
+                               by=c("VendorAddressCountry"="CountryName"),
+                               # skip_check_var=c("NATOyear",	"MajorNonNATOyear","NTIByear"	,"SEATOendYear","RioTreatyStartYear","RioTreatyEndYear","FiveEyes","OtherTreatyName"	,"OtherTreatyStartYear","OtherTreatyEndYear","isforeign"),
+                               missing_file="missing_VendorAddressCountry.csv")
+  colnames(df)[colnames(df)=="ISOalpha3"]<-"VendorAddressISOalpha3"
+}
+
+#### Final Cleanup ####
 # set correct data types
 OTA_data %<>%
   # select(-ContractingCustomer) %>%

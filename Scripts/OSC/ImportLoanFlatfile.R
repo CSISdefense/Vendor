@@ -12,10 +12,12 @@ library(askpass)
 library(DBI)
 
 # path<-"C:\\Users\\grego\\Repositories\\USAspending-local\\"
-path<-"F:\\Users\\Greg\\Repositories\\USAspending-local\\"
-# path<-"F:\\Users\\gsanders\\Documents\\Repositories\\USAspending-local\\"
+# path<-"F:\\Users\\Greg\\Repositories\\USAspending-local\\"
+
+path<-"F:\\Users\\gsanders\\Documents\\Repositories\\USAspending-local\\"
 dir<-"Agency Assistance"
 
+load("F:\\Users\\gsanders\\Documents\\Repositories\\Vendor\\data\\semi_clean\\OSC\\FAADCloanDataSet.rda")
 
 dir.exists(file.path(path,dir,"XIMB"))
 Agencies<-c("XIMB","Commerce","SBA","DoD","Energy")
@@ -113,7 +115,7 @@ rm(loan)
 #8:00 am run? on to set three by 8:43
 #1 million rows finished at 10:44Am, so may 2h45m
 #Error: nanodbc/nanodbc.cpp:1769: 22001: [Microsoft][ODBC SQL Server Driver]String data, right truncation 
-for (file.name in 37:length(file.list)){
+for (file.name in 1:35){
   print(file.list[file.name])
   i<-read_csv(file.path(path,dir,agency,file.list[file.name]),n_max=1000000,guess_max=1000000)
   #Only loans, using code because the name field is often blank
