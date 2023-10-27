@@ -231,6 +231,11 @@ save(def_data,def_lc,def_ck, file="analysis/FPDS_chart_maker/unaggregated_def.Rd
 
 ###########Product Service Code, Agency, Platform ############
 
+platpscdefcd<-read_delim(file.path("data","semi_clean","Location.SP_ProdServPlatformAgencyCongressionalDistrict.csv"),delim="\t",na=c("NULL","NA"),
+                    col_names = TRUE, guess_max = 10000000)
+platpscdefcd<-apply_standard_lookups(platpscdefcd)
+
+platpscdefcd<-initial_clean(platpscdefcd)
 
 platpsc<-read_delim(file.path("data","semi_clean","Federal_ProdservPlatform.txt"),delim="\t",na=c("NULL","NA"),
                     col_names = TRUE, guess_max = 10000000)
