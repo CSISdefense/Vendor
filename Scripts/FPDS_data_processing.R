@@ -379,8 +379,7 @@ platpscintldef %<>%
   mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
   mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
   mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
-  mutate(PlatformPortfolioUAV = factor(PlatformPortfolioUAV)) %>%
-  mutate(CrisisProductOrServiceArea = factor(CrisisProductOrServiceArea))
+  mutate(PlatformPortfolioUAV = factor(PlatformPortfolioUAV))
 
 
 
