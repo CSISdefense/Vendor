@@ -212,7 +212,7 @@ SET NOCOUNT ON;
  SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
  EXEC 
- [Location].SP_ProdServPlatformAgencyCongressionalDistric
+ [Location].SP_ProdServPlatformAgencyCongressionalDistrict
   @customer='Defense'
  
 SET ANSI_WARNINGS OFF;
