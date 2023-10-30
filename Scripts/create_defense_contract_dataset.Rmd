@@ -26,8 +26,12 @@ options(warn=1)
 
 source("DIIGstat.r")
 source("https://raw.githubusercontent.com/CSISdefense/Crisis-Funding/master/Scripts/ContractCleanup.r")
-source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/lookups.r")
-source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/helper.r")
+
+
+login<-askpass::askpass("Please enter the login account")
+pwd<-askpass::askpass("Please enter the account password")
+
+
 
 ```
 
@@ -40,11 +44,15 @@ if(!exists("def_all")) def_all<-NULL
 # debug(input_sample_criteria)
 def_all<-input_sample_criteria(def_all,  
                                dir="..\\data\\semi_clean\\",
-                      file="Defense_Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
-                      last_date=as.Date("2017-12-31"),
-                      drop_incomplete=FALSE)
+                      schema="Contract",
+                      sp="SP_ContractSampleCriteriaDetailsCustomer",
+                      last_date=as.Date("2021-09-30"),
+                      drop_incomplete=FALSE,
+                      login=login,
+                      password=password)
 # def_all$Customer<-"Defense"
-def_all<-def_all %>% filter(StartFiscal_Year<2018 & StartFiscal_Year>=2007 & Customer=="Defense")
+
+def_all<-def_all %>% filter(StartFiscal_Year<=2021 & StartFiscal_Year>=2007)# & Customer=="Defense")
   
 #I'm intending to eventually incorporate this into sample criteria
 #Although maybe it's faster to keep it as a tiny stand alone file.
@@ -72,8 +80,12 @@ save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 ## Top PSC Office NAICS
 ```{r TopPSCofficeNAICS}
 if(!exists("def_all")) load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
+
 def_all<-input_contract_psc_office_naics(def_all,        
-                                         file="Contract.SP_ContractTopPSCofficeNAICS.txt")
+                                         schema="Contract",
+                                         sp="SP_ContractTopPSCofficeNAICS",
+                                         login=login,
+                                         password=password)
 
 
 if(!"Customer" %in% colnames(def_all))
@@ -83,11 +95,9 @@ if(!"Customer" %in% colnames(def_all))
                                     # replace_na_var="AgencyID",
                                     add_var=c("Customer","SubCustomer"),
                                     skip_check_var = "SubCustomer",
-                                    path = "https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                                    directory = "",
-                                    create_lookup_rdata=TRUE
+                                    directory = ""
   )
-# def_all<- subset(def_all,Customer=="Defense")
+
 save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 
 summary(factor(def_all$topContractingOfficeAgencyID))
@@ -103,9 +113,12 @@ summary(factor(def_all$StartFiscal_Year))
 ```{r Scope}
 if(!exists("def_all")) load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
 # undebug(input_initial_scope)
-memory.limit(56000)
+
 def_all<-input_initial_scope(def_all,
-                             file="Contract.SP_ContractUnmodifiedScope.txt")
+                             schema="Contract",
+                             sp="SP_ContractUnmodifiedScope",
+                             login=login,
+                             password=password)
 
 
 save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
@@ -120,7 +133,10 @@ if(!exists("def_all")) load(file="..\\data\\clean\\defense_contract_all_detail.R
 
 
 def_all<-input_contract_ceiling_breach(def_all,
-             file="Contract.SP_ContractCeilingBreachCustomer.txt")
+             schema="Contract",
+             sp="SP_ContractCeilingBreachCustomer",
+             login=login,
+             password=password)
 
 sumcheck<-abs(def_all$UnmodifiedCeiling+
   def_all$ChangeOrderCeilingGrowth+
@@ -1113,7 +1129,7 @@ save(file="../data/clean/transformed_def.Rdata",def)
 
 
 # ggplot(data=def_united,aes(x=factor(IsComplete)))+facet_wrap(~IsOriginal)+geom_bar()
-# load(file="../Data/Clean/transformed_def_2018_08_31.Rdata")
+# load(file="../Data/Clean/transformed_def_2021_08_31.Rdata")
 # smp_missing<-def_united %>% filter(is.na(IsComplete)| IsComplete==0)
 # smp_missing<-left_join(smp_missing,def, by="CSIScontractID")
 # summary(def$LastCurrentCompletionDate)
@@ -1220,7 +1236,7 @@ save(file="../data/clean/transformed_def.Rdata",def)
 # load(file="next_to_study.rdata")
 # save(now_incomplete_boost,file="next_to_study.rdata")
 # rm(def) 9134093
-# load(file="../data/clean/transformed_def_2018_08_31.Rdata")
+# load(file="../data/clean/transformed_def_2021_08_31.Rdata")
 # summary(def_united$IsOriginal)
 # summary(def_united$IsComplete)
 # 
