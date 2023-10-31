@@ -894,6 +894,71 @@ write.csv(file="..//Output//OrdMiss_psc_current.csv",row.names = FALSE,na="",
 
 
 
+ggsave600dpi("..//Output//topline_platform.png", Platform, 
+             width=12, height= 6, units="in",size=14,lineheight = 1.2
+             )
+
+ggsave600dpi("..//Output//topline_platform.svg", Platform, 
+             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+             )
+
+ggsave600dpi("..//Output//topline_platform.emf", Platform+geom_line(
+  size=1,aes(x=dFYear,y=Action_Obligation_OMB24_GDP22,color=PlatformPortfolio)),
+             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+             )
+
+
+(
+Platform_Bar<-build_plot(
+  data=platpscintldef,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="PlatformPortfolio", #color_var
+  facet_var="PlatformPortfolio", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2021 $s)")
+)
+
+ggsave600dpi("..//Output//topline_platform_bar.png", Platform_Bar, 
+             width=12, height= 6, units="in",size=12,lineheight = 1.2
+             )
+
+ggsave600dpi("..//Output//topline_platform_bar.emf", Platform_Bar,
+             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+             )
+
+output_TY<-full_data %>% group_by(PlatformPortfolio,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(PlatformPortfolio),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%arrange(PlatformPortfolio)
+
+write.csv(file="..//Output//topline_platform_current.csv",row.names = FALSE, na = "",
+          output_TY)
+
+wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx")
+# addWorksheet(wb, sheetName = "Platform Portfolio")
+ writeData(wb, output_TY, sheet = "Platform Portfolio", startRow = 1, startCol = 1)
+saveWorkbook(wb,file="..//Output//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
+rm(wb)
+
+```
+
 ## Air and Missile Defense
 ```{r Defense}
 summary(factor(platpscintldef$ProjectPlatform))
@@ -1938,6 +2003,7 @@ summary(platpscintldef$dFYear)
     facet_grid( VendorNTIB~. )+labs(title="Present NTIB Vendor",
                                     y="Action Obligation (Constant 2022 $s")#, scales="free_y"#, scales="free_y"
   )+scale_x_date("Fiscal Year",labels = date_format("'%y"))
+summary(platpscintldef$dFYear)
 
 write.csv(file="..//Output//ntibintl_contract.csv",row.names = FALSE,na = "",
           ntibintl$data%>%# mutate(Fiscal_Year=lubridate::year(dFYear))%>%

@@ -203,11 +203,18 @@ SET NOCOUNT ON;
 --10h53m 15,871,392 rows, 3 cores.
 --11h05m 15,872,583 rows. Erros
 --2h45m; 16,497,747 (new desktop?)
+--2h26m; 17,095,081 rows
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
  EXEC [Location].[SP_ProdServPlatformAgencyPlaceOriginVendor]
  @customer=NULL
-
+ 
+ SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+ EXEC 
+ [Location].SP_ProdServPlatformAgencyCongressionalDistrict
+  @customer='Defense'
+ 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
@@ -278,8 +285,6 @@ EXEC	@return_value = Contract.SP_ContractPricingCustomer
 		@IsDefense = NULL
 					
 
-					Contract.SP_ContractBucketPlatformCustomer
-
 --Do we really need both of these?
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
@@ -306,16 +311,13 @@ EXEC	@return_value = Contract.SP_ContractBucketPlatformCustomer
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
---4h05m
+--6h26m 15,328,597 rows for federal
 DECLARE	@return_value int
-
 
 EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength
 		@Customer = 'Defense',-- [Summary].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer]
 		@SubCustomer = NULL,
 		@PlatformPortfolio =NULL
-
-
 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
@@ -345,9 +347,9 @@ SET NOCOUNT ON;
 --No plan shown until the very end.
 --1023 completed with errors 4,532,322
 --4h41 4,656,745
+--6h13m 10,891,220 post FPDS.partial
 
 DECLARE	@return_value int
---11h25m  fail
 EXEC	@return_value = [budget].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS]
 		@Customer = NULL
 		

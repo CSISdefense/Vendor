@@ -12,10 +12,12 @@ library(askpass)
 library(DBI)
 
 # path<-"C:\\Users\\grego\\Repositories\\USAspending-local\\"
-path<-"F:\\Users\\Greg\\Repositories\\USAspending-local\\"
-# path<-"F:\\Users\\gsanders\\Documents\\Repositories\\USAspending-local\\"
+# path<-"F:\\Users\\Greg\\Repositories\\USAspending-local\\"
+
+path<-"F:\\Users\\gsanders\\Documents\\Repositories\\USAspending-local\\"
 dir<-"Agency Assistance"
 
+load("F:\\Users\\gsanders\\Documents\\Repositories\\Vendor\\data\\semi_clean\\OSC\\FAADCloanDataSet.rda")
 
 dir.exists(file.path(path,dir,"XIMB"))
 Agencies<-c("XIMB","Commerce","SBA","DoD","Energy")
@@ -101,6 +103,11 @@ file.list<-file.list[gsub("^.*\\.","",file.list)=="csv"]
 #table in order, and that this lead to a truncation error that disappeared once all the names
 #matched.
 
+loan<-dbReadTable(con,  name = SQL('"Assistance"."OSCloanDataSet"'))
+save(loan,file="data/semi_clean/OSC/FAADCloanDataSet.rda")
+dbDisconnect(con)
+
+rm(loan)
 
 
 #6:41 am run  8/29
@@ -108,11 +115,11 @@ file.list<-file.list[gsub("^.*\\.","",file.list)=="csv"]
 #8:00 am run? on to set three by 8:43
 #1 million rows finished at 10:44Am, so may 2h45m
 #Error: nanodbc/nanodbc.cpp:1769: 22001: [Microsoft][ODBC SQL Server Driver]String data, right truncation 
-for (file.name in 29:length(file.list)){
+for (file.name in 1:35){
   print(file.list[file.name])
   i<-read_csv(file.path(path,dir,agency,file.list[file.name]),n_max=1000000,guess_max=1000000)
   #Only loans, using code because the name field is often blank
-  i <-i %>% filter(assistance_type_code %in% c("07","09","7","9"))
+  i <-i %>% filter(assistance_type_code %in% c("08","8","11"))
   if(nrow(i)==0)
     next
   i<- as.data.frame(i)
@@ -128,7 +135,7 @@ for (file.name in 29:length(file.list)){
   t$stage1size<-text_to_number(t$stage1size)
   if(nrow(t %>% filter (maxlen>=stage1size))>0){
     t %>% filter (maxlen>=stage1size)
-    stop("Column length will lead to truncation")
+    # stop("Column length will lead to truncation")
   }
   distinct(t %>% select(stage1type,importtype))
   if(nrow(t %>% filter (stage1type %in% c("decimal","date")&importtype=="character" ))){

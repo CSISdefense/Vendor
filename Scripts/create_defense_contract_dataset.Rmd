@@ -26,8 +26,12 @@ options(warn=1)
 
 source("DIIGstat.r")
 source("https://raw.githubusercontent.com/CSISdefense/Crisis-Funding/master/Scripts/ContractCleanup.r")
-source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/lookups.r")
-source("https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/helper.r")
+
+
+login<-askpass::askpass("Please enter the login account")
+pwd<-askpass::askpass("Please enter the account password")
+
+
 
 ```
 
@@ -40,11 +44,15 @@ if(!exists("def_all")) def_all<-NULL
 # debug(input_sample_criteria)
 def_all<-input_sample_criteria(def_all,  
                                dir="..\\data\\semi_clean\\",
-                      file="Defense_Contract.SP_ContractSampleCriteriaDetailsCustomer.txt",
-                      last_date=as.Date("2017-12-31"),
-                      drop_incomplete=FALSE)
+                      schema="Contract",
+                      sp="SP_ContractSampleCriteriaDetailsCustomer",
+                      last_date=as.Date("2021-09-30"),
+                      drop_incomplete=FALSE,
+                      login=login,
+                      password=password)
 # def_all$Customer<-"Defense"
-def_all<-def_all %>% filter(StartFiscal_Year<2018 & StartFiscal_Year>=2007 & Customer=="Defense")
+
+def_all<-def_all %>% filter(StartFiscal_Year<=2021 & StartFiscal_Year>=2007)# & Customer=="Defense")
   
 #I'm intending to eventually incorporate this into sample criteria
 #Although maybe it's faster to keep it as a tiny stand alone file.
@@ -72,8 +80,12 @@ save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 ## Top PSC Office NAICS
 ```{r TopPSCofficeNAICS}
 if(!exists("def_all")) load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
+
 def_all<-input_contract_psc_office_naics(def_all,        
-                                         file="Contract.SP_ContractTopPSCofficeNAICS.txt")
+                                         schema="Contract",
+                                         sp="SP_ContractTopPSCofficeNAICS",
+                                         login=login,
+                                         password=password)
 
 
 if(!"Customer" %in% colnames(def_all))
@@ -83,11 +95,9 @@ if(!"Customer" %in% colnames(def_all))
                                     # replace_na_var="AgencyID",
                                     add_var=c("Customer","SubCustomer"),
                                     skip_check_var = "SubCustomer",
-                                    path = "https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                                    directory = "",
-                                    create_lookup_rdata=TRUE
+                                    directory = ""
   )
-# def_all<- subset(def_all,Customer=="Defense")
+def_all<-def_all %>% filter(is.na(Customer)| Customer=="Defense")
 save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 
 summary(factor(def_all$topContractingOfficeAgencyID))
@@ -103,9 +113,12 @@ summary(factor(def_all$StartFiscal_Year))
 ```{r Scope}
 if(!exists("def_all")) load(file="..\\data\\clean\\defense_contract_all_detail.Rdata")
 # undebug(input_initial_scope)
-memory.limit(56000)
+
 def_all<-input_initial_scope(def_all,
-                             file="Contract.SP_ContractUnmodifiedScope.txt")
+                             schema="Contract",
+                             sp="SP_ContractUnmodifiedScope",
+                             login=login,
+                             password=password)
 
 
 save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
@@ -120,7 +133,10 @@ if(!exists("def_all")) load(file="..\\data\\clean\\defense_contract_all_detail.R
 
 
 def_all<-input_contract_ceiling_breach(def_all,
-             file="Contract.SP_ContractCeilingBreachCustomer.txt")
+             schema="Contract",
+             sp="SP_ContractCeilingBreachCustomer",
+             login=login,
+             password=password)
 
 sumcheck<-abs(def_all$UnmodifiedCeiling+
   def_all$ChangeOrderCeilingGrowth+
@@ -178,23 +194,36 @@ save(file="..\\data\\clean\\defense_contract_complete_detail.Rdata",def_detail)
 ##Location
 ```{r Location}
 if(!exists("def_detail")) load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
+dir<-"../data/semi_clean/"
+rda_file<-"Contract.SP_ContractLocationCustomer.rda"
 
 
-#Drop contracts starting before the study period and not clearly end within it
+  if(!file.exists(file.path(dir,rda_file))){
+    #
+    con <- dbConnect(odbc(),
+                     Driver = "SQL Server",
+                     Server = "vmsqldiig.database.windows.net",
+                     Database = "CSIS360",
+                     UID = login,
+                     PWD =pwd)
+    lookup<-dbGetQuery(con,  
+                       paste("EXEC Contract.SP_ContractLocationCustomer @IsDefense=NULL",sep=""))
+    rm(con)
+    lookup<-standardize_variable_names(lookup)
 
-#   subset(def_detail, StartFY>=2007   & year(MinOfSignedDate)<2017 & 
-#     (LastCurrentCompletionDate<"2017-01-01" | IsClosed==1)
-# )
+    save(lookup,file=file.path(dir,rda_file))
+    rm(lookup) #This is admittedly inefficient
+  }
+  
 
-# load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
+
+# load(file="..\\data\\clean\\defense_contract_complete_detail.Rda")
 def_detail<-read_and_join_experiment(def_detail,
-    "Contract.SP_ContractLocationCustomer.txt"
-  ,path="../"
-  ,dir="data/semi_clean/"
+    rda_file
+  ,path=""
+  ,dir=dir
   ,by="CSIScontractID"
   ,new_var_checked=FALSE
-  # ,zip_file="Contract.SP_ContractLocationCustomer.zip"
-  ,create_lookup_rdata=TRUE
 )
 
 
@@ -252,7 +281,7 @@ def_detail<-def_detail[,!colnames(def_detail) %in%
    # "AnyPlaceInternational",
   "PlaceIsInternational"  ,
   "UnmodifiedPlaceIsInternational",
-   "VendorCountryISO3",fed_full
+   "VendorCountryISO3",
   "UnmodifiedVendorCountryISO3" ,
   "ObligatedAmountVendorIsInternational"  ,
    "AnyVendorInternational",
@@ -282,23 +311,66 @@ save(file="..\\data\\clean\\defense_contract_complete_detail.Rdata",def_detail)
 # load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
 if(!exists("def_detail")) load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
 
+dir<-"../data/semi_clean/"
+rda_file<-"Contract.SP_ContractUnmodifiedCompetitionvehicleCustomer.rda"
+
+
+  if(!file.exists(file.path(dir,rda_file))){
+    #
+    con <- dbConnect(odbc(),
+                     Driver = "SQL Server",
+                     Server = "vmsqldiig.database.windows.net",
+                     Database = "CSIS360",
+                     UID = login,
+                     PWD =pwd)
+    lookup<-dbGetQuery(con,  
+                       paste("EXEC Contract.SP_ContractUnmodifiedCompetitionvehicleCustomer @Customer=NULL",sep=""))
+    rm(con)
+    lookup<-standardize_variable_names(lookup)
+
+    save(lookup,file=file.path(dir,rda_file))
+    rm(lookup) #This is admittedly inefficient
+  }
+  
+
 ##Contract_SP_ContractUnmodifiedCompetitionvehicleCustomer.txt
 def_detail<-read_and_join_experiment(data=def_detail
-  ,"Contract.SP_ContractUnmodifiedCompetitionvehicleCustomer.txt"
-  ,path="../"
-  ,dir="data/semi_clean/"
+  ,rda_file
+  ,path=""
+  ,dir=dir
   ,by="CSIScontractID"
   ,new_var_checked=FALSE
   ,create_lookup_rdata=TRUE
   ,col_types="dddddddccc"
 )
 
+rda_file<-"Contract.SP_ContractCompetitionVehicleCustomer.rda"
+
+
+  if(!file.exists(file.path(dir,rda_file))){
+    #
+    con <- dbConnect(odbc(),
+                     Driver = "SQL Server",
+                     Server = "vmsqldiig.database.windows.net",
+                     Database = "CSIS360",
+                     UID = login,
+                     PWD =pwd)
+    lookup<-dbGetQuery(con,  
+                       paste("EXEC Contract.SP_ContractCompetitionVehicleCustomer @IsDefense=NULL",sep=""))
+    rm(con)
+    lookup<-standardize_variable_names(lookup)
+
+    save(lookup,file=file.path(dir,rda_file))
+    rm(lookup) #This is admittedly inefficient
+  }
+  
+
 
 #Contract.SP_ContractCompetitionVehicleCustomer.txt
 def_detail<-read_and_join_experiment(data=def_detail
-  ,"Contract.SP_ContractCompetitionVehicleCustomer.txt"
-  ,path="../"
-  ,dir="data/semi_clean/"
+  ,rda_file
+  ,path=""
+  ,dir=dir
   ,by="CSIScontractID"
   ,new_var_checked=FALSE
   ,create_lookup_rdata=TRUE
@@ -309,8 +381,8 @@ def_detail<-read_and_join_experiment(data=def_detail
 #Number of Offers
 def_detail$UnmodifiedNumberOfOffersReceived[def_detail$UnmodifiedNumberOfOffersReceived==0]<-NA
 def_detail$NumberOfOffersReceived[def_detail$NumberOfOffersReceived==0]<-NA
-def_detail$UnmodifiedNumberOfOffersReceived<-FactorToNumber(def_detail$UnmodifiedNumberOfOffersReceived)
-def_detail$NumberOfOffersReceived<-FactorToNumber(def_detail$NumberOfOffersReceived)
+def_detail$UnmodifiedNumberOfOffersReceived<-text_to_number(def_detail$UnmodifiedNumberOfOffersReceived)
+def_detail$NumberOfOffersReceived<-text_to_number(def_detail$NumberOfOffersReceived)
 def_detail$UnmodifiedNumberOfOffersReceived[is.null(def_detail$UnmodifiedNumberOfOffersReceived)]<-NA
 def_detail$NumberOfOffersReceived[is.null(def_detail$NumberOfOffersReceived)]<-NA
 
@@ -535,12 +607,33 @@ if(!exists("def_detail")) load(file="..\\data\\clean\\defense_contract_complete_
 
 
 gc()
-memory.limit(56000)
 # load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
 
 
+dir<-"../data/semi_clean/"
+rda_file<-"Contract.SP_ContractPricingCustomer.rda"
+
+
+  if(!file.exists(file.path(dir,rda_file))){
+    #
+    con <- dbConnect(odbc(),
+                     Driver = "SQL Server",
+                     Server = "vmsqldiig.database.windows.net",
+                     Database = "CSIS360",
+                     UID = login,
+                     PWD =pwd)
+    lookup<-dbGetQuery(con,  
+                       paste("EXEC Contract.SP_ContractPricingCustomer @Customer=NULL",sep=""))
+    rm(con)
+    lookup<-standardize_variable_names(lookup)
+
+    save(lookup,file=file.path(dir,rda_file))
+    rm(lookup) #This is admittedly inefficient
+  }
+  
+
 def_detail<-read_and_join_experiment(data=def_detail
-  ,"Contract.SP_ContractPricingCustomer.txt"
+  ,rda_file
   ,path="../"
   ,dir="data/semi_clean/"
   ,by="CSIScontractID"
@@ -656,10 +749,31 @@ summary(def_detail$FxCb)
 #       c("Indefinite Delivery Contract",
 #         "Delivery Order")])
 
-memory.limit(32000)
+
+
+rda_file<-"Contract.SP_ContractPricingUCA.rda"
+
+
+  if(!file.exists(file.path(dir,rda_file))){
+    #
+    con <- dbConnect(odbc(),
+                     Driver = "SQL Server",
+                     Server = "vmsqldiig.database.windows.net",
+                     Database = "CSIS360",
+                     UID = login,
+                     PWD =pwd)
+    lookup<-dbGetQuery(con,  
+                       paste("EXEC Contract.SP_ContractPricingUCA @Customer=NULL",sep=""))
+    rm(con)
+    lookup<-standardize_variable_names(lookup)
+
+    save(lookup,file=file.path(dir,rda_file))
+    rm(lookup) #This is admittedly inefficient
+  }
+  
 
 def_detail<-read_and_join_experiment(data=def_detail
-  ,"Contract.SP_ContractPricingUCA.txt"
+  ,rda_file
   ,path="../"
   ,dir="data/semi_clean/"
   ,by="CSIScontractID"
@@ -752,11 +866,11 @@ def_detail<-read_and_join_experiment(data=def_detail
   ,create_lookup_rdata=TRUE
 )
 # 
-# def_detail$ObligatedAmountIsProducts<-FactorToNumber(def_detail$ObligatedAmountIsProducts)
+# def_detail$ObligatedAmountIsProducts<-text_to_number(def_detail$ObligatedAmountIsProducts)
 # 
-# def_detail$ObligatedAmountIsServices<-FactorToNumber(def_detail$ObligatedAmountIsServices)
+# def_detail$ObligatedAmountIsServices<-text_to_number(def_detail$ObligatedAmountIsServices)
 # 
-# def_detail$ObligatedAmountIsRnD<-FactorToNumber(def_detail$ObligatedAmountIsRnD)
+# def_detail$ObligatedAmountIsRnD<-text_to_number(def_detail$ObligatedAmountIsRnD)
 # 
 # def_detail$pIsProducts <- def_detail$ObligatedAmountIsProducts/def_detail$Action_Obligation
 # def_detail$pIsProducts[is.na(def_detail$ObligatedAmountIsProducts)] <- 0
@@ -770,22 +884,22 @@ def_detail<-read_and_join_experiment(data=def_detail
 #Need to update these to the new platform portfolios
 # 
 # 
-# def_detail$ObligatedAmountIsLand<-FactorToNumber(def_detail$ObligatedAmountIsLand)
+# def_detail$ObligatedAmountIsLand<-text_to_number(def_detail$ObligatedAmountIsLand)
 # 
-# def_detail$ObligatedAmountIsVessel<-FactorToNumber(def_detail$ObligatedAmountIsVessel)
+# def_detail$ObligatedAmountIsVessel<-text_to_number(def_detail$ObligatedAmountIsVessel)
 # 
 # 
-# def_detail$ObligatedAmountIsVessel<-FactorToNumber(def_detail$ObligatedAmountIsAir)
+# def_detail$ObligatedAmountIsVessel<-text_to_number(def_detail$ObligatedAmountIsAir)
 # 
-# def_detail$ObligatedAmountIsVessel<-FactorToNumber(def_detail$ObligatedAmountIsOtherPP)
+# def_detail$ObligatedAmountIsVessel<-text_to_number(def_detail$ObligatedAmountIsOtherPP)
 # 
-# def_detail$ObligatedAmountIsWnA<-FactorToNumber(def_detail$ObligatedAmountIsWnA)
+# def_detail$ObligatedAmountIsWnA<-text_to_number(def_detail$ObligatedAmountIsWnA)
 # 
-# def_detail$ObligatedAmountIsMnS<-FactorToNumber(def_detail$ObligatedAmountIsMnS)
+# def_detail$ObligatedAmountIsMnS<-text_to_number(def_detail$ObligatedAmountIsMnS)
 # 
-# def_detail$ObligatedAmountIsEnC<-FactorToNumber(def_detail$ObligatedAmountIsEnC)
+# def_detail$ObligatedAmountIsEnC<-text_to_number(def_detail$ObligatedAmountIsEnC)
 # 
-# def_detail$ObligatedAmountIsFRSnC<-FactorToNumber(def_detail$ObligatedAmountIsFRSnC)
+# def_detail$ObligatedAmountIsFRSnC<-text_to_number(def_detail$ObligatedAmountIsFRSnC)
 # 
 # 
 # def_detail$pIsLand <- def_detail$ObligatedAmountIsLand/def_detail$Action_Obligation
@@ -1113,7 +1227,7 @@ save(file="../data/clean/transformed_def.Rdata",def)
 
 
 # ggplot(data=def_united,aes(x=factor(IsComplete)))+facet_wrap(~IsOriginal)+geom_bar()
-# load(file="../Data/Clean/transformed_def_2018_08_31.Rdata")
+# load(file="../Data/Clean/transformed_def_2021_08_31.Rdata")
 # smp_missing<-def_united %>% filter(is.na(IsComplete)| IsComplete==0)
 # smp_missing<-left_join(smp_missing,def, by="CSIScontractID")
 # summary(def$LastCurrentCompletionDate)
@@ -1220,7 +1334,7 @@ save(file="../data/clean/transformed_def.Rdata",def)
 # load(file="next_to_study.rdata")
 # save(now_incomplete_boost,file="next_to_study.rdata")
 # rm(def) 9134093
-# load(file="../data/clean/transformed_def_2018_08_31.Rdata")
+# load(file="../data/clean/transformed_def_2021_08_31.Rdata")
 # summary(def_united$IsOriginal)
 # summary(def_united$IsComplete)
 # 

@@ -28,6 +28,6 @@ con <- dbConnect(odbc(),
 
 loan<-dbReadTable(con,  name = SQL('"Assistance"."OSCloanDataSet"'))
 save(loan,file="data/semi_clean/OSC/FAADCloanDataSet.rda")
+load(file="data/semi_clean/OSC/FAADCloanDataSet.rda")
+loan<-loan %>% filter(assistance_type_code!="09")
 
-
-View(loan %>% select(action_date_fiscal_year,transaction_description))

@@ -19,7 +19,7 @@ library(magrittr)
 library(csis360)
 library(readr)
 #This is a kludge until the FMS repo is public
-source(file.path("..","FMS","Scripts","Trade_Standardize.r"))
+source(file.path("..","Trade","Scripts","Trade_Standardize.r"))
 # read in data
 local_path<-get_local_lookup_path()
 
@@ -62,7 +62,7 @@ full_data <- read_delim(
   # "Data//semi_clean//Defense_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",
   delim = "\t",
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
-full_data<-full_data%>% select(-`UnmodifiedUltimateDurationCategory...29`,-`CurrentDurationCategory...30`)
+
 colnames(full_data)[colnames(full_data)=="UnmodifiedUltimateDurationCategory...13"]<-"UnmodifiedUltimateDurationCategory"
 colnames(full_data)[colnames(full_data)=="CurrentDurationCategory...14"]<-"CurrentDurationCategory"
 
@@ -181,9 +181,11 @@ save(fed_data,fed_lc,fed_ck, file="data/clean/fed_summary_FPDS.Rda")
 
 #############Defense Data (faster query run)##########
 def_data<- read_delim(
-  "Data//semi_clean//defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.txt",delim = "\t",
+  "Data//semi_clean//Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.csv",delim = "\t",
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
-def_data<-initial_clean(def_data)
+problems(def_data[nrow(def_data),])
+
+def_data<-initial_clean(def_data,only_defense = TRUE)
 def_data<-apply_standard_lookups(def_data)#,
 
 #def_data
@@ -211,8 +213,9 @@ def_data %<>%
 # mutate(VendorIsForeign = factor(VendorIsForeign))%>%
 # mutate(PlaceIsForeign = factor(PlaceIsForeign))
 
-def_data$Fiscal_YQ<-text_to_number(paste(def_data$Fiscal_Year,
-                                         text_to_number(def_data$fiscal_quarter),sep="."))
+def_data$Fiscal_YQ<-NA
+def_data$Fiscal_YQ[!is.na(def_data$fiscal_quarter)]<-text_to_number(paste(def_data$Fiscal_Year[!is.na(def_data$fiscal_quarter)],
+                                         text_to_number(def_data$fiscal_quarter[!is.na(def_data$fiscal_quarter)]),sep="."))
 def_data$Fiscal_YQ[is.na(def_data$Fiscal_YQ)]<-def_data$Fiscal_Year[is.na(def_data$Fiscal_YQ)]
 
 def_data$PricingInflation.1yearUCA<-as.character(def_data$PricingInflation.1year)
@@ -228,6 +231,11 @@ save(def_data,def_lc,def_ck, file="analysis/FPDS_chart_maker/unaggregated_def.Rd
 
 ###########Product Service Code, Agency, Platform ############
 
+platpscdefcd<-read_delim(file.path("data","semi_clean","Location.SP_ProdServPlatformAgencyCongressionalDistrict.csv"),delim="\t",na=c("NULL","NA"),
+                    col_names = TRUE, guess_max = 10000000)
+platpscdefcd<-apply_standard_lookups(platpscdefcd)
+
+platpscdefcd<-initial_clean(platpscdefcd)
 
 platpsc<-read_delim(file.path("data","semi_clean","Federal_ProdservPlatform.txt"),delim="\t",na=c("NULL","NA"),
                     col_names = TRUE, guess_max = 10000000)
@@ -235,8 +243,29 @@ platpsc<-read_delim(file.path("data","semi_clean","Federal_ProdservPlatform.txt"
 platpsc<-initial_clean(platpsc)
 platpsc<-apply_standard_lookups(platpsc)
 
+
+
+platpsc %<>%
+  # select(-ContractingCustomer) %>%
+  # select(-ClassifyNumberOfOffers) %>%
+  mutate(SubCustomer = factor(SubCustomer)) %>%
+  mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
+  # mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
+  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
+  mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
+  mutate(CrisisProductOrServiceArea = factor(CrisisProductOrServiceArea))
+
+
+
+detail_lc<-csis360::prepare_labels_and_colors(platpsc)
+detail_ck<-csis360::get_column_key(platpsc)
+
+save(platpsc,detail_lc,detail_ck, file="data/clean/platpsc_FPDS.Rda")
+
+
 platpscintl<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdServPlatformAgencyPlaceOriginVendor.txt"),delim="\t",na=c("NULL","NA"),
                         col_names = TRUE, guess_max = 10000000)
+problems(platpscintl)
 colnames(platpscintl)[colnames(platpscintl)=="Customer"]<-"ContractingCustomer"
 
 #Weird kludge for duplicate
@@ -246,9 +275,9 @@ if(colnames(platpscintl)[1]=="productorservicecode" & colnames(platpscintl)[5]==
 # View(platpscintl[(nrow(platpscintl)-3):nrow(platpscintl),])
 # View(platpscintldef[(nrow(platpscintldef)-3):nrow(platpscintldef),])
 # debug(initial_clean)
-platpscintl<-initial_clean(platpscintl,only_defense=FALSE)
 platpscintl<-apply_standard_lookups(platpscintl)#,path=local_path
-platpscintldef<-initial_clean(platpscintl)
+platpscintl<-initial_clean(platpscintl)
+platpscintldef<-initial_clean(platpscintl,only_defense=FALSE)
 
 write.csv(platpscintldef %>% filter(PlatformPortfolio=="Ordnance and Missiles"), 
           file="Output//Munitions//OM.csv",
@@ -334,24 +363,6 @@ levels(platpscintldef$IsFMSplaceIntl)=list(
 
 
 
-platpsc %<>%
-  # select(-ContractingCustomer) %>%
-  # select(-ClassifyNumberOfOffers) %>%
-  mutate(SubCustomer = factor(SubCustomer)) %>%
-  mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
-  # mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
-  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
-  mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
-  mutate(CrisisProductOrServiceArea = factor(CrisisProductOrServiceArea))
-
-
-
-detail_lc<-csis360::prepare_labels_and_colors(platpsc)
-detail_ck<-csis360::get_column_key(platpsc)
-
-save(platpsc,detail_lc,detail_ck, file="data/clean/platpsc_FPDS.Rda")
-
-
 platpscintl %<>%
   # select(-ContractingCustomer) %>%
   # select(-ClassifyNumberOfOffers) %>%
@@ -373,8 +384,7 @@ platpscintldef %<>%
   mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
   mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
   mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
-  mutate(PlatformPortfolioUAV = factor(PlatformPortfolioUAV)) %>%
-  mutate(CrisisProductOrServiceArea = factor(CrisisProductOrServiceArea))
+  mutate(PlatformPortfolioUAV = factor(PlatformPortfolioUAV))
 
 
 
