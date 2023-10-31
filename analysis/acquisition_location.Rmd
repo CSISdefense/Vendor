@@ -29,9 +29,9 @@ note.text.size<-1.40
 if(!exists("platpscintldef"))
   load(file="../data/clean/platpscintl_FPDS.Rda")
 
-
 # save.image("../.RData")
 ```
+
 # Preprocessing 
 ## Ukraine cut
 ```{r Location}
@@ -46,23 +46,35 @@ ukraine_list<-c("1320","1305",
 "1425","1427",
 "1430","1450")
 
-ukrplatpsc<-platpscintldef %>% filter(ProductOrServiceCode %in% ukraine_list & Fiscal_Year>=2022)
+platpscintldef<-read_and_join_experiment(platpscintldef, "ProjectIDUkraineDIBrelevant.csv",
+                         dir="..\\data\\semi_clean\\",path="",
+                         add_var="UkraineDIBrelevant",
+                         skip_check_var="UkraineDIBrelevant")
+
+ukrplatpsc<-platpscintldef %>% filter((ProductOrServiceCode %in% ukraine_list
+                                      | UkraineDIBrelevant =="Always") & Fiscal_Year>=2022 &
+                                        (is.na(UkraineDIBrelevant) | UkraineDIBrelevant !="Never"))
   # summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
 
 
-ukr_state<-platpscintldef %>% 
-  group_by(PlatformPortfolio)%>%
-  filter(ProductOrServiceCode %in% ukraine_list & Fiscal_Year>=2022) %>% 
-  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
-ukrplatpsc$ProductServiceOrRnDarea
-
-wb <- loadWorkbook("..//Output//Munitions//Weapons Systems in Ukr Supp.xlsx")
-writeData(wb, sheet = "PSC", startRow = 1, startCol = 1,
+wb <- loadWorkbook("..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx")
+writeData(wb, sheet = "PSC", startRow = 2, startCol = 1,
           ukrplatpsc %>% group_by(
             ProductServiceOrRnDarea,ProductOrServiceCode,ProductOrServiceCodeText)%>%
             # arrange(ProductServiceOrRnDarea,ProductOrServiceCode,ProductOrServiceCodeText))%>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)))
-saveWorkbook(wb,file="..//Output//Munitions//Weapons Systems in Ukr Supp.xlsx",overwrite = TRUE)
+saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",overwrite = TRUE)
+
+ukrplatpsc$VendorIsForeign
+wb <- loadWorkbook("..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx")
+writeData(wb, sheet = "State", startRow = 2, startCol = 1,
+          ukrplatpsc %>% group_by(
+            VendorIsForeign,VendorStateCode)%>%
+            # arrange(ProductServiceOrRnDarea,ProductOrServiceCode,ProductOrServiceCodeText))%>%
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)))
+saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",overwrite = TRUE)
+
+
 
 
 
