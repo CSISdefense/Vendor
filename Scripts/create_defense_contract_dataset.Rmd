@@ -97,7 +97,7 @@ if(!"Customer" %in% colnames(def_all))
                                     skip_check_var = "SubCustomer",
                                     directory = ""
   )
-
+def_all<-def_all %>% filter(is.na(Customer)| Customer=="Defense")
 save(file="..\\data\\clean\\defense_contract_all_detail.Rdata",def_all)
 
 summary(factor(def_all$topContractingOfficeAgencyID))
@@ -607,12 +607,33 @@ if(!exists("def_detail")) load(file="..\\data\\clean\\defense_contract_complete_
 
 
 gc()
-memory.limit(56000)
 # load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
 
 
+dir<-"../data/semi_clean/"
+rda_file<-"Contract.SP_ContractPricingCustomer.rda"
+
+
+  if(!file.exists(file.path(dir,rda_file))){
+    #
+    con <- dbConnect(odbc(),
+                     Driver = "SQL Server",
+                     Server = "vmsqldiig.database.windows.net",
+                     Database = "CSIS360",
+                     UID = login,
+                     PWD =pwd)
+    lookup<-dbGetQuery(con,  
+                       paste("EXEC Contract.SP_ContractPricingCustomer @Customer=NULL",sep=""))
+    rm(con)
+    lookup<-standardize_variable_names(lookup)
+
+    save(lookup,file=file.path(dir,rda_file))
+    rm(lookup) #This is admittedly inefficient
+  }
+  
+
 def_detail<-read_and_join_experiment(data=def_detail
-  ,"Contract.SP_ContractPricingCustomer.txt"
+  ,rda_file
   ,path="../"
   ,dir="data/semi_clean/"
   ,by="CSIScontractID"
@@ -728,10 +749,31 @@ summary(def_detail$FxCb)
 #       c("Indefinite Delivery Contract",
 #         "Delivery Order")])
 
-memory.limit(32000)
+
+
+rda_file<-"Contract.SP_ContractPricingUCA.rda"
+
+
+  if(!file.exists(file.path(dir,rda_file))){
+    #
+    con <- dbConnect(odbc(),
+                     Driver = "SQL Server",
+                     Server = "vmsqldiig.database.windows.net",
+                     Database = "CSIS360",
+                     UID = login,
+                     PWD =pwd)
+    lookup<-dbGetQuery(con,  
+                       paste("EXEC Contract.SP_ContractPricingUCA @Customer=NULL",sep=""))
+    rm(con)
+    lookup<-standardize_variable_names(lookup)
+
+    save(lookup,file=file.path(dir,rda_file))
+    rm(lookup) #This is admittedly inefficient
+  }
+  
 
 def_detail<-read_and_join_experiment(data=def_detail
-  ,"Contract.SP_ContractPricingUCA.txt"
+  ,rda_file
   ,path="../"
   ,dir="data/semi_clean/"
   ,by="CSIScontractID"
