@@ -233,6 +233,7 @@ save(def_data,def_lc,def_ck, file="analysis/FPDS_chart_maker/unaggregated_def.Rd
 
 platpscdefcd<-read_delim(file.path("data","semi_clean","Location.SP_ProdServPlatformAgencyCongressionalDistrict.csv"),delim="\t",na=c("NULL","NA"),
                     col_names = TRUE, guess_max = 10000000)
+
 platpscdefcd<-apply_standard_lookups(platpscdefcd)
 
 platpscdefcd<-initial_clean(platpscdefcd)
@@ -387,6 +388,12 @@ platpscintldef %<>%
   mutate(PlatformPortfolioUAV = factor(PlatformPortfolioUAV))
 
 
+
+
+cd_lc<-csis360::prepare_labels_and_colors(platpscdefcd)
+cd_ck<-csis360::get_column_key(platpscdefcd)
+
+save(platpscdefcd,cd_lc, cd_ck,file="data/clean/platpscdefcd.Rda")
 
 intl_lc<-csis360::prepare_labels_and_colors(platpscintldef)
 intl_ck<-csis360::get_column_key(platpscintldef)
