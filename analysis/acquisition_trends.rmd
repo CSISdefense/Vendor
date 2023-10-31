@@ -16,7 +16,6 @@ library(ggplot2)
 library(dplyr)
 library(tidyverse)
 library(scales)
-library(lubridate)
 library(svglite)
 library(readxl)
 
@@ -77,7 +76,7 @@ labels_and_colors<-prepare_labels_and_colors(full_data,path=file.path(local_path
 
 
 
-(toplineq<-build_plot(data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2023.1),#rbind(quarterly,q2021,e2021),
+(toplineq<-build_plot(data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2023.2),#rbind(quarterly,q2021,e2021),
                      chart_geom="Bar Chart",
                      x_var="dFYear",
                      y_var="Action_Obligation_OMB24_GDP22",
@@ -102,11 +101,26 @@ ggsave600dpi(toplineq,file=file.path("..","Output","toplineq.png"),
              width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//toplineqr_keynote.svg", toplineq+
+ggsave600dpi("..//Output//AcqTrends//toplineqr_keynote.svg", toplineq+
                labs(title="DOD Contract Obligations, 2000-2023Q1"),
              width=13, height= 5.5, units="in", size=20, lineheight = 0.75
              )
 
+ggsave600dpi(toplineq+labs(caption=NULL),
+            file="../output/AcqTrends/acq_fig2_1_fq.svg",size=12,caption_fraction=8/12,lineheight=1, height =3, width=6.5)
+
+
+
+output_TY<-def_data %>% mutate(Source="Contract") %>%  group_by(Source,fiscal_quarter,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+  arrange(Fiscal_Year)%>% 
+          pivot_wider(id_cols=c(Source,fiscal_quarter),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year) %>%arrange(Source,fiscal_quarter)
+
+wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
+# addWorksheet(wb, sheetName = "2-2 FYQ")
+ writeData(wb, output_TY, sheet = "2-2 FYQ", startRow = 1, startCol = 9)
+saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
 ```
 ## TOA annual
 ```{r TOAannual}
@@ -177,16 +191,16 @@ ggsave600dpi(topline,file=file.path("..","Output","topline_toa_annual.emf"),
              width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
              )
 
-write.csv(file="..//Output//toa_annual.csv",row.names = FALSE,na="",output_TY
+
+write.csv(file="..//Output//AcqTrends//toa_annual.csv",row.names = FALSE,na="",output_TY
           )
 
 
 
-
-wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
 createSheet(wb, name = "TOA")
-writeWorksheet(wb, output_TY, sheet = "TOA", startRow = 2, startCol = 1)
-saveWorkbook(wb)
+writeData(wb, output_TY, sheet = "TOA", startRow = 2, startCol = 1)
+saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
 rm(wb)
 xlcFreeMemory()
 
@@ -282,17 +296,17 @@ ggsave600dpi(topline,file=file.path("..","Output","topline_toa_annual.emf"),
              width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
              )
 
-write.csv(file="..//Output//toa_sam_annual_TY.csv",row.names = FALSE,na="",output_TY
+write.csv(file="..//Output//AcqTrends//toa_sam_annual_TY.csv",row.names = FALSE,na="",output_TY
           )
-write.csv(file="..//Output//toa_sam_annual.csv",row.names = FALSE,na="",output_TY
+write.csv(file="..//Output//AcqTrends//toa_sam_annual.csv",row.names = FALSE,na="",output_TY
           )
 
 
 # 
-# wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+# wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
 # createSheet(wb, name = "TOA")
-# writeWorksheet(wb, output_TY, sheet = "TOA", startRow = 2, startCol = 1)
-# saveWorkbook(wb)
+# writeData(wb, output_TY, sheet = "TOA", startRow = 2, startCol = 1)
+# saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
 # rm(wb)
 # xlcFreeMemory()
 
@@ -397,52 +411,44 @@ ToplineCompLine<-build_plot(
 def_data %>% filter(Competition.sum =="Unlabeled" & Fiscal_Year>=2019) %>% group_by(CompetitionClassification)%>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
 
-ggsave600dpi("..//Output//topline_comp.png", ToplineComp,  
+ggsave600dpi("..//Output//AcqTrends//topline_comp.png", ToplineComp,  
              width=11, height= 5.5, units="in",size=14, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//topline_comp.emf", ToplineComp+theme(legend.position = "right"),  
+ggsave600dpi("..//Output//AcqTrends//topline_comp.emf", ToplineComp+theme(legend.position = "right"),  
              width=6.5, height= 3, units="in",size=11, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//topline_comp.svg", ToplineComp,  
-             width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
-             )
 
-
-ggsave600dpi("..//Output//topline_comp_multi.png", ToplineCompMulti,  
+ggsave600dpi("..//Output//AcqTrends//topline_comp_multi.png", ToplineCompMulti,  
              width=11, height= 5.5, units="in",size=14, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//topline_comp_multi.svg", ToplineCompMulti,  
+ggsave600dpi("..//Output//AcqTrends//topline_comp_multi.svg", ToplineCompMulti,  
              width=6.5, height= 4, units="in",size=12, lineheight=1.2
              )
 
 
 
-ggsave600dpi("..//Output//topline_comp_multi.emf", ToplineCompMulti+theme(legend.position = "right"),  
+ggsave600dpi("..//Output//AcqTrends//topline_comp_multi.emf", ToplineCompMulti+theme(legend.position = "right"),  
              width=6.5, height= 3, units="in",size=11, lineheight=1.2
              )
 
 
-ggsave600dpi("..//Output//topline_comp_square.png", ToplineComp,  
+ggsave600dpi("..//Output//AcqTrends//topline_comp_square.png", ToplineComp,  
              width=6, height= 5, units="in",size=14, lineheight=1.2
              )
 
-
-write.csv(file="..//Output//topline_competition.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//topline_competition.csv",row.names = FALSE, na = "",
           ToplineComp$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(Competition.sum),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
 
-
-write.csv(file="..//Output//topline_competition_cur.csv",row.names = FALSE, na = "",
-          def_data %>% group_by(Competition.sum,Fiscal_Year)%>%
-            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-          pivot_wider(id_cols=c(Competition.sum),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(Competition.sum))
-
-
+log_plot(plot=ToplineComp, df=def_data,
+                     filename="acq_fig6_5_competition",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+                     sheet="6-5 Comp",path="../output/AcqTrends/", height=3.5,
+                     startRow=1,startCol=11,format=TRUE#,var_list=c("Vehicle.AwardTask","Vehicle.sum7")
+         )
 ```
 
 
@@ -480,13 +486,13 @@ UnlabeledComp<-build_plot(
 def_data %>% filter(Competition.sum =="Unlabeled" & Fiscal_Year>=2019) %>% group_by(CompetitionClassification)%>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
 
-ggsave600dpi("..//Output//unlabeled_comp.png", UnlabeledComp,  
+ggsave600dpi("..//Output//AcqTrends//unlabeled_comp.png", UnlabeledComp,  
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
 
 
-write.csv(file="..//Output//unlabeled_competition.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//unlabeled_competition.csv",row.names = FALSE, na = "",
           # ToplineComp$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(UnlabeledComp$data,id_cols=c(CompetitionClassification,Vehicle.sum7),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)
@@ -497,161 +503,6 @@ write.csv(file="..//Output//unlabeled_competition.csv",row.names = FALSE, na = "
 ```
 
 
-## Topline Vendor Size
-```{r ToplineVendor}
-
-(
-ToplineVendor<-build_plot(
-  data=full_data %>% filter(Fiscal_Year<=2021),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="Shiny.VendorSize", #color_var
-  # facet_var="Competition.sum", #facet_var
-  column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = scales::date_format("'%y"),date_breaks = "2 years")+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",
-       caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020.")
-)
-
-(
-ToplineVendor_line<-build_plot(
-  data=full_data %>% filter(Fiscal_Year<=2021),
-  chart_geom = "Line Chart",
-  labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="Shiny.VendorSize", #color_var
-  # facet_var="Competition.sum", #facet_var
-  column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE,
-  share=TRUE
-)+scale_x_date("Fiscal Year",labels = scales::date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
-)
-
-ggsave600dpi("..//Output//topline_vendor_wide.png", ToplineVendor+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020."), 
-             width=12, height= 6, units="in",size=12,lineheight=1
-             )
-
-
-ggsave600dpi("..//Output//topline_vendor_cq.png", ToplineVendor+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
-             width=6.5, height= 4, units="in",size=11,lineheight=1
-             )
-
-ggsave600dpi("..//Output//topline_vendor_cq.svg", ToplineVendor+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
-             width=6.5, height= 4, units="in",size=11,lineheight=1
-             )
-
-ggsave600dpi("..//Output//topline_vendor.png", ToplineVendor, 
-             width=6.5, height= 4, units="in",size=11,lineheight=1
-             )
-
-ggsave600dpi("..//Output//topline_vendor.eps", ToplineVendor+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
-             width=6.5, height= 4, units="in",size=11,lineheight=1
-             )
-
-
-write.csv(file="..//Output//topline_vendor_cur.csv",row.names = FALSE, na = "",
-          full_data %>% group_by(Shiny.VendorSize,Fiscal_Year)%>%
-            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-          pivot_wider(id_cols=c(Shiny.VendorSize),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(Shiny.VendorSize))
-
-
-write.csv(file="..//Output//topline_vendor.csv",row.names = FALSE, na = "",
-          ToplineVendor$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
-                                       bAction_Obligation_OMB24_GDP22=Action_Obligation_OMB24_GDP22/1000000000)%>%
-            pivot_wider(id_cols=c(Shiny.VendorSize),
-                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%arrange(Shiny.VendorSize))
-
-```
-
-
-
-
-
-### Topline Vendor International
-```{r ToplineVendor}
-
-
-(
-ToplineVendorIntl<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=2000 & Fiscal_Year<=2021),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="VendorSize_Intl", #color_var
-  # facet_var="Competition.sum", #facet_var
-  column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE,
-  reverse_color=TRUE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",
-       caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020.")
-)
-
-ggsave600dpi("..//Output//topline_vendor_intl_square.png", ToplineVendorIntl+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020."), 
-             width=6, height= 5, units="in",size=12,lineheight=1
-             )
-
-ggsave600dpi("..//Output//topline_vendor_intl.svg", ToplineVendorIntl+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020."), 
-             width=6.5, height= 4, units="in",size=12,lineheight=1
-             )
-
-
-
-write.csv(file="..//Output//topline_vendor_intl_cur.csv",row.names = FALSE, na = "",
-          full_data %>% group_by(VendorSize_Intl,Fiscal_Year)%>%
-            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-          pivot_wider(id_cols=c(VendorSize_Intl),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(VendorSize_Intl))
-
-```
 
 ### Big 5 Breakout
 ```{r ToplineVendor}
@@ -733,40 +584,40 @@ ToplineVendor_line<-build_plot(
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
 )
 
-ggsave600dpi("..//Output//topline_vendor_wide.png", ToplineVendor+
+ggsave600dpi("..//Output//AcqTrends//topline_vendor_wide.png", ToplineVendor+
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020."), 
              width=12, height= 6, units="in",size=12,lineheight=1
              )
 
 
-ggsave600dpi("..//Output//topline_vendor_cq.png", ToplineVendor+
+ggsave600dpi("..//Output//AcqTrends//topline_vendor_cq.png", ToplineVendor+
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
-ggsave600dpi("..//Output//topline_vendor_cq.svg", ToplineVendor+
+ggsave600dpi("..//Output//AcqTrends//topline_vendor_cq.svg", ToplineVendor+
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
-ggsave600dpi("..//Output//topline_vendor.png", ToplineVendor, 
+ggsave600dpi("..//Output//AcqTrends//topline_vendor.png", ToplineVendor, 
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
-ggsave600dpi("..//Output//topline_vendor.eps", ToplineVendor+
+ggsave600dpi("..//Output//AcqTrends//topline_vendor.eps", ToplineVendor+
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
 
-write.csv(file="..//Output//topline_vendor_cur.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//topline_vendor_cur.csv",row.names = FALSE, na = "",
           full_data %>% group_by(Shiny.VendorSize,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(Shiny.VendorSize),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(Shiny.VendorSize))
 
 
-write.csv(file="..//Output//topline_vendor.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//topline_vendor.csv",row.names = FALSE, na = "",
           ToplineVendor$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
                                        bAction_Obligation_OMB24_GDP22=Action_Obligation_OMB24_GDP22/1000000000)%>%
             pivot_wider(id_cols=c(Shiny.VendorSize),
@@ -868,11 +719,11 @@ ToplineVehicle<-build_plot(
 )
 
 
-ggsave600dpi("..//Output//topline_vehicle7.png", ToplineVehicle7, 
+ggsave600dpi("..//Output//AcqTrends//topline_vehicle7.png", ToplineVehicle7, 
              width=13, height= 4.5, units="in",size=11
              )
 
-write.csv(file="..//Output//topline_vehicle7.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//topline_vehicle7.csv",row.names = FALSE, na = "",
           ToplineVehicle7$data%>% 
             mutate(Fiscal_Year=lubridate::year(dFYear),
                    bAction_Obligation_OMB24_GDP22=Action_Obligation_OMB24_GDP22/1000000000)%>%
@@ -881,16 +732,40 @@ write.csv(file="..//Output//topline_vehicle7.csv",row.names = FALSE, na = "",
             arrange(Vehicle.sum7,Vehicle.AwardTask))
 
 
-ggsave600dpi("..//Output//topline_vehicle.png", ToplineVehicle, 
+ggsave600dpi("..//Output//AcqTrends//topline_vehicle.png", ToplineVehicle, 
              width=13, height= 4.5, units="in",size=11
              )
 
-write.csv(file="..//Output//topline_vehicle.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//topline_vehicle.csv",row.names = FALSE, na = "",
           ToplineVehicle$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
                                        bAction_Obligation_OMB24_GDP22=Action_Obligation_OMB24_GDP22/1000000000)%>%
             pivot_wider(id_cols=c(Vehicle.sum,Vehicle.AwardTask),
                         names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%
             arrange(Vehicle.sum,Vehicle.AwardTask))
+
+log_plot(plot=ToplineVehicle7, df=def_data,
+                     filename="acq_fig4_X_vehicle",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+                     sheet="4-X Veh",path="../output/AcqTrends/", height=4,
+                     startRow=1,startCol=10,format=TRUE,
+         var_list=c("Vehicle.AwardTask","Vehicle.sum7"))
+#   
+# ggsave600dpi(ToplineVehicle7+labs(caption=NULL,title=NULL),
+#             file="../output/AcqTrends/acq_fig4_2_vehicle.svg",size=12,caption_fraction=8/12,lineheight=1, height =4, width=6.5)
+# 
+# output_TY<-def_data %>% group_by(Vehicle.sum7,Vehicle.AwardTask,Fiscal_Year)%>%
+#             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+#   arrange(Fiscal_Year)%>%
+#           pivot_wider(id_cols=c(Vehicle.AwardTask,Vehicle.sum7),
+#                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%arrange(Vehicle.AwardTask,Vehicle.sum7)
+# 
+# 
+# write.csv(output_TY,file="..//Output//AcqTrends//then_year_csv//acq_fig4_2_vehicle.csv",row.names = FALSE, na = "",
+#           )
+# 
+# wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
+# writeData(wb, output_TY, sheet = "4-2 Veh", startRow = 1, startCol = 10)
+# saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
+# rm(wb)
 
 ```
 
@@ -931,21 +806,35 @@ ToplinePricing<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-# ggsave600dpi("..//Output//topline_pricing.png", ToplinePricing, 
-#              width=6.5, height= 4, units="in",size=11
-#              )
 
-
-ggsave600dpi("..//Output//topline_pricing.png", ToplinePricing,  
+ggsave600dpi("..//Output//AcqTrends//topline_pricing.png", ToplinePricing,  
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
-write.csv(file="..//Output//topline_pricing.csv",row.names = FALSE, na = "",
-  arrange(pivot_wider(ToplinePricing$data %>% 
-                        arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
-                      id_cols=c(PricingUCA.sumlong,PricingUCA),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22),PricingUCA.sumlong)%>%
-    arrange(PricingUCA.sumlong,PricingUCA))
+# write.csv(file="..//Output//AcqTrends//topline_pricing.csv",row.names = FALSE, na = "",
+#   arrange(pivot_wider(ToplinePricing$data %>% 
+#                         arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
+#                       id_cols=c(PricingUCA.sumlong,PricingUCA),
+#                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22),PricingUCA.sumlong)%>%
+#     arrange(PricingUCA.sumlong,PricingUCA))
+
+
+ggsave600dpi(ToplinePricing+labs(caption=NULL,title=NULL),
+            file="../output/AcqTrends/acq_fig4_1_pricing.svg",size=12,caption_fraction=8/12,lineheight=1, height =4, width=6.5)
+
+output_TY<-def_data %>% group_by(PricingUCA.sumlong,PricingUCA,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+  arrange(Fiscal_Year)%>%
+          pivot_wider(id_cols=c(PricingUCA.sumlong,PricingUCA),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%arrange(PricingUCA.sumlong,PricingUCA)
+
+
+write.csv(output_TY,file="..//Output//AcqTrends//then_year_csv//acq_fig4_1_pricing.csv",row.names = FALSE, na = "",
+          )
+
+wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
+writeData(wb, output_TY, sheet = "4-1 Price", startRow = 1, startCol = 10)
+saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
 
 
 ```
@@ -994,29 +883,29 @@ PricingHistory<-build_plot(
   labs(y="Share of Obligations",caption="Source: Federal Procurement Data System (FPDS) and CSIS analysis.")
 )
 
-# ggsave600dpi("..//Output//Topline_Pricing_History.png", PricingHistory, 
+# ggsave600dpi("..//Output//AcqTrends//Topline_Pricing_History.png", PricingHistory, 
 #              width=6.5, height= 4, units="in",size=11
 #              )
 
   
-  ggsave600dpi("..//Output//Topline_Pricing_History.png", PricingHistory,  
+  ggsave600dpi("..//Output//AcqTrends//Topline_Pricing_History.png", PricingHistory,  
                width=6.5, height= 3, units="in",size=12, lineheight=1.2
                )
   
   
-  ggsave600dpi("..//Output//Topline_Pricing_History.svg", PricingHistory,  
+  ggsave600dpi("..//Output//AcqTrends//Topline_Pricing_History.svg", PricingHistory,  
                width=6.5, height= 3, units="in",size=12, lineheight=1.2
                )
   
 
-write.csv(file="..//Output//Topline_Pricing_History.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//Topline_Pricing_History.csv",row.names = FALSE, na = "",
   arrange(pivot_wider(PricingHistory$data %>% 
                         arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
                       id_cols=c(PricingInflation),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22),PricingInflation)%>%
     arrange(PricingInflation))
 
-write.csv(file="..//Output//Topline_Pricing_History_cur.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//Topline_Pricing_History_cur.csv",row.names = FALSE, na = "",
   PricingUpdate %>% group_by(Fiscal_Year,PricingInflation)%>%
                         summarise(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE)) %>%
                         arrange(Fiscal_Year) %>%# mutate(Fiscal_Year=lubridate::year(dFYear)) %>%
@@ -1040,7 +929,7 @@ levels(def_data$AnyCommercialText)<-list(
 
 (
 Commercial<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2000),
+  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2023.2),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -1067,22 +956,32 @@ Commercial<-build_plot(
                                                    date_labels="'%y")
 )
 
-ggsave600dpi("..//Output//topline_commercial.png", Commercial, 
+ggsave600dpi("..//Output//AcqTrends//topline_commercial.png", Commercial, 
              width=11, height= 5.5, units="in",size=14,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//topline_commercial.svg", Commercial+
+ggsave600dpi("..//Output//AcqTrends//topline_commercial.svg", Commercial+
   labs(y="Obligations\n(Constant 2022 $s)"),#+facet_wrap(~SubCustomer.platform,nrow=1), 
              width=6.5, height= 2.25, units="in",size=11,lineheight = 1.2
              )
 
-write.csv(file="..//Output//topline_commercial_current.csv",row.names = FALSE, na = "",
-          def_data %>% group_by(AnyCommercialText,Fiscal_Year)%>%
+ggsave600dpi(Commercial+labs(caption=NULL,title=NULL,y="Obligations\n(Constant 2022 $s)"),
+            file="../output/AcqTrends/acq_fig5_4_commercial.svg",size=12,caption_fraction=8/12,lineheight=1, height =2.25, width=6.5)
+
+
+output_TY<-def_data %>% group_by(AnyCommercialText,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-            arrange(Fiscal_Year)%>%
+  arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(AnyCommercialText),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
-            arrange(AnyCommercialText))
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%arrange(AnyCommercialText)
+
+
+write.csv(output_TY,file="..//Output//AcqTrends//then_year_csv//acq_fig5_4_commercial.csv",row.names = FALSE, na = "",
+          )
+
+wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
+writeData(wb, output_TY, sheet = "5-4 Comm", startRow = 1, startCol = 11)
+saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
 
 
 def_data %>% filter(SubCustomer.sum=="Army", PlatformPortfolio=="Other Products", Fiscal_Year==2021) %>%
@@ -1167,28 +1066,28 @@ UnmDuration<-build_plot(
                                                    date_labels="'%y")
 )
 
-ggsave600dpi("..//Output//topline_UnmDuration.png", UnmDuration, 
+ggsave600dpi("..//Output//AcqTrends//topline_UnmDuration.png", UnmDuration, 
              width=11, height= 5.5, units="in",size=14,lineheight = 1.2
              )
 
 
-ggsave600dpi("..//Output//topline_CurDuration.png", CurDuration, 
+ggsave600dpi("..//Output//AcqTrends//topline_CurDuration.png", CurDuration, 
              width=11, height= 5.5, units="in",size=14,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//topline_CurDuration.svg", CurDuration,#+facet_wrap(~SubCustomer.platform,nrow=1), 
+ggsave600dpi("..//Output//AcqTrends//topline_CurDuration.svg", CurDuration,#+facet_wrap(~SubCustomer.platform,nrow=1), 
              width=6.5, height= 3, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//topline_UnmDuration.png", UnmDuration,#+facet_wrap(~SubCustomer.platform,nrow=1), 
+ggsave600dpi("..//Output//AcqTrends//topline_UnmDuration.png", UnmDuration,#+facet_wrap(~SubCustomer.platform,nrow=1), 
              width=6.5, height= 3, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//topline_UnmDuration.svg", UnmDuration,#+facet_wrap(~SubCustomer.platform,nrow=1), 
+ggsave600dpi("..//Output//AcqTrends//topline_UnmDuration.svg", UnmDuration,#+facet_wrap(~SubCustomer.platform,nrow=1), 
              width=6.5, height= 3, units="in",size=11,lineheight = 1.2
              )
 
-write.csv(file="..//Output//topline_CurDuration_current.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//topline_CurDuration_current.csv",row.names = FALSE, na = "",
           def_data %>% group_by(CurrentDurationCategory,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
             arrange(Fiscal_Year)%>%
@@ -1196,7 +1095,7 @@ write.csv(file="..//Output//topline_CurDuration_current.csv",row.names = FALSE, 
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
             arrange(CurrentDurationCategory))
 
-write.csv(file="..//Output//topline_UmdDuration_current.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//topline_UmdDuration_current.csv",row.names = FALSE, na = "",
           def_data %>% group_by(UnmodifiedUltimateDurationCategory,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
             arrange(Fiscal_Year)%>%
@@ -1208,83 +1107,6 @@ write.csv(file="..//Output//topline_UmdDuration_current.csv",row.names = FALSE, 
 ```
 
 #Product/Service/R&D
-
-
-## SAM Product/Service/R&D
-```{r ToplinePSR}
-def_psc<-read_csv("..\\Data_Raw\\SAM\\PSC_code_2011_2022.csv")
-
-def_psc<-standardize_variable_names(def_psc)
-
-def_psc<-apply_standard_lookups(def_psc,path="..\\..\\Lookup-Tables\\")
-sam_lc<-prepare_labels_and_colors(def_psc)
-
-
-# def_data<-deflate(def_data,"Action_Obligation_Then_Year")
-
-
-def_psc_join<-def_psc %>% filter(Fiscal_Year==2022)
-def_psc_join<-rbind(def_psc_join[,colnames(def_psc)%in%colnames(def_data)],
-                    def_data[,colnames(def_data)%in%colnames(def_psc)])
-
-def_psc_join$SimpleArea<-factor(def_psc_join$SimpleArea)
-levels(def_psc_join$SimpleArea)<-list(
-  "Products"=c("Products","Products (All)"),
-  "R&D"="R&D",
-  "Services"=c( "Services (Non-R&D)","Services"),
-  "Unlabeled"="Unlabeled"  
-)
-
-(
-ToplinePSRsam<-build_plot(
-  data=def_psc_join,
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=sam_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="SimpleArea", #color_var
-  # facet_var="Competition.sum", #facet_var
-  column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
-)
-
-ggsave600dpi("..//Output//topline_sam_psr.png", ToplinePSRsam, 
-             width=12, height= 6, units="in",size=12, lineheight=1.2
-             )
-
-ggsave600dpi("..//Output//topline_sam_psr.emf", ToplinePSRsam, 
-             width=6.5, height= 3, units="in",size=11, lineheight=1.2
-             )
-
-
-output_TY<-def_data %>% group_by(SimpleArea,Fiscal_Year)%>%
-            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-          pivot_wider(id_cols=c(SimpleArea),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)
-write.csv(file="..//Output//topline_sam_psr.csv",row.names = FALSE, na = "",
-          output_TY)
-
-
-# wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
-# createSheet(wb, name = "Area")
-# writeWorksheet(wb, output_TY, sheet = "Area", startRow = 14, startCol = 14)
-# saveWorkbook(wb)
-
-```
 
 ## Topline Product/Service/R&D
 ```{r ToplinePSR}
@@ -1316,27 +1138,37 @@ ToplinePSR<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//topline_psr.png", ToplinePSR, 
+ggsave600dpi("..//Output//AcqTrends//topline_psr.png", ToplinePSR, 
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//topline_psr.svg", ToplinePSR, 
+ggsave600dpi("..//Output//AcqTrends//topline_psr.svg", ToplinePSR, 
              width=6.5, height= 3, units="in",size=11, lineheight=1.2
              )
+
+
+
+
+
+ggsave600dpi(ToplinePSR+labs(caption=NULL,title=NULL),
+            file="../output/AcqTrends/acq_fig3_1_area.svg",size=12,caption_fraction=8/12,lineheight=1, height =3, width=6.5)
 
 
 output_TY<-def_data %>% group_by(SimpleArea,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(SimpleArea),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)
-write.csv(file="..//Output//topline_psr.csv",row.names = FALSE, na = "",
+
+write.csv(file="..//Output//AcqTrends//topline_psr.csv",row.names = FALSE, na = "",
           output_TY)
 
+write.csv(output_TY,file="..//Output//AcqTrends//then_year_csv//acq_fig3_1_area.csv",row.names = FALSE, na = "",
+          )
 
-# wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
-# createSheet(wb, name = "Area")
-# writeWorksheet(wb, output_TY, sheet = "Area", startRow = 14, startCol = 14)
-# saveWorkbook(wb)
+wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
+ writeData(wb, output_TY, sheet = "3-1 Area", startRow = 1, startCol = 9)
+saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
+
 
 ```
 
@@ -1345,7 +1177,7 @@ write.csv(file="..//Output//topline_psr.csv",row.names = FALSE, na = "",
 
 (
 PSR_Q<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2000&  Fiscal_YQ<=2023.1 & SimpleArea!="Unlabeled"),
+  data=def_data %>% filter(Fiscal_Year>=2000&  Fiscal_YQ<=2023.2 & SimpleArea!="Unlabeled"),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -1362,27 +1194,27 @@ PSR_Q<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//PSR_Q.png", PSR_Q, 
+ggsave600dpi("..//Output//AcqTrends//PSR_Q.png", PSR_Q, 
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//PSR_Q.svg", PSR_Q, 
+ggsave600dpi("..//Output//AcqTrends//PSR_Q.svg", PSR_Q, 
              width=6.5, height= 3, units="in",size=11, lineheight=1.2
              )
 
 
-output_TY<-def_data %>% filter(Fiscal_YQ<2023) %>% group_by(SimpleArea,Fiscal_Year)%>%
+output_TY<-def_data %>% filter(Fiscal_YQ<=2023.2) %>% group_by(SimpleArea,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(SimpleArea),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)
-write.csv(file="..//Output//PSR_Q.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//PSR_Q.csv",row.names = FALSE, na = "",
           output_TY)
 
 
-# wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+# wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
 # createSheet(wb, name = "Area")
-# writeWorksheet(wb, output_TY, sheet = "Area", startRow = 14, startCol = 14)
-# saveWorkbook(wb)
+# writeData(wb, output_TY, sheet = "Area", startRow = 14, startCol = 14)
+# saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
 
 ```
 
@@ -1392,16 +1224,16 @@ write.csv(file="..//Output//PSR_Q.csv",row.names = FALSE, na = "",
 
 (
 RnDphase<-build_plot(
-  data=def_data %>% filter(Fiscal_YQ<2023) %>% filter(SimpleArea=="R&D"),
+  data=def_data %>% filter(Fiscal_YQ<=2023.2) %>% filter(SimpleArea=="R&D"),
   chart_geom = "Bar Chart",
   share = FALSE,
-  labels_and_colors=labels_and_colors,
+  labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="Fiscal_Year", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="ProductServiceOrRnDarea", #color_var
   # facet_var="Competition.sum", #facet_var
-  column_key=column_key,
+  column_key=def_ck,
   format=TRUE,
   ytextposition=FALSE
 )+
@@ -1417,31 +1249,31 @@ RnDphase<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//psr_RnDPhase.png", RnDphase, 
+ggsave600dpi("..//Output//AcqTrends//psr_RnDPhase.png", RnDphase, 
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
                            
 
-write.csv(file="..//Output//psr_RnDPhase.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//psr_RnDPhase.csv",row.names = FALSE, na = "",
           pivot_wider(RnDphase$data,id_cols=c(ProductServiceOrRnDarea),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
             arrange(ProductServiceOrRnDarea))
             
 
-output_TY<-def_data %>% filter(Fiscal_YQ<2023) %>% filter(SimpleArea=="R&D") %>%
+output_TY<-def_data %>% filter(Fiscal_YQ<=2023.2) %>% filter(SimpleArea=="R&D") %>%
             format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
-                                 labels_and_colors=labels_and_colors) %>%
+                                 labels_and_colors=def_lc) %>%
           pivot_wider(id_cols=c(ProductServiceOrRnDarea),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
             arrange(ProductServiceOrRnDarea)
 
-write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//psr_RnDPhase_current.csv",row.names = FALSE, na = "",
           output_TY)
 
-# wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+# wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
 # createSheet(wb, name = "R&D")
-# writeWorksheet(wb, output_TY, sheet = "R&D", startRow = 15, startCol = 13)
-# saveWorkbook(wb)
+# writeData(wb, output_TY, sheet = "R&D", startRow = 15, startCol = 13)
+# saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
 
 ```
 
@@ -1450,7 +1282,7 @@ write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE, na = ""
 ## R&D Phase+OTA    
 ```{r PhaseAndOTA}
 
-contract_merge<-def_data %>% filter(Fiscal_YQ<2023) %>%
+contract_merge<-def_data %>% filter(Fiscal_YQ<=2023.2) %>%
   group_by(Fiscal_Year,
                          ProductServiceOrRnDarea,
                          SimpleArea)%>%
@@ -1520,21 +1352,21 @@ RnDphasePlusOTA<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )+scale_x_date(date_labels="'%y",date_breaks="1 year")
 
-ggsave600dpi("..//Output//RnDPhasePlusOTA.png", RnDphasePlusOTA+labs(caption="Source: FPDS and CSIS analysis."),
+ggsave600dpi("..//Output//AcqTrends//RnDPhasePlusOTA.png", RnDphasePlusOTA+labs(caption="Source: FPDS and CSIS analysis."),
              width=5, height= 4.75, units="in",size=11, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//RnDPhasePlusOTA.svg", RnDphasePlusOTA+labs(caption="Source: FPDS and CSIS analysis."),
+ggsave600dpi("..//Output//AcqTrends//RnDPhasePlusOTA.svg", RnDphasePlusOTA+labs(caption="Source: FPDS and CSIS analysis."),
              width=5, height= 4.75, units="in",size=11, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//RnDPhasePlusOTA.emf", RnDphasePlusOTA+labs(caption="Source: FPDS and CSIS analysis."),
+ggsave600dpi("..//Output//AcqTrends//RnDPhasePlusOTA.emf", RnDphasePlusOTA+labs(caption="Source: FPDS and CSIS analysis."),
              width=5, height= 4.75, units="in",size=11, lineheight=1.2
              )
 
 #                            
 # 
-# write.csv(file="..//Output//RnDPhasePlusOTA.csv",row.names = FALSE, na = "",
+# write.csv(file="..//Output//AcqTrends//RnDPhasePlusOTA.csv",row.names = FALSE, na = "",
 #           RnDphasePlusOTA$data%>% mutate(Fiscal_Year=year(dFYear)) %>%
 #           pivot_wider(id_cols=c(ProductServiceOrRnDarea),
 #                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
@@ -1544,7 +1376,7 @@ ggsave600dpi("..//Output//RnDPhasePlusOTA.emf", RnDphasePlusOTA+labs(caption="So
 
 
 
-write.csv(file="..//Output//RnDPhasePlusOTA_current.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//RnDPhasePlusOTA_current.csv",row.names = FALSE, na = "",
           merge %>% filter(SimpleArea=="R&D") %>%
             format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",
                                  color_var = "ProductServiceOrRnDarea",
@@ -1627,18 +1459,18 @@ RnDphase<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//contractota_RnDPhase.png", RnDphase,
+ggsave600dpi("..//Output//AcqTrends//contractota_RnDPhase.png", RnDphase,
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 #                            
 # 
-write.csv(file="..//Output//contractota_RnDPhase.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//contractota_RnDPhase.csv",row.names = FALSE, na = "",
           pivot_wider(RnDphase$data,id_cols=c(ProductServiceOrRnDarea,Authority),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
             arrange(ProductServiceOrRnDarea,Authority))
 #             
 # 
-# write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE, na = "",
+# write.csv(file="..//Output//AcqTrends//psr_RnDPhase_current.csv",row.names = FALSE, na = "",
 #           def_data %>% filter(SimpleArea=="R&D") %>%
 #             format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
 #                                  labels_and_colors=labels_and_colors) %>%
@@ -1650,10 +1482,10 @@ write.csv(file="..//Output//contractota_RnDPhase.csv",row.names = FALSE, na = ""
 
 ## Services
 ```{r Services}
-
+summary(factor(def_data$ServicesCategory.sum))
 (
 Services<-build_plot(
-  data=def_data %>% filter(SimpleArea=="Services (Non-R&D)" & Fiscal_YQ<2023),
+  data=def_data %>% filter(SimpleArea=="Services (Non-R&D)" & Fiscal_YQ<=2023.2),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -1678,40 +1510,37 @@ Services<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//psr_Services.png", Services, 
+ggsave600dpi("..//Output//AcqTrends//psr_Services.png", Services, 
              width=12, height= 6, units="in",size=14, lineheight=1.2
              )
               
-ggsave600dpi("..//Output//psr_Services.svg", Services, 
+ggsave600dpi("..//Output//AcqTrends//psr_Services.svg", Services, 
              width=6.5, height= 3.25, units="in",size=10, lineheight=1.2
              )             
 
-write.csv(file="..//Output//psr_Services.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//psr_Services.csv",row.names = FALSE, na = "",
           pivot_wider(Services$data,id_cols=c(ProductServiceOrRnDarea),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
             arrange(ProductServiceOrRnDarea))
             
-output_TY<-def_data %>% filter(Fiscal_YQ<2023) %>% 
+output_TY<-def_data %>% filter(Fiscal_YQ<=2023.2) %>% 
   format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ServicesCategory.detail",
                                  labels_and_colors=labels_and_colors) %>%
           pivot_wider(id_cols=c(ServicesCategory.detail),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
             arrange(ServicesCategory.detail)
 
-write.csv(file="..//Output//psr_Services_current.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//psr_Services_current.csv",row.names = FALSE, na = "",
           output_TY)
 
-wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
-createSheet(wb, name = "Area")
-writeWorksheet(wb, output_TY, sheet = "Area", startRow = 2, startCol = 14)
-createSheet(wb, name = "Services")
-writeWorksheet(wb, output_TY %>% filter(!ServicesCategory.detail %in% c("Products","Fuels","R&D","Unlabeled")), sheet = "Services", startRow = 2, startCol = 14)
-saveWorkbook(wb)
-
+wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
+writeData(wb, output_TY %>% filter(!ServicesCategory.detail %in% c("Products","Fuels","R&D","Unlabeled")), sheet = "3-3 Serv", startRow = 1, startCol = 9)
+saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
+rm(wb)
 ```
 
 
-### P/S/R Vendor size 
+## P/S/R Vendor size 
 ```{r PSR_vendorsize}
 
 
@@ -1742,7 +1571,7 @@ SimpleVendor_dollar<-build_plot(
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.\nMcDonnell Douglas is grouped with the Big-5.")
 )
 
-ggsave600dpi("..//Output//psr_vendorsize_dollar.png", SimpleVendor_dollar, 
+ggsave600dpi("..//Output//AcqTrends//psr_vendorsize_dollar.png", SimpleVendor_dollar, 
              width=6.5, height= 5, units="in",size=11, lineheight=1.2
              )
 
@@ -1775,18 +1604,18 @@ SimpleVendor_share<-build_plot(
 )
 
 
-ggsave600dpi("..//Output//psr_vendorsize_share.png", SimpleVendor_share, 
+ggsave600dpi("..//Output//AcqTrends//psr_vendorsize_share.png", SimpleVendor_share, 
              width=6.5, height= 5, units="in",size=11, lineheight=1.2
              )
 
 ```
 
-### P/S/R Competition
+## P/S/R Competition
 ```{r PSRcomp_plat}
 summary(def_data$SimpleArea)
 (
 PSRComp_line<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=1991 & Fiscal_YQ<2023 & SimpleArea!="Unlabeled"),
+  data=def_data %>% filter(Fiscal_Year>=1991 & Fiscal_YQ<=2023.2 & SimpleArea!="Unlabeled"),
   chart_geom = "Line Chart",
   share = TRUE,
   labels_and_colors=def_lc,
@@ -1817,7 +1646,7 @@ PSRComp_line<-build_plot(
 
 (
 PSRComp_bar<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=1991 & Fiscal_YQ<2023 & SimpleArea!="Unlabeled"),
+  data=def_data %>% filter(Fiscal_Year>=1991 & Fiscal_YQ<=2023.2 & SimpleArea!="Unlabeled"),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -1847,7 +1676,7 @@ PSRComp_bar<-build_plot(
 
 (
 PSRComp_line<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=1991 & Fiscal_YQ<2023 & SimpleArea!="Unlabeled"),
+  data=def_data %>% filter(Fiscal_Year>=1991 & Fiscal_YQ<=2023.2 & SimpleArea!="Unlabeled"),
   chart_geom = "Line Chart",
   share = TRUE,
   labels_and_colors=def_lc,
@@ -1873,58 +1702,65 @@ PSRComp_line<-build_plot(
     date_x_year_breaks(1993,2021,by=4)
 )
 
-ggsave600dpi("..//Output/PSRComp_line.png", PSRComp_line, 
+ggsave600dpi("..//Output//AcqTrends//PSRComp_line.png", PSRComp_line, 
              width=6.5, height= 5, units="in",size=12, lineheight=1.2
              )
 
 
 
-write.csv(file="..//Output//PSRComp_cur.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//PSRComp_cur.csv",row.names = FALSE, na = "",
           def_data %>% group_by(Competition.multisum,SimpleArea,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(SimpleArea,Competition.multisum),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(SimpleArea,Competition.multisum))
 
-ggsave("..//Output/PSRComp_both.png", 
+ggsave("..//Output//AcqTrends//PSRComp_both.png", 
              gridExtra::grid.arrange(
                PSRComp_bar+labs(caption = NULL,x=NULL)+theme(legend.position = "none"),
                PSRComp_line), 
              width=6.5, height= 5, units="in"
 )
 
-ggsave("..//Output/PSRComp_both.svg", 
+
+
+ggsave("..//Output//AcqTrends//PSRComp_both_keynote.png", 
+             gridExtra::grid.arrange(
+               PSRComp_bar+labs(
+                 title="DOD Contract Obligations by Commercial Categorization, 2000-2022",
+                  y="Obligations\n(Const. 2022 $s)",
+               caption = NULL,x=NULL)+theme(legend.position = "none",text=element_text(size=20)),
+               PSRComp_line+labs(y="Share of\nObl.")+theme(text=element_text(size=20),
+               plot.caption = element_text(size=round(20 * 5/6,0))
+               )),
+             width=13, height= 5.5, units="in" #, size=20, lineheight = 0.75
+             )
+
+ggsave("..//Output//AcqTrends//PSRComp_both_keynote.svg", 
+             gridExtra::grid.arrange(
+               PSRComp_bar+labs(
+                 title="DOD Contract Obligations by Commercial Categorization, 2000-2022",
+                  y="Obligations\n(Const. 2022 $s)",
+               caption = NULL,x=NULL)+theme(legend.position = "none",text=element_text(size=20)),
+               PSRComp_line+labs(y="Share of\nObl.")+theme(text=element_text(size=20),
+               plot.caption = element_text(size=round(20 * 5/6,0))
+               )),
+             width=13, height= 5.5, units="in" #, size=20, lineheight = 0.75
+             )
+
+
+ggsave("..//Output//AcqTrends//acq_fig6_6_competitionPSR.svg", 
              gridExtra::grid.arrange(
                PSRComp_bar+labs(caption = NULL,x=NULL)+theme(legend.position = "none"),
                PSRComp_line), 
              width=6.5, height= 6, units="in"
 )
 
-
-ggsave("..//Output//PSRComp_both_keynote.png", 
-             gridExtra::grid.arrange(
-               PSRComp_bar+labs(
-                 title="DOD Contract Obligations by Commercial Categorization, 2000-2022",
-                  y="Obligations\n(Const. 2022 $s)",
-               caption = NULL,x=NULL)+theme(legend.position = "none",text=element_text(size=20)),
-               PSRComp_line+labs(y="Share of\nObl.")+theme(text=element_text(size=20),
-               plot.caption = element_text(size=round(20 * 5/6,0))
-               )),
-             width=13, height= 5.5, units="in" #, size=20, lineheight = 0.75
-             )
-
-ggsave("..//Output//PSRComp_both_keynote.svg", 
-             gridExtra::grid.arrange(
-               PSRComp_bar+labs(
-                 title="DOD Contract Obligations by Commercial Categorization, 2000-2022",
-                  y="Obligations\n(Const. 2022 $s)",
-               caption = NULL,x=NULL)+theme(legend.position = "none",text=element_text(size=20)),
-               PSRComp_line+labs(y="Share of\nObl.")+theme(text=element_text(size=20),
-               plot.caption = element_text(size=round(20 * 5/6,0))
-               )),
-             width=13, height= 5.5, units="in" #, size=20, lineheight = 0.75
-             )
-
-
+log_plot(plot=PSRComp_bar, df=def_data,
+                     filename="acq_fig6_6_competitionPSR",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+                     sheet="6-6 CompPSR",path="../output/AcqTrends/", height=3.5,
+                     startRow=1,startCol=12,format=TRUE,var_list=c("SimpleArea","Competition.multisum"),
+         output_plot=FALSE
+         )
 ```
 
 
@@ -1934,7 +1770,7 @@ ggsave("..//Output//PSRComp_both_keynote.svg",
 
 (
 SubCustomer<-build_plot(
-  data=def_data %>% filter(Fiscal_YQ<2023),
+  data=def_data %>% filter(Fiscal_YQ<=2023.2),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -1959,15 +1795,18 @@ SubCustomer<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )#+date_x_year_breaks(1990,2022, by=4)
 
-ggsave600dpi("..//Output//topline_subcustomer.png", SubCustomer, 
+ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.png", SubCustomer, 
              width=12, height= 6, units="in",size=12,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//topline_subcustomer.svg", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
+ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.svg", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//topline_subcustomer_keynote.svg", SubCustomer+
+
+
+
+ggsave600dpi("..//Output//AcqTrends//topline_subcustomer_keynote.svg", SubCustomer+
                facet_wrap(~SubCustomer.sum,nrow=1)+
                labs(title="DOD Contract Obligations by Component, 1990-2022")+
                date_x_year_breaks(1990,2022, by=5), 
@@ -1975,33 +1814,37 @@ ggsave600dpi("..//Output//topline_subcustomer_keynote.svg", SubCustomer+
              )
 
 
-ggsave600dpi("..//Output//topline_platform_bar_keynote.svg", Platform_Bar+
+ggsave600dpi("..//Output//AcqTrends//topline_platform_bar_keynote.svg", Platform_Bar+
                labs(title="DOD Contract Obligations by Platform Portfolio, 2000-2022"),
              width=13, height= 5.5, units="in", size=20, lineheight = 0.75
              )
 
 
-ggsave600dpi("..//Output//topline_subcustomer.emf", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
+ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.emf", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
+ggsave600dpi(SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1)+labs(caption=NULL,title=NULL),
+            file="../output/AcqTrends/acq_fig2_2_subcustomer.svg",size=12,caption_fraction=8/12,lineheight=1, height =3, width=6.5)
 
-write.csv(file="..//Output//topline_subcustomer.csv",row.names = FALSE, na = "",
-          SubCustomer$data %>% mutate(Fiscal_Year=lubridate::year(dFYear)) %>%
-          pivot_wider(id_cols=c(SubCustomer.sum,SubCustomer.JPO),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
 
-write.csv(file="..//Output//topline_subcustomer_current.csv",row.names = FALSE, na = "",
-          def_data %>% filter(Fiscal_YQ<2023) %>% group_by(SubCustomer.sum,SubCustomer.JPO,Fiscal_Year) %>%
+output_TY<-def_data %>% filter(Fiscal_YQ<=2023.2) %>% group_by(SubCustomer.sum,SubCustomer.JPO,Fiscal_Year) %>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(SubCustomer.sum,SubCustomer.JPO),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)
 
+write.csv(output_TY,file="..//Output//AcqTrends//topline_subcustomer_current.csv",row.names = FALSE, na = "",
+          )
+
+wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
+ writeData(wb, output_TY, sheet = "2-3 Cust", startRow = 1, startCol = 10)
+saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
 
 ```
+
 ## SubCustomer Covid19
 ```{r SubCustomer}
-cust_covid<-def_data %>% filter(Fiscal_YQ<2023) %>% group_by(SubCustomer.JPO,SubCustomer.sum,Fiscal_Year) %>%
+cust_covid<-def_data %>% filter(Fiscal_YQ<=2023.2) %>% group_by(SubCustomer.JPO,SubCustomer.sum,Fiscal_Year) %>%
   summarise(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm = TRUE),
             COVID19obligated=sum(COVID19obligated,na.rm = TRUE))%>%
   mutate(Action_other=Action_Obligation_Then_Year-COVID19obligated) 
@@ -2043,19 +1886,19 @@ SubCustomerCovid<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//subcustomer_covid.png", SubCustomerCovid, 
+ggsave600dpi("..//Output//AcqTrends//subcustomer_covid.png", SubCustomerCovid, 
              width=12, height= 6, units="in",size=12,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//subcustomer_covid.svg", SubCustomerCovid+facet_wrap(~SubCustomer.sum,nrow=1), 
+ggsave600dpi("..//Output//AcqTrends//subcustomer_covid.svg", SubCustomerCovid+facet_wrap(~SubCustomer.sum,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
-write.csv(file="..//Output//subcustomer_covid.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//subcustomer_covid.csv",row.names = FALSE, na = "",
           pivot_wider(SubCustomerCovid$data,id_cols=c(SubCustomer.sum,SubCustomer.COVID),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
 
-write.csv(file="..//Output//subcustomer_covid.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//subcustomer_covid.csv",row.names = FALSE, na = "",
           cust_covid %>% group_by(SubCustomer.sum,SubCustomer.COVID,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(SubCustomer.sum,SubCustomer.COVID),
@@ -2094,10 +1937,10 @@ SubCustomerPSR<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-# ggsave600dpi("..//Output//subcustomer_PSR.png", SubCustomerPSR, 
+# ggsave600dpi("..//Output//AcqTrends//subcustomer_PSR.png", SubCustomerPSR, 
 #              width=6.5, height= 4, units="in",size=11
 #              )
-ggsave600dpi("..//Output//subcustomer_PSR.png", SubCustomerPSR, 
+ggsave600dpi("..//Output//AcqTrends//subcustomer_PSR.png", SubCustomerPSR, 
              width=12, height= 6, units="in",size=12,lineheight = 1.2
              )
 ```
@@ -2107,7 +1950,7 @@ ggsave600dpi("..//Output//subcustomer_PSR.png", SubCustomerPSR,
 def_data$SubCustomer.platform
 (
 SubCustomerComp_line<-build_plot(
-  data=def_data %>% filter(Fiscal_YQ<2023),
+  data=def_data %>% filter(Fiscal_YQ<=2023.2),
   chart_geom = "Line Chart",
   share = TRUE,
   labels_and_colors=labels_and_colors,
@@ -2132,16 +1975,16 @@ SubCustomerComp_line<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-# ggsave600dpi("..//Output//subcustomer_PSR.png", SubCustomerPSR, 
+# ggsave600dpi("..//Output//AcqTrends//subcustomer_PSR.png", SubCustomerPSR, 
 #              width=6.5, height= 4, units="in",size=11
 #              )
-ggsave600dpi("..//Output//subcustomer_Comp_line.png", SubCustomerComp_line, 
+ggsave600dpi("..//Output//AcqTrends//subcustomer_Comp_line.png", SubCustomerComp_line, 
              width=12, height= 6, units="in",size=12,lineheight = 1.2
              )
 
 (
 SubCustomerComp_bar<-build_plot(
-  data=def_data %>% filter(Fiscal_YQ<2023),
+  data=def_data %>% filter(Fiscal_YQ<=2023.2),
   chart_geom = "Bar Chart",
   share = TRUE,
   labels_and_colors=labels_and_colors,
@@ -2166,12 +2009,12 @@ SubCustomerComp_bar<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//subcustomer_Comp_bar.png", SubCustomerComp_bar, 
+ggsave600dpi("..//Output//AcqTrends//subcustomer_Comp_bar.png", SubCustomerComp_bar, 
              width=12, height= 6, units="in",size=12,lineheight = 1.2
              )
 
 
-write.csv(file="..//Output//subcustomer_competition.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//subcustomer_competition.csv",row.names = FALSE, na = "",
           SubCustomerComp_line$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(SubCustomer.platform,Competition.effective.only),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
@@ -2209,29 +2052,29 @@ PricingHistory<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-# ggsave600dpi("..//Output//SubCustomer_Pricing_History.png", PricingHistory, 
+# ggsave600dpi("..//Output//AcqTrends//SubCustomer_Pricing_History.png", PricingHistory, 
 #              width=6.5, height= 4, units="in",size=11
 #              )
 
 
-ggsave600dpi("..//Output//SubCustomer_Pricing_History.png", PricingHistory,  
+ggsave600dpi("..//Output//AcqTrends//SubCustomer_Pricing_History.png", PricingHistory,  
              width=6.5, height= 3, units="in",size=12, lineheight=1.2
              )
 
 
-ggsave600dpi("..//Output//SubCustomer_Pricing_History.svg", PricingHistory,  
+ggsave600dpi("..//Output//AcqTrends//SubCustomer_Pricing_History.svg", PricingHistory,  
              width=6.5, height= 3, units="in",size=12, lineheight=1.2
              )
 
 
-write.csv(file="..//Output//SubCustomer_Pricing_History_share.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//SubCustomer_Pricing_History_share.csv",row.names = FALSE, na = "",
   arrange(pivot_wider(PricingHistory$data %>% 
                         arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
                       id_cols=c(PricingInflation),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22),PricingInflation)%>%
     arrange(PricingInflation))
 
-write.csv(file="..//Output//SubCustomer_Pricing_History.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//SubCustomer_Pricing_History.csv",row.names = FALSE, na = "",
   pricing %>% group_by(Fiscal_Year,PricingInflation)%>%
                         summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE)) %>%
                         arrange(Fiscal_Year) %>%# mutate(Fiscal_Year=lubridate::year(dFYear)) %>%
@@ -2255,7 +2098,7 @@ levels(def_data$AnyCommercialText)<-list(
 
 (
 CommercialCust<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2023),
+  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2023.2),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -2310,32 +2153,32 @@ CommercialCust<-build_plot(
 # )
 # 
 
-ggsave600dpi("..//Output//subcustomer_commercial.png", CommercialCust, 
+ggsave600dpi("..//Output//AcqTrends//subcustomer_commercial.png", CommercialCust, 
              width=6, height= 5.5, units="in",size=12,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//subcustomer_commercial.svg", CommercialCust,#+facet_wrap(~SubCustomer.platform,nrow=1), 
+ggsave600dpi("..//Output//AcqTrends//subcustomer_commercial.svg", CommercialCust,#+facet_wrap(~SubCustomer.platform,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//subcustomer_commercial_keynote.png", CommercialCust+
+ggsave600dpi("..//Output//AcqTrends//subcustomer_commercial_keynote.png", CommercialCust+
                labs(title="DOD Contract Obligations by  Commercial Categorization, 2000-2022"),
              width=13, height= 5.5, units="in", size=20, lineheight = 0.75
              )
 
-ggsave600dpi("..//Output//subcustomer_commercial_keynote.svg", CommercialCust+
+ggsave600dpi("..//Output//AcqTrends//subcustomer_commercial_keynote.svg", CommercialCust+
                labs(title="DOD Contract Obligations by  Commercial Categorization, 2000-2022"),
              width=13, height= 5.5, units="in", size=20, lineheight = 0.75
              )
 
 
-write.csv(file="..//Output//subcustomer_commercial.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//subcustomer_commercial.csv",row.names = FALSE, na = "",
           CommercialCust$data%>%mutate(Fiscal_Year=year(dFYear)) %>%
           pivot_wider(id_cols=c(SubCustomer.platform,AnyCommercialText),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
 
-write.csv(file="..//Output//subcustomer_commercial_current.csv",row.names = FALSE, na = "",
-          def_data %>% filter(Fiscal_YQ<2023) %>% group_by(SubCustomer.platform,AnyCommercialText,Fiscal_Year)%>%
+write.csv(file="..//Output//AcqTrends//subcustomer_commercial_current.csv",row.names = FALSE, na = "",
+          def_data %>% filter(Fiscal_YQ<=2023.2) %>% group_by(SubCustomer.platform,AnyCommercialText,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
             arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(SubCustomer.platform,AnyCommercialText),
@@ -2347,10 +2190,9 @@ write.csv(file="..//Output//subcustomer_commercial_current.csv",row.names = FALS
 # Platform
 ## Topline  Platform
 ```{r Platform}
-
 (
 Platform<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=1990 & Fiscal_YQ<2023),
+  data=def_data %>% filter(Fiscal_Year>=1990 & Fiscal_YQ<=2023.2),
   chart_geom = "Line Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -2375,15 +2217,15 @@ Platform<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//topline_platform.png", Platform, 
+ggsave600dpi("..//Output//AcqTrends//topline_platform.png", Platform, 
              width=12, height= 6, units="in",size=14,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//topline_platform.svg", Platform, 
+ggsave600dpi("..//Output//AcqTrends//topline_platform.svg", Platform, 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//topline_platform.emf", Platform+geom_line(
+ggsave600dpi("..//Output//AcqTrends//topline_platform.emf", Platform+geom_line(
   size=1,aes(x=dFYear,y=Action_Obligation_OMB24_GDP22,color=PlatformPortfolio)),
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
@@ -2391,7 +2233,7 @@ ggsave600dpi("..//Output//topline_platform.emf", Platform+geom_line(
 
 (
 Platform_Bar<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=1990 & Fiscal_YQ<2023),
+  data=def_data %>% filter(Fiscal_Year>=1990 & Fiscal_YQ<=2023.2),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -2416,33 +2258,37 @@ Platform_Bar<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//topline_platform_bar.png", Platform_Bar, 
+ggsave600dpi("..//Output//AcqTrends//topline_platform_bar.png", Platform_Bar, 
              width=11, height= 5.5, units="in",size=14,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//topline_platform_bar.emf", Platform_Bar,
+ggsave600dpi("..//Output//AcqTrends//topline_platform_bar.emf", Platform_Bar,
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//topline_platform_bar_keynote.svg", Platform_Bar+
+ggsave600dpi("..//Output//AcqTrends//topline_platform_bar_keynote.svg", Platform_Bar+
                labs(title="DOD Contract Obligations by Platform Portfolio, 2000-2022"),
              width=13, height= 5.5, units="in", size=20, lineheight = 0.75
              )
 
+ggsave600dpi(Platform_Bar+labs(caption=NULL,title=NULL),
+            file="../output/AcqTrends/acq_fig3_2_platform.svg",size=12,caption_fraction=8/12,lineheight=1, height =4, width=6.5)
 
-output_TY<-full_data %>% group_by(PlatformPortfolio,Fiscal_Year)%>%
+output_TY<-def_data %>% group_by(PlatformPortfolio,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(PlatformPortfolio),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%arrange(PlatformPortfolio)
 
-write.csv(file="..//Output//topline_platform_current.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//topline_platform_current.csv",row.names = FALSE, na = "",
           output_TY)
 
-wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
-createSheet(wb, name = "Platform Portfolio")
-writeWorksheet(wb, output_TY, sheet = "Platform Portfolio", startRow = 15, startCol = 1)
-saveWorkbook(wb)
-rm(wb)
+write.csv(output_TY,file="..//Output//AcqTrends//then_year_csv//acq_fig3_2_platform.csv",row.names = FALSE, na = "",
+          )
+
+wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
+writeData(wb, output_TY, sheet = "3-2 Plat", startRow = 1, startCol = 9)
+saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
+
 
 ```
 
@@ -2477,15 +2323,15 @@ for(s in c("Army","Navy","Air Force")){
       labs(y="Obligations (Constant 2022 $s)")
   )
   
-  ggsave600dpi(paste("..//Output//",s,"_platform.png",sep=""), Platform, 
+  ggsave600dpi(paste("..//Output//AcqTrends//",s,"_platform.png",sep=""), Platform, 
                width=12, height= 6, units="in",size=14,lineheight = 1.2
   )
   
-  ggsave600dpi(paste("..//Output//",s,"_platform.svg",sep=""), Platform, 
+  ggsave600dpi(paste("..//Output//AcqTrends//",s,"_platform.svg",sep=""), Platform, 
                width=6.5, height= 4, units="in",size=11,lineheight = 1.2
   )
   
-  ggsave600dpi(paste("..//Output//",s,"_platform.emf",sep=""), Platform+geom_line(
+  ggsave600dpi(paste("..//Output//AcqTrends//",s,"_platform.emf",sep=""), Platform+geom_line(
     size=1,aes(x=dFYear,y=Action_Obligation_OMB24_GDP22,color=PlatformPortfolio)),
     width=6.5, height= 4, units="in",size=11,lineheight = 1.2
   )
@@ -2518,24 +2364,24 @@ for(s in c("Army","Navy","Air Force")){
 #   labs(y="Obligations (Constant 2022 $s)")
 # )
 # 
-# ggsave600dpi("..//Output//topline_platform_bar.png", Platform_Bar, 
+# ggsave600dpi("..//Output//AcqTrends//topline_platform_bar.png", Platform_Bar, 
 #              width=12, height= 6, units="in",size=12,lineheight = 1.2
 #              )
 # 
-# ggsave600dpi("..//Output//topline_platform_bar.emf", Platform_Bar,
+# ggsave600dpi("..//Output//AcqTrends//topline_platform_bar.emf", Platform_Bar,
 #              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
 #              )
 # 
-# write.csv(file="..//Output//topline_platform_current.csv",row.names = FALSE, na = "",
+# write.csv(file="..//Output//AcqTrends//topline_platform_current.csv",row.names = FALSE, na = "",
 #           full_data %>% group_by(PlatformPortfolio,Fiscal_Year)%>%
 #             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
 #           pivot_wider(id_cols=c(PlatformPortfolio),
 #                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%arrange(PlatformPortfolio))
 # 
-# wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+# wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
 # createSheet(wb, name = "Platform Portfolio")
-# writeWorksheet(wb, output_TY, sheet = "Platform Portfolio", startRow = 15, startCol = 13)
-# saveWorkbook(wb)
+# writeData(wb, output_TY, sheet = "Platform Portfolio", startRow = 15, startCol = 13)
+# saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
 
 ```
 
@@ -2569,7 +2415,7 @@ PlatformSubCustomer<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//platform_subcustomer.png", PlatformSubCustomer, 
+ggsave600dpi("..//Output//AcqTrends//platform_subcustomer.png", PlatformSubCustomer, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
@@ -2605,7 +2451,7 @@ PlatformPSR<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//platform_PSR.png", PlatformPSR, 
+ggsave600dpi("..//Output//AcqTrends//platform_PSR.png", PlatformPSR, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
@@ -2642,11 +2488,11 @@ PlatformProducts<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//platform_products.png", PlatformProducts, 
+ggsave600dpi("..//Output//AcqTrends//platform_products.png", PlatformProducts, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
-write.csv(file="..//Output//platform_products_cur.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//platform_products_cur.csv",row.names = FALSE, na = "",
           full_data%>% filter(SimpleArea=="Products (All)") %>% 
             mutate(Fiscal_Year=lubridate::year(dFYear))%>%
             group_by(PlatformPortfolio, SimpleArea,Fiscal_Year) %>%
@@ -2663,7 +2509,7 @@ write.csv(file="..//Output//platform_products_cur.csv",row.names = FALSE, na = "
 ```{r PlatformPSR}
 (
 PlatformRnD<-build_plot(
-  data=full_data %>% filter(SimpleArea=="R&D"),
+  data=def_data %>% filter(SimpleArea=="R&D"),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -2688,7 +2534,7 @@ PlatformRnD<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//PlatformRnD.png", PlatformPSR, 
+ggsave600dpi("..//Output//AcqTrends//PlatformRnD.png", PlatformRnD, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
@@ -2698,7 +2544,7 @@ ggsave600dpi("..//Output//PlatformRnD.png", PlatformPSR,
 ```{r PlatformQ}
 (
 PlatformQ<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2013 & Fiscal_YQ<=2023.1),
+  data=def_data %>% filter(Fiscal_Year>=2013 & Fiscal_YQ<=2023.2),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -2725,7 +2571,7 @@ PlatformQ<-build_plot(
 
 (
 OnMQ<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2023.1 &
+  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2023.2 &
                              PlatformPortfolio=="Ordnance and Missiles"),
   chart_geom = "Bar Chart",
   share = FALSE,
@@ -2752,36 +2598,36 @@ OnMQ<-build_plot(
 )
 
 
-ggsave600dpi("..//Output//PlatformQ.png", PlatformQ, 
+ggsave600dpi("..//Output//AcqTrends//PlatformQ.png", PlatformQ, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
-ggsave600dpi("..//Output//PlatformQ_slide.svg", PlatformQ+
+ggsave600dpi("..//Output//AcqTrends//PlatformQ_slide.svg", PlatformQ+
                labs(title="Defense Contract Obligations by Platform Portfolio, FY2013-FY2023Q1")+
                theme(plot.title = element_text(margin=margin(t=0.1,r=0,b=0.1,l=0,"inches")),
                      plot.margin = margin(t=0,r=0.1,b=0.1,l=0.1,"inches")), 
              width=10, height= 5.5, units="in", size=11, lineheight = 0.75
              )
 
-ggsave600dpi("..//Output//PlatformQ_keynote.svg", PlatformQ+
+ggsave600dpi("..//Output//AcqTrends//PlatformQ_keynote.svg", PlatformQ+
                labs(title="Ordnance & Missile Contract Obligations, 2000-2023Q1"),
              width=9, height= 5.5, units="in", size=20, lineheight = 0.75
              )
 
 
-ggsave600dpi("..//Output//OnMQ_keynote.png", OnMQ+
+ggsave600dpi("..//Output//AcqTrends//OnMQ_keynote.png", OnMQ+
                labs(title="Ordnance & Missile Contract Obligations, 2000-2023Q1"),
              width=9, height= 5.5, units="in", size=20, lineheight = 0.75
              )
 
-ggsave600dpi("..//Output//OnMQ_keynote.svg", OnMQ+
+ggsave600dpi("..//Output//AcqTrends//OnMQ_keynote.svg", OnMQ+
                labs(title="Ordnance & Missile Contract Obligations, 2000-2023Q1"),
              width=9, height= 5.5, units="in", size=20, lineheight = 0.75
              )
 
 
 
-ggsave600dpi("..//Output//OnMQ.png", OnMQ, 
+ggsave600dpi("..//Output//AcqTrends//OnMQ.png", OnMQ, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
@@ -2795,7 +2641,7 @@ output_TY<-def_data %>% group_by(PlatformPortfolio,Fiscal_Year,fiscal_quarter)%>
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
   arrange(PlatformPortfolio,max_fq)
 
-write.csv(file="..//Output//platform_YTD_current.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//platform_YTD_current.csv",row.names = FALSE, na = "",
           output_TY)
 
 
@@ -2808,7 +2654,7 @@ output_TY<-def_data %>% group_by(PlatformPortfolio,Fiscal_Year,fiscal_quarter)%>
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
   arrange(PlatformPortfolio,fiscal_quarter)
 
-write.csv(file="..//Output//platform_quarter_current.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//platform_quarter_current.csv",row.names = FALSE, na = "",
           output_TY)
 
 ```
@@ -2845,7 +2691,7 @@ PlatformVendor_share<-build_plot(
     caption="Note: McDonnell Douglas is grouped with the Big-5.\nSource: FPDS and CSIS analysis")
 )
 
-ggsave600dpi("..//Output//platform_vendor_share.png", PlatformVendor_share, 
+ggsave600dpi("..//Output//AcqTrends//platform_vendor_share.png", PlatformVendor_share, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
@@ -2879,11 +2725,11 @@ PlatformVendor_dollar<-build_plot(
     caption="Note: The merger of Raytheon and United Technologies took place in April of 2020 and thus did not\nmake the cutoff for inclusion in FY2020. McDonnell Douglas is grouped with the Big-5.\n\nSource: FPDS and CSIS analysis")
 )
 
-ggsave600dpi("..//Output//platform_vendor_dollar.png", PlatformVendor_dollar, 
+ggsave600dpi("..//Output//AcqTrends//platform_vendor_dollar.png", PlatformVendor_dollar, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
-write.csv(file="..//Output//platform_vendor.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//platform_vendor.csv",row.names = FALSE, na = "",
           PlatformVendor_dollar$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(PlatformPortfolio,Shiny.VendorSize),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
@@ -2901,7 +2747,7 @@ write.csv(file="..//Output//platform_vendor.csv",row.names = FALSE, na = "",
 # column_key<-def_ck
 (
 PlatformComp_bar<-build_plot(
-  data=def_data %>% filter(PlatformPortfolio!="Unlabeled"  &Fiscal_Year>=1991 & Fiscal_YQ<2023),
+  data=def_data %>% filter(PlatformPortfolio!="Unlabeled"  &Fiscal_Year>=1991 & Fiscal_YQ<=2023.2),
   chart_geom = "Bar Chart",
   share = TRUE,
   labels_and_colors=labels_and_colors,
@@ -2929,7 +2775,7 @@ PlatformComp_bar<-build_plot(
 
 (
 PlatformComp_line<-build_plot(
-  data=def_data %>% filter(PlatformPortfolio!="Unlabeled" &Fiscal_Year>=1991 & Fiscal_YQ<2023),
+  data=def_data %>% filter(PlatformPortfolio!="Unlabeled" &Fiscal_Year>=1991 & Fiscal_YQ<=2023.2),
   chart_geom = "Line Chart",
   share = TRUE,
   labels_and_colors=labels_and_colors,
@@ -2955,16 +2801,16 @@ PlatformComp_line<-build_plot(
 )
 
 
-ggsave600dpi("..//Output//platform_comp_bar.png", PlatformComp_bar, 
+ggsave600dpi("..//Output//AcqTrends//platform_comp_bar.png", PlatformComp_bar, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
 
-ggsave600dpi("..//Output//platform_comp_line.png", PlatformComp_line, 
+ggsave600dpi("..//Output//AcqTrends//platform_comp_line.png", PlatformComp_line, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
-write.csv(file="..//Output//platform_comp.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//platform_comp.csv",row.names = FALSE, na = "",
           PlatformComp_line$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(PlatformPortfolio,Competition.effective.only),
                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
@@ -3015,25 +2861,25 @@ CommercialPlat<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//platform_commercial.png", CommercialPlat, 
+ggsave600dpi("..//Output//AcqTrends//platform_commercial.png", CommercialPlat, 
              width=6, height= 5.5, units="in",size=12,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//platform_commercial.svg", CommercialPlat,#+facet_wrap(~SubCustomer.platform,nrow=1), 
+ggsave600dpi("..//Output//AcqTrends//platform_commercial.svg", CommercialPlat,#+facet_wrap(~SubCustomer.platform,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//platform_commercial.emf", CommercialPlat,#+facet_wrap(~SubCustomer.platform,nrow=1), 
+ggsave600dpi("..//Output//AcqTrends//platform_commercial.emf", CommercialPlat,#+facet_wrap(~SubCustomer.platform,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
 
-write.csv(file="..//Output//platform_commercial.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//platform_commercial.csv",row.names = FALSE, na = "",
           CommercialPlat$data%>%mutate(Fiscal_Year=year(dFYear)) %>%
           pivot_wider(id_cols=c(SubCustomer.platform,AnyCommercialText),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
 
-write.csv(file="..//Output//platform_commercial_current.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//platform_commercial_current.csv",row.names = FALSE, na = "",
           def_data %>% group_by(PlatformPortfolio,AnyCommercialText,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
             arrange(Fiscal_Year)%>%
@@ -3053,7 +2899,7 @@ write.csv(file="..//Output//platform_commercial_current.csv",row.names = FALSE, 
 
 (
 PlatformMultiYear<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2000),
+  data=full_data %>% filter(Fiscal_Year>=2000),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -3112,25 +2958,25 @@ PlatformMultiYearShare<-build_plot(
 
 
 
-write.csv(file="..//Output//platform_multiyear_cur.csv",row.names = FALSE, na = "",
-          def_data %>% filter(Fiscal_YQ<2023) %>% group_by(PlatformPortfolio,multiyearcontracttext,Fiscal_Year)%>%
+write.csv(file="..//Output//AcqTrends//platform_multiyear_cur.csv",row.names = FALSE, na = "",
+          def_data %>% filter(Fiscal_YQ<=2023.2) %>% group_by(PlatformPortfolio,multiyearcontracttext,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
             arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(PlatformPortfolio,multiyearcontracttext),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
             arrange(PlatformPortfolio,multiyearcontracttext))
 
-ggsave600dpi("..//Output//Platform_MultiYear.png", PlatformMultiYear,  
+ggsave600dpi("..//Output//AcqTrends//Platform_MultiYear.png", PlatformMultiYear,  
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//Platform_MultiYearShare.png", PlatformMultiYearShare+facet_wrap(PlatformPortfolio~.,nrow=2)+
+ggsave600dpi("..//Output//AcqTrends//Platform_MultiYearShare.png", PlatformMultiYearShare+facet_wrap(PlatformPortfolio~.,nrow=2)+
                 labs(y="Share of Obligations",
        caption="Other products / services / R&D not shown. When the multiyear column is empty, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis"),  
              width=12, height= 6, units="in",size=16, lineheight=1.2
              )
 
-ggsave("..//Output//Platform_MultiYearShare_keynote.png", 
+ggsave("..//Output//AcqTrends//Platform_MultiYearShare_keynote.png", 
                PlatformMultiYearShare+labs(
                  title="DOD Share of Contract Obligations to Multiyear Contracts, 2000-2023Q1")+
                  facet_wrap(PlatformPortfolio~.,nrow=2)+
@@ -3139,7 +2985,7 @@ ggsave("..//Output//Platform_MultiYearShare_keynote.png",
              width=13, height= 5.5, units="in",size=20, lineheight=1.2
              )
 
-ggsave("..//Output//Platform_MultiYearShare_keynote.svg", 
+ggsave("..//Output//AcqTrends//Platform_MultiYearShare_keynote.svg", 
                PlatformMultiYearShare+labs(
                  title="DOD Share of Contract Obligations to Multiyear Contracts, 2000-2023Q1")+
                  facet_wrap(PlatformPortfolio~.,nrow=2)+
@@ -3148,7 +2994,7 @@ ggsave("..//Output//Platform_MultiYearShare_keynote.svg",
              width=13, height= 5.5, units="in",size=20, lineheight=1.2
              )
 
-write.csv(file="..//Output//PlatformMultiYearShare.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//PlatformMultiYearShare.csv",row.names = FALSE, na = "",
   pivot_wider(PlatformMultiYearShare$data %>% 
                         arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
                       id_cols=c(PlatformPortfolio,multiyearcontracttext),
@@ -3194,11 +3040,11 @@ Platform_Ukr_Bar<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//Munitions//ukraine_platform_bar.png", Platform_Ukr_Bar, 
+ggsave600dpi("..//Output//AcqTrends//Munitions//ukraine_platform_bar.png", Platform_Ukr_Bar, 
              width=11, height= 5.5, units="in",size=14,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//Munitions//ukraine_platform_bar.emf", Platform_Ukr_Bar,
+ggsave600dpi("..//Output//AcqTrends//Munitions//ukraine_platform_bar.emf", Platform_Ukr_Bar,
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
@@ -3207,19 +3053,176 @@ output_TY<-ukr_data %>% group_by(PlatformPortfolio,Fiscal_Year)%>%
           pivot_wider(id_cols=c(PlatformPortfolio,IsUkraine),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%arrange(PlatformPortfolio,IsUkraine)
 
-write.csv(file="..//Output//Munitions//ukraine_platform_current.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//Munitions//ukraine_platform_current.csv",row.names = FALSE, na = "",
           output_TY)
 
-# wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+# wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
 # createSheet(wb, name = "Platform Portfolio")
-# writeWorksheet(wb, output_TY, sheet = "Platform Portfolio", startRow = 15, startCol = 1)
-# saveWorkbook(wb)
+# writeData(wb, output_TY, sheet = "Platform Portfolio", startRow = 15, startCol = 1)
+# saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
 # rm(wb)
 
 ```
 
 # Vendor Size
-### Vendor Size Vehicle
+## Topline Vendor Size
+```{r ToplineVendor}
+
+(
+ToplineVendor<-build_plot(
+  data=full_data %>% filter(Fiscal_Year<=2021),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="Shiny.VendorSize", #color_var
+  # facet_var="Competition.sum", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = scales::date_format("'%y"),date_breaks = "2 years")+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)",
+       caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020.")
+)
+
+(
+ToplineVendor_line<-build_plot(
+  data=full_data %>% filter(Fiscal_Year<=2021),
+  chart_geom = "Line Chart",
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="Shiny.VendorSize", #color_var
+  # facet_var="Competition.sum", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE,
+  share=TRUE
+)+scale_x_date("Fiscal Year",labels = scales::date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
+)
+
+ggsave600dpi("..//Output//AcqTrends//topline_vendor_wide.png", ToplineVendor+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=12, height= 6, units="in",size=12,lineheight=1
+             )
+
+
+ggsave600dpi("..//Output//AcqTrends//topline_vendor_cq.png", ToplineVendor+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+ggsave600dpi("..//Output//AcqTrends//topline_vendor_cq.svg", ToplineVendor+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+ggsave600dpi("..//Output//AcqTrends//topline_vendor.png", ToplineVendor, 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+ggsave600dpi("..//Output//AcqTrends//topline_vendor.eps", ToplineVendor+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+
+write.csv(file="..//Output//AcqTrends//topline_vendor_cur.csv",row.names = FALSE, na = "",
+          full_data %>% group_by(Shiny.VendorSize,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(Shiny.VendorSize),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(Shiny.VendorSize))
+
+
+write.csv(file="..//Output//AcqTrends//topline_vendor.csv",row.names = FALSE, na = "",
+          ToplineVendor$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
+                                       bAction_Obligation_OMB24_GDP22=Action_Obligation_OMB24_GDP22/1000000000)%>%
+            pivot_wider(id_cols=c(Shiny.VendorSize),
+                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%arrange(Shiny.VendorSize))
+
+```
+
+
+
+
+
+### Topline Vendor International
+```{r ToplineVendor}
+
+
+(
+ToplineVendorIntl<-build_plot(
+  data=full_data %>% filter(Fiscal_Year>=2000 & Fiscal_Year<=2021),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="VendorSize_Intl", #color_var
+  # facet_var="Competition.sum", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE,
+  reverse_color=TRUE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)",
+       caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020.")
+)
+
+ggsave600dpi("..//Output//AcqTrends//topline_vendor_intl_square.png", ToplineVendorIntl+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6, height= 5, units="in",size=12,lineheight=1
+             )
+
+ggsave600dpi("..//Output//AcqTrends//topline_vendor_intl.svg", ToplineVendorIntl+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=12,lineheight=1
+             )
+
+
+
+write.csv(file="..//Output//AcqTrends//topline_vendor_intl_cur.csv",row.names = FALSE, na = "",
+          full_data %>% group_by(VendorSize_Intl,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(VendorSize_Intl),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(VendorSize_Intl))
+
+```
+
+
+## Vendor Size Vehicle
 ```{r ToplineVendor}
 
 
@@ -3310,30 +3313,30 @@ VendorSizeVehicleSumLine<-build_plot(
 )
 
 
-ggsave600dpi("..//Output//vendorsize_vehicle.png", VendorSizeVehicle+
+ggsave600dpi("..//Output//AcqTrends//vendorsize_vehicle.png", VendorSizeVehicle+
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020.\nUnlabeled vendor size excluded."),
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
-ggsave600dpi("..//Output//vendorsize_vehicle.svg", VendorSizeVehicle+
+ggsave600dpi("..//Output//AcqTrends//vendorsize_vehicle.svg", VendorSizeVehicle+
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020\nUnlabeled vendor size excluded.."),
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
-ggsave600dpi("..//Output//vendorsize_awardtaskshare.svg", VendorSizeVehicleSumLine
+ggsave600dpi("..//Output//AcqTrends//vendorsize_awardtaskshare.svg", VendorSizeVehicleSumLine
 +
   labs(caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020.\nUnlabeled vendor size excluded."),
              width=6.5, height= 3.25, units="in",size=11,lineheight=1
              )
 
 
-ggsave600dpi("..//Output//vendorsize_awardtask.svg", VendorSizeVehicleSum
+ggsave600dpi("..//Output//AcqTrends//vendorsize_awardtask.svg", VendorSizeVehicleSum
 +
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020.\nUnlabeled vendor size excluded."),
              width=6.5, height= 3.25, units="in",size=11,lineheight=1
              )
 
-write.csv(file="..//Output//vendorsize_vehicle_current.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//vendorsize_vehicle_current.csv",row.names = FALSE, na = "",
           full_data %>% group_by(Shiny.VendorSize,Vehicle.sum,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
             arrange(Fiscal_Year)%>%
@@ -3342,7 +3345,7 @@ write.csv(file="..//Output//vendorsize_vehicle_current.csv",row.names = FALSE, n
             arrange(Shiny.VendorSize,Vehicle.sum))
 
 
-write.csv(file="..//Output//vendorsize_AwardTask_current.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//vendorsize_AwardTask_current.csv",row.names = FALSE, na = "",
           full_data %>% group_by(Shiny.VendorSize,Vehicle.AwardTask,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
             arrange(Fiscal_Year)%>%
@@ -3494,31 +3497,31 @@ VendorSizePricing2021share<-build_plot(
 
 
 
-ggsave600dpi("..//Output//VendorSize_Pricing2021share.png", VendorSizePricing2021share+
+ggsave600dpi("..//Output//AcqTrends//VendorSize_Pricing2021share.png", VendorSizePricing2021share+
                facet_wrap(~Shiny.VendorSize,nrow=1),
              width=6.5, height= 3, units="in",size=10,lineheight=1
              )
 
-ggsave600dpi("..//Output//VendorSize_Pricing2021share.svg", VendorSizePricing2021share+
+ggsave600dpi("..//Output//AcqTrends//VendorSize_Pricing2021share.svg", VendorSizePricing2021share+
                facet_wrap(~Shiny.VendorSize,nrow=1),
              width=6.5, height= 3, units="in",size=10,lineheight=1)
 
 
 
-ggsave600dpi("..//Output//vendorsize_pricing.png", VendorSizePricing+
+ggsave600dpi("..//Output//AcqTrends//vendorsize_pricing.png", VendorSizePricing+
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS; CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020."),
              width=6, height= 5, units="in",size=12,lineheight=1
              )
 
-ggsave600dpi("..//Output//vendorsize_pricing_2021.png", VendorSizePricing2021+theme(legend.position = "none")+
+ggsave600dpi("..//Output//AcqTrends//vendorsize_pricing_2021.png", VendorSizePricing2021+theme(legend.position = "none")+
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.")+facet_wrap(~Shiny.VendorSize,nrow=1),
              width=6.5, height= 2.5, units="in",size=12,lineheight=1
              )
 
 
-write.csv(file="..//Output//vendorsize_pricing_current.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//vendorsize_pricing_current.csv",row.names = FALSE, na = "",
           def_data %>% group_by(Shiny.VendorSize,PricingUCA.sum,Fiscal_Year)%>%
-            filter(Fiscal_Year>=2000 & Fiscal_YQ<2023)%>%
+            filter(Fiscal_Year>=2000 & Fiscal_YQ<=2023.2)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
             arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(Shiny.VendorSize,PricingUCA.sum),
@@ -3526,9 +3529,9 @@ write.csv(file="..//Output//vendorsize_pricing_current.csv",row.names = FALSE, n
             arrange(Shiny.VendorSize,PricingUCA.sum))
 
 
-write.csv(file="..//Output//VendorSize_Pricing2021.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//VendorSize_Pricing2021.csv",row.names = FALSE, na = "",
           def_data %>% group_by(Shiny.VendorSize,PricingUCA.1year,Fiscal_Year)%>%
-            filter(Fiscal_Year>=2007 & Fiscal_YQ<2023) %>%
+            filter(Fiscal_Year>=2007 & Fiscal_YQ<=2023.2) %>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
             arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(Shiny.VendorSize,PricingUCA.1year),
@@ -3618,15 +3621,15 @@ VehicleMultiYearShare<-build_plot(
 )
 
 
-ggsave600dpi("..//Output//Vehicle_MultiYear.png", VehicleMultiYear,  
+ggsave600dpi("..//Output//AcqTrends//Vehicle_MultiYear.png", VehicleMultiYear,  
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//Vehicle_MultiYearShare.png", VehicleMultiYearShare,  
+ggsave600dpi("..//Output//AcqTrends//Vehicle_MultiYearShare.png", VehicleMultiYearShare,  
              width=6.5, height= 4, units="in",size=12, lineheight=1.2
              )
 
-write.csv(file="..//Output//VehicleMultiYearShare.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//VehicleMultiYearShare.csv",row.names = FALSE, na = "",
   pivot_wider(VehicleMultiYearShare$data %>% 
                         arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
                       id_cols=c(Vehicle.sum7,multiyearcontracttext),
@@ -3698,15 +3701,15 @@ PSRMultiYearShare<-build_plot(
 )
 
 
-ggsave600dpi("..//Output//PSR_MultiYear.png", PSRMultiYear,  
+ggsave600dpi("..//Output//AcqTrends//PSR_MultiYear.png", PSRMultiYear,  
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//PSR_MultiYearShare.png", PSRMultiYearShare,  
+ggsave600dpi("..//Output//AcqTrends//PSR_MultiYearShare.png", PSRMultiYearShare,  
              width=6.5, height= 4, units="in",size=12, lineheight=1.2
              )
 
-write.csv(file="..//Output//PSRMultiYearShare.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//PSRMultiYearShare.csv",row.names = FALSE, na = "",
   pivot_wider(PSRMultiYearShare$data %>% 
                         arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
                       id_cols=c(SimpleArea,multiyearcontracttext),
@@ -3730,7 +3733,7 @@ levels(def_data$gfe_gfp_value)<-list(
 
 (
 GFEcust<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2023) ,
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<=2023.2) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -3760,7 +3763,7 @@ GFEcust<-build_plot(
 
 (
 GFEplat<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2023) ,
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<=2023.2) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -3790,7 +3793,7 @@ GFEplat<-build_plot(
 
 (
 GFEcomp<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2023) ,
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<=2023.2) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -3817,26 +3820,26 @@ GFEcomp<-build_plot(
                                                    date_labels="'%y")
 )
 
-ggsave600dpi("..//Output//platform_GFE.png", GFEplat, 
+ggsave600dpi("..//Output//AcqTrends//platform_GFE.png", GFEplat, 
              width=12, height= 6, units="in",size=12,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//platform_GFE.svg", GFEplat, 
+ggsave600dpi("..//Output//AcqTrends//platform_GFE.svg", GFEplat, 
              width=6.5, height= 4.5, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//platform_GFE.emf", GFEplat, 
+ggsave600dpi("..//Output//AcqTrends//platform_GFE.emf", GFEplat, 
              width=6.5, height= 4.5, units="in",size=11,lineheight = 1.2
              )
 
 
-# write.csv(file="..//Output//platform_GFE.csv",row.names = FALSE, na = "",
+# write.csv(file="..//Output//AcqTrends//platform_GFE.csv",row.names = FALSE, na = "",
 #           pivot_wider(GFEplat$data,id_cols=c(PlatformPortfolio,gfe_gfp_value),
 #                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
 
-write.csv(file="..//Output//platform_GFE_current.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//platform_GFE_current.csv",row.names = FALSE, na = "",
           def_data %>% group_by(PlatformPortfolio,gfe_gfp_value,Fiscal_Year)%>%
-            filter(Fiscal_Year>=2004 & Fiscal_YQ<2023)%>%
+            filter(Fiscal_Year>=2004 & Fiscal_YQ<=2023.2)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(PlatformPortfolio,gfe_gfp_value),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
@@ -3851,7 +3854,7 @@ summary(full_data$ContractingSubCustomer)
 
 (
 CAS<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2023) ,
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<=2023.2) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -3879,7 +3882,7 @@ CAS<-build_plot(
 
 (
 CAS<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2023) ,
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<=2023.2) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -3907,7 +3910,7 @@ CAS<-build_plot(
 
 (
 CAS<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2023) ,
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<=2023.2) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -3935,7 +3938,7 @@ CAS<-build_plot(
 
 (
 CAS<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2023) ,
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<=2023.2) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -3960,24 +3963,24 @@ CAS<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//topline_subcustomer.png", SubCustomer, 
+ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.png", SubCustomer, 
              width=12, height= 6, units="in",size=12,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//topline_subcustomer.svg", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
+ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.svg", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//topline_subcustomer.emf", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
+ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.emf", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
 
-write.csv(file="..//Output//topline_subcustomer.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//topline_subcustomer.csv",row.names = FALSE, na = "",
           pivot_wider(SubCustomer$data,id_cols=c(SubCustomer.sum,SubCustomer.platform),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
 
-write.csv(file="..//Output//topline_subcustomer_current.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//topline_subcustomer_current.csv",row.names = FALSE, na = "",
           full_data %>% group_by(SubCustomer.sum,ContractingSubCustomer,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(SubCustomer.sum,ContractingSubCustomer),
@@ -3993,7 +3996,7 @@ summary(full_data$ContractingSubCustomer)
 
 (
 EE<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2023) ,
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<=2023.2) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -4021,7 +4024,7 @@ EE<-build_plot(
 
 (
 EE<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2023) ,
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<=2023.2) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -4048,24 +4051,24 @@ EE<-build_plot(
 
 
 
-ggsave600dpi("..//Output//topline_subcustomer.png", SubCustomer, 
+ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.png", SubCustomer, 
              width=12, height= 6, units="in",size=12,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//topline_subcustomer.svg", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
+ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.svg", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//topline_subcustomer.emf", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
+ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.emf", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
 
-write.csv(file="..//Output//topline_subcustomer.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//topline_subcustomer.csv",row.names = FALSE, na = "",
           pivot_wider(SubCustomer$data,id_cols=c(SubCustomer.sum,SubCustomer.platform),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
 
-write.csv(file="..//Output//topline_subcustomer_current.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//AcqTrends//topline_subcustomer_current.csv",row.names = FALSE, na = "",
           full_data %>% group_by(SubCustomer.sum,ContractingSubCustomer,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(SubCustomer.sum,ContractingSubCustomer),
@@ -4103,7 +4106,7 @@ summary(full_data$foreign_funding_description)
        caption="Source: FPDS and CSIS analysis.")+
     guides(fill=guide_legend(ncol=3)))
 
-ggsave600dpi(contract_identification,file="../output/figure_03_contract_identification.png",size=12,lineheight=1, height =5, width=9)
+ggsave600dpi(contract_identification,file="../Output//AcqTrends/figure_03_contract_identification.png",size=12,lineheight=1, height =5, width=9)
 
 
 
@@ -4175,7 +4178,7 @@ summary(full_data$PlaceOfManufacture_Sum)
     guides(fill=guide_legend(ncol=3)))
 
 
-ggsave600dpi(contract_identification,file="../output/figure_03_contract_identification.png",size=12,lineheight=1, height =5, width=9)
+ggsave600dpi(contract_identification,file="../Output//AcqTrends/figure_03_contract_identification.png",size=12,lineheight=1, height =5, width=9)
 
 
 
@@ -4305,13 +4308,13 @@ full_data$OriginManufactureVendor<-full_data$PlaceOfManufacture_DoD
     # guides(fill=guide_legend(ncol=2)
 )
 
-  ggsave600dpi(waiverdetail,file="../output/waiverdetail.png",size=14,lineheight=1, height =5.75, width=7)
+  ggsave600dpi(waiverdetail,file="../Output//AcqTrends/waiverdetail.png",size=14,lineheight=1, height =5.75, width=7)
 
 
   
   
   
-    write.csv(file="..//Output//waiverdetail.csv",row.names = FALSE, na = "",
+    write.csv(file="..//Output//AcqTrends//waiverdetail.csv",row.names = FALSE, na = "",
             waiverdetail$data %>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
               pivot_wider(id_cols=c(PlaceOfManufacture_DoD,SimpleArea),
                           names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)
@@ -4375,21 +4378,21 @@ full_data$PlaceOfManufacture_DoD09<-factor_wrap(full_data$PlaceOfManufacture_DoD
     # guides(fill=guide_legend(ncol=2)
 )
 
-  ggsave600dpi(waiversimple,file="../output/waiversimple.png",size=14,lineheight=1, height =5.75, width=7)
-  ggsave600dpi(waiversimple,file="../output/waiversimple.svg",size=14,lineheight=1, height =5.75, width=7)
+  ggsave600dpi(waiversimple,file="../Output//AcqTrends/waiversimple.png",size=14,lineheight=1, height =5.75, width=7)
+  ggsave600dpi(waiversimple,file="../Output//AcqTrends/waiversimple.svg",size=14,lineheight=1, height =5.75, width=7)
 
 
   
   
   
-    write.csv(file="..//Output//waiversimple.csv",row.names = FALSE, na = "",
+    write.csv(file="..//Output//AcqTrends//waiversimple.csv",row.names = FALSE, na = "",
             waiversimple$data %>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
               pivot_wider(id_cols=c(PlaceOfManufacture_DoD09,Service),
                           names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)
             %>% arrange(PlaceOfManufacture_DoD09,Service))
     
       
-    write.csv(file="..//Output//waiversimple.csv",row.names = FALSE, na = "",
+    write.csv(file="..//Output//AcqTrends//waiversimple.csv",row.names = FALSE, na = "",
             waiversimple$data %>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
               pivot_wider(id_cols=c(PlaceOfManufacture_DoD09,Service),
                           names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)
@@ -4483,7 +4486,7 @@ summary(factor(full_data$PlaceOfManufactureText20))
     # guides(fill=guide_legend(ncol=2)
            )
 
-ggsave600dpi(placeregion,file="../output/place_of_manufacture_place_regionwaiver.png",size=14,lineheight=1, height =6, width=12)
+ggsave600dpi(placeregion,file="../Output//AcqTrends/place_of_manufacture_place_regionwaiver.png",size=14,lineheight=1, height =6, width=12)
 
 
 
@@ -4594,7 +4597,7 @@ full_data$place
            )
 
 
-ggsave600dpi(waiver,file="../output/place_of_manufacture_waiver.png",size=8,lineheight=1, height =5, width=9)
+ggsave600dpi(waiver,file="../Output//AcqTrends/place_of_manufacture_waiver.png",size=8,lineheight=1, height =5, width=9)
 
 
 (contract_identification <-  build_plot(data=full_data %>% filter(!is.na(PlaceIsForeign)),
@@ -4678,3 +4681,72 @@ PlaceOfManufactureText20
 
 
 
+### NTIB
+#### OTA 
+```{r FPDS_vendor_Intl}
+ntibisoalpha3<-c("AUS","CAN","GBR")#"NZL",
+
+ota_def$VendorNTIB<-"All Other"
+ota_def$VendorNTIB[ota_def$VendorAddressISOalpha3=="USA"]<-"United States"
+ota_def$VendorNTIB[ota_def$VendorAddressISOalpha3=="AUS"]<-"Australia"
+ota_def$VendorNTIB[ota_def$VendorAddressISOalpha3=="NZL"]<-"New Zealand"
+ota_def$VendorNTIB[ota_def$VendorAddressISOalpha3=="CAN"]<-"Canada"
+ota_def$VendorNTIB[ota_def$VendorAddressISOalpha3=="GBR"]<-"United Kingdom"
+
+
+summary(factor(ota_def$VendorNTIB))
+# undebug(format_data_for_plot)
+
+summary(ota_def$dFYear)
+
+(ntibintl_plat <-  build_plot(data=ota_def%>% filter((#PlaceISOalpha3 %in% ntibisoalpha3|
+                                                                  VendorAddressISOalpha3 %in% ntibisoalpha3) &
+                                                                            Fiscal_Year>2011 & !is.na(VendorAddressISOalpha3)),#VendorAddressISOalpha3==TRUE                             
+                                            chart_geom="Bar Chart",
+                            x_var="dFYear",
+                            y_var="Action_Obligation_OMB24_GDP22",
+                            color_var="PlatformPortfolioUAV",
+                            facet_var="VendorNTIB",
+                            # second_var="PlaceIsForeign",
+                            labels_and_colors=ota_lc,
+                            column_key=ota_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE)+theme(legend.position = "right")+
+    facet_grid( VendorNTIB~. )+labs(title="OTA obligations by Platform for Vendors with Addreses\nin Australia, Canada, and the United Kingdom",
+                                    y="Action Obligation (Constant 2022 $s")#, scales="free_y"#, scales="free_y"
+  )+scale_x_date("Fiscal Year",labels = scales::date_format("'%y"))
+
+(ntibintl_cust <-  build_plot(data=ota_def%>% filter((#PlaceISOalpha3 %in% ntibisoalpha3|
+                                                                  VendorAddressISOalpha3 %in% ntibisoalpha3) &
+                                                                            Fiscal_Year>2011 & !is.na(VendorAddressISOalpha3)),#VendorAddressISOalpha3==TRUE                             
+                                            chart_geom="Bar Chart",
+                            x_var="dFYear",
+                            y_var="Action_Obligation_OMB24_GDP22",
+                            color_var="SubCustomer.OTA",
+                            facet_var="VendorNTIB",
+                            # second_var="PlaceIsForeign",
+                            labels_and_colors=ota_lc,
+                            column_key=ota_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE)+theme(legend.position = "right")+
+    facet_grid( VendorNTIB~. )+labs(title="OTA obligations by Customer for Vendors with Addreses\nin Australia, Canada, and the United Kingdom",
+                                    y="Action Obligation (Constant 2022 $s")#, scales="free_y"#, scales="free_y"
+  )+scale_x_date("Fiscal Year",labels = scales::date_format("'%y"))
+summary(ota_def$dFYear)
+
+
+write.csv(file="..//Output//AcqTrends//ota//ntibintl_plat.csv",row.names = FALSE,na = "",
+          ntibintl_plat$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(VendorNTIB,PlatformPortfolioUAV),
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(VendorNTIB,PlatformPortfolioUAV))
+
+ggsave600dpi(ntibintl_plat,file="../Output//AcqTrends/ota/ntibintl_plat.png",
+             size = 12, lineheight=1, height =5.5, width=6.5)
+
+ggsave600dpi(ntibintl_cust,file="../Output//AcqTrends/ota/ntibintl_cust.png",
+             size = 12, lineheight=1, height =5.5, width=6.5)
+
+
+```
