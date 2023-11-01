@@ -1,4 +1,4 @@
-pUSE CSIS360
+USE CSIS360
 GO
 
 
@@ -194,7 +194,7 @@ from FPDSTypeTable.AgencyID
 where agencyid in ('5300')
 
 
---Federal_Location.SP_ProdServPlatformAgencyPlaceOriginVendor
+
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 --3h38mm
@@ -203,8 +203,6 @@ SET NOCOUNT ON;
 --10h53m 15,871,392 rows, 3 cores.
 --11h05m 15,872,583 rows. Erros
 --2h45m; 16,497,747 (new desktop?)
---Over 12h and glitched, new PSC?
---2h32m Defense only 8,545,005 new FPDSpartial!	
 --2h26m; 17,095,081 rows
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
@@ -213,6 +211,7 @@ SET NOCOUNT ON;
  
  SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
+--2h12
  EXEC 
  [Location].SP_ProdServPlatformAgencyCongressionalDistrict
   @customer='Defense'
@@ -252,12 +251,7 @@ EXEC	@return_value = Contract.SP_ContractUnmodifiedCompetitionvehicleCustomer
 		@Customer = NULL
 
 
-		SET ANSI_WARNINGS OFF;
-		--1h15m
-SET NOCOUNT ON;
-DECLARE	@return_value int
-EXEC	@return_value = Contract.SP_ContractUnmodifiedCompetitionvehicleCustomer
-		@Customer = NULL
+
 
 		SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
@@ -265,6 +259,12 @@ SET NOCOUNT ON;
 DECLARE	@return_value int
 EXEC	@return_value = Contract.SP_ContractCompetitionVehicleCustomer
 		@IsDefense = NULL
+
+
+		SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+--0h05m This is probably dependent on automated contract update runes.
+select * from economic.[ProdServPlatformNAICS]
 
 			SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
@@ -313,8 +313,6 @@ EXEC	@return_value = Contract.SP_ContractBucketPlatformCustomer
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 
---4h05m
---6h23m after FPDSpartial switch, but exclusively Navy Ship & Submarines, 278,070 rows
 --6h26m 15,328,597 rows for federal
 DECLARE	@return_value int
 
@@ -351,13 +349,15 @@ SET NOCOUNT ON;
 --No plan shown until the very end.
 --1023 completed with errors 4,532,322
 --4h41 4,656,745
---11h25m  fail
 --6h13m 10,891,220 post FPDS.partial
 
 DECLARE	@return_value int
 EXEC	@return_value = [budget].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS]
 		@Customer = NULL
 		
+
+		
+
 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
@@ -386,8 +386,11 @@ SET NOCOUNT ON;
 DECLARE	@return_value int
 
 EXEC	@return_value = [Contract].[SP_ContractDefenseSubCustomer]
+
 		
 --SELECT	'Return Value' = @return_value
+
+
 
 
 SET ANSI_WARNINGS OFF;
@@ -581,7 +584,7 @@ select ProductOrServiceCode
 		  , PricingUCA
 		  ,VehicleClassification		  
 ,sum(obligatedamount) as obligatedamount
-from contract.[FPDSpartial] f
+from contract.[FPDSclassification] f
 --where Contractingcustomer='Defense'-- and  ProductOrServiceArea in ('Electronics & Communications'  , 'ICT')
 group by  productorservicecode
 ,ServicesCategory
@@ -642,7 +645,7 @@ select ProductOrServiceCode
 		  --, PricingUCA
 		  --,VehicleClassification		  
 ,sum(obligatedamount) as obligatedamount
-from contract.[FPDSpartial] f
+from contract.[FPDSclassification] f
 --where Contractingcustomer='Defense'-- and  ProductOrServiceArea in ('Electronics & Communications'  , 'ICT')
 group by  productorservicecode
 ,ServicesCategory
@@ -709,7 +712,7 @@ select ProductOrServiceCode
 		  --, PricingUCA
 		  --,VehicleClassification		  
 ,sum(obligatedamount) as obligatedamount
-from contract.[FPDSpartial] f
+from contract.[FPDSclassification] f
 where ProductOrServiceArea in ('Electronics & Communications'  , 'ICT') --Contractingcustomer='Defense'-- and  
 group by  productorservicecode
 ,ServicesCategory

@@ -17,7 +17,7 @@ library(DBI)
 path<-"F:\\Users\\gsanders\\Documents\\Repositories\\USAspending-local\\"
 dir<-"Agency Assistance"
 
-load("F:\\Users\\gsanders\\Documents\\Repositories\\Vendor\\data\\semi_clean\\OSC\\FAADCloanDataSet.rda")
+load("data\\semi_clean\\OSC\\FAADCloanDataSet.rda")
 
 dir.exists(file.path(path,dir,"XIMB"))
 Agencies<-c("XIMB","Commerce","SBA","DoD","Energy")
@@ -104,6 +104,8 @@ file.list<-file.list[gsub("^.*\\.","",file.list)=="csv"]
 #matched.
 
 loan<-dbReadTable(con,  name = SQL('"Assistance"."OSCloanDataSet"'))
+summary(factor(loan$assistance_type_code))
+loan <-loan %>% filter(assistance_type_code %in% c("07","7","08","8"))
 save(loan,file="data/semi_clean/OSC/FAADCloanDataSet.rda")
 dbDisconnect(con)
 
@@ -119,7 +121,7 @@ for (file.name in 1:35){
   print(file.list[file.name])
   i<-read_csv(file.path(path,dir,agency,file.list[file.name]),n_max=1000000,guess_max=1000000)
   #Only loans, using code because the name field is often blank
-  i <-i %>% filter(assistance_type_code %in% c("08","8","11"))
+
   if(nrow(i)==0)
     next
   i<- as.data.frame(i)
