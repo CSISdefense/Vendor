@@ -2929,7 +2929,8 @@ full_data<-full_data %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
 (
 PlatformMultiYearShare<-build_plot(
   data=full_data %>% filter(Fiscal_Year>=2000 &
-                             (multiyearcontract==1)), #is.na(multiyearcontract)|
+                             (multiyearcontract==1)&
+                              !is.na(PlatformPortfolio)), #is.na(multiyearcontract)|
   chart_geom = "Line Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -2957,15 +2958,6 @@ PlatformMultiYearShare<-build_plot(
 )
 
 
-
-write.csv(file="..//Output//AcqTrends//platform_multiyear_cur.csv",row.names = FALSE, na = "",
-          def_data %>% filter(Fiscal_YQ<=2023.2) %>% group_by(PlatformPortfolio,multiyearcontracttext,Fiscal_Year)%>%
-            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-            arrange(Fiscal_Year)%>%
-          pivot_wider(id_cols=c(PlatformPortfolio,multiyearcontracttext),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
-            arrange(PlatformPortfolio,multiyearcontracttext))
-
 ggsave600dpi("..//Output//AcqTrends//Platform_MultiYear.png", PlatformMultiYear,  
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
@@ -2976,7 +2968,7 @@ ggsave600dpi("..//Output//AcqTrends//Platform_MultiYearShare.png", PlatformMulti
              width=12, height= 6, units="in",size=16, lineheight=1.2
              )
 
-ggsave("..//Output//AcqTrends//Platform_MultiYearShare_keynote.png", 
+ggsave600dpi("..//Output//AcqTrends//Platform_MultiYearShare_keynote.png", 
                PlatformMultiYearShare+labs(
                  title="DOD Share of Contract Obligations to Multiyear Contracts, 2000-2023Q1")+
                  facet_wrap(PlatformPortfolio~.,nrow=2)+
@@ -2985,7 +2977,7 @@ ggsave("..//Output//AcqTrends//Platform_MultiYearShare_keynote.png",
              width=13, height= 5.5, units="in",size=20, lineheight=1.2
              )
 
-ggsave("..//Output//AcqTrends//Platform_MultiYearShare_keynote.svg", 
+ggsave600dpi("..//Output//AcqTrends//Platform_MultiYearShare_keynote.svg", 
                PlatformMultiYearShare+labs(
                  title="DOD Share of Contract Obligations to Multiyear Contracts, 2000-2023Q1")+
                  facet_wrap(PlatformPortfolio~.,nrow=2)+
@@ -3001,7 +2993,11 @@ write.csv(file="..//Output//AcqTrends//PlatformMultiYearShare.csv",row.names = F
                       names_from=Fiscal_Year,values_from=pPlatFYear)%>%
   arrange(PlatformPortfolio,multiyearcontracttext))
   
-
+log_plot(plot=PlatformMultiYearShare, df=full_data,
+                     filename="acq_fig4_2_multiyear",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+                     sheet="4-2 Multi",path="../output/AcqTrends/", height=3.5,
+                     startRow=1,startCol=11,format=TRUE,y_var="Action_Obligation_OMB24_GDP22"#,var_list=c("Vehicle.AwardTask","Vehicle.sum7")
+         )
 
 ```
 
