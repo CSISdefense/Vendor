@@ -27,9 +27,8 @@ options(warn=1)
 source("DIIGstat.r")
 source("https://raw.githubusercontent.com/CSISdefense/Crisis-Funding/master/Scripts/ContractCleanup.r")
 
-
-login<-askpass::askpass("Please enter the login account")
-pwd<-askpass::askpass("Please enter the account password")
+if(!exists("login")) login<-askpass::askpass("Please enter the login account")
+if(!exists("pwd")) pwd<-askpass::askpass("Please enter the account password")
 
 
 
@@ -49,7 +48,8 @@ def_all<-input_sample_criteria(def_all,
                       last_date=as.Date("2021-09-30"),
                       drop_incomplete=FALSE,
                       login=login,
-                      password=password)
+                      password=password,
+                      IsDefense=1)
 # def_all$Customer<-"Defense"
 
 def_all<-def_all %>% filter(StartFiscal_Year<=2021 & StartFiscal_Year>=2007)# & Customer=="Defense")
@@ -854,6 +854,30 @@ save(file="..\\data\\clean\\defense_contract_complete_detail.Rdata",def_detail)
 ##BucketPlatform
 ```{r BucketPlatform}
 if(!exists("def_detail")) load(file="..\\data\\clean\\defense_contract_complete_detail.Rdata")
+
+
+dir<-"../data/semi_clean/"
+rda_file<-"Contract.SP_ContractBucketPlatformCustomer.rda"
+
+
+  if(!file.exists(file.path(dir,rda_file))){
+    #
+    con <- dbConnect(odbc(),
+                     Driver = "SQL Server",
+                     Server = "vmsqldiig.database.windows.net",
+                     Database = "CSIS360",
+                     UID = login,
+                     PWD =pwd)
+    lookup<-dbGetQuery(con,  
+                       paste("EXEC Contract.SP_ContractBucketPlatformCustomer @Customer=NULL, @StartFiscalYear=NULL",sep=""))
+    rm(con)
+    lookup<-standardize_variable_names(lookup)
+
+    save(lookup,file=file.path(dir,rda_file))
+    rm(lookup) #This is admittedly inefficient
+  }
+  
+
 
 #Note to identify is.defense here.
 def_detail<-read_and_join_experiment(data=def_detail
