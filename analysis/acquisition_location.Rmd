@@ -61,29 +61,8 @@ ukrplatpsc<-platpscdefcd %>% filter((ProductOrServiceCode %in% ukraine_list
   # summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
 
 
-wb <- loadWorkbook("..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx")
-writeData(wb, sheet = "PSC", startRow = 2, startCol = 1,
-          ukrplatpsc %>% group_by(
-            ProductServiceOrRnDarea,ProductOrServiceCode,ProductOrServiceCodeText)%>%
-            # arrange(ProductServiceOrRnDarea,ProductOrServiceCode,ProductOrServiceCodeText))%>%
-  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)))
-saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",overwrite = TRUE)
-
-wb <- loadWorkbook("..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx")
-writeData(wb, sheet = "Plat", startRow = 1, startCol = 1,
-          ukrplatpsc %>% group_by(
-            PlatformPortfolioUAV,ProjectID,Project.Name)%>%
-  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)))
-saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",overwrite = TRUE)
 
 
-wb <- loadWorkbook("..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx")
-writeData(wb, sheet = "State", startRow = 2, startCol = 1,
-          ukrplatpsc %>% group_by(
-            VendorIsForeign,VendorStateCode)%>%
-            # arrange(ProductServiceOrRnDarea,ProductOrServiceCode,ProductOrServiceCodeText))%>%
-  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)))
-saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",overwrite = TRUE)
 
 ```
 
@@ -228,7 +207,99 @@ platpscintldef$TopCountryISO[is.na(platpscintldef$TopCountryISO) & !is.na(platps
 
 ```
 
+# Ukraine
+## ProdServ
+```{r ukr_psc}
 
+wb <- loadWorkbook("..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx")
+writeData(wb, sheet = "PSC", startRow = 2, startCol = 1,
+          ukrplatpsc %>% group_by(
+            ProductServiceOrRnDarea,ProductOrServiceCode,ProductOrServiceCodeText)%>%
+            # arrange(ProductServiceOrRnDarea,ProductOrServiceCode,ProductOrServiceCodeText))%>%
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)))
+saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",overwrite = TRUE)
+
+
+```
+
+## Platform and Project
+```{r ukr_psc}
+ukrplatpsc$Project.Name[ukrplatpsc$ProjectID==466]<-"PIM"
+
+ukrplatpsc$ProjPSC<-ifelse(is.na(ukrplatpsc$Project.Name),
+                           paste(ukrplatpsc$ProductOrServiceCode,ukrplatpsc$ProductOrServiceCodeText,sep="-"),
+                           ukrplatpsc$Project.Name)
+
+wb <- loadWorkbook("..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx")
+writeData(wb, sheet = "Plat", startRow = 1, startCol = 1,
+          ukrplatpsc %>% group_by(
+            PlatformPortfolio,ProjectID,Project.Name)%>%
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)))
+saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",overwrite = TRUE)
+
+
+wb <- loadWorkbook("..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx")
+writeData(wb, sheet = "Plat", startRow = 1, startCol = 6,
+          ukrplatpsc %>% group_by(
+            PlatformPortfolio,ProjectID,ProjPSC)%>%
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)))
+saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",overwrite = TRUE)
+
+
+```
+
+## Vendor CD
+```{r ukr_vendor_CD}
+
+wb <- loadWorkbook("..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx")
+writeData(wb, sheet = "State", startRow = 2, startCol = 1,
+          ukrplatpsc %>% group_by(
+            VendorIsForeign,VendorStateCode)%>%
+            # arrange(ProductServiceOrRnDarea,ProductOrServiceCode,ProductOrServiceCodeText))%>%
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)))
+saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",overwrite = TRUE)
+
+ukrplatpsc$VendorCD<-ifelse(nchar(ukrplatpsc$prime_award_transaction_recipient_cd_current)<=2 &
+                              ukrplatpsc$VendorIsForeign==0,
+                            paste(ukrplatpsc$VendorStateCode,ukrplatpsc$prime_award_transaction_recipient_cd_current,sep="-"),
+                                  ukrplatpsc$prime_award_transaction_recipient_cd_current)
+
+wb <- loadWorkbook("..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx")
+writeData(wb, sheet = "State", startRow = 2, startCol = 5,
+          ukrplatpsc %>% group_by(
+            VendorIsForeign,VendorStateCode,VendorCD)%>%
+            # arrange(ProductServiceOrRnDarea,ProductOrServiceCode,ProductOrServiceCodeText))%>%
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)))
+saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",overwrite = TRUE)
+
+
+```
+
+## Place CD
+```{r ukr_place_CD}
+
+
+wb <- loadWorkbook("..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx")
+writeData(wb, sheet = "Place", startRow = 2, startCol = 1,
+          ukrplatpsc %>% group_by(
+            PlaceIsForeign,pop_state_code)%>%
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)))
+saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",overwrite = TRUE)
+
+ukrplatpsc$VendorCD<-ifelse(nchar(ukrplatpsc$prime_award_transaction_place_of_performance_cd_current)<=2 &
+                              ukrplatpsc$PlaceIsForeign==0,
+                            paste(ukrplatpsc$pop_state_code,ukrplatpsc$prime_award_transaction_place_of_performance_cd_current,sep="-"),
+                                  ukrplatpsc$prime_award_transaction_place_of_performance_cd_current)
+
+wb <- loadWorkbook("..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx")
+writeData(wb, sheet = "Place", startRow = 2, startCol = 5,
+          ukrplatpsc %>% group_by(
+            PlaceIsForeign,pop_state_code,VendorCD)%>%
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)))
+saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",overwrite = TRUE)
+
+
+```
 
 
 # Top Projects Annual
@@ -265,939 +336,6 @@ write.csv(topoverall %>% group_by(TopProject,Fiscal_Year) %>%
 
 ```
 
-
-# Platforms and Top Projects / PSC
-
-
-## Aircraft System
-```{r Aircraft}
-# summary(factor(platpscintldef$ProjectPlatform))
-# platpscintldef$Fiscal_Year
-# 
-# topplat<-platpscintldef %>% filter(PlatformPortfolio=="Aircraft") %>% group_by (Project.Name) %>%
-#   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB24_GDP22,0))
-#             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-#                         rank_2020=rank(desc(Action_Obligation_2020)))
-# topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
-# 
-# platpscintldef$TopAircraftProject<-
-#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2020<=7 | topplat$rank_total<=7],
-#          platpscintldef$Project.Name,NA)
-# platpscintldef$TopAircraftProject[is.na(platpscintldef$TopAircraftProject) & !is.na(platpscintldef$Project.Name)]<-
-#   "Other Labeled Project"
-# summary(factor(platpscintldef$TopAircraftProject))
-
-
-(
-Platform<-build_plot(
-  data=platpscintldef %>% filter(PlatformPortfolio=="Aircraft"),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="TopProject", #color_var
-  facet_var="TopProject", #facet_var
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-  
-  
-  write.csv(file="..//Output//Aircraft_project_cur.csv",row.names = FALSE,na = "",
-            platpscintldef %>% filter(PlatformPortfolio=="Aircraft")  %>%
-              format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "TopProject"#,
-                                   # labels_and_colors=labels_and_colors
-                                   )%>% arrange(Fiscal_Year) %>%
-            pivot_wider(id_cols=c(TopProject),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
-              arrange(TopProject))
-```
-
-## Ships and Submarines
-```{r ShipsAndSubs}
-# summary(factor(platpscintldef$ProjectPlatform))
-# platpscintldef$Fiscal_Year
-# 
-# topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
-#   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB24_GDP22,0))
-#             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-#                         rank_2020=rank(desc(Action_Obligation_2020)))
-# topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
-# 
-# platpscintldef$TopShipProject<-
-#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2020<=7 | topplat$rank_total<=7],
-#          platpscintldef$Project.Name,NA)
-# platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$Project.Name)]<-
-#   "Other Labeled Project"
-# summary(factor(platpscintldef$TopShipProject))
-
-
-(
-Platform<-build_plot(
-  data=platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines"),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="TopProject", #color_var
-  facet_var="TopProject", #facet_var
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-
- write.csv(file="..//Output//ShipSub_project_current.csv",row.names = FALSE,na="",
-            platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines")  %>%
-              format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "TopProject"#,
-                                   # labels_and_colors=labels_and_colors
-                                   )%>% arrange(Fiscal_Year) %>%
-            pivot_wider(id_cols=c(TopProject),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
-              arrange(TopProject))
-```
- 
-
-## Ordnance and Missiles
-```{r OrdMissiles}
-summary(factor(platpscintldef$ProjectPlatform))
-
-
-# platpscintldef$Fiscal_Year
-# 
-# topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
-#   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB24_GDP22,0))
-#             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-#                         rank_2020=rank(desc(Action_Obligation_2020)))
-# topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
-# 
-# platpscintldef$TopShipProject<-
-#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2020<=7 | topplat$rank_total<=7],
-#          platpscintldef$Project.Name,NA)
-# platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$Project.Name)]<-
-#   "Other Labeled Project"
-summary(factor(platpscintldef$TopProject[platpscintldef$PlatformPortfolio=="Ordnance and Missiles"]))
-
-
-(
-Platform<-build_plot(
-  data=platpscintldef %>% filter(PlatformPortfolio=="Ordnance and Missiles"),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="TopProject", #color_var
-  facet_var="TopProject", #facet_var
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-
-
-
-(
-PSC<-build_plot(
-  data=platpscintldef %>% filter(PlatformPortfolio=="Ordnance and Missiles"),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="TopPStext", #color_var
-  facet_var="TopPStext", #facet_var
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-
-summary(platpscintldef$PlatformPortfolio[platpscintldef$ProjectID %in% c(1916,137,2240)])
-platpscintldef$PlatformPortfolio[platpscintldef$ProjectID %in% c(1916,137,2240)]<-"Missile Defense"
-
-#Project ID 1916 (PATRIOT MISSILE SYS), 137 ('BALLISTIC MISSILE DEFENSE', 2240, LTAMDS should all be air and missile defense. Fixed in databse), 
-write.csv(file="..//Output//OrdMiss_psc_current.csv",row.names = FALSE,na="",
-            platpscintldef %>% filter(PlatformPortfolio=="Ordnance and Missiles")  %>%
-              format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "TopPStext"#,
-                                   # labels_and_colors=labels_and_colors
-                                   )%>% arrange(Fiscal_Year) %>%
-            pivot_wider(id_cols=c(TopPStext),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
-              arrange(TopPStext))
-
-```
-
-
-
-## Air and Missile Defense
-```{r Defense}
-summary(factor(platpscintldef$ProjectPlatform))
-# platpscintldef$Fiscal_Year
-# 
-# topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
-#   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB24_GDP22,0))
-#             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-#                         rank_2020=rank(desc(Action_Obligation_2020)))
-# topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
-# 
-# platpscintldef$TopShipProject<-
-#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2020<=7 | topplat$rank_total<=7],
-#          platpscintldef$Project.Name,NA)
-# platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$Project.Name)]<-
-#   "Other Labeled Project"
-# summary(factor(platpscintldef$TopShipProject))
-
-
-(
-Platform<-build_plot(
-  data=platpscintldef %>% filter(PlatformPortfolio=="Missile Defense"),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="TopProject", #color_var
-  facet_var="TopProject", #facet_var
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-
-
-
-(
-PSC<-build_plot(
-  data=platpscintldef %>% filter(PlatformPortfolio=="Missile Defense"),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="TopPStext", #color_var
-  facet_var="TopPStext", #facet_var
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-
-
-```
-
-## Electronics Comms and Sensors
-```{r ElecCommsSensors}
-summary(factor(platpscintldef$ProjectPlatform))
-# platpscintldef$Fiscal_Year
-# 
-# topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
-#   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB24_GDP22,0))
-#             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-#                         rank_2020=rank(desc(Action_Obligation_2020)))
-# topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
-# 
-# platpscintldef$TopShipProject<-
-#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2020<=7 | topplat$rank_total<=7],
-#          platpscintldef$Project.Name,NA)
-# platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$Project.Name)]<-
-#   "Other Labeled Project"
-# summary(factor(platpscintldef$TopShipProject))
-
-
-(
-Platform<-build_plot(
-  data=platpscintldef %>% filter(PlatformPortfolio=="Electronics, Comms, & Sensors"),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="TopProject", #color_var
-  facet_var="TopProject", #facet_var
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-
-
-
-(
-PSC<-build_plot(
-  data=platpscintldef %>% filter(PlatformPortfolio=="Electronics, Comms, & Sensors"),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="TopPStext", #color_var
-  facet_var="TopPStext", #facet_var
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-
-```
-
-
-## Space Systems
-```{r Space}
-summary(factor(platpscintldef$ProjectPlatform))
-# platpscintldef$Fiscal_Year
-# 
-# topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
-#   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB24_GDP22,0))
-#             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-#                         rank_2020=rank(desc(Action_Obligation_2020)))
-# topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
-# 
-# platpscintldef$TopShipProject<-
-#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2020<=7 | topplat$rank_total<=7],
-#          platpscintldef$Project.Name,NA)
-# platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$Project.Name)]<-
-#   "Other Labeled Project"
-# summary(factor(platpscintldef$TopShipProject))
-
-
-(
-Platform<-build_plot(
-  data=platpscintldef %>% filter(PlatformPortfolio=="Space Systems"),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="TopProject", #color_var
-  facet_var="TopProject", #facet_var
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-
-
-(
-PSC<-build_plot(
-  data=platpscintldef %>% filter(PlatformPortfolio=="Space Systems"),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="TopPStext", #color_var
-  facet_var="TopPStext", #facet_var
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-
-```
-
-## Land Vehicles
-```{r Land}
-summary(factor(platpscintldef$ProjectPlatform))
-# platpscintldef$Fiscal_Year
-# 
-# topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
-#   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB24_GDP22,0))
-#             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-#                         rank_2020=rank(desc(Action_Obligation_2020)))
-# topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
-# 
-# platpscintldef$TopShipProject<-
-#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2020<=7 | topplat$rank_total<=7],
-#          platpscintldef$Project.Name,NA)
-# platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$Project.Name)]<-
-#   "Other Labeled Project"
-# summary(factor(platpscintldef$TopShipProject))
-
-
-(
-Platform<-build_plot(
-  data=platpscintldef %>% filter(PlatformPortfolio=="Land Vehicles"),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="TopProject", #color_var
-  facet_var="TopProject", #facet_var
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-
-
-(
-PSC<-build_plot(
-  data=platpscintldef %>% filter(PlatformPortfolio=="Land Vehicles"),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="TopPStext", #color_var
-  facet_var="TopPStext", #facet_var
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-
-```
-
-
-### Vendor Size and Count via Entity
-```{r drone_count}
-
-# undebug(add_preassigned_scales)
-
-# defense_land_vendor$EntitySizeText.GA<-as.character(defense_land_vendor$EntitySizeText)
-# defense_land_vendor$EntitySizeText.GA[defense_land_vendor$EntityText=="GENERAL ATOMICS"&
-#                                        !is.na(defense_land_vendor$EntityText)]<-"General Atomics"
-
-entity_lc<-prepare_labels_and_colors(defense_platformUAV_vendor)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
-entity_ck<-get_column_key(defense_platformUAV_vendor)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
-defense_platformUAV_vendor$EntityCount<-1
-
-
-defense_entity_both<-defense_platformUAV_vendor %>% filter(PlatformPortfolioUAV=="Land Vehicles")%>% pivot_longer(cols=c(EntityCount,Action_Obligation_OMB24_GDP22),names_to = "Metric")
-
-
-
-
-
-
-
-(a<-build_plot(data=defense_platformUAV_vendor %>% filter(Fiscal_Year>=2005& Fiscal_Year<=2020 & 
-                                                       PlatformPortfolioUAV=="Land Vehicles" &
-                                                    IsEntityAbove2018constant10ThousandThreshold==1),# & PlatformPortfolioUAV %in% 
-                                                  c(#"Aircraft","Electronics, Comms, & Sensors",
-                                                    #"Remotely Operated","Ordnance and Missiles")&
-                                                      ),
-           chart_geom="Bar Chart",
-           x_var="dFYear",
-           y_var="EntityCount",
-           color_var="EntitySizeText.sum",
-           facet_var="None",
-           # second_var="IsEntityAbove2018constant10ThousandThreshold",
-           labels_and_colors=entity_lc,
-           column_key=entity_ck,
-           legend=TRUE,
-           caption=FALSE,
-           format=TRUE,
-           share=FALSE)+
-    labs(y="Number of Entities"))#+
-   #facet_wrap(.~PlatformPortfolioUAV,scales="free_y"))
-
-
-
-# summary(factor(defense_platformUAV_vendor$EntitySizeText))
-
-(b<-build_plot(data=defense_platformUAV_vendor %>% filter(Fiscal_Year>=2005& Fiscal_Year<=2020 &
-                                                       PlatformPortfolioUAV=="Land Vehicles"),
-           chart_geom="Bar Chart",
-           x_var="dFYear",
-           y_var="Action_Obligation_OMB24_GDP22",
-           color_var="EntitySizeText",
-           # facet_var="PlatformPortfolioUAVRemote",
-           # second_var="IsEntityAbove2018constant10ThousandThreshold",
-           labels_and_colors=entity_lc,
-           column_key=entity_ck,
-           legend=TRUE,
-           caption=FALSE,
-           format=TRUE)#+
-   # facet_wrap(.~PlatformPortfolioUAVRemote,scales="free_y"))
-)
-
-
-ggsave600dpi(a,file="../output/land//land_entity_count.png",
-             size = 12, lineheight=1, height =4.5, width=9)
-
-
-ggsave600dpi(b,file="../output/land//land_entity_dollar.png",
-             size = 12, lineheight=1, height =4.5, width=9)
-
-
-(ab<-build_plot(data=defense_entity_both %>% filter(Fiscal_Year>=2005&
-                                                    IsEntityAbove2018constant10ThousandThreshold==1& Fiscal_Year<=2020 &
-                                                       PlatformPortfolioUAV=="Land Vehicles"),# & PlatformPortfolioUAV %in% 
-                                                  c(#"Aircraft","Electronics, Comms, & Sensors",
-                                                    #"Remotely Operated","Ordnance and Missiles")&
-                                                      ),
-           chart_geom="Bar Chart",
-           x_var="dFYear",
-           y_var="value",
-           color_var="EntitySizeText",
-           facet_var="Metric",
-           # second_var="IsEntityAbove2018constant10ThousandThreshold",
-           labels_and_colors=prepare_labels_and_colors(defense_entity_both),
-           column_key=get_column_key(defense_entity_both),
-           legend=TRUE,
-           caption=FALSE,
-           format=TRUE,
-           share=FALSE)+
-    labs(y=NULL)+
-   facet_wrap(.~Metric,scales="free_y")+
-    theme(legend.position = "right"))
-
-
-ggsave600dpi(ab,
-                          file="../output/land//land_entity_count_size.png",
-              size = 12, lineheight=1,height =3.5, width=6.5)
-
-
-ggsave600dpi(ab,
-                          file="../output/land//land_entity_count_size.svg",
-              size = 12, lineheight=1,height =3.5, width=6.5)
-
-```
-
-
-
-
-## Facility Related And Construction
-```{r FRSnC}
-summary(factor(platpscintldef$ProjectPlatform))
-# platpscintldef$Fiscal_Year
-# 
-# topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
-#   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB24_GDP22,0))
-#             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-#                         rank_2020=rank(desc(Action_Obligation_2020)))
-# topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
-# 
-# platpscintldef$TopShipProject<-
-#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2020<=7 | topplat$rank_total<=7],
-#          platpscintldef$Project.Name,NA)
-# platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$Project.Name)]<-
-#   "Other Labeled Project"
-# summary(factor(platpscintldef$TopShipProject))
-
-
-(
-Platform<-build_plot(
-  data=platpscintldef %>% filter(PlatformPortfolio=="Facilities and Construction"),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="TopProject", #color_var
-  facet_var="TopProject", #facet_var
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-
-
-(
-PSC<-build_plot(
-  data=platpscintldef %>% filter(PlatformPortfolio=="Facilities and Construction"),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="TopPStext", #color_var
-  facet_var="TopPStext", #facet_var
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-
-```
-
-## Construction
-```{r FRSnC}
-summary(factor(platpscintldef$CrisisProductOrServiceArea))
-# platpscintldef$Fiscal_Year
-# 
-# topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
-#   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB24_GDP22,0))
-#             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-#                         rank_2020=rank(desc(Action_Obligation_2020)))
-# topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
-# 
-# platpscintldef$TopShipProject<-
-#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2020<=7 | topplat$rank_total<=7],
-#          platpscintldef$Project.Name,NA)
-# platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$Project.Name)]<-
-#   "Other Labeled Project"
-# summary(factor(platpscintldef$TopShipProject))
-
-(
-State<-build_plot(
-  data=platpscintldef %>% filter(CrisisProductOrServiceArea=="Construction"),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="TopStateAbbr", #color_var
-  facet_var="TopStateAbbr", #facet_var
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-ggsave(State,file="construction_state.png")
-(
-State<-build_plot(
-  data=platpscintldef %>% filter(CrisisProductOrServiceArea=="Construction"),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="TopStateAbbr", #color_var
-  facet_var="TopStateAbbr", #facet_var
-  second_var="SubCustomer",
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-
-
-(
-Country<-build_plot(
-  data=platpscintldef %>% filter(CrisisProductOrServiceArea=="Construction"),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="TopCountryISO", #color_var
-  facet_var="TopCountryISO", #facet_var
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-
-
-(
-PSC<-build_plot(
-  data=platpscintldef %>% filter(PlatformPortfolio=="Construction"),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="TopPStext", #color_var
-  facet_var="TopPStext", #facet_var
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-
-```
-
-
-## Other Products
-```{r OtherProducts}
-summary(factor(platpscintldef$PlatformPortfolio))
-# platpscintldef$Fiscal_Year
-# 
-# topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
-#   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-#             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB24_GDP22,0))
-#             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-#                         rank_2020=rank(desc(Action_Obligation_2020)))
-# topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
-# 
-# platpscintldef$TopShipProject<-
-#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2020<=7 | topplat$rank_total<=7],
-#          platpscintldef$Project.Name,NA)
-# platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$Project.Name)]<-
-#   "Other Labeled Project"
-# summary(factor(platpscintldef$TopShipProject))
-
-
-(
-Platform<-build_plot(
-  data=platpscintldef %>% filter(PlatformPortfolio=="Other Products"),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="TopProject", #color_var
-  facet_var="TopProject", #facet_var
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-
-
-(
-PSC<-build_plot(
-  data=platpscintldef %>% filter(PlatformPortfolio=="Other Products"),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  # labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="TopPStext", #color_var
-  facet_var="TopPStext", #facet_var
-  # column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2021 $s)")
-)
-
-```
-### Army Investigation
-```{r ArmyOtherProducts}
-armyDB<-platpscintldef %>% filter(SubCustomer=="Army" & PlatformPortfolio=="Other Products" & 
-                                    Fiscal_Year==2022 & ProductOrServiceCodeText.x=="DRUGS AND BIOLOGICALS")
-
-
-# armyDB$off
-# summary(armyOP$TopPStext)
-
-```
 
 
 # International
