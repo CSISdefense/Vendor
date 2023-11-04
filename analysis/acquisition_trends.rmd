@@ -35,6 +35,8 @@ note.text.size<-1.40
 if(!exists("full_data"))
   # load(file="..//data//clean//unaggregated_FPDS_2020.Rda")
   load(file="FPDS_chart_maker//unaggregated_FPDS.Rda")
+# labels_and_colors<-prepare_labels_and_colors(full_data,path=file.path(local_path,"style//"))
+
 
 if(!exists("def_data"))
   load(file="FPDS_chart_maker/unaggregated_def.Rda")
@@ -43,35 +45,33 @@ if(!exists("def_data"))
 
 load(file="../data/clean/Defense_OTA.Rda")
 
-toa<-readxl::read_excel(path=file.path("..","data_raw","FY22 PB Green Book Table 6-1.xlsx"),skip=4)
-# toa<-toa["Total Current Dollars ..............................................................." ==toa[,2] & !is.na(toa[,2]),]#%in% c(toa[,1],toa[,2],toa[,3]),]
 
 if(!"Action_Obligation_OMB24_GDP22" %in% colnames(ota_def))
   ota_def<-deflate(ota_def, "Dollars_Obligated_Then_Year",deflator_var="OMB23_GDP21")
 colnames(ota_def)[colnames(ota_def)=="Dollars_Obligated_Then_Year_OMB23_GDP21"]<-"Action_Obligation_OMB24_GDP22"
 colnames(ota_def)[colnames(ota_def)=="Dollars_Obligated_Then_Year_Then_Year"]<-"Dollars_Obligated_Then_Year"
 
-#Kludge
-toa<-toa[11,c(-1,-3)]
-colnames(def_data)[colnames(def_data)=="Action_Obligation_Then_Year_OMB23_GDP21"]<-"Action_Obligation_OMB24_GDP22"
-colnames(def_data)[colnames(def_data)=="Action_Obligation_Then_Year_Then_Year"]<-"Action_Obligation_Then_Year"
 
- 
+#Kludge
+toa<-readxl::read_excel(path=file.path("..","data_raw","FY24 6-1_DoD TOA by Title.xlsx"),skip=4)
+toa<-toa[sapply(toa[,2],function(x) substr(x,start=1,stop=21))==
+            "Total Current Dollars" & !is.na(toa[,2]),c(-1,-3)]
+
 
 colnames(toa)<-gsub("FY ","",colnames(toa))
+colnames(toa)<-gsub("\r\nEnacted","",colnames(toa))
 colnames(toa)[colnames(toa)=="...2"]<-"Series"
 toa<-pivot_longer(toa,  cols=-Series, names_to="Fiscal_Year", values_to="Total_Obligation_Authority")
 toa$Total_Obligation_Authority<-toa$Total_Obligation_Authority*1000000
-toa<-deflate(toa,money_var = "Total_Obligation_Authority",deflator_var="OMB20_GDP20")
+toa<-deflate(toa,money_var = "Total_Obligation_Authority",deflator_var="OMB24_GDP22")
 toa$dFYear<-as.Date(paste(toa$Fiscal_Year,1,1,sep="-"))
-labels_and_colors<-prepare_labels_and_colors(full_data,path=file.path(local_path,"style//"))
 
 ```
 
 # Topline
 
 ## Topline Quarterly
-```{r TOA}
+```{r toplineq}
 
 
 
@@ -120,19 +120,22 @@ log_plot(plot=toplineq, df=def_data   %>% filter(Fiscal_YQ<=2023.2),
 
 fpds_annual<-full_data %>% group_by(Fiscal_Year,dFYear,IsFMS,
                                     ContractingCustomer) %>% summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE),
-                                                                      Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))
+                                                                       Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))
 fpds_annual$Series<-"Contract Obligations"
+toa$ContractingCustomer<-"Defense"
+toa$Action_Obligation_OMB24_GDP22<-NA
+toa$Action_Obligation_Then_Year<-NA
 toa$Fiscal_Year<-text_to_number(toa$Fiscal_Year)
 toa$IsFMS<-0
 fpds_annual$Total_Obligation_Authority_Then_Year<-NA
-fpds_annual$Total_Obligation_Authority_OMB20_GDP20<-NA
-fpds_annual<-rbind(as.data.frame(fpds_annual),as.data.frame(toa) %>% dplyr::select(-fiscal_quarter))
+fpds_annual$Total_Obligation_Authority_OMB24_GDP22<-NA
 colnames(toa)[!colnames(toa) %in% colnames(fpds_annual)]
 colnames(fpds_annual)[!colnames(fpds_annual) %in% colnames(toa)]
+fpds_annual<-rbind(as.data.frame(fpds_annual),as.data.frame(toa))# %>% dplyr::select(-fiscal_quarter)
 
 fpds_annual$FMS<-as.character(fpds_annual$IsFMS)
 fpds_annual$FMS[fpds_annual$Fiscal_Year<2012]<-"Obligations (before reliable\nFMS labels available)"
-fpds_annual$FMS[!is.na(fpds_annual$Total_Obligation_Authority_OMB20_GDP20)]<-"Obligations (no FMS)"
+fpds_annual$FMS[!is.na(fpds_annual$Total_Obligation_Authority_OMB24_GDP22)]<-"Obligations (no FMS)"
 fpds_annual$FMS<-factor(fpds_annual$FMS)
 levels(fpds_annual$FMS)<-list("Obligations (includes FMS)"=c("1","Obligations (includes FMS)"),
                               "Obligations (no FMS)"=c("0","Obligations (no FMS)"),
@@ -146,10 +149,10 @@ fpds_annual$TOA<-"Total Obligation Authority"
                      y_var="Action_Obligation_OMB24_GDP22",
            color_var="FMS"
        )+
-    geom_path(aes(x=dFYear,y=Total_Obligation_Authority_OMB20_GDP20,color=TOA))+
+    geom_path(aes(x=dFYear,y=Total_Obligation_Authority_OMB24_GDP22,color=TOA))+
   # scale_alpha_discrete(range=c(0.4,1))+
-    labs(x="Fiscal Year",y="Constant FY 2020 $ Billions",fill="Contract",color="Budget",
-         caption="Source: FPDS, FY 2022 DoD Greenbook, CSIS Analysis")+
+    labs(x="Fiscal Year",y="Constant FY 2022 $ Billions",fill="Contract",color="Budget",
+         caption="Source: FPDS, FY 2024 DoD Greenbook, CSIS Analysis")+
     theme(legend.position = "right")+
     scale_x_date(breaks=as.Date(c(paste(seq(1990,2021,3),"-01-01",sep=""))),
                                                    date_labels="'%y")
@@ -166,14 +169,14 @@ output_TY<-topline$data %>% mutate(source=ifelse(!is.na(Total_Obligation_Authori
                                facet="FMS",
                                # labels_and_colors = ota_lc,
                                group=TRUE) %>%
-            arrange(Fiscal_Year) %>%
-          pivot_wider(id_cols=c(source,FMS),
-                      names_from=Fiscal_Year,values_from=Dollars) %>% 
-            
-            # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=ota_lc$variable[ota_lc$column=="PlatformPortfolio"]))%>%
-            # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=levels(fiscal_quarter),
-            #                                 labels=gsub("\\n"," ",levels(PlatformPortfolio))))%>%
-                   arrange(source,FMS)
+            arrange(Fiscal_Year) #%>%
+          # pivot_wider(id_cols=c(source,FMS),
+          #             names_from=Fiscal_Year,values_from=Dollars) %>% 
+          #   
+          #   # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=ota_lc$variable[ota_lc$column=="PlatformPortfolio"]))%>%
+          #   # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=levels(fiscal_quarter),
+          #   #                                 labels=gsub("\\n"," ",levels(PlatformPortfolio))))%>%
+          #          arrange(source,FMS)
 
 ggsave600dpi(topline,file=file.path("..","Output","AcqTrends","topline_toa_annual.png"),  
              width=12, height= 6, units="in",size=12, lineheight=1.2
@@ -188,123 +191,17 @@ write.csv(file="..//Output//AcqTrends//toa_annual.csv",row.names = FALSE,na="",o
           )
 
 
-
-wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
-createSheet(wb, name = "TOA")
-writeData(wb, output_TY, sheet = "TOA", startRow = 2, startCol = 1)
-saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
-rm(wb)
-xlcFreeMemory()
-
+log_plot(plot=topline, df=output_TY   ,y_var="Dollars",#%>% filter(Fiscal_YQ<=2023.2),
+                     filename="acq_fig2_1_toa_annual",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+                     sheet="2-1 TOA",path="../output/AcqTrends/", height=3,
+                     startRow=1,startCol=13,format=TRUE,var_list=c("source","FMS"),
+         output_plot=TRUE
+         )
 
 
 ```
 
-## TOA sam annual
-```{r TOAannual}
 
-
-fpds_annual<-def_psc_join %>% group_by(Fiscal_Year,dFYear) %>%
-  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE),
-            Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))
-fpds_annual$Series<-"Contract Obligations"
-toa$Fiscal_Year<-text_to_number(toa$Fiscal_Year)
-toa$Action_Obligation_Then_Year<-NA
-fpds_annual$Total_Obligation_Authority_Then_Year<-NA
-fpds_annual$Total_Obligation_Authority_OMB20_GDP20<-NA
-fpds_annual<-rbind(as.data.frame(fpds_annual[,colnames(fpds_annual)%in%colnames(toa)]),
-                   toa[,colnames(toa)%in%colnames(fpds_annual)])
-colnames(toa)[!colnames(toa) %in% colnames(fpds_annual)]
-colnames(fpds_annual)[!colnames(fpds_annual) %in% colnames(toa)]
-
-fpds_annual$TOA<-"Total Obligation Authority"
-
-str(fpds_annual)
-
-(topline<-build_plot(data=fpds_annual %>% filter(Fiscal_Year>=1990),#rbind(quarterly,q2021,e2021),
-                     chart_geom="Bar Chart",
-                     x_var="Fiscal_Year",
-                     y_var="Action_Obligation_OMB24_GDP22"
-       )+
-    geom_path(aes(x=Fiscal_Year,y=Total_Obligation_Authority_OMB20_GDP20,color=TOA))#+
-  # scale_alpha_discrete(range=c(0.4,1))+
-    # labs(x="Fiscal Year",y="Constant FY 2020 $ Billions",fill="Contract",color="Budget",
-    #      caption="Source: FPDS, FY 2022 DoD Greenbook, CSIS Analysis")+
-    # theme(legend.position = "right")#+
-    # scale_x_date(breaks=as.Date(c(paste(seq(1990,2021,3),"-01-01",sep=""))),
-    #                                                date_labels="'%y")
-)
-
-
-
-output_TY<-fpds_annual %>% mutate(
-  source=ifelse(!is.na(Total_Obligation_Authority_Then_Year),"TOA","Contract"),
-  Dollars=ifelse(source=="TOA",
-                 Total_Obligation_Authority_Then_Year,Action_Obligation_Then_Year))%>%
-            filter(Fiscal_Year>=1990)%>%
-          format_data_for_plot(
-                               fy_var="Fiscal_Year",
-                               y_var="Dollars",
-                               color_var="source",
-                               # facet="FMS",
-                               # labels_and_colors = ota_lc,
-                               group=TRUE) %>%
-            arrange(Fiscal_Year) %>%
-          pivot_wider(id_cols=c(source),
-                      names_from=Fiscal_Year,values_from=Dollars) %>% 
-            
-            # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=ota_lc$variable[ota_lc$column=="PlatformPortfolio"]))%>%
-            # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=levels(fiscal_quarter),
-            #                                 labels=gsub("\\n"," ",levels(PlatformPortfolio))))%>%
-                   arrange(source)
-
-
-output_TY<-fpds_annual %>% mutate(
-  source=ifelse(!is.na(Total_Obligation_Authority_Then_Year),"TOA","Contract"),
-  Dollars=ifelse(source=="TOA",
-                 Total_Obligation_Authority_Then_Year,Action_Obligation_Then_Year))%>%
-            filter(Fiscal_Year>=1990)%>%
-          format_data_for_plot(
-                               fy_var="Fiscal_Year",
-                               y_var="Dollars",
-                               color_var="source",
-                               # facet="FMS",
-                               # labels_and_colors = ota_lc,
-                               group=TRUE) %>%
-            arrange(Fiscal_Year) %>%
-          pivot_wider(id_cols=c(source),
-                      names_from=Fiscal_Year,values_from=Dollars) %>% 
-            
-            # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=ota_lc$variable[ota_lc$column=="PlatformPortfolio"]))%>%
-            # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=levels(fiscal_quarter),
-            #                                 labels=gsub("\\n"," ",levels(PlatformPortfolio))))%>%
-                   arrange(source)
-
-ggsave600dpi(topline,file=file.path("..","Output","AcqTrends","topline_toa_annual.png"),  
-             width=12, height= 6, units="in",size=12, lineheight=1.2
-             )
-
-ggsave600dpi(topline,file=file.path("..","Output","AcqTrends","topline_toa_annual.emf"),  
-             width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
-             )
-
-write.csv(file="..//Output//AcqTrends//toa_sam_annual_TY.csv",row.names = FALSE,na="",output_TY
-          )
-write.csv(file="..//Output//AcqTrends//toa_sam_annual.csv",row.names = FALSE,na="",output_TY
-          )
-
-
-# 
-# wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
-# createSheet(wb, name = "TOA")
-# writeData(wb, output_TY, sheet = "TOA", startRow = 2, startCol = 1)
-# saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
-# rm(wb)
-# xlcFreeMemory()
-
-
-
-```
 
 ## Topline Competition
 ```{r ToplineComp}
