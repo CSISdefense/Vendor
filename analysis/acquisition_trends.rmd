@@ -114,7 +114,8 @@ log_plot(plot=toplineq, df=def_data   %>% filter(Fiscal_YQ<=2023.2),
          )
 
 ```
-## TOA annual
+
+## Topline and TOA
 ```{r TOAannual}
 
 
@@ -154,29 +155,10 @@ fpds_annual$TOA<-"Total Obligation Authority"
     labs(x="Fiscal Year",y="Constant FY 2022 $ Billions",fill="Contract",color="Budget",
          caption="Source: FPDS, FY 2024 DoD Greenbook, CSIS Analysis")+
     theme(legend.position = "right")+
-    scale_x_date(breaks=as.Date(c(paste(seq(1990,2021,3),"-01-01",sep=""))),
+    scale_x_date(breaks=as.Date(c(paste(seq(1990,2028,3),"-01-01",sep=""))),
                                                    date_labels="'%y")
 )
 
-output_TY<-topline$data %>% mutate(source=ifelse(!is.na(Total_Obligation_Authority_Then_Year),"TOA","Contract"),
-                                            Dollars=ifelse(source=="TOA",
-                                                                 Total_Obligation_Authority_Then_Year,Action_Obligation_Then_Year))%>%
-            filter(Fiscal_Year>=1990)%>%
-          format_data_for_plot(
-                               fy_var="Fiscal_Year",
-                               y_var="Dollars",
-                               color_var="source",
-                               facet="FMS",
-                               # labels_and_colors = ota_lc,
-                               group=TRUE) %>%
-            arrange(Fiscal_Year) #%>%
-          # pivot_wider(id_cols=c(source,FMS),
-          #             names_from=Fiscal_Year,values_from=Dollars) %>% 
-          #   
-          #   # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=ota_lc$variable[ota_lc$column=="PlatformPortfolio"]))%>%
-          #   # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=levels(fiscal_quarter),
-          #   #                                 labels=gsub("\\n"," ",levels(PlatformPortfolio))))%>%
-          #          arrange(source,FMS)
 
 ggsave600dpi(topline,file=file.path("..","Output","AcqTrends","topline_toa_annual.png"),  
              width=12, height= 6, units="in",size=12, lineheight=1.2
@@ -186,9 +168,20 @@ ggsave600dpi(topline,file=file.path("..","Output","AcqTrends","topline_toa_annua
              width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
              )
 
-
-write.csv(file="..//Output//AcqTrends//toa_annual.csv",row.names = FALSE,na="",output_TY
-          )
+output_TY<-topline$data %>%
+  mutate(source=ifelse(!is.na(Total_Obligation_Authority_Then_Year),
+                       "TOA","Contract"),
+         Dollars=ifelse(source=="TOA",
+                        Total_Obligation_Authority_Then_Year,Action_Obligation_Then_Year))%>%
+  filter(Fiscal_Year>=1990)%>%
+          format_data_for_plot(
+                               fy_var="Fiscal_Year",
+                               y_var="Dollars",
+                               color_var="source",
+                               facet="FMS",
+                               # labels_and_colors = ota_lc,
+                               group=TRUE) %>%
+            arrange(Fiscal_Year) 
 
 
 log_plot(plot=topline, df=output_TY   ,y_var="Dollars",#%>% filter(Fiscal_YQ<=2023.2),
@@ -3853,7 +3846,8 @@ ggsave600dpi(contract_identification,file="../Output//AcqTrends/figure_03_contra
 
 
 ```
-###Buy America
+
+#### Contract identification
 ```{r contract_identification}
 
 summary(full_data$PlaceOfManufacture_Sum)
@@ -3925,6 +3919,9 @@ ggsave600dpi(contract_identification,file="../Output//AcqTrends/figure_03_contra
 
 
 ```
+
+###Buy America
+
 #### Waiver Type
 
 ```{r contract_identification}
