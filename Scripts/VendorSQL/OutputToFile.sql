@@ -350,13 +350,13 @@ SET NOCOUNT ON;
 --1023 completed with errors 4,532,322
 --4h41 4,656,745
 --6h13m 10,891,220 post FPDS.partial
-
+--6h39m 11,007,974 post UEI implementation.
 DECLARE	@return_value int
-EXEC	@return_value = [budget].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS]
+EXEC	@return_value = budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS
 		@Customer = NULL
 		
 
-		
+		set QUERY_GOVERNOR_COST_LIMIT  0
 
 
 SET ANSI_WARNINGS OFF;
