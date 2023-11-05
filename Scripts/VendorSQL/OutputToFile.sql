@@ -351,6 +351,7 @@ SET NOCOUNT ON;
 --4h41 4,656,745
 --6h13m 10,891,220 post FPDS.partial
 --6h39m 11,007,974 post UEI implementation.
+--5h11m 11,343,896 more vendor classifications and 
 DECLARE	@return_value int
 EXEC	@return_value = budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS
 		@Customer = NULL
