@@ -72,13 +72,13 @@ full_data<-initial_clean(fed_data,only_defense=TRUE)
 # path="K:/Users/Greg/Repositories/Lookup-Tables/style")
 
 if(!"OriginIsForeign" %in% colnames(full_data) & "OriginISOalpha3" %in% colnames(full_data) ){
-  full_data<-read_and_join_experiment(full_data,lookup_file="Location_CountryCodes.csv",
-                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="location/",
-                                      add_var = c("isforeign"),#"USAID region",
-                                      by=c("OriginISOalpha3"="alpha-3"),
-                                      # skip_check_var=c("NATOyear",	"MajorNonNATOyear","NTIByear"	,"SEATOendYear","RioTreatyStartYear","RioTreatyEndYear","FiveEyes","OtherTreatyName"	,"OtherTreatyStartYear","OtherTreatyEndYear","isforeign"),
-                                      missing_file="missing_DSCA_iso.csv")
-  colnames(full_data)[colnames(full_data)=="isforeign"]<-"OriginIsForeign"
+  # full_data<-read_and_join_experiment(full_data,lookup_file="Location_CountryCodes.csv",
+  #                                     path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="location/",
+  #                                     add_var = c("isforeign"),#"USAID region",
+  #                                     by=c("OriginISOalpha3"="alpha-3"),
+  #                                     # skip_check_var=c("NATOyear",	"MajorNonNATOyear","NTIByear"	,"SEATOendYear","RioTreatyStartYear","RioTreatyEndYear","FiveEyes","OtherTreatyName"	,"OtherTreatyStartYear","OtherTreatyEndYear","isforeign"),
+  #                                     missing_file="missing_DSCA_iso.csv")
+  # colnames(full_data)[colnames(full_data)=="isforeign"]<-"OriginIsForeign"
   
   full_data <- full_data %>% dplyr::select(-PlaceIsForeign,-VendorIsForeign) 
   full_data %<>% add_alliance(isoAlpha3_col= "PlaceISOalpha3", drop_col = TRUE,prefix="Place")
