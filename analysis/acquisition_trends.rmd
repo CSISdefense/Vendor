@@ -66,6 +66,11 @@ toa$Total_Obligation_Authority<-toa$Total_Obligation_Authority*1000000
 toa<-deflate(toa,money_var = "Total_Obligation_Authority",deflator_var="OMB24_GDP22")
 toa$dFYear<-as.Date(paste(toa$Fiscal_Year,1,1,sep="-"))
 
+def_data$YTD<-ifelse(def_data$Fiscal_Year==max(def_data$Fiscal_Year),"YTD","Full Year")
+summary(factor(def_data$YTD))
+full_data$YTD<-ifelse(full_data$Fiscal_Year==max(full_data$Fiscal_Year),"YTD","Full Year")
+
+
 ```
 
 # Topline
@@ -78,13 +83,13 @@ toa$dFYear<-as.Date(paste(toa$Fiscal_Year,1,1,sep="-"))
 
 (toplineq<-build_plot(data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2023.2),#rbind(quarterly,q2021,e2021),
                      chart_geom="Bar Chart",
-                     x_var="dFYear",
+                     x_var="dFYear",alpha_var="YTD",
                      y_var="Action_Obligation_OMB24_GDP22",
            color_var="fiscal_quarter",
            format = TRUE,
            labels_and_colors = def_lc,
            column_key=def_ck
-       )+date_x_year_breaks(2000,2023,2)+
+       )+date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
     # geom_path(aes(x=dFYear,y=Action_Obligation_OMB24_GDP22,color=TOA))+
   # scale_alpha_discrete(range=c(0.4,1))+
     # labs(x="Fiscal Year",y="Constant FY 2022 $ Billions",fill="Contract",color="Budget",
@@ -107,10 +112,9 @@ ggsave600dpi("..//Output//AcqTrends//toplineqr_keynote.svg", toplineq+
              )
 
 log_plot(plot=toplineq, df=def_data   %>% filter(Fiscal_YQ<=2023.2),
-                     filename="acq_fig2_1_fq",xlsx="DoD_Acq_Trends_Contracts.xlsx",
-                     sheet="2-2 FYQ",path="../output/AcqTrends/", height=3,
-                     startRow=1,startCol=12,format=TRUE,#var_list=c("Source","fiscal_quarter"),
-         output_plot=FALSE
+                     filename="acq_fig2_2_fq",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+                     sheet="2-2 FYQ",path="../output/AcqTrends/", height=3.25,
+                     startRow=1,startCol=12,format=TRUE,#var_list=c("Source","fiscal_quarter")
          )
 
 ```
@@ -119,14 +123,15 @@ log_plot(plot=toplineq, df=def_data   %>% filter(Fiscal_YQ<=2023.2),
 ```{r TOAannual}
 
 
-fpds_annual<-full_data %>% group_by(Fiscal_Year,dFYear,IsFMS,
-                                    ContractingCustomer) %>% summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE),
+fpds_annual<-full_data %>% filter(Fiscal_YQ<=2023.2) %>% group_by(Fiscal_Year,dFYear,IsFMS,
+                                    ContractingCustomer,YTD) %>% summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE),
                                                                        Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))
 fpds_annual$Series<-"Contract Obligations"
 toa$ContractingCustomer<-"Defense"
 toa$Action_Obligation_OMB24_GDP22<-NA
 toa$Action_Obligation_Then_Year<-NA
 toa$Fiscal_Year<-text_to_number(toa$Fiscal_Year)
+toa$YTD<-NA
 toa$IsFMS<-0
 fpds_annual$Total_Obligation_Authority_Then_Year<-NA
 fpds_annual$Total_Obligation_Authority_OMB24_GDP22<-NA
@@ -146,7 +151,8 @@ fpds_annual$TOA<-"Total Obligation Authority"
 
 (topline<-build_plot(data=fpds_annual %>% filter(Fiscal_Year>=1990),#rbind(quarterly,q2021,e2021),
                      chart_geom="Bar Chart",
-                     x_var="dFYear",
+                     x_var="dFYear",alpha_var="YTD",
+                     alpha="YTD",
                      y_var="Action_Obligation_OMB24_GDP22",
            color_var="FMS"
        )+
@@ -155,8 +161,7 @@ fpds_annual$TOA<-"Total Obligation Authority"
     labs(x="Fiscal Year",y="Constant FY 2022 $ Billions",fill="Contract",color="Budget",
          caption="Source: FPDS, FY 2024 DoD Greenbook, CSIS Analysis")+
     theme(legend.position = "right")+
-    scale_x_date(breaks=as.Date(c(paste(seq(1990,2028,3),"-01-01",sep=""))),
-                                                   date_labels="'%y")
+    date_x_year_breaks(1990,2028,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))
 )
 
 
@@ -208,7 +213,7 @@ ToplineCompMulti<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Competition.multisum", #color_var
   # facet_var="Competition.sum", #facet_var
@@ -237,7 +242,7 @@ ToplineComp<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Competition.sum", #color_var
   # facet_var="Competition.sum", #facet_var
@@ -268,7 +273,7 @@ ToplineCompLine<-build_plot(
   share = TRUE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Competition.sum", #color_var
   # facet_var="Competition.sum", #facet_var
@@ -418,7 +423,7 @@ ToplineVendor<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Shiny.VendorSize", #color_var
   # facet_var="Competition.sum", #facet_var
@@ -445,7 +450,7 @@ ToplineVendor_line<-build_plot(
   chart_geom = "Line Chart",
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Shiny.VendorSize", #color_var
   # facet_var="Competition.sum", #facet_var
@@ -519,7 +524,7 @@ ToplineVehicle<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="SimpleArea", #color_var
   facet_var="Vehicle.sum7", #facet_var
@@ -550,7 +555,7 @@ ToplineVehicle7<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Vehicle.sum7", #color_var
   facet_var="Vehicle.AwardTask", #facet_var
@@ -579,7 +584,7 @@ ToplineVehicle<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Vehicle.sum", #color_var
   facet_var="Vehicle.AwardTask", #facet_var
@@ -654,8 +659,6 @@ log_plot(plot=ToplineVehicle7, df=def_data %>% filter(Fiscal_YQ<=2023.2),
 
 ## Topline Pricing
 ```{r ToplinePricing}
-def_data$YTD<-ifelse(def_data$Fiscal_Year==max(def_data$Fiscal_Year),"YTD","Full Year")
-summary(factor(def_data$YTD))
 
 def_data$PricingUCA.sumlong<-def_data$PricingUCA.sum
 levels(def_data$PricingUCA.sumlong)<-list("Firm-Fixed-Price"="FFP",
@@ -671,7 +674,7 @@ ToplinePricing<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="PricingUCA", #color_var
   facet_var="PricingUCA.sumlong", #facet_var
@@ -730,7 +733,7 @@ PricingHistory<-build_plot(
   share = TRUE,
   labels_and_colors=hist_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="PricingInflation", #color_var
   # facet_var="PricingUCA.sumlong", #facet_var
@@ -791,7 +794,7 @@ Commercial<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="AnyCommercialText", #color_var
   # facet_var="SubCustomer.platform", #facet_var
@@ -862,7 +865,7 @@ CurDuration<-build_plot(
   share = TRUE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="CurrentDurationCategory", #color_var
   # facet_var="SubCustomer.platform", #facet_var
@@ -891,7 +894,7 @@ UnmDuration<-build_plot(
   share = TRUE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="UnmodifiedUltimateDurationCategory", #color_var
   # facet_var="SubCustomer.platform", #facet_var
@@ -975,7 +978,7 @@ VehicleMultiYear<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="multiyearcontracttext", #color_var
   facet_var="Vehicle",
@@ -1005,7 +1008,7 @@ VehicleMultiYearShare<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="pPlatFYear", #VAR.y.variable
   color_var="multiyearcontracttext", #color_var
   facet_var="Vehicle.sum7",
@@ -1106,7 +1109,7 @@ PSR_Q<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="fiscal_quarter", #color_var
   facet_var="SimpleArea", #facet_var
@@ -1241,7 +1244,7 @@ RnDphasePlusOTA<-build_plot(
   share = FALSE,
   labels_and_colors=prepare_labels_and_colors(merge),
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="ProductServiceOrRnDarea", #color_var
   column_key=column_key,
@@ -1448,7 +1451,7 @@ SimpleVendor_dollar<-build_plot(
   chart_geom = "Bar Chart",
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Shiny.VendorSize", #color_var
   facet_var="SimpleArea", #facet_var
@@ -1480,7 +1483,7 @@ SimpleVendor_share<-build_plot(
   chart_geom = "Bar Chart",
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Shiny.VendorSize", #color_var
   facet_var="SimpleArea", #facet_var
@@ -1518,7 +1521,7 @@ PSRComp_line<-build_plot(
   share = TRUE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Competition.multisum", #color_var
   facet_var="SimpleArea", #facet_var
@@ -1549,7 +1552,7 @@ PSRComp_bar<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Competition.multisum", #color_var
   facet_var="SimpleArea", #facet_var
@@ -1579,7 +1582,7 @@ PSRComp_line<-build_plot(
   share = TRUE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Competition.multisum", #color_var
   facet_var="SimpleArea", #facet_var
@@ -1662,7 +1665,7 @@ PSRMultiYear<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="multiyearcontracttext", #color_var
   facet_var="SimpleArea",
@@ -1692,7 +1695,7 @@ PSRMultiYearShare<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="pPlatFYear", #VAR.y.variable
   color_var="multiyearcontracttext", #color_var
   facet_var="SimpleArea",
@@ -1745,7 +1748,7 @@ SubCustomer<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="SubCustomer.JPO", #color_var
   facet_var="SubCustomer.sum", #facet_var
@@ -1762,8 +1765,9 @@ SubCustomer<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
-)#+date_x_year_breaks(1990,2022, by=4)
+  labs(y="Obligations (Constant 2022 $s)") +date_x_year_breaks(1990,2020,10,partial_year=2023,partial_label="\nQ1-Q2")+
+  scale_alpha_ordinal(range=c(1,0.5))
+)
 
 ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.png", SubCustomer, 
              width=12, height= 6, units="in",size=12,lineheight = 1.2
@@ -1776,15 +1780,16 @@ ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.svg", SubCustomer+facet
 ggsave600dpi("..//Output//AcqTrends//topline_subcustomer_keynote.svg", SubCustomer+
                facet_wrap(~SubCustomer.sum,nrow=1)+
                labs(title="DOD Contract Obligations by Component, 1990-2022")+
-               date_x_year_breaks(1990,2022, by=5), 
+               date_x_year_breaks(1990,2020,10,partial_year=2023,partial_label="\nQ1-Q2"), 
              width=13, height= 5.5, units="in", size=20, lineheight = 0.75
              )
 
-log_plot(plot=SubCustomer, df=def_data %>% filter(Fiscal_YQ<=2023.2),
-                     filename="acq_fig2_2_subcustomer",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+log_plot(plot=SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1)+
+               labs(title="DOD Contract Obligations by Component, 1990-2022"),
+         df=def_data %>% filter(Fiscal_YQ<=2023.2),
+                     filename="acq_fig2_3_subcustomer",xlsx="DoD_Acq_Trends_Contracts.xlsx",
                      sheet="2-3 Cust",path="../output/AcqTrends/", height=3.5,
-                     startRow=1,startCol=13,format=TRUE,var_list=c("SubCustomer.sum","SubCustomer.JPO"),
-         output_plot=FALSE
+                     startRow=1,startCol=13,format=TRUE,var_list=c("SubCustomer.sum","SubCustomer.JPO")
          )
 
 ```
@@ -1902,7 +1907,7 @@ SubCustomerComp_line<-build_plot(
   share = TRUE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Competition.effective.only", #color_var
   facet_var="SubCustomer.platform", #facet_var
@@ -1979,7 +1984,7 @@ PricingHistory<-build_plot(
   share = TRUE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="PricingInflation", #color_var
   facet_var="SubCustomer.platform", #facet_var
@@ -2050,7 +2055,7 @@ CommercialCust<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="AnyCommercialText", #color_var
   facet_var="SubCustomer.platform", #facet_var
@@ -2139,7 +2144,7 @@ Platform<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="PlatformPortfolio", #color_var
   facet_var="PlatformPortfolio", #facet_var
@@ -2180,7 +2185,7 @@ Platform_Bar<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="PlatformPortfolio", #color_var
   facet_var="PlatformPortfolio", #facet_var
@@ -2233,7 +2238,7 @@ for(s in c("Army","Navy","Air Force")){
       share = FALSE,
       labels_and_colors=labels_and_colors,
       # NA, #VAR.ncol
-      x_var="dFYear", #x_var
+      x_var="dFYear",alpha_var="YTD", #x_var
       y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
       color_var="PlatformPortfolio", #color_var
       facet_var="PlatformPortfolio", #facet_var
@@ -2274,7 +2279,7 @@ for(s in c("Army","Navy","Air Force")){
 #   share = FALSE,
 #   labels_and_colors=labels_and_colors,
 #   # NA, #VAR.ncol
-#   x_var="dFYear", #x_var
+#   x_var="dFYear",alpha_var="YTD", #x_var
 #   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
 #   color_var="PlatformPortfolio", #color_var
 #   facet_var="PlatformPortfolio", #facet_var
@@ -2325,7 +2330,7 @@ PlatformSubCustomer<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="SubCustomer.platform", #color_var
   facet_var="PlatformPortfolio", #facet_var
@@ -2361,7 +2366,7 @@ PlatformPSR<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="SimpleArea", #color_var
   facet_var="PlatformPortfolio", #facet_var
@@ -2398,7 +2403,7 @@ PlatformProducts<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="SimpleArea", #color_var
   facet_var="PlatformPortfolio", #facet_var
@@ -2444,7 +2449,7 @@ PlatformRnD<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="SimpleArea", #color_var
   facet_var="PlatformPortfolio", #facet_var
@@ -2479,7 +2484,7 @@ PlatformQ<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="fiscal_quarter", #color_var
   facet_var="PlatformPortfolio", #facet_var
@@ -2507,7 +2512,7 @@ OnMQ<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="fiscal_quarter", #color_var
   facet_var="PlatformPortfolio", #facet_var
@@ -2600,7 +2605,7 @@ PlatformVendor_share<-build_plot(
   share = TRUE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Shiny.VendorSize", #color_var
   facet_var="PlatformPortfolio", #facet_var
@@ -2634,7 +2639,7 @@ PlatformVendor_dollar<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Shiny.VendorSize", #color_var
   facet_var="PlatformPortfolio", #facet_var
@@ -2682,7 +2687,7 @@ PlatformComp_bar<-build_plot(
   share = TRUE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Competition.multisum", #color_var
   facet_var="PlatformPortfolio", #facet_var
@@ -2710,7 +2715,7 @@ PlatformComp_line<-build_plot(
   share = TRUE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Competition.effective.only", #color_var
   facet_var="PlatformPortfolio", #facet_var
@@ -2834,7 +2839,7 @@ PlatformMultiYear<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="multiyearcontracttext", #color_var
   facet_var="PlatformPortfolio",
@@ -2865,7 +2870,7 @@ PlatformMultiYearShare<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="pPlatFYear", #VAR.y.variable
   color_var="multiyearcontracttext", #color_var
   facet_var="PlatformPortfolio",
@@ -2947,7 +2952,7 @@ Platform_Ukr_Bar<-build_plot(
   share = FALSE,
   labels_and_colors=ukr_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="IsUkraine", #color_var
   facet_var="PlatformPortfolio", #facet_var
@@ -3001,7 +3006,7 @@ ToplineVendor<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Shiny.VendorSize", #color_var
   # facet_var="Competition.sum", #facet_var
@@ -3028,7 +3033,7 @@ ToplineVendor_line<-build_plot(
   chart_geom = "Line Chart",
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Shiny.VendorSize", #color_var
   # facet_var="Competition.sum", #facet_var
@@ -3100,7 +3105,7 @@ ToplineVendorIntl<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="VendorSize_Intl", #color_var
   # facet_var="Competition.sum", #facet_var
@@ -3155,7 +3160,7 @@ VendorSizeVehicle<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Vehicle.sum", #color_var
   facet_var="Shiny.VendorSize", #facet_var
@@ -3184,7 +3189,7 @@ VendorSizeVehicleSum<-build_plot(
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Vehicle.AwardTask", #color_var
   facet_var="Shiny.VendorSize", #facet_var
@@ -3213,7 +3218,7 @@ VendorSizeVehicleSumLine<-build_plot(
   share = TRUE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Vehicle.AwardTask", #color_var
   facet_var="Shiny.VendorSize", #facet_var
@@ -3288,7 +3293,7 @@ ToplineVendor_line<-build_plot(
   chart_geom = "Line Chart",
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Shiny.VendorSize", #color_var
   facet_var="AnyCommercial", #facet_var
@@ -3315,7 +3320,7 @@ ToplineVendor_line<-build_plot(
   chart_geom = "Bar Chart",
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="AnyCommercial", #color_var
   facet_var="Shiny.VendorSize", #facet_var
@@ -3356,7 +3361,7 @@ VendorSizePricing<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="PricingUCA.sum", #color_var
   facet_var="Shiny.VendorSize", #facet_var
@@ -3481,7 +3486,7 @@ GFEcust<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="gfe_gfp_value", #color_var
   facet_var="SubCustomer.platform", #facet_var
@@ -3511,7 +3516,7 @@ GFEplat<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="gfe_gfp_value", #color_var
   facet_var="PlatformPortfolio", #facet_var
@@ -3541,7 +3546,7 @@ GFEcomp<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Competition.detail", #color_var
   facet_var="gfe_gfp_value", #facet_var
@@ -3602,7 +3607,7 @@ CAS<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="costaccountingstandardsclause", #color_var
   facet_var="SubCustomer.platform", #facet_var
@@ -3630,7 +3635,7 @@ CAS<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="costaccountingstandardsclause", #color_var
   facet_var="PlatformPortfolio", #facet_var
@@ -3658,7 +3663,7 @@ CAS<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="Competition.detail", #color_var
   facet_var="costaccountingstandardsclause", #facet_var
@@ -3686,7 +3691,7 @@ CAS<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="AnyCommercial", #color_var
   facet_var="costaccountingstandardsclause", #facet_var
@@ -3744,7 +3749,7 @@ EE<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="EnergyEfficient", #color_var
   facet_var="SubCustomer.platform", #facet_var
@@ -3772,7 +3777,7 @@ EE<-build_plot(
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="EnergyEfficient", #color_var
   facet_var="PlatformPortfolio", #facet_var
@@ -4037,7 +4042,7 @@ full_data$OriginManufactureVendor<-full_data$PlaceOfManufacture_DoD
                                                    VendorIsForeign==1|OriginIsForeign==1)  %>%filter(!is.na(SimpleArea) & SimpleArea!="Unlabeled"),
                             chart_geom="Bar Chart",
                             share=FALSE,
-                            x_var="dFYear",
+                            x_var="dFYear",alpha_var="YTD",
                             y_var="Action_Obligation_OMB24_GDP22",
                             color_var="PlaceOfManufacture_DoD",
                             facet_var="SimpleArea",
@@ -4106,7 +4111,7 @@ full_data$PlaceOfManufacture_DoD09<-factor_wrap(full_data$PlaceOfManufacture_DoD
                                filter(Fiscal_Year>=2009),
                             chart_geom="Bar Chart",
                             share=FALSE,
-                            x_var="dFYear",
+                            x_var="dFYear",alpha_var="YTD",
                             y_var="Action_Obligation_OMB24_GDP22",
                             color_var="PlaceOfManufacture_DoD09",
                             facet_var="Service",
@@ -4221,7 +4226,7 @@ summary(factor(full_data$PlaceOfManufactureText20))
                                                      ),
                             chart_geom="Bar Chart",
                             share=FALSE,
-                            x_var="dFYear",
+                            x_var="dFYear",alpha_var="YTD",
                             y_var="Action_Obligation_OMB24_GDP22",
                             color_var="OriginManufactureVendor20",
                             facet_var="PlaceStateRegionSum",
@@ -4333,7 +4338,7 @@ full_data$place
                                                    VendorIsForeign==1|OriginIsForeign==1) ,
                             chart_geom="Bar Chart",
                             share=FALSE,
-                            x_var="dFYear",
+                            x_var="dFYear",alpha_var="YTD",
                             y_var="Action_Obligation_OMB24_GDP22",
                             color_var="PlaceOfManufacture_Sum",
                             facet_var="OriginStateRegion",
@@ -4458,7 +4463,7 @@ summary(ota_def$dFYear)
                                                                   VendorAddressISOalpha3 %in% ntibisoalpha3) &
                                                                             Fiscal_Year>2011 & !is.na(VendorAddressISOalpha3)),#VendorAddressISOalpha3==TRUE                             
                                             chart_geom="Bar Chart",
-                            x_var="dFYear",
+                            x_var="dFYear",alpha_var="YTD",
                             y_var="Action_Obligation_OMB24_GDP22",
                             color_var="PlatformPortfolioUAV",
                             facet_var="VendorNTIB",
@@ -4476,7 +4481,7 @@ summary(ota_def$dFYear)
                                                                   VendorAddressISOalpha3 %in% ntibisoalpha3) &
                                                                             Fiscal_Year>2011 & !is.na(VendorAddressISOalpha3)),#VendorAddressISOalpha3==TRUE                             
                                             chart_geom="Bar Chart",
-                            x_var="dFYear",
+                            x_var="dFYear",alpha_var="YTD",
                             y_var="Action_Obligation_OMB24_GDP22",
                             color_var="SubCustomer.OTA",
                             facet_var="VendorNTIB",
