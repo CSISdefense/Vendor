@@ -339,6 +339,7 @@ EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCus
 		@PlatformPortfolio =NULL
 		
 
+		set QUERY_GOVERNOR_COST_LIMIT  0
 
 		
 SET ANSI_WARNINGS OFF;
@@ -352,13 +353,12 @@ SET NOCOUNT ON;
 --6h13m 10,891,220 post FPDS.partial
 --6h39m 11,007,974 post UEI implementation.
 --5h11m 11,343,896 more vendor classifications and 
-DECLARE	@return_value int
-EXEC	@return_value = budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS
+--7h46m 11,391,836 after more labeling.
+EXEC	budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS
 		@Customer = NULL
 		
 
-		set QUERY_GOVERNOR_COST_LIMIT  0
-
+		
 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
