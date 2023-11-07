@@ -654,6 +654,9 @@ log_plot(plot=ToplineVehicle7, df=def_data %>% filter(Fiscal_YQ<=2023.2),
 
 ## Topline Pricing
 ```{r ToplinePricing}
+def_data$YTD<-ifelse(def_data$Fiscal_Year==max(def_data$Fiscal_Year),"YTD","Full Year")
+summary(factor(def_data$YTD))
+
 def_data$PricingUCA.sumlong<-def_data$PricingUCA.sum
 levels(def_data$PricingUCA.sumlong)<-list("Firm-Fixed-Price"="FFP",
                                            "Less Common"="Less Common",
@@ -674,8 +677,9 @@ ToplinePricing<-build_plot(
   facet_var="PricingUCA.sumlong", #facet_var
   column_key=column_key,
   format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  ytextposition=FALSE,
+  alpha_var="YTD",
+)+date_x_year_breaks(2000,2020,5,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
@@ -687,6 +691,10 @@ ToplinePricing<-build_plot(
   theme(legend.position = "right")+
   labs(y="Obligations (Constant 2022 $s)")
 )
+
+
+
+
 
 ggsave600dpi("..//Output//AcqTrends//topline_pricing.png", ToplinePricing,  
              width=12, height= 6, units="in",size=12, lineheight=1.2

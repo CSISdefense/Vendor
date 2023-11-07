@@ -44,13 +44,6 @@ initial_clean<-function(df,only_defense=TRUE){
   df
 }
 
-# full_data %>% filter(fiscal_year==2021) %>% summarise(o=sum(SumOfobligatedAmount))
-
-# full_data <- read_delim(
-#   "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerpcau.txt",delim = "\t",
-#   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
-
-
 
 #############Full Data and Fed Data##########
 
@@ -136,7 +129,13 @@ labels_and_colors<-csis360::prepare_labels_and_colors(full_data %>% select(-reco
 
 column_key<-csis360::get_column_key(full_data)
 
+full_data$Fiscal_YQ[!is.na(full_data$fiscal_quarter_YTD)]<-text_to_number(paste(full_data$Fiscal_Year[!is.na(full_data$fiscal_quarter_YTD)],
+                                                                          text_to_number(full_data$fiscal_quarter_YTD[!is.na(full_data$fiscal_quarter_YTD)]),sep="."))
+full_data$Fiscal_YQ[is.na(full_data$Fiscal_YQ)]<-full_data$Fiscal_Year[is.na(full_data$Fiscal_YQ)]
+
 save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
+
+
 
 fpds_lc<-csis360::prepare_labels_and_colors(full_data %>% select(-recoveredmaterialclauses))
 
@@ -461,101 +460,7 @@ save(pricing,pricing_lc,pricing_ck, file="data/clean/pricing_historical.Rda")
 
 
 
-# write output to CleanedVendorSize.csv
-# save(full_data,labels_and_colors,column_key, file="Shiny Apps//FPDS_chart_maker//2018_unaggregated_FPDS.Rda")
 
-# # 
-# partial_2018 <- read_delim(
-#   "Data//Single_Year_Summary_2019-02-25.csv",delim = ",")
-# colnames(partial_2018)[colnames(partial_2018)=="X9"]<-"ContractActions"
-# 
-# sum(text_to_number(partial_2018$`Action Obligation`))
-# # 
-# # 
-# partial_2018<-standardize_variable_names(partial_2018)
-# 
-# 
-# colnames(partial_2018)[colnames(partial_2018)=="Contracting.Agency.ID"]<-"AgencyID"
-# partial_2018$Action_Obligation<-text_to_number(partial_2018$Action_Obligation)
-# partial_2018$Fiscal.Year<-2018
-# sum(partial_2018$Action_Obligation)
-# 
-# 
-# partial_2018<-deflate(partial_2018,
-#                    money_var = "Action_Obligation",
-#                    deflator_var="OMB19_19"
-# )
-# 
-# partial_2018<-deflate(partial_2018,
-#                       money_var = "Action_Obligation",
-#                       deflator_var="OMB20_GDP20"
-# )
-# 
-# sum(partial_2018$Action_Obligation.Then.Year)
-# # 
-# partial_2018<-transform_contract(partial_2018)
-# 
-# 
-# 
-
-# 
-# sum(partial_2018$Action_Obligation.Then.Year)
-
-# partial_2018<-partial_2018%>%filter(ContractingCustomer=="Defense")
-# 
-# #Classify Product or Service Codes
-# partial_2018<-csis360::read_and_join(partial_2018,
-#                                   "LOOKUP_Buckets.csv",
-#                                   # by="ProductOrServiceArea",
-#                                   by="ProductServiceOrRnDarea",
-#                                   replace_na_var="ProductServiceOrRnDarea",
-#                                   add_var="ProductServiceOrRnDarea.sum",
-#                                   path="https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/",
-#                                   dir="Lookups/"
-# )
-# 
-# 
-# partial_2018<-replace_nas_with_unlabeled(partial_2018,"SubCustomer","Uncategorized")
-# partial_2018<-csis360::read_and_join(partial_2018,
-#                                   "Lookup_SubCustomer.csv",
-#                                   by=c("ContractingCustomer","ContractingSubCustomer"),
-#                                   add_var="SubCustomer.platform",
-#                                   path="https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/",
-#                                   dir="Lookups/"
-# )
-# 
-# 
-# colnames(partial_2018)[colnames(partial_2018)=="Fiscal.Year"]<-"fiscal_year"
-# colnames(partial_2018)[colnames(partial_2018)=="ContractActions"]<-"NumberOfActions"
-# 
-# colnames(partial_2018)[colnames(partial_2018) %in% colnames(full_data)]
-# colnames(full_data)[!colnames(full_data) %in% colnames(partial_2018)]
-# 
-# 
-# 
-# 
-# partial_2018<-partial_2018 %>% group_by(ProductServiceOrRnDarea,
-#                                         ProductServiceOrRnDarea.sum,
-#                           ContractingSubCustomer,
-#                           SubCustomer.platform,
-#                           fiscal_year) %>%
-#   dplyr::summarize(Action_Obligation.Then.Year=sum(Action_Obligation.Then.Year,na.rm=TRUE),
-#                    Action_Obligation.OMB.2019=sum(Action_Obligation.OMB.2019,na.rm=TRUE),
-#                    NumberOfActions=sum(NumberOfActions,na.rm=TRUE))
-# 
-# 
-# 
-# partial_2018$PlatformPortfolio<-"Unlabeled"
-# partial_2018$Vendor.Size<-"Unlabeled"
-# partial_2018$CompetitionClassification<-"Unlabeled"
-# partial_2018$ClassifyNumberOfOffers<-"Unlabeled"
-# partial_2018$Shiny.VendorSize<-"Unlabeled"
-# partial_2018$Competition.sum<-"Unlabeled"
-# partial_2018$Competition.effective.only<-"Unlabeled"
-# partial_2018$Competition.multisum<-"Unlabeled"
-# partial_2018$No.Competition.sum<-"Unlabeled"
-# 
-# full_data<-rbind(full_data,as.data.frame(partial_2018))
 # 
 # 
 # 
