@@ -87,12 +87,7 @@ full_data$YTD<-ifelse(full_data$Fiscal_Year==max(full_data$Fiscal_Year),"YTD","F
            format = TRUE,
            labels_and_colors = def_lc,
            column_key=def_ck
-       )+date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-    # geom_path(aes(x=dFYear,y=Action_Obligation_OMB24_GDP22,color=TOA))+
-  # scale_alpha_discrete(range=c(0.4,1))+
-    # labs(x="Fiscal Year",y="Constant FY 2022 $ Billions",fill="Contract",color="Budget",
-    #      caption="Source: FPDS, CSIS Analysis")+
-    theme(legend.position = "right")+
+       )+date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))    theme(legend.position = "right")+
   labs(y="Obligations (Constant 2022 $s)")
 )
 
@@ -116,6 +111,70 @@ log_plot(plot=toplineq, df=def_data   %>% filter(Fiscal_YQ<=2023.2),
          )
 
 ```
+
+### Quarterly Plat Breakout
+```{r QuartPlatBreakout} 
+platform_levels<-levels(factor(def_data$PlatformPortfolio))
+for(p in platform_levels){
+  file_p<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",p)))
+  (Breakout<-build_plot(
+    data=def_data %>% filter(Fiscal_Year>=2000&Fiscal_YQ<=2023.2&PlatformPortfolio==p),
+                     chart_geom="Bar Chart",
+                     x_var="dFYear",alpha_var="YTD",
+                     y_var="Action_Obligation_OMB24_GDP22",
+           color_var="fiscal_quarter",
+           format = TRUE,
+           labels_and_colors = def_lc,
+           column_key=def_ck
+       )+
+      date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5)) +   theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)",title=p)
+)
+  
+  if(!dir.exists(file.path("../output/AcqTrends/Platform",file_p)))
+    dir.create(file.path("../output/AcqTrends/Platform",file_p))
+  undebug(log_plot)
+  log_plot(plot=Breakout, df=def_data  %>% filter(Fiscal_YQ<=2023.2&PlatformPortfolio==p),
+           filename=paste(file_p,"FYQ",sep="_"),xlsx=paste("DoD",file_p,"Contracts.xlsx",sep="_"),
+           sheet="FYQ",path=file.path("../output/AcqTrends/Platform/",file_p), height=3.5,
+           startRow=1,startCol=13,format=TRUE,var_list=c("Vehicle.AwardTask","Vehicle.sum7"),
+           output_doc_png=TRUE,excel_y_var=TRUE
+           )
+  
+}
+```
+
+### Quarterly Cust Breakout
+```{r QuartCustBreakout} 
+subcustomer_levels<-levels(factor(def_data$SubCustomer.sum))
+for(c in subcustomer_levels){
+  file_c<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",c)))
+  (Breakout<-build_plot(
+    data=def_data %>% filter(Fiscal_Year>=2000&SubCustomer.sum==c& Fiscal_YQ<=2023.2),
+                    chart_geom="Bar Chart",
+                     x_var="dFYear",alpha_var="YTD",
+                     y_var="Action_Obligation_OMB24_GDP22",
+           color_var="fiscal_quarter",
+           format = TRUE,
+           labels_and_colors = def_lc,
+           column_key=def_ck
+       )+
+      date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5)) +   theme(legend.position = "right")+
+     labs(y="Obligations (Constant 2022 $s)",title=c))
+  
+  if(!dir.exists(file.path("../output/AcqTrends/Customer",file_c)))
+    dir.create(file.path("../output/AcqTrends/Customer",file_c))
+  
+  log_plot(plot=Breakout, df=def_data  %>% filter(Fiscal_YQ<=2023.2&SubCustomer.sum==c),
+           filename=paste(file_c,"FYQ",sep="_"),xlsx=paste(file_c,"Contracts.xlsx",sep="_"),
+           sheet="FYQ",path=file.path("../output/AcqTrends/Customer/",file_c), height=3.5,
+           startRow=1,startCol=13,format=TRUE,var_list=c("Vehicle.AwardTask","Vehicle.sum7"),
+           output_doc_png=TRUE,excel_y_var=TRUE
+           )
+  
+}
+```
+
 
 ## Topline and TOA
 ```{r TOAannual}
@@ -634,8 +693,8 @@ log_plot(plot=ToplineVehicle7, df=def_data %>% filter(Fiscal_YQ<=2023.2),
 platform_levels<-levels(factor(def_data$PlatformPortfolio))
 for(p in platform_levels){
   file_p<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",p)))
-  (BreakoutPricing<-build_plot(
-    data=def_data %>% filter(Fiscal_Year>=2000&PlatformPortfolio==p),
+  (Breakout<-build_plot(
+    data=def_data %>% filter(Fiscal_Year>=2000&Fiscal_YQ<=2023.2&PlatformPortfolio==p),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -649,7 +708,7 @@ for(p in platform_levels){
   ytextposition=FALSE
 )+date_x_year_breaks(2000,2022,2,partial_year=2023,partial_label="\nQ1-Q2")+   scale_alpha_ordinal(range=c(1,0.5))+
   theme(legend.position = "right")+
-    labs(y="Obligations (Constant 2022 $s)",main=p))
+    labs(y="Obligations (Constant 2022 $s)",title=p))
 
   if(!dir.exists(file.path("../output/AcqTrends/Platform",file_p)))
     dir.create(file.path("../output/AcqTrends/Platform",file_p))
@@ -684,7 +743,7 @@ for(c in subcustomer_levels){
   ytextposition=FALSE
 )+date_x_year_breaks(2000,2022,2,partial_year=2023,partial_label="\nQ1-Q2")+   scale_alpha_ordinal(range=c(1,0.5))+
   theme(legend.position = "right")+
-    labs(y="Obligations (Constant 2022 $s)",main=c))
+    labs(y="Obligations (Constant 2022 $s)",title=c))
   
   if(!dir.exists(file.path("../output/AcqTrends/Customer",file_c)))
     dir.create(file.path("../output/AcqTrends/Customer",file_c))
@@ -947,7 +1006,7 @@ platform_levels<-levels(factor(def_data$PlatformPortfolio))
 for(p in platform_levels){
   file_p<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",p)))
   (Breakout<-build_plot(
-    data=def_data %>% filter(Fiscal_Year>=2000&PlatformPortfolio==p),
+    data=def_data %>% filter(Fiscal_Year>=2000&Fiscal_YQ<=2023.2&PlatformPortfolio==p),
     chart_geom = "Bar Chart",
     share = FALSE,
     labels_and_colors=labels_and_colors,
@@ -962,7 +1021,7 @@ for(p in platform_levels){
     alpha_var="YTD",
   )+date_x_year_breaks(2000,2020,6,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
     theme(legend.position = "right")+
-    labs(y="Obligations (Constant 2022 $s)",main=p))
+    labs(y="Obligations (Constant 2022 $s)",title=p))
 
   if(!dir.exists(file.path("../output/AcqTrends/Platform",file_p)))
     dir.create(file.path("../output/AcqTrends/Platform",file_p))
@@ -998,7 +1057,7 @@ for(c in subcustomer_levels){
     alpha_var="YTD",
   )+date_x_year_breaks(2000,2020,6,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
     theme(legend.position = "right")+
-    labs(y="Obligations (Constant 2022 $s)",main=c))
+    labs(y="Obligations (Constant 2022 $s)",title=c))
   
   if(!dir.exists(file.path("../output/AcqTrends/Customer",file_c)))
     dir.create(file.path("../output/AcqTrends/Customer",file_c))
@@ -1422,7 +1481,7 @@ for(p in platform_levels){
   ytextposition=FALSE
 )+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",main=p)+
+  labs(y="Obligations (Constant 2022 $s)",title=p)+
   date_x_year_breaks(1990,2020,5,partial_year=2023,partial_label="\nQ1-Q2")+
   scale_alpha_ordinal(range=c(1,0.5))
 )
@@ -1461,7 +1520,7 @@ for(c in subcustomer_levels){
   ytextposition=FALSE
 )+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",main=c)+
+  labs(y="Obligations (Constant 2022 $s)",title=c)+
   date_x_year_breaks(1990,2020,5,partial_year=2023,partial_label="\nQ1-Q2")+
   scale_alpha_ordinal(range=c(1,0.5))
 )

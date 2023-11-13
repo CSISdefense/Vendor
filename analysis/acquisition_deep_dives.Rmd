@@ -681,6 +681,46 @@ write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE, na = ""
 # Platforms and Top Projects / PSC
 
 
+### Project Plat Breakout
+```{r VehPlatBreakout} 
+platform_levels<-levels(factor(def_data$PlatformPortfolio))
+
+
+for(p in platform_levels){
+  file_p<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",p)))
+  
+  (Breakout<-build_plot(
+    data=platpscintldef %>% filter(Fiscal_Year>=2000&Fiscal_Year<=2022&PlatformPortfolio==p),
+ chart_geom = "Line Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="TopProject", #color_var
+  facet_var="TopProject", #facet_var
+  # column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2022 $s)",title=p)
+)
+
+  if(!dir.exists(file.path("../output/AcqTrends/Platform",file_p)))
+    dir.create(file.path("../output/AcqTrends/Platform",file_p))
+  undebug(log_plot)
+  log_plot(plot=Breakout, df=def_data  %>% filter(Fiscal_Year<=2022&PlatformPortfolio==p),
+           filename=paste(file_p,"top_project",sep="_"),xlsx=paste("DoD",file_p,"Contracts.xlsx",sep="_"),
+           sheet="Proj",path=file.path("../output/AcqTrends/Platform/",file_p), height=3.5,
+           startRow=1,startCol=14,format=TRUE,var_list=c("Vehicle.AwardTask","Vehicle.sum7"),
+           output_doc_png=TRUE,excel_y_var=TRUE
+           )
+  
+}
+```
+
+
 ## Aircraft System
 ```{r Aircraft}
 # summary(factor(platpscintldef$ProjectPlatform))
@@ -716,14 +756,6 @@ Platform<-build_plot(
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
   theme(legend.position = "none")+
   labs(y="Obligations (Constant 2021 $s)")
 )
