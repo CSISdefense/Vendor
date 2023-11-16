@@ -197,12 +197,12 @@ colnames(fpds_annual)[!colnames(fpds_annual) %in% colnames(toa)]
 fpds_annual<-rbind(as.data.frame(fpds_annual),as.data.frame(toa))# %>% dplyr::select(-fiscal_quarter)
 
 fpds_annual$FMS<-as.character(fpds_annual$IsFMS)
-fpds_annual$FMS[fpds_annual$Fiscal_Year<2012]<-"Obligations (before reliable\nFMS labels available)"
+fpds_annual$FMS[fpds_annual$Fiscal_Year<2012 | is.na(fpds_annual$IsFMS)]<-"Obligations (reliable\nFMS labels not available)"
 fpds_annual$FMS[!is.na(fpds_annual$Total_Obligation_Authority_OMB24_GDP22)]<-"Obligations (no FMS)"
 fpds_annual$FMS<-factor(fpds_annual$FMS)
 levels(fpds_annual$FMS)<-list("Obligations (includes FMS)"=c("1","Obligations (includes FMS)"),
                               "Obligations (no FMS)"=c("0","Obligations (no FMS)"),
-                              "Obligations (before reliable\nFMS labels available)"="Obligations (before reliable\nFMS labels available)")
+                              "Obligations (reliable\nFMS labels not available)"="Obligations (reliable\nFMS labels not available)")
 fpds_annual$TOA<-"Total Obligation Authority"
 
 
@@ -751,7 +751,7 @@ levels(def_data$PricingUCA.sumlong)<-list("Firm Fixed-Price"="FFP",
                                            "Unclear"="Unclear"   )
 (
 ToplinePricing<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2000),
+  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2023.2),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -1422,7 +1422,8 @@ ggsave600dpi("..//Output//AcqTrends//topline_psr.svg", ToplinePSR,
 log_plot(plot=ToplinePSR, df=def_data %>% filter(Fiscal_YQ<=2023.2),
                      filename="acq_fig3_1_area",xlsx="DoD_Acq_Trends_Contracts.xlsx",
                      sheet="3-1 Area",path="../output/AcqTrends/", height=3.5,
-                     startRow=1,startCol=12,format=TRUE,#var_list=c("SimpleArea","Competition.multisum")
+                     startRow=1,startCol=12,format=TRUE,#var_list=c("SimpleArea","Competition.multisum"),
+         excel_y_var = TRUE,excel_formulas = TRUE
          )
 
 ```
@@ -3384,7 +3385,7 @@ log_plot(PlatformMultiYearShare, full_data %>% filter(Fiscal_YQ<=2023.2) ,
                      filename="acq_fig4_2_multiyear",xlsx="DoD_Acq_Trends_Contracts.xlsx",
                      sheet="4-2 Multi",path="../output/AcqTrends/", height=3.5,excel_y_var = TRUE,excel_formulas = TRUE,
                      startRow=1,startCol=13,format=TRUE,y_var="Action_Obligation_OMB24_GDP22",
-         var_list=c("PlatformPortfolio","multiyearcontracttext")
+         var_list=c("PlatformPortfolio","multiyearcontracttext"),
          )
 
 ```

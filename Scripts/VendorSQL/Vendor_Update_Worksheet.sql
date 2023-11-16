@@ -5,15 +5,13 @@ EXEC	 [Vendor].[SP_UEIunlabeledToInvestigateContractOrderFast]
 
 EXEC	[Vendor].[SP_ParentIDToInvestigateFast]
 
-GO
-XDJBAL68ELM5
 
 GO
 	set QUERY_GOVERNOR_COST_LIMIT  0
 
 
 EXEC	 [Vendor].[sp_InvestigateParentID]
-		@parentid = N'VERTEX AEROSPACE'
+		@parentid = N'United tech'
 
 
 		RAM-System GmbH is owned by MBDA Deutschland (50%), Diehl Stiftung (25%) and Diehl BGT Defence (25%).
@@ -85,7 +83,7 @@ EXEC	[Vendor].[sp_AssignJointVentureStatus]
 
 
 EXEC	 [Vendor].[sp_InvestigateParentID]
-		@parentid = N'BEARINGPOINT [NORTH AMERICAN PUBLIC SERVICES]'
+		@parentid = N'v2x'
 
 		Battelle ; UNIVERSITY OF CALIFORNIA; UNIVERSITY OF TEXAS
 

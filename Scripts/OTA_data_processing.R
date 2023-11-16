@@ -23,10 +23,10 @@ OTA_data_current <- read_delim(
   "data_raw//OTA_All_Fields.csv",delim = ",",
   col_names = TRUE, guess_max = 500000,na=c("NA","NULL"),skip = 2)
 
-
-
 OTA_data_current<-standardize_variable_names(OTA_data_current)#,
                                              # path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+OTA_data_current$Date_Signed<-as.Date(OTA_data_current$Date_Signed,"%m/%d/%y")
+OTA_data_current$fiscal_quarter<- quarter(OTA_data_current$Date_Signed,fiscal_start=10)
 
 OTA_data_current$ProductOrServiceCode[OTA_data_current$ProductOrServiceCode=="7.00E+21"]<-"7E21"
 
@@ -37,65 +37,6 @@ OTA_data_current<-apply_standard_lookups(OTA_data_current)
 
 
 OTA_data<-OTA_data_current
-
-# 
-# initial_clean<-function(df){
-#   if(substring(df$fiscal_year[nrow(df)],1,12)=="Completion time")
-#     df<-df[-nrow(df),]
-#   
-#   df<-standardize_variable_names(df)
-#   # coerce Amount to be a numeric variable
-#   df$Action_Obligation %<>% as.numeric()
-#   if("Number.Of.Actions" %in% colnames(df)) 
-#     df$Number.Of.Actions %<>% as.numeric()
-#   df$Fiscal.Year <- as.numeric(df$Fiscal.Year)
-#   colnames(df)[colnames(df)=="Contractingcustomer"]<-"ContractingCustomer"
-#   colnames(df)[colnames(df)=="platformportfolio"]<-"PlatformPortfolio"
-#   # discard pre-2000
-#   df %<>% filter(Fiscal.Year >= 2000 & ContractingCustomer=="Defense")
-#   colnames(df)[colnames(df)=="Action_Obligation_Then_Year"]<-"Action_Obligation"
-#   colnames(df)[colnames(df)=="Fiscal.Year"]<-"fiscal_year"
-#   df$dFYear<-as.Date(paste("1/1/",as.character(df$fiscal_year),sep=""),"%m/%d/%Y")
-#   df
-# }
-
-#Consolidate categories for Vendor Size
-
-# OTA_data<-csis360::read_and_join(OTA_data,
-#   "LOOKUP_Contractor_Size.csv",
-#   by="Vendor.Size",
-#   add_var="Shiny.VendorSize",
-#   path="https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/",
-#   dir="Lookups/"
-# )
-
-
-
-# classify competition
-# OTA_data<-csis360::read_and_join(OTA_data,
-#   "Lookup_SQL_CompetitionClassification.csv",
-#   by=c("CompetitionClassification","ClassifyNumberOfOffers"),
-#   replace_na_var="ClassifyNumberOfOffers",
-#   add_var=c("Competition.sum",
-#     "Competition.multisum",
-#     "Competition.effective.only",
-#     "No.Competition.sum"),
-#   path="https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/",
-#   dir="Lookups/"
-# )
-
-# classify competition
-# OTA_data<-csis360::read_and_join(OTA_data,
-#                                   "Lookup_SQL_CompetitionClassification.csv",
-#                                   by=c("CompetitionClassification","ClassifyNumberOfOffers"),
-#                                   replace_na_var="ClassifyNumberOfOffers",
-#                                   add_var=c("Competition.sum",
-#                                             "Competition.multisum",
-#                                             "Competition.effective.only",
-#                                             "No.Competition.sum"),
-#                                   path="https://raw.githubusercontent.com/CSISdefense/R-scripts-and-data/master/",
-#                                   dir="Lookups/"
-# )
 
 #### Standard additions ####
 
@@ -123,6 +64,22 @@ levels(factor(OTA_data$ContractingAgencyName))
 
 # write.csv(colnames(OTA_data),"OTA_names.csv")
 
+OTA_data<-OTA_data %>% mutate(Fiscal_Year_gt_2020=ifelse(Fiscal_Year>2020,1,0))
+OTA_data<-csis360::read_and_join_experiment(OTA_data,
+                                            "PSCAtransition.csv",
+                                            dir="ProductOrService/",
+                                            by=c("ProductOrServiceCode"="ProductOrServiceCode",
+                                                 "Fiscal_Year_gt_2020"="Fiscal_Year_gt_2020"),
+                                            add_var=c("PlatformPortfolio"),
+                                                                              path=#"C:\\Users\\gsand\\Repositories\\Lookup-Tables\\",
+                                    "https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                            skip_check_var = c("PlatformPortfolio"),
+)
+colnames(OTA_data)[colnames(OTA_data)=="PlatformPortfolio"]<-"TransitionPlatformPortfolio"
+
+
+
+
 OTA_data<-csis360::read_and_join_experiment(OTA_data,
                                   "ProductOrServiceCodes.csv",
                                   by=c("ProductOrServiceCode"="ProductOrServiceCode"),
@@ -130,9 +87,22 @@ OTA_data<-csis360::read_and_join_experiment(OTA_data,
                                   add_var=c("PlatformPortfolio"),
                                   path=#"C:\\Users\\gsand\\Repositories\\Lookup-Tables\\",
                                     "https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                                  dir=""
+                                  dir="",
+                                  skip_check_var =  "PlatformPortfolio"
 )
 
+OTA_data$PlatformPortfolio[is.na(OTA_data$PlatformPortfolio)]<-
+  OTA_data$TransitionPlatformPortfolio[is.na(OTA_data$PlatformPortfolio)]
+
+#Manual check because we have to draw from two sources
+NA.check.OTA_data<-subset(OTA_data, is.na(PlatformPortfolio)&!is.na(ProductOrServiceCode),
+                          select=c("ProductOrServiceCode","TransitionPlatformPortfolio","PlatformPortfolio"))
+if(nrow(NA.check.OTA_data)>0){
+  print(unique(NA.check.OTA_data))
+  stop(paste(nrow(NA.check.OTA_data),"rows of NAs generated in PlatformPortfolio"))
+}
+
+OTA_data<-OTA_data %>% dplyr::select(-Fiscal_Year_gt_2020,-TransitionPlatformPortfolio)
 
 colnames(OTA_data)[colnames(OTA_data)=="PlatformPortfolio"]<-"PSCPlatformPortfolio"
 OTA_data<-read_and_join_experiment(OTA_data,
@@ -289,21 +259,6 @@ sum(OTA_data$Action_Obligation_OMB24_GDP22[OTA_data$IsRemotelyOperated],na.rm=TR
 
 OTA_data$PlatformPortfolioUAV<-as.character(OTA_data$PlatformPortfolio)
 OTA_data$PlatformPortfolioUAV[OTA_data$IsRemotelyOperated==TRUE]<-"Remotely Crewed"
-#### International #####
-
-
-
-if("PrincipalPlaceofPerformanceCountryCode" %in% colnames(df) & !"PlaceISOalpha3" %in% colnames(df)){
-  if("ISOalpha3" %in% colnames(df))
-    df<-subset(df,select=-c(ISOalpha3))
-  df<-read_and_join_experiment(df,lookup_file="Location_CountryCodes.csv",
-                               path=path,dir="location/",
-                               add_var = c("ISOalpha3"),
-                               by=c("VendorAddressCountry"="CountryName"),
-                               # skip_check_var=c("NATOyear",	"MajorNonNATOyear","NTIByear"	,"SEATOendYear","RioTreatyStartYear","RioTreatyEndYear","FiveEyes","OtherTreatyName"	,"OtherTreatyStartYear","OtherTreatyEndYear","isforeign"),
-                               missing_file="missing_VendorAddressCountry.csv")
-  colnames(df)[colnames(df)=="ISOalpha3"]<-"VendorAddressISOalpha3"
-}
 
 #### Final Cleanup ####
 # set correct data types
