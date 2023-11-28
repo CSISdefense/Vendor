@@ -125,9 +125,9 @@ full_data %<>%
   mutate(PlaceIsForeign = factor(PlaceIsForeign))
 
 
-labels_and_colors<-csis360::prepare_labels_and_colors(full_data %>% select(-recoveredmaterialclauses))
+labels_and_colors<-prepare_labels_and_colors(full_data %>% select(-recoveredmaterialclauses))
 
-column_key<-csis360::get_column_key(full_data)
+column_key<-get_column_key(full_data)
 
 full_data$Fiscal_YQ[!is.na(full_data$fiscal_quarter_YTD)]<-text_to_number(paste(full_data$Fiscal_Year[!is.na(full_data$fiscal_quarter_YTD)],
                                                                           text_to_number(full_data$fiscal_quarter_YTD[!is.na(full_data$fiscal_quarter_YTD)]),sep="."))
@@ -220,9 +220,9 @@ def_data$Fiscal_YQ[is.na(def_data$Fiscal_YQ)]<-def_data$Fiscal_Year[is.na(def_da
 def_data$PricingInflation.1yearUCA<-as.character(def_data$PricingInflation.1year)
 def_data$PricingInflation.1yearUCA[def_data$PricingUCA.sum=="UCA"]<-"UCA"
 def_data$PricingMechanism<-as.character(def_data$PricingMechanism)
-def_lc<-csis360::prepare_labels_and_colors(def_data, path=file.path(local_path,"style\\"))
+def_lc<-prepare_labels_and_colors(def_data, path=file.path(local_path,"style\\"))
 
-def_ck<-csis360::get_column_key(def_data %>% select(-PricingMechanism),path=file.path(local_path,"style\\"))
+def_ck<-get_column_key(def_data %>% select(-PricingMechanism),path=file.path(local_path,"style\\"))
 
 save(def_data,def_lc,def_ck, file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
 # load(file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
