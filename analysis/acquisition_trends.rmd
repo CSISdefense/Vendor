@@ -868,7 +868,7 @@ log_plot(plot=PricingHistory, df=PricingUpdate  %>% filter(Fiscal_Year<=2022),
 
 ### Pricing FMS
 ```{r FPDS_pricingUCA}
-
+summary(full_data$IsFMS)
 full_data$ProductOrService<-factor(full_data$SimpleArea)
 levels(full_data$ProductOrService)<-list("Products"="Products (All)",
                                          "Services & R&D"=c("R&D","Services (Non-R&D)"),
@@ -934,7 +934,7 @@ full_data<- full_data %>%      group_by(Fiscal_Year,IsFMS) %>%
 #     theme(legend.position = "right"))
 
 (fpds_pricing_psr <-  build_plot(data=full_data %>% filter(Fiscal_Year>=2012 & Fiscal_YQ<=2023.2) %>%
-                                   filter(SimpleArea!="Unlabeled"),
+                                   filter(SimpleArea!="Unlabeled" & IsFMS!="Unlabeled" & !is.na(IsFMS)),
                             chart_geom="Line Chart",
                             x_var="dFYear",
                             y_var="Action_FMS_PSR_Share",
@@ -950,12 +950,16 @@ full_data<- full_data %>%      group_by(Fiscal_Year,IsFMS) %>%
 )+date_x_year_breaks(2012,2022,2,partial_year=2023,partial_label="\nQ1–Q2")+
     scale_alpha_ordinal(range=c(1,0.5))+theme(legend.position = "right")+
     facet_grid(SimpleArea~PricingUCA)+
-    scale_y_continuous(labels = scales::percent_format(accuracy = 1)))#+
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1))+
+    labs(caption="Note: Excludes unlabeled product or service and unlabeled FMS.\nSource: FPDS; and CSIS analysis."))#+
+
      # theme(strip.text.y = element_text(angle=0)))
 
 
 # debug(buildaC_plot)
-(fpds_pricing_psr_bar <-  build_plot(data=full_data  %>% filter(SimpleArea!="Unlabeled")%>%
+(fpds_pricing_psr_bar <-  build_plot(data=full_data  %>% filter(SimpleArea!="Unlabeled"&
+                                                                    IsFMS!="Unlabeled" & 
+                                                                  !is.na(IsFMS))%>%
                                        filter(Fiscal_Year>=2012 & Fiscal_YQ<=2023.2),
                             chart_geom="Bar Chart",
                             x_var="dFYear",
@@ -972,7 +976,7 @@ full_data<- full_data %>%      group_by(Fiscal_Year,IsFMS) %>%
 )+date_x_year_breaks(2012,2022,2,partial_year=2023,partial_label="\nQ1–Q2")+
     scale_alpha_ordinal(range=c(1,0.5))+theme(legend.position = "right")+
     facet_grid( IsFMS~ProductOrService , scales="free_y")+
-    labs(caption="Source: FPDS; CSIS analysis."))
+    labs(caption="Note: Excludes unlabeled product or service and unlabeled FMS.\nSource: FPDS; and CSIS analysis."))
 # 
 # ggsave600dpi(fpds_pricing_psr_bar, filename = "..//output//figure_07_fpds_pricing_psr_bar.png", 
 #        width = 9,
@@ -3158,7 +3162,7 @@ PlatformVendorIntl_share<-build_plot(
     caption="Source: FPDS; and CSIS analysis.")
 )
 
-ggsave600dpi("..//Output//AcqTrends//platform_vendor_share.png", PlatformVendorIntl_share, 
+ggsave600dpi("..//Output//AcqTrends//platform_vendor_intl_share.png", PlatformVendorIntl_share, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
@@ -3192,6 +3196,12 @@ PlatformVendorIntl_dollar<-build_plot(
     caption="Source: FPDS; and CSIS analysis..")
 )
 
+log_plot(plot=PlatformVendorIntl_dollar, df=full_data  %>% filter(Fiscal_YQ<=2023.2),
+                     filename="acq_fig6_2_plat_vendor_intl",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+                     sheet="6-2 PlatVend",path="../output/AcqTrends/", height=5,
+         excel_y_var = TRUE, excel_formulas = TRUE,
+                     format=TRUE,#,var_list=c("SimpleArea","Competition.multisum")
+         )
 
 ```
 
