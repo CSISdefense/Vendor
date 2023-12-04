@@ -4,7 +4,7 @@ GO
 
 --For instructions see https://github.com/CSISdefense/DIIGsql/blob/master/Doc/Output_Large_Dataset.md
 
-
+SET QUERY_GOVERNOR_COST_LIMIT 0
 --1h31 m
 --2h15m at 47%
 SET ANSI_WARNINGS OFF;
