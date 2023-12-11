@@ -17,18 +17,17 @@ dir.exists(file.path("..","..","Data","semi_clean","OSC"))
 f<-list.files(file.path("..","..","Data","semi_clean","OSC"))
 
 file.exists(file.path("..","..","Data","semiclean","OSC","FAADCloanDataSet.rda"))
-load("C:\\Users\\grego\\Repositories\\Vendor\\Data\\semi_clean\\OSC\\FAADCloanDataSet.rda")
+load("..\\..\\Data\\semi_clean\\OSC\\SelectedLoanDataSet.rda")
 
-list.files(file.path("..","..","Data","semi_clean","OSC"))
-load(file=file.path("..","..","Data","semiclean","OSC","FAADCloanDataSet.rda"))
-  
-  cfda<-loan %>% group_by(awarding_agency_name,cfda_number,cfda_title,assistance_type_code) %>% 
-    summarise(n=length(awarding_agency_name))
-  write_csv(cfda,file="../../data/semi_clean/cfda.csv")
+  cfda<-loanSelected %>% group_by(awarding_agency_name,cfda_num,cfda_title,assistance_type_code) %>% 
+      summarise(n=length(assistance_type_code),
+            total_outlayed_amount_for_overall_award=sum(total_outlayed_amount_for_overall_award,na.rm=TRUE),
+            face_value_of_loan=sum(face_value_of_loan,na.rm=TRUE)) 
+  write_csv(cfda,file="../../data/semi_clean/selected_cfda.csv")
   
   # loan<-loan %>% filter(cfda_title!="DISASTER ASSISTANCE LOANS")
 
-loan<-standardize_variable_names(loan)
+loanSelected<-standardize_variable_names(loanSelected)
 exim<-read_csv("../../Data_Raw/Loans/Authorizations_From_10_01_2006_Thru_12_31_2022.csv",na = "N/A")
 colnames(exim)<-gsub(" ",".",colnames(exim))
 colnames(exim)<-gsub("/",".",colnames(exim))
@@ -39,9 +38,9 @@ colnames(exim)<-gsub("/",".",colnames(exim))
 
 # View(loan %>% filter(cfda_title=="DISASTER ASSISTANCE LOANS"))
 
-write.csv(unique(loan$recipient_uei[loan$cfda_title=="DISASTER ASSISTANCE LOANS"]),file="disast_nam.csv")
-
-descrip<-loan %>% group_by(transaction_description) %>%
+# write.csv(unique(loan$recipient_uei[loan$cfda_title=="DISASTER ASSISTANCE LOANS"]),file="disast_nam.csv")
+# 
+descrip<-loanSelected %>% group_by(transaction_description) %>%
   summarise(n=nrow(total_obligated_amount))
 
 ```
@@ -85,12 +84,12 @@ col<-"transaction_description"
 labeled<-label_keyword(descrip,keyword)
 summary(labeled)
 
-labeled<-left_join(loan,labeled,by="transaction_description")
-labeled$HighTech[labeled$cfda_number %in% c("81.112","81.126","59.058")|
+labeled<-left_join(loanSelected,labeled,by="transaction_description")
+labeled$HighTech[labeled$cfda_num %in% c("81.112","81.126","59.058")|
                    labeled$cfda_title %in% c("STEWARDSHIP SCIENCE GRANT PROGRAM",
                                      "FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES",
                                      "FEDERAL AND STATE TECHNOLOGY PARTNERSHIP PROGRAM")]<-TRUE
-labeled$AnyTag[labeled$cfda_number %in% c("81.112","81.126","59.058")|
+labeled$AnyTag[labeled$cfda_num %in% c("81.112","81.126","59.058")|
                    labeled$cfda_title %in% c("STEWARDSHIP SCIENCE GRANT PROGRAM",
                                      "FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES",
                                      "FEDERAL AND STATE TECHNOLOGY PARTNERSHIP PROGRAM")]<-TRUE
@@ -109,19 +108,19 @@ label_exim$Primary.Export.Product.NAICS[!is.na(label_exim$Primary.Export.Product
                                                    is.na(label_exim$Primary.Export.Product.NAICS)],1,4))
                                                    
 
-loan<-left_join(loan,labeled,by="transaction_description")
-loan_crit<-loan %>% filter((AnyTag==TRUE & !is.na(AnyTag)) |
-                   cfda_number %in% c("81.112","81.126","59.058") |
+loanSelected<-left_join(loanSelected,labeled,by="transaction_description")
+loan_crit<-loanSelected %>% filter((AnyTag==TRUE & !is.na(AnyTag)) |
+                   cfda_num %in% c("81.112","81.126","59.058") |
                    cfda_title %in% c("STEWARDSHIP SCIENCE GRANT PROGRAM",
                                      "FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES",
                                      "FEDERAL AND STATE TECHNOLOGY PARTNERSHIP PROGRAM"))
-loan_crit$Renewable[loan_crit$cfda_number %in% c("81.126")|
+loan_crit$Renewable[loan_crit$cfda_num %in% c("81.126")|
                    loan_crit$cfda_title %in% c("FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES")]<-TRUE
-loan_crit$AnyTag[loan_crit$cfda_number %in% c("81.126")|
+loan_crit$AnyTag[loan_crit$cfda_num %in% c("81.126")|
                    loan_crit$cfda_title %in% c("FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES")]<-TRUE
 
-write_csv(loan_crit %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../data/semi_clean/OSC/USAspending_OSCtagged.csv")
-save(loan_crit,file="../../data/semi_clean/OSC/USAspending_OSCtagged.rda")
+write_csv(loan_crit %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../data/semi_clean/OSC/USAspending_selected_OSCtagged.csv")
+save(loan_crit,file="../../data/semi_clean/OSC/USAspending_OSCselectedTagged.rda")
   
 
 label_exim<-read_and_join_experiment(label_exim,
@@ -135,94 +134,6 @@ label_exim$CriticalTech[label_exim$Primary.Export.Product.NAICS==334410]<-"Micro
 label_exim$CriticalTech[label_exim$CriticalTech==""]<-NA
 label_exim$AnyTag[!is.na(label_exim$CriticalTech)]<-TRUE
 write_csv(label_exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../Output/OSC/EXIMtagged.csv")
-
-#   # grep("hightech|Unmanned|Uninhabited|Uncrewed|Remotely Crewed",x$Description_of_Requirement)
-#   x$hightech<-NA
-#   x$deeptech<-NA
-#   x$Maritime<-NA
-#   x$mq<-NA
-#   x$rq<-NA
-#   
-#   # x$hightech[grep("RPA",x[,col],ignore.case = TRUE)]<-TRUE Doesn't seem to be any.
-#   
-#   x$hightech[grep("hightech",x[,col])]<-TRUE
-#   sum(x$hightech,na.rm=TRUE)
-#   
-#   x$hightech[grep("QUASAR",x[,col])]<-NA
-#   x$hightech[grep("QUASI",x[,col])]<-NA
-#   x$hightech[grep("EXHUAST",x[,col])]<-NA
-#   sum(x$hightech,na.rm=TRUE)
-#   x$hightech[grep("UAV",x[,col])]<-TRUE
-#   sum(x$hightech,na.rm=TRUE)
-#   x$hightech[grep("Unmanned",x[,col],ignore.case = TRUE)]<-TRUE
-#   sum(x$hightech,na.rm=TRUE)
-#   x$hightech[grep("Remotely Crewed",x[,col],ignore.case = TRUE)]<-TRUE
-#   sum(x$hightech,na.rm=TRUE)
-#   x$hightech[grep("Remotely Piloted",x[,col],ignore.case = TRUE)]<-TRUE
-#   sum(x$hightech,na.rm=TRUE)
-#   x$hightech[grep("Uninhabited",x[,col],ignore.case = TRUE)]<-TRUE
-#   sum(x$hightech,na.rm=TRUE)
-#   
-#   x$hightech[grep("Uncrewed",x[,col],ignore.case = TRUE)]<-TRUE
-#   sum(x$hightech,na.rm=TRUE)
-#   
-#   # Excluding Counter hightech
-#   x$deeptech[grep("Counter Unmanned",x[,col],ignore.case = TRUE)]<-TRUE
-#   sum(x$deeptech,na.rm=TRUE)
-#   x$deeptech[grep("C-hightech",x[,col],ignore.case = TRUE)]<-TRUE
-#   x$deeptech[grep("CSUAS",x[,col],ignore.case = TRUE)]<-TRUE
-#   x$deeptech[grep("Counter hightech",x[,col],ignore.case = TRUE)]<-TRUE
-#   x$deeptech[grep("Counter-hightech",x[,col],ignore.case = TRUE)]<-TRUE
-#   
-#   x$deeptech[grep("Counter-Unmanned",x[,col],ignore.case = TRUE)]<-TRUE
-#   sum(x$deeptech,na.rm=TRUE)
-#   
-#   x$UGS[grep("Unmanned Ground",x[,col],ignore.case = TRUE)]<-TRUE
-#   
-#   x$Maritime[grep("Unmanned Surface",x[,col],ignore.case = TRUE)]<-TRUE
-#   x$Maritime[grep("Unmanned Maritime",x[,col],ignore.case = TRUE)]<-TRUE
-#   
-#   x$Maritime[grep("UNDERWATER UNMANNED",x[,col],ignore.case = TRUE)]<-TRUE
-#   x$Maritime[grep("UNMANNED UNDERWATER",x[,col],ignore.case = TRUE)]<-TRUE
-#   
-#   x$Maritime[grep("UNMANNED UNDERSEA",x[,col],ignore.case = TRUE)]<-TRUE
-#   sum(x$deeptech,na.rm=TRUE)
-#   
-#   
-#   x$hightech[x$deeptech==TRUE]<-NA
-#   
-#   x$hightech[x$Maritime==TRUE]<-NA
-#   x$hightech[x$UGS==TRUE]<-NA
-#   sum(x$hightech,na.rm=TRUE)
-#   
-#   
-#   
-#   x$mq[grep("MQ-",x[,col],ignore.case = TRUE)]<-TRUE
-#   # x$mq[grep("MQT",x[,col],ignore.case = TRUE)]<-NA
-#   # x$mq[grep("MQSA",x[,col],ignore.case = TRUE)]<-NA
-#   # x$mq[grep("MESSAGE QUEUE",x[,col],ignore.case = TRUE)]<-NA
-#   # x$mq[grep("WEBSPHERE MQ",x[,col],ignore.case = TRUE)]<-NA
-#   # x$mq[grep("CMQA",x[,col],ignore.case = TRUE)]<-NA
-#   # x$mq[grep("NMQ",x[,col],ignore.case = TRUE)]<-NA
-#   # x$mq[grep("MQU",x[,col],ignore.case = TRUE)]<-NA #Covers most proper words
-#   # x$mq[grep("OFMQ",x[,col],ignore.case = TRUE)]<-NA
-#   sum(x$mq,na.rm = TRUE)
-#   x$rq[grep("RQ-",x[,col],ignore.case = TRUE)]<-TRUE
-#   # x$rq[grep("RQU",x[,col],ignore.case = TRUE)]<-NA #Covers most proper words
-#   # x$rq[grep("RQMT",x[,col],ignore.case = TRUE)]<-NA
-#    x$rq[grep("AN/SRQ-",x[,col],ign
-#    x$rq[grep("AN/ARQ-",x[,col],ignore.case = TRUE)]<-NA
-#   # x$rq[grep("TRQ",x[,col],ignore.case = TRUE)]<-NA
-#   # x$rq[grep("SRQ",x[,col],ignore.case = TRUE)]<-NA
-#   # x$rq[grep("AHRQ",x[,col],ignore.case = TRUE)]<-NA
-#   sum(x$rq,na.rm=TRUE)
-#   
-#   x$any_uas<-NA
-#   x$any_uas<-x$hightech|x$mq|x$rq
-#   x
-# }
-
-
 
 ```
 
