@@ -39,7 +39,6 @@ loanDisaster <-loan  %>% filter(cfda_num %in% c(59.008,59.063))
 save(loanDisaster,file="data/semi_clean/OSC/SBAdisasterLoanDataSet.rda")
 
 #These are the loans we have paths to identify critical technologies
-
 loanSelected<- loan %>% filter(cfda_num %in% c(31.007,59.011,59.012,59.016,59.041,59.054,81.126))
 save(loanSelected,file="data/semi_clean/OSC/SelectedLoanDataSet.rda")
 
@@ -58,7 +57,10 @@ load(file="data/semi_clean/OSC/FAADCloanDataSet.rda")
 
 
 
-test<-loan %>% group_by(cfda_title,cfda_num,assistance_type_code) %>% summarise(n=length(assistance_type_code)) %>% arrange(cfda_num)
+test<-loan %>% group_by(cfda_title,cfda_num,assistance_type_code) %>% 
+  summarise(n=length(assistance_type_code),
+            total_outlayed_amount_for_overall_award=sum(total_outlayed_amount_for_overall_award,na.rm=TRUE))  %>%
+  arrange(cfda_num)
 
 
 
