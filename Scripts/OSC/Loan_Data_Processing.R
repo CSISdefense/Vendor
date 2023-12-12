@@ -1,6 +1,5 @@
-
 ###############################################################
-# Sync FPDStypetable.ProductOrServiceCode with repo version
+# Load and process loan data from multiple sourcse
 ################################################################
 library(dplyr)
 library(tidyr)
@@ -12,6 +11,7 @@ library(odbc)
 library(askpass)
 library(DBI)
 library(askpass)
+library(openxlsx)
 
 
 login<-askpass("Please enter the login account")
@@ -59,8 +59,64 @@ save(loanOther,file="data/semi_clean/OSC/OtherLoanDataSet.rda")
 
 load(file="data/semi_clean/OSC/SelectedLoanDataSet.rda")
 
+###ExIm bank
+exim<-read_csv("Data_Raw/Loans/Authorizations_From_10_01_2006_Thru_12_31_2022.csv",na = "N/A")
+colnames(exim)<-gsub(" ",".",colnames(exim))
+colnames(exim)<-gsub("/",".",colnames(exim))
+exim$Primary.Export.Product.NAICS<-NA
+exim$Primary.Export.Product.SIC<-NA
+exim$Primary.Export.Product.NAICS[nchar(exim$Primary.Export.Product.NAICS.SIC.code)==6
+                                  & !is.na(exim$Primary.Export.Product.NAICS.SIC.code)]<-
+  text_to_number(exim$Primary.Export.Product.NAICS.SIC.code[nchar(exim$Primary.Export.Product.NAICS.SIC.code)==6
+                                                            & !is.na(exim$Primary.Export.Product.NAICS.SIC.code)])
+exim$Primary.Export.Product.SIC[nchar(exim$Primary.Export.Product.NAICS.SIC.code)<6
+                                  & !is.na(exim$Primary.Export.Product.NAICS.SIC.code)]<-
+  exim$Primary.Export.Product.NAICS.SIC.code[nchar(exim$Primary.Export.Product.NAICS.SIC.code)<6
+                                                            & !is.na(exim$Primary.Export.Product.NAICS.SIC.code)]
+
+View(exim[!duplicated(exim$Primary.Export.Product.SIC),"Primary.Export.Product.SIC"]%>%arrange(Primary.Export.Product.SIC))
+
+#SIC codes? sometimes have a letter as a 5th character
+exim$Primary.Export.Product.SIC.code<-NA
+exim$Primary.Export.Product.SIC.code[!is.na(exim$Primary.Export.Product.NAICS.SIC.code)&
+                                          is.na(exim$Primary.Export.Product.SIC.code)&
+                                       nchar(exim$Primary.Export.Product.NAICS.SIC.code)<6]<-
+  text_to_number(
+    substr(exim$Primary.Export.Product.SIC.code[!is.na(exim$Primary.Export.Product.NAICS.SIC.code)&
+                                                              is.na(exim$Primary.Export.Product.SIC.code)&
+                                                  nchar(exim$Primary.Export.Product.NAICS.SIC.code)<6],1,4))
+exim<-read_and_join_experiment(exim,
+                                     lookup_file="Lookup_PrincipalNAICScode.csv",
+                                     directory="economic//",
+                                     by=c("Primary.Export.Product.NAICS"="principalnaicscode"),
+                                     add_var=c("principalnaicscodeText"),
+                                     skip_check_var =c("principalnaicscodeText"),
+                                     missing_file="naics.csv")
 
 
+
+
+list.files(file.path("Data_Raw","Economic"))
+file.exists(file.path("Data_Raw","Economic","1987_SIC_to_1997_NAICS.xls"))
+# sic1997<-readWorkbook(file.path("Data_Raw","Economic","1987_SIC_to_1997_NAICS.xls"))
+sic1997<-read_csv(file.path("Data_Raw","Economic","1987_SIC_to_1997_NAICS.csv"))
+sic1997complete<-sic1997 %>% filter(is.na(`Part Indicator`))
+colnames(sic1997complete)<-colnames(sic1997complete) %>% make.names()
+write_csv(sic1997complete,file.path("Data_Raw","Economic","1987_SIC_to_1997_NAICS_complete.csv"))
+colnames(sic1997complete)
+exim<-read_and_join_experiment(exim,
+                               lookup_file="1987_SIC_to_1997_NAICS_complete.csv",
+                               directory="data_raw//economic//",
+                               path="",
+                               by=c("Primary.Export.Product.SIC.code"="SIC"),
+                               add_var=c("SIC.Titles.and.Part.Descriptions"),
+                               skip_check_var =c("SIC.Titles.and.Part.Description"),
+                               missing_file="sic.csv")
+
+
+
+
+save(exim,file="Data/Semi_Clean/OSC/exim.rda")
 
 
 

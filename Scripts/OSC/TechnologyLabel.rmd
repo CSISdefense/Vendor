@@ -23,18 +23,11 @@ load("..\\..\\Data\\semi_clean\\OSC\\SelectedLoanDataSet.rda")
       summarise(n=length(assistance_type_code),
             total_outlayed_amount_for_overall_award=sum(total_outlayed_amount_for_overall_award,na.rm=TRUE),
             face_value_of_loan=sum(face_value_of_loan,na.rm=TRUE)) 
-  write_csv(cfda,file="../../data/semi_clean/selected_cfda.csv")
+  write_csv(cfda,file="../../output/OSC/selected_cfda.csv")
   
   # loan<-loan %>% filter(cfda_title!="DISASTER ASSISTANCE LOANS")
 
 loanSelected<-standardize_variable_names(loanSelected)
-exim<-read_csv("../../Data_Raw/Loans/Authorizations_From_10_01_2006_Thru_12_31_2022.csv",na = "N/A")
-colnames(exim)<-gsub(" ",".",colnames(exim))
-colnames(exim)<-gsub("/",".",colnames(exim))
-
-#Paranoia check that we can retain integrity when just reading and writing.
-# dcr1m<-dcr %>% filter(obligatedamount>=1000000)
-# dcr10m<-dcr %>% filter(obligatedamount>=10000000)
 
 # View(loan %>% filter(cfda_title=="DISASTER ASSISTANCE LOANS"))
 
@@ -42,7 +35,7 @@ colnames(exim)<-gsub("/",".",colnames(exim))
 # 
 descrip<-loanSelected %>% group_by(transaction_description) %>%
   summarise(n=nrow(total_obligated_amount))
-
+load(file="Data/Semi_Clean/OSC/exim.rda")  
 ```
 
 # Setup
@@ -51,11 +44,8 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-### OTA description hightech labeling
-
-#### label function
+## Description Label function
 ```{r labeling_function}
-
 
 label_keyword<-function(x,keyword,col="transaction_description"){
   x<-as.data.frame(x)
@@ -71,130 +61,79 @@ label_keyword<-function(x,keyword,col="transaction_description"){
   }
   for(i in 1:nrow(keyword)){
     if(!keyword$tag[i] %in% colnames(x))
+      x[keyword$tag[i]]<-NA
     x[grep(keyword$keyword[i],x[,col],ignore.case = TRUE),keyword$tag[i]]<-TRUE
     x$AnyTag[x[,keyword$tag[i]]==TRUE & !is.na(x[,keyword$tag[i]])]<-TRUE
   }
-  
   x
 }
-  
+
+```
+
+
+# Assign labels
+
+
+
+## Description Labeling
+```{r DescriptionLabels}
 
 keyword<-read_csv("..//..//data//semi_clean//OSC//osc_keyword_list.csv")
 col<-"transaction_description"
 labeled<-label_keyword(descrip,keyword)
 summary(labeled)
 
-labeled<-left_join(loanSelected,labeled,by="transaction_description")
-labeled$HighTech[labeled$cfda_num %in% c("81.112","81.126","59.058")|
-                   labeled$cfda_title %in% c("STEWARDSHIP SCIENCE GRANT PROGRAM",
-                                     "FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES",
-                                     "FEDERAL AND STATE TECHNOLOGY PARTNERSHIP PROGRAM")]<-TRUE
-labeled$AnyTag[labeled$cfda_num %in% c("81.112","81.126","59.058")|
-                   labeled$cfda_title %in% c("STEWARDSHIP SCIENCE GRANT PROGRAM",
-                                     "FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES",
-                                     "FEDERAL AND STATE TECHNOLOGY PARTNERSHIP PROGRAM")]<-TRUE
-
-write_csv(labeled %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../Output/OSC/OSCtagged.csv")
-write_csv(cfda,file="../../Output/OSC/cfda.csv")
-
-
-label_exim<-label_keyword(exim,keyword,"Product.Description")
-label_exim$Primary.Export.Product.NAICS<-text_to_number(label_exim$Primary.Export.Product.NAICS.SIC.code)
-#SIC codes? sometimes have a letter as a 5th character
-label_exim$Primary.Export.Product.NAICS[!is.na(label_exim$Primary.Export.Product.NAICS.SIC.code)&
-                                                   is.na(label_exim$Primary.Export.Product.NAICS)]<-
-  text_to_number(
-    substr(label_exim$Primary.Export.Product.NAICS.SIC.code[!is.na(label_exim$Primary.Export.Product.NAICS.SIC.code)&
-                                                   is.na(label_exim$Primary.Export.Product.NAICS)],1,4))
-                                                   
-
 loanSelected<-left_join(loanSelected,labeled,by="transaction_description")
-loan_crit<-loanSelected %>% filter((AnyTag==TRUE & !is.na(AnyTag)) |
-                   cfda_num %in% c("81.112","81.126","59.058") |
-                   cfda_title %in% c("STEWARDSHIP SCIENCE GRANT PROGRAM",
-                                     "FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES",
-                                     "FEDERAL AND STATE TECHNOLOGY PARTNERSHIP PROGRAM"))
-loan_crit$Renewable[loan_crit$cfda_num %in% c("81.126")|
-                   loan_crit$cfda_title %in% c("FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES")]<-TRUE
-loan_crit$AnyTag[loan_crit$cfda_num %in% c("81.126")|
-                   loan_crit$cfda_title %in% c("FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES")]<-TRUE
 
-write_csv(loan_crit %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../data/semi_clean/OSC/USAspending_selected_OSCtagged.csv")
-save(loan_crit,file="../../data/semi_clean/OSC/USAspending_OSCselectedTagged.rda")
-  
+#Product label is just the NAICS/SIC category description
+label_exim<-label_keyword(exim,keyword,"Product.Description")
+# label_exim<-exim
+
+```
+
+### CFDA labeling
+```{r CFDSlabels}
+loanSelected$HighTech[loanSelected$cfda_num %in% c("81.112","81.126","59.058")|
+                   loanSelected$cfda_title %in% c("STEWARDSHIP SCIENCE GRANT PROGRAM",
+                                     "FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES",
+                                     "FEDERAL AND STATE TECHNOLOGY PARTNERSHIP PROGRAM")]<-TRUE
+loanSelected$AnyTag[loanSelected$cfda_num %in% c("81.112","81.126","59.058")|
+                   loanSelected$cfda_title %in% c("STEWARDSHIP SCIENCE GRANT PROGRAM",
+                                     "FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES",
+                                     "FEDERAL AND STATE TECHNOLOGY PARTNERSHIP PROGRAM")]<-TRUE
+
+loanSelected$Renewable[loanSelected$cfda_num %in% c("81.126")|
+                   loanSelected$cfda_title %in% c("FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES")]<-TRUE
+loanSelected$AnyTag[loanSelected$cfda_num %in% c("81.126")|
+                   loanSelected$cfda_title %in% c("FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES")]<-TRUE
+
+```
+
+### NAICS labels
+
+```{r NAICSlabels}
 
 label_exim<-read_and_join_experiment(label_exim,
                          lookup_file="Lookup_PrincipalNAICScode.csv",
                          directory="economic//",
                          by=c("Primary.Export.Product.NAICS"="principalnaicscode"),
-                         add_var=c("principalnaicscodeText","CriticalTech"),
-                         skip_check_var =c("CriticalTech","principalnaicscodeText"),
+                         add_var=c("CriticalTech"),
+                         skip_check_var =c("CriticalTech"),
                          missing_file="naics.csv")
 label_exim$CriticalTech[label_exim$Primary.Export.Product.NAICS==334410]<-"Microelectronics"
 label_exim$CriticalTech[label_exim$CriticalTech==""]<-NA
 label_exim$AnyTag[!is.na(label_exim$CriticalTech)]<-TRUE
-write_csv(label_exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../Output/OSC/EXIMtagged.csv")
 
 ```
 
 
-#### Assign labels
-
-```{r assign labels}
-
-d<-read_delim(file.path("..","data","semi_clean","ota_description_UAS.csv"),na ="",col_types="ccccc",delim=",")
-m<-read_csv(file.path("..","data","semi_clean","contract_MajorProgramCode.csv"))
-# dcr<-read_delim(file.path("..","data","semi_clean","DescriptionOfContractRequirement_Portfolio.csv"),"\t")
-
-dcr10m<-read_delim(file="..//data//semi_clean//FPDS10m_descrip_plat.csv",delim = ",")
-problems(d)
-d<-standardize_variable_names(d)
-dcr10m<-standardize_variable_names(dcr10m)
-colnames(dcr10m)<-trimws(colnames(dcr10m))
-dcr10m$obligatedamount<-text_to_number(dcr10m$obligatedamount)
-
-
-dcr10m<-label_UAS(dcr10m,"descriptionofcontractrequirement")
-d<-label_UAS(d,"Description_of_Requirement")
-m<-label_UAS(m,"majorprogramcode")
-
-write_delim(d,file.path("..","data","semi_clean","ota_description_UAS.csv"),na = "",delim=",")
-write_delim(m,file.path("..","data","semi_clean","contract_MajorProgramCode.csv"),na = "",delim=",")
-write_delim(dcr10m,file="..//data//semi_clean//FPDS10m_descrip_plat.csv",na = "",delim = ",")
-summary(d)
-summary(m)
-summary(dcr10m)
-levels(dcr10m$PlatformPortfolioRemote)
-dcr10m %>% group_by(any_uas,PlatformPortfolioRemote) %>% filter(any_uas  | PlatformPortfolioRemote=="Remotely Operated") %>%
-  mutate(gt100m=ifelse(obligatedamount>100000000,obligatedamount,0),
-         gt10m=ifelse(obligatedamount> 10000000,obligatedamount,0)) %>%
-  summarise(obligatedamount=sum(obligatedamount, na.rm = TRUE),
-            gt100m=sum(gt100m),
-            gt10m=sum(gt10m))
-
-
-dcr10m %>% group_by(Remotely_Crewed) %>% filter(Remotely_Crewed!=""  | PlatformPortfolioRemote=="Remotely Operated") %>%
-  summarise(obligatedamount=sum(obligatedamount, na.rm = TRUE))
-
-
-summary(dcr10m %>% filter (obligatedamount> 10000000))
-#UUVSS maritime
-#MORFIUS counter-hightech hightech
-#SUAS Small hightech
+## Output
+```{r TagOutput}
+write_csv(loanSelected %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../data/semi_clean/OSC/USAspending_selected_OSCtagged.csv")
+write_csv(label_exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../data/semi_clean/OSC/EXIMtagged.csv")
+save(loanSelected,label_exim,file="../../data/semi_clean/OSC/OSCselectedTagged.rda")
 ```
-### Reverting text for output
-```{r}
 
-dcr10m<-read_delim(file="..//data//semi_clean//FPDS10m_descrip_plat.csv",delim = ",")
-
-dcr10m<-dcr10m %>% select(-descriptionofcontractrequirement) %>% read_and_join_experiment(
-                         path="..//data_raw//",dir="",lookup_file = "FPDS10m_descrip_plat_row_number.csv",
-                         add_var="descriptionofcontractrequirement",
-                         # skip_check_var = "Remotely_Crewed",
-                         by=c("descrip_plat_row_number"))
-
-write_delim(dcr10m,file="..//data//semi_clean//FPDS10m_descrip_plat.csv",na = "",delim = ",")
-```
 
 ### Expanding labels to contracts
 
@@ -264,49 +203,3 @@ write_csv(Remotely_Crewed_CAU,file.path("..","data","semi_clean","ota_CAU_UAS.cs
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
-# Labeling language
-```{r OTA_UAS_test}
-
-
-loan <- read_delim(
-  "..//data_raw//OTA_All_Fields.csv",delim = ",",
-  col_names = TRUE, guess_max = 500000,na=c("NA","NULL"),skip = 2)
-loan<-standardize_variable_names(loan)
-loan<-apply_standard_lookups(loan)
-
-loan$IsRemotelyOperated<-FALSE
-loan$IsRemotelyOperated[loan$ProductOrServiceCode=="1550"]<-TRUE
-sum(loan$Action_Obligation_OMB23_GDP21[loan$IsRemotelyOperated],na.rm=TRUE)
-
-loan<-read_and_join_experiment(loan,
-                         path="..//data_raw//",dir="",lookup_file = "OTA_descrip_row_number.csv",
-                         add_var="descrip_row_number",
-                         # skip_check_var = "Remotely_Crewed",
-                         by="Description_of_Requirement")
-
-loan<-read_and_join_experiment(loan,
-                         path="..//data//semi_clean//",dir="",lookup_file = "ota_description_UAS.csv",
-                         add_var="Remotely_Crewed",
-                         # skip_check_var = "Remotely_Crewed",
-                         by="descrip_row_number",
-                         col_types = "cnccccccccc")
-
-loan$IsRemotelyOperated[loan$Remotely_Crewed %in% c("hightech","hightech/C-hightech")]<-TRUE
-sum(loan$Action_Obligation_OMB23_GDP21[loan$IsRemotelyOperated],na.rm=TRUE)
-
-loan$`ReferencedIDVAgencyID`[is.na(loan$`ReferencedIDVAgencyID`)]<-""
-loan<-read_and_join_experiment(loan,
-                         path="..//data//semi_clean//",dir="",lookup_file = "ota_CAU_UAS.csv",
-                         add_var="Remotely_Crewed_CAU",
-                         skip_check_var = "Remotely_Crewed_CAU",
-                         by=c("PIIDAgencyID","PIID","ReferencedIDVAgencyID","Referenced_IDV_PIID"),col_types="dcccc")
-
-summary(factor(loan$Remotely_Crewed_CAU))
-
-
-loan$IsRemotelyOperated[loan$Remotely_Crewed_CAU %in% c("hightech","hightech/C-hightech")]<-TRUE
-
-sum(loan$Action_Obligation_OMB23_GDP21[loan$IsRemotelyOperated],na.rm=TRUE)
-
-
-```
