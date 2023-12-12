@@ -17,7 +17,6 @@ library(DBI)
 path<-"F:\\Users\\gsanders\\Documents\\Repositories\\USAspending-local\\"
 dir<-"Agency Assistance"
 
-load("data\\semi_clean\\OSC\\FAADCloanDataSet.rda")
 
 dir.exists(file.path(path,dir,"XIMB"))
 Agencies<-c("XIMB","Commerce","SBA","DoD","Energy")
@@ -32,30 +31,6 @@ for(agency in Agencies){
   files<-files[!files %in% gsub(paste(full_path,"/",sep=""),"",list.dirs(full_path))]
   flen<-nchar(files)
   
-  # extension<-gsub("^.*\\.","",files)
-  # dirs<-gsub("\\.pdf$","",files)
-  # dirs<-gsub("\\.xlsx$","",dirs)
-  # dirs<-gsub("\\.xls$","",dirs)
-  # 
-  # # shorten_name<-function(x){
-  # #   x<-gsub("Research, Development, Test and Evaluation","RDTnE",x)
-  # #   x<-gsub("MasterJustificationBook","",x)
-  # # }
-  # 
-  # safe_name<-function(x){
-  #   x<-shorten_name(x)
-  #   x<-gsub(" ","_",x)
-  #   x<-gsub("&","and",x)
-  #   x<-gsub("[(|)|,]","",x)  
-  # }
-  # 
-  # dirs<-safe_name(dirs)
-  # 
-  # 
-  # file.rename(from=file.path(full_path,files),
-  #             to=file.path(full_path,shorten_name(files)))
-  # 
-  
   dirs<-list.dirs(file.path(full_path,dir,agency),recursive = FALSE)
   file<-list.files(full_path)
   file<-file[gsub("^.*\\.","",file)=="zip"]
@@ -67,20 +42,6 @@ for(agency in Agencies){
   }
 }
 
-
-i<-read_csv(file.path(full_path,dir,agency,"FY2023_All_Contracts_Full_20230811_1.csv"),n_max=1000000,guess_max=1000000)
-# f<-read_delim("C:\\Users\\grego\\Repositories\\DIIGsql\\data_raw\\Errorlogging.FlatFileErrors.csv",delim=",",skip=1,col_names=FALSE)
-
-max(nchar(i$prime_award_transaction_place_of_performance_cd_original),na.rm=TRUE)
-
-stage1<-read_csv("https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/ImportAids/ErrorLogging_FPDSstage1_size.csv")
-filecheck<-data.frame(colname=colnames(i))
-#List columns dropped from the new file that are present in Errorlogging.FPDSstage1
-#these may have been renamed.
-stage1 %>% filter(!colname %in% filecheck$colname &
-                    !colname %in% c("CSISmodifiedDate", "CSIScreatedDate",
-                                    "IsDuplicateUTI","number_of_employees",
-                                    "annual_revenues", "USAspending_file_name"))
 
 # max(i$last_modified_date)
 
@@ -95,7 +56,7 @@ con <- dbConnect(odbc(),
                  PWD =pwd)
 
 
-agency<-"SBA"
+agency<-"Energy"
 file.list<-list.files(file.path(path,dir,agency))
 file.list<-file.list[gsub("^.*\\.","",file.list)=="csv"]
 # Error: nanodbc/nanodbc.cpp:1769: 22001: [Microsoft][ODBC SQL Server Driver]String data, right truncation 
@@ -103,21 +64,13 @@ file.list<-file.list[gsub("^.*\\.","",file.list)=="csv"]
 #table in order, and that this lead to a truncation error that disappeared once all the names
 #matched.
 
-loan<-dbReadTable(con,  name = SQL('"Assistance"."OSCloanDataSet"'))
-summary(factor(loan$assistance_type_code))
-loan <-loan %>% filter(assistance_type_code %in% c("07","7","08","8"))
-save(loan,file="data/semi_clean/OSC/FAADCloanDataSet.rda")
-dbDisconnect(con)
-
-rm(loan)
-
 
 #6:41 am run  8/29
 #On to second set of 100k by 7:01, which included file import. 20 min / file on desktop?
 #8:00 am run? on to set three by 8:43
 #1 million rows finished at 10:44Am, so may 2h45m
 #Error: nanodbc/nanodbc.cpp:1769: 22001: [Microsoft][ODBC SQL Server Driver]String data, right truncation 
-for (file.name in 1:35){
+for (file.name in 1:7){
   print(file.list[file.name])
   i<-read_csv(file.path(path,dir,agency,file.list[file.name]),n_max=1000000,guess_max=1000000)
   #Only loans, using code because the name field is often blank

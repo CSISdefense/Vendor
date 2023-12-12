@@ -1,3 +1,4 @@
+
 ###############################################################
 # Load and process loan data from multiple sourcse
 ################################################################
@@ -119,5 +120,40 @@ exim<-read_and_join_experiment(exim,
 save(exim,file="Data/Semi_Clean/OSC/exim.rda")
 
 
+#
 
 
+rbind_files<-function(files,path){
+  for(i in 1:length(files)){
+    if(i==1)
+      x<-read_csv(file.path(path,files[i]))
+    else{
+      y<-read_csv(file.path(path,files[i]))
+      x<-rbind(x,y)
+      if(ncol(x)!=ncol(y) | any(colnames(x)!=colnames(y))){
+        warning(colnames(x)[!colnames(x) %in% colnames(y)])
+        warning(colnames(y)[!colnames(y) %in% colnames(x)])
+        stop("Column Names mismatch")
+      }
+    }
+  }
+  x
+}
+
+
+file.list<-list.files(file.path("Data_Raw","Assistance"))
+file.list<-file.list[gsub("^.*\\.","",file.list)=="csv"]
+
+list.504<-file.list[grep("^foia-504",file.list)]
+sba.504<-rbind_files(list.504,file.path("Data_Raw","Assistance"))
+
+
+list.7a<-file.list[grep("^foia-7a",file.list)]
+sba.7a<-rbind_files(list.7a,file.path("Data_Raw","Assistance"))
+
+list.sbg<-file.list[grep("^foia-sbg",file.list)]
+sba.sbg<-rbind_files(list.sbg,file.path("Data_Raw","Assistance"))
+
+sbic_providers<-read_csv(file.path("Data_Raw","Assistance","sbic_contacts.csv"),na = "na")
+
+save(sba.504,sba.7a,sba.sbg,sbic_providers,file=file.path("data","semi_Clean","OSC","sba_programs.rd"))
