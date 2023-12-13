@@ -156,4 +156,4 @@ sba.sbg<-rbind_files(list.sbg,file.path("Data_Raw","Assistance"))
 
 sbic_providers<-read_csv(file.path("Data_Raw","Assistance","sbic_contacts.csv"),na = "na")
 
-save(sba.504,sba.7a,sba.sbg,sbic_providers,file=file.path("data","semi_Clean","OSC","sba_programs.rd"))
+save(sba.504,sba.7a,sba.sbg,sbic_providers,file=file.path("data","semi_Clean","OSC","sba_programs.rda"))
