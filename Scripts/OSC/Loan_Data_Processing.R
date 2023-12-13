@@ -101,7 +101,7 @@ save(loanPPP,file="data/semi_clean/OSC/PPPloanDataSet.rda")
 loanDisaster <-loan  %>% filter(cfda_num %in% c(59.008,59.063))
 save(loanDisaster,file="data/semi_clean/OSC/SBAdisasterLoanDataSet.rda")
 
-#These are the loans we have paths to identify critgical technologies
+#These are the loans we have paths to identify critical technologies
 loanSelected<- loan %>% filter(cfda_num %in% c(31.007,59.011,59.012,59.016,59.041,59.054,81.126))
 save(loanSelected,file="data/semi_clean/OSC/SelectedLoanDataSet.rda")
 
