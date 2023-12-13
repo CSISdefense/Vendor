@@ -56,7 +56,7 @@ con <- dbConnect(odbc(),
                  PWD =pwd)
 
 
-agency<-"Energy"
+agency<-"DoD"
 file.list<-list.files(file.path(path,dir,agency))
 file.list<-file.list[gsub("^.*\\.","",file.list)=="csv"]
 # Error: nanodbc/nanodbc.cpp:1769: 22001: [Microsoft][ODBC SQL Server Driver]String data, right truncation 

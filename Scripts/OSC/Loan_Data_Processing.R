@@ -28,13 +28,67 @@ con <- dbConnect(odbc(),
 
 
 loan<-dbReadTable(con,  name = SQL('"Assistance"."OSCloanDataSet"'))
+load(file="data/semi_clean/OSC/EnergyLoanDataSet.rda")
 
+
+standard_assistance_lookups<-function(df){
+  df<-df %>% mutate(cfda_num=ifelse(
+    nchar(cfda_number)>6,
+    round(text_to_number(cfda_number),3),
+    cfda_number))
+  if(any(!is.na(df$cfda_number)&is.na(df$cfda_num)))
+    stop("Mangled CFDA number")
+  df<-read_and_join_experiment(df,directory="assistance//",lookup_file="assistance_type_code.csv",
+                               by="assistance_type_code")
+  df
+}
+
+award_summary<-function(df){
+  minmax<-function(x){
+    ifelse(min(x)==max(x),min(x),NA)
+  }
+  minmod<-function(x,mod){
+    min(ifelse(is.na(mod) | mod==min(mod,na.rm=FALSE),x,NA))
+  }
+  
+  loanEnergy %>% group_by(assistance_award_unique_key) %>%
+    summarise(
+      recipient_name=minmax(recipient_name),
+      transaction_count=length(assistance_award_unique_key),
+      cfda_num=minmax(cfda_num),
+      cfda_title=minmax(cfda_title),
+      assistance_type_code=minmax(assistance_type_code),
+      assistance_type_description=minmax(assistance_type_description),
+      federal_action_obligation=sum(federal_action_obligation,na.rm=TRUE),
+      original_loan_subsidy_cost=sum(original_loan_subsidy_cost,na.rm=TRUE),
+      face_value_of_loan=sum(face_value_of_loan,na.rm=TRUE),
+      non_federal_funding_amount=sum(non_federal_funding_amount,na.rm=TRUE),
+      indirect_cost_federal_share_amount=sum(indirect_cost_federal_share_amount,na.rm=TRUE),
+      first_transaction_description=minmod(transaction_description,modification_number)
+    )
+}
+
+loanEnergy$indirect_cost_federal_share_amount
+View(award_summary(loanEnergy) %>% filter(!assistance_type_code==11|is.na(assistance_type_code==11)))
+
+loanEnergy<-standard_assistance_lookups(loanEnergy)
+
+summary(factor(loanEnergy$cfda_num))
+summary(factor(loanEnergy$cfda_number))
+loanEnergy$cfda_number[is.na(loanEnergy$cfda_num)]
+
+
+
+write.csv()
+write.csv(loanEnergy %>% group_by(assistance_type_code,assistance_type_description)%>%filter(!is.na(assistance_type_description)) %>%
+  summarise(),file="assistance_type_code.csv",row.names = FALSE)
 
 
 cfda_summary<-loan %>% group_by(cfda_title,cfda_num,assistance_type_code) %>% 
   summarise(n=length(assistance_type_code),
             total_outlayed_amount_for_overall_award=sum(total_outlayed_amount_for_overall_award,na.rm=TRUE),
-            face_value_of_loan=sum(face_value_of_loan,na.rm=TRUE))  %>%
+            face_value_of_loan=sum(face_value_of_loan,na.rm=TRUE),
+            min_period_of_performance_start_date =min(period_of_performance_start_date))  %>%
   arrange(cfda_num)
 write.csv(cfda_summary,"data/semi_clean/OSC/cfda_summary.csv",row.names = FALSE)
 
@@ -48,7 +102,7 @@ save(loanPPP,file="data/semi_clean/OSC/PPPloanDataSet.rda")
 loanDisaster <-loan  %>% filter(cfda_num %in% c(59.008,59.063))
 save(loanDisaster,file="data/semi_clean/OSC/SBAdisasterLoanDataSet.rda")
 
-#These are the loans we have paths to identify critical technologies
+#These are the loans we have paths to identify critgical technologies
 loanSelected<- loan %>% filter(cfda_num %in% c(31.007,59.011,59.012,59.016,59.041,59.054,81.126))
 save(loanSelected,file="data/semi_clean/OSC/SelectedLoanDataSet.rda")
 
