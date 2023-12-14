@@ -27,7 +27,7 @@ con <- dbConnect(odbc(),
 
 
 loan<-dbReadTable(con,  name = SQL('"Assistance"."OSCloanDataSet"'))
-load(file="data/semi_clean/OSC/EnergyLoanDataSet.rda")
+# load(file="data/semi_clean/OSC/EnergyLoanDataSet.rda")
 
 
 standard_assistance_lookups<-function(df){
@@ -50,7 +50,7 @@ award_summary<-function(df){
     min(ifelse(is.na(mod) | mod==min(mod,na.rm=FALSE),x,NA))
   }
   
-  loanEnergy %>% group_by(assistance_award_unique_key) %>%
+  loan %>% group_by(assistance_award_unique_key) %>%
     summarise(
       recipient_name=minmax(recipient_name),
       transaction_count=length(assistance_award_unique_key),
@@ -67,19 +67,19 @@ award_summary<-function(df){
     )
 }
 
-loanEnergy$indirect_cost_federal_share_amount
-View(award_summary(loanEnergy) %>% filter(!assistance_type_code==11|is.na(assistance_type_code==11)))
+# loan$indirect_cost_federal_share_amount
+# View(award_summary(loan) %>% filter(!assistance_type_code==11|is.na(assistance_type_code==11)))
 
-loanEnergy<-standard_assistance_lookups(loanEnergy)
+loan<-standard_assistance_lookups(loan)
 
-summary(factor(loanEnergy$cfda_num))
-summary(factor(loanEnergy$cfda_number))
-loanEnergy$cfda_number[is.na(loanEnergy$cfda_num)]
+summary(factor(loan$cfda_num))
+summary(factor(loan$cfda_number))
+loan$cfda_number[is.na(loan$cfda_num)]
 
 
 
 write.csv()
-write.csv(loanEnergy %>% group_by(assistance_type_code,assistance_type_description)%>%filter(!is.na(assistance_type_description)) %>%
+write.csv(loan %>% group_by(assistance_type_code,assistance_type_description)%>%filter(!is.na(assistance_type_description)) %>%
   summarise(),file="assistance_type_code.csv",row.names = FALSE)
 
 
