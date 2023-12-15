@@ -12,6 +12,7 @@ library(readr)
 library(csis360)
 library(dplyr)
 library(tidyr)
+library(openxlsx)
 
 # dir.exists(file.path("..","..","Data","semi_clean","OSC"))
 # f<-list.files(file.path("..","..","Data","semi_clean","OSC"))
@@ -32,6 +33,8 @@ loanEnergy<-standardize_variable_names(loanEnergy)
 descrip<-loanEnergy %>% group_by(transaction_description) %>%
   summarise(n=nrow(total_obligated_amount))
 load(file="../../Data/Semi_Clean/OSC/exim.rda")  
+
+load(file=file.path("..","..","data","semi_Clean","OSC","sba_programs.rda"))
 ```
 
 # Setup
@@ -63,6 +66,7 @@ label_keyword<-function(x,keyword,col="transaction_description"){
   }
   x
 }
+
 
 ```
 
@@ -116,11 +120,199 @@ label_exim<-read_and_join_experiment(label_exim,
                          add_var=c("CriticalTech"),
                          skip_check_var =c("CriticalTech"),
                          missing_file="naics.csv")
-label_exim$CriticalTech[label_exim$Primary.Export.Product.NAICS==334410]<-"Microelectronics"
 label_exim$CriticalTech[label_exim$CriticalTech==""]<-NA
 label_exim$AnyTag[!is.na(label_exim$CriticalTech)]<-TRUE
 
+# sba.504$
+# write.csv(sba.504 %>% group_by(NaicsCode,NaicsDescription) %>%summarise(),"naics_all.csv")
+test<-as.Date(sba.504$ApprovalDate,"%m/%d/%Y")
+if(any(is.na(test)&!is.na(sba.504$ApprovalDate))){
+  sba.504$ApprovalDate[is.na(test)&!is.na(sba.504$ApprovalDate)]
+  stop("Malformed date")
+} else {
+  sba.504$ApprovalDate<-test
+  sba.504$ApprovalYear<-year(sba.504$ApprovalDate)
+  rm(test)
+}
+
+sba.504 <- read_and_join_experiment(sba.504,
+                         lookup_file="Lookup_PrincipalNAICScode.csv",
+                         directory="economic//",
+                         by=c("NaicsCode"="principalnaicscode"),
+                         add_var=c("CriticalTech"),
+                         skip_check_var =c("CriticalTech"),
+                         missing_file="naics.csv")
+sba.504$AnyTag<-NA
+sba.504$AnyTag[!is.na(sba.504$CriticalTech) & sba.504$CriticalTech!=""]<-TRUE
+summary(sba.504$AnyTag)
+
+
+
+
+(
+sba.504tech<-build_plot(
+  data=sba.504,
+  chart_geom = "Bar Chart",
+  share = TRUE,
+  # labels_and_colors=loan_lc,
+  # column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="ApprovalYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="GrossApproval", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  # facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Gross Approval")# (Constant 2022 $s)
+)
+
+
+sba.7a <- read_and_join_experiment(sba.7a,
+                         lookup_file="Lookup_PrincipalNAICScode.csv",
+                         directory="economic//",
+                         by=c("NaicsCode"="principalnaicscode"),
+                         add_var=c("CriticalTech"),
+                         skip_check_var =c("CriticalTech"),
+                         missing_file="naics7a.csv")
+sba.7a$AnyTag<-NA
+sba.7a$AnyTag[!is.na(sba.7a$CriticalTech) & sba.7a$CriticalTech!=""]<-TRUE
+summary(sba.7a$AnyTag)
+
+
+
+
+(
+sba.7a<-build_plot(
+  data=sba.7a,
+  chart_geom = "Bar Chart",
+  share = TRUE,
+  # labels_and_colors=loan_lc,
+  # column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="ApprovalFiscalYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="GrossApproval", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  # facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Gross Approval")# (Constant 2022 $s)
+)
+
+
+
+
+sba.sbg <- read_and_join_experiment(sba.sbg,
+                         lookup_file="Lookup_PrincipalNAICScode.csv",
+                         directory="economic//",
+                         by=c("PROJECT_NAICS"="principalnaicscode"),
+                         add_var=c("CriticalTech"),
+                         skip_check_var =c("CriticalTech"),
+                         missing_file="naics_sbg.csv")
+sba.sbg$AnyTag<-NA
+sba.sbg$AnyTag[!is.na(sba.sbg$CriticalTech) & sba.sbg$CriticalTech!=""]<-TRUE
+summary(sba.sbg$AnyTag)
+
+
+
+sba.sbg$count<-1
+(
+sba.sbg_contract<-build_plot(
+  data=sba.sbg  %>% filter(!is.na(PROJECT_START_DATE)),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=loan_lc,
+  # column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="ProjectStartYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="LARGEST_CONTRACT", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  # facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Largest Contract")# (Constant 2022 $s)
+)
+
+(
+sba.sbg_count<-build_plot(
+  data=sba.sbg  %>% filter(!is.na(PROJECT_START_DATE)),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=loan_lc,
+  # column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="ProjectStartYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="count", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  # facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Count")# (Constant 2022 $s)
+)
+
+sba_unified<-
+  rbind(sba.504 %>% mutate(StartYear=ApprovalFiscalYear,Amount=GrossApproval,
+                           program="504") %>%
+          dplyr::select(StartYear, Amount,CriticalTech,program),
+        sba.7a %>% mutate(StartYear=ApprovalFiscalYear,Amount=GrossApproval,
+                           program="7(A)") %>%
+          dplyr::select(StartYear, Amount,CriticalTech,program),
+        sba.sbg %>% mutate(StartYear=ProjectStartYear,Amount=LARGEST_CONTRACT,
+                           program="SBG") %>%
+          dplyr::select(StartYear, Amount,CriticalTech,program))
+        
+
+
+(
+sba_crosscut<-build_plot(
+  data=sba_unified  %>% filter(!is.na(StartYear)),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=loan_lc,
+  # column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="StartYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="Amount", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  facet_var="program", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Gross Amount or Largest Project")# (Constant 2022 $s)
+)
+
+save(sba.504,sba.7a,sba.sbg,sbic_providers,file=file.path("..","..","data","semi_Clean","OSC","sba_programs.rda"))
+
+wb<-loadWorkbook(file=file.path("..","..","Output","OSC","selected_assistance_critical_tech.xlsx"))
+writeData(wb, sheet="504-foia",sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+writeData(wb, sheet="7a-foia",stringi::stri_enc_toutf8(sba.7a) %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+writeData(wb, sheet="sbg-foia",sba.sbg %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
+foia_sba_critical_tech.csv"),sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
+"foia_sba_7a_critical_tech.csv"),sba.7a %>% filter(AnyTag==TRUE& !is.na(AnyTag)))
+write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
+"foia_sba_sbg_critical_tech.csv"),sba.sbg %>% filter(AnyTag==TRUE& !is.na(AnyTag)))
+    saveWorkbook(wb,file=(file.path(path,xlsx)),overwrite = TRUE)
+
+write.csv(file=file.path("..","..","Output","OSC","sbic_providers.csv"),sbic_providers)
+
 ```
+
+
 
 
 ## Output

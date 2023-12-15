@@ -12,7 +12,7 @@ library(askpass)
 library(DBI)
 library(askpass)
 library(openxlsx)
-
+library(tidyverse)
 
 login<-askpass("Please enter the login account")
 pwd<-askpass("Please enter the account password")
@@ -44,154 +44,6 @@ standard_assistance_lookups<-function(df){
 }
 
 
-award_summary<-function(df){
-  minmax<-function(x){
-    ifelse(min(x)==max(x),min(x),NA)
-  }
-  minmod<-function(x,mod){
-    min(ifelse(is.na(mod) | mod==min(mod,na.rm=FALSE),x,NA),na.rm = TRUE)
-  }
-  
-  latest<-function(x,date){
-    min(ifelse(date==max(date),x,NA),na.rm = TRUE)
-  }
-  
-  loan %>% group_by(assistance_award_unique_key) %>%
-    summarise(
-      # assistance_transaction_unique_key=minmax(assistance_transaction_unique_key),
-      assistance_award_unique_key=minmax(assistance_award_unique_key),
-      recipient_name=minmax(recipient_name),
-      transaction_count=length(assistance_award_unique_key),
-      cfda_num=minmax(cfda_num),
-      cfda_title=minmax(cfda_title),
-      # sai_number=minmax(sai_number),
-      assistance_type_code=minmax(assistance_type_code),
-      assistance_type_description=minmax(assistance_type_description),
-      prime_award_base_transaction_description=minmax(prime_award_base_transaction_description),
-      period_of_performance_start_date=minmod(period_of_performance_start_date,modification_number),
-      initial_period_of_performance_current_end_date=minmod(period_of_performance_current_end_date,modification_number),
-      federal_action_obligation=sum(federal_action_obligation,na.rm=TRUE),
-      original_loan_subsidy_cost=sum(original_loan_subsidy_cost,na.rm=TRUE),
-      # latest_total_outlayed_amount_for_overall_award=latest(total_outlayed_amount_for_overall_award,action_date),
-      face_value_of_loan=sum(face_value_of_loan,na.rm=TRUE),
-      non_federal_funding_amount=sum(non_federal_funding_amount,na.rm=TRUE),
-      indirect_cost_federal_share_amount=sum(indirect_cost_federal_share_amount,na.rm=TRUE),
-      # latest_transaction_description=latest(transaction_description,action_date),
-      max_last_modified_date=max(last_modified_date),
-      award_id_fain=minmax(award_id_fain),
-      # modification_number=minmax(modification_number),
-      award_id_uri=minmax(award_id_uri),
-      sai_number=minmax(sai_number),
-      federal_action_obligation=minmax(federal_action_obligation),
-      total_obligated_amount=minmax(total_obligated_amount),
-      total_outlayed_amount_for_overall_award=minmax(total_outlayed_amount_for_overall_award),
-      indirect_cost_federal_share_amount=minmax(indirect_cost_federal_share_amount),
-      non_federal_funding_amount=minmax(non_federal_funding_amount),
-      total_non_federal_funding_amount=minmax(total_non_federal_funding_amount),
-      face_value_of_loan=minmax(face_value_of_loan),
-      original_loan_subsidy_cost=minmax(original_loan_subsidy_cost),
-      total_face_value_of_loan=minmax(total_face_value_of_loan),
-      total_loan_subsidy_cost=minmax(total_loan_subsidy_cost),
-      disaster_emergency_fund_codes_for_overall_award=minmax(disaster_emergency_fund_codes_for_overall_award),
-      outlayed_amount_from_COVID.19_supplementals_for_overall_award=minmax(outlayed_amount_from_COVID.19_supplementals_for_overall_award),
-      obligated_amount_from_COVID.19_supplementals_for_overall_award=minmax(obligated_amount_from_COVID.19_supplementals_for_overall_award),
-      outlayed_amount_from_IIJA_supplemental_for_overall_award=minmax(outlayed_amount_from_IIJA_supplemental_for_overall_award),
-      obligated_amount_from_IIJA_supplemental_for_overall_award=minmax(obligated_amount_from_IIJA_supplemental_for_overall_award),
-      action_date=minmax(action_date),
-      action_date_fiscal_year=minmax(action_date_fiscal_year),
-      period_of_performance_start_date=minmax(period_of_performance_start_date),
-      period_of_performance_current_end_date=minmax(period_of_performance_current_end_date),
-      awarding_agency_code=minmax(awarding_agency_code),
-      awarding_agency_name=minmax(awarding_agency_name),
-      awarding_sub_agency_code=minmax(awarding_sub_agency_code),
-      awarding_sub_agency_name=minmax(awarding_sub_agency_name),
-      awarding_office_code=minmax(awarding_office_code),
-      awarding_office_name=minmax(awarding_office_name),
-      funding_agency_code=minmax(funding_agency_code),
-      Funding_Agency_Name=minmax(Funding_Agency_Name),
-      funding_sub_agency_code=minmax(funding_sub_agency_code),
-      funding_sub_agency_name=minmax(funding_sub_agency_name),
-      funding_office_code=minmax(funding_office_code),
-      funding_office_name=minmax(funding_office_name),
-      treasury_accounts_funding_this_award=minmax(treasury_accounts_funding_this_award),
-      federal_accounts_funding_this_award=minmax(federal_accounts_funding_this_award),
-      object_classes_funding_this_award=minmax(object_classes_funding_this_award),
-      program_activities_funding_this_award=minmax(program_activities_funding_this_award),
-      recipient_uei=minmax(recipient_uei),
-      recipient_duns=minmax(recipient_duns),
-      recipient_name=minmax(recipient_name),
-      recipient_name_raw=minmax(recipient_name_raw),
-      recipient_parent_uei=minmax(recipient_parent_uei),
-      recipient_parent_duns=minmax(recipient_parent_duns),
-      recipient_parent_name=minmax(recipient_parent_name),
-      recipient_parent_name_raw=minmax(recipient_parent_name_raw),
-      recipient_country_code=minmax(recipient_country_code),
-      recipient_country_name=minmax(recipient_country_name),
-      recipient_address_line_1=minmax(recipient_address_line_1),
-      recipient_address_line_2=minmax(recipient_address_line_2),
-      recipient_city_code=minmax(recipient_city_code),
-      recipient_city_name=minmax(recipient_city_name),
-      prime_award_transaction_recipient_county_fips_code=minmax(prime_award_transaction_recipient_county_fips_code),
-      recipient_county_name=minmax(recipient_county_name),
-      prime_award_transaction_recipient_state_fips_code=minmax(prime_award_transaction_recipient_state_fips_code),
-      recipient_state_code=minmax(recipient_state_code),
-      recipient_state_name=minmax(recipient_state_name),
-      recipient_zip_code=minmax(recipient_zip_code),
-      recipient_zip_last_4_code=minmax(recipient_zip_last_4_code),
-      prime_award_transaction_recipient_cd_original=minmax(prime_award_transaction_recipient_cd_original),
-      prime_award_transaction_recipient_cd_current=minmax(prime_award_transaction_recipient_cd_current),
-      recipient_foreign_city_name=minmax(recipient_foreign_city_name),
-      recipient_foreign_province_name=minmax(recipient_foreign_province_name),
-      recipient_foreign_postal_code=minmax(recipient_foreign_postal_code),
-      primary_place_of_performance_scope=minmax(primary_place_of_performance_scope),
-      primary_place_of_performance_country_code=minmax(primary_place_of_performance_country_code),
-      primary_place_of_performance_country_name=minmax(primary_place_of_performance_country_name),
-      primary_place_of_performance_code=minmax(primary_place_of_performance_code),
-      primary_place_of_performance_city_name=minmax(primary_place_of_performance_city_name),
-      prime_award_transaction_place_of_performance_county_fips_code=minmax(prime_award_transaction_place_of_performance_county_fips_code),
-      primary_place_of_performance_county_name=minmax(primary_place_of_performance_county_name),
-      prime_award_transaction_place_of_performance_state_fips_code=minmax(prime_award_transaction_place_of_performance_state_fips_code),
-      primary_place_of_performance_state_name=minmax(primary_place_of_performance_state_name),
-      primary_place_of_performance_zip_4=minmax(primary_place_of_performance_zip_4),
-      prime_award_transaction_place_of_performance_cd_original=minmax(prime_award_transaction_place_of_performance_cd_original),
-      prime_award_transaction_place_of_performance_cd_current=minmax(prime_award_transaction_place_of_performance_cd_current),
-      primary_place_of_performance_foreign_location=minmax(primary_place_of_performance_foreign_location),
-      cfda_number=minmax(cfda_number),
-      cfda_title=minmax(cfda_title),
-      funding_opportunity_number=minmax(funding_opportunity_number),
-      funding_opportunity_goals_text=minmax(funding_opportunity_goals_text),
-      assistance_type_code=minmax(assistance_type_code),
-      transaction_description=minmax(transaction_description),
-      prime_award_base_transaction_description=minmax(prime_award_base_transaction_description),
-      business_funds_indicator_code=minmax(business_funds_indicator_code),
-      business_funds_indicator_description=minmax(business_funds_indicator_description),
-      business_types_code=minmax(business_types_code),
-      business_types_description=minmax(business_types_description),
-      correction_delete_indicator_code=minmax(correction_delete_indicator_code),
-      correction_delete_indicator_description=minmax(correction_delete_indicator_description),
-      action_type_code=minmax(action_type_code),
-      action_type_description=minmax(action_type_description),
-      record_type_code=minmax(record_type_code),
-      record_type_description=minmax(record_type_description),
-      highly_compensated_officer_1_name=minmax(highly_compensated_officer_1_name),
-      highly_compensated_officer_1_amount=minmax(highly_compensated_officer_1_amount),
-      highly_compensated_officer_2_name=minmax(highly_compensated_officer_2_name),
-      highly_compensated_officer_2_amount=minmax(highly_compensated_officer_2_amount),
-      highly_compensated_officer_3_name=minmax(highly_compensated_officer_3_name),
-      highly_compensated_officer_3_amount=minmax(highly_compensated_officer_3_amount),
-      highly_compensated_officer_4_name=minmax(highly_compensated_officer_4_name),
-      highly_compensated_officer_4_amount=minmax(highly_compensated_officer_4_amount),
-      highly_compensated_officer_5_name=minmax(highly_compensated_officer_5_name),
-      highly_compensated_officer_5_amount=minmax(highly_compensated_officer_5_amount),
-      usaspending_permalink=minmax(usaspending_permalink),
-      last_modified_date=minmax(last_modified_date),
-      USAspending_file_name=minmax(USAspending_file_name),
-      cfda_num=minmax(cfda_num),
-      assistance_type_description=minmax(assistance_type_description),
-    )
-  x
-}
-
 # View(award_summary(loan) %>% filter(!assistance_type_code==11|is.na(assistance_type_code==11)))
 
 
@@ -203,22 +55,25 @@ drop_empties<-function(df){
   }
   df
 }
+loan<-drop_empties(loan)
+summary(factor(loanSelected$awarding_agency_name))
+loanEnergyAward<-loanSelected %>% filter(awarding_agency_name=="Department of Energy")
 loanEnergy<-drop_empties(loanEnergy)
-colnames(loanEnergy)
+loanEnergyAward<-award_summary(loanEnergy)
+colnames(loanSelected)[!colnames(loanSelected) %in% colnames(loanEnergy)]
 
-loanEnergy<-standard_assistance_lookups(loanEnergy)
+
+colnames(loan)
+
+loan<-standard_assistance_lookups(loan)
 
 summary(factor(loan$cfda_num))
 summary(factor(loan$cfda_number))
 loan$cfda_number[is.na(loan$cfda_num)]
 
-loan<-standard_assistance_lookups(loan)
-
 colnames(loanEnergy)[!colnames(loanEnergy) %in% colnames(loan_award)]
 
 
-
-write.csv()
 write.csv(loan %>% group_by(assistance_type_code,assistance_type_description)%>%filter(!is.na(assistance_type_description)) %>%
   summarise(),file="assistance_type_code.csv",row.names = FALSE)
 
@@ -340,12 +195,28 @@ file.list<-file.list[gsub("^.*\\.","",file.list)=="csv"]
 list.504<-file.list[grep("^foia-504",file.list)]
 sba.504<-rbind_files(list.504,file.path("Data_Raw","Assistance"))
 
+test<-as.Date(sba.sbg$PROJECT_START_DATE,"%m/%d/%Y")
+
+
+
 
 list.7a<-file.list[grep("^foia-7a",file.list)]
 sba.7a<-rbind_files(list.7a,file.path("Data_Raw","Assistance"))
 
 list.sbg<-file.list[grep("^foia-sbg",file.list)]
 sba.sbg<-rbind_files(list.sbg,file.path("Data_Raw","Assistance"))
+
+if(any(is.na(test)&!is.na(sba.sbg$PROJECT_START_DATE)&
+       sba.sbg$PROJECT_START_DATE!="###############################################################################################################################################################################################################################################################")){
+  sba.sbg$PROJECT_START_DATE[is.na(test)&!is.na(sba.sbg$PROJECT_START_DATE)]
+  stop("Malformed date")
+} else {
+  sba.sbg$PROJECT_START_DATE<-test
+  sba.sbg$ProjectStartYear<-year(sba.sbg$PROJECT_START_DATE)
+  rm(test)
+}
+
+
 
 sbic_providers<-read_csv(file.path("Data_Raw","Assistance","sbic_contacts.csv"),na = "na")
 
