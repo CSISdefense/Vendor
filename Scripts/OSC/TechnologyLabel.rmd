@@ -24,13 +24,13 @@ load("..\\..\\Data\\semi_clean\\OSC\\SelectedLoanDataSet.rda")
   
   # loan<-loan %>% filter(cfda_title!="DISASTER ASSISTANCE LOANS")
 
-loanEnergy<-standardize_variable_names(loanEnergy)
+loanSelected<-standardize_variable_names(loanSelected)
 
 # View(loan %>% filter(cfda_title=="DISASTER ASSISTANCE LOANS"))
 
 # write.csv(unique(loan$recipient_uei[loan$cfda_title=="DISASTER ASSISTANCE LOANS"]),file="disast_nam.csv")
 # 
-descrip<-loanEnergy %>% group_by(transaction_description) %>%
+descrip<-loanSelected %>% group_by(transaction_description) %>%
   summarise(n=nrow(total_obligated_amount))
 load(file="../../Data/Semi_Clean/OSC/exim.rda")  
 
@@ -83,29 +83,29 @@ col<-"transaction_description"
 labeled<-label_keyword(descrip,keyword)
 summary(labeled)
 
-loanEnergy<-left_join(loanEnergy,labeled,by="transaction_description")
+loanSelected<-left_join(loanSelected,labeled,by="transaction_description")
 
 #Product label is just the NAICS/SIC category description
-label_exim<-label_keyword(exim,keyword,"Product.Description")
-# label_exim<-exim
+exim<-label_keyword(exim,keyword,"Product.Description")
+# exim<-exim
 
 ```
 
 ### CFDA labeling
 ```{r CFDSlabels}
-loanEnergy$HighTech[loanEnergy$cfda_num %in% c("81.112","81.126","59.058")|
-                   loanEnergy$cfda_title %in% c("STEWARDSHIP SCIENCE GRANT PROGRAM",
+loanSelected$HighTech[loanSelected$cfda_num %in% c("81.112","81.126","59.058")|
+                   loanSelected$cfda_title %in% c("STEWARDSHIP SCIENCE GRANT PROGRAM",
                                      "FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES",
                                      "FEDERAL AND STATE TECHNOLOGY PARTNERSHIP PROGRAM")]<-TRUE
-loanEnergy$AnyTag[loanEnergy$cfda_num %in% c("81.112","81.126","59.058")|
-                   loanEnergy$cfda_title %in% c("STEWARDSHIP SCIENCE GRANT PROGRAM",
+loanSelected$AnyTag[loanSelected$cfda_num %in% c("81.112","81.126","59.058")|
+                   loanSelected$cfda_title %in% c("STEWARDSHIP SCIENCE GRANT PROGRAM",
                                      "FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES",
                                      "FEDERAL AND STATE TECHNOLOGY PARTNERSHIP PROGRAM")]<-TRUE
 
-loanEnergy$Renewable[loanEnergy$cfda_num %in% c("81.126")|
-                   loanEnergy$cfda_title %in% c("FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES")]<-TRUE
-loanEnergy$AnyTag[loanEnergy$cfda_num %in% c("81.126")|
-                   loanEnergy$cfda_title %in% c("FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES")]<-TRUE
+loanSelected$Renewable[loanSelected$cfda_num %in% c("81.126")|
+                   loanSelected$cfda_title %in% c("FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES")]<-TRUE
+loanSelected$AnyTag[loanSelected$cfda_num %in% c("81.126")|
+                   loanSelected$cfda_title %in% c("FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES")]<-TRUE
 
 ```
 
@@ -113,15 +113,18 @@ loanEnergy$AnyTag[loanEnergy$cfda_num %in% c("81.126")|
 
 ```{r NAICSlabels}
 
-label_exim<-read_and_join_experiment(label_exim,
+# 
+# write.csv(exim %>% group_by(Primary.Export.Product.NAICS,Product.Description) %>%
+#             filter(!is.na(Primary.Export.Product.NAICS))%>% summarise(),"exim_naics_all.csv")
+exim<-read_and_join_experiment(exim,
                          lookup_file="Lookup_PrincipalNAICScode.csv",
                          directory="economic//",
                          by=c("Primary.Export.Product.NAICS"="principalnaicscode"),
                          add_var=c("CriticalTech"),
-                         skip_check_var =c("CriticalTech"),
-                         missing_file="naics.csv")
-label_exim$CriticalTech[label_exim$CriticalTech==""]<-NA
-label_exim$AnyTag[!is.na(label_exim$CriticalTech)]<-TRUE
+                         # skip_check_var =c("CriticalTech"),
+                         missing_file="exim_naics.csv")
+exim$CriticalTech[exim$CriticalTech==""]<-NA
+exim$AnyTag[!is.na(exim$CriticalTech)]<-TRUE
 
 # sba.504$
 # write.csv(sba.504 %>% group_by(NaicsCode,NaicsDescription) %>%summarise(),"naics_all.csv")
@@ -300,13 +303,17 @@ wb<-loadWorkbook(file=file.path("..","..","Output","OSC","selected_assistance_cr
 writeData(wb, sheet="504-foia",sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
 writeData(wb, sheet="7a-foia",stringi::stri_enc_toutf8(sba.7a) %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
 writeData(wb, sheet="sbg-foia",sba.sbg %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+writeData(wb, sheet="sbg-foia",sba.sbg %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+writeData(wb, sheet="ExIm",exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
 write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
-foia_sba_critical_tech.csv"),sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+                         "foia_sba_critical_tech.csv"),sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
 write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
-"foia_sba_7a_critical_tech.csv"),sba.7a %>% filter(AnyTag==TRUE& !is.na(AnyTag)))
+                         "foia_sba_7a_critical_tech.csv"),sba.7a %>% filter(AnyTag==TRUE& !is.na(AnyTag)))
 write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
-"foia_sba_sbg_critical_tech.csv"),sba.sbg %>% filter(AnyTag==TRUE& !is.na(AnyTag)))
-    saveWorkbook(wb,file=(file.path(path,xlsx)),overwrite = TRUE)
+                         "foia_sba_sbg_critical_tech.csv"),sba.sbg %>% filter(AnyTag==TRUE& !is.na(AnyTag)))
+saveWorkbook(wb,file=(file.path(path,xlsx)),overwrite = TRUE)
+
+
 
 write.csv(file=file.path("..","..","Output","OSC","sbic_providers.csv"),sbic_providers)
 
@@ -317,9 +324,9 @@ write.csv(file=file.path("..","..","Output","OSC","sbic_providers.csv"),sbic_pro
 
 ## Output
 ```{r TagOutput}
-write_csv(loanEnergy %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../data/semi_clean/OSC/USAspending_Energy_OSCtagged.csv",na = "")
-write_csv(label_exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../data/semi_clean/OSC/EXIMtagged.csv",na = "")
-save(loanEnergy,label_exim,file="../../data/semi_clean/OSC/OSCselectedTagged.rda",na = "")
+write_csv(loanSelected %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../data/semi_clean/OSC/USAspending_Energy_OSCtagged.csv",na = "")
+write_csv(exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../data/semi_clean/OSC/EXIMtagged.csv",na = "")
+save(loanSelected,exim,file="../../data/semi_clean/OSC/OSCselectedTagged.rda",na = "")
 ```
 
 
