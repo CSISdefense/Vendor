@@ -89,8 +89,8 @@ summary(labeled)
 loanSelected<-left_join(loanSelected,labeled,by="transaction_description")
 
 #Product label is just the NAICS/SIC category description
-label_exim<-label_keyword(exim,keyword,"Product.Description")
-# label_exim<-exim
+exim<-label_keyword(exim,keyword,"Product.Description")
+# exim<-exim
 
 
 ```
@@ -127,15 +127,18 @@ saveWorkbook(wb,file=(file.path("..","..","Output","OSC")),overwrite = TRUE)
 
 ```{r NAICSlabels}
 
-label_exim<-read_and_join_experiment(label_exim,
+# 
+# write.csv(exim %>% group_by(Primary.Export.Product.NAICS,Product.Description) %>%
+#             filter(!is.na(Primary.Export.Product.NAICS))%>% summarise(),"exim_naics_all.csv")
+exim<-read_and_join_experiment(exim,
                          lookup_file="Lookup_PrincipalNAICScode.csv",
                          directory="economic//",
                          by=c("Primary.Export.Product.NAICS"="principalnaicscode"),
                          add_var=c("CriticalTech"),
-                         skip_check_var =c("CriticalTech"),
-                         missing_file="naics.csv")
-label_exim$CriticalTech[label_exim$CriticalTech==""]<-NA
-label_exim$AnyTag[!is.na(label_exim$CriticalTech)]<-TRUE
+                         # skip_check_var =c("CriticalTech"),
+                         missing_file="exim_naics.csv")
+exim$CriticalTech[exim$CriticalTech==""]<-NA
+exim$AnyTag[!is.na(exim$CriticalTech)]<-TRUE
 
 # sba.504$
 # write.csv(sba.504 %>% group_by(NaicsCode,NaicsDescription) %>%summarise(),"naics_all.csv")
@@ -296,6 +299,8 @@ wb<-loadWorkbook(file=file.path("..","..","Output","OSC","selected_assistance_cr
 writeData(wb, sheet="504-foia",sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
 writeData(wb, sheet="7a-foia",stringi::stri_enc_toutf8(sba.7a) %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
 writeData(wb, sheet="sbg-foia",sba.sbg %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+writeData(wb, sheet="sbg-foia",sba.sbg %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+writeData(wb, sheet="ExIm",exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
 write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
                          "foia_sba_critical_tech.csv"),sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)),
           row.names = FALSE)
@@ -306,6 +311,8 @@ write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
                          "foia_sba_sbg_critical_tech.csv"),sba.sbg %>% filter(AnyTag==TRUE& !is.na(AnyTag)),
           row.names = FALSE)
 saveWorkbook(wb,file=(file.path("..","..","Output","OSC")),overwrite = TRUE)
+
+
 
 write.csv(file=file.path("..","..","Output","OSC","sbic_providers.csv"),sbic_providers)
 
