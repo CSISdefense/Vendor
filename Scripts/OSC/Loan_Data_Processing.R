@@ -90,19 +90,31 @@ save(loan,file="data/semi_clean/OSC/FAADCloanDataSet.rda")
 
 #Over 13 million and no way to identify critical tech, seperating 
 loanPPP<-loan %>% filter(cfda_num==59.073)
+loanPPP<-standardize_variable_names(loanPPP)
+loanPPP<-apply_standard_lookups(loanPPP) 
 save(loanPPP,file="data/semi_clean/OSC/PPPloanDataSet.rda")
 
 #Around 6 million, also no clear way to identify critical tech
 loanDisaster <-loan  %>% filter(cfda_num %in% c(59.008,59.063))
+loanDisaster<-standardize_variable_names(loanDisaster)
+loanDisaster<-apply_standard_lookups(loanDisaster) 
 save(loanDisaster,file="data/semi_clean/OSC/SBAdisasterLoanDataSet.rda")
 
 #These are the loans we have paths to identify critical technologies
 loanSelected<- loan %>% filter(cfda_num %in% c(31.007,59.011,59.012,59.016,59.041,59.054,81.126))
+
+loanSelected<-standardize_variable_names(loanSelected)
+loanSelected<-apply_standard_lookups(loanSelected) 
+
+loanSelected$YTD<-ifelse(loanSelected$Fiscal_Year==2023,"YTD","Full Year")
+
 save(loanSelected,file="data/semi_clean/OSC/SelectedLoanDataSet.rda")
 
 loanOther <- loan %>% filter(!cfda_num %in% c(31.007,59.011,59.012,59.016,59.041,59.054,81.126,
                                      59.073,
                                      59.008,59.063))
+loanOther<-standardize_variable_names(loanOther)
+loanOther<-apply_standard_lookups(loanOther) 
 save(loanOther,file="data/semi_clean/OSC/OtherLoanDataSet.rda")
 
 
@@ -194,18 +206,33 @@ file.list<-file.list[gsub("^.*\\.","",file.list)=="csv"]
 
 list.504<-file.list[grep("^foia-504",file.list)]
 sba.504<-rbind_files(list.504,file.path("Data_Raw","Assistance"))
+sba.504<-deflate(sba.504,money_var="GrossApproval",fy_var="ApprovalFiscalYear")
 
-test<-as.Date(sba.sbg$PROJECT_START_DATE,"%m/%d/%Y")
+test<-as.Date(sba.504$ApprovalDate,"%m/%d/%Y")
+if(any(is.na(test)&!is.na(sba.504$ApprovalDate))){
+  sba.504$ApprovalDate[is.na(test)&!is.na(sba.504$ApprovalDate)]
+  stop("Malformed date")
+} else {
+  sba.504$ApprovalDate<-test
+  sba.504$ApprovalYear<-year(sba.504$ApprovalDate)
+  rm(test)
+}
+
 
 
 
 
 list.7a<-file.list[grep("^foia-7a",file.list)]
 sba.7a<-rbind_files(list.7a,file.path("Data_Raw","Assistance"))
+sba.7a<-deflate(sba.7a,money_var="GrossApproval",fy_var="ApprovalFiscalYear")
+
 
 list.sbg<-file.list[grep("^foia-sbg",file.list)]
 sba.sbg<-rbind_files(list.sbg,file.path("Data_Raw","Assistance"))
 
+
+
+test<-as.Date(sba.sbg$PROJECT_START_DATE,"%m/%d/%Y")
 if(any(is.na(test)&!is.na(sba.sbg$PROJECT_START_DATE)&
        sba.sbg$PROJECT_START_DATE!="###############################################################################################################################################################################################################################################################")){
   sba.sbg$PROJECT_START_DATE[is.na(test)&!is.na(sba.sbg$PROJECT_START_DATE)]
@@ -213,11 +240,35 @@ if(any(is.na(test)&!is.na(sba.sbg$PROJECT_START_DATE)&
 } else {
   sba.sbg$PROJECT_START_DATE<-test
   sba.sbg$ProjectStartYear<-year(sba.sbg$PROJECT_START_DATE)
+  sba.sbg$ProjectStartFiscalYear<-get_fiscal_year(sba.sbg$PROJECT_START_DATE)
   rm(test)
 }
+sba.sbg<-deflate(sba.sbg,money_var="LARGEST_CONTRACT",fy_var="ProjectStartFiscalYear")
+
+
 
 
 
 sbic_providers<-read_csv(file.path("Data_Raw","Assistance","sbic_contacts.csv"),na = "na")
 
-save(sba.504,sba.7a,sba.sbg,sbic_providers,file=file.path("data","semi_Clean","OSC","sba_programs.rda"))
+
+sba_unified<-
+  rbind(sba.504 %>% mutate(StartFiscalYear=ApprovalFiscalYear,
+                           Amount=GrossApproval_Then_Year,
+                           program="504") %>%
+          dplyr::select(StartFiscalYear, Amount,CriticalTech,program),
+        sba.7a %>% mutate(StartFiscalYear=ApprovalFiscalYear,
+                          Amount=GrossApproval_Then_Year,
+                          program="7(A)") %>%
+          dplyr::select(StartFiscalYear, Amount,CriticalTech,program),
+        sba.sbg %>% mutate(StartFiscalYear=ProjectStartFiscalYear,
+                           Amount=LARGEST_CONTRACT_Then_Year,
+                           program="SBG") %>%
+          dplyr::select(StartFiscalYear, Amount,CriticalTech,program))
+sba_unified<-deflate(sba_unified,money_var="Amount",fy_var="StartFiscalYear")
+
+
+
+
+save(sba.504,sba.7a,sba.sbg,sbic_providers,sba_unified,
+     file=file.path("data","semi_Clean","OSC","sba_programs.rda"))

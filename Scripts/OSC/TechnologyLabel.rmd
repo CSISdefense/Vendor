@@ -24,17 +24,20 @@ load("..\\..\\Data\\semi_clean\\OSC\\SelectedLoanDataSet.rda")
   
   # loan<-loan %>% filter(cfda_title!="DISASTER ASSISTANCE LOANS")
 
-loanEnergy<-standardize_variable_names(loanEnergy)
+# loanSelected<-standardize_variable_names(loanSelected)
 
 # View(loan %>% filter(cfda_title=="DISASTER ASSISTANCE LOANS"))
 
 # write.csv(unique(loan$recipient_uei[loan$cfda_title=="DISASTER ASSISTANCE LOANS"]),file="disast_nam.csv")
 # 
-descrip<-loanEnergy %>% group_by(transaction_description) %>%
+descrip<-loanSelected %>% group_by(transaction_description) %>%
   summarise(n=nrow(total_obligated_amount))
 load(file="../../Data/Semi_Clean/OSC/exim.rda")  
 
 load(file=file.path("..","..","data","semi_Clean","OSC","sba_programs.rda"))
+
+
+
 ```
 
 # Setup
@@ -83,29 +86,40 @@ col<-"transaction_description"
 labeled<-label_keyword(descrip,keyword)
 summary(labeled)
 
-loanEnergy<-left_join(loanEnergy,labeled,by="transaction_description")
+loanSelected<-left_join(loanSelected,labeled,by="transaction_description")
 
 #Product label is just the NAICS/SIC category description
 label_exim<-label_keyword(exim,keyword,"Product.Description")
 # label_exim<-exim
 
+
 ```
 
 ### CFDA labeling
 ```{r CFDSlabels}
-loanEnergy$HighTech[loanEnergy$cfda_num %in% c("81.112","81.126","59.058")|
-                   loanEnergy$cfda_title %in% c("STEWARDSHIP SCIENCE GRANT PROGRAM",
+loanSelected$HighTech[loanSelected$cfda_num %in% c("81.112","81.126","59.058")|
+                   loanSelected$cfda_title %in% c("STEWARDSHIP SCIENCE GRANT PROGRAM",
                                      "FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES",
                                      "FEDERAL AND STATE TECHNOLOGY PARTNERSHIP PROGRAM")]<-TRUE
-loanEnergy$AnyTag[loanEnergy$cfda_num %in% c("81.112","81.126","59.058")|
-                   loanEnergy$cfda_title %in% c("STEWARDSHIP SCIENCE GRANT PROGRAM",
+loanSelected$AnyTag[loanSelected$cfda_num %in% c("81.112","81.126","59.058")|
+                   loanSelected$cfda_title %in% c("STEWARDSHIP SCIENCE GRANT PROGRAM",
                                      "FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES",
                                      "FEDERAL AND STATE TECHNOLOGY PARTNERSHIP PROGRAM")]<-TRUE
 
-loanEnergy$Renewable[loanEnergy$cfda_num %in% c("81.126")|
-                   loanEnergy$cfda_title %in% c("FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES")]<-TRUE
-loanEnergy$AnyTag[loanEnergy$cfda_num %in% c("81.126")|
-                   loanEnergy$cfda_title %in% c("FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES")]<-TRUE
+loanSelected$Renewable[loanSelected$cfda_num %in% c("81.126")|
+                   loanSelected$cfda_title %in% c("FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES")]<-TRUE
+loanSelected$AnyTag[loanSelected$cfda_num %in% c("81.126")|
+                   loanSelected$cfda_title %in% c("FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES")]<-TRUE
+
+wb<-loadWorkbook(file=file.path("..","..","Output","OSC","selected_assistance_critical_tech.xlsx"))
+writeData(wb, sheet="Selected",loanSelected %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
+                         "usaspending_critical_tech.csv"),loanSelected %>% filter(AnyTag==TRUE& !is.na(AnyTag)),row.names = FALSE)
+
+saveWorkbook(wb,file=(file.path("..","..","Output","OSC")),overwrite = TRUE)
+
+
+
 
 ```
 
@@ -125,15 +139,6 @@ label_exim$AnyTag[!is.na(label_exim$CriticalTech)]<-TRUE
 
 # sba.504$
 # write.csv(sba.504 %>% group_by(NaicsCode,NaicsDescription) %>%summarise(),"naics_all.csv")
-test<-as.Date(sba.504$ApprovalDate,"%m/%d/%Y")
-if(any(is.na(test)&!is.na(sba.504$ApprovalDate))){
-  sba.504$ApprovalDate[is.na(test)&!is.na(sba.504$ApprovalDate)]
-  stop("Malformed date")
-} else {
-  sba.504$ApprovalDate<-test
-  sba.504$ApprovalYear<-year(sba.504$ApprovalDate)
-  rm(test)
-}
 
 sba.504 <- read_and_join_experiment(sba.504,
                          lookup_file="Lookup_PrincipalNAICScode.csv",
@@ -261,17 +266,6 @@ sba.sbg_count<-build_plot(
   labs(y="Count")# (Constant 2022 $s)
 )
 
-sba_unified<-
-  rbind(sba.504 %>% mutate(StartYear=ApprovalFiscalYear,Amount=GrossApproval,
-                           program="504") %>%
-          dplyr::select(StartYear, Amount,CriticalTech,program),
-        sba.7a %>% mutate(StartYear=ApprovalFiscalYear,Amount=GrossApproval,
-                           program="7(A)") %>%
-          dplyr::select(StartYear, Amount,CriticalTech,program),
-        sba.sbg %>% mutate(StartYear=ProjectStartYear,Amount=LARGEST_CONTRACT,
-                           program="SBG") %>%
-          dplyr::select(StartYear, Amount,CriticalTech,program))
-        
 
 
 (
@@ -282,7 +276,7 @@ sba_crosscut<-build_plot(
   # labels_and_colors=loan_lc,
   # column_key=loan_ck,
   # NA, #VAR.ncol
-  x_var="StartYear", 
+  x_var="StartFiscalYear", 
   # alpha_var="YTD",  #x_var 
   y_var="Amount", #VAR.y.variable
   color_var="CriticalTech", #color_var
@@ -294,6 +288,8 @@ sba_crosscut<-build_plot(
   labs(y="Gross Amount or Largest Project")# (Constant 2022 $s)
 )
 
+
+
 save(sba.504,sba.7a,sba.sbg,sbic_providers,file=file.path("..","..","data","semi_Clean","OSC","sba_programs.rda"))
 
 wb<-loadWorkbook(file=file.path("..","..","Output","OSC","selected_assistance_critical_tech.xlsx"))
@@ -301,12 +297,15 @@ writeData(wb, sheet="504-foia",sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag))
 writeData(wb, sheet="7a-foia",stringi::stri_enc_toutf8(sba.7a) %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
 writeData(wb, sheet="sbg-foia",sba.sbg %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
 write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
-foia_sba_critical_tech.csv"),sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+                         "foia_sba_critical_tech.csv"),sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)),
+          row.names = FALSE)
 write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
-"foia_sba_7a_critical_tech.csv"),sba.7a %>% filter(AnyTag==TRUE& !is.na(AnyTag)))
+                         "foia_sba_7a_critical_tech.csv"),sba.7a %>% filter(AnyTag==TRUE& !is.na(AnyTag)),
+          row.names = FALSE)
 write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
-"foia_sba_sbg_critical_tech.csv"),sba.sbg %>% filter(AnyTag==TRUE& !is.na(AnyTag)))
-    saveWorkbook(wb,file=(file.path(path,xlsx)),overwrite = TRUE)
+                         "foia_sba_sbg_critical_tech.csv"),sba.sbg %>% filter(AnyTag==TRUE& !is.na(AnyTag)),
+          row.names = FALSE)
+saveWorkbook(wb,file=(file.path("..","..","Output","OSC")),overwrite = TRUE)
 
 write.csv(file=file.path("..","..","Output","OSC","sbic_providers.csv"),sbic_providers)
 
@@ -315,11 +314,11 @@ write.csv(file=file.path("..","..","Output","OSC","sbic_providers.csv"),sbic_pro
 
 
 
-## Output
+
 ```{r TagOutput}
-write_csv(loanEnergy %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../data/semi_clean/OSC/USAspending_Energy_OSCtagged.csv",na = "")
+write_csv(loanSelected %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../data/semi_clean/OSC/USAspending_Energy_OSCtagged.csv",na = "")
 write_csv(label_exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../data/semi_clean/OSC/EXIMtagged.csv",na = "")
-save(loanEnergy,label_exim,file="../../data/semi_clean/OSC/OSCselectedTagged.rda",na = "")
+save(loanSelected,label_exim,file="../../data/semi_clean/OSC/OSCselectedTagged.rda",na = "")
 ```
 
 
