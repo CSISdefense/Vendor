@@ -112,11 +112,11 @@ loanSelected$AnyTag[loanSelected$cfda_num %in% c("81.126")|
                    loanSelected$cfda_title %in% c("FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES")]<-TRUE
 
 wb<-loadWorkbook(file=file.path("..","..","Output","OSC","selected_assistance_critical_tech.xlsx"))
-writeData(wb, sheet="Selected",loanSelected %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+writeData(wb, sheet="USAspending",loanSelected %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
 write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
                          "usaspending_critical_tech.csv"),loanSelected %>% filter(AnyTag==TRUE& !is.na(AnyTag)),row.names = FALSE)
 
-saveWorkbook(wb,file=(file.path("..","..","Output","OSC")),overwrite = TRUE)
+saveWorkbook(wb,file=(file.path("..","..","Output","OSC","selected_assistance_critical_tech.xlsx")),overwrite = TRUE)
 
 
 
@@ -299,8 +299,10 @@ wb<-loadWorkbook(file=file.path("..","..","Output","OSC","selected_assistance_cr
 writeData(wb, sheet="504-foia",sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
 writeData(wb, sheet="7a-foia",stringi::stri_enc_toutf8(sba.7a) %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
 writeData(wb, sheet="sbg-foia",sba.sbg %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-writeData(wb, sheet="sbg-foia",sba.sbg %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
 writeData(wb, sheet="ExIm",exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+saveWorkbook(wb,file=(file.path("..","..","Output","OSC")),overwrite = TRUE)
+
+
 write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
                          "foia_sba_critical_tech.csv"),sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)),
           row.names = FALSE)
@@ -310,90 +312,47 @@ write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
 write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
                          "foia_sba_sbg_critical_tech.csv"),sba.sbg %>% filter(AnyTag==TRUE& !is.na(AnyTag)),
           row.names = FALSE)
-saveWorkbook(wb,file=(file.path("..","..","Output","OSC")),overwrite = TRUE)
-
-
 
 write.csv(file=file.path("..","..","Output","OSC","sbic_providers.csv"),sbic_providers)
 
 ```
 
-
+# Output
 
 
 
 ```{r TagOutput}
-write_csv(loanSelected %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../data/semi_clean/OSC/USAspending_Energy_OSCtagged.csv",na = "")
+
+wb<-loadWorkbook(file=file.path("..","..","Output","OSC","selected_assistance_critical_tech.xlsx"))
+writeData(wb, sheet="504-foia",sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+# writeData(wb, sheet="7a-foia",sba.7a %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+writeData(wb, sheet="sbg-foia",sba.sbg %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+writeData(wb, sheet="ExIm",exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+writeData(wb, sheet="USAspending",loanSelected %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+saveWorkbook(wb,file=(file.path("..","..","Output","OSC")),overwrite = TRUE)
+
+
+write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
+                         "foia_sba_critical_tech.csv"),sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)),
+          row.names = FALSE)
+write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
+                         "foia_sba_7a_critical_tech.csv"),sba.7a %>% filter(AnyTag==TRUE& !is.na(AnyTag)),
+          row.names = FALSE)
+write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
+                         "foia_sba_sbg_critical_tech.csv"),sba.sbg %>% filter(AnyTag==TRUE& !is.na(AnyTag)),
+          row.names = FALSE)
+
+write.csv(file=file.path("..","..","Output","OSC","sbic_providers.csv"),sbic_providers)
+
+write_csv(loanSelected %>% filter(AnyTag==TRUE &
+                                    !is.na(AnyTag)),file="../../data/semi_clean/OSC/USAspending_Energy_OSCtagged.csv",na = "")
+write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
+                         "usaspending_critical_tech.csv"),loanSelected %>% filter(AnyTag==TRUE& !is.na(AnyTag)),row.names = FALSE)
+
 write_csv(label_exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../data/semi_clean/OSC/EXIMtagged.csv",na = "")
+
+
 save(loanSelected,label_exim,file="../../data/semi_clean/OSC/OSCselectedTagged.rda",na = "")
 ```
 
-
-### Expanding labels to contracts
-
-You can also embed plots, for example:
-
-```{r contract_expansion}
-
-loan <- read_delim(
-  "..//data_raw//OTA_All_Fields.csv",delim = ",",
-  col_names = TRUE, guess_max = 500000,na=c("NA","NULL"),skip = 2)
-loan<-standardize_variable_names(loan)
-
-
-loan<-read_and_join_experiment(loan,
-                         path="..//data_raw//",dir="",lookup_file = "OTA_descrip_row_number.csv",
-                         add_var="descrip_row_number",
-                         # skip_check_var = "Remotely_Crewed",
-                         by="Description_of_Requirement")
-
-loan<-read_and_join_experiment(loan,
-                         path="..//data//semi_clean//",dir="",lookup_file = "ota_description_UAS.csv",
-                         add_var="Remotely_Crewed",
-                         # skip_check_var = "Remotely_Crewed",
-                         by="descrip_row_number",
-                         col_types = "cnccccccccc")
-
-loan$Remotely_Crewed[loan$Remotely_Crewed %in% c("","FALSE")]<-NA
-
-
-sum(text_to_number(loan$Action_Obligation)[loan$Remotely_Crewed %in% c("hightech","hightech/C-hightech")])
-
-
-#This is incredibly slow ~20m, perhaps because of all the warning it prints.
-# loan<-loan %>% group_by(`PIIDAgencyID`,PIID,`ReferencedIDVAgencyID`,Referenced_IDV_PIID) %>%
-#   mutate(max_rc=max(Remotely_Crewed,na.rm=TRUE),
-#          min_rc=min(Remotely_Crewed,na.rm=TRUE))
-
-Remotely_Crewed_CAU<-loan %>% filter(Remotely_Crewed %in% c("hightech","hightech/C-hightech"))%>%
-  group_by(PIIDAgencyID,PIID,ReferencedIDVAgencyID,Referenced_IDV_PIID,
-           Remotely_Crewed) %>% dplyr::summarise()
-
-Remotely_Crewed_CAU$ReferencedIDVAgencyID[is.na(Remotely_Crewed_CAU$ReferencedIDVAgencyID)]<-""
-
-# Training and Readiness Accelerator (TReX) does include hightech, but is a  broader OTA.
-Remotely_Crewed_CAU<-Remotely_Crewed_CAU %>% filter(PIID!="W900KK1890005") 
-
-colnames(Remotely_Crewed_CAU)[colnames(Remotely_Crewed_CAU)=="Remotely_Crewed"]<-"Remotely_Crewed_CAU"
-write_csv(Remotely_Crewed_CAU,file.path("..","data","semi_clean","ota_CAU_UAS.csv"))
-
-
-# 
-# write.csv(loan %>% select(`PIIDAgencyID`,PIID,`ReferencedIDVAgencyID`,Referenced_IDV_PIID,
-#                                  Description_of_Requirement,Remotely_Crewed,max_rc,min_rc,Action_Obligation)
-#      %>% filter(max_rc=='hightech'|min_rc=="hightech"),"CUA_OTA_check.csv")
-# 
-# 
-# write.csv(loan %>% select(`PIIDAgencyID`,PIID,`ReferencedIDVAgencyID`,Referenced_IDV_PIID,
-#                                  Description_of_Requirement,Remotely_Crewed,max_rc,min_rc,Action_Obligation,
-#                                  ProductOrServiceCode)
-#      %>% filter(!is.na(max_rc) | ProductOrServiceCode=="1550"),"CUA_OTA_rc_check.csv")
-# 
-# summary(factor(loan$Remotely_Crewed[loan$ProductOrServiceCode=="1550"]))
-
-
-
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
