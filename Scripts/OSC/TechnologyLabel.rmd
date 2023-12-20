@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(RTextTools)
 library(readr)
+library(ggplot2)
 library(csis360)
 library(dplyr)
 library(tidyr)
@@ -84,8 +85,16 @@ label_keyword<-function(x,keyword,col="transaction_description"){
 keyword<-read_csv("..//..//data//semi_clean//OSC//osc_keyword_list.csv")
 col<-"transaction_description"
 labeled<-label_keyword(descrip,keyword)
+colnames(loanSelected)
 summary(labeled)
 
+loanSelected<-loanSelected[,!colnames(loanSelected) %in%
+                             colnames(loanSelected)[grep(".x",colnames(loanSelected))]]
+loanSelected<-loanSelected[,!colnames(loanSelected) %in%
+                             colnames(loanSelected)[grep(".y",colnames(loanSelected))]]
+
+loanSelected<-loanSelected[,!colnames(loanSelected) %in% 
+                                       colnames(labeled)[!colnames(labeled) %in% c("transaction_description","AnyTag")]]
 loanSelected<-left_join(loanSelected,labeled,by="transaction_description")
 
 #Product label is just the NAICS/SIC category description
@@ -135,7 +144,7 @@ exim<-read_and_join_experiment(exim,
                          directory="economic//",
                          by=c("Primary.Export.Product.NAICS"="principalnaicscode"),
                          add_var=c("CriticalTech"),
-                         # skip_check_var =c("CriticalTech"),
+                         skip_check_var =c("CriticalTech"),
                          missing_file="exim_naics.csv")
 exim$CriticalTech[exim$CriticalTech==""]<-NA
 exim$AnyTag[!is.na(exim$CriticalTech)]<-TRUE
@@ -165,9 +174,9 @@ sba.504tech<-build_plot(
   # labels_and_colors=loan_lc,
   # column_key=loan_ck,
   # NA, #VAR.ncol
-  x_var="ApprovalYear", 
+  x_var="ApprovalFiscalYear", 
   # alpha_var="YTD",  #x_var 
-  y_var="GrossApproval", #VAR.y.variable
+  y_var="GrossApproval_OMB24_GDP22", #VAR.y.variable
   color_var="CriticalTech", #color_var
   # facet_var="awarding_agency_name", #facet_var
   format=TRUE,
@@ -193,7 +202,7 @@ summary(sba.7a$AnyTag)
 
 
 (
-sba.7a<-build_plot(
+sba.7atech<-build_plot(
   data=sba.7a,
   chart_geom = "Bar Chart",
   share = TRUE,
@@ -202,7 +211,7 @@ sba.7a<-build_plot(
   # NA, #VAR.ncol
   x_var="ApprovalFiscalYear", 
   # alpha_var="YTD",  #x_var 
-  y_var="GrossApproval", #VAR.y.variable
+  y_var="GrossApproval_OMB24_GDP22", #VAR.y.variable
   color_var="CriticalTech", #color_var
   # facet_var="awarding_agency_name", #facet_var
   format=TRUE,
@@ -239,7 +248,7 @@ sba.sbg_contract<-build_plot(
   # NA, #VAR.ncol
   x_var="ProjectStartYear", 
   # alpha_var="YTD",  #x_var 
-  y_var="LARGEST_CONTRACT", #VAR.y.variable
+  y_var="LARGEST_CONTRACT_OMB24_GDP22", #VAR.y.variable
   color_var="CriticalTech", #color_var
   # facet_var="awarding_agency_name", #facet_var
   format=TRUE,
@@ -273,7 +282,7 @@ sba.sbg_count<-build_plot(
 
 (
 sba_crosscut<-build_plot(
-  data=sba_unified  %>% filter(!is.na(StartYear)),
+  data=sba_unified  %>% filter(!is.na(StartFiscalYear)),
   chart_geom = "Bar Chart",
   share = FALSE,
   # labels_and_colors=loan_lc,
@@ -281,7 +290,7 @@ sba_crosscut<-build_plot(
   # NA, #VAR.ncol
   x_var="StartFiscalYear", 
   # alpha_var="YTD",  #x_var 
-  y_var="Amount", #VAR.y.variable
+  y_var="Amount_OMB24_GDP22", #VAR.y.variable
   color_var="CriticalTech", #color_var
   facet_var="program", #facet_var
   format=TRUE,
@@ -297,10 +306,10 @@ save(sba.504,sba.7a,sba.sbg,sbic_providers,file=file.path("..","..","data","semi
 
 wb<-loadWorkbook(file=file.path("..","..","Output","OSC","selected_assistance_critical_tech.xlsx"))
 writeData(wb, sheet="504-foia",sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-writeData(wb, sheet="7a-foia",stringi::stri_enc_toutf8(sba.7a) %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+writeData(wb, sheet="7a-foia",sba.7a %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
 writeData(wb, sheet="sbg-foia",sba.sbg %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
 writeData(wb, sheet="ExIm",exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-saveWorkbook(wb,file=(file.path("..","..","Output","OSC")),overwrite = TRUE)
+saveWorkbook(wb,file=(file.path("..","..","Output","OSC","selected_assistance_critical_tech.xlsx")),overwrite = TRUE)
 
 
 write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
@@ -325,11 +334,12 @@ write.csv(file=file.path("..","..","Output","OSC","sbic_providers.csv"),sbic_pro
 
 wb<-loadWorkbook(file=file.path("..","..","Output","OSC","selected_assistance_critical_tech.xlsx"))
 writeData(wb, sheet="504-foia",sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-# writeData(wb, sheet="7a-foia",sba.7a %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+writeData(wb, sheet="7a-foia",sba.7a %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+colnames(sba.7a)
 writeData(wb, sheet="sbg-foia",sba.sbg %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
 writeData(wb, sheet="ExIm",exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
 writeData(wb, sheet="USAspending",loanSelected %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-saveWorkbook(wb,file=(file.path("..","..","Output","OSC")),overwrite = TRUE)
+saveWorkbook(wb,file=file.path("..","..","Output","OSC","selected_assistance_critical_tech.xlsx"),overwrite = TRUE)
 
 
 write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
@@ -342,17 +352,20 @@ write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
                          "foia_sba_sbg_critical_tech.csv"),sba.sbg %>% filter(AnyTag==TRUE& !is.na(AnyTag)),
           row.names = FALSE)
 
-write.csv(file=file.path("..","..","Output","OSC","sbic_providers.csv"),sbic_providers)
+write.csv(file=file.path("..","..","Output","OSC","sbic_providers.csv"),sbic_providers,na="",)
 
 write_csv(loanSelected %>% filter(AnyTag==TRUE &
                                     !is.na(AnyTag)),file="../../data/semi_clean/OSC/USAspending_Energy_OSCtagged.csv",na = "")
 write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
                          "usaspending_critical_tech.csv"),loanSelected %>% filter(AnyTag==TRUE& !is.na(AnyTag)),row.names = FALSE)
 
-write_csv(label_exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../data/semi_clean/OSC/EXIMtagged.csv",na = "")
+write_csv(exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../data/semi_clean/OSC/EXIMtagged.csv",na = "")
 
 
-save(loanSelected,label_exim,file="../../data/semi_clean/OSC/OSCselectedTagged.rda",na = "")
+save(loanSelected,file="../../data/semi_clean/OSC/SelectedLoanDataSet.rda")
+save(exim,file="../../data/semi_clean/OSC/exim.rda")
+save(sba.504,sba.7a,sba.sbg,sbic_providers,file=file.path("..","..","data","semi_Clean","OSC","sba_programs.rda"))
+
 ```
 
 

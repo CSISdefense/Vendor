@@ -13,6 +13,7 @@ library(DBI)
 library(askpass)
 library(openxlsx)
 library(tidyverse)
+library(lubridate)
 
 login<-askpass("Please enter the login account")
 pwd<-askpass("Please enter the account password")
@@ -223,7 +224,22 @@ if(any(is.na(test)&!is.na(sba.504$ApprovalDate))){
 
 
 list.7a<-file.list[grep("^foia-7a",file.list)]
-sba.7a<-rbind_files(list.7a,file.path("Data_Raw","Assistance"))
+sba.7a<-rbind_files(list.7a,file.path("Data_Raw","Assistance"))%>%
+  mutate(BorrName=stringi::stri_trans_nfc(stringi::stri_enc_toutf8(BorrName)),
+         BorrStreet=stringi::stri_trans_nfc(stringi::stri_enc_toutf8(BorrStreet)),
+         BorrCity=stringi::stri_trans_nfc(stringi::stri_enc_toutf8(BorrCity)),
+         BankStreet=stringi::stri_trans_nfc(stringi::stri_enc_toutf8(BankStreet)),
+         BankCity=stringi::stri_trans_nfc(stringi::stri_enc_toutf8(BankCity)),
+         BankState=stringi::stri_trans_nfc(stringi::stri_enc_toutf8(BankState))
+  )
+sba.7a<-sba.7a%>%
+  mutate(BorrName=stringi::stri_trans_nfc(stringi::stri_enc_toutf8(BorrName)),
+         BorrStreet=stringi::stri_trans_nfc(stringi::stri_enc_toutf8(BorrStreet)),
+         BorrCity=stringi::stri_trans_nfc(stringi::stri_enc_toutf8(BorrCity)),
+         BankStreet=stringi::stri_trans_nfc(stringi::stri_enc_toutf8(BankStreet)),
+         BankCity=stringi::stri_trans_nfc(stringi::stri_enc_toutf8(BankCity)),
+         BankState=stringi::stri_trans_nfc(stringi::stri_enc_toutf8(BankState))
+  )
 sba.7a<-deflate(sba.7a,money_var="GrossApproval",fy_var="ApprovalFiscalYear")
 
 
