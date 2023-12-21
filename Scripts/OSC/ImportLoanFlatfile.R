@@ -17,9 +17,10 @@ library(DBI)
 path<-"F:\\Users\\gsanders\\Documents\\Repositories\\USAspending-local\\"
 dir<-"Agency Assistance"
 
-
-write.csv(df %>% group_by(awarding_agency_code,awarding_agency_name) %>%
-            filter(!is.na(awarding_agency_name)) %>% summarise())
+df$cfda_num
+write.csv(df %>% group_by(cfda_num,cfda_title) %>%
+            filter(!is.na(awarding_agency_name)) %>% summarise(),
+          file="cfda_number.csv")
 
 dir.exists(file.path(path,dir,"XIMB"))
 Agencies<-c("XIMB","Commerce","SBA","DoD","Energy")
