@@ -37,7 +37,7 @@ standard_assistance_lookups<-function(df){
     cfda_number))
   if(any(!is.na(df$cfda_number)&is.na(df$cfda_num)))
     stop("Mangled CFDA number")
-  df$assistance_type_code=text_to_number(df$assistance_type_code)
+  df$assistance_type_code<-text_to_number(df$assistance_type_code)
   df<-read_and_join_experiment(df,directory="assistance//",lookup_file="assistance_type_code.csv",
                                by="assistance_type_code")
   df
