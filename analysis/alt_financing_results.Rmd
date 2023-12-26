@@ -35,7 +35,7 @@ geom.text.size<-12
 main.text.size<-1
 note.text.size<-1.40
 
-load("..\\Data\\semi_clean\\OSC\\SelectedLoanDataSet.rda")
+load("..\\Data\\clean\\OSC\\SelectedLoanDataSet.rda")
 
 ```
 
@@ -44,7 +44,7 @@ load("..\\Data\\semi_clean\\OSC\\SelectedLoanDataSet.rda")
 ## Data Exploration
 ### USA spending
 #### CFDA
-```{r CFDS}
+```{r CFDA}
 
 
  cfda<-loanSelected %>% group_by(awarding_agency_name,cfda_num,cfda_title,assistance_type_code) %>% 
@@ -127,16 +127,157 @@ ToplineCFDA<-build_plot(
 #### Sources
 ```{r sba}
 
+(
+sba.504tech<-build_plot(
+  data=sba.504,
+  chart_geom = "Bar Chart",
+  share = TRUE,
+  # labels_and_colors=loan_lc,
+  # column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="ApprovalFiscalYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="GrossApproval_OMB24_GDP22", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  # facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Gross Approval")# (Constant 2022 $s)
+)
+
+
+
+
+(
+sba.7atech<-build_plot(
+  data=sba.7a,
+  chart_geom = "Bar Chart",
+  share = TRUE,
+  # labels_and_colors=loan_lc,
+  # column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="ApprovalFiscalYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="GrossApproval_OMB24_GDP22", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  # facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Gross Approval")# (Constant 2022 $s)
+)
+
+
+sba.sbg$count<-1
+(
+sba.sbg_contract<-build_plot(
+  data=sba.sbg  %>% filter(!is.na(PROJECT_START_DATE)),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=loan_lc,
+  # column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="ProjectStartYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="LARGEST_CONTRACT_OMB24_GDP22", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  # facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Largest Contract")# (Constant 2022 $s)
+)
+
+(
+sba.sbg_count<-build_plot(
+  data=sba.sbg  %>% filter(!is.na(PROJECT_START_DATE)),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=loan_lc,
+  # column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="ProjectStartYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="count", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  # facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Count")# (Constant 2022 $s)
+)
+
+
+
+(
+sba_crosscut<-build_plot(
+  data=sba_unified  %>% filter(!is.na(StartFiscalYear)),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=loan_lc,
+  # column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="StartFiscalYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="Amount_OMB24_GDP22", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  facet_var="program", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Gross Amount or Largest Project")# (Constant 2022 $s)
+)
+
+
 
 ```
 
 ### Economic
-#### Award Summary
+#### Award Summary function
 ```{r award_summary}
+recipient_summary<-function(df){
 
+    minmax<-function(x){
+    if(is.factor(x))
+      x<-as.character(x)
+    ifelse(min(x)==max(x),min(x),NA)
+  }
+
+    df %>% group_by(recipient_uei) %>%
+    summarise(
+      recipient_name=minmax(recipient_name),
+      recipient_duns=minmax(recipient_duns),
+      recipient_name_raw=minmax(recipient_name_raw),
+      recipient_parent_uei=minmax(recipient_parent_uei),
+      recipient_parent_duns=minmax(recipient_parent_duns),
+      recipient_parent_name=minmax(recipient_parent_name),
+      recipient_parent_name_raw=minmax(recipient_parent_name_raw),
+      recipient_country_code=minmax(recipient_country_code),
+      recipient_country_name=minmax(recipient_country_name),
+      recipient_address_line_1=minmax(recipient_address_line_1),
+      recipient_address_line_2=minmax(recipient_address_line_2),
+      recipient_city_code=minmax(recipient_city_code),
+      recipient_city_name=minmax(recipient_city_name),
+      prime_award_transaction_recipient_county_fips_code=minmax(prime_award_transaction_recipient_county_fips_code),
+      recipient_county_name=minmax(recipient_county_name),
+      prime_award_transaction_recipient_state_fips_code=minmax(prime_award_transaction_recipient_state_fips_code),
+      recipient_state_code=minmax(recipient_state_code),
+      recipient_state_name=minmax(recipient_state_name),
+      recipient_zip_code=minmax(recipient_zip_code),
+      recipient_zip_last_4_code=minmax(recipient_zip_last_4_code),
+    )
+}
 
 award_summary<-function(df){
   minmax<-function(x){
+    if(is.factor(x))
+      x<-as.character(x)
     ifelse(min(x)==max(x),min(x),NA)
   }
   minmod<-function(x,mod){
@@ -159,8 +300,8 @@ award_summary<-function(df){
       assistance_type_code=minmax(assistance_type_code),
       assistance_type_description=minmax(assistance_type_description),
       prime_award_base_transaction_description=minmax(prime_award_base_transaction_description),
-      period_of_performance_start_date=minmod(period_of_performance_start_date,modification_number),
-      initial_period_of_performance_current_end_date=minmod(period_of_performance_current_end_date,modification_number),
+      period_of_performance_start_date=minmod(period_of_performance_start_date,ModificationNumber),
+      initial_period_of_performance_current_end_date=minmod(period_of_performance_current_end_date,ModificationNumber),
       # federal_action_obligation=sum(federal_action_obligation,na.rm=TRUE),
       original_loan_subsidy_cost=sum(original_loan_subsidy_cost,na.rm=TRUE),
       # latest_total_outlayed_amount_for_overall_award=latest(total_outlayed_amount_for_overall_award,action_date),
@@ -170,7 +311,7 @@ award_summary<-function(df){
       # latest_transaction_description=latest(transaction_description,action_date),
       max_last_modified_date=max(last_modified_date),
       award_id_fain=minmax(award_id_fain),
-      # modification_number=minmax(modification_number),
+      # ModificationNumber=minmax(ModificationNumber),
       award_id_uri=minmax(award_id_uri),
       sai_number=minmax(sai_number),
       federal_action_obligation=minmax(federal_action_obligation),
@@ -189,7 +330,7 @@ award_summary<-function(df){
       # outlayed_amount_from_IIJA_supplemental_for_overall_award=minmax(outlayed_amount_from_IIJA_supplemental_for_overall_award),
       # obligated_amount_from_IIJA_supplemental_for_overall_award=minmax(obligated_amount_from_IIJA_supplemental_for_overall_award),
       action_date=minmax(action_date),
-      action_date_fiscal_year=minmax(action_date_fiscal_year),
+      Fiscal_Year=minmax(Fiscal_Year),
       period_of_performance_start_date=minmax(period_of_performance_start_date),
       period_of_performance_current_end_date=minmax(period_of_performance_current_end_date),
       awarding_agency_code=minmax(awarding_agency_code),
@@ -210,7 +351,6 @@ award_summary<-function(df){
       # program_activities_funding_this_award=minmax(program_activities_funding_this_award),
       recipient_uei=minmax(recipient_uei),
       recipient_duns=minmax(recipient_duns),
-      recipient_name=minmax(recipient_name),
       recipient_name_raw=minmax(recipient_name_raw),
       recipient_parent_uei=minmax(recipient_parent_uei),
       recipient_parent_duns=minmax(recipient_parent_duns),
@@ -282,6 +422,28 @@ award_summary<-function(df){
     )
   df
 }
+```
+
+#### Innovative Energy Award
+```{r}
+
+
+InnovEnergyAward<-award_summary(loanSelected %>% filter(awarding_agency_name =="Department of Energy"))
+InnovEnergyRecip<-recipient_summary(loanSelected %>% filter(awarding_agency_name =="Department of Energy"))
+view(InnovEnergyRecip %>% arrange(recipient_name))
+write.csv(file=file.path("..","data","semi_clean","OSC","uei_innov_energy.csv"),InnovEnergyRecip%>% arrange(recipient_name),
+          row.names = FALSE)
+
+
+wb<-loadWorkbook(file=file.path("..","Output","OSC","selected_assistance_critical_tech.xlsx"))
+writeData(wb, sheet="InnEngy-USAS",InnovEnergyAward)
+saveWorkbook(wb,file=file.path("..","Output","OSC","selected_assistance_critical_tech.xlsx"),overwrite = TRUE)
+
+
+write.csv(file=file.path("..","Output","OSC","critical_tech_csv",
+                         "usas_innovative_energy_award.csv"),InnovEnergyAward,
+          row.names = FALSE)
+
 ```
 
 

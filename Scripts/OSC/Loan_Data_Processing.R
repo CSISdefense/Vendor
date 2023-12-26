@@ -56,12 +56,12 @@ drop_empties<-function(df){
   }
   df
 }
-loan<-drop_empties(loan)
-summary(factor(loanSelected$awarding_agency_name))
-loanEnergyAward<-loanSelected %>% filter(awarding_agency_name=="Department of Energy")
-loanEnergy<-drop_empties(loanEnergy)
-loanEnergyAward<-award_summary(loanEnergy)
-colnames(loanSelected)[!colnames(loanSelected) %in% colnames(loanEnergy)]
+# loan<-drop_empties(loan)
+# summary(factor(loanSelected$awarding_agency_name))
+# loanEnergyAward<-loanSelected %>% filter(awarding_agency_name=="Department of Energy")
+# loanEnergy<-drop_empties(loanEnergy)
+# loanEnergyAward<-award_summary(loanEnergy)
+# colnames(loanSelected)[!colnames(loanSelected) %in% colnames(loanEnergy)]
 
 
 colnames(loan)
@@ -72,11 +72,11 @@ summary(factor(loan$cfda_num))
 summary(factor(loan$cfda_number))
 loan$cfda_number[is.na(loan$cfda_num)]
 
-colnames(loanEnergy)[!colnames(loanEnergy) %in% colnames(loan_award)]
+# colnames(loanEnergy)[!colnames(loanEnergy) %in% colnames(loan_award)]
 
 
-write.csv(loan %>% group_by(assistance_type_code,assistance_type_description)%>%filter(!is.na(assistance_type_description)) %>%
-  summarise(),file="assistance_type_code.csv",row.names = FALSE)
+# write.csv(loan %>% group_by(assistance_type_code,assistance_type_description)%>%filter(!is.na(assistance_type_description)) %>%
+#   summarise(),file="assistance_type_code.csv",row.names = FALSE)
 
 
 cfda_summary<-loan %>% group_by(cfda_title,cfda_num,assistance_type_code) %>% 
@@ -89,7 +89,7 @@ write.csv(cfda_summary,"data/semi_clean/OSC/cfda_summary.csv",row.names = FALSE)
 
 save(loan,file="data/semi_clean/OSC/FAADCloanDataSet.rda")
 
-#Over 13 million and no way to identify critical tech, seperating 
+#Over 13 million and no way to identify critical tech, separating.
 loanPPP<-loan %>% filter(cfda_num==59.073)
 loanPPP<-standardize_variable_names(loanPPP)
 loanPPP<-apply_standard_lookups(loanPPP) 
