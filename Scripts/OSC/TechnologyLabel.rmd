@@ -199,6 +199,17 @@ loanSelected<-read_and_join_experiment(loanSelected,
                          add_var=c("project_name"),
                          skip_check_var =c("project_name"))
 
+if(nrow(loanSelected %>% filter(awarding_agency_name =="Department of Energy"))==0)
+   stop("DOE missing from loanSelect")
+#Kludge for a missing UEI.
+summary(factor(loanSelected$project_name))
+loanSelected$project_name[loanSelected$recipient_name=="ULTIUM CELLS LLC"& is.na(loanSelected$recipient_uei)]<-"Ultium Cells"
+if(nrow(loanSelected %>% filter(awarding_agency_name =="Department of Energy" & is.na(project_name)))>0){
+  view(loanSelected %>% filter(awarding_agency_name =="Department of Energy" & is.na(project_name)))
+   stop("Project name missing from some DoE")
+}
+summary(factor(loanSelected$project_name))
+
 loanSelected<-read_and_join_experiment(loanSelected,
                          lookup_file="DOE_LPO_project",
                          path=file.path("..","..","Data","semi_clean","OSC"),
