@@ -37,6 +37,11 @@ note.text.size<-1.40
 load("..\\Data\\clean\\OSC\\SelectedLoanDataSet.rda")
 load(file.path("..","data","Clean","OSC","sba_programs.rda"))
 
+agency_list<-data.frame(
+  agency=c("SBA","EXIM"),
+  source=c("SBA FOIA datasets","EXIM dataset"),
+  yaxis=c("Gross Amount or Instance Contract","Approved or Declined Amount")
+)
 ```
 
 
@@ -245,6 +250,7 @@ award_summary<-function(df){
                          by=c("project_name"="project_name"),
                          # add_var=c("project_name"),
                          # skip_check_var =c("project_name")
+                         join_type="full"
   ) %>% mutate(project_url=stringi::stri_trans_nfc(project_url),
                Loan_Status=stringi::stri_trans_nfc(Loan_Status),
                energy_innovation_category=stringi::stri_trans_nfc(energy_innovation_category),
@@ -416,12 +422,27 @@ project_summary<-function(df){
                          by=c("project_name"="project_name"),
                          # add_var=c("project_name"),
                          # skip_check_var =c("project_name")
+                         join_type="full"
   ) %>% mutate(project_url=stringi::stri_trans_nfc(project_url),
                Loan_Status=stringi::stri_trans_nfc(Loan_Status),
                energy_innovation_category=stringi::stri_trans_nfc(energy_innovation_category),
                Issuance_Date=stringi::stri_trans_nfc(Issuance_Date))
   
-  df
+
+  
+  test<-as.Date(df$Issuance_Date,"%m/%d/%Y")
+  if(any(is.na(test)&!is.na(df$Issuance_Date))){
+    df$Issuance_Date[is.na(test)&!is.na(df$Issuance_Date)]
+    stop("Malformed date")
+  } else {
+    df$Issuance_Date<-test
+    df$IssuanceYear<-year(df$Issuance_Date)
+    df$IssuanceFiscalYear<-get_fiscal_year(df$Issuance_Date)
+    
+    rm(test)
+  }
+  
+    df
 }
 ```
 
@@ -492,6 +513,42 @@ write.csv(file=file.path("..","Output","OSC","critical_tech_csv",
 
 
 # Decriptive stats
+## Prepare Unified Dataframe
+```{r}
+
+
+agency_assist<-
+  rbind(sba.504 %>% mutate(StartFiscalYear=ApprovalFiscalYear,
+                           Amount=GrossApproval_Then_Year,
+                           Agency="SBA",
+                           program="504") %>%
+          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
+        sba.7a %>% mutate(StartFiscalYear=ApprovalFiscalYear,
+                          Amount=GrossApproval_Then_Year,
+                           Agency="SBA",
+                          program="7(A)") %>%
+          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
+       sba.sbg %>% mutate(StartFiscalYear=InstanceFiscalYear,
+                           Amount=INSTANCE_CONTRACT_AMOUNT_Then_Year,
+                           Agency="SBA",
+                           program="SBG") %>%
+          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
+       exim %>% mutate(StartFiscalYear=Fiscal.Year,
+                           Amount=Approved.Declined.Amount,
+                           Agency="EXIM",
+                           program="EXIM") %>%
+          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
+        LPOproject %>% mutate(StartFiscalYear=Fiscal.Year,
+                           Amount=Approved.Declined.Amount,
+                           Agency="EXIM",
+                           program="EXIM") %>%
+          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag)
+       ) %>% group_by(StartFiscalYear, CriticalTech,Agency,program,AnyTag) %>%
+  summarise(Amount=sum(Amount,na.rm = TRUE),
+            Count=n())
+agency_assist<-deflate(agency_assist,money_var="Amount",fy_var="StartFiscalYear")
+```
+
 ## Offices and Programs
 
 #### CFDA-USAS
@@ -796,8 +853,8 @@ sba_crosscut<-build_plot(
 
 
 (
-sba_crosscut<-build_plot(
-  data=sba_unified  %>% filter(!is.na(StartFiscalYear)) %>% filter(AnyTag==TRUE),
+crosscut<-build_plot(
+  data=agency_assist  %>% filter(!is.na(StartFiscalYear)) %>% filter(AnyTag==TRUE),
   chart_geom = "Bar Chart",
   share = FALSE,
   # labels_and_colors=loan_lc,
@@ -807,15 +864,51 @@ sba_crosscut<-build_plot(
   # alpha_var="YTD",  #x_var 
   y_var="Amount_OMB24_GDP22", #VAR.y.variable
   color_var="program", #color_var
-  # facet_var="program", #facet_var
+  facet_var="Agency", #facet_var
   format=TRUE,
   ytextposition=FALSE
 )+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
   theme(legend.position = "right")+
-  labs(y="Gross Amount or Instance Contract")+
+  labs(y="Gross Amount or Instance Contract",
+       x="Critical Technology Area")+
     coord_flip()# (Constant 2022 $s)
 )
 
+
+agency_assist$CriticalTech[agency_assist$CriticalTech==""]<-"Not Critical Tech"
+undebug(log_plot)
+for(c in agency_list$agency){
+  file_c<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",c)))
+  (Breakout<-build_plot(
+    data=agency_assist %>% filter(AnyTag==TRUE&Agency==c),#& Fiscal_YQ<=2023.2 Fiscal_Year>=2000& 
+    chart_geom = "Bar Chart",
+    share = FALSE,
+    # labels_and_colors=def_lc,
+    # NA, #VAR.ncol
+    x_var="CriticalTech",#alpha_var="YTD", #x_var
+    y_var="Amount_OMB24_GDP22", #VAR.y.variable
+    color_var="program", #color_var
+    # facet_var="PlatformPortfolio", #facet_var
+    # column_key=def_ck,
+    format=TRUE,
+    ytextposition=FALSE
+  )+#date_x_year_breaks(1990,2020,8,partial_year=2023,partial_label="\nQ1–Q2")+   
+      # theme(legend.position = "none")+
+      labs(y="Obligations (Constant 2022 $s)")+
+      coord_flip()
+  )
+  # 
+  if(!dir.exists(file.path("../output/OSC/",file_c)))
+    dir.create(file.path("../output/OSC",file_c))
+  
+  log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==c),#Fiscal_YQ<=2023.2&
+           filename=paste(file_c,"Crit",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),
+           sheet="Crit",path=file.path("../output/OSC/",file_c), height=3.5,
+           startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
+           output_doc_png=TRUE,excel_y_var=TRUE
+  )
+  
+}
 
 ```
 
