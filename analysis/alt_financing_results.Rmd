@@ -38,9 +38,9 @@ load("..\\Data\\clean\\OSC\\SelectedLoanDataSet.rda")
 load(file.path("..","data","Clean","OSC","sba_programs.rda"))
 
 agency_list<-data.frame(
-  agency=c("SBA","EXIM"),
-  source=c("SBA FOIA datasets","EXIM dataset"),
-  yaxis=c("Gross Amount or Instance Contract","Approved or Declined Amount")
+  agency=c("DFC","SBA","EXIM","DOE"),
+  source=c("DFC.gov","SBA FOIA datasets","EXIM dataset","LPO Portfolio Projects and FAADS"),
+  yaxis=c("Commitment Level (then year)","Gross Amount or Instance Contract (2022 $s)","Approved or Declined Amount (2022 $s)","Loan Amount (2022 $s)")
 )
 ```
 
@@ -253,7 +253,7 @@ award_summary<-function(df){
                          join_type="full"
   ) %>% mutate(project_url=stringi::stri_trans_nfc(project_url),
                Loan_Status=stringi::stri_trans_nfc(Loan_Status),
-               energy_innovation_category=stringi::stri_trans_nfc(energy_innovation_category),
+               LPO_Tech_Sector=stringi::stri_trans_nfc(LPO_Tech_Sector),
                Issuance_Date=stringi::stri_trans_nfc(Issuance_Date))
   
   df
@@ -421,26 +421,45 @@ project_summary<-function(df){
                          directory="",
                          by=c("project_name"="project_name"),
                          # add_var=c("project_name"),
-                         # skip_check_var =c("project_name")
+                         skip_check_var =c("Date_Repaid","Issuance_Date","Project_Statement",
+                                           "Loan_Amount"),
                          join_type="full"
   ) %>% mutate(project_url=stringi::stri_trans_nfc(project_url),
                Loan_Status=stringi::stri_trans_nfc(Loan_Status),
-               energy_innovation_category=stringi::stri_trans_nfc(energy_innovation_category),
+               LPO_Tech_Sector=stringi::stri_trans_nfc(LPO_Tech_Sector),
                Issuance_Date=stringi::stri_trans_nfc(Issuance_Date))
   
 
   
   test<-as.Date(df$Issuance_Date,"%m/%d/%Y")
+  test[is.na(test)]<-as.Date(paste0("1-",df$Issuance_Date[is.na(test)]),"%d-%y-%b")
   if(any(is.na(test)&!is.na(df$Issuance_Date))){
     df$Issuance_Date[is.na(test)&!is.na(df$Issuance_Date)]
     stop("Malformed date")
   } else {
     df$Issuance_Date<-test
-    df$IssuanceYear<-year(df$Issuance_Date)
+    df$IssuanceYear<-lubridate::year(df$Issuance_Date)
     df$IssuanceFiscalYear<-get_fiscal_year(df$Issuance_Date)
+    
+    df$IssuanceYear[is.na(df$IssuanceYear)]<-
+      lubridate::year(df$Issuance_Date[is.na(df$IssuanceYear)])
+    df$IssuanceFiscalYear[is.na(df$period_of_performance_start_date)]<-
+      get_fiscal_year(df$Issuance_Date[is.na(df$period_of_performance_start_date)])
     
     rm(test)
   }
+  
+  df$Loan_Program[df$Loan_Program=="" & df$LPO_Tech_Sector %in% c("Advanced Vehicles & Components",
+                                                                                           "Critical Materials")]<-"ATVM"
+df$Loan_Program[df$Loan_Program=="" & !df$LPO_Tech_Sector %in% c("Advanced Vehicles & Components",
+                                                                                           "Critical Materials")]<-"Title 17"
+
+if(any(is.na(text_to_number(df$Loan_Amount) & !is.na(df$Loan_Amount))))
+  stop("Loan_Amount conversion failure")
+
+df$Loan_Amount<-text_to_number(df$Loan_Amount)
+df$Loan_Amount[is.na(df$Loan_Amount)] <-
+  df$face_value_of_loan[is.na(df$Loan_Amount)]
   
     df
 }
@@ -448,6 +467,7 @@ project_summary<-function(df){
 
 ### Innovative Energy Award
 ```{r}
+  
 
 
 LPOaward<-award_summary(loanSelected %>% filter(awarding_agency_name =="Department of Energy"))
@@ -463,7 +483,7 @@ writeData(wb, sheet="DOE-LPO-award",LPOaward)
 writeData(wb, sheet="DOE-LPO",LPOproject %>% 
             dplyr::select(project_name,			
                    transaction_count,
-                   energy_innovation_category,
+                   LPO_Tech_Sector,
                    project_url,
                    usaspending_permalink,
                    Project_Statement,
@@ -538,10 +558,12 @@ agency_assist<-
                            Agency="EXIM",
                            program="EXIM") %>%
           dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
-        LPOproject %>% mutate(StartFiscalYear=Fiscal.Year,
-                           Amount=Approved.Declined.Amount,
-                           Agency="EXIM",
-                           program="EXIM") %>%
+        LPOproject %>% mutate(StartFiscalYear=IssuanceFiscalYear,
+                           Amount=Loan_Amount,
+                           Agency="DOE",
+                           program=Loan_Program,
+                           CriticalTech=LPO_Tech_Sector,
+                           AnyTag=TRUE) %>%
           dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag)
        ) %>% group_by(StartFiscalYear, CriticalTech,Agency,program,AnyTag) %>%
   summarise(Amount=sum(Amount,na.rm = TRUE),
@@ -832,7 +854,7 @@ sba_crosscut<-build_plot(
 
 (
 sba_crosscut<-build_plot(
-  data=sba_unified  %>% filter(!is.na(StartFiscalYear)) %>% filter(AnyTag==TRUE),
+  data=agency_assist  %>% filter(!is.na(StartFiscalYear)) %>% filter(AnyTag==TRUE),
   chart_geom = "Bar Chart",
   share = FALSE,
   # labels_and_colors=loan_lc,
@@ -876,11 +898,12 @@ crosscut<-build_plot(
 
 
 agency_assist$CriticalTech[agency_assist$CriticalTech==""]<-"Not Critical Tech"
-undebug(log_plot)
-for(c in agency_list$agency){
-  file_c<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",c)))
+
+for(i in 1:length(agency_list$agency)){
+  c<-agency_list$agency[i]
+  file_c<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",agency_list$agency[i])))
   (Breakout<-build_plot(
-    data=agency_assist %>% filter(AnyTag==TRUE&Agency==c),#& Fiscal_YQ<=2023.2 Fiscal_Year>=2000& 
+    data=agency_assist %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#& Fiscal_YQ<=2023.2 Fiscal_Year>=2000& 
     chart_geom = "Bar Chart",
     share = FALSE,
     # labels_and_colors=def_lc,
@@ -894,14 +917,15 @@ for(c in agency_list$agency){
     ytextposition=FALSE
   )+#date_x_year_breaks(1990,2020,8,partial_year=2023,partial_label="\nQ1–Q2")+   
       # theme(legend.position = "none")+
-      labs(y="Obligations (Constant 2022 $s)")+
+      labs(y=agency_list$yaxis[i],
+           caption=paste("Source",agency_list$source[i]))+
       coord_flip()
   )
   # 
   if(!dir.exists(file.path("../output/OSC/",file_c)))
     dir.create(file.path("../output/OSC",file_c))
   
-  log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==c),#Fiscal_YQ<=2023.2&
+  log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#Fiscal_YQ<=2023.2&
            filename=paste(file_c,"Crit",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),
            sheet="Crit",path=file.path("../output/OSC/",file_c), height=3.5,
            startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
