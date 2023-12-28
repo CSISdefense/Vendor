@@ -42,204 +42,11 @@ load("..\\Data\\clean\\OSC\\SelectedLoanDataSet.rda")
 
 
 ## Data Exploration
-### USA spending
-#### CFDA
-```{r CFDA}
 
 
- cfda<-loanSelected %>% group_by(awarding_agency_name,cfda_num,cfda_title,assistance_type_code) %>% 
-      summarise(n=length(assistance_type_code),
-            total_outlayed_amount_for_overall_award=sum(total_outlayed_amount_for_overall_award,na.rm=TRUE),
-            face_value_of_loan=sum(face_value_of_loan,na.rm=TRUE)) 
-  # write_csv(cfda,file="../../output/OSC/selected_cfda.csv")
-
-
-loan_lc<-prepare_labels_and_colors(loanSelected)
-loan_ck<-get_column_key(loanSelected)
-
-(
-CFDAoblgiation<-build_plot(
-  data=loanSelected,
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=loan_lc,
-  column_key=loan_ck,
-  # NA, #VAR.ncol
-  x_var="dFYear", 
-  alpha_var="YTD",  #x_var 
-  y_var="federal_action_obligation", #VAR.y.variable
-  color_var="cfda_num", #color_var
-  facet_var="awarding_agency_name", #facet_var
-  format=TRUE,
-  ytextposition=FALSE
-)+date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "right")+
-  labs(y="Obligations")# (Constant 2022 $s)
-)
-
-
-
-(
-ToplineCFDA<-build_plot(
-  data=loanSelected,
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=loan_lc,
-  column_key=loan_ck,
-  # NA, #VAR.ncol
-  x_var="dFYear", 
-  alpha_var="YTD",  #x_var 
-  y_var="face_value_of_loan", #VAR.y.variable
-  color_var="cfda_num", #color_var
-  facet_var="awarding_agency_name", #facet_var
-  format=TRUE,
-  ytextposition=FALSE
-)+date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "right")+
-  labs(y="Original Loan Face Value")# (Constant 2022 $s)
-)
-
-
-
-(
-ToplineCFDA<-build_plot(
-  data=loanSelected,
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=loan_lc,
-  column_key=loan_ck,
-  # NA, #VAR.ncol
-  x_var="dFYear", 
-  alpha_var="YTD",  #x_var 
-  y_var="original_loan_subsidy_cost", #VAR.y.variable
-  color_var="cfda_num", #color_var
-  facet_var="awarding_agency_name", #facet_var
-  format=TRUE,
-  ytextposition=FALSE
-)+date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "right")+
-  labs(y="Original Loan Subsidy Cost")# (Constant 2022 $s)
-)
-
-  
-```
-### SBA secondary sources
-#### Sources
-```{r sba}
-
-(
-sba.504tech<-build_plot(
-  data=sba.504,
-  chart_geom = "Bar Chart",
-  share = TRUE,
-  # labels_and_colors=loan_lc,
-  # column_key=loan_ck,
-  # NA, #VAR.ncol
-  x_var="ApprovalFiscalYear", 
-  # alpha_var="YTD",  #x_var 
-  y_var="GrossApproval_OMB24_GDP22", #VAR.y.variable
-  color_var="CriticalTech", #color_var
-  # facet_var="awarding_agency_name", #facet_var
-  format=TRUE,
-  ytextposition=FALSE
-)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "right")+
-  labs(y="Gross Approval")# (Constant 2022 $s)
-)
-
-
-
-
-(
-sba.7atech<-build_plot(
-  data=sba.7a,
-  chart_geom = "Bar Chart",
-  share = TRUE,
-  # labels_and_colors=loan_lc,
-  # column_key=loan_ck,
-  # NA, #VAR.ncol
-  x_var="ApprovalFiscalYear", 
-  # alpha_var="YTD",  #x_var 
-  y_var="GrossApproval_OMB24_GDP22", #VAR.y.variable
-  color_var="CriticalTech", #color_var
-  # facet_var="awarding_agency_name", #facet_var
-  format=TRUE,
-  ytextposition=FALSE
-)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "right")+
-  labs(y="Gross Approval")# (Constant 2022 $s)
-)
-
-
-sba.sbg$count<-1
-(
-sba.sbg_contract<-build_plot(
-  data=sba.sbg  %>% filter(!is.na(PROJECT_START_DATE)),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  # labels_and_colors=loan_lc,
-  # column_key=loan_ck,
-  # NA, #VAR.ncol
-  x_var="ProjectStartYear", 
-  # alpha_var="YTD",  #x_var 
-  y_var="LARGEST_CONTRACT_OMB24_GDP22", #VAR.y.variable
-  color_var="CriticalTech", #color_var
-  # facet_var="awarding_agency_name", #facet_var
-  format=TRUE,
-  ytextposition=FALSE
-)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "right")+
-  labs(y="Largest Contract")# (Constant 2022 $s)
-)
-
-(
-sba.sbg_count<-build_plot(
-  data=sba.sbg  %>% filter(!is.na(PROJECT_START_DATE)),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  # labels_and_colors=loan_lc,
-  # column_key=loan_ck,
-  # NA, #VAR.ncol
-  x_var="ProjectStartYear", 
-  # alpha_var="YTD",  #x_var 
-  y_var="count", #VAR.y.variable
-  color_var="CriticalTech", #color_var
-  # facet_var="awarding_agency_name", #facet_var
-  format=TRUE,
-  ytextposition=FALSE
-)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "right")+
-  labs(y="Count")# (Constant 2022 $s)
-)
-
-
-
-(
-sba_crosscut<-build_plot(
-  data=sba_unified  %>% filter(!is.na(StartFiscalYear)),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  # labels_and_colors=loan_lc,
-  # column_key=loan_ck,
-  # NA, #VAR.ncol
-  x_var="StartFiscalYear", 
-  # alpha_var="YTD",  #x_var 
-  y_var="Amount_OMB24_GDP22", #VAR.y.variable
-  color_var="CriticalTech", #color_var
-  facet_var="program", #facet_var
-  format=TRUE,
-  ytextposition=FALSE
-)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "right")+
-  labs(y="Gross Amount or Largest Project")# (Constant 2022 $s)
-)
-
-
-
-```
-
-### Economic
-#### Award Summary function
+### Case Study Support
+#### Functions
+##### Recipient Summary
 ```{r award_summary}
 recipient_summary<-function(df){
 
@@ -251,6 +58,7 @@ recipient_summary<-function(df){
 
     df %>% group_by(recipient_uei) %>%
     summarise(
+      project_name=minmax(project_name),
       recipient_name=minmax(recipient_name),
       recipient_duns=minmax(recipient_duns),
       recipient_name_raw=minmax(recipient_name_raw),
@@ -273,7 +81,10 @@ recipient_summary<-function(df){
       recipient_zip_last_4_code=minmax(recipient_zip_last_4_code),
     )
 }
+```
 
+##### Award Summary
+```{award_summary}
 award_summary<-function(df){
   minmax<-function(x){
     if(is.factor(x))
@@ -295,6 +106,7 @@ award_summary<-function(df){
   
   df<-df %>% group_by(assistance_award_unique_key) %>%
     summarise(
+      project_name=minmax(project_name),
       # assistance_transaction_unique_key=minmax(assistance_transaction_unique_key),
       assistance_award_unique_key=minmax(assistance_award_unique_key),
       recipient_name=minmax(recipient_name),
@@ -425,13 +237,26 @@ award_summary<-function(df){
       cfda_num=minmax(cfda_num),
       assistance_type_description=minmax(assistance_type_description),
     )
+  
+    df<-read_and_join_experiment(df,
+                         lookup_file="DOE_LPO_project.csv",
+                         path=file.path("..","Data","semi_clean","OSC"),
+                         directory="",
+                         by=c("project_name"="project_name"),
+                         # add_var=c("project_name"),
+                         # skip_check_var =c("project_name")
+  ) %>% mutate(project_url=stringi::stri_trans_nfc(project_url),
+               Loan_Status=stringi::stri_trans_nfc(Loan_Status),
+               energy_innovation_category=stringi::stri_trans_nfc(energy_innovation_category),
+               Issuance_Date=stringi::stri_trans_nfc(Issuance_Date))
+  
   df
 }
 
 ```
 
 
-### ProjectName summary
+##### ProjectName summary
 ```{r ProjectSummaryFunction}
 
 project_summary<-function(df){
@@ -592,7 +417,7 @@ project_summary<-function(df){
                          # add_var=c("project_name"),
                          # skip_check_var =c("project_name")
   ) %>% mutate(project_url=stringi::stri_trans_nfc(project_url),
-               Status=stringi::stri_trans_nfc(Status),
+               Loan_Status=stringi::stri_trans_nfc(Loan_Status),
                energy_innovation_category=stringi::stri_trans_nfc(energy_innovation_category),
                Issuance_Date=stringi::stri_trans_nfc(Issuance_Date))
   
@@ -600,7 +425,7 @@ project_summary<-function(df){
 }
 ```
 
-#### Innovative Energy Award
+### Innovative Energy Award
 ```{r}
 
 
@@ -615,19 +440,21 @@ LPOproject<-project_summary(loanSelected %>% filter(awarding_agency_name =="Depa
 wb<-loadWorkbook(file=file.path("..","Output","OSC","selected_assistance_critical_tech.xlsx"))
 writeData(wb, sheet="DOE-LPO-award",LPOaward)
 writeData(wb, sheet="DOE-LPO",LPOproject %>% 
-            dplyr::select(project_name,
+            dplyr::select(project_name,			
+                   transaction_count,
                    energy_innovation_category,
                    project_url,
                    usaspending_permalink,
-                   transaction_count,
                    Project_Statement,
                    prime_award_base_transaction_description,
                    Loan_Status,
+                   GAO_comments,
                    Issuance_Date,
                    period_of_performance_start_date,
                    Date_Repaid,
                    initial_period_of_performance_current_end_date,
                    max_last_modified_date,
+                   Loan_Amount,
                    original_loan_subsidy_cost,
                    face_value_of_loan,
                    non_federal_funding_amount,
@@ -635,10 +462,10 @@ writeData(wb, sheet="DOE-LPO",LPOproject %>%
                    Loan_Type,
                   assistance_type_description,
                    federal_action_obligation,
-                   total_obligated_amount,
-                   total_non_federal_funding_amount,
-                   total_face_value_of_loan,
-                   total_loan_subsidy_cost,
+                   # total_obligated_amount,
+                   # total_non_federal_funding_amount,
+                   # total_face_value_of_loan,
+                   # total_loan_subsidy_cost,
                   recipient_name,
                   recipient_state_name,
                   recipient_parent_name,
@@ -657,7 +484,429 @@ write.csv(file=file.path("..","Output","OSC","critical_tech_csv",
                          "usas_DOE_LPO_award.csv"),LPOaward,
           row.names = FALSE)
 
+write.csv(file=file.path("..","Output","OSC","critical_tech_csv",
+                         "usas_DOE_LPO_project.csv"),LPOproject,
+          row.names = FALSE)
+
 ```
+
+
+# Decriptive stats
+## Offices and Programs
+
+#### CFDA-USAS
+```{r CFDA}
+
+
+ cfda<-loanSelected %>% group_by(awarding_agency_name,cfda_num,cfda_title,assistance_type_code) %>% 
+      summarise(n=length(assistance_type_code),
+            total_outlayed_amount_for_overall_award=sum(total_outlayed_amount_for_overall_award,na.rm=TRUE),
+            face_value_of_loan=sum(face_value_of_loan,na.rm=TRUE)) 
+  # write_csv(cfda,file="../../output/OSC/selected_cfda.csv")
+
+
+loan_lc<-prepare_labels_and_colors(loanSelected)
+loan_ck<-get_column_key(loanSelected)
+
+(
+CFDAoblgiation<-build_plot(
+  data=loanSelected,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=loan_lc,
+  column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="dFYear", 
+  alpha_var="YTD",  #x_var 
+  y_var="federal_action_obligation", #VAR.y.variable
+  color_var="cfda_num", #color_var
+  facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Obligations")# (Constant 2022 $s)
+)
+
+
+
+(
+ToplineCFDA<-build_plot(
+  data=loanSelected,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=loan_lc,
+  column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="dFYear", 
+  alpha_var="YTD",  #x_var 
+  y_var="face_value_of_loan", #VAR.y.variable
+  color_var="cfda_num", #color_var
+  facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Original Loan Face Value")# (Constant 2022 $s)
+)
+
+
+
+(
+ToplineCFDA<-build_plot(
+  data=loanSelected,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=loan_lc,
+  column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="dFYear", 
+  alpha_var="YTD",  #x_var 
+  y_var="original_loan_subsidy_cost", #VAR.y.variable
+  color_var="cfda_num", #color_var
+  facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Original Loan Subsidy Cost")# (Constant 2022 $s)
+)
+
+  
+```
+
+
+
+### Office
+```{r grouped percent frequency/obligation barplot for all Office}
+#grouped bar plot for variable Office
+#Perpare data for plot
+Office_Freq <- def %>% group_by(Agency, Office) %>%
+  dplyr::summarise(
+    Count_Freq=length(CSIScontractID),
+    Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE)
+  )
+
+Office_Freq$Percent_Obligation <- Office_Freq$Action_Obligation_Then_Year/
+                                          sum(Office_Freq$Action_Obligation_Then_Year,na.rm=TRUE)
+
+Office_Freq$Percent_Freq <- Office_Freq$Count_Freq/
+                                          sum(Office_Freq$Count_Freq,na.rm=TRUE)
+
+#get the detailed desceription for Office by AgencyID and OfficeID
+
+Office_Freq<-read_and_join_experiment(Office_Freq,
+                                      lookup_file = "Office.ContractingOfficeCode.txt",
+                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                                      dir="office/",
+                                      by=c("Agency"="AgencyID",
+                                       "Office"="ContractingOfficeCode"   
+                                      ),
+                                      add_var = "ContractingOfficeName",
+                                      skip_check_var = "ContractingOfficeName")
+
+
+colnames(Office_Freq)[colnames(Office_Freq)=="ContractingOfficeName"] <- "OfficeName"
+
+# Office_Freq[,1:2] <- lapply(Office_Freq[,1:2], function(x) as.character(x))
+#Generate a new name column by Combining Office and officeName
+Office_Freq$Office_Full <- ifelse(is.na(Office_Freq$OfficeName), Office_Freq$Office, 
+                                  paste(Office_Freq$Office, 
+                                            sep=" - ", Office_Freq$OfficeName))
+
+
+# Office_Freq$Percent_Obli <- Percent_Obli * 100
+
+Office_Freq_top10Freq <- Office_Freq[order(-Office_Freq$Percent_Freq),]
+Office_Freq_top10Freq <- Office_Freq_top10Freq[1:10, ]  #including NULL category
+Office_Freq_top10Obli <- Office_Freq[order(-Office_Freq$Percent_Obligation),]
+Office_Freq_top10Obli <- Office_Freq_top10Obli[1:10, ]  #including NULL category
+
+Office_Freq_TOP <- rbind(Office_Freq_top10Obli, Office_Freq_top10Freq)
+Office_Freq_TOP <- unique(Office_Freq_TOP)  #17 records in total
+
+Office_Freq_TOP$Office_Full <- factor(Office_Freq_TOP$Office_Full, 
+                                      levels = rev(Office_Freq_TOP$Office_Full))
+Office_Freq_TOP <- melt(Office_Freq_TOP, 
+                        id = c("Agency","Office", "OfficeName", "Office_Full", "Count_Freq", "Action_Obligation_Then_Year"))
+
+Office_barplot <- ggplot(data = Office_Freq_TOP,
+                         aes(x = Office_Full, 
+                             y = value,
+                             fill = factor(variable))) +
+                  geom_bar(stat = "identity", 
+                  position = "dodge", 
+                  width = 0.8) + 
+                  coord_flip() +
+                  xlab("") + 
+                  ylab("") + 
+                  theme_grey() + 
+                  scale_fill_grey(labels = c("% of records", "% of obligation"),
+                                  guide = guide_legend(reverse = TRUE)) + 
+                  ggtitle("Percent of Frequency and obligation for Office") +
+                  theme(text = element_text(size = 10), 
+                        legend.title = element_blank(),
+                        legend.position = "bottom",
+                        legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit = "cm"),
+                        legend.text = element_text(margin = margin(r=0.5, unit = "cm")), 
+                        plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm"))
+Office_barplot
+```
+
+
+## Critical Tech
+### Is Critical-SBA
+```{r sba}
+
+(
+sba.504tech<-build_plot(
+  data=sba.504,
+  chart_geom = "Bar Chart",
+  share = TRUE,
+  # labels_and_colors=loan_lc,
+  # column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="ApprovalFiscalYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="GrossApproval_OMB24_GDP22", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  # facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Gross Approval")# (Constant 2022 $s)
+)
+
+
+
+
+(
+sba.7atech<-build_plot(
+  data=sba.7a,
+  chart_geom = "Bar Chart",
+  share = TRUE,
+  # labels_and_colors=loan_lc,
+  # column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="ApprovalFiscalYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="GrossApproval_OMB24_GDP22", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  # facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Gross Approval")# (Constant 2022 $s)
+)
+
+
+sba.sbg$count<-1
+(
+sba.sbg_contract<-build_plot(
+  data=sba.sbg  %>% filter(!is.na(PROJECT_START_DATE)),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=loan_lc,
+  # column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="ProjectStartYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="LARGEST_CONTRACT_OMB24_GDP22", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  # facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Largest Contract")# (Constant 2022 $s)
+)
+
+(
+sba.sbg_count<-build_plot(
+  data=sba.sbg  %>% filter(!is.na(PROJECT_START_DATE)),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=loan_lc,
+  # column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="ProjectStartYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="count", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  # facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Count")# (Constant 2022 $s)
+)
+
+
+
+(
+sba_crosscut<-build_plot(
+  data=sba_unified  %>% filter(!is.na(StartFiscalYear)),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=loan_lc,
+  # column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="StartFiscalYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="Amount_OMB24_GDP22", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  facet_var="program", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Gross Amount or Largest Project")# (Constant 2022 $s)
+)
+
+
+
+```
+
+
+### Type-SBA
+```{r sba}
+
+(
+sba.504tech<-build_plot(
+  data=sba.504 %>% filter(AnyTag==TRUE),
+  chart_geom = "Bar Chart",
+  share = TRUE,
+  # labels_and_colors=loan_lc,
+  # column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="ApprovalFiscalYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="GrossApproval_OMB24_GDP22", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  # facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Gross Approval")# (Constant 2022 $s)
+)
+
+
+
+
+(
+sba.7atech<-build_plot(
+  data=sba.7a %>% filter(AnyTag==TRUE),
+  chart_geom = "Bar Chart",
+  share = TRUE,
+  # labels_and_colors=loan_lc,
+  # column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="ApprovalFiscalYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="GrossApproval_OMB24_GDP22", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  # facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Gross Approval")# (Constant 2022 $s)
+)
+
+
+sba.sbg$count<-1
+(
+sba.sbg_contract<-build_plot(
+  data=sba.sbg  %>% filter(!is.na(PROJECT_START_DATE)) %>% filter(AnyTag==TRUE), 
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=loan_lc,
+  # column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="ProjectStartYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="LARGEST_CONTRACT_OMB24_GDP22", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  # facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Largest Contract")# (Constant 2022 $s)
+)
+
+(
+sba.sbg_count<-build_plot(
+  data=sba.sbg  %>% filter(!is.na(PROJECT_START_DATE)) %>% filter(AnyTag==TRUE),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=loan_lc,
+  # column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="ProjectStartYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="count", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  # facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Count")# (Constant 2022 $s)
+)
+
+
+
+(
+sba_crosscut<-build_plot(
+  data=sba_unified  %>% filter(!is.na(StartFiscalYear)) %>% filter(AnyTag==TRUE),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=loan_lc,
+  # column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="StartFiscalYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="Amount_OMB24_GDP22", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  facet_var="program", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Gross Amount or Largest Project")# (Constant 2022 $s)
+)
+
+
+
+(
+sba_crosscut<-build_plot(
+  data=sba_unified  %>% filter(!is.na(StartFiscalYear)) %>% filter(AnyTag==TRUE),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=loan_lc,
+  # column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="CriticalTech", 
+  # alpha_var="YTD",  #x_var 
+  y_var="Amount_OMB24_GDP22", #VAR.y.variable
+  color_var="program", #color_var
+  # facet_var="program", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Gross Amount or Largest Project")# (Constant 2022 $s)
+)
+
+
+```
+
+## Economic
+
 
 
 #### NAICS 2
@@ -999,86 +1248,7 @@ write.csv(NAICS_summary,file="..//Output/NAICS6_summary.csv",row.names = FALSE)
 
 
 
-
-### Office
-```{r grouped percent frequency/obligation barplot for all Office}
-#grouped bar plot for variable Office
-#Perpare data for plot
-Office_Freq <- def %>% group_by(Agency, Office) %>%
-  dplyr::summarise(
-    Count_Freq=length(CSIScontractID),
-    Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE)
-  )
-
-Office_Freq$Percent_Obligation <- Office_Freq$Action_Obligation_Then_Year/
-                                          sum(Office_Freq$Action_Obligation_Then_Year,na.rm=TRUE)
-
-Office_Freq$Percent_Freq <- Office_Freq$Count_Freq/
-                                          sum(Office_Freq$Count_Freq,na.rm=TRUE)
-
-#get the detailed desceription for Office by AgencyID and OfficeID
-
-Office_Freq<-read_and_join_experiment(Office_Freq,
-                                      lookup_file = "Office.ContractingOfficeCode.txt",
-                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                                      dir="office/",
-                                      by=c("Agency"="AgencyID",
-                                       "Office"="ContractingOfficeCode"   
-                                      ),
-                                      add_var = "ContractingOfficeName",
-                                      skip_check_var = "ContractingOfficeName")
-
-
-colnames(Office_Freq)[colnames(Office_Freq)=="ContractingOfficeName"] <- "OfficeName"
-
-# Office_Freq[,1:2] <- lapply(Office_Freq[,1:2], function(x) as.character(x))
-#Generate a new name column by Combining Office and officeName
-Office_Freq$Office_Full <- ifelse(is.na(Office_Freq$OfficeName), Office_Freq$Office, 
-                                  paste(Office_Freq$Office, 
-                                            sep=" - ", Office_Freq$OfficeName))
-
-
-# Office_Freq$Percent_Obli <- Percent_Obli * 100
-
-Office_Freq_top10Freq <- Office_Freq[order(-Office_Freq$Percent_Freq),]
-Office_Freq_top10Freq <- Office_Freq_top10Freq[1:10, ]  #including NULL category
-Office_Freq_top10Obli <- Office_Freq[order(-Office_Freq$Percent_Obligation),]
-Office_Freq_top10Obli <- Office_Freq_top10Obli[1:10, ]  #including NULL category
-
-Office_Freq_TOP <- rbind(Office_Freq_top10Obli, Office_Freq_top10Freq)
-Office_Freq_TOP <- unique(Office_Freq_TOP)  #17 records in total
-
-Office_Freq_TOP$Office_Full <- factor(Office_Freq_TOP$Office_Full, 
-                                      levels = rev(Office_Freq_TOP$Office_Full))
-Office_Freq_TOP <- melt(Office_Freq_TOP, 
-                        id = c("Agency","Office", "OfficeName", "Office_Full", "Count_Freq", "Action_Obligation_Then_Year"))
-
-Office_barplot <- ggplot(data = Office_Freq_TOP,
-                         aes(x = Office_Full, 
-                             y = value,
-                             fill = factor(variable))) +
-                  geom_bar(stat = "identity", 
-                  position = "dodge", 
-                  width = 0.8) + 
-                  coord_flip() +
-                  xlab("") + 
-                  ylab("") + 
-                  theme_grey() + 
-                  scale_fill_grey(labels = c("% of records", "% of obligation"),
-                                  guide = guide_legend(reverse = TRUE)) + 
-                  ggtitle("Percent of Frequency and obligation for Office") +
-                  theme(text = element_text(size = 10), 
-                        legend.title = element_blank(),
-                        legend.position = "bottom",
-                        legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit = "cm"),
-                        legend.text = element_text(margin = margin(r=0.5, unit = "cm")), 
-                        plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm"))
-Office_barplot
-```
-
-
-
-### Variable examination
+## Scope 
 ```{r VarGraph}
 
 
