@@ -261,9 +261,26 @@ if(any(is.na(test)&!is.na(sba.sbg$PROJECT_START_DATE)&
   sba.sbg$PROJECT_START_DATE<-test
   sba.sbg$ProjectStartYear<-year(sba.sbg$PROJECT_START_DATE)
   sba.sbg$ProjectStartFiscalYear<-get_fiscal_year(sba.sbg$PROJECT_START_DATE)
+  sba.sbg$InstanceStartYear<-year(sba.sbg$INSTANCE_DATE)
+  sba.sbg$InstanceFiscalYear<-get_fiscal_year(sba.sbg$INSTANCE_DATE)
+  
   rm(test)
 }
+test<-as.Date(sba.sbg$INSTANCE_DATE,"%m/%d/%Y")
+if(any(is.na(test)&!is.na(sba.sbg$INSTANCE_DATE))){
+  sba.sbg$INSTANCE_DATE[is.na(test)&!is.na(sba.sbg$INSTANCE_DATE)]
+  stop("Malformed date")
+} else {
+  sba.sbg$INSTANCE_DATE<-test
+  sba.sbg$InstanceStartYear<-year(sba.sbg$INSTANCE_DATE)
+  sba.sbg$InstanceFiscalYear<-get_fiscal_year(sba.sbg$INSTANCE_DATE)
+  
+  rm(test)
+}
+
 sba.sbg<-deflate(sba.sbg,money_var="LARGEST_CONTRACT",fy_var="ProjectStartFiscalYear")
+sba.sbg<-deflate(sba.sbg,money_var="INSTANCE_CONTRACT_AMOUNT",fy_var="InstanceFiscalYear")
+
 
 
 
@@ -276,15 +293,15 @@ sba_unified<-
   rbind(sba.504 %>% mutate(StartFiscalYear=ApprovalFiscalYear,
                            Amount=GrossApproval_Then_Year,
                            program="504") %>%
-          dplyr::select(StartFiscalYear, Amount,CriticalTech,program),
+          dplyr::select(StartFiscalYear, Amount,program),
         sba.7a %>% mutate(StartFiscalYear=ApprovalFiscalYear,
                           Amount=GrossApproval_Then_Year,
                           program="7(A)") %>%
-          dplyr::select(StartFiscalYear, Amount,CriticalTech,program),
-        sba.sbg %>% mutate(StartFiscalYear=ProjectStartFiscalYear,
-                           Amount=LARGEST_CONTRACT_Then_Year,
+          dplyr::select(StartFiscalYear, Amount,program),
+        sba.sbg %>% mutate(StartFiscalYear=InstanceFiscalYear,
+                           Amount=INSTANCE_CONTRACT_AMOUNT_Then_Year,
                            program="SBG") %>%
-          dplyr::select(StartFiscalYear, Amount,CriticalTech,program))
+          dplyr::select(StartFiscalYear, Amount,program))
 sba_unified<-deflate(sba_unified,money_var="Amount",fy_var="StartFiscalYear")
 
 

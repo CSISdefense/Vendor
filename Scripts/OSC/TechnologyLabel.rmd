@@ -259,6 +259,26 @@ write_csv(exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../data/semi_c
 
 save(loanSelected,file="../../data/clean/OSC/SelectedLoanDataSet.rda")
 save(exim,file="../../data/semi_clean/OSC/exim.rda")
+
+
+sba_unified<-
+  rbind(sba.504 %>% mutate(StartFiscalYear=ApprovalFiscalYear,
+                           Amount=GrossApproval_Then_Year,
+                           program="504") %>%
+          dplyr::select(StartFiscalYear, Amount,CriticalTech,program,AnyTag),
+        sba.7a %>% mutate(StartFiscalYear=ApprovalFiscalYear,
+                          Amount=GrossApproval_Then_Year,
+                          program="7(A)") %>%
+          dplyr::select(StartFiscalYear, Amount,CriticalTech,program,AnyTag),
+       sba.sbg %>% mutate(StartFiscalYear=InstanceFiscalYear,
+                           Amount=INSTANCE_CONTRACT_AMOUNT_Then_Year,
+                           program="SBG") %>%
+          dplyr::select(StartFiscalYear, Amount,CriticalTech,program,AnyTag))
+sba_unified<-deflate(sba_unified,money_var="Amount",fy_var="StartFiscalYear")
+
+
+
+
 save(sba.504,sba.7a,sba.sbg,sbic_providers,file=file.path("..","..","data","Clean","OSC","sba_programs.rda"))
 
 ```
