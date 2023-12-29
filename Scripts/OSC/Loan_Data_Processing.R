@@ -306,6 +306,10 @@ sba_unified<-deflate(sba_unified,money_var="Amount",fy_var="StartFiscalYear")
 
 
 
-
 save(sba.504,sba.7a,sba.sbg,sbic_providers,sba_unified,
      file=file.path("data","semi_Clean","OSC","sba_programs.rda"))
+
+dfc<-readWorkbook(xlsxFile=file.path("Data_Raw","Assistance","DFC investments.xlsx"),sheet="Sheet1")
+dfc$Commitment.level<-text_to_number(dfc$Commitment.level)
+save(dfc,file="data/semi_clean/OSC/dfc.rda")
+

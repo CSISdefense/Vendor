@@ -37,7 +37,7 @@ load(file="../../Data/Semi_Clean/OSC/exim.rda")
 
 load(file=file.path("..","..","data","semi_Clean","OSC","sba_programs.rda"))
 
-
+load(file=file.path("..","..","data", "semi_clean","OSC","dfc.rda"))
 
 ```
 
@@ -216,7 +216,12 @@ loanSelected<-read_and_join_experiment(loanSelected,
                          directory="",
                          by=c("project_name"="project_name"),
                          # add_var=c("project_name"),
-                         # skip_check_var =c("project_name")
+                         skip_check_var =c("Date_Repaid","Issuance_Date","Project_Statement",
+                                           "Loan_Amount")
+                         ) %>% mutate(project_url=stringi::stri_trans_nfc(project_url),
+               Loan_Status=stringi::stri_trans_nfc(Loan_Status),
+               LPO_Tech_Sector=stringi::stri_trans_nfc(LPO_Tech_Sector),
+               Issuance_Date=stringi::stri_trans_nfc(Issuance_Date)
                          )
 
 ```
@@ -230,10 +235,10 @@ loanSelected<-read_and_join_experiment(loanSelected,
 wb<-loadWorkbook(file=file.path("..","..","Output","OSC","selected_assistance_critical_tech.xlsx"))
 writeData(wb, sheet="504-foia",sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
 writeData(wb, sheet="7a-foia",sba.7a %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-colnames(sba.7a)
 writeData(wb, sheet="sbg-foia",sba.sbg %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
 writeData(wb, sheet="ExIm",exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-writeData(wb, sheet="USAspending",loanSelected %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+writeData(wb, sheet="DFC",dfc)
+writeData(wb, sheet="USAS",loanSelected %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
 saveWorkbook(wb,file=file.path("..","..","Output","OSC","selected_assistance_critical_tech.xlsx"),overwrite = TRUE)
 
 
