@@ -39,6 +39,7 @@ load(file=file.path("..","..","data","semi_Clean","Assistance","sba_programs.rda
 
 load(file=file.path("..","..","data", "semi_clean","Assistance","dfc.rda"))
 repo_output_path<-file.path("..","..","Output","Assistance")
+sharepoint_log_path<-file.path(get_local_sharepoint_path("Office of Strategic Capital - Documents"),"General","Data")
 ```
 
 # Setup
@@ -216,8 +217,9 @@ loanSelected<-read_and_join_experiment(loanSelected,
                          directory="",
                          by=c("project_name"="project_name"),
                          # add_var=c("project_name"),
-                         skip_check_var =c("Date_Repaid","Issuance_Date","Project_Statement",
-                                           "Loan_Amount")
+                                     skip_check_var =c("Date_Repaid","Issuance_Date","Project_Statement",
+                                           "Loan_Amount","Location","Loan_Type",
+                                           "Loan_Program"),
                          ) %>% mutate(project_url=stringi::stri_trans_nfc(project_url),
                Loan_Status=stringi::stri_trans_nfc(Loan_Status),
                LPO_Tech_Sector=stringi::stri_trans_nfc(LPO_Tech_Sector),
@@ -231,23 +233,50 @@ loanSelected<-read_and_join_experiment(loanSelected,
 
 
 ```{r TagOutput}
-
-rwb<-loadWorkbook(file=file.path(repo_output_path,"selected_assistance_critical_tech.xlsx"))
-swb<-loadWorkbook(file=file.path(sharepoint_output_path,"selected_assistance_critical_tech.xlsx"))
-
-writeData(wb, sheet="504-foia",sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-writeData(wb, sheet="7a-foia",sba.7a %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-writeData(wb, sheet="sbg-foia",sba.sbg %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-writeData(wb, sheet="ExIm",exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-writeData(wb, sheet="DFC",dfc)
-writeData(wb, sheet="USAS",loanSelected %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-saveWorkbook(wb,file=file.path(repo_output_path,"selected_assistance_critical_tech.xlsx"),overwrite = TRUE)
+writeData_twice<-function(first_wb,second_wb,data,sheet){
+  writeData(first_wb, sheet=sheet,data)
+  writeData(second_wb, sheet=sheet,data)
+}
 
 
 write_twice<-function(data,first_path,second_path,dir,file){
   write_csv(file=file.path(first_path,dir,file),data)
   write_csv(file=file.path(second_path,dir,file),data)
 }
+
+
+
+rwb<-loadWorkbook(file=file.path(repo_output_path,"SBA","SBA_Assistance.xlsx"))
+swb<-loadWorkbook(file=file.path(sharepoint_log_path,"SBA","SBA_Assistance.xlsx"))
+writeData_twice(swb,rwb,sheet="504-foia",sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+writeData_twice(swb,rwb, sheet="7a-foia",sba.7a %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+writeData_twice(swb,rwb, sheet="sbg-foia",sba.sbg %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+saveWorkbook(rwb,file=file.path(repo_output_path,"SBA","SBA_Assistance.xlsx"),overwrite = TRUE)
+saveWorkbook(swb,file=file.path(sharepoint_log_path,"SBA","SBA_Assistance.xlsx"),overwrite = TRUE)
+
+
+rwb<-loadWorkbook(file=file.path(repo_output_path,"EXIM","EXIM_Assistance.xlsx"))
+swb<-loadWorkbook(file=file.path(sharepoint_log_path,"EXIM","EXIM_Assistance.xlsx"))
+writeData_twice(swb,rwb, sheet="ExIm",exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+saveWorkbook(rwb,file=file.path(repo_output_path,"EXIM","EXIM_Assistance.xlsx"),overwrite = TRUE)
+saveWorkbook(swb,file=file.path(sharepoint_log_path,"EXIM","EXIM_Assistance.xlsx"),overwrite = TRUE)
+
+rwb<-loadWorkbook(file=file.path(repo_output_path,"DFC","DFC_Assistance.xlsx"))
+swb<-loadWorkbook(file=file.path(sharepoint_log_path,"DFC","DFC_Assistance.xlsx"))
+
+writeData_twice(swb,rwb, sheet="DFC",dfc)
+saveWorkbook(rwb,file=file.path(repo_output_path,"DFC","DFC_Assistance.xlsx"),overwrite = TRUE)
+saveWorkbook(swb,file=file.path(sharepoint_log_path,"DFC","DFC_Assistance.xlsx"),overwrite = TRUE)
+
+
+rwb<-loadWorkbook(file=file.path(repo_output_path,"selected_assistance_critical_tech.xlsx"))
+swb<-loadWorkbook(file=file.path(sharepoint_log_path,"selected_assistance_critical_tech.xlsx"))
+
+writeData_twice(swb,rwb, sheet="USAS",loanSelected %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+saveWorkbook(rwb,file=file.path(repo_output_path,"selected_assistance_critical_tech.xlsx"),overwrite = TRUE)
+saveWorkbook(swb,file=file.path(sharepoint_log_path,"selected_assistance_critical_tech.xlsx"),overwrite = TRUE)
+
+
 
 
 

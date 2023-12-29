@@ -34,10 +34,10 @@ geom.text.size<-12
 main.text.size<-1
 note.text.size<-1.40
 
-load("..\\Data\\clean\\OSC\\SelectedLoanDataSet.rda")
-load(file.path("..","data","Clean","OSC","sba_programs.rda"))
-load(file.path("..","data","Clean","OSC","dfc.rda"))
-load(file.path("..","data","Clean","OSC","exim.rda"))
+load("..\\Data\\clean\\Assistance\\SelectedLoanDataSet.rda")
+load(file.path("..","data","Clean","Assistance","sba_programs.rda"))
+load(file.path("..","data","Clean","Assistance","dfc.rda"))
+load(file.path("..","data","Clean","Assistance","exim.rda"))
 
 agency_list<-data.frame(
   agency=c("DFC","SBA","EXIM","DOE"),
@@ -249,7 +249,7 @@ award_summary<-function(df){
   
     df<-read_and_join_experiment(df,
                          lookup_file="DOE_LPO_project.csv",
-                         path=file.path("..","Data","semi_clean","OSC"),
+                         path=file.path("..","Data","semi_clean","Assistance"),
                          directory="",
                          by=c("project_name"="project_name"),
                          # add_var=c("project_name"),
@@ -421,7 +421,7 @@ project_summary<-function(df){
   
   df<-read_and_join_experiment(df,
                          lookup_file="DOE_LPO_project.csv",
-                         path=file.path("..","Data","semi_clean","OSC"),
+                         path=file.path("..","Data","semi_clean","Assistance"),
                          directory="",
                          by=c("project_name"="project_name"),
                          # add_var=c("project_name"),
@@ -488,11 +488,11 @@ LPOaward<-award_summary(loanSelected %>% filter(awarding_agency_name =="Departme
 LPOproject<-project_summary(loanSelected %>% filter(awarding_agency_name =="Department of Energy"))
 # LPOrecip<-project_summary(loanSelected %>% filter(awarding_agency_name =="Department of Energy"))
 # view(LPOrecip %>% arrange(recipient_name))
-# write.csv(file=file.path("..","data","semi_clean","OSC","uei_innov_energy.csv"),LPOrecip%>% arrange(recipient_name),
+# write.csv(file=file.path("..","data","semi_clean","Assistance","uei_innov_energy.csv"),LPOrecip%>% arrange(recipient_name),
 #           row.names = FALSE)
 
 
-wb<-loadWorkbook(file=file.path("..","Output","OSC","selected_assistance_critical_tech.xlsx"))
+wb<-loadWorkbook(file=file.path("..","Output","Assistance","selected_assistance_critical_tech.xlsx"))
 # writeData(wb, sheet="DOE-LPO-award",LPOaward)
 writeData(wb, sheet="DOE-LPO",LPOproject %>% 
             dplyr::select(project_name,			
@@ -533,14 +533,14 @@ writeData(wb, sheet="DOE-LPO",LPOproject %>%
                    ))
 writeData(wb, sheet="DOE-LPO-long",LPOproject)
 # writeData(wb, sheet="DOE-LPO-long",LPOproject %>% select())
-saveWorkbook(wb,file=file.path("..","Output","OSC","selected_assistance_critical_tech.xlsx"),overwrite = TRUE)
+saveWorkbook(wb,file=file.path("..","Output","Assistance","selected_assistance_critical_tech.xlsx"),overwrite = TRUE)
 
 
-write.csv(file=file.path("..","Output","OSC","critical_tech_csv",
+write.csv(file=file.path("..","Output","Assistance","critical_tech_csv",
                          "usas_DOE_LPO_award.csv"),LPOaward,
           row.names = FALSE)
 
-write.csv(file=file.path("..","Output","OSC","critical_tech_csv",
+write.csv(file=file.path("..","Output","Assistance","critical_tech_csv",
                          "usas_DOE_LPO_project.csv"),LPOproject,
           row.names = FALSE)
 
@@ -557,7 +557,7 @@ agency_assist<-
                            Amount=GrossApproval_Then_Year,
                            Agency="SBA",
                            program="504",
-                        FinancingType=subpgmdesc,
+                        FinancingType=DeliveryMethod,
                         FinancingStatus=LoanStatus,
                         State=ProjectState,
                         PartnerCountry=NA) %>%
@@ -567,7 +567,7 @@ agency_assist<-
                           Amount=GrossApproval_Then_Year,
                           Agency="SBA",
                           program="7(A)",
-                        FinancingType=subpgmdesc,
+                        FinancingType=DeliveryMethod,
                         FinancingStatus=LoanStatus,
                         State=ProjectState,
                         PartnerCountry=NA) %>%
@@ -622,6 +622,8 @@ agency_assist<-
   summarise(Amount=sum(Amount,na.rm = TRUE),
             Count=n())
 agency_assist<-deflate(agency_assist,money_var="Amount",fy_var="StartFiscalYear")
+
+
 ```
 
 ## Offices and Programs
@@ -634,7 +636,7 @@ agency_assist<-deflate(agency_assist,money_var="Amount",fy_var="StartFiscalYear"
       summarise(n=length(assistance_type_code),
             total_outlayed_amount_for_overall_award=sum(total_outlayed_amount_for_overall_award,na.rm=TRUE),
             face_value_of_loan=sum(face_value_of_loan,na.rm=TRUE)) 
-  # write_csv(cfda,file="../../output/OSC/selected_cfda.csv")
+  # write_csv(cfda,file="../../output/Assistance/selected_cfda.csv")
 
 
 loan_lc<-prepare_labels_and_colors(loanSelected)
@@ -975,12 +977,12 @@ for(i in 1:length(agency_list$agency)){
       coord_flip()
   )
   # 
-  if(!dir.exists(file.path("../output/OSC/",file_c)))
-    dir.create(file.path("../output/OSC",file_c))
+  if(!dir.exists(file.path("../output/Assistance/",file_c)))
+    dir.create(file.path("../output/Assistance",file_c))
   
   log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#Fiscal_YQ<=2023.2&
            filename=paste(file_c,"Crit",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),
-           sheet="Crit",path=file.path("../output/OSC/",file_c),second_path=sharepoint_log_path,
+           sheet="Crit",path=file.path("../output/Assistance/",file_c),second_path=sharepoint_log_path,
            height=3.5,
            startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
            output_doc_png=TRUE,excel_y_var=TRUE
@@ -1065,12 +1067,12 @@ for(i in 1:length(agency_list$agency)){
       coord_flip()
   )
   # 
-  if(!dir.exists(file.path("../output/OSC/",file_c)))
-    dir.create(file.path("../output/OSC",file_c))
+  if(!dir.exists(file.path("../output/Assistance/",file_c)))
+    dir.create(file.path("../output/Assistance",file_c))
   
   log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#Fiscal_YQ<=2023.2&
            filename=paste(file_c,"Status",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),
-           sheet="Status",path=file.path("../output/OSC/",file_c),second_path=sharepoint_log_path, height=3.5,
+           sheet="Status",path=file.path("../output/Assistance/",file_c),second_path=sharepoint_log_path, height=3.5,
            startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
            output_doc_png=TRUE,excel_y_var=TRUE
   )
@@ -1153,12 +1155,12 @@ for(i in 1:length(agency_list$agency)){
       coord_flip()
   )
   # 
-  if(!dir.exists(file.path("../output/OSC/",file_c)))
-    dir.create(file.path("../output/OSC",file_c))
+  if(!dir.exists(file.path("../output/Assistance/",file_c)))
+    dir.create(file.path("../output/Assistance",file_c))
   
   log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#Fiscal_YQ<=2023.2&
            filename=paste(file_c,"Type",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),
-           sheet="Type",path=file.path("../output/OSC/",file_c),second_path=sharepoint_log_path, height=3.5,
+           sheet="Type",path=file.path("../output/Assistance/",file_c),second_path=sharepoint_log_path, height=3.5,
            startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
            output_doc_png=TRUE,excel_y_var=TRUE
   )
