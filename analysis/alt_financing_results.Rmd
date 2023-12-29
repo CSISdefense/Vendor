@@ -424,12 +424,21 @@ project_summary<-function(df){
                          by=c("project_name"="project_name"),
                          # add_var=c("project_name"),
                          skip_check_var =c("Date_Repaid","Issuance_Date","Project_Statement",
-                                           "Loan_Amount"),
+                                           "Loan_Amount","Location"),
                          join_type="full"
-  ) %>% mutate(project_url=stringi::stri_trans_nfc(project_url),
+  ) %>% mutate(LPO_Tech_Sector=stringi::stri_trans_nfc(LPO_Tech_Sector),
+               project_url=stringi::stri_trans_nfc(project_url),
+               Loan_Type=stringi::stri_trans_nfc(Loan_Type),
                Loan_Status=stringi::stri_trans_nfc(Loan_Status),
-               LPO_Tech_Sector=stringi::stri_trans_nfc(LPO_Tech_Sector),
-               Issuance_Date=stringi::stri_trans_nfc(Issuance_Date))
+               
+               
+               Issuance_Date=stringi::stri_trans_nfc(Issuance_Date),
+               Date_Repaid=stringi::stri_trans_nfc(Date_Repaid),
+               Project_Statement=stringi::stri_trans_nfc(Project_Statement),
+               Loan_Program=stringi::stri_trans_nfc(Loan_Program),
+               GAO_comments=stringi::stri_trans_nfc(GAO_comments),
+               Location=stringi::stri_trans_nfc(Location),
+               Owner=stringi::stri_trans_nfc(Owner))
   
 
   
@@ -481,7 +490,7 @@ LPOproject<-project_summary(loanSelected %>% filter(awarding_agency_name =="Depa
 
 
 wb<-loadWorkbook(file=file.path("..","Output","OSC","selected_assistance_critical_tech.xlsx"))
-writeData(wb, sheet="DOE-LPO-award",LPOaward)
+# writeData(wb, sheet="DOE-LPO-award",LPOaward)
 writeData(wb, sheet="DOE-LPO",LPOproject %>% 
             dplyr::select(project_name,			
                    transaction_count,
@@ -513,6 +522,7 @@ writeData(wb, sheet="DOE-LPO",LPOproject %>%
                   recipient_state_name,
                   recipient_parent_name,
                   primary_place_of_performance_scope,
+                  Location,
                   primary_place_of_performance_state_name,
                   action_type_description,
                   business_funds_indicator_description,
@@ -543,38 +553,68 @@ agency_assist<-
   rbind(sba.504 %>% mutate(StartFiscalYear=ApprovalFiscalYear,
                            Amount=GrossApproval_Then_Year,
                            Agency="SBA",
-                           program="504") %>%
-          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
+                           program="504",
+                        FinancingType=subpgmdesc,
+                        FinancingStatus=LoanStatus,
+                        State=ProjectState,
+                        PartnerCountry=NA) %>%
+          dplyr::select(StartFiscalYear, Amount,Agency,program,
+                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry),
         sba.7a %>% mutate(StartFiscalYear=ApprovalFiscalYear,
                           Amount=GrossApproval_Then_Year,
-                           Agency="SBA",
-                          program="7(A)") %>%
-          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
-       sba.sbg %>% mutate(StartFiscalYear=InstanceFiscalYear,
+                          Agency="SBA",
+                          program="7(A)",
+                        FinancingType=subpgmdesc,
+                        FinancingStatus=LoanStatus,
+                        State=ProjectState,
+                        PartnerCountry=NA) %>%
+          dplyr::select(StartFiscalYear, Amount,Agency,program,
+                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry),
+        sba.sbg %>% mutate(StartFiscalYear=InstanceFiscalYear,
                            Amount=INSTANCE_CONTRACT_AMOUNT_Then_Year,
                            Agency="SBA",
-                           program="SBG") %>%
-          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
-       exim %>% mutate(StartFiscalYear=Fiscal.Year,
-                           Amount=Approved.Declined.Amount,
-                           Agency="EXIM",
-                           program="EXIM") %>%
-          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
+                           program="SBG",
+                        FinancingType=BOND_TYPE,
+                        FinancingStatus=BOND_STATUS,
+                        State=BUSINESS_STATE,
+                        PartnerCountry=NA) %>%
+          dplyr::select(StartFiscalYear, Amount,Agency,program,
+                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry),
+        exim %>% mutate(StartFiscalYear=Fiscal.Year,
+                        Amount=Approved.Declined.Amount,
+                        Agency="EXIM",
+                        program="EXIM",
+                        FinancingType=Program,
+                        FinancingStatus=Deal.Cancelled,
+                        State=Primary.Exporter.State.Name,
+                        PartnerCountry=Country) %>%
+          dplyr::select(StartFiscalYear, Amount,Agency,program,
+                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry),
         LPOproject %>% mutate(StartFiscalYear=IssuanceFiscalYear,
-                           Amount=Loan_Amount,
-                           Agency="DOE",
-                           program=Loan_Program,
-                           CriticalTech=LPO_Tech_Sector,
-                           AnyTag=TRUE) %>%
-          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
-       dfc %>% mutate(StartFiscalYear=Year,
-                           Amount=Commitment.level,
-                           Agency="DFC",
-                           program="DFC",
-                           CriticalTech=Sector,
-                           AnyTag=TRUE) %>%
-          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag)
-       ) %>% group_by(StartFiscalYear, CriticalTech,Agency,program,AnyTag) %>%
+                              Amount=Loan_Amount,
+                              Agency="DOE",
+                              program=Loan_Program,
+                              FinancingType=Loan_Type,
+                              FinancingStatus=Loan_Status,
+                              CriticalTech=LPO_Tech_Sector,
+                              AnyTag=TRUE,
+                              State=Location,
+                              PartnerCountry=NA) %>%
+          dplyr::select(StartFiscalYear, Amount,Agency,program,
+                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry),
+        dfc %>% mutate(StartFiscalYear=Year,
+                       Amount=Commitment.level,
+                       Agency="DFC",
+                       program="DFC",
+                       FinancingType=Type,
+                       FinancingStatus=NA,
+                       CriticalTech=Sector,
+                       AnyTag=TRUE,
+                       State=NA,
+                       PartnerCountry=Country) %>%
+          dplyr::select(StartFiscalYear, Amount,Agency,program,
+                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry)
+  ) %>% group_by(StartFiscalYear, CriticalTech,Agency,program,AnyTag) %>%
   summarise(Amount=sum(Amount,na.rm = TRUE),
             Count=n())
 agency_assist<-deflate(agency_assist,money_var="Amount",fy_var="StartFiscalYear")
