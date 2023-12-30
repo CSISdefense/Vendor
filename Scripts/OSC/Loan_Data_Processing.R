@@ -126,7 +126,8 @@ save(loanOther,file="data/semi_clean/Assistance/OtherLoanDataSet.rda")
 load(file="data/semi_clean/Assistance/SelectedLoanDataSet.rda")
 
 ###ExIm bank
-exim<-read_csv("Data_Raw/Loans/Authorizations_From_10_01_2006_Thru_12_31_2022.csv",na = "N/A")
+exim<-read_csv("Data_Raw/Assistance/EXIM/Authorizations_From_10_01_2006_Thru_12_31_2022.csv",na = "N/A")
+exim <- exim %>% filter(Program!="Insurance")
 colnames(exim)<-gsub(" ",".",colnames(exim))
 colnames(exim)<-gsub("/",".",colnames(exim))
 exim$Primary.Export.Product.NAICS<-NA

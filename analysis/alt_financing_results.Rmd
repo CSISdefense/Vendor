@@ -41,8 +41,10 @@ load(file.path("..","data","Clean","Assistance","exim.rda"))
 
 agency_list<-data.frame(
   agency=c("DFC","SBA","EXIM","DOE"),
-  source=c("DFC.gov","SBA FOIA datasets","EXIM dataset","LPO Portfolio Projects and FAADS"),
-  yaxis=c("Commitment Level (then year)","Gross Amount or Instance Contract (2022 $s)","Approved or Declined Amount (2022 $s)","Loan Amount (2022 $s)")
+  source=c("DFC.gov and CSIS analysis.","SBA FOIA datasets and CSIS analysis.","EXIM dataset and CSIS analysis.","LPO Portfolio Projects, FAADS, and CSIS analysis."),
+  yaxis=c("Commitment Level (2022 $s)","Gross Amount or Instance Contract (2022 $s)","Approved or Declined Amount (2022 $s)","Loan Amount (2022 $s)"),
+  statussource=c("Source: DFC.gov and CSIS analysis.","* 7A and 504 loans are exempt from reporting the status of loans that are not paid off, cancelled, or charged off.\nSource: SBA FOIA datasets and CSIS analysis.",
+           "Source: EXIM dataset and CSIS analysis.","Source: LPO Portfolio Projects and FAADS and CSIS analysis.")
 )
 
 sharepoint_log_path<-file.path(get_local_sharepoint_path("Office of Strategic Capital - Documents"),"General","Data")
@@ -93,7 +95,7 @@ recipient_summary<-function(df){
 ```
 
 ##### Award Summary
-```{award_summary}
+```{r award_summary}
 award_summary<-function(df){
   minmax<-function(x){
     if(is.factor(x))
@@ -253,12 +255,24 @@ award_summary<-function(df){
                          directory="",
                          by=c("project_name"="project_name"),
                          # add_var=c("project_name"),
-                         # skip_check_var =c("project_name")
+                         skip_check_var =c("Date_Repaid","Issuance_Date","Project_Statement",
+                                           "Loan_Amount","Location","Loan_Type",
+                                           "Loan_Program"),
                          join_type="full"
-  ) %>% mutate(project_url=stringi::stri_trans_nfc(project_url),
+  ) %>% mutate(LPO_Tech_Sector=stringi::stri_trans_nfc(LPO_Tech_Sector),
+               project_url=stringi::stri_trans_nfc(project_url),
+               Loan_Type=stringi::stri_trans_nfc(Loan_Type),
                Loan_Status=stringi::stri_trans_nfc(Loan_Status),
-               LPO_Tech_Sector=stringi::stri_trans_nfc(LPO_Tech_Sector),
-               Issuance_Date=stringi::stri_trans_nfc(Issuance_Date))
+               
+               
+               Issuance_Date=stringi::stri_trans_nfc(Issuance_Date),
+               Date_Repaid=stringi::stri_trans_nfc(Date_Repaid),
+               Project_Statement=stringi::stri_trans_nfc(Project_Statement),
+               Loan_Program=stringi::stri_trans_nfc(Loan_Program),
+               GAO_comments=stringi::stri_trans_nfc(GAO_comments),
+               Location=stringi::stri_trans_nfc(Location),
+               Owner=stringi::stri_trans_nfc(Owner))
+  
   
   df
 }
@@ -474,7 +488,8 @@ if(any(is.na(text_to_number(df$Loan_Amount) & !is.na(df$Loan_Amount))))
 df$Loan_Amount<-text_to_number(df$Loan_Amount)
 df$Loan_Amount[is.na(df$Loan_Amount)] <-
   df$face_value_of_loan[is.na(df$Loan_Amount)]
-  
+  df$Loan_Type[is.na(df$Loan_Type)]<-
+  df$assistance_type_description[is.na(df$Loan_Type)]
     df
 }
 ```
@@ -492,9 +507,10 @@ LPOproject<-project_summary(loanSelected %>% filter(awarding_agency_name =="Depa
 #           row.names = FALSE)
 
 
-wb<-loadWorkbook(file=file.path("..","Output","Assistance","selected_assistance_critical_tech.xlsx"))
+rwb<-loadWorkbook(file=file.path("..","Output","Assistance","DOE","DOE_assistance.xlsx"))
+swb<-loadWorkbook(file=file.path(sharepoint_log_path,"DOE","DOE_assistance.xlsx"))
 # writeData(wb, sheet="DOE-LPO-award",LPOaward)
-writeData(wb, sheet="DOE-LPO",LPOproject %>% 
+writeData_twice(rwb,swb, sheet="DOE-LPO",LPOproject %>% 
             dplyr::select(project_name,			
                    transaction_count,
                    LPO_Tech_Sector,
@@ -531,9 +547,10 @@ writeData(wb, sheet="DOE-LPO",LPOproject %>%
                   business_funds_indicator_description,
                   business_types_description
                    ))
-writeData(wb, sheet="DOE-LPO-long",LPOproject)
+writeData_twice(rwb,swb, sheet="DOE-LPO-long",LPOproject)
 # writeData(wb, sheet="DOE-LPO-long",LPOproject %>% select())
-saveWorkbook(wb,file=file.path("..","Output","Assistance","selected_assistance_critical_tech.xlsx"),overwrite = TRUE)
+saveWorkbook(rwb,file=file.path("..","Output","Assistance","DOE","DOE_assistance.xlsx"),overwrite = TRUE)
+saveWorkbook(swb,file=file.path(sharepoint_log_path,"DOE","DOE_assistance.xlsx"),overwrite = TRUE)
 
 
 write.csv(file=file.path("..","Output","Assistance","critical_tech_csv",
@@ -577,7 +594,7 @@ agency_assist<-
                            Amount=INSTANCE_CONTRACT_AMOUNT_Then_Year,
                            Agency="SBA",
                            program="SBG",
-                        FinancingType=BOND_TYPE,
+                        FinancingType=PROGRAM,
                         FinancingStatus=BOND_STATUS,
                         State=BUSINESS_STATE,
                         PartnerCountry=NA) %>%
@@ -606,7 +623,7 @@ agency_assist<-
           dplyr::select(StartFiscalYear, Amount,Agency,program,
                         FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry),
         dfc %>% mutate(StartFiscalYear=Year,
-                       Amount=Commitment.level,
+                       Amount=Committment.level,
                        Agency="DFC",
                        program="DFC",
                        FinancingType=Type,
@@ -904,7 +921,7 @@ sba_crosscut<-build_plot(
 ```
 
 
-### Type
+### Tech Type
 ```{r sba}
 
 (
@@ -973,22 +990,27 @@ for(i in 1:length(agency_list$agency)){
   )+#date_x_year_breaks(1990,2020,8,partial_year=2023,partial_label="\nQ1–Q2")+   
       # theme(legend.position = "none")+
       labs(y=agency_list$yaxis[i],
-           caption=paste("Source",agency_list$source[i]))+
+           x="Critical Technology Area",
+           caption=paste("Source: ",agency_list$source[i]),
+           title=paste(agency_list$agency[i],"Financing to Critical Technology Areas by Area"))+
       coord_flip()
   )
   # 
   if(!dir.exists(file.path("../output/Assistance/",file_c)))
     dir.create(file.path("../output/Assistance",file_c))
   
+  
   log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#Fiscal_YQ<=2023.2&
-           filename=paste(file_c,"Crit",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),
-           sheet="Crit",path=file.path("../output/Assistance/",file_c),second_path=sharepoint_log_path,
+           filename=paste(file_c,"Crit",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_text = FALSE,
+           sheet="Crit",path=file.path("../output/Assistance/",file_c),second_path=file.path(sharepoint_log_path,file_c),
            height=3.5,
            startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
            output_doc_png=TRUE,excel_y_var=TRUE
   )
   
 }
+
+
 
 ```
 
@@ -997,6 +1019,11 @@ for(i in 1:length(agency_list$agency)){
 ### Financing Status
 ```{r FinancingStatus}
 
+
+  agency_assist<-read_and_join_experiment(agency_assist,directory="assistance//",lookup_file="FinancingStatus.csv",
+                               by=c("program","FinancingStatus"),add_var="FinancingStatus.sum",
+                               case_sensitive = FALSE)
+  
 (
 annual<-build_plot(
   data=agency_assist  %>% filter(!is.na(StartFiscalYear)) %>% filter(AnyTag==TRUE),
@@ -1008,7 +1035,7 @@ annual<-build_plot(
   x_var="StartFiscalYear", 
   # alpha_var="YTD",  #x_var 
   y_var="Amount_OMB24_GDP22", #VAR.y.variable
-  color_var="FinancingStatus", #color_var
+  color_var="FinancingStatus.sum", #color_var
   facet_var="program", #facet_var
   format=TRUE,
   ytextposition=FALSE
@@ -1027,7 +1054,7 @@ overall<-build_plot(
   # labels_and_colors=loan_lc,
   # column_key=loan_ck,
   # NA, #VAR.ncol
-  x_var="FinancingStatus", 
+  x_var="FinancingStatus.sum", 
   # alpha_var="YTD",  #x_var 
   y_var="Amount_OMB24_GDP22", #VAR.y.variable
   color_var="program", #color_var
@@ -1037,14 +1064,15 @@ overall<-build_plot(
 )+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
   theme(legend.position = "right")+
   labs(y="Gross Amount or Instance Contract",
-       x="Critical Technology Area")+
+       x="Financing Status",
+           paste(agency_list$agency[i],"Financing to Critical Technology Areas by Status"))+
     coord_flip()# (Constant 2022 $s)
 )
 
 
 for(i in 1:length(agency_list$agency)){
   c<-agency_list$agency[i]
-  if(all(is.na(agency_assist$FinancingStatus[agency_assist$Agency==agency_list$agency[i]])))
+  if(all(is.na(agency_assist$FinancingStatus.sum[agency_assist$Agency==agency_list$agency[i]])))
     next #Skip when the core data is missing.
   file_c<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",agency_list$agency[i])))
   (Breakout<-build_plot(
@@ -1053,7 +1081,7 @@ for(i in 1:length(agency_list$agency)){
     share = FALSE,
     # labels_and_colors=def_lc,
     # NA, #VAR.ncol
-    x_var="FinancingStatus",#alpha_var="YTD", #x_var
+    x_var="FinancingStatus.sum",#alpha_var="YTD", #x_var
     y_var="Amount_OMB24_GDP22", #VAR.y.variable
     color_var="program", #color_var
     # facet_var="PlatformPortfolio", #facet_var
@@ -1063,7 +1091,9 @@ for(i in 1:length(agency_list$agency)){
   )+#date_x_year_breaks(1990,2020,8,partial_year=2023,partial_label="\nQ1–Q2")+   
       # theme(legend.position = "none")+
       labs(y=agency_list$yaxis[i],
-           caption=paste("Source",agency_list$source[i]))+
+           caption=agency_list$statussource[i],
+           x="Financing Status",
+           title=paste(agency_list$agency[i],"Financing to Critical Technology Areas\nby Status"))+
       coord_flip()
   )
   # 
@@ -1071,13 +1101,14 @@ for(i in 1:length(agency_list$agency)){
     dir.create(file.path("../output/Assistance",file_c))
   
   log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#Fiscal_YQ<=2023.2&
-           filename=paste(file_c,"Status",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),
-           sheet="Status",path=file.path("../output/Assistance/",file_c),second_path=sharepoint_log_path, height=3.5,
+           filename=paste(file_c,"Status",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_text = FALSE,
+           sheet="Status",path=file.path("../output/Assistance/",file_c),second_path=file.path(sharepoint_log_path,file_c), height=3.5,
            startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
            output_doc_png=TRUE,excel_y_var=TRUE
   )
   
 }
+
 
 ```
 
@@ -1085,6 +1116,11 @@ for(i in 1:length(agency_list$agency)){
 ### Financing Type
 ```{r LoanStatus}
 
+agency_assist$FinancingType<-trimws(agency_assist$FinancingType)
+  agency_assist<-read_and_join_experiment(agency_assist,directory="assistance//",lookup_file="FinancingType.csv",
+                               by=c("program","FinancingType"),add_var="FinancingType.Sum")
+
+
 (
 annual<-build_plot(
   data=agency_assist  %>% filter(!is.na(StartFiscalYear)) %>% filter(AnyTag==TRUE),
@@ -1096,7 +1132,7 @@ annual<-build_plot(
   x_var="StartFiscalYear", 
   # alpha_var="YTD",  #x_var 
   y_var="Amount_OMB24_GDP22", #VAR.y.variable
-  color_var="FinancingType", #color_var
+  color_var="FinancingType.Sum", #color_var
   facet_var="program", #facet_var
   format=TRUE,
   ytextposition=FALSE
@@ -1115,7 +1151,7 @@ overall<-build_plot(
   # labels_and_colors=loan_lc,
   # column_key=loan_ck,
   # NA, #VAR.ncol
-  x_var="FinancingType", 
+  x_var="FinancingType.Sum", 
   # alpha_var="YTD",  #x_var 
   y_var="Amount_OMB24_GDP22", #VAR.y.variable
   color_var="program", #color_var
@@ -1125,14 +1161,15 @@ overall<-build_plot(
 )+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
   theme(legend.position = "right")+
   labs(y="Gross Amount or Instance Contract",
-       x="Critical Technology Area")+
+       x="Financing Mechanism",
+           title=paste("Financing to Critical Technology Areas\nby Mecahnism"))+
     coord_flip()# (Constant 2022 $s)
 )
 
 
 for(i in 1:length(agency_list$agency)){
   c<-agency_list$agency[i]
-  if(all(is.na(agency_assist$FinancingType[agency_assist$Agency==agency_list$agency[i]])))
+  if(all(is.na(agency_assist$FinancingType.Sum[agency_assist$Agency==agency_list$agency[i]])))
     next #Skip when the core data is missing.
   file_c<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",agency_list$agency[i])))
   (Breakout<-build_plot(
@@ -1141,7 +1178,7 @@ for(i in 1:length(agency_list$agency)){
     share = FALSE,
     # labels_and_colors=def_lc,
     # NA, #VAR.ncol
-    x_var="FinancingType",#alpha_var="YTD", #x_var
+    x_var="FinancingType.Sum",#alpha_var="YTD", #x_var
     y_var="Amount_OMB24_GDP22", #VAR.y.variable
     color_var="program", #color_var
     # facet_var="PlatformPortfolio", #facet_var
@@ -1151,7 +1188,9 @@ for(i in 1:length(agency_list$agency)){
   )+#date_x_year_breaks(1990,2020,8,partial_year=2023,partial_label="\nQ1–Q2")+   
       # theme(legend.position = "none")+
       labs(y=agency_list$yaxis[i],
-           caption=paste("Source",agency_list$source[i]))+
+           x="Financing Method",
+           caption=paste("Source: ",agency_list$source[i]),
+           title=paste(agency_list$agency[i],"Financing to Critical Technology Areas\nby Mechanism"))+
       coord_flip()
   )
   # 
@@ -1159,14 +1198,16 @@ for(i in 1:length(agency_list$agency)){
     dir.create(file.path("../output/Assistance",file_c))
   
   log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#Fiscal_YQ<=2023.2&
-           filename=paste(file_c,"Type",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),
-           sheet="Type",path=file.path("../output/Assistance/",file_c),second_path=sharepoint_log_path, height=3.5,
+           filename=paste(file_c,"Type",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_text = FALSE,
+           sheet="Type",path=file.path("../output/Assistance/",file_c),second_path=file.path(sharepoint_log_path,file_c), height=3.5,
            startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
            output_doc_png=TRUE,excel_y_var=TRUE
   )
   
 }
 
+
+# write.csv(agency_assist %>% group_by(program, FinancingType.Sum) %>% summarise(),file="FinancingType.csv", row.names = FALSE)
 ```
 
 ## Economic
