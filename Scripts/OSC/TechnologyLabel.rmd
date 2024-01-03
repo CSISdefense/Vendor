@@ -15,11 +15,11 @@ library(dplyr)
 library(tidyr)
 library(openxlsx)
 
-# dir.exists(file.path("..","..","Data","semi_clean","OSC"))
-# f<-list.files(file.path("..","..","Data","semi_clean","OSC"))
+# dir.exists(file.path("..","..","Data","semi_clean","Assistance"))
+# f<-list.files(file.path("..","..","Data","semi_clean","Assistance"))
 # 
-# file.exists(file.path("..","..","Data","semi_clean","OSC","SelectedLoanDataSet.rda"))
-load("..\\..\\Data\\semi_clean\\OSC\\SelectedLoanDataSet.rda")
+# file.exists(file.path("..","..","Data","semi_clean","Assistance","SelectedLoanDataSet.rda"))
+load("..\\..\\Data\\semi_clean\\Assistance\\SelectedLoanDataSet.rda")
 
  
   
@@ -33,12 +33,13 @@ load("..\\..\\Data\\semi_clean\\OSC\\SelectedLoanDataSet.rda")
 # 
 descrip<-loanSelected %>% group_by(transaction_description) %>%
   summarise(n=nrow(total_obligated_amount))
-load(file="../../Data/Semi_Clean/OSC/exim.rda")  
+load(file="../../Data/Semi_Clean/Assistance/exim.rda")  
 
-load(file=file.path("..","..","data","semi_Clean","OSC","sba_programs.rda"))
+load(file=file.path("..","..","data","semi_Clean","Assistance","sba_programs.rda"))
 
-
-
+load(file=file.path("..","..","data", "semi_clean","Assistance","dfc.rda"))
+repo_output_path<-file.path("..","..","Output","Assistance")
+sharepoint_log_path<-file.path(get_local_sharepoint_path("Office of Strategic Capital - Documents"),"General","Data")
 ```
 
 # Setup
@@ -82,16 +83,16 @@ label_keyword<-function(x,keyword,col="transaction_description"){
 ## Description Labeling
 ```{r DescriptionLabels}
 
-keyword<-read_csv("..//..//data//semi_clean//OSC//osc_keyword_list.csv")
+keyword<-read_csv("..//..//data//semi_clean//Assistance//crittech_keyword_list.csv")
 col<-"transaction_description"
 labeled<-label_keyword(descrip,keyword)
 colnames(loanSelected)
 summary(labeled)
 
 loanSelected<-loanSelected[,!colnames(loanSelected) %in%
-                             colnames(loanSelected)[grep(".x",colnames(loanSelected))]]
+                             colnames(loanSelected)[grep("\\.x$",colnames(loanSelected))]]
 loanSelected<-loanSelected[,!colnames(loanSelected) %in%
-                             colnames(loanSelected)[grep(".y",colnames(loanSelected))]]
+                             colnames(loanSelected)[grep("\\.y$",colnames(loanSelected))]]
 
 loanSelected<-loanSelected[,!colnames(loanSelected) %in% 
                                        colnames(labeled)[!colnames(labeled) %in% c("transaction_description","AnyTag")]]
@@ -119,14 +120,6 @@ loanSelected$Renewable[loanSelected$cfda_num %in% c("81.126")|
                    loanSelected$cfda_title %in% c("FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES")]<-TRUE
 loanSelected$AnyTag[loanSelected$cfda_num %in% c("81.126")|
                    loanSelected$cfda_title %in% c("FEDERAL LOAN GUARANTEES FOR INNOVATIVE ENERGY TECHNOLOGIES")]<-TRUE
-
-wb<-loadWorkbook(file=file.path("..","..","Output","OSC","selected_assistance_critical_tech.xlsx"))
-writeData(wb, sheet="USAspending",loanSelected %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
-                         "usaspending_critical_tech.csv"),loanSelected %>% filter(AnyTag==TRUE& !is.na(AnyTag)),row.names = FALSE)
-
-saveWorkbook(wb,file=(file.path("..","..","Output","OSC","selected_assistance_critical_tech.xlsx")),overwrite = TRUE)
-
 
 
 
@@ -165,28 +158,6 @@ summary(sba.504$AnyTag)
 
 
 
-
-(
-sba.504tech<-build_plot(
-  data=sba.504,
-  chart_geom = "Bar Chart",
-  share = TRUE,
-  # labels_and_colors=loan_lc,
-  # column_key=loan_ck,
-  # NA, #VAR.ncol
-  x_var="ApprovalFiscalYear", 
-  # alpha_var="YTD",  #x_var 
-  y_var="GrossApproval_OMB24_GDP22", #VAR.y.variable
-  color_var="CriticalTech", #color_var
-  # facet_var="awarding_agency_name", #facet_var
-  format=TRUE,
-  ytextposition=FALSE
-)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "right")+
-  labs(y="Gross Approval")# (Constant 2022 $s)
-)
-
-
 sba.7a <- read_and_join_experiment(sba.7a,
                          lookup_file="Lookup_PrincipalNAICScode.csv",
                          directory="economic//",
@@ -198,28 +169,6 @@ sba.7a$AnyTag<-NA
 sba.7a$AnyTag[!is.na(sba.7a$CriticalTech) & sba.7a$CriticalTech!=""]<-TRUE
 summary(sba.7a$AnyTag)
 
-
-
-
-(
-sba.7atech<-build_plot(
-  data=sba.7a,
-  chart_geom = "Bar Chart",
-  share = TRUE,
-  # labels_and_colors=loan_lc,
-  # column_key=loan_ck,
-  # NA, #VAR.ncol
-  x_var="ApprovalFiscalYear", 
-  # alpha_var="YTD",  #x_var 
-  y_var="GrossApproval_OMB24_GDP22", #VAR.y.variable
-  color_var="CriticalTech", #color_var
-  # facet_var="awarding_agency_name", #facet_var
-  format=TRUE,
-  ytextposition=FALSE
-)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "right")+
-  labs(y="Gross Approval")# (Constant 2022 $s)
-)
 
 
 
@@ -237,92 +186,45 @@ summary(sba.sbg$AnyTag)
 
 
 
-sba.sbg$count<-1
-(
-sba.sbg_contract<-build_plot(
-  data=sba.sbg  %>% filter(!is.na(PROJECT_START_DATE)),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  # labels_and_colors=loan_lc,
-  # column_key=loan_ck,
-  # NA, #VAR.ncol
-  x_var="ProjectStartYear", 
-  # alpha_var="YTD",  #x_var 
-  y_var="LARGEST_CONTRACT_OMB24_GDP22", #VAR.y.variable
-  color_var="CriticalTech", #color_var
-  # facet_var="awarding_agency_name", #facet_var
-  format=TRUE,
-  ytextposition=FALSE
-)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "right")+
-  labs(y="Largest Contract")# (Constant 2022 $s)
-)
-
-(
-sba.sbg_count<-build_plot(
-  data=sba.sbg  %>% filter(!is.na(PROJECT_START_DATE)),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  # labels_and_colors=loan_lc,
-  # column_key=loan_ck,
-  # NA, #VAR.ncol
-  x_var="ProjectStartYear", 
-  # alpha_var="YTD",  #x_var 
-  y_var="count", #VAR.y.variable
-  color_var="CriticalTech", #color_var
-  # facet_var="awarding_agency_name", #facet_var
-  format=TRUE,
-  ytextposition=FALSE
-)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "right")+
-  labs(y="Count")# (Constant 2022 $s)
-)
 
 
+```
 
-(
-sba_crosscut<-build_plot(
-  data=sba_unified  %>% filter(!is.na(StartFiscalYear)),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  # labels_and_colors=loan_lc,
-  # column_key=loan_ck,
-  # NA, #VAR.ncol
-  x_var="StartFiscalYear", 
-  # alpha_var="YTD",  #x_var 
-  y_var="Amount_OMB24_GDP22", #VAR.y.variable
-  color_var="CriticalTech", #color_var
-  facet_var="program", #facet_var
-  format=TRUE,
-  ytextposition=FALSE
-)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "right")+
-  labs(y="Gross Amount or Largest Project")# (Constant 2022 $s)
-)
+### Recipient labeling
+```{r Recipient}
+loanSelected<-read_and_join_experiment(loanSelected,
+                         lookup_file="DOE_LPO_uei.csv",
+                         path=file.path("..","..","Data","semi_clean","Assistance"),
+                         directory="",
+                         by=c("recipient_uei"="recipient_uei"),
+                         add_var=c("project_name"),
+                         skip_check_var =c("project_name"))
 
+if(nrow(loanSelected %>% filter(awarding_agency_name =="Department of Energy"))==0)
+   stop("DOE missing from loanSelect")
+#Kludge for a missing UEI.
+summary(factor(loanSelected$project_name))
+loanSelected$project_name[loanSelected$recipient_name=="ULTIUM CELLS LLC"& is.na(loanSelected$recipient_uei)]<-"Ultium Cells"
+if(nrow(loanSelected %>% filter(awarding_agency_name =="Department of Energy" & is.na(project_name)))>0){
+  view(loanSelected %>% filter(awarding_agency_name =="Department of Energy" & is.na(project_name)))
+   stop("Project name missing from some DoE")
+}
+summary(factor(loanSelected$project_name))
 
-
-save(sba.504,sba.7a,sba.sbg,sbic_providers,file=file.path("..","..","data","semi_Clean","OSC","sba_programs.rda"))
-
-wb<-loadWorkbook(file=file.path("..","..","Output","OSC","selected_assistance_critical_tech.xlsx"))
-writeData(wb, sheet="504-foia",sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-writeData(wb, sheet="7a-foia",sba.7a %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-writeData(wb, sheet="sbg-foia",sba.sbg %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-writeData(wb, sheet="ExIm",exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-saveWorkbook(wb,file=(file.path("..","..","Output","OSC","selected_assistance_critical_tech.xlsx")),overwrite = TRUE)
-
-
-write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
-                         "foia_sba_critical_tech.csv"),sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)),
-          row.names = FALSE)
-write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
-                         "foia_sba_7a_critical_tech.csv"),sba.7a %>% filter(AnyTag==TRUE& !is.na(AnyTag)),
-          row.names = FALSE)
-write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
-                         "foia_sba_sbg_critical_tech.csv"),sba.sbg %>% filter(AnyTag==TRUE& !is.na(AnyTag)),
-          row.names = FALSE)
-
-write.csv(file=file.path("..","..","Output","OSC","sbic_providers.csv"),sbic_providers)
+loanSelected<-read_and_join_experiment(loanSelected,
+                         lookup_file="DOE_LPO_project.csv",
+                         path=file.path("..","..","Data","semi_clean","Assistance"),
+                         directory="",
+                         by=c("project_name"="project_name"),
+                         # add_var=c("project_name"),
+                                     skip_check_var =c("Date_Repaid","Issuance_Date","Project_Statement",
+                                           "Loan_Amount","Location","Loan_Type",
+                                           "Loan_Program"),
+                         ) %>% mutate(project_url=stringi::stri_trans_nfc(project_url),
+               Loan_Status=stringi::stri_trans_nfc(Loan_Status),
+               LPO_Tech_Sector=stringi::stri_trans_nfc(LPO_Tech_Sector),
+               Issuance_Date=stringi::stri_trans_nfc(Issuance_Date)
+                         )
 
 ```
 
@@ -331,40 +233,113 @@ write.csv(file=file.path("..","..","Output","OSC","sbic_providers.csv"),sbic_pro
 
 
 ```{r TagOutput}
-
-wb<-loadWorkbook(file=file.path("..","..","Output","OSC","selected_assistance_critical_tech.xlsx"))
-writeData(wb, sheet="504-foia",sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-writeData(wb, sheet="7a-foia",sba.7a %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-colnames(sba.7a)
-writeData(wb, sheet="sbg-foia",sba.sbg %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-writeData(wb, sheet="ExIm",exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-writeData(wb, sheet="USAspending",loanSelected %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
-saveWorkbook(wb,file=file.path("..","..","Output","OSC","selected_assistance_critical_tech.xlsx"),overwrite = TRUE)
+writeData_twice<-function(first_wb,second_wb,data,sheet){
+  writeData(first_wb, sheet=sheet,data)
+  writeData(second_wb, sheet=sheet,data)
+}
 
 
-write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
-                         "foia_sba_critical_tech.csv"),sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)),
-          row.names = FALSE)
-write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
-                         "foia_sba_7a_critical_tech.csv"),sba.7a %>% filter(AnyTag==TRUE& !is.na(AnyTag)),
-          row.names = FALSE)
-write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
-                         "foia_sba_sbg_critical_tech.csv"),sba.sbg %>% filter(AnyTag==TRUE& !is.na(AnyTag)),
-          row.names = FALSE)
+write_twice<-function(data,first_path,second_path,dir,file){
+  write_csv(file=file.path(first_path,dir,file),data)
+  write_csv(file=file.path(second_path,dir,file),data)
+}
 
-write.csv(file=file.path("..","..","Output","OSC","sbic_providers.csv"),sbic_providers,na="",)
+
+
+rwb<-loadWorkbook(file=file.path(repo_output_path,"SBA","SBA_Assistance.xlsx"))
+swb<-loadWorkbook(file=file.path(sharepoint_log_path,"SBA","SBA_Assistance.xlsx"))
+writeData_twice(swb,rwb,sheet="504-foia",sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+writeData_twice(swb,rwb, sheet="7a-foia",sba.7a %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+writeData_twice(swb,rwb, sheet="sbg-foia",sba.sbg %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+saveWorkbook(rwb,file=file.path(repo_output_path,"SBA","SBA_Assistance.xlsx"),overwrite = TRUE)
+saveWorkbook(swb,file=file.path(sharepoint_log_path,"SBA","SBA_Assistance.xlsx"),overwrite = TRUE)
+
+
+rwb<-loadWorkbook(file=file.path(repo_output_path,"EXIM","EXIM_Assistance.xlsx"))
+swb<-loadWorkbook(file=file.path(sharepoint_log_path,"EXIM","EXIM_Assistance.xlsx"))
+writeData_twice(swb,rwb, sheet="ExIm",exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+saveWorkbook(rwb,file=file.path(repo_output_path,"EXIM","EXIM_Assistance.xlsx"),overwrite = TRUE)
+saveWorkbook(swb,file=file.path(sharepoint_log_path,"EXIM","EXIM_Assistance.xlsx"),overwrite = TRUE)
+
+rwb<-loadWorkbook(file=file.path(repo_output_path,"DFC","DFC_Assistance.xlsx"))
+swb<-loadWorkbook(file=file.path(sharepoint_log_path,"DFC","DFC_Assistance.xlsx"))
+
+writeData_twice(swb,rwb, sheet="DFC",dfc)
+saveWorkbook(rwb,file=file.path(repo_output_path,"DFC","DFC_Assistance.xlsx"),overwrite = TRUE)
+saveWorkbook(swb,file=file.path(sharepoint_log_path,"DFC","DFC_Assistance.xlsx"),overwrite = TRUE)
+
+
+rwb<-loadWorkbook(file=file.path(repo_output_path,"selected_assistance_critical_tech.xlsx"))
+swb<-loadWorkbook(file=file.path(sharepoint_log_path,"selected_assistance_critical_tech.xlsx"))
+
+writeData_twice(swb,rwb, sheet="USAS",loanSelected %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+saveWorkbook(rwb,file=file.path(repo_output_path,"selected_assistance_critical_tech.xlsx"),overwrite = TRUE)
+saveWorkbook(swb,file=file.path(sharepoint_log_path,"selected_assistance_critical_tech.xlsx"),overwrite = TRUE)
+
+
+
+
+
+write_twice(first_path=repo_output_path,second_path = sharepoint_log_path,dir="critical_tech_csv",
+            file="foia_sba_critical_tech.csv",
+            sba.504 %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+          
+
+write_twice(first_path=repo_output_path,second_path = sharepoint_log_path,dir="critical_tech_csv",
+            file="foia_sba_7a_critical_tech.csv",
+            sba.7a %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+
+write_twice(first_path=repo_output_path,second_path = sharepoint_log_path,dir="critical_tech_csv",
+            file="foia_sba_sbg_critical_tech.csv",
+            sba.sbg %>% filter(AnyTag==TRUE & !is.na(AnyTag)))
+
+write_twice(first_path=repo_output_path,second_path = sharepoint_log_path,dir="critical_tech_csv",
+            file="sbic_providers.csv",
+            sbic_providers)
+
 
 write_csv(loanSelected %>% filter(AnyTag==TRUE &
-                                    !is.na(AnyTag)),file="../../data/semi_clean/OSC/USAspending_Energy_OSCtagged.csv",na = "")
-write.csv(file=file.path("..","..","Output","OSC","critical_tech_csv",
+                                    !is.na(AnyTag)),file="../../data/semi_clean/Assistance/USAspending_Energy_OSCtagged.csv",na = "")
+write.csv(file=file.path(repo_output_path,"critical_tech_csv",
                          "usaspending_critical_tech.csv"),loanSelected %>% filter(AnyTag==TRUE& !is.na(AnyTag)),row.names = FALSE)
 
-write_csv(exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../data/semi_clean/OSC/EXIMtagged.csv",na = "")
+write_csv(exim %>% filter(AnyTag==TRUE & !is.na(AnyTag)),file="../../data/semi_clean/Assistance/EXIMtagged.csv",na = "")
 
 
-save(loanSelected,file="../../data/semi_clean/OSC/SelectedLoanDataSet.rda")
-save(exim,file="../../data/semi_clean/OSC/exim.rda")
-save(sba.504,sba.7a,sba.sbg,sbic_providers,file=file.path("..","..","data","semi_Clean","OSC","sba_programs.rda"))
+save(loanSelected,file="../../data/clean/Assistance/SelectedLoanDataSet.rda")
+save(exim,file="../../data/semi_clean/Assistance/exim.rda")
+
+
+agency_assist<-
+  rbind(sba.504 %>% mutate(StartFiscalYear=ApprovalFiscalYear,
+                           Amount=GrossApproval_Then_Year,
+                           Agency="SBA",
+                           program="504") %>%
+          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
+        sba.7a %>% mutate(StartFiscalYear=ApprovalFiscalYear,
+                          Amount=GrossApproval_Then_Year,
+                           Agency="SBA",
+                          program="7(A)") %>%
+          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
+       sba.sbg %>% mutate(StartFiscalYear=InstanceFiscalYear,
+                           Amount=INSTANCE_CONTRACT_AMOUNT_Then_Year,
+                           Agency="SBA",
+                           program="SBG") %>%
+          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
+       exim %>% mutate(StartFiscalYear=Fiscal.Year,
+                           Amount=Approved.Declined.Amount,
+                           Agency="EXIM",
+                           program="EXIM") %>%
+          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag)
+       ) %>% group_by(StartFiscalYear, CriticalTech,Agency,program,AnyTag) %>%
+  summarise(Amount=sum(Amount,na.rm = TRUE),
+            Count=n())
+agency_assist<-deflate(agency_assist,money_var="Amount",fy_var="StartFiscalYear")
+
+colnames(exim)
+
+
+save(sba.504,sba.7a,sba.sbg,sbic_providers,file=file.path("..","..","data","Clean","Assistance","sba_programs.rda"))
 
 ```
 

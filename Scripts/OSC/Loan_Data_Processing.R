@@ -28,7 +28,7 @@ con <- dbConnect(odbc(),
 
 
 loan<-dbReadTable(con,  name = SQL('"Assistance"."OSCloanDataSet"'))
-# load(file="data/semi_clean/OSC/EnergyLoanDataSet.rda")
+# load(file="data/semi_clean/Assistance/EnergyLoanDataSet.rda")
 
 
 standard_assistance_lookups<-function(df){
@@ -38,9 +38,13 @@ standard_assistance_lookups<-function(df){
     cfda_number))
   if(any(!is.na(df$cfda_number)&is.na(df$cfda_num)))
     stop("Mangled CFDA number")
-  df$assistance_type_code=text_to_number(df$assistance_type_code)
+  df$assistance_type_code<-text_to_number(df$assistance_type_code)
   df<-read_and_join_experiment(df,directory="assistance//",lookup_file="assistance_type_code.csv",
                                by="assistance_type_code")
+  df<-read_and_join_experiment(df,directory="assistance//",lookup_file="action_type_code.csv",
+                               by="action_type_code")
+  df<-read_and_join_experiment(df,directory="assistance//",lookup_file="business_funds_indicator_code.csv",
+                               by="business_funds_indicator_code")
   df
 }
 
@@ -56,12 +60,12 @@ drop_empties<-function(df){
   }
   df
 }
-loan<-drop_empties(loan)
-summary(factor(loanSelected$awarding_agency_name))
-loanEnergyAward<-loanSelected %>% filter(awarding_agency_name=="Department of Energy")
-loanEnergy<-drop_empties(loanEnergy)
-loanEnergyAward<-award_summary(loanEnergy)
-colnames(loanSelected)[!colnames(loanSelected) %in% colnames(loanEnergy)]
+# loan<-drop_empties(loan)
+# summary(factor(loanSelected$awarding_agency_name))
+# loanEnergyAward<-loanSelected %>% filter(awarding_agency_name=="Department of Energy")
+# loanEnergy<-drop_empties(loanEnergy)
+# loanEnergyAward<-award_summary(loanEnergy)
+# colnames(loanSelected)[!colnames(loanSelected) %in% colnames(loanEnergy)]
 
 
 colnames(loan)
@@ -72,11 +76,11 @@ summary(factor(loan$cfda_num))
 summary(factor(loan$cfda_number))
 loan$cfda_number[is.na(loan$cfda_num)]
 
-colnames(loanEnergy)[!colnames(loanEnergy) %in% colnames(loan_award)]
+# colnames(loanEnergy)[!colnames(loanEnergy) %in% colnames(loan_award)]
 
 
-write.csv(loan %>% group_by(assistance_type_code,assistance_type_description)%>%filter(!is.na(assistance_type_description)) %>%
-  summarise(),file="assistance_type_code.csv",row.names = FALSE)
+# write.csv(loan %>% group_by(assistance_type_code,assistance_type_description)%>%filter(!is.na(assistance_type_description)) %>%
+#   summarise(),file="assistance_type_code.csv",row.names = FALSE)
 
 
 cfda_summary<-loan %>% group_by(cfda_title,cfda_num,assistance_type_code) %>% 
@@ -85,21 +89,21 @@ cfda_summary<-loan %>% group_by(cfda_title,cfda_num,assistance_type_code) %>%
             face_value_of_loan=sum(face_value_of_loan,na.rm=TRUE),
             min_period_of_performance_start_date =min(period_of_performance_start_date))  %>%
   arrange(cfda_num)
-write.csv(cfda_summary,"data/semi_clean/OSC/cfda_summary.csv",row.names = FALSE)
+write.csv(cfda_summary,"data/semi_clean/Assistance/cfda_summary.csv",row.names = FALSE)
 
-save(loan,file="data/semi_clean/OSC/FAADCloanDataSet.rda")
+save(loan,file="data/semi_clean/Assistance/FAADCloanDataSet.rda")
 
-#Over 13 million and no way to identify critical tech, seperating 
+#Over 13 million and no way to identify critical tech, separating.
 loanPPP<-loan %>% filter(cfda_num==59.073)
 loanPPP<-standardize_variable_names(loanPPP)
 loanPPP<-apply_standard_lookups(loanPPP) 
-save(loanPPP,file="data/semi_clean/OSC/PPPloanDataSet.rda")
+save(loanPPP,file="data/semi_clean/Assistance/PPPloanDataSet.rda")
 
 #Around 6 million, also no clear way to identify critical tech
 loanDisaster <-loan  %>% filter(cfda_num %in% c(59.008,59.063))
 loanDisaster<-standardize_variable_names(loanDisaster)
 loanDisaster<-apply_standard_lookups(loanDisaster) 
-save(loanDisaster,file="data/semi_clean/OSC/SBAdisasterLoanDataSet.rda")
+save(loanDisaster,file="data/semi_clean/Assistance/SBAdisasterLoanDataSet.rda")
 
 #These are the loans we have paths to identify critical technologies
 loanSelected<- loan %>% filter(cfda_num %in% c(31.007,59.011,59.012,59.016,59.041,59.054,81.126))
@@ -109,20 +113,21 @@ loanSelected<-apply_standard_lookups(loanSelected)
 
 loanSelected$YTD<-ifelse(loanSelected$Fiscal_Year==2023,"YTD","Full Year")
 
-save(loanSelected,file="data/semi_clean/OSC/SelectedLoanDataSet.rda")
+save(loanSelected,file="data/semi_clean/Assistance/SelectedLoanDataSet.rda")
 
 loanOther <- loan %>% filter(!cfda_num %in% c(31.007,59.011,59.012,59.016,59.041,59.054,81.126,
                                      59.073,
                                      59.008,59.063))
 loanOther<-standardize_variable_names(loanOther)
 loanOther<-apply_standard_lookups(loanOther) 
-save(loanOther,file="data/semi_clean/OSC/OtherLoanDataSet.rda")
+save(loanOther,file="data/semi_clean/Assistance/OtherLoanDataSet.rda")
 
 
-load(file="data/semi_clean/OSC/SelectedLoanDataSet.rda")
+load(file="data/semi_clean/Assistance/SelectedLoanDataSet.rda")
 
 ###ExIm bank
-exim<-read_csv("Data_Raw/Loans/Authorizations_From_10_01_2006_Thru_12_31_2022.csv",na = "N/A")
+exim<-read_csv("Data_Raw/Assistance/EXIM/Authorizations_From_10_01_2006_Thru_12_31_2022.csv",na = "N/A")
+exim <- exim %>% filter(Program!="Insurance")
 colnames(exim)<-gsub(" ",".",colnames(exim))
 colnames(exim)<-gsub("/",".",colnames(exim))
 exim$Primary.Export.Product.NAICS<-NA
@@ -178,7 +183,7 @@ exim<-read_and_join_experiment(exim,
 
 
 
-save(exim,file="Data/Semi_Clean/OSC/exim.rda")
+save(exim,file="Data/Semi_Clean/Assistance/exim.rda")
 
 
 #
@@ -257,9 +262,26 @@ if(any(is.na(test)&!is.na(sba.sbg$PROJECT_START_DATE)&
   sba.sbg$PROJECT_START_DATE<-test
   sba.sbg$ProjectStartYear<-year(sba.sbg$PROJECT_START_DATE)
   sba.sbg$ProjectStartFiscalYear<-get_fiscal_year(sba.sbg$PROJECT_START_DATE)
+  sba.sbg$InstanceStartYear<-year(sba.sbg$INSTANCE_DATE)
+  sba.sbg$InstanceFiscalYear<-get_fiscal_year(sba.sbg$INSTANCE_DATE)
+  
   rm(test)
 }
+test<-as.Date(sba.sbg$INSTANCE_DATE,"%m/%d/%Y")
+if(any(is.na(test)&!is.na(sba.sbg$INSTANCE_DATE))){
+  sba.sbg$INSTANCE_DATE[is.na(test)&!is.na(sba.sbg$INSTANCE_DATE)]
+  stop("Malformed date")
+} else {
+  sba.sbg$INSTANCE_DATE<-test
+  sba.sbg$InstanceStartYear<-year(sba.sbg$INSTANCE_DATE)
+  sba.sbg$InstanceFiscalYear<-get_fiscal_year(sba.sbg$INSTANCE_DATE)
+  
+  rm(test)
+}
+
 sba.sbg<-deflate(sba.sbg,money_var="LARGEST_CONTRACT",fy_var="ProjectStartFiscalYear")
+sba.sbg<-deflate(sba.sbg,money_var="INSTANCE_CONTRACT_AMOUNT",fy_var="InstanceFiscalYear")
+
 
 
 
@@ -272,19 +294,23 @@ sba_unified<-
   rbind(sba.504 %>% mutate(StartFiscalYear=ApprovalFiscalYear,
                            Amount=GrossApproval_Then_Year,
                            program="504") %>%
-          dplyr::select(StartFiscalYear, Amount,CriticalTech,program),
+          dplyr::select(StartFiscalYear, Amount,program),
         sba.7a %>% mutate(StartFiscalYear=ApprovalFiscalYear,
                           Amount=GrossApproval_Then_Year,
                           program="7(A)") %>%
-          dplyr::select(StartFiscalYear, Amount,CriticalTech,program),
-        sba.sbg %>% mutate(StartFiscalYear=ProjectStartFiscalYear,
-                           Amount=LARGEST_CONTRACT_Then_Year,
+          dplyr::select(StartFiscalYear, Amount,program),
+        sba.sbg %>% mutate(StartFiscalYear=InstanceFiscalYear,
+                           Amount=INSTANCE_CONTRACT_AMOUNT_Then_Year,
                            program="SBG") %>%
-          dplyr::select(StartFiscalYear, Amount,CriticalTech,program))
+          dplyr::select(StartFiscalYear, Amount,program))
 sba_unified<-deflate(sba_unified,money_var="Amount",fy_var="StartFiscalYear")
 
 
 
-
 save(sba.504,sba.7a,sba.sbg,sbic_providers,sba_unified,
-     file=file.path("data","semi_Clean","OSC","sba_programs.rda"))
+     file=file.path("data","semi_Clean","Assistance","sba_programs.rda"))
+
+dfc<-readWorkbook(xlsxFile=file.path("Data_Raw","Assistance","DFC investments.xlsx"),sheet="Sheet1")
+dfc$Commitment.level<-text_to_number(dfc$Commitment.level)
+save(dfc,file="data/semi_clean/Assistance/dfc.rda")
+
