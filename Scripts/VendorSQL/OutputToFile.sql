@@ -81,6 +81,16 @@ group by  fiscal_year
 order by fiscal_year,fiscal_quarter
 
 
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+select  ProductOrServiceCode
+,platformportfolio
+,[claimantprogramcode]
+,ProjectID
+,principalnaicscode
+,obligatedamount
+from  Economic.[ProdServPlatformNAICS]
+
 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
