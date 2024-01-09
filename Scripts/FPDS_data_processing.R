@@ -404,6 +404,27 @@ fed_ck<-csis360::get_column_key(platpscintl)
 
 save(platpscintl,fed_lc, fed_ck,file="data/clean/Federal_platpscintl_FPDS.Rda")
 
+
+##############PSC, Platform, NAICS #############
+
+pscnaics<-read_delim(file.path("data","semi_clean","Economic.ProdServPlatformNAICS.csv"),delim="\t",na=c("NULL","NA"),
+                         col_names = TRUE, guess_max = 10000000)
+
+debug(apply_standard_lookups)
+pscnaics<-apply_standard_lookups(pscnaics,path="offline")
+
+
+
+
+pscnaics %<>%
+  # select(-ContractingCustomer) %>%
+  # select(-ClassifyNumberOfOffers) %>%
+  # mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
+  mutate(PlatformPortfolio = factor(PlatformPortfolio))
+
+save(pscnaics, file="data/clean/ProdServPlatformNAICS.rda")
+
+
 ##############Software #############
 sw<-read_delim(file.path("data","semi_clean","Summary.SP_SoftwareDetail.txt"),delim="\t",na=c("NULL","NA"),
                col_names = TRUE, guess_max = 10000000)
@@ -429,6 +450,7 @@ jadc2<-apply_standard_lookups(jadc2)#,
 jadc2_lc<-csis360::prepare_labels_and_colors(jadc2)
 jadc2_ck<-csis360::get_column_key(jadc2)
 save(jadc2,jadc2_lc, jadc2_ck,file="data/clean/jadc2.Rda")
+
 
 
 
