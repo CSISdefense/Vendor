@@ -923,6 +923,7 @@ sba_crosscut<-build_plot(
 
 ### Tech Type
 ```{r sba}
+agency_assist<-replace_nas_with_unlabeled(agency_assist,"CriticalTech","To be classified")
 
 (
 annual<-build_plot(
@@ -964,7 +965,7 @@ overall<-build_plot(
 )+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
   theme(legend.position = "right")+
   labs(y="Gross Amount or Instance Contract",
-       x="Critical Technology Area")+
+       x="Critical Technology Sector")+
     coord_flip()# (Constant 2022 $s)
 )
 
@@ -975,7 +976,7 @@ for(i in 1:length(agency_list$agency)){
   c<-agency_list$agency[i]
   file_c<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",agency_list$agency[i])))
   (Breakout<-build_plot(
-    data=agency_assist %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#& Fiscal_YQ<=2023.2 Fiscal_Year>=2000& 
+    data=agency_assist %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]&!is.na(AnyTag)),#& Fiscal_YQ<=2023.2 Fiscal_Year>=2000& 
     chart_geom = "Bar Chart",
     share = FALSE,
     # labels_and_colors=def_lc,
@@ -990,9 +991,9 @@ for(i in 1:length(agency_list$agency)){
   )+#date_x_year_breaks(1990,2020,8,partial_year=2023,partial_label="\nQ1–Q2")+   
       # theme(legend.position = "none")+
       labs(y=agency_list$yaxis[i],
-           x="Critical Technology Area",
+           x="Critical Technology Sector",
            caption=paste("Source: ",agency_list$source[i]),
-           title=paste(agency_list$agency[i],"Financing to Critical Technology Areas by Area"))+
+           title=paste(agency_list$agency[i],"Financing to Critical Technology Sectors\nby Sector"))+
       coord_flip()
   )
   # 
@@ -1023,7 +1024,7 @@ for(i in 1:length(agency_list$agency)){
   agency_assist<-read_and_join_experiment(agency_assist,directory="assistance//",lookup_file="FinancingStatus.csv",
                                by=c("program","FinancingStatus"),add_var="FinancingStatus.sum",
                                case_sensitive = FALSE)
-  
+  agency_assist<-replace_nas_with_unlabeled(agency_assist,"FinancingStatus.sum")
 (
 annual<-build_plot(
   data=agency_assist  %>% filter(!is.na(StartFiscalYear)) %>% filter(AnyTag==TRUE),
@@ -1065,18 +1066,19 @@ overall<-build_plot(
   theme(legend.position = "right")+
   labs(y="Gross Amount or Instance Contract",
        x="Financing Status",
-           paste(agency_list$agency[i],"Financing to Critical Technology Areas by Status"))+
+           paste(agency_list$agency[i],"Financing to Critical Technology Sectors by Status"))+
     coord_flip()# (Constant 2022 $s)
 )
 
-
+summary(factor(agency_assist$FinancingStatus.sum[agency_assist$AnyTag==TRUE & !is.na(agency_assist$AnyTag)]))
+  
 for(i in 1:length(agency_list$agency)){
   c<-agency_list$agency[i]
   if(all(is.na(agency_assist$FinancingStatus.sum[agency_assist$Agency==agency_list$agency[i]])))
     next #Skip when the core data is missing.
   file_c<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",agency_list$agency[i])))
   (Breakout<-build_plot(
-    data=agency_assist %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#& Fiscal_YQ<=2023.2 Fiscal_Year>=2000& 
+    data=agency_assist %>% filter(AnyTag==TRUE & !is.na(AnyTag)&Agency==agency_list$agency[i]),#& Fiscal_YQ<=2023.2 Fiscal_Year>=2000& 
     chart_geom = "Bar Chart",
     share = FALSE,
     # labels_and_colors=def_lc,
@@ -1093,7 +1095,7 @@ for(i in 1:length(agency_list$agency)){
       labs(y=agency_list$yaxis[i],
            caption=agency_list$statussource[i],
            x="Financing Status",
-           title=paste(agency_list$agency[i],"Financing to Critical Technology Areas\nby Status"))+
+           title=paste(agency_list$agency[i],"Financing to Critical Technology Sectors\nby Status"))+
       coord_flip()
   )
   # 
@@ -1119,7 +1121,7 @@ for(i in 1:length(agency_list$agency)){
 agency_assist$FinancingType<-trimws(agency_assist$FinancingType)
   agency_assist<-read_and_join_experiment(agency_assist,directory="assistance//",lookup_file="FinancingType.csv",
                                by=c("program","FinancingType"),add_var="FinancingType.Sum")
-
+agency_assist<-replace_nas_with_unlabeled(agency_assist,"FinancingType.Sum")
 
 (
 annual<-build_plot(
@@ -1162,18 +1164,21 @@ overall<-build_plot(
   theme(legend.position = "right")+
   labs(y="Gross Amount or Instance Contract",
        x="Financing Mechanism",
-           title=paste("Financing to Critical Technology Areas\nby Mecahnism"))+
+           title=paste("Financing to Critical Technology Sectors\nby Mecahnism"))+
     coord_flip()# (Constant 2022 $s)
 )
 
 
+summary(factor(agency_assist$FinancingType.Sum[agency_assist$AnyTag==TRUE & !is.na(agency_assist$AnyTag)]))
+  
+  
 for(i in 1:length(agency_list$agency)){
   c<-agency_list$agency[i]
   if(all(is.na(agency_assist$FinancingType.Sum[agency_assist$Agency==agency_list$agency[i]])))
     next #Skip when the core data is missing.
   file_c<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",agency_list$agency[i])))
   (Breakout<-build_plot(
-    data=agency_assist %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#& Fiscal_YQ<=2023.2 Fiscal_Year>=2000& 
+    data=agency_assist %>% filter(AnyTag==TRUE&!is.na(AnyTag)&Agency==agency_list$agency[i]),#& Fiscal_YQ<=2023.2 Fiscal_Year>=2000& 
     chart_geom = "Bar Chart",
     share = FALSE,
     # labels_and_colors=def_lc,
@@ -1190,7 +1195,7 @@ for(i in 1:length(agency_list$agency)){
       labs(y=agency_list$yaxis[i],
            x="Financing Method",
            caption=paste("Source: ",agency_list$source[i]),
-           title=paste(agency_list$agency[i],"Financing to Critical Technology Areas\nby Mechanism"))+
+           title=paste(agency_list$agency[i],"Financing to Critical Technology Sectors\nby Mechanism"))+
       coord_flip()
   )
   # 
