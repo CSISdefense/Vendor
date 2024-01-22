@@ -39,7 +39,7 @@ load(file=file.path("..","..","data","semi_Clean","Assistance","sba_programs.rda
 
 load(file=file.path("..","..","data", "semi_clean","Assistance","dfc.rda"))
 repo_output_path<-file.path("..","..","Output","Assistance")
-sharepoint_log_path<-file.path(get_local_sharepoint_path("Office of Strategic Capital - Documents"),"General","Data")
+sharepoint_log_path<-file.path(get_local_sharepoint_path("Office of Strategic Capital - Documents"),"Data")
 ```
 
 # Setup
@@ -228,6 +228,70 @@ loanSelected<-read_and_join_experiment(loanSelected,
 
 ```
 
+
+### Biotechnology/Nanotechnology
+```{r Bio/Nano}
+bio_504<-sba.504 %>% filter(NaicsCode %in% c(541711, 541714))
+bio_7a<-sba.7a %>% filter(NaicsCode %in% c(541711, 541714))
+bio_sbg<-sba.sbg %>% filter(PROJECT_NAICS %in% c(541711, 541714))
+bio_exim<-exim %>% filter(Primary.Export.Product.NAICS %in% c(541711, 541714))
+
+colnames(bio_504)[!colnames(bio_504) %in% colnames(bio_7a)]
+
+colnames(bio_7a)[!colnames(bio_7a) %in% colnames(bio_504)]
+
+
+nano_504<-sba.504 %>% filter(NaicsCode %in% c(541713))
+nano_7a<-sba.7a %>% filter(NaicsCode %in% c(541713))
+nano_sbg<-sba.sbg %>% filter(PROJECT_NAICS %in% c(541713))
+nano_exim<-exim %>% filter(Primary.Export.Product.NAICS %in% c(541713))
+
+writeData_twice<-function(first_wb,second_wb,data,sheet){
+  writeData(first_wb, sheet=sheet,data)
+  writeData(second_wb, sheet=sheet,data)
+}
+
+
+write_twice<-function(data,first_path,second_path,dir,file){
+  write_csv(file=file.path(first_path,dir,file),data)
+  write_csv(file=file.path(second_path,dir,file),data)
+}
+
+agency_assist<-
+  rbind(sba.504 %>% mutate(StartFiscalYear=ApprovalFiscalYear,
+                           Amount=GrossApproval_Then_Year,
+                           Agency="SBA",
+                           program="504") %>%
+          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
+        sba.7a %>% mutate(StartFiscalYear=ApprovalFiscalYear,
+                          Amount=GrossApproval_Then_Year,
+                           Agency="SBA",
+                          program="7(A)") %>%
+          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
+       sba.sbg %>% mutate(StartFiscalYear=InstanceFiscalYear,
+                           Amount=INSTANCE_CONTRACT_AMOUNT_Then_Year,
+                           Agency="SBA",
+                           program="SBG") %>%
+          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
+       exim %>% mutate(StartFiscalYear=Fiscal.Year,
+                           Amount=Approved.Declined.Amount,
+                           Agency="EXIM",
+                           program="EXIM") %>%
+          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag)
+       ) %>% group_by(StartFiscalYear, CriticalTech,Agency,program,AnyTag) %>%
+  summarise(Amount=sum(Amount,na.rm = TRUE),
+            Count=n())
+
+rwb<-loadWorkbook(file=file.path(repo_output_path,"SBA","SBA_Bio.xlsx"))
+swb<-loadWorkbook(file=file.path(sharepoint_log_path,"SBA","SBA_Bio.xlsx"))
+writeData_twice(swb,rwb,sheet="504-bio",sba.504 %>% filter(NaicsCode %in% c(541711, 541714)))
+writeData_twice(swb,rwb, sheet="7a-bio",sba.7a %>% filter(NaicsCode %in% c(541711, 541714)))
+saveWorkbook(rwb,file=file.path(repo_output_path,"SBA","SBA_Bio.xlsx"),overwrite = TRUE)
+saveWorkbook(swb,file=file.path(sharepoint_log_path,"SBA","SBA_Bio.xlsx"),overwrite = TRUE)
+
+
+```
+
 # Output
 
 
@@ -340,6 +404,7 @@ colnames(exim)
 
 
 save(sba.504,sba.7a,sba.sbg,sbic_providers,file=file.path("..","..","data","Clean","Assistance","sba_programs.rda"))
+
 
 ```
 
