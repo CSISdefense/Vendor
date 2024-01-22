@@ -2671,6 +2671,8 @@ for(c in subcustomer_levels){
 }
 ```
 
+
+
 ## Platform by Service
 ```{r Platform}
 for(s in c("Army","Navy","Air Force")){
@@ -3507,6 +3509,43 @@ write.csv(file="..//Output//AcqTrends//Munitions//ukraine_platform_current.csv",
 ```
 
 # Vendor Size
+
+## Vendor Size Plat Breakout
+```{r CustomerPlatBreakout} 
+platform_levels<-levels(factor(def_data$PlatformPortfolio))
+for(p in platform_levels){
+  file_p<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",p)))
+  (Breakout<-build_plot(
+    data=def_data %>% filter(Fiscal_Year>=2000&PlatformPortfolio==p& Fiscal_YQ<=2023.2),
+chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="Shiny.VendorSize", #color_var
+  # facet_var="SubCustomer.sum", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)") +date_x_year_breaks(1990,2020,5,partial_year=2023,partial_label="\nQ1–Q2")
+)
+  if(!dir.exists(file.path("../output/AcqTrends/Platform",file_p)))
+    dir.create(file.path("../output/AcqTrends/Platform",file_p))
+  
+  log_plot(plot=Breakout, df=def_data  %>% filter(Fiscal_YQ<=2023.2&PlatformPortfolio==p),
+           filename=paste(file_p,"vendor",sep="_"),xlsx=paste("DoD",file_p,"Contracts.xlsx",sep="_"),
+           sheet="vend",path=file.path("../output/AcqTrends/Platform/",file_p), height=3.5,
+           startRow=1,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
+           output_doc_png=TRUE,excel_y_var=TRUE
+           )
+  
+}
+```
+
+
 ## Topline Vendor Size
 ```{r ToplineVendor}
 
