@@ -281,11 +281,16 @@ agency_assist<-
        ) %>% group_by(StartFiscalYear, CriticalTech,Agency,program,AnyTag) %>%
   summarise(Amount=sum(Amount,na.rm = TRUE),
             Count=n())
+levels(factor(loanSelected$awarding_agency_name))
+sba.FPDS<-loanSelected %>% filter(awarding_agency_name=="Small Business Administration")
+bio_borrowers<-unique(c(bio_7a$BorrName,bio_504$BorrName))
+sba.FPDS<-sba.FPDS %>% filter(recipient_parent_name %in% bio_borrowers | 
+                                recipient_name %in% bio_borrowers)
 
 rwb<-loadWorkbook(file=file.path(repo_output_path,"SBA","SBA_Bio.xlsx"))
 swb<-loadWorkbook(file=file.path(sharepoint_log_path,"SBA","SBA_Bio.xlsx"))
-writeData_twice(swb,rwb,sheet="504-bio",sba.504 %>% filter(NaicsCode %in% c(541711, 541714)))
-writeData_twice(swb,rwb, sheet="7a-bio",sba.7a %>% filter(NaicsCode %in% c(541711, 541714)))
+writeData_twice(swb,rwb,sheet="504",sba.504 %>% filter(NaicsCode %in% c(541711, 541714)))
+writeData_twice(swb,rwb, sheet="7a",sba.7a %>% filter(NaicsCode %in% c(541711, 541714)))
 saveWorkbook(rwb,file=file.path(repo_output_path,"SBA","SBA_Bio.xlsx"),overwrite = TRUE)
 saveWorkbook(swb,file=file.path(sharepoint_log_path,"SBA","SBA_Bio.xlsx"),overwrite = TRUE)
 
