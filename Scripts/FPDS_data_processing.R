@@ -132,11 +132,14 @@ column_key<-get_column_key(full_data)
 full_data$Fiscal_YQ[!is.na(full_data$fiscal_quarter_YTD)]<-text_to_number(paste(full_data$Fiscal_Year[!is.na(full_data$fiscal_quarter_YTD)],
                                                                           text_to_number(full_data$fiscal_quarter_YTD[!is.na(full_data$fiscal_quarter_YTD)]),sep="."))
 full_data$Fiscal_YQ[is.na(full_data$Fiscal_YQ)]<-full_data$Fiscal_Year[is.na(full_data$Fiscal_YQ)]
-
+full_data$YTD<-factor(ifelse(full_data$Fiscal_Year==max(full_data$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
 save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
 
 
 
+summary(factor(def_data$YTD))
+
+summary(factor(full_data$YTD))
 fpds_lc<-csis360::prepare_labels_and_colors(full_data %>% select(-recoveredmaterialclauses))
 
 fpds_ck<-csis360::get_column_key(full_data)
@@ -171,10 +174,11 @@ fed_data %<>%
   mutate(PlaceIsForeign = factor(PlaceIsForeign))
 
 
-fed_lc<-csis360::prepare_labels_and_colors(full_data)
+fed_lc<-csis360::prepare_labels_and_colors(fed_data)
 
-fed_ck<-csis360::get_column_key(full_data)
+fed_ck<-csis360::get_column_key(fed_data)
 
+fed_data$YTD<-factor(ifelse(fed_data$Fiscal_Year==max(fed_data$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
 save(fed_data,fed_lc,fed_ck, file="data/clean/fed_summary_FPDS.Rda")
 
 
@@ -223,7 +227,7 @@ def_data$PricingMechanism<-as.character(def_data$PricingMechanism)
 def_lc<-prepare_labels_and_colors(def_data, path=file.path(local_path,"style\\"))
 
 def_ck<-get_column_key(def_data %>% select(-PricingMechanism),path=file.path(local_path,"style\\"))
-
+def_data$YTD<-factor(ifelse(def_data$Fiscal_Year==max(def_data$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
 save(def_data,def_lc,def_ck, file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
 # load(file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
 
@@ -391,18 +395,18 @@ platpscintldef %<>%
 
 cd_lc<-csis360::prepare_labels_and_colors(platpscdefcd)
 cd_ck<-csis360::get_column_key(platpscdefcd)
-
+platpscdefcd$YTD<-factor(ifelse(platpscdefcd$Fiscal_Year==max(platpscdefcd$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
 save(platpscdefcd,cd_lc, cd_ck,file="data/clean/platpscdefcd.Rda")
 
 intl_lc<-csis360::prepare_labels_and_colors(platpscintldef)
 intl_ck<-csis360::get_column_key(platpscintldef)
-
+platpscintldef$YTD<-factor(ifelse(platpscintldef$Fiscal_Year==max(platpscintldef$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
 save(platpscintldef,intl_lc, intl_ck,file="data/clean/platpscintl_FPDS.Rda")
 
-fed_lc<-csis360::prepare_labels_and_colors(platpscintl)
-fed_ck<-csis360::get_column_key(platpscintl)
-
-save(platpscintl,fed_lc, fed_ck,file="data/clean/Federal_platpscintl_FPDS.Rda")
+fedpsc_lc<-csis360::prepare_labels_and_colors(platpscintl)
+fedpsc_ck<-csis360::get_column_key(platpscintl)
+platpscintl$YTD<-factor(ifelse(platpscintl$Fiscal_Year==max(platpscintl$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
+save(platpscintl,fedpsc_lc, fedpsc_ck,file="data/clean/Federal_platpscintl_FPDS.Rda")
 
 
 ##############PSC, Platform, NAICS #############
