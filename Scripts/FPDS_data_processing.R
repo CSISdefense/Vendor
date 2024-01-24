@@ -241,6 +241,12 @@ platpscdefcd<-apply_standard_lookups(platpscdefcd)
 
 platpscdefcd<-initial_clean(platpscdefcd)
 
+
+cd_lc<-csis360::prepare_labels_and_colors(platpscdefcd)
+cd_ck<-csis360::get_column_key(platpscdefcd)
+platpscdefcd$YTD<-factor(ifelse(platpscdefcd$Fiscal_Year==max(platpscdefcd$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
+save(platpscdefcd,cd_lc, cd_ck,file="data/clean/platpscdefcd.Rda")
+
 platpsc<-read_delim(file.path("data","semi_clean","Federal_ProdservPlatform.txt"),delim="\t",na=c("NULL","NA"),
                     col_names = TRUE, guess_max = 10000000)
 
@@ -310,16 +316,6 @@ write.csv(platpscintldef %>% filter(PlatformPortfolio=="Other Products"&SubCusto
 
 
 
-platpscintldef %<>% read_and_join_experiment(lookup_file="Budget_FundedByForeignEntity.csv",
-                                             path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="budget/",
-                                             add_var = c("foreign_funding_description","IsFMS"),
-                                             by=c("fundedbyforeignentity"),
-                                             # missing_file="missing_iso.csv",
-                                             skip_check_var = c("foreign_funding_description","IsFMS")
-)
-
-
-
 platpscintldef$IsJSF[platpscintldef$ProjectID==87]<-"JSF (F-35)"
 platpscintldef$IsJSF[!is.na(platpscintldef$ProjectID)&platpscintldef$ProjectID!=87&platpscintldef$IsUnknown==0]<-"Other Project"
 platpscintldef$IsJSF[is.na(platpscintldef$IsUnknown)|platpscintldef$IsUnknown==1]<-"Unknown Project"
@@ -336,18 +332,6 @@ levels(platpscintldef$IsFMSplaceIntl)=list(
   "No FMS\nPerformed Domestically"="0\n0",
   "Unlabeled"=c("0\nNA","1\nNA",   "NA\n0" ,  "NA\n1"  ,"NA\nNA" )
 )
-
-
-
-
-
-
-
-
-
-
-
-
 
 # 
 # full_data$PricingUCA<-full_data$PricingFee
@@ -371,8 +355,7 @@ platpscintl %<>%
   mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
   mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
   mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
-  mutate(PlatformPortfolioUAV = factor(PlatformPortfolioUAV)) %>%
-  mutate(CrisisProductOrServiceArea = factor(CrisisProductOrServiceArea))
+  mutate(PlatformPortfolioUAV = factor(PlatformPortfolioUAV)) 
 
 
 
@@ -388,11 +371,6 @@ platpscintldef %<>%
 
 
 
-
-cd_lc<-csis360::prepare_labels_and_colors(platpscdefcd)
-cd_ck<-csis360::get_column_key(platpscdefcd)
-platpscdefcd$YTD<-factor(ifelse(platpscdefcd$Fiscal_Year==max(platpscdefcd$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
-save(platpscdefcd,cd_lc, cd_ck,file="data/clean/platpscdefcd.Rda")
 
 intl_lc<-csis360::prepare_labels_and_colors(platpscintldef)
 intl_ck<-csis360::get_column_key(platpscintldef)
