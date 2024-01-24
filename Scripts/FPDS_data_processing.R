@@ -272,16 +272,12 @@ platpscintl<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdS
 problems(platpscintl)
 colnames(platpscintl)[colnames(platpscintl)=="Customer"]<-"ContractingCustomer"
 
-#Weird kludge for duplicate
-if(colnames(platpscintl)[1]=="productorservicecode" & colnames(platpscintl)[5]=="ProductOrServiceCode"){
-  platpscintl<-platpscintl %>% select(-productorservicecode)
-}
 # View(platpscintl[(nrow(platpscintl)-3):nrow(platpscintl),])
 # View(platpscintldef[(nrow(platpscintldef)-3):nrow(platpscintldef),])
 # debug(initial_clean)
 platpscintl<-apply_standard_lookups(platpscintl)#,path=local_path
-platpscintl<-initial_clean(platpscintl)
-platpscintldef<-initial_clean(platpscintl,only_defense=FALSE)
+platpscintl<-initial_clean(platpscintl,only_defense=FALSE)
+platpscintldef<-initial_clean(platpscintl,only_defense=TRUE)
 
 write.csv(platpscintldef %>% filter(PlatformPortfolio=="Ordnance and Missiles"), 
           file="Output//Munitions//OM.csv",
