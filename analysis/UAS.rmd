@@ -54,7 +54,7 @@ load(file="../data/clean/TopVendorUAVHistoryPlatformCustomer.rda")
 # load(file="../data/clean/jadc2.Rda")
 
 platpscintl$SubCustomer.DoD<-as.character(platpscintl$SubCustomer.sum)
-platpscintl$SubCustomer.DoD[platpscintl$Customer!="Defense"]<-"Civilian"
+platpscintl$SubCustomer.DoD[platpscintl$contractingCustomer!="Defense"]<-"Civilian"
 
 fed_data$SubCustomer.DoD<-as.character(fed_data$SubCustomer.sum)
 fed_data$SubCustomer.DoD[fed_data$ContractingCustomer!="Defense"]<-"Civilian"
@@ -92,19 +92,21 @@ japan_repo_path<-"../../Trade/output/Japan/"
 
 ## Preprocess
 ```{r PreprocessProjectDrone}
-
-droneEO<-platpscintl %>% filter(PlatformPortfolioUAV=="Remotely Crewed" |
-                                  ProductOrServiceCode %in% c("1220","1240","1280","3635","5850",
-                                                              "5855","6008","6031","6033","6650")) 
-droneEO$CaseStudy<-NA
-droneEO$CaseStudy[droneEO$PlatformPortfolioUAV=="Remotely Crewed"]<-"Remotely Crewed"
-droneEO$CaseStudy[droneEO$ProductOrServiceCode %in% c("1220","1240","1280","3635","5850",
-                                                              "5855","6008","6031","6033","6650")]<-"Electro-Optical Sensors"
-drone<-platpscintl %>% filter(PlatformPortfolioUAV=="Remotely Crewed")
-
 platpscintl$PlatformPortfolioUAVEO<-as.character(platpscintl$PlatformPortfolioUAV)
 platpscintl$PlatformPortfolioUAVEO[platpscintl$ProductOrServiceCode %in% c("1220","1240","1280","3635","5850",
                                                               "5855","6008","6031","6033","6650")]<-"EO Sensors"
+platpscintl$CaseStudy<-NA
+platpscintl$CaseStudy[platpscintl$PlatformPortfolioUAV=="Remotely Crewed"]<-"Remotely Crewed"
+platpscintl$CaseStudy[platpscintl$ProductOrServiceCode %in% c("1220","1240","1280","3635","5850",
+                                                              "5855","6008","6031","6033","6650")]<-"Electro-Optical Sensors"
+
+fedpsc_ck<-get_column_key(platpscintl)
+fedpsc_lc<-prepare_labels_and_colors(platpscintl)
+
+droneEO<-platpscintl %>% filter(CaseStudy %iN% c("Remotely Crewed","Electro-Optical Sensors")) 
+drone<-platpscintl %>% filter(PlatformPortfolioUAV=="Remotely Crewed")
+
+
 
 # drone <-drone %>% select(-ProductOrServiceCodeText.y,-TopPScode,-TopPStext)
 colnames(drone)[colnames(drone)=="ProductOrServiceCodeText.x"]<-"ProductOrServiceCodeText"
@@ -1683,6 +1685,7 @@ ggsave600dpi(rc_vendor_place_fms,file="../output/Remotely_Crewed//rc_vendor_plac
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
     y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    alpha_Var="YTD",
     color_var="Shiny.VendorSize", #color_var
     facet_var="CaseStudy", #facet_var
     # second_var = "VendorSize",
@@ -1703,7 +1706,7 @@ ggsave600dpi(rc_vendor_place_fms,file="../output/Remotely_Crewed//rc_vendor_plac
   # facet_wrap(~ContractingAgencyTextSwr,ncol=4)
 )
 
-log_plot(plot=rceo_psr, df=droneEO %>% dplyr::filter(  lubridate::year(dFYear)>=1990 & 
+log_plot(plot=rceo_psr, df=droneEO %>% dplyr::filter(  lubridate::year(dFYear)>=2010 & 
                                                                             lubridate::year(dFYear)<=2023),
            filename="UAS_EO_Vendor_Size",xlsx="Japan_Def_Coop.xlsx",suppress_text = FALSE,
            sheet="Vendor",path=japan_repo_path,second_path=japan_log_path, height=3.5,
