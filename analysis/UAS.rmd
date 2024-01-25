@@ -85,27 +85,26 @@ def_data<-fed_data %>% filter(ContractingCustomer=="Defense")
 
 
 # drone %>% group_by(Customer) %>% summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))
-japan_log_path<-file.path(get_local_sharepoint_path("JAPAN-DIIG Project - General"),"Data")
+japan_log_path<-file.path(get_local_sharepoint_path("JAPAN-DIIG Project - Documents"),"General","Data")
 japan_repo_path<-"../../Trade/output/Japan/"
 ```
 
 
 ## Preprocess
 ```{r PreprocessProjectDrone}
-platpscintl$PlatformPortfolioUAVEO<-as.character(platpscintl$PlatformPortfolioUAV)
-platpscintl$PlatformPortfolioUAVEO[platpscintl$ProductOrServiceCode %in% c("1220","1240","1280","3635","5850",
-                                                              "5855","6008","6031","6033","6650")]<-"EO Sensors"
-platpscintl$CaseStudy<-NA
-platpscintl$CaseStudy[platpscintl$PlatformPortfolioUAV=="Remotely Crewed"]<-"Remotely Crewed"
-platpscintl$CaseStudy[platpscintl$ProductOrServiceCode %in% c("1220","1240","1280","3635","5850",
-                                                              "5855","6008","6031","6033","6650")]<-"Electro-Optical Sensors"
-
-fedpsc_ck<-get_column_key(platpscintl)
-fedpsc_lc<-prepare_labels_and_colors(platpscintl)
-
-droneEO<-platpscintl %>% filter(CaseStudy %iN% c("Remotely Crewed","Electro-Optical Sensors")) 
-drone<-platpscintl %>% filter(PlatformPortfolioUAV=="Remotely Crewed")
-
+  platpscintl$PlatformPortfolioUAVEO<-as.character(platpscintl$PlatformPortfolioUAV)
+  platpscintl$PlatformPortfolioUAVEO[platpscintl$ProductOrServiceCode %in% c("1220","1240","1280","3635","5850","6008","6031","6033","6650")]<-"EO Sensors"
+  platpscintl$CaseStudy<-NA
+  platpscintl$CaseStudy[platpscintl$PlatformPortfolioUAV=="Remotely Crewed"]<-"UAS"
+  platpscintl$CaseStudy[platpscintl$ProductOrServiceCode %in% c("1220","1240","1280","3635","5850",
+                                                                "6008","6031","6033","6650")]<-"EO Sensors"
+  
+  fedpsc_ck<-get_column_key(platpscintl)
+  fedpsc_lc<-prepare_labels_and_colors(platpscintl)
+  
+  droneEO<-platpscintl %>% filter(CaseStudy %in% c("UAS","EO Sensors")) 
+  drone<-platpscintl %>% filter(PlatformPortfolioUAV=="Remotely Crewed")
+  
 
 
 # drone <-drone %>% select(-ProductOrServiceCodeText.y,-TopPScode,-TopPStext)
@@ -872,7 +871,7 @@ log_plot(plot=rc_custproj, df=drone,
 ### EO Customer Top PSC
 ```{r drone_customer}
 
-droneEO %>% filter(CaseStudy=="Electro-Optical Sensors") %>% group_by(ProductOrServiceCodeText) %>%
+droneEO %>% filter(CaseStudy=="EO Sensors") %>% group_by(ProductOrServiceCodeText) %>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))
 
 droneEO$PSCsum<-factor(droneEO$ProductOrServiceCodeText)
@@ -883,9 +882,9 @@ droneEO$PSCsum<-factor(droneEO$ProductOrServiceCodeText)
 levels(droneEO$PSCsum)<-list(
   "Fire Control"=c("AIRCRAFT BOMBING FIRE CONT COMPS","FIRE CONT COMPUTING SIGHTS & DEVICE"),
   "NIGHT VISION EQ"="NIGHT VISION EQ",
-  "OPTICAL SIGHTING & RANGING EQUIPMENT"="OPTICAL SIGHTING & RANGING EQUIPMEN",
-  "LIGHT COMMUNICATION EQUIPMENT"="VISIBLE AND INVISIBLE LIGHT COMMUNICATION EQUIPMENT",
-  "Other EO Sensors and Related"=c("INTEGRATED OPTICAL CIRCUITS","CRYSTAL & GLASS INDUSTRIES MACHINE",
+  "Optical Sighting &\nRanging Equipment"="OPTICAL SIGHTING & RANGING EQUIPMEN",
+  "Light Communication\nEquipment"="VISIBLE AND INVISIBLE LIGHT COMMUNICATION EQUIPMENT",
+  "Other EO Sensors &\nRelated"=c("INTEGRATED OPTICAL CIRCUITS","CRYSTAL & GLASS INDUSTRIES MACHINE",
                        "FIBER OPTIC PHOTO DETECTORS","OPTICAL INSTRUMENTS",
                        "OPTICAL MULTIPLEXERS/DEMULTIPLEXERS")
 )
@@ -902,7 +901,7 @@ levels(droneEO$PSCsum)<-list(
 
 (
   eo_custproj<-build_plot(
-    data=droneEO %>% filter(Fiscal_Year>=2010 & CaseStudy=="Electro-Optical Sensors") ,
+    data=droneEO %>% filter(Fiscal_Year>=2010 & CaseStudy=="EO Sensors") ,
     chart_geom = "Bar Chart",
     share = FALSE,
     labels_and_colors=fed_lc,
@@ -924,13 +923,13 @@ levels(droneEO$PSCsum)<-list(
     # y="Percent of Obligations",
     # color="Competition")+
     theme(legend.position = "right")+
-    labs(title="US Federal Contracting for EO Senors\nby Customer and Product Code",
-         y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.")#+
+    labs(title="US Federal Contracting for EO Sensors\nby Customer and Product Code",
+         y="Obligations (Constant 2022 $s)",caption="Note: Products only, EO sensor specific R&D and servies codes were not found.\nSource: FPDS and CSIS analysis.")#+
   # facet_wrap(~ContractingAgencyTextSwr,ncol=4)
 )
 
 
-log_plot(plot=eo_custproj, df=droneEO %>% filter(CaseStudy=="Electro-Optical Sensors"),
+log_plot(plot=eo_custproj, df=droneEO %>% filter(CaseStudy=="EO Sensors"),
            filename="EO_Customer_PSC",xlsx="Japan_Def_Coop.xlsx",suppress_text = FALSE,
            sheet="EOcustPSC",path=japan_repo_path,second_path=japan_log_path, height=3.5,
            format=TRUE,#var_list=c("FlowText","StateRegionJapan"),
@@ -1678,14 +1677,14 @@ ggsave600dpi(rc_vendor_place_fms,file="../output/Remotely_Crewed//rc_vendor_plac
 
 (
   rceo_psr<-build_plot(
-    data=droneEO ,
+    data=droneEO %>% filter(Fiscal_Year>=2010),
     chart_geom = "Bar Chart",
     share = FALSE,
     labels_and_colors=fedpsc_lc,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
     y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-    alpha_Var="YTD",
+    alpha_var="YTD",
     color_var="Shiny.VendorSize", #color_var
     facet_var="CaseStudy", #facet_var
     # second_var = "VendorSize",
