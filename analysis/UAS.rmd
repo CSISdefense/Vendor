@@ -734,7 +734,7 @@ write.csv(file="..//Output//Remotely_Crewed//def_platUAS_cur.csv",row.names = FA
     # color="Competition")+
     theme(legend.position = "right")+
     labs(title="U.S. Federal UAS and EO Sensor Contracts by Customer",
-         y="Obligations (Constant 2022 $s)",caption="Note: Unlabeled not shown. Source: FPDS and CSIS analysis.")#+
+         y="Obligations (Constant 2022 $s)",caption="Note: Labeling efforts are ongoing, UAS R&D and services are not identified by code and must be manually labeled. Unlabeled not shown.\nSource: FPDS and CSIS analysis.")#+
   # facet_wrap(~ContractingAgencyTextSwr,ncol=4)
 )
 
@@ -826,7 +826,7 @@ levels(drone$TopProjectLabel)<-list(
     # color="Competition")+
     theme(legend.position = "right")+
     labs(title="US Federal Contracting for UAS\nby Customer and Project",
-         y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.")#+
+         y="Obligations (Constant 2022 $s)",caption="Note: Labeling efforts are ongoing, UAS R&D and services are not identified by code and must be manually labeled.\nSource: FPDS and CSIS analysis.")#+
   # facet_wrap(~ContractingAgencyTextSwr,ncol=4)
 )
 
@@ -873,6 +873,79 @@ log_plot(plot=rc_custproj, df=drone,
 
 droneEO %>% filter(CaseStudy=="EO Sensors") %>% group_by(ProductOrServiceCodeText) %>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))
+
+droneEO$PSCsum<-factor(droneEO$ProductOrServiceCodeText)
+
+# drone$TopProjectLabel<-factor(drone$TopProject  )
+# drone<-replace_nas_with_unlabeled(drone,"TopProjectLabel","Other UAS")
+# 
+levels(droneEO$PSCsum)<-list(
+  "Fire Control"=c("AIRCRAFT BOMBING FIRE CONT COMPS","FIRE CONT COMPUTING SIGHTS & DEVICE"),
+  "NIGHT VISION EQ"="NIGHT VISION EQ",
+  "Optical Sighting &\nRanging Equipment"="OPTICAL SIGHTING & RANGING EQUIPMEN",
+  "Light Communication\nEquipment"="VISIBLE AND INVISIBLE LIGHT COMMUNICATION EQUIPMENT",
+  "Other EO Sensors &\nRelated"=c("INTEGRATED OPTICAL CIRCUITS","CRYSTAL & GLASS INDUSTRIES MACHINE",
+                       "FIBER OPTIC PHOTO DETECTORS","OPTICAL INSTRUMENTS",
+                       "OPTICAL MULTIPLEXERS/DEMULTIPLEXERS")
+)
+
+# levels(drone$TopProjectLabel)<-list(
+#   "Tactical UAV" ="TACTICAL UAV",
+#    "MQ-1C Gray Eagle"="MQ-1C Gray Eagle",
+#       "RQ-4 Global Hawk" =c("GLOBAL HAWK", "RQ-4 Global Hawk"),
+#       "MQ-4C Triton"=c("BAMS","MQ-4C Triton"),
+#   "MQ-8 Fire Scout"=c("VTUAV","MQ-8 Fire Scout"),
+#    "MQ-9 Reaper" = "MQ-9 Reaper",
+#   "MQ-25 Stingray"="MQ-25 Stingray",
+#   "Other, multiple,\nor unspecified UAS"=c("Other Labeled Project","Other UAS"))
+
+(
+  eo_custproj<-build_plot(
+    data=droneEO %>% filter(Fiscal_Year>=2010 & CaseStudy=="EO Sensors") ,
+    chart_geom = "Bar Chart",
+    share = FALSE,
+    labels_and_colors=fedpsc_lc,
+    column_key=fedpsc_ck,
+    # NA, #VAR.ncol
+    x_var="dFYear", #x_var
+    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    alpha_var="YTD",
+    color_var="PSCsum", #color_var
+    facet_var="SubCustomer.DoD", #facet_var
+    format=TRUE,
+    ytextposition=FALSE
+  )+
+    # theme(strip.text.y = element_text(angle=0))+
+    # theme(axis.text.x = element_text(angle=90))+
+    #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+    #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+    #             )+labs(title=NULL,
+    # x="Fiscal Year",
+    # y="Percent of Obligations",
+    # color="Competition")+
+    theme(legend.position = "right")+
+    labs(title="US Federal Contracting for EO Sensors\nby Customer and Product Code",
+         y="Obligations (Constant 2022 $s)",caption="Note: Products only, EO sensor specific R&D and servies codes were not found.\nSource: FPDS and CSIS analysis.")#+
+  # facet_wrap(~ContractingAgencyTextSwr,ncol=4)
+)
+
+
+log_plot(plot=eo_custproj, df=droneEO %>% filter(CaseStudy=="EO Sensors"),
+           filename="EO_Customer_PSC",xlsx="Japan_Def_Coop.xlsx",suppress_text = FALSE,
+           sheet="EOcustPSC",path=japan_repo_path,second_path=japan_log_path, height=3.5,
+           format=TRUE,#var_list=c("FlowText","StateRegionJapan"),
+           output_doc_png=TRUE,excel_y_var=TRUE
+  )
+
+```
+
+### EO Customer Project
+```{r drone_customer}
+
+droneEO %>% filter(CaseStudy=="EO Sensors") %>% group_by(Project.Name) %>%
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE)) %>%
+  arrange(-Action_Obligation_OMB24_GDP22)
+  
 
 droneEO$PSCsum<-factor(droneEO$ProductOrServiceCodeText)
 
@@ -1880,6 +1953,79 @@ log_plot(plot=rceo_psr, df=droneEO %>% dplyr::filter(  lubridate::year(dFYear)>=
            format=TRUE,#var_list=c("FlowText","StateRegionJapan"),
            output_doc_png=TRUE,excel_y_var=TRUE
   )
+```
+
+### EO Top PSC Vendor Size 
+```{r drone_customer}
+
+droneEO %>% filter(CaseStudy=="EO Sensors") %>% filter(VendorSize_Intl=="International") %>%
+  group_by(VendorISOalpha3,OriginISOalpha3) %>%
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE)) %>% arrange(-Action_Obligation_OMB24_GDP22)
+
+droneEO$PSCsum<-factor(droneEO$ProductOrServiceCodeText)
+
+# drone$TopProjectLabel<-factor(drone$TopProject  )
+# drone<-replace_nas_with_unlabeled(drone,"TopProjectLabel","Other UAS")
+# 
+levels(droneEO$PSCsum)<-list(
+  "Fire Control"=c("AIRCRAFT BOMBING FIRE CONT COMPS","FIRE CONT COMPUTING SIGHTS & DEVICE"),
+  "NIGHT VISION EQ"="NIGHT VISION EQ",
+  "Optical Sighting &\nRanging Equipment"="OPTICAL SIGHTING & RANGING EQUIPMEN",
+  "Light Communication\nEquipment"="VISIBLE AND INVISIBLE LIGHT COMMUNICATION EQUIPMENT",
+  "Other EO Sensors &\nRelated"=c("INTEGRATED OPTICAL CIRCUITS","CRYSTAL & GLASS INDUSTRIES MACHINE",
+                       "FIBER OPTIC PHOTO DETECTORS","OPTICAL INSTRUMENTS",
+                       "OPTICAL MULTIPLEXERS/DEMULTIPLEXERS")
+)
+
+# levels(drone$TopProjectLabel)<-list(
+#   "Tactical UAV" ="TACTICAL UAV",
+#    "MQ-1C Gray Eagle"="MQ-1C Gray Eagle",
+#       "RQ-4 Global Hawk" =c("GLOBAL HAWK", "RQ-4 Global Hawk"),
+#       "MQ-4C Triton"=c("BAMS","MQ-4C Triton"),
+#   "MQ-8 Fire Scout"=c("VTUAV","MQ-8 Fire Scout"),
+#    "MQ-9 Reaper" = "MQ-9 Reaper",
+#   "MQ-25 Stingray"="MQ-25 Stingray",
+#   "Other, multiple,\nor unspecified UAS"=c("Other Labeled Project","Other UAS"))
+
+(
+  eo_vendpsc<-build_plot(
+    data=droneEO %>% filter(Fiscal_Year>=2010 & CaseStudy=="EO Sensors") ,
+    chart_geom = "Bar Chart",
+    share = FALSE,
+    labels_and_colors=fedpsc_lc,
+    column_key=fedpsc_ck,
+    # NA, #VAR.ncol
+    x_var="dFYear", #x_var
+    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    alpha_var="YTD",
+    color_var="VendorSize_Intl", #color_var
+    facet_var="PSCsum", #facet_var
+    format=TRUE,
+    ytextposition=FALSE
+  )+
+    # theme(strip.text.y = element_text(angle=0))+
+    # theme(axis.text.x = element_text(angle=90))+
+    #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+    #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+    #             )+labs(title=NULL,
+    # x="Fiscal Year",
+    # y="Percent of Obligations",
+    # color="Competition")+
+    theme(legend.position = "right")+
+    labs(title="US Federal Contracting for EO Sensors\nby Product Code and Vendor Size",
+         y="Obligations (Constant 2022 $s)",caption="Note: Labeling efforts are ongoing, EO sensor-specific R&D and services codes were not found.\nSource: FPDS and CSIS analysis.")#+
+  # facet_wrap(~ContractingAgencyTextSwr,ncol=4)
+)
+
+
+log_plot(plot=eo_vendpsc, df=droneEO %>% filter(CaseStudy=="EO Sensors"),
+           filename="EO_PSC_Vendor",xlsx="Japan_Def_Coop.xlsx",suppress_text = FALSE,
+           sheet="EOpscVend",path=japan_repo_path,second_path=japan_log_path, height=3.5,
+           format=TRUE,#var_list=c("FlowText","StateRegionJapan"),
+           output_doc_png=TRUE,excel_y_var=TRUE
+  )
+
+
 ```
 
 # Entities
