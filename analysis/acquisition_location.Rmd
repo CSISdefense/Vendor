@@ -392,11 +392,35 @@ artillery<-read.csv(file.path("..","data_raw","USA_Artillery_Production.csv")) %
 artillery$Aproximate.Date<-as.Date(artillery$Aproximate.Date,"%m/%d/%Y")
 artillery$Monthly.Production<-text_to_number(artillery$Monthly.Production)
 
-build_plot(artillery %>% filter(Series!="A&S Sept. 2022 Targets"),
+(prod155mm<-
+  build_plot(artillery %>% filter(Series!="A&S Sept. 2022 Targets"),
            chart_geom = "Line Chart",
            x_var="Aproximate.Date",
            y_var="Monthly.Production",
-           color_var="Series")
+           alpha_var="Type",
+           color_var="Series")+geom_point(aes(x=Aproximate.Date,
+                                              y=Monthly.Production,
+                                              color=Series),
+                                          size=3,
+                                          data=
+                                            artillery %>% filter(Series!="A&S Sept. 2022 Targets"&
+                                                                   Duplicate.Actuals==FALSE)
+                                          )+scale_linetype(guide="none")+
+  labs(x="Reporting Date or Target Deadline", y="Monthly Production\nof 155mm Ammunition",
+       title="Army 155mm Ammunition Production Rates and Targets",
+       caption="Sources: Bryan Bender and Lara Seligman, Politico, Dec., 4, 2022;
+       Jen Judson, DefenseNews, Mar. 28, 2023; Noah Robertson, DefenseNews, Sept. 15, 2023; 
+       Sam Skove, Defense One, Nov. 27, 2023; initial chart by Govini; and CSIS analysis.")+
+    scale_x_date(date_breaks = "6 months",date_labels = "'%y\n%b")+
+    geom_line(aes(x=Aproximate.Date,
+                                              y=Monthly.Production,
+                                              color=Series,
+                  linetype=Type),linewidth=1.5)+
+    theme(legend.position="right")
+    #,labels = "%Y-%m"
+)
+ggsave600dpi(prod155mm,file=file.path("..","Output","Munitions","prod155.png"),width=11,height=4,
+             size=14,lineheight=1)
 ```
 
 # Top Projects Annual
