@@ -54,14 +54,14 @@ load(file="../data/clean/TopVendorUAVHistoryPlatformCustomer.rda")
 # load(file="../data/clean/jadc2.Rda")
 
 platpscintl$SubCustomer.DoD<-as.character(platpscintl$SubCustomer.sum)
-platpscintl$SubCustomer.DoD[platpscintl$contractingCustomer!="Defense"]<-"Civilian"
+platpscintl$SubCustomer.DoD[platpscintl$ContractingCustomer!="Defense"]<-"Civilian"
 
 fed_data$SubCustomer.DoD<-as.character(fed_data$SubCustomer.sum)
 fed_data$SubCustomer.DoD[fed_data$ContractingCustomer!="Defense"]<-"Civilian"
 def_data<-fed_data %>% filter(ContractingCustomer=="Defense")
 
 OTA_data$SubCustomer.DoD<-as.character(OTA_data$SubCustomer.sum)
-OTA_data$SubCustomer.DoD[OTA_data$Customer!="Defense"]<-"Civilian"
+OTA_data$SubCustomer.DoD[OTA_data$ContractingCustomer!="Defense"]<-"Civilian"
 
 ota_contract$SubCustomer.DoD<-as.character(ota_contract$SubCustomer.sum)
 ota_contract$SubCustomer.DoD<-as.character(ota_contract$SubCustomer.sum)
@@ -84,28 +84,27 @@ def_data<-fed_data %>% filter(ContractingCustomer=="Defense")
 # detail_ck<-get_column_key(platpscintl,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 
 
-# drone %>% group_by(Customer) %>% summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))
-japan_log_path<-file.path(get_local_sharepoint_path("JAPAN-DIIG Project - General"),"Data")
+# drone %>% group_by(ContractingCustomer) %>% summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))
+japan_log_path<-file.path(get_local_sharepoint_path("JAPAN-DIIG Project - Documents"),"General","Data")
 japan_repo_path<-"../../Trade/output/Japan/"
 ```
 
 
 ## Preprocess
 ```{r PreprocessProjectDrone}
-platpscintl$PlatformPortfolioUAVEO<-as.character(platpscintl$PlatformPortfolioUAV)
-platpscintl$PlatformPortfolioUAVEO[platpscintl$ProductOrServiceCode %in% c("1220","1240","1280","3635","5850",
-                                                              "5855","6008","6031","6033","6650")]<-"EO Sensors"
-platpscintl$CaseStudy<-NA
-platpscintl$CaseStudy[platpscintl$PlatformPortfolioUAV=="Remotely Crewed"]<-"Remotely Crewed"
-platpscintl$CaseStudy[platpscintl$ProductOrServiceCode %in% c("1220","1240","1280","3635","5850",
-                                                              "5855","6008","6031","6033","6650")]<-"Electro-Optical Sensors"
-
-fedpsc_ck<-get_column_key(platpscintl)
-fedpsc_lc<-prepare_labels_and_colors(platpscintl)
-
-droneEO<-platpscintl %>% filter(CaseStudy %iN% c("Remotely Crewed","Electro-Optical Sensors")) 
-drone<-platpscintl %>% filter(PlatformPortfolioUAV=="Remotely Crewed")
-
+eo_psc<-c("1220","1240","1280","3635","5850","6008","6031","6033","6650")
+  platpscintl$PlatformPortfolioUAVEO<-as.character(platpscintl$PlatformPortfolioUAV)
+  platpscintl$PlatformPortfolioUAVEO[platpscintl$ProductOrServiceCode %in% eo_psc]<-"EO Sensors"
+  platpscintl$CaseStudy<-NA
+  platpscintl$CaseStudy[platpscintl$PlatformPortfolioUAV=="Remotely Crewed"]<-"UAS"
+  platpscintl$CaseStudy[platpscintl$ProductOrServiceCode %in% eo_psc]<-"EO Sensors"
+  
+  fedpsc_ck<-get_column_key(platpscintl)
+  fedpsc_lc<-prepare_labels_and_colors(platpscintl)
+  
+  droneEO<-platpscintl %>% filter(CaseStudy %in% c("UAS","EO Sensors")) 
+  drone<-platpscintl %>% filter(PlatformPortfolioUAV=="Remotely Crewed")
+  
 
 
 # drone <-drone %>% select(-ProductOrServiceCodeText.y,-TopPScode,-TopPStext)
@@ -371,7 +370,7 @@ write.csv(file="ArmyUAS.csv",(OTA_data[grep("DIU", OTA_data$Description_of_Requi
   
   (
     uas_ota_sub<-build_plot(
-      data=OTA_data %>% filter(PlatformPortfolioUAV=="Remotely Crewed" & Fiscal_Year<=2021) ,
+      data=OTA_data %>% filter(PlatformPortfolioUAV=="Remotely Crewed" & Fiscal_Year<=2023.2) ,
       chart_geom = "Bar Chart",
       share = FALSE,
       labels_and_colors=ota_lc,
@@ -441,7 +440,7 @@ write.csv(file="ArmyUAS.csv",(OTA_data[grep("DIU", OTA_data$Description_of_Requi
 ggsave600dpi(uas_ota_subcust,file="..//output//Remotely_Crewed//uas_ota_subcust.png",  
              width=3.25, height= 3, units="in",size=12, lineheight=1.2
 )
-ggsave600dpi(uas_ota_subcust,file="..//output//Remotely_Crewed//uas_ota_subcustsvg",  
+ggsave600dpi(uas_ota_subcust,file="..//output//Remotely_Crewed//uas_ota_subcust.svg",  
              width=3.25, height= 3, units="in",size=12, lineheight=1.2
 )
 
@@ -568,7 +567,7 @@ log_plot(plot=rceo_psr, df=droneEO %>% dplyr::filter(  lubridate::year(dFYear)>=
 
 (
   rc_psr_plat<-build_plot(
-    data=platpscintl %>% filter(Fiscal_Year>=2010,PlatformPortfolioUAV!="Unlabeled"& Customer=="Defense"&
+    data=platpscintl %>% filter(Fiscal_Year>=2010,PlatformPortfolioUAV!="Unlabeled"& ContractingCustomer=="Defense"&
                                !PlatformPortfolioUAV %in% c("Facilities and Construction",
                                                             "Other Products",
                                                             "Other R&D and Knowledge Based",
@@ -600,7 +599,7 @@ log_plot(plot=rceo_psr, df=droneEO %>% dplyr::filter(  lubridate::year(dFYear)>=
 
 (
   rc_psr_plat_share<-build_plot(
-    data=platpscintl %>% filter(Fiscal_Year>=2010,PlatformPortfolioUAV!="Unlabeled"& Customer=="Defense"&
+    data=platpscintl %>% filter(Fiscal_Year>=2010,PlatformPortfolioUAV!="Unlabeled"& ContractingCustomer=="Defense"&
                                !PlatformPortfolioUAV %in% c("Facilities and Construction",
                                                             "Other Products",
                                                             "Other R&D and Knowledge Based",
@@ -735,7 +734,7 @@ write.csv(file="..//Output//Remotely_Crewed//def_platUAS_cur.csv",row.names = FA
     # color="Competition")+
     theme(legend.position = "right")+
     labs(title="U.S. Federal UAS and EO Sensor Contracts by Customer",
-         y="Obligations (Constant 2022 $s)",caption="Note: Unlabeled not shown. Source: FPDS and CSIS analysis.")#+
+         y="Obligations (Constant 2022 $s)",caption="Note: Labeling efforts are ongoing, UAS R&D and services are not identified by code and must be manually labeled. Unlabeled not shown.\nSource: FPDS and CSIS analysis.")#+
   # facet_wrap(~ContractingAgencyTextSwr,ncol=4)
 )
 
@@ -827,7 +826,7 @@ levels(drone$TopProjectLabel)<-list(
     # color="Competition")+
     theme(legend.position = "right")+
     labs(title="US Federal Contracting for UAS\nby Customer and Project",
-         y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.")#+
+         y="Obligations (Constant 2022 $s)",caption="Note: Labeling efforts are ongoing, UAS R&D and services are not identified by code and must be manually labeled.\nSource: FPDS and CSIS analysis.")#+
   # facet_wrap(~ContractingAgencyTextSwr,ncol=4)
 )
 
@@ -872,7 +871,7 @@ log_plot(plot=rc_custproj, df=drone,
 ### EO Customer Top PSC
 ```{r drone_customer}
 
-droneEO %>% filter(CaseStudy=="Electro-Optical Sensors") %>% group_by(ProductOrServiceCodeText) %>%
+droneEO %>% filter(CaseStudy=="EO Sensors") %>% group_by(ProductOrServiceCodeText) %>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))
 
 droneEO$PSCsum<-factor(droneEO$ProductOrServiceCodeText)
@@ -883,9 +882,9 @@ droneEO$PSCsum<-factor(droneEO$ProductOrServiceCodeText)
 levels(droneEO$PSCsum)<-list(
   "Fire Control"=c("AIRCRAFT BOMBING FIRE CONT COMPS","FIRE CONT COMPUTING SIGHTS & DEVICE"),
   "NIGHT VISION EQ"="NIGHT VISION EQ",
-  "OPTICAL SIGHTING & RANGING EQUIPMENT"="OPTICAL SIGHTING & RANGING EQUIPMEN",
-  "LIGHT COMMUNICATION EQUIPMENT"="VISIBLE AND INVISIBLE LIGHT COMMUNICATION EQUIPMENT",
-  "Other EO Sensors and Related"=c("INTEGRATED OPTICAL CIRCUITS","CRYSTAL & GLASS INDUSTRIES MACHINE",
+  "Optical Sighting &\nRanging Equipment"="OPTICAL SIGHTING & RANGING EQUIPMEN",
+  "Light Communication\nEquipment"="VISIBLE AND INVISIBLE LIGHT COMMUNICATION EQUIPMENT",
+  "Other EO Sensors &\nRelated"=c("INTEGRATED OPTICAL CIRCUITS","CRYSTAL & GLASS INDUSTRIES MACHINE",
                        "FIBER OPTIC PHOTO DETECTORS","OPTICAL INSTRUMENTS",
                        "OPTICAL MULTIPLEXERS/DEMULTIPLEXERS")
 )
@@ -902,14 +901,15 @@ levels(droneEO$PSCsum)<-list(
 
 (
   eo_custproj<-build_plot(
-    data=droneEO %>% filter(Fiscal_Year>=2010 & CaseStudy=="Electro-Optical Sensors") ,
+    data=droneEO %>% filter(Fiscal_Year>=2010 & CaseStudy=="EO Sensors") ,
     chart_geom = "Bar Chart",
     share = FALSE,
-    labels_and_colors=fed_lc,
-    column_key=fed_ck,
+    labels_and_colors=fedpsc_lc,
+    column_key=fedpsc_ck,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
     y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    alpha_var="YTD",
     color_var="PSCsum", #color_var
     facet_var="SubCustomer.DoD", #facet_var
     format=TRUE,
@@ -925,12 +925,85 @@ levels(droneEO$PSCsum)<-list(
     # color="Competition")+
     theme(legend.position = "right")+
     labs(title="US Federal Contracting for EO Sensors\nby Customer and Product Code",
-         y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.")#+
+         y="Obligations (Constant 2022 $s)",caption="Note: Products only, EO sensor specific R&D and servies codes were not found.\nSource: FPDS and CSIS analysis.")#+
   # facet_wrap(~ContractingAgencyTextSwr,ncol=4)
 )
 
 
-log_plot(plot=eo_custproj, df=droneEO %>% filter(CaseStudy=="Electro-Optical Sensors"),
+log_plot(plot=eo_custproj, df=droneEO %>% filter(CaseStudy=="EO Sensors"),
+           filename="EO_Customer_PSC",xlsx="Japan_Def_Coop.xlsx",suppress_text = FALSE,
+           sheet="EOcustPSC",path=japan_repo_path,second_path=japan_log_path, height=3.5,
+           format=TRUE,#var_list=c("FlowText","StateRegionJapan"),
+           output_doc_png=TRUE,excel_y_var=TRUE
+  )
+
+```
+
+### EO Customer Project
+```{r drone_customer}
+
+droneEO %>% filter(CaseStudy=="EO Sensors") %>% group_by(Project.Name) %>%
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE)) %>%
+  arrange(-Action_Obligation_OMB24_GDP22)
+  
+
+droneEO$PSCsum<-factor(droneEO$ProductOrServiceCodeText)
+
+# drone$TopProjectLabel<-factor(drone$TopProject  )
+# drone<-replace_nas_with_unlabeled(drone,"TopProjectLabel","Other UAS")
+# 
+levels(droneEO$PSCsum)<-list(
+  "Fire Control"=c("AIRCRAFT BOMBING FIRE CONT COMPS","FIRE CONT COMPUTING SIGHTS & DEVICE"),
+  "NIGHT VISION EQ"="NIGHT VISION EQ",
+  "Optical Sighting &\nRanging Equipment"="OPTICAL SIGHTING & RANGING EQUIPMEN",
+  "Light Communication\nEquipment"="VISIBLE AND INVISIBLE LIGHT COMMUNICATION EQUIPMENT",
+  "Other EO Sensors &\nRelated"=c("INTEGRATED OPTICAL CIRCUITS","CRYSTAL & GLASS INDUSTRIES MACHINE",
+                       "FIBER OPTIC PHOTO DETECTORS","OPTICAL INSTRUMENTS",
+                       "OPTICAL MULTIPLEXERS/DEMULTIPLEXERS")
+)
+
+# levels(drone$TopProjectLabel)<-list(
+#   "Tactical UAV" ="TACTICAL UAV",
+#    "MQ-1C Gray Eagle"="MQ-1C Gray Eagle",
+#       "RQ-4 Global Hawk" =c("GLOBAL HAWK", "RQ-4 Global Hawk"),
+#       "MQ-4C Triton"=c("BAMS","MQ-4C Triton"),
+#   "MQ-8 Fire Scout"=c("VTUAV","MQ-8 Fire Scout"),
+#    "MQ-9 Reaper" = "MQ-9 Reaper",
+#   "MQ-25 Stingray"="MQ-25 Stingray",
+#   "Other, multiple,\nor unspecified UAS"=c("Other Labeled Project","Other UAS"))
+
+(
+  eo_custproj<-build_plot(
+    data=droneEO %>% filter(Fiscal_Year>=2010 & CaseStudy=="EO Sensors") ,
+    chart_geom = "Bar Chart",
+    share = FALSE,
+    labels_and_colors=fedpsc_lc,
+    column_key=fedpsc_ck,
+    # NA, #VAR.ncol
+    x_var="dFYear", #x_var
+    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    alpha_var="YTD",
+    color_var="PSCsum", #color_var
+    facet_var="SubCustomer.DoD", #facet_var
+    format=TRUE,
+    ytextposition=FALSE
+  )+
+    # theme(strip.text.y = element_text(angle=0))+
+    # theme(axis.text.x = element_text(angle=90))+
+    #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+    #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+    #             )+labs(title=NULL,
+    # x="Fiscal Year",
+    # y="Percent of Obligations",
+    # color="Competition")+
+    theme(legend.position = "right")+
+    labs(title="US Federal Contracting for EO Sensors\nby Customer and Product Code",
+         y="Obligations (Constant 2022 $s)",caption="Note: Products only, EO sensor specific R&D and servies codes were not found.\nSource: FPDS and CSIS analysis.")#+
+  # facet_wrap(~ContractingAgencyTextSwr,ncol=4)
+)
+
+
+log_plot(plot=eo_custproj, df=droneEO %>% filter(CaseStudy=="EO Sensors"),
            filename="EO_Customer_PSC",xlsx="Japan_Def_Coop.xlsx",suppress_text = FALSE,
            sheet="EOcustPSC",path=japan_repo_path,second_path=japan_log_path, height=3.5,
            format=TRUE,#var_list=c("FlowText","StateRegionJapan"),
@@ -940,7 +1013,7 @@ log_plot(plot=eo_custproj, df=droneEO %>% filter(CaseStudy=="Electro-Optical Sen
 ```
 
 ## Commercial 
-### Commercial Subcustomer
+### UAS Commercial Subcustomer
 ```{r drone_customer}
 
 fed_data<-fed_data %>% group_by(SubCustomer.DoD,Fiscal_Year) %>%
@@ -1041,7 +1114,7 @@ ggsave600dpi(rc_commercial,file="..//output//Remotely_Crewed//Remotely_Crewed_Co
 
   (
     uas_ota_sub<-build_plot(
-      data=OTA_data %>% filter(PlatformPortfolioUAV=="Remotely Crewed" & Fiscal_Year<=2021) ,
+      data=OTA_data %>% filter(PlatformPortfolioUAV=="Remotely Crewed" & Fiscal_Year<=2022) ,
       chart_geom = "Bar Chart",
       share = FALSE,
       labels_and_colors=ota_lc,
@@ -1071,7 +1144,7 @@ ggsave600dpi(rc_commercial,file="..//output//Remotely_Crewed//Remotely_Crewed_Co
 
   (
     uas_ota_contract_comm_sub<-build_plot(
-      data=ota_contract %>% filter(PlatformPortfolioUAV=="Remotely Crewed" & Fiscal_Year<=2021& 
+      data=ota_contract %>% filter(PlatformPortfolioUAV=="Remotely Crewed" & Fiscal_Year<=2022& 
                                      AnyCommercial %in% c('Y',"NonDev","Other OTA")&
                                      Fiscal_Year>=2011) ,
       chart_geom = "Bar Chart",
@@ -1096,14 +1169,22 @@ ggsave600dpi(rc_commercial,file="..//output//Remotely_Crewed//Remotely_Crewed_Co
       # y="Percent of Obligations",
       # color="Competition")+
       theme(legend.position = "bottom")+
-      labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.")+
+      labs(y="Obligations (Constant 2022 $s)",title="Commercial Contracts & Other Transaction Authority\n(OTA) Arrangements for UAS by Customer",caption="Source: FPDS and CSIS analysis.")+
      facet_grid(.~SubCustomer.DoD)
+  )
+
+log_plot(plot=uas_ota_contract_comm_sub, df=ota_contract %>% filter(PlatformPortfolioUAV=="Remotely Crewed" & Fiscal_Year<=2022& 
+                                     AnyCommercial %in% c('Y',"NonDev","Other OTA")),
+           filename="UAS_Commercial_OTA",xlsx="UAS_Commercial_OTA.xlsx",suppress_text = FALSE,
+           sheet="UAS_CommerOTA",path=japan_repo_path,second_path=japan_log_path, height=3.5,
+           format=TRUE,#var_list=c("FlowText","StateRegionJapan"),
+           output_doc_png=TRUE,excel_y_var=TRUE
   )
 
 
 (
     uas_contract_comm_sub<-build_plot(
-      data=fed_data %>% filter(PlatformPortfolioUAV=="Remotely Crewed" & Fiscal_Year<=2021& 
+      data=fed_data %>% filter(PlatformPortfolioUAV=="Remotely Crewed" & Fiscal_Year<=2022& 
                                      AnyCommercial %in% c('Y',"NonDev","Other OTA")&
                                      Fiscal_Year>=2011) ,
       chart_geom = "Bar Chart",
@@ -1157,6 +1238,137 @@ write.csv(file="..//Output//Remotely_Crewed//uas_ota_contract_comm_sub.csv",row.
             pivot_wider(id_cols=c(SubCustomer.DoD,IsOTA),
                         names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%
             arrange(SubCustomer.DoD,IsOTA))
+```
+
+### EO  Commercial Subcustomer
+```{r drone_customer}
+
+  (
+    eo_ota_sub<-build_plot(
+      data=OTA_data %>% filter(ProductOrServiceCode %in% eo_psc & Fiscal_Year<=2022) ,
+      chart_geom = "Bar Chart",
+      share = FALSE,
+      labels_and_colors=ota_lc,
+      # NA, #VAR.ncol
+      x_var="dFYear", #x_var
+      y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+      color_var="SubCustomer.DoD", #color_var
+      # facet_var="SubCustomer.DoD", #facet_var
+      # second_var="IsOTA", #facet_var
+      column_key=ota_lc,
+      format=TRUE,
+      ytextposition=FALSE
+    )+
+      # theme(strip.text.y = element_text(angle=0))+
+      # theme(axis.text.x = element_text(angle=90))+
+      #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+      #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+      #             )+labs(title=NULL,
+      # x="Fiscal Year",
+      # y="Percent of Obligations",
+      # color="Competition")+
+      theme(legend.position = "right")+
+      labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.")#+
+     # facet_wrap(~PlatformPortfolioUAV,scale="free_y")
+  )
+
+# 
+#   (
+#     eo_ota_contract_comm_sub<-build_plot(
+#       data=ota_contract %>% filter(PlatformPortfolioUAV=="Remotely Crewed" & Fiscal_Year<=2022& 
+#                                      AnyCommercial %in% c('Y',"NonDev","Other OTA")&
+#                                      Fiscal_Year>=2011) ,
+#       chart_geom = "Bar Chart",
+#       share = FALSE,
+#       labels_and_colors=ota_contract_lc,
+#       # NA, #VAR.ncol
+#       x_var="dFYear", #x_var
+#       y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+#       color_var="IsOTA", #color_var
+#       facet_var="SubCustomer.DoD", #facet_var
+#       # second_var="IsOTA", #facet_var
+#       column_key=ota_contract_lc,
+#       format=TRUE,
+#       ytextposition=FALSE
+#     )+
+#       # theme(strip.text.y = element_text(angle=0))+
+#       # theme(axis.text.x = element_text(angle=90))+
+#       #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+#       #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+#       #             )+labs(title=NULL,
+#       # x="Fiscal Year",
+#       # y="Percent of Obligations",
+#       # color="Competition")+
+#       theme(legend.position = "bottom")+
+#       labs(y="Obligations (Constant 2022 $s)",title="Commercial Contracts & Other Transaction Authority (OTA)\nArrangements for EO by Customer",caption="Source: FPDS and CSIS analysis.")+
+#      facet_grid(.~SubCustomer.DoD)
+#   )
+
+log_plot(plot=uas_ota_contract_comm_sub, df=ota_contract %>% filter(PlatformPortfolioUAV=="Remotely Crewed" & Fiscal_Year<=2022& 
+                                     AnyCommercial %in% c('Y',"NonDev","Other OTA")),
+           filename="UAS_Commercial_OTA",xlsx="UAS_Commercial_OTA.xlsx",suppress_text = FALSE,
+           sheet="UAS_CommerOTA",path=japan_repo_path,second_path=japan_log_path, height=3.5,
+           format=TRUE,#var_list=c("FlowText","StateRegionJapan"),
+           output_doc_png=TRUE,excel_y_var=TRUE
+  )
+
+# 
+# (
+#     eo_contract_comm_sub<-build_plot(
+#       data=fed_data %>% filter(PlatformPortfolioUAV=="Remotely Crewed" & Fiscal_Year<=2022& 
+#                                      AnyCommercial %in% c('Y',"NonDev","Other OTA")&
+#                                      Fiscal_Year>=2011) ,
+#       chart_geom = "Bar Chart",
+#       share = FALSE,
+#       labels_and_colors=ota_contract_lc,
+#       # NA, #VAR.ncol
+#       x_var="dFYear", #x_var
+#       y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+#       color_var="SubCustomer.DoD", #color_var
+#       facet_var="SubCustomer.DoD", #facet_var
+#       # second_var="IsOTA", #facet_var
+#       column_key=ota_contract_lc,
+#       format=TRUE,
+#       ytextposition=FALSE
+#     )+
+#       # theme(strip.text.y = element_text(angle=0))+
+#       # theme(axis.text.x = element_text(angle=90))+
+#       #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+#       #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+#       #             )+labs(title=NULL,
+#       # x="Fiscal Year",
+#       # y="Percent of Obligations",
+#       # color="Competition")+
+#       theme(legend.position = "bottom")+
+#       labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.")+
+#      facet_grid(.~SubCustomer.DoD)
+#   )
+# OTA_data$LegalBusinessName
+# OTA_data %>% filter(SubCustomer.DoD=="Army"& PlatformPortfolioUAV=="Remotely Crewed"& Fiscal_Year<=2014)%>%
+#   group_by(Description_of_Requirement,LegalBusinessName,NontraditionalGovernmentContractorParticipationDescription)%>%
+#        summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))%>%
+#   arrange(-Action_Obligation_OMB24_GDP22)
+# 
+# ggsave600dpi(uas_ota_contract_comm_sub,file="..//output//Remotely_Crewed//uas_ota_contract_comm_sub.png",
+#              width=6.5, height= 3, units="in",size=11, lineheight=1.2)
+# 
+# ggsave600dpi(uas_ota_contract_comm_sub,file="..//output//Remotely_Crewed//uas_ota_contract_comm_sub.svg",
+#              width=6.5, height= 3, units="in",size=11, lineheight=1.2)
+# 
+# 
+# ggsave600dpi(uas_contract_comm_sub+theme(legend.position = "None"),file="..//output//Remotely_Crewed//uas_contract_comm_sub.png",
+#              width=6.5, height= 2.75, units="in",size=11, lineheight=1.2)
+# 
+# ggsave600dpi(uas_contract_comm_sub+theme(legend.position = "None"),file="..//output//Remotely_Crewed//uas_contract_comm_sub.svg",
+#              width=6.5, height= 2.75, units="in",size=11, lineheight=1.2)
+# 
+# write.csv(file="..//Output//Remotely_Crewed//uas_ota_contract_comm_sub.csv",row.names = FALSE,na = "",
+#           uas_ota_contract_comm_sub$data %>% mutate(Fiscal_Year=lubridate::year(dFYear),
+#             bAction_Obligation_OMB24_GDP22=Action_Obligation_OMB24_GDP22/1000000000)%>%
+#             arrange(Fiscal_Year)%>%
+#             pivot_wider(id_cols=c(SubCustomer.DoD,IsOTA),
+#                         names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%
+#             arrange(SubCustomer.DoD,IsOTA))
 ```
 
 ### Commercial Across Categories
@@ -1446,16 +1658,16 @@ write.csv(file="..//Output//Remotely_Crewed//PSReffCompPlatUAV.csv",row.names = 
 
 (
   RCVendorIntl<-build_plot(
-    data=drone %>% filter(Fiscal_Year<=2020),
+    data=drone %>% filter(Fiscal_Year>=2010),
     chart_geom = "Bar Chart",
     share = FALSE,
-    labels_and_colors=labels_and_colors,
+    labels_and_colors=fedpsc_lc,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
     y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
     color_var="VendorSize_Intl", #color_var
     # facet_var="Competition.sum", #facet_var
-    column_key=column_key,
+    column_key=fedpsc_ck,
     format=TRUE,
     ytextposition=FALSE
   )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1478,6 +1690,34 @@ ggsave600dpi("..//Output//Remotely_Crewed//remotely_crewed_vendor_intl_square.pn
 )
 
 
+
+(
+  EORCVendorIntl<-build_plot(
+    data=droneEO %>% filter(Fiscal_Year>=2010),
+    chart_geom = "Bar Chart",
+    share = FALSE,
+    labels_and_colors=fedpsc_lc,
+    # NA, #VAR.ncol
+    x_var="dFYear", #x_var
+    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    color_var="VendorSize_Intl", #color_var
+    facet_var="CaseStudy", #facet_var
+    column_key=fedpsc_ck,
+    format=TRUE,
+    ytextposition=FALSE
+  )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+    # theme(strip.text.y = element_text(angle=0))+
+    # theme(axis.text.x = element_text(angle=90))+
+    #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+    #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+    #             )+labs(title=NULL,
+    # x="Fiscal Year",
+    # y="Percent of Obligations",
+    # color="Competition")+
+    theme(legend.position = "right")+
+    labs(y="Obligations (Constant 2022 $s)",
+         caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020 and thus did not make the cutoff for inclusion in FY2020.")
+)
 
 ```
 
@@ -1586,7 +1826,7 @@ write.csv(file="..//Output//Remotely_Crewed//FMSplatUAV_cur.csv",row.names = FAL
 
 # undebug(build_plot)
 
-(rc_contract_identification <-  build_plot(data=droneEO %>% filter(Customer=="Defense" &Fiscal_Year>=2012),
+(eorc_contract_identification <-  build_plot(data=droneEO %>% filter(ContractingCustomer=="Defense" &Fiscal_Year>=2012),
                                            chart_geom="Bar Chart",
                                            share=FALSE,
                                            x_var="dFYear",
@@ -1594,8 +1834,8 @@ write.csv(file="..//Output//Remotely_Crewed//FMSplatUAV_cur.csv",row.names = FAL
                                            color_var="foreign_funding_description",
                                            facet_var="CaseStudy",
                                            second_var="IsFMS",
-                                           labels_and_colors=fed_lc,
-                                           column_key=fed_ck,
+                                           labels_and_colors=fedpsc_lc,
+                                           column_key=fedpsc_ck,
                                            legend=TRUE,
                                            caption=FALSE,
                                            format=TRUE)+
@@ -1609,7 +1849,7 @@ ggsave600dpi(rc_contract_identification,file="../output//Remotely_Crewed//figure
              size=12,lineheight=1, height =5, width=9)
 
 
-log_plot(plot=eorc_customer, df=droneEO %>% dplyr::filter( 
+log_plot(plot=eorc_contract_identification, df=droneEO %>% dplyr::filter( 
                                                                             lubridate::year(dFYear)>=2012 & 
                                                                             lubridate::year(dFYear)<=2023),
            filename="UAS_EO_FMS",xlsx="Japan_Def_Coop.xlsx",suppress_text = FALSE,
@@ -1678,14 +1918,14 @@ ggsave600dpi(rc_vendor_place_fms,file="../output/Remotely_Crewed//rc_vendor_plac
 
 (
   rceo_psr<-build_plot(
-    data=droneEO ,
+    data=droneEO %>% filter(Fiscal_Year>=2010),
     chart_geom = "Bar Chart",
     share = FALSE,
     labels_and_colors=fedpsc_lc,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
     y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-    alpha_Var="YTD",
+    alpha_var="YTD",
     color_var="Shiny.VendorSize", #color_var
     facet_var="CaseStudy", #facet_var
     # second_var = "VendorSize",
@@ -1713,6 +1953,79 @@ log_plot(plot=rceo_psr, df=droneEO %>% dplyr::filter(  lubridate::year(dFYear)>=
            format=TRUE,#var_list=c("FlowText","StateRegionJapan"),
            output_doc_png=TRUE,excel_y_var=TRUE
   )
+```
+
+### EO Top PSC Vendor Size 
+```{r drone_customer}
+
+droneEO %>% filter(CaseStudy=="EO Sensors") %>% filter(VendorSize_Intl=="International") %>%
+  group_by(VendorISOalpha3,OriginISOalpha3) %>%
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE)) %>% arrange(-Action_Obligation_OMB24_GDP22)
+
+droneEO$PSCsum<-factor(droneEO$ProductOrServiceCodeText)
+
+# drone$TopProjectLabel<-factor(drone$TopProject  )
+# drone<-replace_nas_with_unlabeled(drone,"TopProjectLabel","Other UAS")
+# 
+levels(droneEO$PSCsum)<-list(
+  "Fire Control"=c("AIRCRAFT BOMBING FIRE CONT COMPS","FIRE CONT COMPUTING SIGHTS & DEVICE"),
+  "NIGHT VISION EQ"="NIGHT VISION EQ",
+  "Optical Sighting &\nRanging Equipment"="OPTICAL SIGHTING & RANGING EQUIPMEN",
+  "Light Communication\nEquipment"="VISIBLE AND INVISIBLE LIGHT COMMUNICATION EQUIPMENT",
+  "Other EO Sensors &\nRelated"=c("INTEGRATED OPTICAL CIRCUITS","CRYSTAL & GLASS INDUSTRIES MACHINE",
+                       "FIBER OPTIC PHOTO DETECTORS","OPTICAL INSTRUMENTS",
+                       "OPTICAL MULTIPLEXERS/DEMULTIPLEXERS")
+)
+
+# levels(drone$TopProjectLabel)<-list(
+#   "Tactical UAV" ="TACTICAL UAV",
+#    "MQ-1C Gray Eagle"="MQ-1C Gray Eagle",
+#       "RQ-4 Global Hawk" =c("GLOBAL HAWK", "RQ-4 Global Hawk"),
+#       "MQ-4C Triton"=c("BAMS","MQ-4C Triton"),
+#   "MQ-8 Fire Scout"=c("VTUAV","MQ-8 Fire Scout"),
+#    "MQ-9 Reaper" = "MQ-9 Reaper",
+#   "MQ-25 Stingray"="MQ-25 Stingray",
+#   "Other, multiple,\nor unspecified UAS"=c("Other Labeled Project","Other UAS"))
+
+(
+  eo_vendpsc<-build_plot(
+    data=droneEO %>% filter(Fiscal_Year>=2010 & CaseStudy=="EO Sensors") ,
+    chart_geom = "Bar Chart",
+    share = FALSE,
+    labels_and_colors=fedpsc_lc,
+    column_key=fedpsc_ck,
+    # NA, #VAR.ncol
+    x_var="dFYear", #x_var
+    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    alpha_var="YTD",
+    color_var="VendorSize_Intl", #color_var
+    facet_var="PSCsum", #facet_var
+    format=TRUE,
+    ytextposition=FALSE
+  )+
+    # theme(strip.text.y = element_text(angle=0))+
+    # theme(axis.text.x = element_text(angle=90))+
+    #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+    #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+    #             )+labs(title=NULL,
+    # x="Fiscal Year",
+    # y="Percent of Obligations",
+    # color="Competition")+
+    theme(legend.position = "right")+
+    labs(title="US Federal Contracting for EO Sensors\nby Product Code and Vendor Size",
+         y="Obligations (Constant 2022 $s)",caption="Note: Labeling efforts are ongoing, EO sensor-specific R&D and services codes were not found.\nSource: FPDS and CSIS analysis.")#+
+  # facet_wrap(~ContractingAgencyTextSwr,ncol=4)
+)
+
+
+log_plot(plot=eo_vendpsc, df=droneEO %>% filter(CaseStudy=="EO Sensors"),
+           filename="EO_PSC_Vendor",xlsx="Japan_Def_Coop.xlsx",suppress_text = FALSE,
+           sheet="EOpscVend",path=japan_repo_path,second_path=japan_log_path, height=3.5,
+           format=TRUE,#var_list=c("FlowText","StateRegionJapan"),
+           output_doc_png=TRUE,excel_y_var=TRUE
+  )
+
+
 ```
 
 # Entities
@@ -1871,7 +2184,7 @@ defense_UAV_vendor<-defense_UAV_vendor %>%
                 TotalPos=rank(-TotalSpend))
 
 vendorUAVwide<-defense_UAV_vendor %>%
-  filter(Fiscal_Year >=2010 & Fiscal_Year<=2021) %>%
+  filter(Fiscal_Year >=2010 & Fiscal_Year<=2023.2) %>%
   dplyr::mutate(TopEntityText=ifelse(pos<=10,EntityText,"All Other"),
          Toppos=ifelse(pos<=10,pos,0)) %>%
   dplyr::group_by(PlatformPortfolioUAV,EntityText,EntityID,EntityCategory) %>%
@@ -1970,7 +2283,7 @@ defense_platformUAV_contractor<-deflate(defense_platformUAV_contractor,money_var
 
 
 contractorUAVwide<-defense_platformUAV_contractor %>%
-  filter(Fiscal_Year >=2010 & Fiscal_Year<=2021) %>%
+  filter(Fiscal_Year >=2010 & Fiscal_Year<=2023.2) %>%
   # dplyr::mutate(TopContractorText=ifelse(pos<=10,AllContractor,"All Other"),
   #        Toppos=ifelse(pos<=10,pos,0)) %>%
   group_by(PlatformPortfolioUAV,UnknownCompany,AllContractor,
