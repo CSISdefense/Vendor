@@ -33,8 +33,11 @@ if(!exists("platpscintldef"))
 if(!exists("platpscdefcd"))
   load(file="../data/clean/platpscdefcd.Rda")
 
+if(!exists("pscnaics"))
+  load(file="../data/clean/ProdServPlatformNAICS.rda")
+
 if(!exists("munition"))
-  load(file=file.path("data","semi_clean","munition_transaction.rda"))
+  load(file=file.path("..","data","semi_clean","munition_transaction.rda"))
 
 # save.image("../.RData")
 ```
@@ -147,12 +150,12 @@ summary(factor(platpscintldef$TopPStext))
 # platpscintldef %>% group_by(Fiscal_Year,pop_isna,sc_isna) %>%
 #   summarise(n=length(Fiscal_Year))
 
-# summary(factor(platpscintldef$CrisisProductOrServiceArea))
+# summary(factor(platpscintldef$ProductOrServiceArea))
 
-topState<-platpscintldef %>% group_by (pop_state_code,CrisisProductOrServiceArea) %>%
+topState<-platpscintldef %>% group_by (pop_state_code,ProductOrServiceArea) %>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB24_GDP22,0)))%>%
-              group_by (CrisisProductOrServiceArea) %>%
+              group_by (ProductOrServiceArea) %>%
     mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
                         rank_2020=rank(desc(Action_Obligation_2020)))
 topState %>% arrange(desc(Action_Obligation_OMB24_GDP22))
@@ -166,7 +169,7 @@ platpscintldef<-platpscintldef[,!colnames(platpscintldef) %in% c("Action_Obligat
   "rank_total.y","rank_total.x","rank_2020.y","rank_2020.x","TopStateAbbr.x","TopStateAbbr.y")]
 
 platpscintldef<-left_join(platpscintldef,topState %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2020),
-          by=c("pop_state_code","CrisisProductOrServiceArea"))
+          by=c("pop_state_code","ProductOrServiceArea"))
 
 platpscintldef$TopStateAbbr[is.na(platpscintldef$TopStateAbbr) & !is.na(platpscintldef$pop_state_code)]<-
   "Other Labeled State"
@@ -182,12 +185,12 @@ platpscintldef$TopStateAbbr[is.na(platpscintldef$TopStateAbbr) & !is.na(platpsci
 ## Place Country
 ```{r PreprocessCountry}
 
-# summary(factor(platpscintldef$CrisisProductOrServiceArea))
+# summary(factor(platpscintldef$ProductOrServiceArea))
 colnames(platpscintldef)[colnames(platpscintldef)=="Fiscal_Year"]<-"Fiscal_Year"
-topCountry<-platpscintldef %>% group_by (PlaceISOalpha3,CrisisProductOrServiceArea) %>%
+topCountry<-platpscintldef %>% group_by (PlaceISOalpha3,ProductOrServiceArea) %>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
             Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB24_GDP22,0)))%>%
-              group_by (CrisisProductOrServiceArea) %>%
+              group_by (ProductOrServiceArea) %>%
     mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
                         rank_2020=rank(desc(Action_Obligation_2020)))
 topCountry %>% arrange(desc(Action_Obligation_OMB24_GDP22))
@@ -199,7 +202,7 @@ topCountry$TopCountryISO<-
 
 
 platpscintldef<-left_join(platpscintldef,topCountry %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2020),
-          by=c("PlaceISOalpha3","CrisisProductOrServiceArea"))
+          by=c("PlaceISOalpha3","ProductOrServiceArea"))
 
 platpscintldef$TopCountryISO[is.na(platpscintldef$TopCountryISO) & !is.na(platpscintldef$PlaceISOalpha3)]<-
   "Other Labeled Country"
@@ -389,7 +392,68 @@ ukrnaicsplat<-pscnaics %>% filter(PlatformPortfolio %in% c("Ordnance and Missile
 
 ```
 
-### 155mm production
+
+## HIMARS
+
+```{r}
+
+(
+HimarsPSR<-build_plot(
+  data=platpscintldef %>% filter(Project.Name=='MLRS'),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=intl_lc,
+  # NA, #VAR.ncol
+  x_var="Fiscal_Year", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="Shiny.VendorSize", #color_var
+  # facet_var="Competition.sum", #facet_var
+  column_key=intl_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2021 $s)")
+)
+
+ggsave600dpi("..//Output//Deep_Dives//Himars//Himars_psr.png", HimarsPSR, 
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+ggsave600dpi("..//Output//Deep_Dives//Himars//Himars_psr.emf", HimarsPSR, 
+             width=6.5, height= 3, units="in",size=11, lineheight=1.2
+             )
+
+output_TY<-platpscintldef %>% group_by(Shiny.VendorSize,Fiscal_Year,Project.Name)%>% filter(Project.Name=='MLRS') %>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+  arrange(Fiscal_Year) %>%
+          pivot_wider(id_cols=c(Project.Name,Shiny.VendorSize),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)
+write.csv(file="..//Output//Deep_Dives//Himars//Himars_psr.csv",row.names = FALSE, na = "",
+          output_TY)
+
+
+
+# wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
+# addWorksheet(wb, name = "Area")
+#  writeData(wb, output_TY, sheet = "Area", startRow = 14, startCol = 14)
+# saveWorkbook(wb)
+
+
+```
+
+
+
+# Capacity Boosting
+## 155mm production
 ```{r}
 artillery<-read.csv(file.path("..","data_raw","USA_Artillery_Production.csv")) %>%filter(!is.na(Monthly.Production))
 
@@ -429,61 +493,48 @@ ggsave600dpi(prod155mm,file=file.path("..","Output","Munitions","prod155.svg"),w
              size=14,lineheight=1)
 ```
 
+## Topline Multiyear
+```{r Multiyear}
 
-## HIMARS
 
-```{r}
 
 (
-HimarsPSR<-build_plot(
-  data=platpscintldef %>% filter(Project.Name=='MLRS'),
+Multiyear<-build_plot(
+  data=munition %>% filter(Fiscal_Year>=2000),# & Fiscal_YQ<=2023.2
   chart_geom = "Bar Chart",
   share = FALSE,
-  labels_and_colors=labels_and_colors,
+  labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="Fiscal_Year", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="Shiny.VendorSize", #color_var
-  # facet_var="Competition.sum", #facet_var
-  column_key=column_key,
+  color_var="multiyearcontract", #color_var
+  # facet_var="SubCustomer.platform", #facet_var
+  column_key=def_ck,
   format=TRUE,
   ytextposition=FALSE
 )+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2021 $s)")
+  labs(y="Obligations (Constant 2022 $s)")+
+  date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1–Q2")
 )
 
-ggsave600dpi("..//Output//Deep_Dives//Himars//Himars_psr.png", HimarsPSR, 
-             width=12, height= 6, units="in",size=12, lineheight=1.2
+ggsave600dpi("..//Output//AcqTrends//topline_Multiyear.png", Multiyear, 
+             width=11, height= 5.5, units="in",size=14,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//Deep_Dives//Himars//Himars_psr.emf", HimarsPSR, 
-             width=6.5, height= 3, units="in",size=11, lineheight=1.2
+ggsave600dpi("..//Output//AcqTrends//topline_Multiyear.svg", Multiyear+
+  labs(y="Obligations\n(Constant 2022 $s)"),#+facet_wrap(~SubCustomer.platform,nrow=1), 
+             width=6.5, height= 2.25, units="in",size=11,lineheight = 1.2
              )
 
-output_TY<-platpscintldef %>% group_by(Shiny.VendorSize,Fiscal_Year,Project.Name)%>% filter(Project.Name=='MLRS') %>%
-            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-  arrange(Fiscal_Year) %>%
-          pivot_wider(id_cols=c(Project.Name,Shiny.VendorSize),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)
-write.csv(file="..//Output//Deep_Dives//Himars//Himars_psr.csv",row.names = FALSE, na = "",
-          output_TY)
 
-
-
-# wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx", create = TRUE)
-# addWorksheet(wb, name = "Area")
-#  writeData(wb, output_TY, sheet = "Area", startRow = 14, startCol = 14)
-# saveWorkbook(wb)
-
+# full_data %>% filter(SubCustomer.sum=="Army", PlatformPortfolio=="Other Products", Fiscal_Year==2021) %>%
+#   group_by(AnyMultiyearText,Competition.multisum) %>% summarise(
+#     COVID19obligated=sum(COVID19obligated,na.rm=TRUE),
+#     Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
+#     Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year),
+#     
+#   )
 
 ```
 
