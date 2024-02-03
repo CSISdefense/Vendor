@@ -53,5 +53,8 @@ munition<-dbGetQuery(con, "SELECT [CSIScontractID]
       ,ContractingAgencyID
       ,FundingAgencyID
                      FROM Contract.FPDSpartial WHERE PlatformPortfolio in ('Ordnance and Missiles','Missile Defense') AND ContractingCustomer='Defense'")
-save(munition,file=file.path("data","semi_clean","munition_transaction.rda")
+
+summary(factor(munition$principalnaicscode[is.na(text_to_number(munition$principalnaicscode))]))
+munition<-apply_standard_lookups(munition)
+save(munition,file=file.path("data","semi_clean","munition_transaction.rda"))
      
