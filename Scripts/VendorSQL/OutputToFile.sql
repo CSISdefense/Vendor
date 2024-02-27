@@ -125,6 +125,7 @@ SELECT  [EntityID]
       ,[IsEntityAbove1990constantReportingThreshold]
       ,[AnyEntityUSplaceOfPerformance]
       ,[AnyEntityForeignPlaceOfPerformance]
+	  ,AnyDefenseCustomer
       ,[ObligatedAmount]
 	  ,ObligatedAmountIsSmall
       ,[NumberOfActions]
@@ -132,8 +133,15 @@ SELECT  [EntityID]
       ,[Top6]
       ,[UnknownCompany]
   FROM [Vendor].[EntityIDhistory]
-  where fiscal_year>=2000
+  --where fiscal_year>=2000
   
+  --15m but probably not necessary
+  select [EntityID]
+  ,1 as AnyDefenseCustomer
+  ,fiscal_year
+  from contract.fpdspartial
+  where contractingcustomer='Defense' and fiscal_year>=2000
+  group by fiscal_year, [EntityID]
 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
