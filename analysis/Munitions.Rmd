@@ -39,6 +39,8 @@ if(!exists("pscnaics"))
 if(!exists("munition"))
   load(file=file.path("..","data","semi_clean","munition_transaction.rda"))
 
+munition_lc<-prepare_labels_and_colors(munition)
+munition_ck<-get_column_key(munition)
 # save.image("../.RData")
 ```
 
@@ -395,7 +397,7 @@ ukrnaicsplat<-pscnaics %>% filter(PlatformPortfolio %in% c("Ordnance and Missile
 
 ## HIMARS
 
-```{r}
+```{r HIMARS}
 
 (
 HimarsPSR<-build_plot(
@@ -424,11 +426,11 @@ HimarsPSR<-build_plot(
   labs(y="Obligations (Constant 2021 $s)")
 )
 
-ggsave600dpi("..//Output//Deep_Dives//Himars//Himars_psr.png", HimarsPSR, 
+ggsave600dpi("..//Output//Munitions//Himars_psr.png", HimarsPSR, 
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//Deep_Dives//Himars//Himars_psr.emf", HimarsPSR, 
+ggsave600dpi("..//Output//Munitions//Himars_psr.emf", HimarsPSR, 
              width=6.5, height= 3, units="in",size=11, lineheight=1.2
              )
 
@@ -437,7 +439,7 @@ output_TY<-platpscintldef %>% group_by(Shiny.VendorSize,Fiscal_Year,Project.Name
   arrange(Fiscal_Year) %>%
           pivot_wider(id_cols=c(Project.Name,Shiny.VendorSize),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)
-write.csv(file="..//Output//Deep_Dives//Himars//Himars_psr.csv",row.names = FALSE, na = "",
+write.csv(file="..//Output//Munitions//Himars_psr.csv",row.names = FALSE, na = "",
           output_TY)
 
 
@@ -493,8 +495,8 @@ ggsave600dpi(prod155mm,file=file.path("..","Output","Munitions","prod155.svg"),w
              size=14,lineheight=1)
 ```
 
-## Topline Multiyear
-```{r Multiyear}
+## Munition Multiyear  Obligations
+```{r Multiyear_obl}
 
 
 
@@ -503,13 +505,13 @@ Multiyear<-build_plot(
   data=munition %>% filter(Fiscal_Year>=2000),# & Fiscal_YQ<=2023.2
   chart_geom = "Bar Chart",
   share = FALSE,
-  labels_and_colors=def_lc,
+  labels_and_colors=munition_lc,
   # NA, #VAR.ncol
-  x_var="dFYear",alpha_var="YTD", #x_var
+  x_var="dFYear",#alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="multiyearcontract", #color_var
   # facet_var="SubCustomer.platform", #facet_var
-  column_key=def_ck,
+  column_key=munition_ck,
   format=TRUE,
   ytextposition=FALSE
 )+
@@ -518,11 +520,52 @@ Multiyear<-build_plot(
   date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1–Q2")
 )
 
-ggsave600dpi("..//Output//AcqTrends//topline_Multiyear.png", Multiyear, 
+(
+Multiyear<-build_plot(
+  data=munition %>% filter(Fiscal_Year>=2000),# & Fiscal_YQ<=2023.2
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=munition_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="baseandexercisedoptionsvalue", #VAR.y.variable
+  color_var="multiyearcontract", #color_var
+  # facet_var="SubCustomer.platform", #facet_var
+  column_key=munition_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Base and Exercised Options (Then Year$s)")+
+  date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1–Q2")
+)
+
+(
+Multiyear<-build_plot(
+  data=munition %>% filter(Fiscal_Year>=2000),# & Fiscal_YQ<=2023.2
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=munition_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="baseandalloptionsvalue", #VAR.y.variable
+  color_var="multiyearcontract", #color_var
+  # facet_var="SubCustomer.platform", #facet_var
+  column_key=munition_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Base and All Options (Then Year $s)")+
+  date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1–Q2")
+)
+
+
+ggsave600dpi("..//Output//Munitions//topline_Multiyear.png", Multiyear, 
              width=11, height= 5.5, units="in",size=14,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_Multiyear.svg", Multiyear+
+ggsave600dpi("..//Output//Munitions//topline_Multiyear.svg", Multiyear+
   labs(y="Obligations\n(Constant 2022 $s)"),#+facet_wrap(~SubCustomer.platform,nrow=1), 
              width=6.5, height= 2.25, units="in",size=11,lineheight = 1.2
              )
@@ -538,3 +581,88 @@ ggsave600dpi("..//Output//AcqTrends//topline_Multiyear.svg", Multiyear+
 
 ```
 
+### Munition Detail
+```{r Multiyear_obl}
+
+
+
+(
+Multiyear<-build_plot(
+  data=munition %>% filter(Fiscal_Year>=2000),# & Fiscal_YQ<=2023.2
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=munition_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="multiyearcontract", #color_var
+  # facet_var="SubCustomer.platform", #facet_var
+  column_key=munition_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)")+
+  date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1–Q2")
+)
+
+(
+Multiyear<-build_plot(
+  data=munition %>% filter(Fiscal_Year>=2000),# & Fiscal_YQ<=2023.2
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=munition_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="baseandexercisedoptionsvalue", #VAR.y.variable
+  color_var="multiyearcontract", #color_var
+  # facet_var="SubCustomer.platform", #facet_var
+  column_key=munition_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Base and Exercised Options (Then Year$s)")+
+  date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1–Q2")
+)
+
+(
+Multiyear<-build_plot(
+  data=munition %>% filter(Fiscal_Year>=2000),# & Fiscal_YQ<=2023.2
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=munition_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="baseandalloptionsvalue", #VAR.y.variable
+  color_var="multiyearcontract", #color_var
+  # facet_var="SubCustomer.platform", #facet_var
+  column_key=munition_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Base and All Options (Then Year $s)")+
+  date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1–Q2")
+)
+
+
+ggsave600dpi("..//Output//Munitions//topline_Multiyear.png", Multiyear, 
+             width=11, height= 5.5, units="in",size=14,lineheight = 1.2
+             )
+
+ggsave600dpi("..//Output//Munitions//topline_Multiyear.svg", Multiyear+
+  labs(y="Obligations\n(Constant 2022 $s)"),#+facet_wrap(~SubCustomer.platform,nrow=1), 
+             width=6.5, height= 2.25, units="in",size=11,lineheight = 1.2
+             )
+
+
+# full_data %>% filter(SubCustomer.sum=="Army", PlatformPortfolio=="Other Products", Fiscal_Year==2021) %>%
+#   group_by(AnyMultiyearText,Competition.multisum) %>% summarise(
+#     COVID19obligated=sum(COVID19obligated,na.rm=TRUE),
+#     Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
+#     Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year),
+#     
+#   )
+
+```
