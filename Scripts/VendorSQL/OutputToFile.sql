@@ -15,6 +15,19 @@ SET NOCOUNT ON;
   group by isnull(trim(descriptionofcontractrequirement),'Unlabled'),PlatformPortfolioRemote
   
 
+--3H11M TO reach 28% for entiredatabase ~30m for one incomplete
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+select fiscal_year, contract_transaction_unique_key, csistransactionid, last_modified_date
+from contract.fpds
+where fiscal_year in (2015,2016,2017)
+
+--Not yet run
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+select fiscal_year, contract_transaction_unique_key, last_modified_date
+from errorlogging.fpdsstage1
+
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
   select  f.descriptionofcontractrequirement,f.obligatedamount,f.csistransactionid,ctid.csiscontractid
@@ -90,6 +103,37 @@ select  ProductOrServiceCode
 ,principalnaicscode
 ,obligatedamount
 from  Economic.[ProdServPlatformNAICS]
+--2478175
+--2j46m with errors
+--942,792 rows
+--3h30m
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+select  ProductOrServiceCode
+,ContractingCustomer
+,platformportfolio
+,[claimantprogramcode]
+,ProjectID
+,principalnaicscode
+,PricingUCA
+,costaccountingstandardsclause
+,costorpricingdata
+,fiscal_year
+,sum(obligatedamount) as obligatedamount 
+from  contract.FPDSpartial
+where  ContractingCustomer='Defense'
+group by ProductOrServiceCode
+,ContractingCustomer
+,platformportfolio
+,[claimantprogramcode]
+,ProjectID
+,principalnaicscode
+,ProductOrServiceCode
+,PricingUCA
+,costaccountingstandardsclause
+,costorpricingdata
+,fiscal_year
+
 
 
 SET ANSI_WARNINGS OFF;

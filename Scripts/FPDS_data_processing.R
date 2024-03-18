@@ -402,6 +402,25 @@ pscnaics %<>%
 
 save(pscnaics, file="data/clean/ProdServPlatformNAICS.rda")
 
+############## High Tech Non-Trad #############
+hightech<-read_delim(file.path("data","semi_clean","Economic.NAICSprodservNonTraditional.csv"),delim="\t",na=c("NULL","NA"),
+                    col_names = TRUE, guess_max = 10000000)
+
+hightech<-apply_standard_lookups(hightech)
+hightech<-read_and_join_experiment(hightech,
+                               lookup_file="Lookup_PrincipalNAICScode.csv",
+                               directory="economic//",
+                               by=c("principalnaicscode"="principalnaicscode"),
+                               add_var=c("CriticalTech"),
+                               skip_check_var =c("CriticalTech"),
+                               missing_file="fpds_naics.csv")
+
+
+hightech_lc<-prepare_labels_and_colors(hightech)
+hightech_ck<-get_column_key(hightech)
+
+save(hightech,hightech_lc,hightech_ck, file="data/clean/hightech_FPDS.Rda")
+
 
 ##############Software #############
 sw<-read_delim(file.path("data","semi_clean","Summary.SP_SoftwareDetail.txt"),delim="\t",na=c("NULL","NA"),
