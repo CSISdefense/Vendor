@@ -16,11 +16,12 @@ SET NOCOUNT ON;
   
 
 --3H11M TO reach 28% for entiredatabase ~30m for one incomplete
+--54 % at 14h15m (with parallel runs happenign)
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 select fiscal_year, contract_transaction_unique_key, csistransactionid, last_modified_date
 from contract.fpds
-where fiscal_year in (2015,2016,2017)
+where fiscal_year in (2023)
 
 --Not yet run
 --9m53s for 2.5 m rows
@@ -319,6 +320,7 @@ SET NOCOUNT ON;
  SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 --2h12
+--2h39m 12,547,505 rows
  EXEC 
  [Location].SP_ProdServPlatformAgencyCongressionalDistrict
   @customer='Defense'
@@ -370,7 +372,7 @@ EXEC	@return_value = Contract.SP_ContractCompetitionVehicleCustomer
 
 		SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
---0h05m This is probably dependent on automated contract update runes.
+--2h35	m This is probably dependent on automated contract update runes.
 select * from economic.[ProdServPlatformNAICS]
 
 			SET ANSI_WARNINGS OFF;
