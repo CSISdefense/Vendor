@@ -23,9 +23,10 @@ from contract.fpds
 where fiscal_year in (2015,2016,2017)
 
 --Not yet run
+--9m53s for 2.5 m rows
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
-select fiscal_year, contract_transaction_unique_key, last_modified_date
+select contract_transaction_unique_key, last_modified_date,USAspending_file_name
 from errorlogging.fpdsstage1
 
 SET ANSI_WARNINGS OFF;
@@ -134,6 +135,49 @@ group by ProductOrServiceCode
 ,costorpricingdata
 ,fiscal_year
 
+
+--2478175
+--2j46m with errors
+--942,792 rows
+--3h30m
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+select  ProductOrServiceCode
+,ContractingCustomer
+,platformportfolio
+,[claimantprogramcode]
+,ProjectID
+,principalnaicscode
+,PricingUCA
+,costaccountingstandardsclause
+,solicitationprocedures --Sealed bid
+,isforeigngovernment --Foreign government, not sure about concerns
+,contractingofficerbusinesssizedetermination --S or Y
+,costorpricingdata
+,commercialitemacquisitionprocedures
+,informationtechnologycommercialitemcategory
+,simplified_procedures_for_certain_commercial_items_code
+,fiscal_year
+,sum(obligatedamount) as obligatedamount 
+from  contract.FPDSpartial
+where  ContractingCustomer='Defense'
+group by ProductOrServiceCode
+,ContractingCustomer
+,platformportfolio
+,[claimantprogramcode]
+,ProjectID
+,principalnaicscode
+,ProductOrServiceCode
+,PricingUCA
+,costaccountingstandardsclause
+,solicitationprocedures --Sealed bid
+,isforeigngovernment --Foreign government, not sure about concerns
+,contractingofficerbusinesssizedetermination --S or Y
+,costorpricingdata
+,commercialitemacquisitionprocedures
+,informationtechnologycommercialitemcategory
+,simplified_procedures_for_certain_commercial_items_code
+,fiscal_year
 
 
 SET ANSI_WARNINGS OFF;
