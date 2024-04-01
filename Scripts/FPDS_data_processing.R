@@ -137,7 +137,6 @@ save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/una
 
 
 
-summary(factor(def_data$YTD))
 
 summary(factor(full_data$YTD))
 fpds_lc<-csis360::prepare_labels_and_colors(full_data %>% select(-recoveredmaterialclauses))
@@ -147,7 +146,7 @@ fpds_ck<-csis360::get_column_key(full_data)
 fpds_data<-full_data %>% filter(ContractingCustomer=="Defense"&
                                   Fiscal_Year>=2010)
 
-save(fpds_data,fpds_lc, fpds_ck,file = "..\\FMS\\data\\clean\\fpds_transaction_summary.rda")
+save(fpds_data,fpds_lc, fpds_ck,file = "..\\Trade\\data\\clean\\fpds_transaction_summary.rda")
 rm(fpds_data)
 
 fed_data %<>%
@@ -184,7 +183,7 @@ save(fed_data,fed_lc,fed_ck, file="data/clean/fed_summary_FPDS.Rda")
 
 #############Defense Data (faster query run)##########
 def_data<- read_delim(
-  "Data//semi_clean//Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.csv",delim = "\t",
+  "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.txt",delim = "\t",
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
 problems(def_data[nrow(def_data),])
 
@@ -262,8 +261,8 @@ platpsc %<>%
   mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
   # mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
   mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
-  mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
-  mutate(CrisisProductOrServiceArea = factor(CrisisProductOrServiceArea))
+  mutate(PlatformPortfolio = factor(PlatformPortfolio))
+
 
 
 
@@ -388,7 +387,6 @@ save(platpscintl,fedpsc_lc, fedpsc_ck,file="data/clean/Federal_platpscintl_FPDS.
 pscnaics<-read_delim(file.path("data","semi_clean","Economic.ProdServPlatformNAICS.csv"),delim="\t",na=c("NULL","NA"),
                          col_names = TRUE, guess_max = 10000000)
 
-debug(apply_standard_lookups)
 pscnaics<-apply_standard_lookups(pscnaics,path="offline")
 
 
@@ -403,7 +401,7 @@ pscnaics %<>%
 save(pscnaics, file="data/clean/ProdServPlatformNAICS.rda")
 
 ############## High Tech Non-Trad #############
-hightech<-read_delim(file.path("data","semi_clean","Economic.NAICSprodservNonTraditional.csv"),delim="\t",na=c("NULL","NA"),
+hightech<-read_delim(file.path("data","semi_clean","Economic.NAICSprodservNonTraditionalHistory.csv"),delim="\t",na=c("NULL","NA"),
                     col_names = TRUE, guess_max = 10000000)
 
 hightech<-apply_standard_lookups(hightech)
