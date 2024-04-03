@@ -14,10 +14,6 @@ library(DBI)
 # path<-"C:\\Users\\grego\\Repositories\\USAspending-local\\"
 # path<-"F:\\Users\\Greg\\Repositories\\USAspending-local\\"
 
-path<-"F:\\Users\\gsanders\\Documents\\Repositories\\USAspending-local\\"
-dir<-"Agency Assistance"
-
-
 login<-askpass("Please enter the login account")
 pwd<-askpass("Please enter the account password")
 

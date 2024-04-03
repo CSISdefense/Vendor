@@ -24,16 +24,22 @@ legend.text.size<-8
 title.text.size<-12
 geom.text.size<-12
 
+CGAdir<-file.path(get_local_sharepoint_path("DIIG CGA Ukraine Commentary - Documents"),
+                  "General\\Data\\")
+
 main.text.size<-1
 note.text.size<-1.40
 if(!exists("platpscintldef"))
   load(file="../data/clean/platpscintl_FPDS.Rda")
+summary(platpscintldef$Fiscal_Year)
 
 
 if(!exists("platpscdefcd"))
   load(file="../data/clean/platpscdefcd.Rda")
+summary(platpscdefcd$Fiscal_Year)
+max(platpscdefcd$Fiscal_YQ)
 
-if(!exists("pscnaics"))
+if(!exists("economic"))
   load(file="../data/clean/ProdServPlatformNAICS.rda")
 
 if(!exists("munition"))
@@ -45,6 +51,8 @@ munition_ck<-get_column_key(munition)
 ```
 
 # Preprocessing 
+
+
 ## Ukraine cut
 ```{r Location}
 colnames(platpscdefcd)
@@ -66,120 +74,166 @@ if(!"UkraineDIBrelevant" %in% colnames(platpscdefcd))
                                            skip_check_var=c("Project.Name","UkraineDIBrelevant"))
 
 ukrplatpsc<-platpscdefcd %>% filter((ProductOrServiceCode %in% ukraine_list
-                                      | UkraineDIBrelevant =="Always") & Fiscal_Year>=2022 &
+                                      | UkraineDIBrelevant =="Always") & Fiscal_YQ>=2022.2 &
+                                      Fiscal_YQ<=2024.1 & ContractingCustomer=="Defense" & 
                                         (is.na(UkraineDIBrelevant) | UkraineDIBrelevant !="Never"))
   # summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
 
+economic<-read_and_join_experiment(economic, "ProjectIDUkraineDIBrelevant.csv",
+                                           dir="..\\data\\semi_clean\\",path="",
+                                         by="ProjectID",
+                                           add_var=c("Project.Name","UkraineDIBrelevant"),
+                                           skip_check_var=c("Project.Name","UkraineDIBrelevant"))
 
-
-
+economic<-economic %>% mutate(IsUkraineRelevant=ifelse((ProductOrServiceCode %in% ukraine_list
+                                      | UkraineDIBrelevant =="Always")  &
+                                        ContractingCustomer=="Defense" & 
+                                        (is.na(UkraineDIBrelevant) | 
+                                           UkraineDIBrelevant!="Never"),1,0))
 
 ```
 
-## Project
+## Ukraine Project
 ```{r PreprocessProject}
 
-summary(factor(platpscintldef$ProjectPlatform))
+summary(factor(ukrplatpsc$ProjectPlatform))
 
-colnames(platpscintldef)[colnames(platpscintldef)=="Action_Obligation_Then_Year_Then_Year"]<-
+colnames(ukrplatpsc)[colnames(ukrplatpsc)=="Action_Obligation_Then_Year_Then_Year"]<-
   "Action_Obligation_Then_Year"
 
-colnames(platpscintldef)[colnames(platpscintldef)=="Action_Obligation_Then_Year_OMB23_GDP21"]<-
+colnames(ukrplatpsc)[colnames(ukrplatpsc)=="Action_Obligation_Then_Year_OMB23_GDP21"]<-
   "Action_Obligation_OMB24_GDP22"
 
-topplat<-platpscintldef %>% group_by (Project.Name,PlatformPortfolio) %>%
+topproj<-ukrplatpsc %>% group_by (Project.Name) %>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-            Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB24_GDP22,0)))%>%
-              group_by (PlatformPortfolio) %>%
+            Action_Obligation_2023=sum(ifelse(Fiscal_Year==2023,Action_Obligation_OMB24_GDP22,0)))%>%
+              group_by () %>%
     mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-                        rank_2020=rank(desc(Action_Obligation_2020)))
-topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
+                        rank_2023=rank(desc(Action_Obligation_2023)))
+topproj %>% arrange(desc(Action_Obligation_OMB24_GDP22))
 
 
-topplat$TopProject<-
-  ifelse(topplat$rank_2020<=7 | topplat$rank_total<=7,topplat$Project.Name,NA)
+topproj$TopProject<-
+  ifelse(topproj$rank_2023<=7 | topproj$rank_total<=7,topproj$Project.Name,NA)
 
-platpscintldef<-left_join(platpscintldef,topplat %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2020),
-          by=c("Project.Name","PlatformPortfolio"))
+ukrplatpsc<-left_join(ukrplatpsc,topproj %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2023),
+          by=c("Project.Name"))
 
-platpscintldef$TopProject[is.na(platpscintldef$TopProject) & !is.na(platpscintldef$Project.Name)]<-
+ukrplatpsc$TopProject[is.na(ukrplatpsc$TopProject) & !is.na(ukrplatpsc$Project.Name)]<-
   "Other Labeled Project"
 
 
-summary(factor(platpscintldef$TopProject))
+summary(factor(ukrplatpsc$TopProject))
 
 
 ```
-## PSC
+## Ukraine PSC
 ```{r PreprocessPSC}
 
-summary(factor(platpscintldef$ProjectPlatform))
+summary(factor(ukrplatpsc$ProjectPlatform))
 
-topPSC<-platpscintldef %>% group_by (ProductOrServiceCode,ProductOrServiceCodeText,PlatformPortfolio) %>%
+topPSC<-ukrplatpsc %>% group_by (ProductOrServiceCode,ProductOrServiceCodeText) %>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-            Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB24_GDP22,0)))%>%
-              group_by (PlatformPortfolio) %>%
+            Action_Obligation_2023=sum(ifelse(Fiscal_Year==2023,Action_Obligation_OMB24_GDP22,0)))%>%
+              group_by () %>%
     mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-                        rank_2020=rank(desc(Action_Obligation_2020)))
+                        rank_2023=rank(desc(Action_Obligation_2023)))
 topPSC %>% arrange(desc(Action_Obligation_OMB24_GDP22))
 
 topPSC$TopPScode<-
-  ifelse(topPSC$rank_2020<=7 | topPSC$rank_total<=7,topPSC$ProductOrServiceCode,NA)
+  ifelse(topPSC$rank_2023<=7 | topPSC$rank_total<=7,topPSC$ProductOrServiceCode,NA)
 topPSC$TopPStext<-
-  ifelse(topPSC$rank_2020<=7 | topPSC$rank_total<=7,topPSC$ProductOrServiceCodeText,NA)
+  ifelse(topPSC$rank_2023<=7 | topPSC$rank_total<=7,topPSC$ProductOrServiceCodeText,NA)
 
 
-platpscintldef<-left_join(platpscintldef,topPSC %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2020),
-          by=c("ProductOrServiceCode","PlatformPortfolio"))
+ukrplatpsc<-left_join(ukrplatpsc,topPSC %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2023,-ProductOrServiceCodeText),
+          by=c("ProductOrServiceCode"))
 
-platpscintldef$TopPScode[is.na(platpscintldef$TopPScode) & !is.na(platpscintldef$ProductOrServiceCode)]<-
+ukrplatpsc$TopPScode[is.na(ukrplatpsc$TopPScode) & !is.na(ukrplatpsc$ProductOrServiceCode)]<-
   "Other Labeled PSC"
-platpscintldef$TopPStext[is.na(platpscintldef$TopPStext) & !is.na(platpscintldef$ProductOrServiceCode)]<-
+ukrplatpsc$TopPStext[is.na(ukrplatpsc$TopPStext) & !is.na(ukrplatpsc$ProductOrServiceCode)]<-
   "Other Labeled PSC"
 
-platpscintldef$TopPStext<-factor_wrap(platpscintldef$TopPStext)
+ukrplatpsc$TopPStext<-factor_wrap(ukrplatpsc$TopPStext)
 
-summary(factor(platpscintldef$TopPStext))
+summary(factor(ukrplatpsc$TopPStext))
 
 
 ```
 
-## Place State
+## Ukraine Place State
 ```{r PreprocessState}
 
-# platpscintldef$pop_isna<-is.na(platpscintldef$pop_state_code)
-# platpscintldef$sc_isna<-is.na(platpscintldef$PlaceStateCode)
-# platpscintldef %>% group_by(Fiscal_Year,pop_isna,sc_isna) %>%
+# ukrplatpsc$pop_isna<-is.na(ukrplatpsc$pop_state_code)
+# ukrplatpsc$sc_isna<-is.na(ukrplatpsc$PlaceStateCode)
+# ukrplatpsc %>% group_by(Fiscal_Year,pop_isna,sc_isna) %>%
 #   summarise(n=length(Fiscal_Year))
 
-# summary(factor(platpscintldef$ProductOrServiceArea))
+# summary(factor(ukrplatpsc$ProductOrServiceArea))
 
-topState<-platpscintldef %>% group_by (pop_state_code,ProductOrServiceArea) %>%
+topState<-ukrplatpsc %>% group_by (pop_state_code) %>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-            Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB24_GDP22,0)))%>%
-              group_by (ProductOrServiceArea) %>%
-    mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-                        rank_2020=rank(desc(Action_Obligation_2020)))
+            Action_Obligation_2023=sum(ifelse(Fiscal_Year==2023,Action_Obligation_OMB24_GDP22,0)))%>%
+              group_by () %>%
+    mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)))
 topState %>% arrange(desc(Action_Obligation_OMB24_GDP22))
 
 topState$TopStateAbbr<-
-  ifelse(topState$rank_2020<=25 | topState$rank_total<=25,topState$pop_state_code,NA)
+  ifelse(topState$rank_total<=5,topState$pop_state_code,NA)
 # topState$TopStateName<-
-#   ifelse(topState$rank_2020<=7 | topState$rank_total<=7,topState$PlaceStateCodeText,NA)
-platpscintldef<-platpscintldef[,!colnames(platpscintldef) %in% c("Action_Obligation_OMB24_GDP22.x","Action_Obligation_OMB24_GDP22.y",
-                                   "Action_Obligation_2020.x","Action_Obligation_2020.y",
-  "rank_total.y","rank_total.x","rank_2020.y","rank_2020.x","TopStateAbbr.x","TopStateAbbr.y")]
+#   ifelse(topState$rank_2023<=7 | topState$rank_total<=7,topState$PlaceStateCodeText,NA)
+ukrplatpsc<-ukrplatpsc[,!colnames(ukrplatpsc) %in% c("Action_Obligation_OMB24_GDP22.x","Action_Obligation_OMB24_GDP22.y",
+                                   "Action_Obligation_2023.x","Action_Obligation_2023.y",
+  "rank_total.y","rank_total.x","rank_2023.y","rank_2023.x","TopStateAbbr.x","TopStateAbbr.y")]
 
-platpscintldef<-left_join(platpscintldef,topState %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2020),
-          by=c("pop_state_code","ProductOrServiceArea"))
+ukrplatpsc<-left_join(ukrplatpsc,topState %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2023),
+          by=c("pop_state_code"))
 
-platpscintldef$TopStateAbbr[is.na(platpscintldef$TopStateAbbr) & !is.na(platpscintldef$pop_state_code)]<-
+ukrplatpsc$TopStateAbbr[is.na(ukrplatpsc$TopStateAbbr) & !is.na(ukrplatpsc$pop_state_code)]<-
   "Other Labeled State"
-# platpscintldef$TopStateName[is.na(platpscintldef$TopStateName) & !is.na(platpscintldef$pop_state_code)]<-
+# ukrplatpsc$TopStateName[is.na(ukrplatpsc$TopStateName) & !is.na(ukrplatpsc$pop_state_code)]<-
 #   "Other Labeled State"
 
 
-# summary(factor(platpscintldef$TopStateName))
+# summary(factor(ukrplatpsc$TopStateName))
+
+
+```
+## Ukraine Vendor State
+```{r PreprocessState}
+
+# ukrplatpsc$pop_isna<-is.na(ukrplatpsc$pop_state_code)
+# ukrplatpsc$sc_isna<-is.na(ukrplatpsc$VendorStateCode)
+# ukrplatpsc %>% group_by(Fiscal_Year,pop_isna,sc_isna) %>%
+#   summarise(n=length(Fiscal_Year))
+
+# summary(factor(ukrplatpsc$ProductOrServiceArea))
+
+topVendorState<-ukrplatpsc %>% group_by (VendorStateCode) %>%
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
+            Action_Obligation_2023=sum(ifelse(Fiscal_Year==2023,Action_Obligation_OMB24_GDP22,0)))%>%
+              group_by () %>%
+    mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)))
+topVendorState %>% arrange(desc(Action_Obligation_OMB24_GDP22))
+
+topVendorState$topVendorStateAbbr<-
+  ifelse(topVendorState$rank_total<=5,topVendorState$VendorStateCode,NA)
+# topVendorState$topVendorStateName<-
+#   ifelse(topVendorState$rank_2023<=7 | topVendorState$rank_total<=7,topVendorState$VendorStateCodeText,NA)
+ukrplatpsc<-ukrplatpsc[,!colnames(ukrplatpsc) %in% c("Action_Obligation_OMB24_GDP22.x","Action_Obligation_OMB24_GDP22.y",
+                                   "Action_Obligation_2023.x","Action_Obligation_2023.y",
+  "rank_total.y","rank_total.x","rank_2023.y","rank_2023.x","topVendorStateAbbr.x","topVendorStateAbbr.y")]
+
+ukrplatpsc<-left_join(ukrplatpsc,topVendorState %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2023),
+          by=c("VendorStateCode"))
+
+ukrplatpsc$topVendorStateAbbr[is.na(ukrplatpsc$topVendorStateAbbr) & !is.na(ukrplatpsc$VendorStateCode)]<-
+  "Other Labeled State"
+# ukrplatpsc$topVendorStateName[is.na(ukrplatpsc$topVendorStateName) & !is.na(ukrplatpsc$VendorStateCode)]<-
+#   "Other Labeled State"
+
+
+# summary(factor(ukrplatpsc$topVendorStateName))
 
 
 ```
@@ -191,19 +245,19 @@ platpscintldef$TopStateAbbr[is.na(platpscintldef$TopStateAbbr) & !is.na(platpsci
 colnames(platpscintldef)[colnames(platpscintldef)=="Fiscal_Year"]<-"Fiscal_Year"
 topCountry<-platpscintldef %>% group_by (PlaceISOalpha3,ProductOrServiceArea) %>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-            Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB24_GDP22,0)))%>%
+            Action_Obligation_2023=sum(ifelse(Fiscal_Year==2023,Action_Obligation_OMB24_GDP22,0)))%>%
               group_by (ProductOrServiceArea) %>%
     mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-                        rank_2020=rank(desc(Action_Obligation_2020)))
+                        rank_2023=rank(desc(Action_Obligation_2023)))
 topCountry %>% arrange(desc(Action_Obligation_OMB24_GDP22))
 
 topCountry$TopCountryISO<-
-  ifelse(topCountry$rank_2020<=7 | topCountry$rank_total<=7,topCountry$PlaceISOalpha3,NA)
+  ifelse(topCountry$rank_2023<=7 | topCountry$rank_total<=7,topCountry$PlaceISOalpha3,NA)
 # topCountry$TopCountryName<-
-#   ifelse(topCountry$rank_2020<=7 | topCountry$rank_total<=7,topCountry$PlaceCountryCodeText,NA)
+#   ifelse(topCountry$rank_2023<=7 | topCountry$rank_total<=7,topCountry$PlaceCountryCodeText,NA)
 
 
-platpscintldef<-left_join(platpscintldef,topCountry %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2020),
+platpscintldef<-left_join(platpscintldef,topCountry %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2023),
           by=c("PlaceISOalpha3","ProductOrServiceArea"))
 
 platpscintldef$TopCountryISO[is.na(platpscintldef$TopCountryISO) & !is.na(platpscintldef$PlaceISOalpha3)]<-
@@ -221,17 +275,93 @@ platpscintldef$TopCountryISO[is.na(platpscintldef$TopCountryISO) & !is.na(platps
 ## ProdServ
 ```{r ukr_psc}
 
-wb <- loadWorkbook("..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx")
-writeData(wb, sheet = "PSC", startRow = 2, startCol = 1,
-          ukrplatpsc %>% group_by(
+export_worksheet(df= ukrplatpsc %>% group_by(
             ProductServiceOrRnDarea,ProductOrServiceCode,ProductOrServiceCodeText)%>%
             # arrange(ProductServiceOrRnDarea,ProductOrServiceCode,ProductOrServiceCodeText))%>%
-  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)))
-saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",overwrite = TRUE)
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)),
+  xlsx="Weapons_Systems_in_Ukr_Supp.xlsx",
+  sheet="PSC",path= "..//Output//Munitions//",
+  second_path=CGAdir,
+  startRow=2,startCol=1
+)
 
+
+(
+PSC<-build_plot(
+  data=ukrplatpsc,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=munition_lc,
+  # NA, #VAR.ncol
+  x_var="fiscal_quarter",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="TopPStext", #color_var
+  facet_var="Fiscal_Year", #facet_var
+  alpha_var = "YTD",
+  column_key=munition_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)")#+
+  # date_x_year_breaks(2000,2022,2,partial_year=2024,partial_label="\nQ1")
+  # facet_wrap(facet=~UkraineDIBrelevant, scales="free_y")
+)
 
 ```
+## Topline Graph
+```{r topline}
 
+summary(factor(platpscdefcd$PlatformPortfolioUAV))
+(
+MunitionPlatform<-build_plot(
+  data=platpscdefcd %>% filter(
+    Fiscal_Year>=2012 & Fiscal_YQ<=2024.1 &
+                                 (PlatformPortfolioUAV %in% c("Missile Defense",
+                                                              "Ordnance and Missiles")|
+                                    UkraineDIBrelevant %in% c("Sometimes","Always"))),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=munition_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="UkraineDIBrelevant", #color_var
+  facet_var="PlatformPortfolioUAV", #facet_var
+  alpha_var = "YTD",
+  column_key=munition_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)")+
+  date_x_year_breaks(2000,2022,2,partial_year=2024,partial_label="\nQ1")
+  # +
+  # facet_wrap(facet=~PlatformPortfolioUAV, scales="free_y")
+)
+
+(
+UkraineRelevant<-build_plot(
+  data=platpscdefcd %>% filter(Fiscal_Year>=2012 & Fiscal_YQ<=2024.1),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=munition_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="UkraineDIBrelevant", #color_var
+  facet_var="UkraineDIBrelevant", #facet_var
+  alpha_var = "YTD",
+  column_key=munition_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)")+
+  date_x_year_breaks(2000,2022,2,partial_year=2024,partial_label="\nQ1")+
+  facet_wrap(facet=~UkraineDIBrelevant, scales="free_y")
+)
+```
 ## Platform and Project
 ```{r ukr_psc}
 ukrplatpsc$Project.Name[ukrplatpsc$ProjectID==466]<-"PIM"
@@ -240,48 +370,92 @@ ukrplatpsc$ProjPSC<-ifelse(is.na(ukrplatpsc$Project.Name),
                            paste(ukrplatpsc$ProductOrServiceCode,ukrplatpsc$ProductOrServiceCodeText,sep="-"),
                            ukrplatpsc$Project.Name)
 
-wb <- loadWorkbook("..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx")
-writeData(wb, sheet = "Plat", startRow = 1, startCol = 1,
-          ukrplatpsc %>% group_by(
-            PlatformPortfolio,ProjectID,Project.Name)%>%
-  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)))
-saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",overwrite = TRUE)
-
-
-wb <- loadWorkbook("..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx")
-writeData(wb, sheet = "Plat", startRow = 1, startCol = 6,
-          ukrplatpsc %>% group_by(
+export_worksheet(df= ukrplatpsc %>% group_by(
             PlatformPortfolio,ProjectID,ProjPSC)%>%
-  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)))
-saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",overwrite = TRUE)
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)),
+  xlsx="Weapons_Systems_in_Ukr_Supp.xlsx",
+  sheet="Plat",path= "..//Output//Munitions//",
+  second_path=CGAdir,
+  startRow=1,startCol=6
+)
 
+
+(
+Proj<-build_plot(
+  data=ukrplatpsc,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=munition_lc,
+  # NA, #VAR.ncol
+  x_var="fiscal_quarter",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="TopProject", #color_var
+  facet_var="Fiscal_Year", #facet_var
+  alpha_var = "YTD",
+  column_key=munition_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)")#+
+  # date_x_year_breaks(2000,2022,2,partial_year=2024,partial_label="\nQ1")
+  # facet_wrap(facet=~UkraineDIBrelevant, scales="free_y")
+)
 
 ```
 
 ## Vendor CD
 ```{r ukr_vendor_CD}
 
-wb <- loadWorkbook("..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx")
-writeData(wb, sheet = "State", startRow = 2, startCol = 1,
-          ukrplatpsc %>% group_by(
-            VendorIsForeign,VendorStateCode)%>%
-            # arrange(ProductServiceOrRnDarea,ProductOrServiceCode,ProductOrServiceCodeText))%>%
-  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)))
-saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",overwrite = TRUE)
+  
+export_worksheet(df= ukrplatpsc %>% group_by(
+  VendorIsForeign,VendorStateCode)%>%
+    # arrange(ProductServiceOrRnDarea,ProductOrServiceCode,ProductOrServiceCodeText))%>%
+    summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)),
+  xlsx="Weapons_Systems_in_Ukr_Supp.xlsx",
+  sheet="VendState",path= "..//Output//Munitions//",
+  second_path=CGAdir,
+  startRow=2,startCol=1
+)
 
 ukrplatpsc$VendorCD<-ifelse(nchar(ukrplatpsc$prime_award_transaction_recipient_cd_current)<=2 &
                               ukrplatpsc$VendorIsForeign==0,
                             paste(ukrplatpsc$VendorStateCode,ukrplatpsc$prime_award_transaction_recipient_cd_current,sep="-"),
-                                  ukrplatpsc$prime_award_transaction_recipient_cd_current)
+                            ukrplatpsc$prime_award_transaction_recipient_cd_current)
 
-wb <- loadWorkbook("..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx")
-writeData(wb, sheet = "State", startRow = 2, startCol = 5,
-          ukrplatpsc %>% group_by(
+
+export_worksheet(df= ukrplatpsc %>% group_by(
             VendorIsForeign,VendorStateCode,VendorCD)%>%
             # arrange(ProductServiceOrRnDarea,ProductOrServiceCode,ProductOrServiceCodeText))%>%
-  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)))
-saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",overwrite = TRUE)
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)),
+  xlsx="Weapons_Systems_in_Ukr_Supp.xlsx",
+  sheet="VendState",path= "..//Output//Munitions//",
+  second_path=CGAdir,
+  startRow=2,startCol=5
+)
 
+
+(
+UkrainePlace<-build_plot(
+  data=ukrplatpsc,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=munition_lc,
+  # NA, #VAR.ncol
+  x_var="fiscal_quarter",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="topVendorStateAbbr", #color_var
+  facet_var="Fiscal_Year", #facet_var
+  alpha_var = "YTD",
+  column_key=munition_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)")#+
+  # date_x_year_breaks(2000,2022,2,partial_year=2024,partial_label="\nQ1")
+  # facet_wrap(facet=~UkraineDIBrelevant, scales="free_y")
+)
 
 ```
 
@@ -289,30 +463,108 @@ saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",o
 ```{r ukr_place_CD}
 
 
-wb <- loadWorkbook("..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx")
-writeData(wb, sheet = "Place", startRow = 2, startCol = 1,
-          ukrplatpsc %>% group_by(
-            PlaceIsForeign,pop_state_code)%>%
-  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)))
-saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",overwrite = TRUE)
 
-ukrplatpsc$VendorCD<-ifelse(nchar(ukrplatpsc$prime_award_transaction_place_of_performance_cd_current)<=2 &
-                              ukrplatpsc$PlaceIsForeign==0,
-                            paste(ukrplatpsc$pop_state_code,ukrplatpsc$prime_award_transaction_place_of_performance_cd_current,sep="-"),
-                                  ukrplatpsc$prime_award_transaction_place_of_performance_cd_current)
+ukrplatpsc<-ukrplatpsc %>% mutate(
+  PlaceOrOriginIsInternational=case_when(PlaceIsForeign==1 | 
+                                        OriginIsInternational==1~ "International",
+                                        PlaceIsForeign==0 | 
+                                        OriginIsInternational==0~"Domestic",
+                                      TRUE ~"Unlabeled"),
+  PlaceCD=
+    case_when(
+      PlaceOrOriginIsInternational=="International"~"International",
+      PlaceOrOriginIsInternational=="Unlabeled"~"Unlabeled",
+      nchar(prime_award_transaction_place_of_performance_cd_current)<=2 & pop_state_code!=""~
+        paste(pop_state_code,prime_award_transaction_place_of_performance_cd_current ,sep="-"),
+      TRUE ~ prime_award_transaction_place_of_performance_cd_current),
+  PlaceState=case_when(
+         PlaceOrOriginIsInternational=="International"~"International",
+      PlaceOrOriginIsInternational=="Unlabeled"~"Unlabeled",
+   pop_state_code==""~"Unlabeled",
+  TRUE~pop_state_code)
+  )
 
-wb <- loadWorkbook("..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx")
-writeData(wb, sheet = "Place", startRow = 2, startCol = 5,
-          ukrplatpsc %>% group_by(
-            PlaceIsForeign,pop_state_code,VendorCD)%>%
-  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)))
-saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",overwrite = TRUE)
 
+  
+export_worksheet(df=  ukrplatpsc %>% group_by(
+            PlaceOrOriginIsInternational,PlaceState)%>%
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)),
+  xlsx="Weapons_Systems_in_Ukr_Supp.xlsx",
+  sheet="Place",path= "..//Output//Munitions//",
+  second_path=CGAdir,
+  startRow=2,startCol=1
+)
+
+ukrplace<-ukrplatpsc %>%group_by(PlaceOrOriginIsInternational,PlaceState,PlaceCD)%>%
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)) %>%
+  mutate(PlaceState=ifelse(Action_Obligation_OMB24_GDP22>=0,PlaceState,"Deobligation"),
+         PlaceCD=ifelse(Action_Obligation_OMB24_GDP22>=0,PlaceCD,"Deobligation"))%>%
+  group_by(PlaceOrOriginIsInternational,PlaceState,PlaceCD) %>%
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)) %>%
+  mutate(CD_Action_Obligation_OMB24_GDP22=
+           ifelse(substr(PlaceCD,3,5)=="-90",0,Action_Obligation_OMB24_GDP22),
+         Statewide_Action_Obligation_OMB24_GDP22=
+           ifelse(substr(PlaceCD,3,5)=="-90",Action_Obligation_OMB24_GDP22,0)
+                                           )%>%
+  group_by(PlaceOrOriginIsInternational,PlaceState) %>%
+    mutate(Distributed_Statewide_Action_Obligation_OMB24_GDP22=
+             ifelse(substr(PlaceCD,3,5)=="-90" |
+                       sum(Statewide_Action_Obligation_OMB24_GDP22)<=0,0,
+                    #Distributing it proportionally
+                    CD_Action_Obligation_OMB24_GDP22/
+                      sum(CD_Action_Obligation_OMB24_GDP22) *
+               sum(Statewide_Action_Obligation_OMB24_GDP22)
+               # /sum(ifelse(substr(PlaceCD,3,5)=="-90",0,1))
+               ))%>%filter(Action_Obligation_OMB24_GDP22!=0)
+
+ukrplace$CD_and_Distributed_Action_Obligation_OMB24_GDP22=
+  ukrplace$CD_Action_Obligation_OMB24_GDP22+
+  ukrplace$Distributed_Statewide_Action_Obligation_OMB24_GDP22
+if(sum(ukrplace$Distributed_Statewide_Action_Obligation_OMB24_GDP22,na.rm=TRUE)!=
+   sum(ukrplace$Statewide_Action_Obligation_OMB24_GDP22,na.rm=TRUE)){
+  stop("Checksum error")
+} else if(sum(ukrplace$Action_Obligation_OMB24_GDP22,na.rm=TRUE)!=
+   sum(ukrplace$CD_and_Distributed_Action_Obligation_OMB24_GDP22,na.rm=TRUE)){
+  stop("Checksum error")
+} else
+  ukrplace<-ukrplace %>% select(-Statewide_Action_Obligation_OMB24_GDP22)
+
+  
+
+export_worksheet(df= ukrplace,
+  xlsx="Weapons_Systems_in_Ukr_Supp.xlsx",
+  sheet="Place",path= "..//Output//Munitions//",
+  second_path=CGAdir,
+  startRow=2,startCol=5
+)
+
+
+(
+UkrainePlace<-build_plot(
+  data=ukrplatpsc,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=munition_lc,
+  # NA, #VAR.ncol
+  x_var="fiscal_quarter",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="TopStateAbbr", #color_var
+  facet_var="Fiscal_Year", #facet_var
+  alpha_var = "YTD",
+  column_key=munition_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)")#+
+  # date_x_year_breaks(2000,2022,2,partial_year=2024,partial_label="\nQ1")
+  # facet_wrap(facet=~UkraineDIBrelevant, scales="free_y")
+)
 
 ```
 
 
-
+## Breakout
 ### Project Customer Breakout
 ```{r ProjPlatBreakout} 
 # summary(platpscdefcd$fiscal_quarter)
@@ -321,7 +573,7 @@ saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",o
                                         (is.na(UkraineDIBrelevant) | UkraineDIBrelevant !="Never")),
            filename=paste("Ukraine_related_DIB","all_poroject",sep="_"),xlsx="Weapons_Systems_in_Ukr_Supp.xlsx",
            x_var="Fiscal_Year",y_var="Action_Obligation_OMB24_GDP22",
-           sheet="AllProj",path=file.path("../output/Munitions/"),
+           sheet="AllProj",path=file.path("../output/Munitions/"),second_path=CGAdir,
             csv_then_year=TRUE,excel_then_year = FALSE, excel_y_var=TRUE,excel_formula=TRUE,
            format=TRUE,var_list=c("PlatformPortfolio","Project.Name","ProjectID"),
            output_doc_png=FALSE, output_doc_svg = FALSE
@@ -338,7 +590,7 @@ saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",o
                                         (is.na(UkraineDIBrelevant) | UkraineDIBrelevant !="Never")),
            filename=paste("Ukraine_related_DIB","all_psc",sep="_"),xlsx="Weapons_Systems_in_Ukr_Supp.xlsx",
            x_var="Fiscal_Year",y_var="Action_Obligation_OMB24_GDP22",
-           sheet="AllPSC",path=file.path("../output/Munitions/"),
+           sheet="AllPSC",path=file.path("../output/Munitions/"),second_path=CGAdir,
            csv_then_year=TRUE,excel_then_year = FALSE, excel_y_var=TRUE,excel_formulas = TRUE,
            format=TRUE,var_list=c("ProductOrServiceArea","ProductOrServiceCode","ProductOrServiceCodeText"),
            output_doc_png=FALSE, output_doc_svg = FALSE
@@ -347,7 +599,8 @@ saveWorkbook(wb,file="..//Output//Munitions//Weapons_Systems_in_Ukr_Supp.xlsx",o
 
 ```
 
-## NAICS look
+# NAICS 
+## Munitions munitons look
 ```{r MunitionsNAICS}
 bottleneck_list<-c("1320",#AMMUNITION, OVER 125 MM
                 #"1305",#AMMUNITION, THROUGH 30 MM
@@ -367,35 +620,109 @@ bottleneck_list<-c("1320",#AMMUNITION, OVER 125 MM
 "1450" #GUIDED MISSILE HANDLING AND SERVICING EQUIPMENT
 ) 
 
-pscnaics %>% filter(ProductOrServiceCode %in% ukraine_list)  %>%
+economic %>% filter(ProductOrServiceCode %in% ukraine_list)  %>%
   group_by(ProductOrServiceCode,ProductOrServiceCodeText) %>%
-  summarise(Action_Obligation=sum(Action_Obligation,na.rm=TRUE)) %>%
+  summarise(Action_Obligation=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE)) %>%
   arrange(ProductOrServiceCode)
 
-ukrnaics<-pscnaics %>% filter(ProductOrServiceCode %in% bottleneck_list)  %>%
+ukrnaics<-economic %>% filter(ProductOrServiceCode %in% bottleneck_list)  %>%
   group_by(principalnaicscode,principalnaicscodeText) %>%
-  summarise(Action_Obligation=sum(Action_Obligation,na.rm=TRUE)) %>%
-  arrange(-Action_Obligation)
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE)) %>%
+  arrange(-Action_Obligation_OMB24_GDP22)
 
-levels(pscnaics$PlatformPortfolio)
-ukrnaicsplat<-pscnaics %>% filter(PlatformPortfolio %in% c("Ordnance and Missiles","Missile Defense"))  %>%
+levels(economic$PlatformPortfolio)
+ukrnaicsplat<-economic %>% filter(PlatformPortfolio %in% c("Ordnance and Missiles","Missile Defense"))  %>%
   group_by(principalnaicscode,principalnaicscodeText) %>%
-  summarise(Action_Obligation=sum(Action_Obligation,na.rm=TRUE)) %>%
-  arrange(-Action_Obligation)
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE)) %>%
+  arrange(-Action_Obligation_OMB24_GDP22)
 
 
   bottleneck_naics<-c(336414,336419,332993,325920,332995)
   
-  ukrnaicsplat<-pscnaics %>% filter(principalnaicscode %in% bottleneck_naics)  %>%
-  group_by(principalnaicscode,principalnaicscodeText) %>%
-  summarise(Action_Obligation=sum(Action_Obligation,na.rm=TRUE)) %>%
-  arrange(principalnaicscode)
+  economic %>% filter(principalnaicscode %in% bottleneck_naics)  %>%
+    group_by(principalnaicscode,principalnaicscodeText) %>%
+    summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE)) %>%
+    arrange(principalnaicscode)
+  
+```
 
+### NAICS history
+```{r NAICShistory}
+economic <- economic %>% mutate(MunitionNAICS=case_when(
+  is.na(principalnaicscodeText)~NA,
+  principalnaicscode %in% bottleneck_naics ~ principalnaicscodeText ,
+  TRUE~"All Other NAICS"
+))
+
+(
+NAICS<-build_plot(
+  data=economic %>% filter(principalnaicscode %in% bottleneck_naics | IsUkraineRelevant ==1),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=munition_lc,
+  # NA, #VAR.ncol
+  x_var="Fiscal_Year",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="MunitionNAICS", #color_var
+  facet_var="IsUkraineRelevant", #facet_var
+  # alpha_var = "YTD",
+  column_key=munition_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+ guides(fill = guide_legend(ncol = 1))+
+  theme(legend.position = "bottom")+
+  labs(y="Obligations (Constant 2022 $s)")#+
+  # date_x_year_breaks(2000,2022,2,partial_year=2024,partial_label="\nQ1")
+  # facet_wrap(facet=~UkraineDIBrelevant, scales="free_y")
+)
 
 ```
 
 
-## HIMARS
+
+# Capacity Boosting
+## System Dives
+
+### 155mm production
+```{r}
+artillery<-read.csv(file.path("..","data_raw","USA_Artillery_Production.csv")) %>%filter(!is.na(Monthly.Production))
+
+artillery$Aproximate.Date<-as.Date(artillery$Aproximate.Date,"%m/%d/%Y")
+artillery$Monthly.Production<-text_to_number(artillery$Monthly.Production)
+
+(prod155mm<-
+  build_plot(artillery %>% filter(Series!="A&S Sept. 2022 Targets"),
+           chart_geom = "Line Chart",
+           x_var="Aproximate.Date",
+           y_var="Monthly.Production",
+           alpha_var="Type",
+           color_var="Series")+geom_point(aes(x=Aproximate.Date,
+                                              y=Monthly.Production,
+                                              color=Series),
+                                          size=3,
+                                          data=
+                                            artillery %>% filter(Series!="A&S Sept. 2022 Targets"&
+                                                                   Duplicate.Actuals==FALSE)
+                                          )+scale_linetype(guide="none")+
+  labs(x="Reporting Date or Target Deadline", y="Monthly Production\nof 155mm Ammunition",
+       title="Army 155mm Ammunition Production Rates and Targets",
+       caption="Sources: Bryan Bender and Lara Seligman, Politico, Dec., 4, 2022;
+       Jen Judson, DefenseNews, Mar. 28, 2023; Noah Robertson, DefenseNews, Sept. 15, 2023; 
+       Sam Skove, Defense One, Nov. 27, 2023; initial chart by Govini; and CSIS analysis.")+
+    scale_x_date(date_breaks = "6 months",date_labels = "'%y\n%b")+
+    geom_line(aes(x=Aproximate.Date,
+                                              y=Monthly.Production,
+                                              color=Series,
+                  linetype=Type),linewidth=1.5)+
+    theme(legend.position="bottom")
+    #,labels = "%Y-%m"
+)
+ggsave600dpi(prod155mm,file=file.path("..","Output","Munitions","prod155.png"),width=11,height=4,
+             size=14,lineheight=1)
+ggsave600dpi(prod155mm,file=file.path("..","Output","Munitions","prod155.svg"),width=11,height=4,
+             size=14,lineheight=1)
+```
+### HIMARS
 
 ```{r HIMARS}
 
@@ -452,48 +779,6 @@ write.csv(file="..//Output//Munitions//Himars_psr.csv",row.names = FALSE, na = "
 
 ```
 
-
-
-# Capacity Boosting
-## 155mm production
-```{r}
-artillery<-read.csv(file.path("..","data_raw","USA_Artillery_Production.csv")) %>%filter(!is.na(Monthly.Production))
-
-artillery$Aproximate.Date<-as.Date(artillery$Aproximate.Date,"%m/%d/%Y")
-artillery$Monthly.Production<-text_to_number(artillery$Monthly.Production)
-
-(prod155mm<-
-  build_plot(artillery %>% filter(Series!="A&S Sept. 2022 Targets"),
-           chart_geom = "Line Chart",
-           x_var="Aproximate.Date",
-           y_var="Monthly.Production",
-           alpha_var="Type",
-           color_var="Series")+geom_point(aes(x=Aproximate.Date,
-                                              y=Monthly.Production,
-                                              color=Series),
-                                          size=3,
-                                          data=
-                                            artillery %>% filter(Series!="A&S Sept. 2022 Targets"&
-                                                                   Duplicate.Actuals==FALSE)
-                                          )+scale_linetype(guide="none")+
-  labs(x="Reporting Date or Target Deadline", y="Monthly Production\nof 155mm Ammunition",
-       title="Army 155mm Ammunition Production Rates and Targets",
-       caption="Sources: Bryan Bender and Lara Seligman, Politico, Dec., 4, 2022;
-       Jen Judson, DefenseNews, Mar. 28, 2023; Noah Robertson, DefenseNews, Sept. 15, 2023; 
-       Sam Skove, Defense One, Nov. 27, 2023; initial chart by Govini; and CSIS analysis.")+
-    scale_x_date(date_breaks = "6 months",date_labels = "'%y\n%b")+
-    geom_line(aes(x=Aproximate.Date,
-                                              y=Monthly.Production,
-                                              color=Series,
-                  linetype=Type),linewidth=1.5)+
-    theme(legend.position="bottom")
-    #,labels = "%Y-%m"
-)
-ggsave600dpi(prod155mm,file=file.path("..","Output","Munitions","prod155.png"),width=11,height=4,
-             size=14,lineheight=1)
-ggsave600dpi(prod155mm,file=file.path("..","Output","Munitions","prod155.svg"),width=11,height=4,
-             size=14,lineheight=1)
-```
 
 ## Munition Multiyear  Obligations
 ```{r Multiyear_obl}

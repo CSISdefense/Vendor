@@ -233,10 +233,11 @@ save(def_data,def_lc,def_ck, file="analysis/FPDS_chart_maker/unaggregated_def.Rd
 
 ###########Product Service Code, Agency, Platform ############
 
-platpscdefcd<-read_delim(file.path("data","semi_clean","Location.SP_ProdServPlatformAgencyCongressionalDistrict.csv"),delim="\t",na=c("NULL","NA"),
+platpscdefcd<-read_delim(file.path("data","semi_clean","Defense_Location.SP_ProdServPlatformAgencyCongressionalDistrict.txt"),delim="\t",na=c("NULL","NA"),
                     col_names = TRUE, guess_max = 10000000)
 
 platpscdefcd<-apply_standard_lookups(platpscdefcd)
+any(duplicated(colnames(platpscdefcd)))
 
 platpscdefcd<-initial_clean(platpscdefcd)
 
@@ -382,30 +383,12 @@ platpscintl$YTD<-factor(ifelse(platpscintl$Fiscal_Year==max(platpscintl$Fiscal_Y
 save(platpscintl,fedpsc_lc, fedpsc_ck,file="data/clean/Federal_platpscintl_FPDS.Rda")
 
 
-##############PSC, Platform, NAICS #############
-
-pscnaics<-read_delim(file.path("data","semi_clean","Economic.ProdServPlatformNAICS.csv"),delim="\t",na=c("NULL","NA"),
-                         col_names = TRUE, guess_max = 10000000)
-
-pscnaics<-apply_standard_lookups(pscnaics,path="offline")
-
-
-
-
-pscnaics %<>%
-  # select(-ContractingCustomer) %>%
-  # select(-ClassifyNumberOfOffers) %>%
-  # mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
-  mutate(PlatformPortfolio = factor(PlatformPortfolio))
-
-save(pscnaics, file="data/clean/ProdServPlatformNAICS.rda")
-
-############## High Tech Non-Trad #############
-hightech<-read_delim(file.path("data","semi_clean","Economic.NAICSprodservNonTraditionalHistory.csv"),delim="\t",na=c("NULL","NA"),
+############## NAICS and High Tech Non-Trad #############
+economic<-read_delim(file.path("data","semi_clean","Economic.NAICSprodservNonTraditionalHistory.csv"),delim="\t",na=c("NULL","NA"),
                     col_names = TRUE, guess_max = 10000000)
-debug(apply_standard_lookups)
-hightech<-apply_standard_lookups(hightech)
-hightech<-read_and_join_experiment(hightech,
+
+economic<-apply_standard_lookups(economic)
+economic<-read_and_join_experiment(economic,
                                lookup_file="Lookup_PrincipalNAICScode.csv",
                                directory="economic//",
                                by=c("principalnaicscode"="principalnaicscode"),
@@ -414,10 +397,9 @@ hightech<-read_and_join_experiment(hightech,
                                missing_file="fpds_naics.csv")
 
 
-hightech_lc<-prepare_labels_and_colors(hightech)
-hightech_ck<-get_column_key(hightech)
-
-save(hightech,hightech_lc,hightech_ck, file="data/clean/hightech_FPDS.Rda")
+economic_lc<-prepare_labels_and_colors(economic)
+economic_ck<-get_column_key(economic)
+save(economic, file="data/clean/ProdServPlatformNAICS.rda")
 
 
 ##############Software #############
