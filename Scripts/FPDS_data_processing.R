@@ -403,7 +403,7 @@ save(pscnaics, file="data/clean/ProdServPlatformNAICS.rda")
 ############## High Tech Non-Trad #############
 hightech<-read_delim(file.path("data","semi_clean","Economic.NAICSprodservNonTraditionalHistory.csv"),delim="\t",na=c("NULL","NA"),
                     col_names = TRUE, guess_max = 10000000)
-
+debug(apply_standard_lookups)
 hightech<-apply_standard_lookups(hightech)
 hightech<-read_and_join_experiment(hightech,
                                lookup_file="Lookup_PrincipalNAICScode.csv",
