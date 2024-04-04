@@ -1,15 +1,10 @@
-# Data Pre-Processing for Vendor Size Shiny Graphic
-# UPDATED 2021/03/07
-#
-# This script does pre-processing to get a SQL query into usable form for shiny
-# graphics
+# Data Pre-Processing for Census data
 #
 # Input:
-#   CSV-format results from SQL query:
-#     Vendor_SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer
+#   CSV-format/Txt results from Census website query:
+#     
 #
-# Output: CSV file (unaggregated_FPDS.Rda)
-# with data in the minimal form needed by Shiny script
+# Output: unaggregated_FPDS.Rda
 ################################################################################
 
 # install.packages("../csis360_0.0.0.9022.tar.gz")
@@ -18,31 +13,8 @@ library(tidyverse)
 library(magrittr)
 library(csis360)
 library(readr)
-#This is a kludge until the FMS repo is public
-source(file.path("..","Trade","Scripts","Trade_Standardize.r"))
 # read in data
 local_path<-get_local_lookup_path()
-
-initial_clean<-function(df,only_defense=TRUE){
-  df<-standardize_variable_names(df)
-  # colnames(df)[colnames(df)=="Fiscal.Year"]<-"Fiscal_Year"
-  # coerce Amount to be a numeric variable
-  # if("Action_Obligation" %in% colnames(df)) 
-  #   df$Action_Obligation %<>% text_to_number()
-  # if("NumberOfActions" %in% colnames(df)) 
-  #   df$NumberOfActions %<>% text_to_number()
-  # df$Fiscal_Year <- text_to_number(df$Fiscal_Year)
-  colnames(df)[colnames(df)=="Customer"]<-"ContractingCustomer"
-  # colnames(df)[colnames(df)=="platformportfolio"]<-"PlatformPortfolio"
-  # discard pre-1990
-  df %<>% filter(Fiscal_Year >= 1990) #Fiscal_Year >= 2000 & 
-  if(only_defense)
-    df %<>% filter(Fiscal_Year >= 1990 & ContractingCustomer=="Defense") #Fiscal_Year >= 2000 & 
-  # colnames(df)[colnames(df)=="Action_Obligation_Then_Year"]<-"Action_Obligation"
-  # df$dFYear<-as.Date(paste("1/1/",as.character(df$Fiscal_Year),sep=""),"%m/%d/%Y")
-  
-  df
-}
 
 
 #############Full Data and Fed Data##########

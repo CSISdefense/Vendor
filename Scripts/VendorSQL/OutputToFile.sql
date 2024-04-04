@@ -180,6 +180,8 @@ group by ProductOrServiceCode
 ,simplified_procedures_for_certain_commercial_items_code
 ,fiscal_year
 
+SET QUERY_GOVERNOR_COST_LIMIT 0
+--2h35m 2m620 rows. We could probably aggregate this to the CAU level easily enoough.
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 exec ProductOrServiceCode.SP_SpaceDetail

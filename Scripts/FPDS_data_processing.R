@@ -401,6 +401,17 @@ economic_lc<-prepare_labels_and_colors(economic)
 economic_ck<-get_column_key(economic)
 save(economic, file="data/clean/ProdServPlatformNAICS.rda")
 
+##############Space ########
+space<-read_delim(file.path("data","semi_clean","ProductOrServiceCode.SP_SpaceDetail.txt"),delim="\t",na=c("NULL","NA"),
+               col_names = TRUE, guess_max = 10000000)
+
+space<-apply_standard_lookups(space)
+space$YTD<-factor(ifelse(space$Fiscal_Year==max(space$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
+space_lc<-prepare_labels_and_colors(space)
+space_ck<-get_column_key(space)
+
+save(space,space_lc,space_ck, file="data/clean/space_FPDS.Rda")
+
 
 ##############Software #############
 sw<-read_delim(file.path("data","semi_clean","Summary.SP_SoftwareDetail.txt"),delim="\t",na=c("NULL","NA"),

@@ -21,14 +21,14 @@ library(Hmisc)
 # read in data
 OTA_data_current <- read_delim(
   "data_raw//OTA_All_Fields.csv",delim = ",",
-  col_names = TRUE, guess_max = 500000,na=c("NA","NULL"),skip = 2)
+  col_names = TRUE, guess_max = 500000,na=c("NA","NULL"),skip = 5)
 
 OTA_data_current<-standardize_variable_names(OTA_data_current)#,
                                              # path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
 OTA_data_current$Date_Signed<-as.Date(OTA_data_current$Date_Signed,"%m/%d/%y")
 OTA_data_current$fiscal_quarter<- quarter(OTA_data_current$Date_Signed,fiscal_start=10)
-
-OTA_data_current$ProductOrServiceCode[OTA_data_current$ProductOrServiceCode=="7.00E+21"]<-"7E21"
+# 
+# OTA_data_current$ProductOrServiceCode[OTA_data_current$ProductOrServiceCode=="7.00E+21"]<-"7E21"
 
 
 OTA_data_current<-apply_standard_lookups(OTA_data_current)
