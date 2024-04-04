@@ -180,6 +180,11 @@ group by ProductOrServiceCode
 ,simplified_procedures_for_certain_commercial_items_code
 ,fiscal_year
 
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+exec ProductOrServiceCode.SP_SpaceDetail
+@customer=NULL
+
 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
