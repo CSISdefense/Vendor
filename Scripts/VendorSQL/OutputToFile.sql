@@ -137,9 +137,19 @@ SET NOCOUNT ON;
 
 --2h41m 5,5390,957 rows
 SET QUERY_GOVERNOR_COST_LIMIT 0
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
 Exec [Economic].[SP_NAICSprodservNonTraditionalHistory]
 	@customer='Defense',
 	@startfiscalyear=2007
+	
+
+--Australia 3h36m
+	SET QUERY_GOVERNOR_COST_LIMIT 0
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+Exec [Location].[SP_CountryDetail]
+ 	@countryISOalpha3='AUS'
 
 
 --2h35m 2m620 rows. We could probably aggregate this to the CAU level easily enoough.
