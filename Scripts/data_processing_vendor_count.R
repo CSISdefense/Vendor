@@ -54,7 +54,6 @@ library(csis360)
          "IsEntityAbove1990constantReportingThreshold",
          "IsEntityAbove2016constantReportingThreshold"
          )
-  
   platform_sub<-apply_standard_lookups(platform_sub)
   check_key(platform_sub,c("SubCustomer", "PlatformPortfolio",key))
   platform_only<-apply_standard_lookups(platform_only)
@@ -145,8 +144,8 @@ platformUAS_only<-prepare_vendor(platformUAS_only)
 
 
 
-labels_and_colors<-csis360::prepare_labels_and_colors(platform_sub)
-column_key<-csis360::get_column_key(platform_sub)
+labels_and_colors<-prepare_labels_and_colors(platform_sub)
+column_key<-get_column_key(platform_sub)
 
 write_csv(platform_only, file.path("analysis","FPDS_vendor_count","platform_only.csv"))
 write_csv(sub_only, file.path("analysis","FPDS_vendor_count","sub_only.csv"))
@@ -155,8 +154,8 @@ write_csv(platformUAS_only, file.path("analysis","FPDS_vendor_count","platformUA
 write_csv(top_level, file.path("analysis","FPDS_vendor_count","top_level.csv"))
 
 colnames(platformUAS_only)[colnames(platformUAS_only)=="EntitySizeSum"]<-"EntitySizeText.sum"
-uav_lc<-csis360::prepare_labels_and_colors(platformUAS_only)
-uav_ck<-csis360::get_column_key(platformUAS_only)
+uav_lc<-prepare_labels_and_colors(platformUAS_only)
+uav_ck<-get_column_key(platformUAS_only)
 
 # write output to CleanedVendorSize.csv
 save(platformUAS_only, uav_lc, uav_ck, 

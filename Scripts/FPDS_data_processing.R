@@ -137,7 +137,6 @@ save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/una
 
 
 
-summary(factor(def_data$YTD))
 
 summary(factor(full_data$YTD))
 fpds_lc<-csis360::prepare_labels_and_colors(full_data %>% select(-recoveredmaterialclauses))
@@ -147,7 +146,7 @@ fpds_ck<-csis360::get_column_key(full_data)
 fpds_data<-full_data %>% filter(ContractingCustomer=="Defense"&
                                   Fiscal_Year>=2010)
 
-save(fpds_data,fpds_lc, fpds_ck,file = "..\\FMS\\data\\clean\\fpds_transaction_summary.rda")
+save(fpds_data,fpds_lc, fpds_ck,file = "..\\Trade\\data\\clean\\fpds_transaction_summary.rda")
 rm(fpds_data)
 
 fed_data %<>%
@@ -184,7 +183,7 @@ save(fed_data,fed_lc,fed_ck, file="data/clean/fed_summary_FPDS.Rda")
 
 #############Defense Data (faster query run)##########
 def_data<- read_delim(
-  "Data//semi_clean//Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.csv",delim = "\t",
+  "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.txt",delim = "\t",
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
 problems(def_data[nrow(def_data),])
 
@@ -234,10 +233,11 @@ save(def_data,def_lc,def_ck, file="analysis/FPDS_chart_maker/unaggregated_def.Rd
 
 ###########Product Service Code, Agency, Platform ############
 
-platpscdefcd<-read_delim(file.path("data","semi_clean","Location.SP_ProdServPlatformAgencyCongressionalDistrict.csv"),delim="\t",na=c("NULL","NA"),
+platpscdefcd<-read_delim(file.path("data","semi_clean","Defense_Location.SP_ProdServPlatformAgencyCongressionalDistrict.txt"),delim="\t",na=c("NULL","NA"),
                     col_names = TRUE, guess_max = 10000000)
 
 platpscdefcd<-apply_standard_lookups(platpscdefcd)
+any(duplicated(colnames(platpscdefcd)))
 
 platpscdefcd<-initial_clean(platpscdefcd)
 
@@ -262,8 +262,8 @@ platpsc %<>%
   mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
   # mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
   mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
-  mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
-  mutate(CrisisProductOrServiceArea = factor(CrisisProductOrServiceArea))
+  mutate(PlatformPortfolio = factor(PlatformPortfolio))
+
 
 
 
@@ -383,24 +383,34 @@ platpscintl$YTD<-factor(ifelse(platpscintl$Fiscal_Year==max(platpscintl$Fiscal_Y
 save(platpscintl,fedpsc_lc, fedpsc_ck,file="data/clean/Federal_platpscintl_FPDS.Rda")
 
 
-##############PSC, Platform, NAICS #############
+############## NAICS and High Tech Non-Trad #############
+economic<-read_delim(file.path("data","semi_clean","Defense_Economic.SP_NAICSprodservNonTraditionalHistory.txt"),delim="\t",na=c("NULL","NA"),
+                    col_names = TRUE, guess_max = 10000000)
 
-pscnaics<-read_delim(file.path("data","semi_clean","Economic.ProdServPlatformNAICS.csv"),delim="\t",na=c("NULL","NA"),
-                         col_names = TRUE, guess_max = 10000000)
+economic<-apply_standard_lookups(economic)
+economic<-read_and_join_experiment(economic,
+                               lookup_file="Lookup_PrincipalNAICScode.csv",
+                               directory="economic//",
+                               by=c("principalnaicscode"="principalnaicscode"),
+                               add_var=c("CriticalTech"),
+                               skip_check_var =c("CriticalTech"),
+                               missing_file="fpds_naics.csv")
 
-debug(apply_standard_lookups)
-pscnaics<-apply_standard_lookups(pscnaics,path="offline")
 
+economic_lc<-prepare_labels_and_colors(economic)
+economic_ck<-get_column_key(economic)
+save(economic, file="data/clean/ProdServPlatformNAICS.rda")
 
+##############Space ########
+space<-read_delim(file.path("data","semi_clean","ProductOrServiceCode.SP_SpaceDetail.txt"),delim="\t",na=c("NULL","NA"),
+               col_names = TRUE, guess_max = 10000000)
 
+space<-apply_standard_lookups(space)
+space$YTD<-factor(ifelse(space$Fiscal_Year==max(space$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
+space_lc<-prepare_labels_and_colors(space)
+space_ck<-get_column_key(space)
 
-pscnaics %<>%
-  # select(-ContractingCustomer) %>%
-  # select(-ClassifyNumberOfOffers) %>%
-  # mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
-  mutate(PlatformPortfolio = factor(PlatformPortfolio))
-
-save(pscnaics, file="data/clean/ProdServPlatformNAICS.rda")
+save(space,space_lc,space_ck, file="data/clean/space_FPDS.Rda")
 
 
 ##############Software #############

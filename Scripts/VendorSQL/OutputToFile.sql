@@ -15,6 +15,21 @@ SET NOCOUNT ON;
   group by isnull(trim(descriptionofcontractrequirement),'Unlabled'),PlatformPortfolioRemote
   
 
+--3H11M TO reach 28% for entiredatabase ~30m for one incomplete
+--54 % at 14h15m (with parallel runs happenign)
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+select fiscal_year, contract_transaction_unique_key, csistransactionid, last_modified_date
+from contract.fpds
+where fiscal_year in (2023)
+
+--Not yet run
+--9m53s for 2.5 m rows
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+select contract_transaction_unique_key, last_modified_date,USAspending_file_name
+from errorlogging.fpdsstage1
+
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
   select  f.descriptionofcontractrequirement,f.obligatedamount,f.csistransactionid,ctid.csiscontractid
@@ -81,15 +96,67 @@ group by  fiscal_year
 order by fiscal_year,fiscal_quarter
 
 
+--2478175
+--2j46m with errors
+--942,792 rows
+--3h30m
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 select  ProductOrServiceCode
+,ContractingCustomer
 ,platformportfolio
 ,[claimantprogramcode]
 ,ProjectID
 ,principalnaicscode
-,obligatedamount
-from  Economic.[ProdServPlatformNAICS]
+,PricingUCA
+,costaccountingstandardsclause
+,costorpricingdata
+,fiscal_year
+,sum(obligatedamount) as obligatedamount 
+from  contract.FPDSpartial
+where  ContractingCustomer='Defense'
+group by ProductOrServiceCode
+,ContractingCustomer
+,platformportfolio
+,[claimantprogramcode]
+,ProjectID
+,principalnaicscode
+,ProductOrServiceCode
+,PricingUCA
+,costaccountingstandardsclause
+,costorpricingdata
+,fiscal_year
+
+
+--2478175
+--2j46m with errors
+--942,792 rows
+--3h30m
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+
+--2h41m 5,5390,957 rows
+SET QUERY_GOVERNOR_COST_LIMIT 0
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+Exec [Economic].[SP_NAICSprodservNonTraditionalHistory]
+	@customer='Defense',
+	@startfiscalyear=2007
+	
+
+--Australia 3h36m
+	SET QUERY_GOVERNOR_COST_LIMIT 0
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+Exec [Location].[SP_CountryDetail]
+ 	@countryISOalpha3='AUS'
+
+
+--2h35m 2m620 rows. We could probably aggregate this to the CAU level easily enoough.
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+exec ProductOrServiceCode.SP_SpaceDetail
+@customer=NULL
 
 
 SET ANSI_WARNINGS OFF;
@@ -125,6 +192,7 @@ SELECT  [EntityID]
       ,[IsEntityAbove1990constantReportingThreshold]
       ,[AnyEntityUSplaceOfPerformance]
       ,[AnyEntityForeignPlaceOfPerformance]
+	  ,AnyDefenseCustomer
       ,[ObligatedAmount]
 	  ,ObligatedAmountIsSmall
       ,[NumberOfActions]
@@ -132,8 +200,15 @@ SELECT  [EntityID]
       ,[Top6]
       ,[UnknownCompany]
   FROM [Vendor].[EntityIDhistory]
-  where fiscal_year>=2000
+  --where fiscal_year>=2000
   
+  --15m but probably not necessary
+  select [EntityID]
+  ,1 as AnyDefenseCustomer
+  ,fiscal_year
+  from contract.fpdspartial
+  where contractingcustomer='Defense' and fiscal_year>=2000
+  group by fiscal_year, [EntityID]
 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
@@ -223,6 +298,7 @@ SET NOCOUNT ON;
  SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 --2h12
+--2h39m 12,547,505 rows
  EXEC 
  [Location].SP_ProdServPlatformAgencyCongressionalDistrict
   @customer='Defense'
@@ -274,12 +350,12 @@ EXEC	@return_value = Contract.SP_ContractCompetitionVehicleCustomer
 
 		SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
---0h05m This is probably dependent on automated contract update runes.
+--2h35	m This is probably dependent on automated contract update runs.
 select * from economic.[ProdServPlatformNAICS]
 
 			SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
---0h05m This is probably dependent on automated contract update runes.
+--0h05m This is probably dependent on automated contract update runs.
 DECLARE	@return_value int
 EXEC	@return_value = Contract.SP_ContractTopPSCofficeNAICS
 		@IsDefense = NULL
@@ -588,6 +664,7 @@ select ProductOrServiceCode
 ,contractingofficeagencyid
 ,ContractingAgencyText
 ,fiscal_year
+,fiscal_quarter
 ,PlaceCountryText
 ,fundedbyforeignentity
  --Pricing
@@ -617,6 +694,7 @@ group by  productorservicecode
 ,contractingofficeagencyid
 ,ContractingAgencyText
 ,fiscal_year
+,fiscal_quarter
 ,PlaceCountryText
 ,fundedbyforeignentity
 	     ,[TypeOfContractPricing5Category]

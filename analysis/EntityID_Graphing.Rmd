@@ -14,6 +14,7 @@ library(ggplot2)
 library(csis360)
 load(file="../data/clean/FPDS_eid_fyear.rda")
 load(file="../data//clean//defense_naics_vendor.Rdata")
+
 load(file="../data//clean//TopVendorUAVHistoryPlatformCustomer.rda")
 
 # style_path<-"https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/style/"
@@ -42,6 +43,16 @@ FPDS_eid_fyear$EntitySmall[FPDS_eid_fyear$EntitySizeGlitch==TRUE |FPDS_eid_fyear
 summary(factor(FPDS_eid_fyear$EntitySmall))
 FPDS_eid_fyear$EntitySmall<-factor(FPDS_eid_fyear$EntitySmall,rev(c("Always Small Vendor","Sometimes Small Vendor","Other Than Small","Unlabeled")))
 
+FPDS_eid_fyear<-csis360::read_and_join_experiment(FPDS_eid_fyear,
+  "Vendor.EntityIDanyDefense.txt",
+  by=c("fiscal_year","EntityID"),
+  add_var="AnyDefenseCustomer",
+  skip_check_var = "AnyDefenseCustomer",
+  path="",
+  
+  dir=file.path("..","data","semi_clean")
+)
+
 
 
 ec<-read.delim(file.path("../Data/semi_clean/Vendor_sp_EntityCountHistoryCustomer.txt"), header=TRUE,  na.strings = c("", "NULL"))
@@ -50,13 +61,15 @@ ec<-standardize_variable_names(ec)
 ec$dFYear<-as.Date(paste("1/1/",as.character(ec$Fiscal_Year),sep=""),"%m/%d/%Y")
 
 
-ec<-csis360::read_and_join(ec,
+ec<-csis360::read_and_join_experiment(ec,
   "EntitySizeCode.csv",
   by="EntitySizeCode",
   add_var="EntitySmall",
   path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
   dir="vendor/"
 )
+
+
 
 # def_eid_fyear<-read.delim(file.path("../Data/semi_clean/Defense_Vendor.SP_EntityIDhistory.txt"), header=TRUE,  na.strings = c("", "NULL"))
 # def_eid_fyear<-remove_bom(def_eid_fyear)
@@ -87,7 +100,8 @@ ecp<-csis360::read_and_join(ecp,
   path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
   dir="vendor/"
 )
-def_eid_fyear_plat<-read.delim(file.path("../Data/semi_clean/Defense_Vendor.SP_EntityIDhistoryPlatform.txt"), header=TRUE,  na.strings = c("", "NULL"))
+def_eid_fyear_plat<-read.delim(file.path("../Data/semi_clean/Defense_Vendor.SP_EntityIDhistoryPlatform.txt"),
+                               header=TRUE,  na.strings = c("", "NULL"))
 def_eid_fyear_plat<-remove_bom(def_eid_fyear_plat)
 def_eid_fyear_plat<-standardize_variable_names(def_eid_fyear_plat)
 def_eid_fyear_plat$EntityCount<-1
@@ -95,7 +109,8 @@ def_eid_fyear_plat$dFYear<-as.Date(paste("1/1/",as.character(def_eid_fyear_plat$
 
 ecp$EntitySizeText<-factor(ecp$EntitySizeText)
 ecp$thresh<-factor(ecp$IsEntityAbove2016constantOneMillionThreshold,
-                   levels=c(0,1), labels=c("Vendor only receives smaller contracts","Vendor receives contracts over $1 million in 2016 $"))
+                   levels=c(0,1), 
+                   labels=c("Vendor only receives smaller contracts","Vendor receives contracts over $1 million in 2016 $"))
 
 
 ecp<-replace_nas_with_unlabeled(ecp,"EntitySmall","Unlabeled Vendor")
@@ -164,7 +179,8 @@ defense_platform_vendor$entrant_2018T<-factor(defense_platform_vendor$entrant_20
 
 (
 all_10k_small_bar<-build_plot(
-  data=FPDS_eid_fyear %>% dplyr::filter(IsEntityAbove2018constant10ThousandThreshold==1), ##where is FPDS summary?
+  data=FPDS_eid_fyear %>% dplyr::filter(IsEntityAbove2018constant10ThousandThreshold==1
+                                        & fiscal_year>=2005), ##where is FPDS summary?
   chart_geom = "Bar Chart",
   share = FALSE,
   x_var="fiscal_year",
@@ -176,8 +192,27 @@ all_10k_small_bar<-build_plot(
   # labels_and_colors=eid_lc,
   column_key=NULL,
   format=TRUE
+)+labs(y="Count of vendors contracts above $10k in 2018 $s",x="Fiscal Year")
 )
+
+(
+all_10k_small_bar<-build_plot(
+  data=FPDS_eid_fyear %>% dplyr::filter(IsEntityAbove1990constantReportingThreshold==1), ##where is FPDS summary?
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  x_var="fiscal_year",
+  y_var="count", #Name of variable to plot on y-axis
+  color_var="EntitySmall",       # name of coloration variable, as string
+  # facet_var="EntitySizeText",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  # labels_and_colors=eid_lc,
+  column_key=NULL,
+  format=TRUE
+)+labs(y="Count of vendors contracts above $25k in 1990 $s",x="Fiscal Year")
 )
+
+
 (
 all_small_bar<-build_plot(
   data=FPDS_eid_fyear,# %>% dplyr::filter(IsEntityAbove2018constant10ThousandThreshold==0), ##where is FPDS summary?
@@ -192,7 +227,7 @@ all_small_bar<-build_plot(
   # labels_and_colors=eid_lc,
   column_key=NULL,
   format=TRUE
-)
+)+labs(y="Count of all vendors",x="Fiscal Year")
 )
 
 write.csv(all_10k_small_bar$data %>% pivot_wider(id_cols="EntitySmall",names_from="fiscal_year",values_from="count"),file.path("..","output","all_10k_small.csv"))
@@ -204,7 +239,72 @@ ggsave(all_10k_small_bar+labs(title="Federal Contractor Count",x="Fiscal Year",y
 
 ```
 
+## Defense Vendor
+```{r overall}
 
+
+(
+all_10k_small_bar<-build_plot(
+  data=FPDS_eid_fyear %>% dplyr::filter(IsEntityAbove2018constant10ThousandThreshold==1
+                                        & fiscal_year>=2005 &
+                                          AnyDefenseCustomer==1), ##where is FPDS summary?
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  x_var="fiscal_year",
+  y_var="count", #Name of variable to plot on y-axis
+  color_var="EntitySmall",       # name of coloration variable, as string
+  # facet_var="EntitySizeText",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  # labels_and_colors=eid_lc,
+  column_key=NULL,
+  format=TRUE
+)+labs(y="Count of vendors contracts above $10k in 2018 $s",x="Fiscal Year")
+)
+
+(
+all_10k_small_bar<-build_plot(
+  data=FPDS_eid_fyear %>% dplyr::filter(IsEntityAbove1990constantReportingThreshold==1 &
+                                          AnyDefenseCustomer==1), ##where is FPDS summary?
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  x_var="fiscal_year",
+  y_var="count", #Name of variable to plot on y-axis
+  color_var="EntitySmall",       # name of coloration variable, as string
+  # facet_var="EntitySizeText",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  # labels_and_colors=eid_lc,
+  column_key=NULL,
+  format=TRUE
+)+labs(y="Count of vendors contracts above $25k in 1990 $s",x="Fiscal Year")
+)
+
+(
+all_small_bar<-build_plot(
+  data=FPDS_eid_fyear %>% dplyr::filter( AnyDefenseCustomer==1), ##where is FPDS summary?
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  x_var="fiscal_year",
+  y_var="count", #Name of variable to plot on y-axis
+  color_var="EntitySmall",       # name of coloration variable, as string
+  # facet_var="EntitySizeText",        # name of facet variable, as string
+  legend=TRUE, #Include a legend
+  caption=TRUE, #Include a source caption
+  # labels_and_colors=eid_lc,
+  column_key=NULL,
+  format=TRUE
+)+labs(y="Count of all vendors",x="Fiscal Year")
+)
+
+write.csv(all_10k_small_bar$data %>% pivot_wider(id_cols="EntitySmall",names_from="fiscal_year",values_from="count"),file.path("..","output","all_10k_small.csv"))
+
+
+write.csv(all_small_bar$data %>% pivot_wider(id_cols="EntitySmall",names_from="fiscal_year",values_from="count"),file.path("..","output","all_small.csv"))
+
+ggsave(all_10k_small_bar+labs(title="Federal Contractor Count",x="Fiscal Year",y="Number of Entities with contracts\nvalued over $10k threshold (in 2018 constant dollars)"),file=file.path("..","output","all_10k_small.png"))
+
+```
 
 First lets look at the total number of vendors.
 
@@ -458,19 +558,19 @@ build_plot(
 
 
 
-build_plot(
-  data=FPDS_cleaned_unique %>% filter(fiscal_year>2000),
-  chart_geom = "Histogram",
-  # share = FALSE,
-  x_var="FYear",
-  # y_var="ObligatedAmount_OMB20_GDP20", #Name of variable to plot on y-axis
-  # color_var="entrant",       # name of coloration variable, as string
-  # facet_var="entrant",        # name of facet variable, as string
-  legend=TRUE, #Include a legend
-  caption=TRUE, #Include a source caption
-  labels_and_colors=eid_lc,
-  column_key=NULL
-)+labs(x="Fiscal Year of Contractor First Appearance",y="Number of Contractors")#+facet_wrap(~entrant,scales="free_y",ncol=1)
+# build_plot(
+#   data=FPDS_cleaned_unique %>% filter(fiscal_year>2000),
+#   chart_geom = "Histogram",
+#   # share = FALSE,
+#   x_var="FYear",
+#   # y_var="ObligatedAmount_OMB20_GDP20", #Name of variable to plot on y-axis
+#   # color_var="entrant",       # name of coloration variable, as string
+#   # facet_var="entrant",        # name of facet variable, as string
+#   legend=TRUE, #Include a legend
+#   caption=TRUE, #Include a source caption
+#   labels_and_colors=eid_lc,
+#   column_key=NULL
+# )+labs(x="Fiscal Year of Contractor First Appearance",y="Number of Contractors")#+facet_wrap(~entrant,scales="free_y",ncol=1)
 
 
 ```
@@ -537,24 +637,24 @@ build_plot(
   caption=TRUE, #Include a source caption
   labels_and_colors=eid_lc,
   column_key=NULL
-)+facet_wrap(~sample_year,scales="free_y",space="free_y",ncol=1)+
+)+facet_wrap(~sample_year,scales="free_y",ncol=1)+
   labs(x="Fiscal Year of Transaction",y="Obligations 2020 $")
 
 
-
-build_plot(
-  data=FPDS_cleaned_unique,
-  chart_geom = "Bar Chart",
-  # share = FALSE,
-  x_var="FYear",
-  y_var="total_obligations", #Name of variable to plot on y-axis
-  # color_var="entrant",       # name of coloration variable, as string
-  # facet_var="entrant",        # name of facet variable, as string
-  legend=TRUE, #Include a legend
-  caption=TRUE, #Include a source caption
-  labels_and_colors=eid_lc,
-  column_key=NULL
-)labs(x="Fiscal Year of Contractor First Appearance",y="Obligations 2020 $")
+# 
+# build_plot(
+#   data=FPDS_cleaned_unique,
+#   chart_geom = "Bar Chart",
+#   # share = FALSE,
+#   x_var="FYear",
+#   y_var="total_obligations", #Name of variable to plot on y-axis
+#   # color_var="entrant",       # name of coloration variable, as string
+#   # facet_var="entrant",        # name of facet variable, as string
+#   legend=TRUE, #Include a legend
+#   caption=TRUE, #Include a source caption
+#   labels_and_colors=eid_lc,
+#   column_key=NULL
+# )+labs(x="Fiscal Year of Contractor First Appearance",y="Obligations 2020 $")
 
 
 ```
@@ -569,7 +669,7 @@ Note that the `echo = FALSE` parameter was added to the code chunk to prevent pr
 
 (eplatnew<-build_plot(defense_platform_vendor %>% filter(Fiscal_Year>=2008 &
                                     IsEntityAbove2018constant10ThousandThreshold==1 &
-                                      !is.na(PlatformPortfolio)&
+                                      PlatformPortfolio!="Unlabeled"&
                                       PlatformPortfolio!="Unlabeled"),
            chart_geom = "Bar Chart",
            x_var="dFYear",
@@ -606,7 +706,7 @@ summary(defense_platform_vendor$PlatformPortfolio)
 
 (ecsplatnew<-build_plot(defense_platform_vendor %>% filter(Fiscal_Year>=2008 &
                                     IsEntityAbove2018constant10ThousandThreshold==1 &
-                                      !is.na(PlatformPortfolio)&
+                                      PlatformPortfolio!="Unlabeled"&
                                       PlatformPortfolio!="Unlabeled",
                                     PlatformPortfolio=="Electronics, Comms, & Sensors"),
            chart_geom = "Bar Chart",
@@ -758,7 +858,8 @@ eid_lc<-prepare_labels_and_colors(ec)
 
 
 (eplat<-build_plot(ecp %>% filter(Fiscal_Year>=2005 &
-                                    IsEntityAbove2018constant10ThousandThreshold==1),
+                                    IsEntityAbove2018constant10ThousandThreshold==1&
+                                    PlatformPortfolio!="Unlabeled"),
            chart_geom = "Bar Chart",
            x_var="dFYear",
            y_var="EntityCount",
@@ -766,22 +867,17 @@ eid_lc<-prepare_labels_and_colors(ec)
            facet_var="PlatformPortfolio",
            # second_var="",
            # labels_and_colors = ecp_lc,
-           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
-)+labs(color="Vendor receives over $1 million threshold in 2016 $s")
-(eplatbar<-build_plot(ecp %>% filter(Fiscal_Year>=2005 &
-                                    IsEntityAbove2018constant10ThousandThreshold==1),
-           chart_geom = "Bar Chart",
-           x_var="dFYear",
-           y_var="EntityCount",
-           color_var="EntitySmall",
-           facet_var="PlatformPortfolio",
-           # second_var="",
-           labels_and_colors = ecp_lc,
-           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
-)+facet_wrap(~PlatformPortfolio,scale="free_y")
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")+
+   labs(color="Vendor receives over $1 million threshold in 2016 $s")+
+   labs(title="Defense Contractor Count, 2005-2020",x="Fiscal Year"
+        ,y="Number of Entities with Contracts\nValued over $10k (2018 Constant $s)",
+        caption="Notes: Some entities appear in multiple categories. Entities with unlabeled platforms not shown.
+        Source: FPDS including Duns & Bradstreet identifiers, CSIS roll-ups and analysis.")
+)
 
 (eplatbar<-build_plot(ecp %>% filter(Fiscal_Year>=2005 &
-                                    IsEntityAbove2018constant10ThousandThreshold==1),
+                                    IsEntityAbove2018constant10ThousandThreshold==1&
+                                    PlatformPortfolio!="Unlabeled"),
            chart_geom = "Bar Chart",
            x_var="dFYear",
            y_var="EntityCount",
@@ -789,11 +885,45 @@ eid_lc<-prepare_labels_and_colors(ec)
            facet_var="PlatformPortfolio",
            # second_var="",
            labels_and_colors = ecp_lc,
-           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
-)+facet_wrap(~PlatformPortfolio,ncol=6)+scale_x_date("Fiscal Year",labels = scales::label_date("'%y"),date_breaks = "3 years")
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")+facet_wrap(~PlatformPortfolio,scale="free_y")+
+   labs(title="Defense Contractor Count, 2005-2020",x="Fiscal Year"
+        ,y="Number of Entities with Contracts\nValued over $10k (2018 Constant $s)",
+        caption="Notes: Some entities appear in multiple categories. Unlabeled platform not shown.
+        Source: FPDS including Duns & Bradstreet identifiers, CSIS roll-ups and analysis.")
+)
+
+
+
+(eplatbar<-build_plot(ecp %>% filter(Fiscal_Year>=2005 &
+                                    IsEntityAbove2018constant10ThousandThreshold==1&
+                                    PlatformPortfolio!="Unlabeled"),
+           chart_geom = "Bar Chart",
+           x_var="dFYear",
+           y_var="EntityCount",
+           color_var="EntitySmall",
+           facet_var="PlatformPortfolio",
+           # second_var="",
+           labels_and_colors = ecp_lc,
+           format=TRUE)+ labs(title="Defense Contractor Count, 2005-2020",x="Fiscal Year"
+        ,y="Number of Entities with Contracts\nValued over $10k (2018 Constant $s)",
+        caption="Notes: Some entities appear in multiple categories. Entities with unlabeled platforms not shown.
+        Source: FPDS including Duns & Bradstreet identifiers, CSIS roll-ups and analysis.")+
+    facet_wrap(~PlatformPortfolio,ncol=6)+scale_x_date("Fiscal Year",labels = scales::label_date("'%y"),date_breaks = "3 years"))
+
+
+
+write.csv(file=file.path("..","Output","def_entity_size_count_plat.csv"),row.names = FALSE, na = "",
+          eplatline$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
+            pivot_wider(id_cols=c(PlatformPortfolio),
+                        names_from=Fiscal_Year,values_from=EntityCount))
+
+ggsave600dpi(file=file.path("..","Output","def_entity_size_count_plat_line.png"), eplatline, 
+             width=6.5, height= 4, units="in",size=9,lineheight = 0.75
+             )
 
 (eplatline<-build_plot(ecp %>% filter(Fiscal_Year>=2005 &
-                                    IsEntityAbove2018constant10ThousandThreshold==1),
+                                    IsEntityAbove2018constant10ThousandThreshold==1&
+                                    PlatformPortfolio!="Unlabeled"),
            chart_geom = "Line Chart",
            x_var="dFYear",
            y_var="EntityCount",
@@ -801,8 +931,10 @@ eid_lc<-prepare_labels_and_colors(ec)
            facet_var="PlatformPortfolio",
            # second_var="",
            labels_and_colors = ecp_lc,
-           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")+
-    facet_wrap(~PlatformPortfolio,ncol=6)+scale_x_date("Fiscal Year",labels = scales::label_date("'%y"),date_breaks = "3 years")
+           format=TRUE)+facet_wrap(~PlatformPortfolio,ncol=6)+scale_x_date("Fiscal Year",labels = scales::label_date("'%y"),date_breaks = "3 years")+ labs(title="Defense Contractor Count, 2005-2020",x="Fiscal Year"
+        ,y="Number of Entities with Contracts\nValued over $10k (2018 Constant $s)",
+        caption="Notes: Some entities appear in multiple categories. Entities with unlabeled platforms not shown.
+        Source: FPDS including Duns & Bradstreet identifiers, CSIS roll-ups and analysis.")
 )
 
 write.csv(file=file.path("..","Output","def_entity_count_plat.csv"),row.names = FALSE, na = "",
@@ -815,7 +947,8 @@ ggsave600dpi(file=file.path("..","Output","def_entity_count_plat_line.png"), epl
              )
 
 (eplat<-build_plot(ecp %>% filter(Fiscal_Year>=2005 &
-                                    IsEntityAbove2018constant10ThousandThreshold==1),
+                                    IsEntityAbove2018constant10ThousandThreshold==1&
+                                    PlatformPortfolio!="Unlabeled"),
            chart_geom = "Bar Chart",
            x_var="dFYear",
            y_var="Action_Obligation",
@@ -823,7 +956,10 @@ ggsave600dpi(file=file.path("..","Output","def_entity_count_plat_line.png"), epl
            facet_var="IsEntityAbove2016constantOneMillionThreshold",
            second_var="PlatformPortfolio",
            # labels_and_colors = ecp_lc,
-           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")
+           format=TRUE)+labs(x="Fiscal Year",y="Vendor Count")+ labs(title="Defense Contractor Count, 2005-2020",x="Fiscal Year"
+        ,y="Number of Entities with Contracts\nValued over $10k (2018 Constant $s)",
+        caption="Notes: Some entities appear in multiple categories. Entities with unlabeled platforms not shown.
+        Source: FPDS including Duns & Bradstreet identifiers, CSIS roll-ups and analysis.")
 )#+facet_wrap(~PlatformPortfolio,scale="free_y")
 
 
@@ -845,7 +981,7 @@ library(readr)
 annual_platform_summary<-read_csv(file="..//Output//annual_platform_summary.csv")
 colnames(annual_platform_summary)[colnames(annual_platform_summary)=="platformPortfolio"]<-"PlatformPortfolio"
 
-platform_no_na<-subset(annual_platform_summary,!is.na(PlatformPortfolio))
+platform_no_na<-subset(annual_platform_summary,PlatformPortfolio!="Unlabeled")
 labels_and_colors<-csis360::prepare_labels_and_colors(platform_no_na,"PlatformPortfolio")
 
 
