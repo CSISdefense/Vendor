@@ -384,7 +384,7 @@ save(platpscintl,fedpsc_lc, fedpsc_ck,file="data/clean/Federal_platpscintl_FPDS.
 
 
 ############## NAICS and High Tech Non-Trad #############
-economic<-read_delim(file.path("data","semi_clean","Economic.ProdServPlatformNAICS.csv"),delim="\t",na=c("NULL","NA"),
+economic<-read_delim(file.path("data","semi_clean","Defense_Economic.SP_NAICSprodservNonTraditionalHistory.txt"),delim="\t",na=c("NULL","NA"),
                     col_names = TRUE, guess_max = 10000000)
 
 economic<-apply_standard_lookups(economic)

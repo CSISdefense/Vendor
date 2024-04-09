@@ -96,15 +96,6 @@ group by  fiscal_year
 order by fiscal_year,fiscal_quarter
 
 
-SET ANSI_WARNINGS OFF;
-SET NOCOUNT ON;
-select  ProductOrServiceCode
-,platformportfolio
-,[claimantprogramcode]
-,ProjectID
-,principalnaicscode
-,obligatedamount
-from  Economic.[ProdServPlatformNAICS]
 --2478175
 --2j46m with errors
 --942,792 rows
@@ -143,44 +134,24 @@ group by ProductOrServiceCode
 --3h30m
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
-select  ProductOrServiceCode
-,ContractingCustomer
-,platformportfolio
-,[claimantprogramcode]
-,ProjectID
-,principalnaicscode
-,PricingUCA
-,costaccountingstandardsclause
-,solicitationprocedures --Sealed bid
-,isforeigngovernment --Foreign government, not sure about concerns
-,contractingofficerbusinesssizedetermination --S or Y
-,costorpricingdata
-,commercialitemacquisitionprocedures
-,informationtechnologycommercialitemcategory
-,simplified_procedures_for_certain_commercial_items_code
-,fiscal_year
-,sum(obligatedamount) as obligatedamount 
-from  contract.FPDSpartial
-where  ContractingCustomer='Defense'
-group by ProductOrServiceCode
-,ContractingCustomer
-,platformportfolio
-,[claimantprogramcode]
-,ProjectID
-,principalnaicscode
-,ProductOrServiceCode
-,PricingUCA
-,costaccountingstandardsclause
-,solicitationprocedures --Sealed bid
-,isforeigngovernment --Foreign government, not sure about concerns
-,contractingofficerbusinesssizedetermination --S or Y
-,costorpricingdata
-,commercialitemacquisitionprocedures
-,informationtechnologycommercialitemcategory
-,simplified_procedures_for_certain_commercial_items_code
-,fiscal_year
 
+--2h41m 5,5390,957 rows
 SET QUERY_GOVERNOR_COST_LIMIT 0
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+Exec [Economic].[SP_NAICSprodservNonTraditionalHistory]
+	@customer='Defense',
+	@startfiscalyear=2007
+	
+
+--Australia 3h36m
+	SET QUERY_GOVERNOR_COST_LIMIT 0
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+Exec [Location].[SP_CountryDetail]
+ 	@countryISOalpha3='AUS'
+
+
 --2h35m 2m620 rows. We could probably aggregate this to the CAU level easily enoough.
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
@@ -379,12 +350,12 @@ EXEC	@return_value = Contract.SP_ContractCompetitionVehicleCustomer
 
 		SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
---2h35	m This is probably dependent on automated contract update runes.
+--2h35	m This is probably dependent on automated contract update runs.
 select * from economic.[ProdServPlatformNAICS]
 
 			SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
---0h05m This is probably dependent on automated contract update runes.
+--0h05m This is probably dependent on automated contract update runs.
 DECLARE	@return_value int
 EXEC	@return_value = Contract.SP_ContractTopPSCofficeNAICS
 		@IsDefense = NULL
@@ -693,6 +664,7 @@ select ProductOrServiceCode
 ,contractingofficeagencyid
 ,ContractingAgencyText
 ,fiscal_year
+,fiscal_quarter
 ,PlaceCountryText
 ,fundedbyforeignentity
  --Pricing
@@ -722,6 +694,7 @@ group by  productorservicecode
 ,contractingofficeagencyid
 ,ContractingAgencyText
 ,fiscal_year
+,fiscal_quarter
 ,PlaceCountryText
 ,fundedbyforeignentity
 	     ,[TypeOfContractPricing5Category]
