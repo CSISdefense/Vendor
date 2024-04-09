@@ -49,18 +49,18 @@ colnames(platpscintldef)[colnames(platpscintldef)=="Action_Obligation_Then_Year_
   "Action_Obligation_Then_Year"
 
 topplat<-platpscintldef %>% group_by (Project.Name,PlatformPortfolio) %>%
-  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-            Action_Obligation_2022=sum(ifelse(Fiscal_Year>=2022,Action_Obligation_OMB24_GDP22,0)))%>%
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm = TRUE),
+            Action_Obligation_2023=sum(ifelse(Fiscal_Year>=2023,Action_Obligation_OMB24_GDP22,NA),na.rm = TRUE))%>%
               group_by (PlatformPortfolio) %>%
     mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-                        rank_2022=rank(desc(Action_Obligation_2022)))
+                        rank_2023=rank(desc(Action_Obligation_2023)))
 topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
 
 
 topplat$TopProject<-
-  ifelse(topplat$rank_2022<=7 | topplat$rank_total<=7,topplat$Project.Name,NA)
+  ifelse(topplat$rank_2023<=7 | topplat$rank_total<=7,topplat$Project.Name,NA)
 
-platpscintldef<-left_join(platpscintldef,topplat %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2022),
+platpscintldef<-left_join(platpscintldef,topplat %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2023),
           by=c("Project.Name","PlatformPortfolio"))
 
 platpscintldef$TopProject[is.na(platpscintldef$TopProject) & !is.na(platpscintldef$Project.Name)]<-
@@ -68,6 +68,22 @@ platpscintldef$TopProject[is.na(platpscintldef$TopProject) & !is.na(platpscintld
 
 
 summary(factor(platpscintldef$TopProject))
+
+
+colnames(platpscintldef)
+platpscintldef
+View(platpscintldef%>% group_by(PlatformPortfolio,TopProjectTest,TopProject,rank_total,TopProjectTest_rank_total,rank_2023,TopProjectTest_rank_recent,recent_weight) %>%  
+       filter(!TopProjectTest=="Other Labeled"& TopProject=="Other Labeled Project") %>%
+  summarise(n=length(Fiscal_Year)))
+
+# debug(label_top)
+platpscintldef<-label_top(platpscintldef,
+                    col="Project.Name",
+                    n=7,
+                    top_name="TopProjectTest",
+                    group_list="PlatformPortfolio",
+                    recent=2023,
+                    retain_rank=TRUE)
 
 
 ```
@@ -78,19 +94,19 @@ summary(factor(platpscintldef$ProjectPlatform))
 
 topPSC<-platpscintldef %>% group_by (ProductOrServiceCode,ProductOrServiceCodeText,PlatformPortfolio) %>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-            Action_Obligation_2022=sum(ifelse(Fiscal_Year>=2022,Action_Obligation_OMB24_GDP22,0)))%>%
+            Action_Obligation_2023=sum(ifelse(Fiscal_Year>=2023,Action_Obligation_OMB24_GDP22,0)))%>%
               group_by (PlatformPortfolio) %>%
     mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-                        rank_2022=rank(desc(Action_Obligation_2022)))
+                        rank_2023=rank(desc(Action_Obligation_2023)))
 topPSC %>% arrange(desc(Action_Obligation_OMB24_GDP22))
 
 topPSC$TopPScode<-
-  ifelse(topPSC$rank_2022<=7 | topPSC$rank_total<=7,topPSC$ProductOrServiceCode,NA)
+  ifelse(topPSC$rank_2023<=7 | topPSC$rank_total<=7,topPSC$ProductOrServiceCode,NA)
 topPSC$TopPStext<-
-  ifelse(topPSC$rank_2022<=7 | topPSC$rank_total<=7,topPSC$ProductOrServiceCodeText,NA)
+  ifelse(topPSC$rank_2023<=7 | topPSC$rank_total<=7,topPSC$ProductOrServiceCodeText,NA)
 
 
-platpscintldef<-left_join(platpscintldef,topPSC %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2022),
+platpscintldef<-left_join(platpscintldef,topPSC %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2023),
           by=c("ProductOrServiceCode","PlatformPortfolio"))
 
 platpscintldef$TopPScode[is.na(platpscintldef$TopPScode) & !is.na(platpscintldef$ProductOrServiceCode)]<-
@@ -117,21 +133,21 @@ summary(factor(platpscintldef$TopPStext))
 
 topState<-platpscintldef %>% group_by (pop_state_code,CrisisProductOrServiceArea) %>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-            Action_Obligation_2022=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0)))%>%
+            Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0)))%>%
               group_by (CrisisProductOrServiceArea) %>%
     mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-                        rank_2022=rank(desc(Action_Obligation_2022)))
+                        rank_2023=rank(desc(Action_Obligation_2023)))
 topState %>% arrange(desc(Action_Obligation_OMB24_GDP22))
 
 topState$TopStateAbbr<-
-  ifelse(topState$rank_2022<=25 | topState$rank_total<=25,topState$pop_state_code,NA)
+  ifelse(topState$rank_2023<=25 | topState$rank_total<=25,topState$pop_state_code,NA)
 # topState$TopStateName<-
-#   ifelse(topState$rank_2022<=7 | topState$rank_total<=7,topState$PlaceStateCodeText,NA)
+#   ifelse(topState$rank_2023<=7 | topState$rank_total<=7,topState$PlaceStateCodeText,NA)
 platpscintldef<-platpscintldef[,!colnames(platpscintldef) %in% c("Action_Obligation_OMB24_GDP22.x","Action_Obligation_OMB24_GDP22.y",
-                                   "Action_Obligation_2022.x","Action_Obligation_2022.y",
-  "rank_total.y","rank_total.x","rank_2022.y","rank_2022.x","TopStateAbbr.x","TopStateAbbr.y")]
+                                   "Action_Obligation_2023.x","Action_Obligation_2023.y",
+  "rank_total.y","rank_total.x","rank_2023.y","rank_2023.x","TopStateAbbr.x","TopStateAbbr.y")]
 
-platpscintldef<-left_join(platpscintldef,topState %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2022),
+platpscintldef<-left_join(platpscintldef,topState %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2023),
           by=c("pop_state_code","CrisisProductOrServiceArea"))
 
 platpscintldef$TopStateAbbr[is.na(platpscintldef$TopStateAbbr) & !is.na(platpscintldef$pop_state_code)]<-
@@ -152,19 +168,19 @@ platpscintldef$TopStateAbbr[is.na(platpscintldef$TopStateAbbr) & !is.na(platpsci
 colnames(platpscintldef)[colnames(platpscintldef)=="Fiscal_Year"]<-"Fiscal_Year"
 topCountry<-platpscintldef %>% group_by (PlaceISOalpha3,CrisisProductOrServiceArea) %>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-            Action_Obligation_2022=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0)))%>%
+            Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0)))%>%
               group_by (CrisisProductOrServiceArea) %>%
     mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-                        rank_2022=rank(desc(Action_Obligation_2022)))
+                        rank_2023=rank(desc(Action_Obligation_2023)))
 topCountry %>% arrange(desc(Action_Obligation_OMB24_GDP22))
 
 topCountry$TopCountryISO<-
-  ifelse(topCountry$rank_2022<=7 | topCountry$rank_total<=7,topCountry$PlaceISOalpha3,NA)
+  ifelse(topCountry$rank_2023<=7 | topCountry$rank_total<=7,topCountry$PlaceISOalpha3,NA)
 # topCountry$TopCountryName<-
-#   ifelse(topCountry$rank_2022<=7 | topCountry$rank_total<=7,topCountry$PlaceCountryCodeText,NA)
+#   ifelse(topCountry$rank_2023<=7 | topCountry$rank_total<=7,topCountry$PlaceCountryCodeText,NA)
 
 
-platpscintldef<-left_join(platpscintldef,topCountry %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2022),
+platpscintldef<-left_join(platpscintldef,topCountry %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2023),
           by=c("PlaceISOalpha3","CrisisProductOrServiceArea"))
 
 platpscintldef$TopCountryISO[is.na(platpscintldef$TopCountryISO) & !is.na(platpscintldef$PlaceISOalpha3)]<-
@@ -507,7 +523,7 @@ write.csv(topoverall %>% group_by(TopProject,Fiscal_Year) %>%
           ,file="TopAnnualDoDproject.csv",row.names = FALSE)
 
 
-# platpscintldef<-left_join(platpscintldef,topplat %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2022),
+# platpscintldef<-left_join(platpscintldef,topplat %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2023),
 #           by=c("Project.Name","PlatformPortfolio"))
 
 
@@ -833,13 +849,13 @@ for(p in platform_levels){
 # 
 # topplat<-platpscintldef %>% filter(PlatformPortfolio=="Aircraft") %>% group_by (Project.Name) %>%
 #   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-#             Action_Obligation_2022=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0))
+#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-#                         rank_2022=rank(desc(Action_Obligation_2022)))
+#                         rank_2023=rank(desc(Action_Obligation_2023)))
 # topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
 # 
 # platpscintldef$TopAircraftProject<-
-#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2022<=7 | topplat$rank_total<=7],
+#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2023<=7 | topplat$rank_total<=7],
 #          platpscintldef$Project.Name,NA)
 # platpscintldef$TopAircraftProject[is.na(platpscintldef$TopAircraftProject) & !is.na(platpscintldef$Project.Name)]<-
 #   "Other Labeled Project"
@@ -883,13 +899,13 @@ Platform<-build_plot(
 # 
 # topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
 #   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-#             Action_Obligation_2022=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0))
+#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-#                         rank_2022=rank(desc(Action_Obligation_2022)))
+#                         rank_2023=rank(desc(Action_Obligation_2023)))
 # topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
 # 
 # platpscintldef$TopShipProject<-
-#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2022<=7 | topplat$rank_total<=7],
+#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2023<=7 | topplat$rank_total<=7],
 #          platpscintldef$Project.Name,NA)
 # platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$Project.Name)]<-
 #   "Other Labeled Project"
@@ -943,13 +959,13 @@ summary(factor(platpscintldef$ProjectPlatform))
 # 
 # topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
 #   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-#             Action_Obligation_2022=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0))
+#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-#                         rank_2022=rank(desc(Action_Obligation_2022)))
+#                         rank_2023=rank(desc(Action_Obligation_2023)))
 # topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
 # 
 # platpscintldef$TopShipProject<-
-#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2022<=7 | topplat$rank_total<=7],
+#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2023<=7 | topplat$rank_total<=7],
 #          platpscintldef$Project.Name,NA)
 # platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$Project.Name)]<-
 #   "Other Labeled Project"
@@ -1098,13 +1114,13 @@ summary(factor(platpscintldef$ProjectPlatform))
 # 
 # topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
 #   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-#             Action_Obligation_2022=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0))
+#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-#                         rank_2022=rank(desc(Action_Obligation_2022)))
+#                         rank_2023=rank(desc(Action_Obligation_2023)))
 # topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
 # 
 # platpscintldef$TopShipProject<-
-#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2022<=7 | topplat$rank_total<=7],
+#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2023<=7 | topplat$rank_total<=7],
 #          platpscintldef$Project.Name,NA)
 # platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$Project.Name)]<-
 #   "Other Labeled Project"
@@ -1177,13 +1193,13 @@ summary(factor(platpscintldef$ProjectPlatform))
 # 
 # topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
 #   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-#             Action_Obligation_2022=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0))
+#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-#                         rank_2022=rank(desc(Action_Obligation_2022)))
+#                         rank_2023=rank(desc(Action_Obligation_2023)))
 # topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
 # 
 # platpscintldef$TopShipProject<-
-#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2022<=7 | topplat$rank_total<=7],
+#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2023<=7 | topplat$rank_total<=7],
 #          platpscintldef$Project.Name,NA)
 # platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$Project.Name)]<-
 #   "Other Labeled Project"
@@ -1256,13 +1272,13 @@ summary(factor(platpscintldef$ProjectPlatform))
 # 
 # topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
 #   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-#             Action_Obligation_2022=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0))
+#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-#                         rank_2022=rank(desc(Action_Obligation_2022)))
+#                         rank_2023=rank(desc(Action_Obligation_2023)))
 # topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
 # 
 # platpscintldef$TopShipProject<-
-#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2022<=7 | topplat$rank_total<=7],
+#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2023<=7 | topplat$rank_total<=7],
 #          platpscintldef$Project.Name,NA)
 # platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$Project.Name)]<-
 #   "Other Labeled Project"
@@ -1333,13 +1349,13 @@ summary(factor(platpscintldef$ProjectPlatform))
 # 
 # topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
 #   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-#             Action_Obligation_2022=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0))
+#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-#                         rank_2022=rank(desc(Action_Obligation_2022)))
+#                         rank_2023=rank(desc(Action_Obligation_2023)))
 # topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
 # 
 # platpscintldef$TopShipProject<-
-#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2022<=7 | topplat$rank_total<=7],
+#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2023<=7 | topplat$rank_total<=7],
 #          platpscintldef$Project.Name,NA)
 # platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$Project.Name)]<-
 #   "Other Labeled Project"
@@ -1520,13 +1536,13 @@ summary(factor(platpscintldef$ProjectPlatform))
 # 
 # topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
 #   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-#             Action_Obligation_2022=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0))
+#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-#                         rank_2022=rank(desc(Action_Obligation_2022)))
+#                         rank_2023=rank(desc(Action_Obligation_2023)))
 # topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
 # 
 # platpscintldef$TopShipProject<-
-#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2022<=7 | topplat$rank_total<=7],
+#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2023<=7 | topplat$rank_total<=7],
 #          platpscintldef$Project.Name,NA)
 # platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$Project.Name)]<-
 #   "Other Labeled Project"
@@ -1597,13 +1613,13 @@ summary(factor(platpscintldef$CrisisProductOrServiceArea))
 # 
 # topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
 #   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-#             Action_Obligation_2022=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0))
+#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-#                         rank_2022=rank(desc(Action_Obligation_2022)))
+#                         rank_2023=rank(desc(Action_Obligation_2023)))
 # topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
 # 
 # platpscintldef$TopShipProject<-
-#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2022<=7 | topplat$rank_total<=7],
+#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2023<=7 | topplat$rank_total<=7],
 #          platpscintldef$Project.Name,NA)
 # platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$Project.Name)]<-
 #   "Other Labeled Project"
@@ -1730,13 +1746,13 @@ summary(factor(platpscintldef$PlatformPortfolio))
 # 
 # topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
 #   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
-#             Action_Obligation_2022=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0))
+#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0))
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-#                         rank_2022=rank(desc(Action_Obligation_2022)))
+#                         rank_2023=rank(desc(Action_Obligation_2023)))
 # topplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
 # 
 # platpscintldef$TopShipProject<-
-#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2022<=7 | topplat$rank_total<=7],
+#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2023<=7 | topplat$rank_total<=7],
 #          platpscintldef$Project.Name,NA)
 # platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$Project.Name)]<-
 #   "Other Labeled Project"
