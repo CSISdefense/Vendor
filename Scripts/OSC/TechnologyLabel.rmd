@@ -78,7 +78,55 @@ label_keyword<-function(x,keyword,col="transaction_description"){
 
 # Assign labels
 
+## Creation of NAICS labels
+```{r NAICSlabels}
 
+keyword<-read_csv("..//..//data//semi_clean//Assistance//crittech_keyword_list.csv")
+
+
+
+#Product label is just the NAICS/SIC category description
+exim<-label_keyword(exim %>%select(-AnyTag),keyword,"Product.Description") 
+# exim<-exim
+colnames(exim)
+exim_naics <- exim %>% group_by(Primary.Export.Product.NAICS,
+                                principalnaicscodeText ,
+                                AnyTag,
+                                DeepTech,
+                                HighTech,
+                                Biotechnology,
+                                Quantum,
+                                FutureG,
+                                AdvMaterials,
+                                TrustedAI,
+                                SysOfSys,
+                                Microelectronics,
+                                Space,
+                                Renewable,
+                                Computing,
+                                HMI,
+                                DirectedEnergy,
+                                Hypersonics,
+                                SensorCyber,
+                                ComponentTech,
+                                CriticalTech ) %>%
+  summarise()
+
+
+
+naics<-read_csv(file.path(get_local_lookup_path(),
+                "economic","Lookup_PrincipalNAICScode.csv"))
+
+naics<-left_join(naics%>%select(-AnyTag),exim_naics %>% group_by(Primary.Export.Product.NAICS,
+                                               AnyTag) %>% summarise() %>%
+                   dplyr::select(Primary.Export.Product.NAICS,AnyTag),
+          by=join_by(principalnaicscode==Primary.Export.Product.NAICS))
+
+naics %>%  mutate(l=nchar(principalnaicscode)) %>%
+  group_by(CriticalTech,l,AnyTag) %>% summarise(n=length(principalnaicscode)) %>%
+  arrange(CriticalTech,l,AnyTag) 
+
+```
 
 ## Description Labeling
 ```{r DescriptionLabels}
