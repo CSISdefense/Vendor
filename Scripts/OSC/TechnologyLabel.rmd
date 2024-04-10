@@ -84,47 +84,80 @@ label_keyword<-function(x,keyword,col="transaction_description"){
 keyword<-read_csv("..//..//data//semi_clean//Assistance//crittech_keyword_list.csv")
 
 
-
 #Product label is just the NAICS/SIC category description
-exim<-label_keyword(exim %>%select(-AnyTag),keyword,"Product.Description") 
+exim_naics<-label_keyword(exim %>%select(-AnyTag),keyword,"Product.Description") 
+
 # exim<-exim
-colnames(exim)
-exim_naics <- exim %>% group_by(Primary.Export.Product.NAICS,
-                                principalnaicscodeText ,
-                                AnyTag,
-                                DeepTech,
-                                HighTech,
-                                Biotechnology,
-                                Quantum,
-                                FutureG,
-                                AdvMaterials,
-                                TrustedAI,
-                                SysOfSys,
-                                Microelectronics,
-                                Space,
-                                Renewable,
-                                Computing,
-                                HMI,
-                                DirectedEnergy,
-                                Hypersonics,
-                                SensorCyber,
-                                ComponentTech,
-                                CriticalTech ) %>%
+exim_naics <- exim_naics %>% group_by(Primary.Export.Product.NAICS,
+                                      principalnaicscodeText ,
+                                      AnyTag,
+                                      DeepTech,
+                                      HighTech,
+                                      Biotechnology,
+                                      Quantum,
+                                      FutureG,
+                                      AdvMaterials,
+                                      TrustedAI,
+                                      SysOfSys,
+                                      Microelectronics,
+                                      Space,
+                                      Renewable,
+                                      Computing,
+                                      HMI,
+                                      DirectedEnergy,
+                                      Hypersonics,
+                                      SensorCyber,
+                                      ComponentTech,
+                                      CriticalTech ) %>%
   summarise()
 
 
 
 naics<-read_csv(file.path(get_local_lookup_path(),
-                "economic","Lookup_PrincipalNAICScode.csv"))
+                          "economic","Lookup_PrincipalNAICScode.csv"))
 
-naics<-left_join(naics%>%select(-AnyTag),exim_naics %>% group_by(Primary.Export.Product.NAICS,
-                                               AnyTag) %>% summarise() %>%
-                   dplyr::select(Primary.Export.Product.NAICS,AnyTag),
-          by=join_by(principalnaicscode==Primary.Export.Product.NAICS))
+colnames(naics)
+naics_label<-label_keyword(naics ,keyword,"principalnaicscodeText") 
 
-naics %>%  mutate(l=nchar(principalnaicscode)) %>%
-  group_by(CriticalTech,l,AnyTag) %>% summarise(n=length(principalnaicscode)) %>%
-  arrange(CriticalTech,l,AnyTag) 
+colnames(naics_label)[colnames(naics_label)=="AnyTag"]<-"FPDS_AnyTag"
+
+colnames(exim_naics)[colnames(exim_naics)=="AnyTag"]<-"ExIm_AnyTag"
+naics_label<-left_join(naics_label,exim_naics %>% group_by(Primary.Export.Product.NAICS,
+                                                           ExIm_AnyTag) %>% summarise() %>%
+                         dplyr::select(Primary.Export.Product.NAICS,ExIm_AnyTag),
+                       by=join_by(principalnaicscode==Primary.Export.Product.NAICS))
+
+# naics %>%  mutate(l=nchar(principalnaicscode)) %>%
+#   group_by(CriticalTech,l,AnyTag) %>% summarise(n=length(principalnaicscode)) %>%
+#   arrange(CriticalTech,l,AnyTag) 
+
+# naics_bls<-
+naics_cfius<-read.csv(file.path(get_local_lookup_path(),"economic","FormerCFIUScriticalTech.csv"))
+  
+
+
+naics_label$IsFormerCFIUScriticalTech<-FALSE
+naics_label$IsFormerCFIUScriticalTech[naics_label$principalnaicscode %in%
+                                        naics_cfius[,"NAICS.Code"]]<-TRUE
+naics_label<-read_and_join_experiment(naics_label,
+                         lookup_file="naics_hightech_bls.csv",
+                         directory="economic//",
+                         path="offline",
+                         by=c("principalNAICS4DigitCode"="NaicsCode"),
+                         col_type="cc",
+                         add_var=c("HighTechBLS"),
+                         skip_check_var =c("HighTechBLS"))
+
+
+naics_label %>% mutate(l=nchar(principalnaicscode)) %>%
+  group_by(CriticalTech,ExIm_AnyTag,FPDS_AnyTag,HighTechBLS,IsFormerCFIUScriticalTech) %>%
+  summarise(n=length(principalnaicscode)) %>%
+  arrange(CriticalTech,ExIm_AnyTag,FPDS_AnyTag,HighTechBLS,IsFormerCFIUScriticalTech) 
+write.csv(file="naics_label.csv",naics_label %>%
+            filter(FPDS_AnyTag | ExIm_AnyTag | !is.na(HighTechBLS) | 
+                     !is.na(CriticalTech)) %>%arrange(principalnaicscode),row.names = FALSE
+)
+
 
 ```
 
