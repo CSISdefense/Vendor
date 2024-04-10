@@ -397,13 +397,12 @@ EXEC	@return_value = Contract.SP_ContractBucketPlatformCustomer
 
 
 
-SET ANSI_WARNINGS OFF;
-SET NOCOUNT ON;
 
 --6h26m 15,328,597 rows for federal
-DECLARE	@return_value int
-
-EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength
+--7h30m or so for defense only after postgres
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+EXEC	Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength
 		@Customer = 'Defense',-- [Summary].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer]
 		@SubCustomer = NULL,
 		@PlatformPortfolio =NULL
