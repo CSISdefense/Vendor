@@ -447,126 +447,7 @@ write.csv(file="..//Output//AcqTrends//unlabeled_competition.csv",row.names = FA
 
 
 
-### Big 5 Breakout
-```{r ToplineVendor}
 
-big5<-read.delim(file.path("..","data","semi_clean","Defense_Vendor.sp_TopVendorHistoryCustomer.txt"),sep="\t")
-big5<-read_and_join_experiment(big5,lookup_file="Lookup_ParentID.csv",
-                               path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\",
-                                 # "https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                               dir="vendor/",           
-                               add_var = c("Top6","IsPreTop6"),#"USAID region",
-                               by=c("ParentID"="ParentID"),
-                               skip_check_var=c("Top6","IsPreTop6"),
-                               # missing_file="missing_DSCA_iso.csv"
-)
-big5<-big5 %>% filter(Top6==1|IsPreTop6==1)
-big5$Big5<-big5$ParentID
-big5$Big5[big5$JointVenture==1]<-"Big 5 Joint Venture"
-big5$Big5[big5$Big5=="LOCKHEED"]<-"LOCKHEED MARTIN"
-big5$Big5[big5$Big5=="GRUMMAN"]<-"NORTHROP GRUMMAN"
-big5$SumOfobligatedAmount<-text_to_number(big5$SumOfobligatedAmount)
-big5_wide <-big5 %>% group_by(Big5,Fiscal_Year) %>% filter(Fiscal_Year>=1990) %>%
-  summarise(Action_Obligation=sum(SumOfobligatedAmount,na.rm=TRUE)) %>%
-  pivot_wider(id_cols=Big5,names_from=Fiscal_Year,values_from=Action_Obligation) 
-
-write.csv(big5_wide,file=file.path("..","Output","AcqTrends","big5_wide.csv"),row.names=FALSE)
-
-(
-ToplineVendor<-build_plot(
-  data=full_data %>% filter(Fiscal_Year<=2020),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="Shiny.VendorSize", #color_var
-  # facet_var="Competition.sum", #facet_var
-  column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE
-)+scale_x_date("Fiscal Year",labels = date_format("'%y"),date_breaks = "2 years")+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",
-       caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020.")
-)
-
-(
-ToplineVendor_line<-build_plot(
-  data=full_data %>% filter(Fiscal_Year<=2020),
-  chart_geom = "Line Chart",
-  labels_and_colors=labels_and_colors,
-  # NA, #VAR.ncol
-  x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="Shiny.VendorSize", #color_var
-  # facet_var="Competition.sum", #facet_var
-  column_key=column_key,
-  format=TRUE,
-  ytextposition=FALSE,
-  share=TRUE
-)+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
-)
-
-ggsave600dpi("..//Output//AcqTrends//topline_vendor_wide.png", ToplineVendor+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020."), 
-             width=12, height= 6, units="in",size=12,lineheight=1
-             )
-
-
-ggsave600dpi("..//Output//AcqTrends//topline_vendor_cq.png", ToplineVendor+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
-             width=6.5, height= 4, units="in",size=11,lineheight=1
-             )
-
-ggsave600dpi("..//Output//AcqTrends//topline_vendor_cq.svg", ToplineVendor+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
-             width=6.5, height= 4, units="in",size=11,lineheight=1
-             )
-
-ggsave600dpi("..//Output//AcqTrends//topline_vendor.png", ToplineVendor, 
-             width=6.5, height= 4, units="in",size=11,lineheight=1
-             )
-
-ggsave600dpi("..//Output//AcqTrends//topline_vendor.eps", ToplineVendor+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
-             width=6.5, height= 4, units="in",size=11,lineheight=1
-             )
-
-
-write.csv(file="..//Output//AcqTrends//topline_vendor_cur.csv",row.names = FALSE, na = "",
-          full_data %>% group_by(Shiny.VendorSize,Fiscal_Year)%>%
-            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-          pivot_wider(id_cols=c(Shiny.VendorSize),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(Shiny.VendorSize))
-
-
-write.csv(file="..//Output//AcqTrends//topline_vendor.csv",row.names = FALSE, na = "",
-          ToplineVendor$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
-                                       bAction_Obligation_OMB24_GDP22=Action_Obligation_OMB24_GDP22/1000000000)%>%
-            pivot_wider(id_cols=c(Shiny.VendorSize),
-                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%arrange(Shiny.VendorSize))
-
-```
 
 
 
@@ -764,7 +645,7 @@ ToplinePricing<-build_plot(
   format=TRUE,
   ytextposition=FALSE,
   alpha_var="YTD",
-)+date_x_year_breaks(2000,2020,6)+#,partial_year=2024,partial_label="\nQ1")
+)+date_x_year_breaks(2000,2023,7)+#,partial_year=2024,partial_label="\nQ1")
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
@@ -809,6 +690,7 @@ if(!exists("pricing"))
   load(file="../data/clean/pricing_historical.Rda")
 
 hist_lc<-prepare_labels_and_colors(pricing %>% select(-ContractingOfficeName,-PricingMechanism))#,path=local_path
+hist_ck<-get_column_key(pricing)#,path=local_path
 pricing$Fiscal_YQ<-pricing$Fiscal_Year
 pricing$YTD<-"Full Year"
 PricingUpdate<-rbind(pricing[pricing$Fiscal_Year<2022,colnames(pricing) %in% colnames(def_data)],
@@ -819,7 +701,7 @@ PricingUpdate<-rbind(pricing[pricing$Fiscal_Year<2022,colnames(pricing) %in% col
 
 (
 PricingHistory<-build_plot(
-  data=PricingUpdate %>% filter(Fiscal_YQ <= 2023.2),
+  data=PricingUpdate %>% filter(Fiscal_YQ < 2024),
   chart_geom = "Line Chart",
   share = TRUE,
   labels_and_colors=hist_lc,
@@ -828,7 +710,7 @@ PricingHistory<-build_plot(
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="PricingInflation", #color_var
   # facet_var="PricingUCA.sumlong", #facet_var
-  column_key=column_key,
+  column_key=hist_ck,
   format=TRUE,
   ytextposition=FALSE
 )+#+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
@@ -1013,7 +895,7 @@ for(p in platform_levels){
     format=TRUE,
     ytextposition=FALSE,
     alpha_var="YTD",
-  )+date_x_year_breaks(2000,2020,6)+#,partial_year=2024,partial_label="\nQ1")
+  )+date_x_year_breaks(2000,2023,6)+#,partial_year=2024,partial_label="\nQ1")
     theme(legend.position = "right")+
     labs(y="Obligations (Constant 2022 $s)",title=p))
 
@@ -1049,7 +931,7 @@ for(c in subcustomer_levels){
     format=TRUE,
     ytextposition=FALSE,
     alpha_var="YTD",
-  )+date_x_year_breaks(2000,2020,6)+#,partial_year=2024,partial_label="\nQ1")
+  )+date_x_year_breaks(2000,2023,6)+#,partial_year=2024,partial_label="\nQ1")
     theme(legend.position = "right")+
     labs(y="Obligations (Constant 2022 $s)",title=c))
   
@@ -1170,7 +1052,7 @@ CurDuration<-build_plot(
   # color="Competition")+
   theme(legend.position = "right")+
   labs(y="Share of Obligations")+
-     date_x_year_breaks(2000,2022,2)#)#,partial_year=2024,partial_label="\nOct–Nov")
+     date_x_year_breaks(2007,2023,2)#)#,partial_year=2024,partial_label="\nOct–Nov")
 
 )
 
@@ -1199,7 +1081,7 @@ UnmDuration<-build_plot(
   # color="Competition")+
   theme(legend.position = "right")+
   labs(y="Share of Obligations")+
-      date_x_year_breaks(2000,2022,2)#)#,partial_year=2024,partial_label="\nOct–Nov")
+      date_x_year_breaks(2007,2023,2)#)#,partial_year=2024,partial_label="\nOct–Nov")
 
 )
 
@@ -1239,7 +1121,6 @@ log_plot(plot=UnmDuration, df=def_data  %>% filter(Fiscal_YQ<2024),
 
 ## Topline Multiyear
 ```{r Multiyear}
-
 
 
 (
@@ -1384,6 +1265,308 @@ write.csv(file="..//Output//AcqTrends//VehicleMultiYearShare.csv",row.names = FA
 
 ```
 
+## Topline GFE
+```{r GFE}
+
+def_data$gfe_gfp_value<-factor(def_data$gfe_gfp_code)
+levels(def_data$gfe_gfp_value)<-list(
+   "No Government Furnished"="N",
+  "Transaction uses\nGovernment Furnished\nEquipment or Property"="Y"
+ 
+)
+
+```
+
+
+
+### GFE Competition
+```{r GFEcomp}
+
+(
+GFEcomp<-build_plot(
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="Competition.detail", #color_var
+  facet_var="gfe_gfp_value", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)")+
+    scale_x_date(breaks=as.Date(c(paste(seq(2000,2021,3),"-01-01",sep=""))),
+                                                   date_labels="'%y")
+)
+
+ggsave600dpi("..//Output//AcqTrends//platform_GFE.png", GFEplat, 
+             width=12, height= 6, units="in",size=12,lineheight = 1.2
+             )
+
+ggsave600dpi("..//Output//AcqTrends//platform_GFE.svg", GFEplat, 
+             width=6.5, height= 4.5, units="in",size=11,lineheight = 1.2
+             )
+
+ggsave600dpi("..//Output//AcqTrends//platform_GFE.emf", GFEplat, 
+             width=6.5, height= 4.5, units="in",size=11,lineheight = 1.2
+             )
+
+
+# write.csv(file="..//Output//AcqTrends//platform_GFE.csv",row.names = FALSE, na = "",
+#           pivot_wider(GFEplat$data,id_cols=c(PlatformPortfolio,gfe_gfp_value),
+#                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
+
+write.csv(file="..//Output//AcqTrends//platform_GFE_current.csv",row.names = FALSE, na = "",
+          def_data %>% group_by(PlatformPortfolio,gfe_gfp_value,Fiscal_Year)%>%
+            filter(Fiscal_Year>=2004 & Fiscal_YQ<2024)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(PlatformPortfolio,gfe_gfp_value),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
+
+summary(full_data$ContractingSubCustomer)
+```
+
+
+## Topline Cost Accounting
+```{r SubCustomer}
+
+
+(
+CAS<-build_plot(
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="costaccountingstandardsclause", #color_var
+  facet_var="SubCustomer.platform", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)")
+)
+
+
+(
+CAS<-build_plot(
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="costaccountingstandardsclause", #color_var
+  facet_var="PlatformPortfolio", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)")
+)
+
+
+(
+CAS<-build_plot(
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="Competition.detail", #color_var
+  facet_var="costaccountingstandardsclause", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)")
+)
+
+
+(
+CAS<-build_plot(
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="AnyCommercial", #color_var
+  facet_var="costaccountingstandardsclause", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)")
+)
+
+ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.png", SubCustomer, 
+             width=12, height= 6, units="in",size=12,lineheight = 1.2
+             )
+
+ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.svg", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
+             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+             )
+
+ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.emf", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
+             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+             )
+
+
+write.csv(file="..//Output//AcqTrends//topline_subcustomer.csv",row.names = FALSE, na = "",
+          pivot_wider(SubCustomer$data,id_cols=c(SubCustomer.sum,SubCustomer.platform),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
+
+write.csv(file="..//Output//AcqTrends//topline_subcustomer_current.csv",row.names = FALSE, na = "",
+          full_data %>% group_by(SubCustomer.sum,ContractingSubCustomer,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(SubCustomer.sum,ContractingSubCustomer),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
+
+summary(full_data$ContractingSubCustomer)
+```
+
+## Topline Energy Efficient
+```{r SubCustomer}
+
+
+
+(
+EE<-build_plot(
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="EnergyEfficient", #color_var
+  facet_var="SubCustomer.platform", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)")
+)
+
+
+(
+EE<-build_plot(
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="EnergyEfficient", #color_var
+  facet_var="PlatformPortfolio", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)")
+)
+
+
+
+ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.png", SubCustomer, 
+             width=12, height= 6, units="in",size=12,lineheight = 1.2
+             )
+
+ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.svg", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
+             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+             )
+
+ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.emf", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
+             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+             )
+
+
+write.csv(file="..//Output//AcqTrends//topline_subcustomer.csv",row.names = FALSE, na = "",
+          pivot_wider(SubCustomer$data,id_cols=c(SubCustomer.sum,SubCustomer.platform),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
+
+write.csv(file="..//Output//AcqTrends//topline_subcustomer_current.csv",row.names = FALSE, na = "",
+          full_data %>% group_by(SubCustomer.sum,ContractingSubCustomer,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(SubCustomer.sum,ContractingSubCustomer),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
+
+summary(full_data$ContractingSubCustomer)
+```
 
 #Product/Service/R&D
 
@@ -1840,6 +2023,75 @@ log_plot(plot=Services, df=full_data  %>% filter(Fiscal_YQ<2024 &SimpleArea=="Se
 
 ```
 
+## PSR Pricing
+```{r PSR_pricing}
+
+
+(
+PSRpricing_dollar<-build_plot(
+  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ < 2024 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
+  chart_geom = "Bar Chart",
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="PricingUCA.sum", #color_var
+  facet_var="SimpleArea", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE,
+  share=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.")
+)
+
+ggsave600dpi("..//Output//AcqTrends//psr_pricing_dollar.png", PSRpricing_dollar, 
+             width=6.5, height= 5, units="in",size=11, lineheight=1.2
+             )
+
+
+(
+SimpleVendor_share<-build_plot(
+  data=def_data %>% filter(Fiscal_Year>=2000 &Fiscal_YQ<2024 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
+  chart_geom = "Bar Chart",
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="PricingUCA.sum", #color_var
+  facet_var="SimpleArea", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE,
+  share=TRUE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.")
+)
+
+
+ggsave600dpi("..//Output//AcqTrends//psr_pricing_share.png", SimpleVendor_share, 
+             width=6.5, height= 5, units="in",size=11, lineheight=1.2
+             )
+
+```
 
 ## PSR Vendor size 
 ```{r PSR_vendorsize}
@@ -1940,7 +2192,7 @@ PSRComp_line<-build_plot(
   theme(legend.position = "bottom")+
   labs(x="Fiscal Year",
        y="Obligations (Constant 2022 $s)")+
-    date_x_year_breaks(1993,2021,by=6)#,partial_year=2024,partial_label="\nQ1")
+    date_x_year_breaks(1993,2023,by=6)#,partial_year=2024,partial_label="\nQ1")
 )
 
 
@@ -1963,7 +2215,7 @@ PSRComp_bar<-build_plot(
   theme(legend.position = "bottom")+
   labs(x="Fiscal Year",
        y="Obligations (Constant 2022 $s)")+
-    date_x_year_breaks(1993,2021,by=6)#,partial_year=2024,partial_label="\nQ1")
+    date_x_year_breaks(1993,2023,by=6)#,partial_year=2024,partial_label="\nQ1")
 )
 
 
@@ -1992,7 +2244,7 @@ PSRComp_line<-build_plot(
   # color="Competition")+
   theme(legend.position = "bottom")+
   labs(x="Fiscal Year",y="Share of Obligations")+
-    date_x_year_breaks(1993,2021,by=6)#,partial_year=2024,partial_label="\nQ1")
+    date_x_year_breaks(1993,2023,by=6)#,partial_year=2024,partial_label="\nQ1")
 )
 
 ggsave600dpi("..//Output//AcqTrends//PSRComp_line.png", PSRComp_line, 
@@ -2429,22 +2681,24 @@ write.csv(file="..//Output//AcqTrends//subcustomer_competition.csv",row.names = 
 
 ## SubCustomer Pricing History
 ```{r SubCustomerPricing}
-
+summary(factor(PricingUpdate$SubCustomer.platform))
 (
-PricingHistory<-build_plot(
-  data=pricing,
-  chart_geom = "Line Chart",
+PricingHistoryCust<-build_plot(
+  data=PricingUpdate %>% filter(!SubCustomer.platform %in%
+                                  c("DECA (Largely Unreported)","Uncategorized")&
+                                  Fiscal_YQ<2024),
+  chart_geom = "Bar Chart",
   share = TRUE,
-  labels_and_colors=labels_and_colors,
+  labels_and_colors=hist_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="PricingInflation", #color_var
   facet_var="SubCustomer.platform", #facet_var
-  column_key=column_key,
+  column_key=hist_ck,
   format=TRUE,
   ytextposition=FALSE
-)+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
+)+date_x_year_breaks(1980,2023,10)+#,partial_year=2024,partial_label="\nQ1")   
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
@@ -2454,7 +2708,8 @@ PricingHistory<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2022 $s)",
+       caption="Note: Uncategorized customer not shown.\nSource: FPDS and CSIS analysis.")
 )
 
 # ggsave600dpi("..//Output//AcqTrends//SubCustomer_Pricing_History.png", PricingHistory, 
@@ -2462,31 +2717,22 @@ PricingHistory<-build_plot(
 #              )
 
 
-ggsave600dpi("..//Output//AcqTrends//SubCustomer_Pricing_History.png", PricingHistory,  
+ggsave600dpi("..//Output//AcqTrends//SubCustomer_Pricing_History.png", PricingHistoryCust,  
              width=6.5, height= 3, units="in",size=12, lineheight=1.2
              )
 
 
-ggsave600dpi("..//Output//AcqTrends//SubCustomer_Pricing_History.svg", PricingHistory,  
+ggsave600dpi("..//Output//AcqTrends//SubCustomer_Pricing_History.svg", PricingHistoryCust,  
              width=6.5, height= 3, units="in",size=12, lineheight=1.2
              )
 
-
-write.csv(file="..//Output//AcqTrends//SubCustomer_Pricing_History_share.csv",row.names = FALSE, na = "",
-  arrange(pivot_wider(PricingHistory$data %>% 
-                        arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
-                      id_cols=c(PricingInflation),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22),PricingInflation)%>%
-    arrange(PricingInflation))
-
-write.csv(file="..//Output//AcqTrends//SubCustomer_Pricing_History.csv",row.names = FALSE, na = "",
-  pricing %>% group_by(Fiscal_Year,PricingInflation)%>%
-                        summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE)) %>%
-                        arrange(Fiscal_Year) %>%# mutate(Fiscal_Year=lubridate::year(dFYear)) %>%
-                        pivot_wider(
-                      id_cols=c(PricingInflation),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
-    arrange(PricingInflation))
+log_plot(plot=PricingHistoryCust, df=PricingUpdate  %>% filter(!SubCustomer.platform %in%
+                                  c("DECA (Largely Unreported)","Uncategorized")&
+                                  Fiscal_YQ<2024),
+                     filename="acq_pricing_history_subcust",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+                     sheet="PriceHistSubCust",path="../output/AcqTrends/",second_path=online_path, height=3.5,
+                     format=TRUE#,var_list=c("PricingInflation")
+         )
 
 ```
 
@@ -2526,7 +2772,7 @@ CommercialCust<-build_plot(
   # color="Competition")+
   theme(legend.position = "right")+
   labs(y="Obligations (Constant 2022 $s)")+
-      date_x_year_breaks(2000,2020,6)#,partial_year=2024,partial_label="\nQ1")
+      date_x_year_breaks(2000,2023,6)#,partial_year=2024,partial_label="\nQ1")
     
 
 )
@@ -2559,6 +2805,39 @@ log_plot(plot=CommercialCust, df=def_data %>% filter(Fiscal_YQ<2024),
          output_doc_svg=TRUE
          )
 
+```
+
+## Subcustomer GFE
+```{r GFE subcustomer}
+
+(
+GFEcust<-build_plot(
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="gfe_gfp_value", #color_var
+  facet_var="SubCustomer.platform", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)")+
+      date_x_year_breaks(2000,2022,2)#,partial_year=2024,partial_label="\nOct–Nov")
+
+)
 ```
 
 # Platform
@@ -2645,7 +2924,6 @@ log_plot(plot=Platform_Bar+theme(plot.margin = margin(t=0,r=0.25,b=0.1,l=0.1,"in
          )
 
 ```
-
 
 ## Plat Cust Breakout
 ```{r PlatCustBreakout} 
@@ -3240,7 +3518,7 @@ PlatformComp_bar<-build_plot(
 
 (
 PlatformComp_line<-build_plot(
-  data=def_data %>% filter(PlatformPortfolio!="Unlabeled" &Fiscal_Year>=1991 & Fiscal_YQ<2024),
+  data=def_data %>% filter(PlatformPortfolio!="Unlabeled" &Fiscal_Year>=1992 & Fiscal_YQ<2024),
   chart_geom = "Line Chart",
   share = TRUE,
   labels_and_colors=labels_and_colors,
@@ -3520,6 +3798,41 @@ write.csv(file="..//Output//AcqTrends//Munitions//ukraine_platform_current.csv",
 
 ```
 
+
+## Platform GFE
+```{r GFEplatform}
+
+(
+GFEplat<-build_plot(
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="gfe_gfp_value", #color_var
+  facet_var="PlatformPortfolio", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+
+  labs(y="Obligations (Constant 2022 $s)")+
+    scale_x_date(breaks=as.Date(c(paste(seq(2000,2021,4),"-01-01",sep=""))),
+                                                   date_labels="'%y")
+)
+```
+
+
 # Vendor Size
 
 ## Vendor Size Plat Breakout
@@ -3647,8 +3960,6 @@ log_plot(plot=ToplineVendor, df=full_data  %>% filter(Fiscal_YQ<2024 ),
 
 
 
-
-
 ### Topline Vendor International
 ```{r ToplineVendor}
 
@@ -3689,6 +4000,127 @@ log_plot(plot=ToplineVendorIntl, df=full_data  %>% filter(Fiscal_YQ<2024),
          excel_y_var = TRUE, excel_formulas = TRUE,
                      format=TRUE,#,var_list=c("SimpleArea","Competition.multisum")
          )
+
+```
+
+## Big 5 Breakout
+```{r ToplineVendor}
+
+big5<-read.delim(file.path("..","data","semi_clean","Defense_Vendor.sp_TopVendorHistoryCustomer.txt"),sep="\t")
+big5<-read_and_join_experiment(big5,lookup_file="Lookup_ParentID.csv",
+                               path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\",
+                                 # "https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                               dir="vendor/",           
+                               add_var = c("Top6","IsPreTop6"),#"USAID region",
+                               by=c("ParentID"="ParentID"),
+                               skip_check_var=c("Top6","IsPreTop6"),
+                               # missing_file="missing_DSCA_iso.csv"
+)
+big5<-big5 %>% filter(Top6==1|IsPreTop6==1)
+big5$Big5<-big5$ParentID
+big5$Big5[big5$JointVenture==1]<-"Big 5 Joint Venture"
+big5$Big5[big5$Big5=="LOCKHEED"]<-"LOCKHEED MARTIN"
+big5$Big5[big5$Big5=="GRUMMAN"]<-"NORTHROP GRUMMAN"
+big5$SumOfobligatedAmount<-text_to_number(big5$SumOfobligatedAmount)
+big5_wide <-big5 %>% group_by(Big5,Fiscal_Year) %>% filter(Fiscal_Year>=1990) %>%
+  summarise(Action_Obligation=sum(SumOfobligatedAmount,na.rm=TRUE)) %>%
+  pivot_wider(id_cols=Big5,names_from=Fiscal_Year,values_from=Action_Obligation) 
+
+write.csv(big5_wide,file=file.path("..","Output","AcqTrends","big5_wide.csv"),row.names=FALSE)
+
+(
+ToplineVendor<-build_plot(
+  data=full_data %>% filter(Fiscal_Year<=2020),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="Shiny.VendorSize", #color_var
+  # facet_var="Competition.sum", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"),date_breaks = "2 years")+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)",
+       caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020.")
+)
+
+(
+ToplineVendor_line<-build_plot(
+  data=full_data %>% filter(Fiscal_Year<=2020),
+  chart_geom = "Line Chart",
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="Shiny.VendorSize", #color_var
+  # facet_var="Competition.sum", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE,
+  share=TRUE
+)+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
+)
+
+ggsave600dpi("..//Output//AcqTrends//topline_vendor_wide.png", ToplineVendor+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=12, height= 6, units="in",size=12,lineheight=1
+             )
+
+
+ggsave600dpi("..//Output//AcqTrends//topline_vendor_cq.png", ToplineVendor+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+ggsave600dpi("..//Output//AcqTrends//topline_vendor_cq.svg", ToplineVendor+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+ggsave600dpi("..//Output//AcqTrends//topline_vendor.png", ToplineVendor, 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+ggsave600dpi("..//Output//AcqTrends//topline_vendor.eps", ToplineVendor+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+
+write.csv(file="..//Output//AcqTrends//topline_vendor_cur.csv",row.names = FALSE, na = "",
+          full_data %>% group_by(Shiny.VendorSize,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(Shiny.VendorSize),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(Shiny.VendorSize))
+
+
+write.csv(file="..//Output//AcqTrends//topline_vendor.csv",row.names = FALSE, na = "",
+          ToplineVendor$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
+                                       bAction_Obligation_OMB24_GDP22=Action_Obligation_OMB24_GDP22/1000000000)%>%
+            pivot_wider(id_cols=c(Shiny.VendorSize),
+                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%arrange(Shiny.VendorSize))
 
 ```
 
@@ -3826,14 +4258,14 @@ write.csv(file="..//Output//AcqTrends//vendorsize_AwardTask_current.csv",row.nam
 
 ```
 
-## Size Commercial
+## Vendor Size Commercial
 ```{r SizePlatform}
 
 
 
 (
 ToplineVendor_line<-build_plot(
-  data=def_data %>% filter(Fiscal_Year<=2021 &  Fiscal_Year>=2000 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
+  data=def_data %>% filter(Fiscal_YQ<2024 &  Fiscal_Year>=2000 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
   chart_geom = "Line Chart",
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
@@ -3860,7 +4292,7 @@ ToplineVendor_line<-build_plot(
 
 (
 ToplineVendor_line<-build_plot(
-  data=def_data %>% filter(Fiscal_Year<=2021 &  Fiscal_Year>=2000 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
+  data=def_data %>% filter(Fiscal_YQ<2024 &  Fiscal_Year>=2000 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
   chart_geom = "Bar Chart",
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
@@ -3890,7 +4322,7 @@ ToplineVendor_line<-build_plot(
 ```
 
 
-### Vendor Size Pricing
+## Vendor Size Pricing
 ```{r VendorSizePricing}
 full_data$PricingUCA.1year<-as.character(full_data$PricingUCA.sum)
 full_data$PricingUCA.1year[full_data$CurrentDurationIsYear=="<=1 year"]<-"<=1 Year (All Types)"
@@ -4004,361 +4436,11 @@ write.csv(file="..//Output//AcqTrends//VendorSize_Pricing2021.csv",row.names = F
 
 ```
 
-# GFE
-```{r GFE}
-
-def_data$gfe_gfp_value<-factor(def_data$gfe_gfp_code)
-levels(def_data$gfe_gfp_value)<-list(
-   "No Government Furnished"="N",
-  "Transaction uses\nGovernment Furnished\nEquipment or Property"="Y"
- 
-)
-
-(
-GFEcust<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=def_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="gfe_gfp_value", #color_var
-  facet_var="SubCustomer.platform", #facet_var
-  column_key=def_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")+
-      date_x_year_breaks(2000,2022,2)#,partial_year=2024,partial_label="\nOct–Nov")
-
-)
-
-
-(
-GFEplat<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=def_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="gfe_gfp_value", #color_var
-  facet_var="PlatformPortfolio", #facet_var
-  column_key=def_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "bottom")+
-  labs(y="Obligations (Constant 2022 $s)")+
-    scale_x_date(breaks=as.Date(c(paste(seq(2000,2021,4),"-01-01",sep=""))),
-                                                   date_labels="'%y")
-)
-
-
-(
-GFEcomp<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=def_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="Competition.detail", #color_var
-  facet_var="gfe_gfp_value", #facet_var
-  column_key=def_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")+
-    scale_x_date(breaks=as.Date(c(paste(seq(2000,2021,3),"-01-01",sep=""))),
-                                                   date_labels="'%y")
-)
-
-ggsave600dpi("..//Output//AcqTrends//platform_GFE.png", GFEplat, 
-             width=12, height= 6, units="in",size=12,lineheight = 1.2
-             )
-
-ggsave600dpi("..//Output//AcqTrends//platform_GFE.svg", GFEplat, 
-             width=6.5, height= 4.5, units="in",size=11,lineheight = 1.2
-             )
-
-ggsave600dpi("..//Output//AcqTrends//platform_GFE.emf", GFEplat, 
-             width=6.5, height= 4.5, units="in",size=11,lineheight = 1.2
-             )
-
-
-# write.csv(file="..//Output//AcqTrends//platform_GFE.csv",row.names = FALSE, na = "",
-#           pivot_wider(GFEplat$data,id_cols=c(PlatformPortfolio,gfe_gfp_value),
-#                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
-
-write.csv(file="..//Output//AcqTrends//platform_GFE_current.csv",row.names = FALSE, na = "",
-          def_data %>% group_by(PlatformPortfolio,gfe_gfp_value,Fiscal_Year)%>%
-            filter(Fiscal_Year>=2004 & Fiscal_YQ<2024)%>%
-            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-          pivot_wider(id_cols=c(PlatformPortfolio,gfe_gfp_value),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
-
-summary(full_data$ContractingSubCustomer)
-```
-
-
-# Cost Accounting
-```{r SubCustomer}
-
-
-(
-CAS<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=def_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="costaccountingstandardsclause", #color_var
-  facet_var="SubCustomer.platform", #facet_var
-  column_key=def_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
-)
-
-
-(
-CAS<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=def_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="costaccountingstandardsclause", #color_var
-  facet_var="PlatformPortfolio", #facet_var
-  column_key=def_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
-)
-
-
-(
-CAS<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=def_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="Competition.detail", #color_var
-  facet_var="costaccountingstandardsclause", #facet_var
-  column_key=def_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
-)
-
-
-(
-CAS<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=def_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="AnyCommercial", #color_var
-  facet_var="costaccountingstandardsclause", #facet_var
-  column_key=def_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
-)
-
-ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.png", SubCustomer, 
-             width=12, height= 6, units="in",size=12,lineheight = 1.2
-             )
-
-ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.svg", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
-             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
-             )
-
-ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.emf", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
-             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
-             )
-
-
-write.csv(file="..//Output//AcqTrends//topline_subcustomer.csv",row.names = FALSE, na = "",
-          pivot_wider(SubCustomer$data,id_cols=c(SubCustomer.sum,SubCustomer.platform),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
-
-write.csv(file="..//Output//AcqTrends//topline_subcustomer_current.csv",row.names = FALSE, na = "",
-          full_data %>% group_by(SubCustomer.sum,ContractingSubCustomer,Fiscal_Year)%>%
-            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-          pivot_wider(id_cols=c(SubCustomer.sum,ContractingSubCustomer),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
-
-summary(full_data$ContractingSubCustomer)
-```
-
-# Energy Efficient
-```{r SubCustomer}
 
 
 
-(
-EE<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=def_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="EnergyEfficient", #color_var
-  facet_var="SubCustomer.platform", #facet_var
-  column_key=def_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
-)
 
 
-(
-EE<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=def_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="EnergyEfficient", #color_var
-  facet_var="PlatformPortfolio", #facet_var
-  column_key=def_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
-)
-
-
-
-ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.png", SubCustomer, 
-             width=12, height= 6, units="in",size=12,lineheight = 1.2
-             )
-
-ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.svg", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
-             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
-             )
-
-ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.emf", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
-             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
-             )
-
-
-write.csv(file="..//Output//AcqTrends//topline_subcustomer.csv",row.names = FALSE, na = "",
-          pivot_wider(SubCustomer$data,id_cols=c(SubCustomer.sum,SubCustomer.platform),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
-
-write.csv(file="..//Output//AcqTrends//topline_subcustomer_current.csv",row.names = FALSE, na = "",
-          full_data %>% group_by(SubCustomer.sum,ContractingSubCustomer,Fiscal_Year)%>%
-            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-          pivot_wider(id_cols=c(SubCustomer.sum,ContractingSubCustomer),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
-
-summary(full_data$ContractingSubCustomer)
-```
 
 #International
 
