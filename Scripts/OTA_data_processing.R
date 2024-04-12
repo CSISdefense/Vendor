@@ -133,6 +133,18 @@ OTA_data$SubCustomer.OTA[OTA_data$Contracting_Agency_ID=="97AE"]<-"DARPA"
 OTA_data$SubCustomer.OTA[OTA_data$Contracting_Agency_ID=="97F5"]<-"WHS"
 OTA_data$SubCustomer.OTA[OTA_data$SubCustomer  %in% c("DLA","DISA")]<-"Other DoD"
 
+OTA_data$SubCustomer.OTA.sum<-factor(OTA_data$SubCustomer.OTA)
+levels(OTA_data$SubCustomer.OTA.sum)<-list(
+    "Army"="Army",
+    "Navy"="Navy",
+    "Air Force"="Air Force",
+    "SDA"="SDA",
+    "MDA"="MDA",
+    "DARPA"="DARPA",           
+    "Other DoD"=c("MilitaryHealth","WHS","Other DoD"),
+    "Interior"="Interior",
+    "DHS"=c("OPO","TSA")
+)
 
 # OTA_data<-csis360::read_and_join_experiment(OTA_data,
 #                                              "Vehicle.csv",
@@ -260,12 +272,19 @@ sum(OTA_data$Action_Obligation_OMB24_GDP22[OTA_data$IsRemotelyOperated],na.rm=TR
 OTA_data$PlatformPortfolioUAV<-as.character(OTA_data$PlatformPortfolio)
 OTA_data$PlatformPortfolioUAV[OTA_data$IsRemotelyOperated==TRUE]<-"Remotely Crewed"
 
+
+OTA_data$TypeOfAgreement<-factor(OTA_data$TypeOfAgreement)
+levels(OTA_data$TypeOfAgreement)<-list("Prototype"=c("PROTOTYPE","Prototype"),
+                                      "Production"=c("PRODUCTION","PRODUCTIO","Production"))
+
+
 #### Final Cleanup ####
 # set correct data types
 OTA_data %<>%
   # select(-ContractingCustomer) %>%
   # select(-ClassifyNumberOfOffers) %>%
   mutate(SubCustomer.OTA = factor(SubCustomer.OTA)) %>%
+  mutate(SubCustomer.OTA.sum = factor(SubCustomer.OTA.sum)) %>%
   mutate(SubCustomer.sum = factor(SubCustomer.sum)) %>%
   mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
   mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%

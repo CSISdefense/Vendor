@@ -129,12 +129,12 @@ summary(factor(platpscintldef$TopPStext))
 # platpscintldef %>% group_by(Fiscal_Year,pop_isna,sc_isna) %>%
 #   summarise(n=length(Fiscal_Year))
 
-# summary(factor(platpscintldef$CrisisProductOrServiceArea))
+# summary(factor(platpscintldef$ProductOrServiceArea))
 
-topState<-platpscintldef %>% group_by (pop_state_code,CrisisProductOrServiceArea) %>%
+topState<-platpscintldef %>% group_by (pop_state_code,ProductOrServiceArea) %>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0)))%>%
-              group_by (CrisisProductOrServiceArea) %>%
+              group_by (ProductOrServiceArea) %>%
     mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
                         rank_2023=rank(desc(Action_Obligation_2023)))
 topState %>% arrange(desc(Action_Obligation_OMB24_GDP22))
@@ -148,7 +148,7 @@ platpscintldef<-platpscintldef[,!colnames(platpscintldef) %in% c("Action_Obligat
   "rank_total.y","rank_total.x","rank_2023.y","rank_2023.x","TopStateAbbr.x","TopStateAbbr.y")]
 
 platpscintldef<-left_join(platpscintldef,topState %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2023),
-          by=c("pop_state_code","CrisisProductOrServiceArea"))
+          by=c("pop_state_code","ProductOrServiceArea"))
 
 platpscintldef$TopStateAbbr[is.na(platpscintldef$TopStateAbbr) & !is.na(platpscintldef$pop_state_code)]<-
   "Other Labeled State"
@@ -164,12 +164,12 @@ platpscintldef$TopStateAbbr[is.na(platpscintldef$TopStateAbbr) & !is.na(platpsci
 ## Place Country
 ```{r PreprocessCountry}
 
-# summary(factor(platpscintldef$CrisisProductOrServiceArea))
+# summary(factor(platpscintldef$ProductOrServiceArea))
 colnames(platpscintldef)[colnames(platpscintldef)=="Fiscal_Year"]<-"Fiscal_Year"
-topCountry<-platpscintldef %>% group_by (PlaceISOalpha3,CrisisProductOrServiceArea) %>%
+topCountry<-platpscintldef %>% group_by (PlaceISOalpha3,ProductOrServiceArea) %>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB24_GDP22,0)))%>%
-              group_by (CrisisProductOrServiceArea) %>%
+              group_by (ProductOrServiceArea) %>%
     mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
                         rank_2023=rank(desc(Action_Obligation_2023)))
 topCountry %>% arrange(desc(Action_Obligation_OMB24_GDP22))
@@ -181,7 +181,7 @@ topCountry$TopCountryISO<-
 
 
 platpscintldef<-left_join(platpscintldef,topCountry %>% select(-Action_Obligation_OMB24_GDP22,Action_Obligation_2023),
-          by=c("PlaceISOalpha3","CrisisProductOrServiceArea"))
+          by=c("PlaceISOalpha3","ProductOrServiceArea"))
 
 platpscintldef$TopCountryISO[is.na(platpscintldef$TopCountryISO) & !is.na(platpscintldef$PlaceISOalpha3)]<-
   "Other Labeled Country"
@@ -1608,7 +1608,7 @@ PSC<-build_plot(
 
 ## Construction
 ```{r FRSnC}
-summary(factor(platpscintldef$CrisisProductOrServiceArea))
+summary(factor(platpscintldef$ProductOrServiceArea))
 # platpscintldef$Fiscal_Year
 # 
 # topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
@@ -1627,7 +1627,7 @@ summary(factor(platpscintldef$CrisisProductOrServiceArea))
 
 (
 State<-build_plot(
-  data=platpscintldef %>% filter(CrisisProductOrServiceArea=="Construction"),
+  data=platpscintldef %>% filter(ProductOrServiceArea=="Construction"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -1654,7 +1654,7 @@ State<-build_plot(
 ggsave(State,file="construction_state.png")
 (
 State<-build_plot(
-  data=platpscintldef %>% filter(CrisisProductOrServiceArea=="Construction"),
+  data=platpscintldef %>% filter(ProductOrServiceArea=="Construction"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -1683,7 +1683,7 @@ State<-build_plot(
 
 (
 Country<-build_plot(
-  data=platpscintldef %>% filter(CrisisProductOrServiceArea=="Construction"),
+  data=platpscintldef %>% filter(ProductOrServiceArea=="Construction"),
   chart_geom = "Line Chart",
   share = FALSE,
   # labels_and_colors=labels_and_colors,
@@ -2274,66 +2274,7 @@ write.csv(file="..//Output//HistoricPricing.csv",row.names = FALSE, na = "",
 
 # International
 ##FMS 
-#### Service Category
-```{r FPDS_vendor_Intl}
 
-summary(factor(platpscintldef$SimpleArea))
-# undebug(format_data_for_plot)
-(fmsintl_service <-  build_plot(data=platpscintldef%>% filter((PlaceIsForeign==1|VendorIsForeign==TRUE)&!is.na(PlaceIsForeign) &
-                                                                            Fiscal_Year>2011 & !is.na(IsFMS)&
-                                                                  SimpleArea=="Services"),#IsFMS==TRUE                             
-                                            chart_geom="Bar Chart",
-                            x_var="Fiscal_Year",
-                            y_var="Action_Obligation_OMB24_GDP22",
-                            color_var="CrisisProductOrServiceArea",
-                            facet_var="PlaceIsForeign",
-                            second_var="IsFMS",
-                            labels_and_colors=intl_lc,
-                            column_key=intl_ck,
-                            legend=TRUE,
-                            caption=FALSE,
-                            format=TRUE)+theme(legend.position = "right")+
-    facet_grid( .~IsFMS+PlaceIsForeign )+labs(title="Services FMS or Performed Internationally")#, scales="free_y"#, scales="free_y"
-  )
-summary(platpscintldef$dFYear)
-
-write.csv(file="..//Output//fmsintl_service.csv",row.names = FALSE,na = "",
-          fmsintl_service$data%>%# mutate(Fiscal_Year=lubridate::year(dFYear))%>%
-            pivot_wider(id_cols=c(PlaceIsForeign,IsFMS,CrisisProductOrServiceArea),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(PlaceIsForeign,IsFMS,CrisisProductOrServiceArea))
-
-ggsave600dpi(fmsintl_service,file="../output/fmsintl_service.png",
-             size = 12, lineheight=1, height =6, width=9)
-
-
-(fmsintl_service_vendor <-  build_plot(data=platpscintldef%>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign) &
-                                                                            Fiscal_Year>2011 & !is.na(IsFMS)&
-                                                                  SimpleArea=="Services"),#IsFMS==TRUE                             
-                                            chart_geom="Bar Chart",
-                            x_var="dFYear",
-                            y_var="Action_Obligation_OMB24_GDP22",
-                            color_var="CrisisProductOrServiceArea",
-                            facet_var="IsFMSplaceIntl",
-                            second_var="VendorSize_Intl",
-                            labels_and_colors=intl_lc,
-                            column_key=intl_ck,
-                            legend=TRUE,
-                            caption=FALSE,
-                            format=TRUE)+theme(legend.position = "right")+
-    facet_grid( IsFMSplaceIntl~VendorSize_Intl , scales="free_y", space="free_y")+labs(title="Services FMS or Performed Internationally")+
-    theme(  strip.text.y=element_text(angle=0))
-  )
-
-
-write.csv(file="..//Output//fmsintl_service_vendor.csv",row.names = FALSE,na = "",
-          fmsintl_service_vendor$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
-            pivot_wider(id_cols=c(IsFMSplaceIntl,VendorSize_Intl,CrisisProductOrServiceArea),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(IsFMSplaceIntl,VendorSize_Intl,CrisisProductOrServiceArea))
-
-ggsave600dpi(fmsintl_service_vendor,file="../output/fmsintl_service_vendor.png",
-             size = 12, lineheight=1, height =6, width=9)
-
-```
 
 #### NTIB
 ```{r FPDS_vendor_Intl}
@@ -2357,7 +2298,7 @@ summary(platpscintldef$dFYear)
                                             chart_geom="Bar Chart",
                             x_var="dFYear",
                             y_var="Action_Obligation_OMB24_GDP22",
-                            color_var="CrisisProductOrServiceArea",
+                            color_var="ProductOrServiceArea",
                             facet_var="VendorNTIB",
                             second_var="PlaceIsForeign",
                             labels_and_colors=intl_lc,
@@ -2372,8 +2313,8 @@ summary(platpscintldef$dFYear)
 
 write.csv(file="..//Output//ntibintl_contract.csv",row.names = FALSE,na = "",
           ntibintl$data%>%# mutate(Fiscal_Year=lubridate::year(dFYear))%>%
-            pivot_wider(id_cols=c(PlaceIsForeign,VendorNTIB,CrisisProductOrServiceArea),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(PlaceIsForeign,VendorNTIB,CrisisProductOrServiceArea))
+            pivot_wider(id_cols=c(PlaceIsForeign,VendorNTIB,ProductOrServiceArea),
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(PlaceIsForeign,VendorNTIB,ProductOrServiceArea))
 
 ggsave600dpi(ntibintl,file="../output/ntibintl.png",
              size = 12, lineheight=1, height =5.5, width=12)
@@ -2384,7 +2325,7 @@ ggsave600dpi(ntibintl,file="../output/ntibintl.png",
 #                                             chart_geom="Bar Chart",
 #                             x_var="dFYear",
 #                             y_var="Action_Obligation_OMB24_GDP22",
-#                             color_var="CrisisProductOrServiceArea",
+#                             color_var="ProductOrServiceArea",
 #                             facet_var="PlaceIsForeign",
 #                             second_var="VendorSize_Intl",
 #                             labels_and_colors=intl_lc,
@@ -2398,8 +2339,8 @@ ggsave600dpi(ntibintl,file="../output/ntibintl.png",
 # 
 # write.csv(file="..//Output//ntibintl_vendor.csv",row.names = FALSE,na = "",
 #           ntibintl_vendor$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
-#             pivot_wider(id_cols=c(VendorNTIB,VendorSize_Intl,CrisisProductOrServiceArea),
-#                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(VendorNTIB,VendorSize_Intl,CrisisProductOrServiceArea))
+#             pivot_wider(id_cols=c(VendorNTIB,VendorSize_Intl,ProductOrServiceArea),
+#                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(VendorNTIB,VendorSize_Intl,ProductOrServiceArea))
 
 # ggsave600dpi(ntibintl_vendor,file="../output/ntibintl_vendor.png",
 #              size = 12, lineheight=1, height =6, width=9)
@@ -2449,7 +2390,7 @@ summary(factor(platpscintldef$SimpleArea))
                                             chart_geom="Bar Chart",
                             x_var="Fiscal_Year",
                             y_var="Action_Obligation_OMB24_GDP22",
-                            color_var="CrisisProductOrServiceArea",
+                            color_var="ProductOrServiceArea",
                             facet_var="PlaceIsForeign",
                             second_var="IsFMS",
                             labels_and_colors=intl_lc,
@@ -2463,8 +2404,8 @@ summary(platpscintldef$dFYear)
 
 write.csv(file="..//Output//fmsintl_service.csv",row.names = FALSE,na = "",
           fmsintl_service$data%>%# mutate(Fiscal_Year=lubridate::year(dFYear))%>%
-            pivot_wider(id_cols=c(PlaceIsForeign,IsFMS,CrisisProductOrServiceArea),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(PlaceIsForeign,IsFMS,CrisisProductOrServiceArea))
+            pivot_wider(id_cols=c(PlaceIsForeign,IsFMS,ProductOrServiceArea),
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(PlaceIsForeign,IsFMS,ProductOrServiceArea))
 
 ggsave600dpi(fmsintl_service,file="../output/fmsintl_service.png",
              size = 12, lineheight=1, height =6, width=9)
@@ -2476,7 +2417,7 @@ ggsave600dpi(fmsintl_service,file="../output/fmsintl_service.png",
                                             chart_geom="Bar Chart",
                             x_var="dFYear",
                             y_var="Action_Obligation_OMB24_GDP22",
-                            color_var="CrisisProductOrServiceArea",
+                            color_var="ProductOrServiceArea",
                             facet_var="IsFMSplaceIntl",
                             second_var="VendorSize_Intl",
                             labels_and_colors=intl_lc,
@@ -2491,8 +2432,8 @@ ggsave600dpi(fmsintl_service,file="../output/fmsintl_service.png",
 
 write.csv(file="..//Output//fmsintl_service_vendor.csv",row.names = FALSE,na = "",
           fmsintl_service_vendor$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
-            pivot_wider(id_cols=c(IsFMSplaceIntl,VendorSize_Intl,CrisisProductOrServiceArea),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(IsFMSplaceIntl,VendorSize_Intl,CrisisProductOrServiceArea))
+            pivot_wider(id_cols=c(IsFMSplaceIntl,VendorSize_Intl,ProductOrServiceArea),
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(IsFMSplaceIntl,VendorSize_Intl,ProductOrServiceArea))
 
 ggsave600dpi(fmsintl_service_vendor,file="../output/fmsintl_service_vendor.png",
              size = 12, lineheight=1, height =6, width=9)
@@ -2879,7 +2820,7 @@ summary(factor(platpscintldef$SimpleArea))
                                             chart_geom="Bar Chart",
                             x_var="Fiscal_Year",
                             y_var="Action_Obligation_OMB24_GDP22",
-                            color_var="CrisisProductOrServiceArea",
+                            color_var="ProductOrServiceArea",
                             facet_var="PlaceIsForeign",
                             second_var="IsFMS",
                             labels_and_colors=intl_lc,
@@ -2893,8 +2834,8 @@ summary(platpscintldef$dFYear)
 
 write.csv(file="..//Output//fmsintl_service.csv",row.names = FALSE,na = "",
           fmsintl_service$data%>%# mutate(Fiscal_Year=lubridate::year(dFYear))%>%
-            pivot_wider(id_cols=c(PlaceIsForeign,IsFMS,CrisisProductOrServiceArea),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(PlaceIsForeign,IsFMS,CrisisProductOrServiceArea))
+            pivot_wider(id_cols=c(PlaceIsForeign,IsFMS,ProductOrServiceArea),
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(PlaceIsForeign,IsFMS,ProductOrServiceArea))
 
 ggsave600dpi(fmsintl_service,file="../output/fmsintl_service.png",
              size = 12, lineheight=1, height =6, width=9)
@@ -2906,7 +2847,7 @@ ggsave600dpi(fmsintl_service,file="../output/fmsintl_service.png",
                                             chart_geom="Bar Chart",
                             x_var="dFYear",
                             y_var="Action_Obligation_OMB24_GDP22",
-                            color_var="CrisisProductOrServiceArea",
+                            color_var="ProductOrServiceArea",
                             facet_var="IsFMSplaceIntl",
                             second_var="VendorSize_Intl",
                             labels_and_colors=intl_lc,
@@ -2921,8 +2862,8 @@ ggsave600dpi(fmsintl_service,file="../output/fmsintl_service.png",
 
 write.csv(file="..//Output//fmsintl_service_vendor.csv",row.names = FALSE,na = "",
           fmsintl_service_vendor$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
-            pivot_wider(id_cols=c(IsFMSplaceIntl,VendorSize_Intl,CrisisProductOrServiceArea),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(IsFMSplaceIntl,VendorSize_Intl,CrisisProductOrServiceArea))
+            pivot_wider(id_cols=c(IsFMSplaceIntl,VendorSize_Intl,ProductOrServiceArea),
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(IsFMSplaceIntl,VendorSize_Intl,ProductOrServiceArea))
 
 ggsave600dpi(fmsintl_service_vendor,file="../output/fmsintl_service_vendor.png",
              size = 12, lineheight=1, height =6, width=9)

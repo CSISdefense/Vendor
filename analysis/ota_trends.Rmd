@@ -16,6 +16,7 @@ library(ggplot2)
 library(dplyr)
 library(tidyverse)
 library(scales)
+library(openxlsx)
 # library(XLConnect)
 axis.text.size<-10
 strip.text.size<-10
@@ -29,7 +30,9 @@ note.text.size<-1.40
 load(file="../data/clean/Defense_OTA.Rda")
 
 ota_def$YTD<-ifelse(ota_def$Fiscal_Year==max(ota_def$Fiscal_Year),"YTD","Full Year")
+ota_def$dFYear<-as.Date(paste0(as.character(ota_def$Fiscal_Year),"/01/01"))
 
+online_path<-file.path(get_local_sharepoint_path("DIIG Teamsite - Shared Documents"),"2024 - Acquisition Trends","Data and Figures")
 ```
 
 # Estimates
@@ -183,45 +186,29 @@ ggsave600dpi(ota_topline_q,file=file.path("..","Output","ota_quarterly.png"),
 ## Topline spend 
 ```{r}
 ota_def$`BaseandAllOptionsValue(TotalContractValue)`
-output_TY<-ota_def  %>% select(Fiscal_Year,Action_Obligation_Then_Year,`BaseandAllOptionsValue(TotalContractValue)`)%>%
-  group_by(Fiscal_Year)%>%  
+output_TY<-ota_def  %>% 
+  filter(Fiscal_YQ<=2024.1) %>%
+  group_by(dFYear,YTD)%>%  
   summarise(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE),
-            `BaseandAllOptionsValue(TotalContractValue)`=sum(text_to_number(`BaseandAllOptionsValue(TotalContractValue)`),
-                                                                    na.rm=TRUE))%>%
-  pivot_longer(cols=c(Action_Obligation_Then_Year,`BaseandAllOptionsValue(TotalContractValue)`)) %>%
-  pivot_wider(names_from=c(Fiscal_Year))
-                                      
-
-wb <- loadWorkbook("..//Output//OTA//DoD_Acq_Trends_OTA.xlsx")
-if(!"Topline" %in% getSheetNames("..//Output//OTA//DoD_Acq_Trends_OTA.xlsx"))
-  addWorksheet(wb, sheetName = "Topline")
-writeData(wb, output_TY, sheet = "Topline", startRow = 1, startCol = 1)
-saveWorkbook(wb,"..//Output//OTA//DoD_Acq_Trends_OTA.xlsx",overwrite = TRUE)
-rm(wb)
-xlcFreeMemory()
-            
-
-
-write.csv(file="..//Output//OTA//ota_topline.csv",row.names = FALSE,na="",
-          output_TY)
-            
-```
-
-## Topline Competition
-```{r ToplineComp}
-
-(
-ToplineComp<-build_plot(
-  data=ota_def,
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=ota_lc,
-  # NA, #VAR.ncol
+            `BaseandAllOptionsValue(TotalContractValue)`=
+              sum(text_to_number(`BaseandAllOptionsValue(TotalContractValue)`),
+                  na.rm=TRUE))%>%
+  pivot_longer(cols=c(Action_Obligation_Then_Year,`BaseandAllOptionsValue(TotalContractValue)`),
+                      names_to="Metric")
   
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="Competition.sum", #color_var
+(
+Topline<-build_plot(
+  data=output_TY,
+  chart_geom = "Line Chart",
+  share = FALSE,
+  # labels_and_colors=prepare_labels_and_colors(output_TY),
+  # NA, #VAR.ncol
+  alpha_var="YTD",
+  x_var="dFYear",
+  y_var="value", #VAR.y.variable
+  color_var="Metric", #color_var
   # facet_var="Competition.sum", #facet_var
-  column_key=ota_ck,
+  # column_key=get_column_key(output_TY),
   format=TRUE,
   ytextposition=FALSE
 )+
@@ -237,20 +224,16 @@ ToplineComp<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//OTA//topline_comp.png", ToplineComp,  
-             width=12, height= 6, units="in",size=11, lineheight=1.2
-             )
-
-View(ToplineComp$data)
-
-write.csv(file="..//Output//OTA//topline_competition.csv",row.names = FALSE,
-          # ToplineComp$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
-            pivot_wider(ToplineComp$data%>%mutate(Fiscal_Year=year(dFYear)),id_cols=c(Competition.sum),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
-
-
-
+log_plot(plot=Topline, df=output_TY,
+                     filename="topline",xlsx="DoD_Acq_Trends_OTA.xlsx",
+                     sheet="Topline",path="..//Output//OTA//",second_path=online_path,
+         height=3.25,
+                     startRow=1,startCol=12,format=TRUE,#var_list=c("Source","fiscal_quarter"),
+         excel_then_year =  FALSE,csv_then_year = FALSE
+         )                                  
 ```
+
+
 
 
 ## Topline Vendor Size
@@ -258,7 +241,7 @@ write.csv(file="..//Output//OTA//topline_competition.csv",row.names = FALSE,
 
 (
 ToplineVendor<-build_plot(
-  data=ota_def,
+  data=ota_def %>% filter(Fiscal_YQ<=2024.1),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=ota_lc,
@@ -270,7 +253,7 @@ ToplineVendor<-build_plot(
   column_key=ota_ck,
   format=TRUE,
   ytextposition=FALSE
-)+date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+)+date_x_year_breaks(2000,2022,2,partial_year=2024,partial_label="\nQ1")+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
@@ -288,90 +271,26 @@ ggsave600dpi("..//Output//OTA//topline_vendor.png", ToplineVendor,
              )
 
 ```
-## Topline Vehicle
-```{r ToplineVehicle}
+
+
+## Topline NonTraditional
+```{r ToplineVendor}
 
 (
-ToplineVehicle<-build_plot(
-  data=ota_def,
+ToplineNontrad<-build_plot(
+  data=ota_def %>% filter(Fiscal_YQ<=2024.1),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=ota_lc,
   # NA, #VAR.ncol
   x_var="dFYear", alpha_var="YTD",  #x_var 
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="SimpleArea", #color_var
-  facet_var="Vehicle.sum", #facet_var
+  color_var="NontraditionalGovernmentContractorParticipationDescription", #color_var
+  # facet_var="Competition.sum", #facet_var
   column_key=ota_ck,
   format=TRUE,
   ytextposition=FALSE
-)+date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
-)
-
-
-(
-ToplineVehicle<-build_plot(
-  data=ota_def %>% filter(!is.na(Vehicle.AwardTask)),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=ota_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear", alpha_var="YTD",  #x_var 
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="Vehicle.sum", #color_var
-  facet_var="Vehicle.AwardTask", #facet_var
-  column_key=ota_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",
-       caption="Note: Unlabeled not shown. Source: FPDS and CSIS analysis")
-)
-
-summary(ota_def$Vehicle)
-
-ggsave600dpi("..//Output//OTA//topline_vehicle.png", ToplineVehicle, 
-             width=13, height= 4.5, units="in",size=11
-             )
-
-```
-
-
-## Topline Pricing
-```{r ToplinePricing}
-ota_def$PricingUCA.sumlong<-ota_def$PricingUCA.sum
-levels(ota_def$PricingUCA.sumlong)<-list("Firm-Fixed-Price"="FFP",
-                                           "Less Common"="Less Common",
-                                           "Incentive"="Incentive",
-                                           "Other Cost-Based"="Other CB",
-                                           "Undefinitized\nContract Award"="UCA",
-                                           "Unclear"="Unclear"   )
-(
-ToplinePricing<-build_plot(
-  data=ota_def,
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=ota_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear", alpha_var="YTD",  #x_var 
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="PricingUCA", #color_var
-  facet_var="PricingUCA.sumlong", #facet_var
-  column_key=ota_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+)+date_x_year_breaks(2000,2022,2,partial_year=2024,partial_label="\nQ1")+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
@@ -384,45 +303,36 @@ ToplinePricing<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-# ggsave600dpi("..//Output//OTA//topline_pricing.png", ToplinePricing, 
-#              width=6.5, height= 4, units="in",size=11
-#              )
-
-
-ggsave600dpi("..//Output//OTA//topline_pricing.png", ToplinePricing,  
-             width=12, height= 6, units="in",size=11, lineheight=1.2
-             )
-lubridate::year(ota_def$dFYear)
-write.csv(file="..//Output//OTA//topline_pricing.csv",row.names = FALSE,
-          ToplinePricing$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
-            pivot_wider(id_cols=c(PricingUCA,PricingUCA.sumlong),
-                        names_from=dFYear,values_from=Action_Obligation_OMB24_GDP22))
-
+log_plot(plot=ToplineNontrad, df=ota_def %>% filter(Fiscal_YQ<=2024.1),
+                     filename="acq_ota_3_ota_nontrad",xlsx="DoD_Acq_Trends_OTA.xlsx",
+                     sheet="NonTrad",path="..//Output//OTA//",second_path=online_path,
+         width=4.5,height=5.5,
+                     startRow=1,startCol=12,format=TRUE,#var_list=c("Source","fiscal_quarter"),
+         )      
 
 ```
 
-
+# Type of Agreement
 ## Topline Type of Agreement
 ```{r TypeOfAgreement}
-ota_def$Type_Of_Agreement_sum<-factor(ota_def$Type_Of_Agreement)
-levels(ota_def$Type_Of_Agreement_sum)<-list("Prototype"=c("PROTOTYPE","Prototype"),
-                                           "Production"=c("PRODUCTION","PRODUCTIO","Production"))
 
 (
 ToplineType<-build_plot(
-  data=ota_def,
+  data=ota_def %>% filter(Fiscal_Year>=2015 & Fiscal_YQ<=2024.1 &
+                            !is.na(TypeOfAgreement)),
   chart_geom = "Bar Chart",
   share = FALSE,
   # labels_and_colors=ota_lc,
   # NA, #VAR.ncol
   x_var="dFYear", alpha_var="YTD",  #x_var 
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="Type_Of_Agreement_sum", #color_var
-  facet_var="Type_Of_Agreement_sum", #facet_var
+  color_var="TypeOfAgreement", #color_var
+  facet_var="TypeOfAgreement", #facet_var
   # column_key=ota_ck,
   format=TRUE,
   ytextposition=FALSE
-)+date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+)+date_x_year_breaks(2000,2022,2,partial_year=2024,partial_label="\nQ1")+
+    facet_grid(TypeOfAgreement~., scales="free_y",space="free_y")+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
@@ -431,24 +341,140 @@ ToplineType<-build_plot(
   # x="Fiscal Year",
   # y="Percent of Obligations",
   # color="Competition")+
-  theme(legend.position = "right")+
+  theme(legend.position = "right",strip.text.y=element_text(angle=0))+
+  labs(y="Obligations (Constant 2022 $s)",x="Fiscal Year",
+       caption="Note: Unlabeled values not show.\nSource: FPDS and CSIS analysis.")
+)
+
+log_plot(plot=ToplineType, df=ota_def %>% filter(Fiscal_YQ<=2024.1),
+                     filename="acq_ota_1_ota_type",xlsx="DoD_Acq_Trends_OTA.xlsx",
+                     sheet="Type",path="..//Output//OTA//",second_path=online_path,
+         width=4.5,height=5.5,
+                     startRow=1,startCol=12,format=TRUE,#var_list=c("Source","fiscal_quarter"),
+         )       
+
+```
+
+
+## Type Subcustomer
+```{r SubCustomerType}
+
+(
+TypeSubCustomer<-build_plot(
+  data=ota_def %>% filter(Fiscal_Year>=2015 & Fiscal_YQ<=2024.1 &
+                            !is.na(TypeOfAgreement)),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=ota_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", alpha_var="YTD",  #x_var 
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="SubCustomer.OTA.sum", #color_var
+  facet_var="TypeOfAgreement", #facet_var
+  column_key=ota_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2022,2,partial_year=2024,partial_label="\nQ1")+
+    facet_grid(TypeOfAgreement~., scales="free_y",space="free_y")+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right",strip.text.y=element_text(angle=0))+
+  labs(y="Obligations (Constant 2022 $s)",x="Fiscal Year",
+       caption="Note: Unlabeled values not show.\nSource: FPDS and CSIS analysis.")
+)
+
+log_plot(plot=TypeSubCustomer, df=ota_def %>% filter(Fiscal_YQ<=2024.1),
+                     filename="acq_ota_2_ota_type_cust",xlsx="DoD_Acq_Trends_OTA.xlsx",
+                     sheet="TypeCust",path="..//Output//OTA//",second_path=online_path,
+         width=4.5,height=5.5,
+                     startRow=1,startCol=12,format=TRUE,#var_list=c("Source","fiscal_quarter"),
+         )       
+
+```
+
+
+## Type NonTraditional
+```{r SubCustomerType}
+
+(
+TypeNonTrad<-build_plot(
+  data=ota_def %>% filter(Fiscal_Year>=2015 & Fiscal_YQ<=2024.1 &
+                            !is.na(TypeOfAgreement)),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=ota_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", alpha_var="YTD",  #x_var 
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="NontraditionalGovernmentContractorParticipationDescription", #color_var
+  facet_var="TypeOfAgreement", #facet_var
+  # column_key=ota_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2022,2,partial_year=2024,partial_label="\nQ1")+
+    facet_grid(TypeOfAgreement~., scales="free_y",space="free_y")+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right",strip.text.y=element_text(angle=0))+
+  labs(y="Obligations (Constant 2022 $s)",x="Fiscal Year",
+       caption="Note: Unlabeled values not show.\nSource: FPDS and CSIS analysis.")
+)
+
+log_plot(plot=TypeNonTrad, df=ota_def %>% filter(Fiscal_YQ<=2024.1),
+                     filename="acq_ota_2_ota_type_nontrad",xlsx="DoD_Acq_Trends_OTA.xlsx",
+                     sheet="NonTrad",path="..//Output//OTA//",second_path=online_path,
+         width=4.5,height=5.5,
+                     startRow=1,startCol=12,format=TRUE,#var_list=c("Source","fiscal_quarter"),
+         )       
+ 
+
+```
+
+## Type Platform
+```{r PlatformType}
+
+(
+TypePlatform<-build_plot(
+  data=ota_def %>% filter(Fiscal_YQ<=2024.1),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=ota_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", alpha_var="YTD",  #x_var 
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="PlatformPortfolio", #color_var
+  facet_var="TypeOfAgreement", #facet_var
+  column_key=ota_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-# ggsave600dpi("..//Output//OTA//topline_Type.png", ToplineType, 
-#              width=6.5, height= 4, units="in",size=11
-#              )
-
-
-ggsave600dpi("..//Output//OTA//topline_Type.png", ToplineType,  
-             width=12, height= 6, units="in",size=11, lineheight=1.2
+ggsave600dpi("..//Output//OTA//Type_Platform.png", TypePlatform, 
+             width=12, height= 6, units="in",size=11,lineheight = 1.2
              )
-write.csv(file="..//Output//OTA//topline_Type.csv",row.names = FALSE,
-          ToplineType$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
-            pivot_wider(id_cols=c(Type_Of_Agreement_sum),
-                        names_from=dFYear,values_from=Action_Obligation_OMB24_GDP22))
-
-
 ```
 
 #Product/Service/R&D
@@ -458,7 +484,7 @@ write.csv(file="..//Output//OTA//topline_Type.csv",row.names = FALSE,
 
 (
 ToplinePSR<-build_plot(
-  data=ota_def %>% filter(Fiscal_Year>=2015& Fiscal_YQ<=2023.2),
+  data=ota_def %>% filter(Fiscal_Year>=2015& Fiscal_YQ<=2024.1),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=ota_lc,
@@ -472,7 +498,7 @@ ToplinePSR<-build_plot(
   ytextposition=FALSE
 )+  theme(legend.position = "right")+
   labs(y="Obligations (Constant 2022 $s)")+
-  date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1-Q2")+
+  date_x_year_breaks(2000,2022,2,partial_year=2024,partial_label="\nQ1")+
    scale_alpha_ordinal(range=c(1,0.5))
 )
 
@@ -490,23 +516,17 @@ ggsave600dpi("..//Output//OTA//ota_topline_psr_keynote.png", ToplinePSR+
              width=6, height= 5.5, units="in", size=20, lineheight = 0.75
              )
 
-write.csv(file="..//Output//OTA//ota_topline_psr_cur.csv",row.names = FALSE,
-          ota_def %>% group_by(SimpleArea,Fiscal_Year)%>%
-            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-          pivot_wider(id_cols=c(SimpleArea),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
-
-
-
-log_plot(plot=ToplinePSR, df=ota_def   %>% filter(Fiscal_YQ<=2023.2),
+log_plot(plot=ToplinePSR, df=ota_def   %>% filter(Fiscal_YQ<=2024.1),
                      filename="acq_fig5_3_OTAarea",xlsx="DoD_Acq_Trends_Contracts.xlsx",
-                     sheet="5-3A OTAarea",path="../output/AcqTrends/", height=3,
+                     sheet="5-3A OTAarea",path="../output/AcqTrends/",second_path=online_path,height=3,
                      startRow=1,startCol=12,format=TRUE,
          excel_y_var = TRUE,excel_formulas=TRUE,hist_year=2015,cur_year=2022
          #var_list=c("Source","fiscal_quarter")
          )
 
 ```
+
+
 
 ## PSR Covid
 ```{r ToplinePSR}
@@ -516,7 +536,7 @@ summary(ota_def$SimpleArea)
 
 (
 ToplinePSRcovid<-build_plot(
-  data=ota_def,
+  data=ota_def %>% filter(Fiscal_YQ<=2024.1),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=ota_lc,
@@ -698,6 +718,45 @@ write.csv(file="..//Output//OTA//contractota_RnDPhase.csv",row.names = FALSE,
 
 ```
 
+
+## PSR Subcustomer
+```{r SubCustomerPSR}
+
+(
+PSRsubcustomer<-build_plot(
+  data=ota_def %>% filter(Fiscal_YQ<=2024.1),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=ota_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", alpha_var="YTD",  #x_var 
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="SubCustomer.OTA.sum", #color_var
+  facet_var="SimpleArea", #facet_var
+  column_key=ota_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+
+  labs(y="Obligations (Constant 2022 $s)")
+)
+
+# ggsave600dpi("..//Output//OTA//subcustomer_PSR.png", PSRsubcustomer, 
+#              width=6.5, height= 4, units="in",size=11
+#              )
+ggsave600dpi("..//Output//OTA//PSR_subcustomer.png", PSRsubcustomer, 
+             width=12, height= 6, units="in",size=11,lineheight = 1.2
+             )
+```
+
 ## Services
 ```{r names_from=lubridate::year(dFYear)}
 
@@ -763,7 +822,7 @@ SubCustomer<-build_plot(
   # NA, #VAR.ncol
   x_var="dFYear", alpha_var="YTD",  #x_var 
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="SubCustomer.OTA", #color_var
+  color_var="SubCustomer.OTA.sum", #color_var
   # facet_var="SubCustomer.sum", #facet_var
   column_key=ota_ck,
   format=TRUE,
@@ -807,7 +866,7 @@ summary(ota_def$SubCustomer)
 
 (
 SubCustomer<-build_plot(
-  data=ota_def,
+  data=ota_def %>% filter(Fiscal_YQ<=2024.1),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=ota_lc,
@@ -855,7 +914,7 @@ summary(ota_def$SubCustomer)
 
 (
 SubCustomerPSR<-build_plot(
-  data=ota_def,
+  data=ota_def %>% filter(Fiscal_YQ<=2024.1),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=ota_lc,
@@ -863,11 +922,11 @@ SubCustomerPSR<-build_plot(
   x_var="dFYear", alpha_var="YTD",  #x_var 
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="SimpleArea", #color_var
-  facet_var="SubCustomer.sum", #facet_var
+  facet_var="SubCustomer.OTA", #facet_var
   column_key=ota_ck,
   format=TRUE,
   ytextposition=FALSE
-)+
+)+facet_wrap(~SubCustomer.OTA,scale="free_y")+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
@@ -877,7 +936,7 @@ SubCustomerPSR<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "bottom")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2022 $s),\nVariable Scale")
 )
 
 # ggsave600dpi("..//Output//OTA//subcustomer_PSR.png", SubCustomerPSR, 
@@ -888,7 +947,81 @@ ggsave600dpi("..//Output//OTA//subcustomer_PSR.png", SubCustomerPSR,
              )
 ```
 
+## SubCustomer Type
+```{r SubCustomerPSR}
 
+(
+SubCustomerType<-build_plot(
+  data=ota_def %>% filter(Fiscal_YQ<=2024.1),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=ota_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", alpha_var="YTD",  #x_var 
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="TypeOfAgreement", #color_var
+  facet_var="SubCustomer.OTA", #facet_var
+  column_key=ota_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+facet_wrap(~SubCustomer.OTA,scale="free_y")+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+
+  labs(y="Obligations (Constant 2022 $s),\nVariable Scale")
+)
+
+# ggsave600dpi("..//Output//OTA//subcustomer_PSR.png", SubCustomerPSR, 
+#              width=6.5, height= 4, units="in",size=11
+#              )
+ggsave600dpi("..//Output//OTA//subcustomer_Type.png", SubCustomerType, 
+             width=12, height= 6, units="in",size=11,lineheight = 1.2
+             )
+```
+
+## SubCustomer NonTrad
+```{r SubCustomerPSR}
+
+(
+SubCustomerNonTrad<-build_plot(
+  data=ota_def %>% filter(Fiscal_YQ<=2024.1),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=ota_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", alpha_var="YTD",  #x_var 
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="NontraditionalGovernmentContractorParticipationDescription", #color_var
+  facet_var="SubCustomer.OTA", #facet_var
+  column_key=ota_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+facet_wrap(~SubCustomer.OTA,scale="free_y")+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+
+  labs(y="Obligations (Constant 2022 $s),\nVariable Scale")
+)
+
+# ggsave600dpi("..//Output//OTA//subcustomer_PSR.png", SubCustomerPSR, 
+#              width=6.5, height= 4, units="in",size=11
+#              )
+ggsave600dpi("..//Output//OTA//subcustomer_Type.png", SubCustomerNonTrad, 
+             width=12, height= 6, units="in",size=11,lineheight = 1.2
+             )
+```
 
 # Platform
 ## Topline  Platform
@@ -896,7 +1029,7 @@ ggsave600dpi("..//Output//OTA//subcustomer_PSR.png", SubCustomerPSR,
 
 (
 Platform<-build_plot(
-  data=ota_def %>% filter(Fiscal_Year>=2015 & Fiscal_YQ<=2023.2),
+  data=ota_def %>% filter(Fiscal_Year>=2015 & Fiscal_YQ<=2024.1),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=ota_lc,
@@ -911,7 +1044,7 @@ Platform<-build_plot(
 )+
   theme(legend.position = "right")+
   labs(y="Obligations (Constant 2022 $s)")+
-  date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1-Q2")+
+  date_x_year_breaks(2000,2022,2,partial_year=2024,partial_label="\nQ1")+
    scale_alpha_ordinal(range=c(1,0.5))
 )
 
@@ -930,25 +1063,10 @@ ggsave600dpi("..//Output//OTA//ota_platform_keynote.svg", Platform+
                labs(title="DOD OTAs Obligations by\nPlatform, 2015-2022"),
              width=6.5, height= 5.5, units="in", size=20, lineheight = 0.75
              )
-  
-write.csv(file="..//Output//OTA//ota_platform_current.csv",row.names = FALSE,na="",
-          format_data_for_plot(ota_def,
-                               fy_var="Fiscal_Year",
-                               y_var="Action_Obligation_Then_Year",
-                               color_var="PlatformPortfolio",
-                               labels_and_colors = ota_lc,
-                               group=TRUE) %>%
-            arrange(Fiscal_Year) %>%
-          pivot_wider(id_cols=c(PlatformPortfolio),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year) %>% 
-            # mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=ota_lc$variable[ota_lc$column=="PlatformPortfolio"]))%>%
-            mutate(PlatformPortfolio=factor(PlatformPortfolio,levels=levels(PlatformPortfolio),
-                                            labels=gsub("\\n"," ",levels(PlatformPortfolio))))%>%
-                   arrange(desc(PlatformPortfolio)))
 
-log_plot(plot=Platform, df=ota_def   %>% filter(Fiscal_YQ<=2023.2),
+log_plot(plot=Platform, df=ota_def   %>% filter(Fiscal_YQ<=2024.1),
                      filename="acq_fig5_3_OTAplatform",xlsx="DoD_Acq_Trends_Contracts.xlsx",
-                     sheet="5-3B OTAplat",path="../output/AcqTrends/", height=3,
+                     sheet="5-3B OTAplat",path="../output/AcqTrends/",second_path=online_path,height=3,
                      startRow=1,startCol=12,format=TRUE,
          excel_y_var = TRUE,excel_formulas=TRUE,hist_year=2015,cur_year=2022
          #var_list=c("Source","fiscal_quarter")
@@ -969,14 +1087,14 @@ ggsave("..//..//Vendor//Output//AcqTrends//acq_fig5_3_OTAplatarea.svg",
 
 (
 PlatformSubCustomer<-build_plot(
-  data=ota_def,
+  data=ota_def %>% filter(Fiscal_YQ<=2024.1),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=ota_lc,
   # NA, #VAR.ncol
   x_var="dFYear", alpha_var="YTD",  #x_var 
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="SubCustomer.platform", #color_var
+  color_var="SubCustomer.OTA.sum", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=ota_ck,
   format=TRUE,
@@ -1005,7 +1123,7 @@ ggsave600dpi("..//Output//OTA//platform_subcustomer.png", PlatformSubCustomer,
 
 (
 PlatformPSR<-build_plot(
-  data=ota_def,
+  data=ota_def %>% filter(Fiscal_YQ<=2024.1),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=ota_lc,
@@ -1017,7 +1135,7 @@ PlatformPSR<-build_plot(
   column_key=ota_ck,
   format=TRUE,
   ytextposition=FALSE
-)+date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+)+date_x_year_breaks(2000,2022,2,partial_year=2024,partial_label="\nQ1")+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
@@ -1057,7 +1175,7 @@ PlatformVendor<-build_plot(
   column_key=ota_ck,
   format=TRUE,
   ytextposition=FALSE
-)+date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+)+date_x_year_breaks(2000,2022,2,partial_year=2024,partial_label="\nQ1")+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
@@ -1095,7 +1213,7 @@ PlatformComp<-build_plot(
   column_key=ota_ck,
   format=TRUE,
   ytextposition=FALSE
-)+date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+)+date_x_year_breaks(2000,2022,2,partial_year=2024,partial_label="\nQ1")+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
@@ -1132,7 +1250,7 @@ ArmyPlatform<-build_plot(
   column_key=ota_ck,
   format=TRUE,
   ytextposition=FALSE
-)+date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+)+date_x_year_breaks(2000,2022,2,partial_year=2024,partial_label="\nQ1")+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
@@ -1187,7 +1305,7 @@ NavyPlatform<-build_plot(
   column_key=ota_ck,
   format=TRUE,
   ytextposition=FALSE
-)+date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+)+date_x_year_breaks(2000,2022,2,partial_year=2024,partial_label="\nQ1")+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
@@ -1242,7 +1360,7 @@ AirForcePlatform<-build_plot(
   column_key=ota_ck,
   format=TRUE,
   ytextposition=FALSE
-)+date_x_year_breaks(2000,2020,2,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+)+date_x_year_breaks(2000,2022,2,partial_year=2024,partial_label="\nQ1")+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
