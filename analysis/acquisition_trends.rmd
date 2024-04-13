@@ -51,6 +51,7 @@ colnames(ota_def)[colnames(ota_def)=="Dollars_Obligated_Then_Year_Then_Year"]<-"
 
 #Kludge
 toa<-readxl::read_excel(path=file.path("..","data_raw","FY24 6-1_DoD TOA by Title.xlsx"),skip=4)
+request<-readxl::read_excel(path=file.path("..","data_raw","FY24 1-1.xlsx"),skip=3)
 toa<-toa[sapply(toa[,2],function(x) substr(x,start=1,stop=21))==
             "Total Current Dollars" & !is.na(toa[,2]),c(-1,-3)]
 
@@ -67,6 +68,9 @@ online_path<-file.path(get_local_sharepoint_path("DIIG Teamsite - Shared Documen
 
 max(full_data$Fiscal_YQ)
 max(def_data$Fiscal_YQ)
+
+
+load(file="../data/clean/Defense_OTA.Rda")
 ```
 
 # Topline
@@ -98,8 +102,9 @@ ggsave600dpi(toplineq,file=file.path("..","Output","AcqTrends","toplineq.png"),
              width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//toplineqr_keynote.svg", toplineq+
-               labs(title="DOD Contract Obligations, 2000–2023Q2"),
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,
+             filename="toplineqr_keynote.svg", toplineq+
+               labs(title="DOD Contract Obligations, 2000–2024 Oct-Nov"),
              width=13, height= 5.5, units="in", size=20, lineheight = 0.75
              )
 
@@ -179,7 +184,7 @@ for(c in subcustomer_levels){
 ```{r TOAannual}
 
 
-fpds_annual<-full_data %>% filter(Fiscal_YQ<2024) %>% group_by(Fiscal_Year,dFYear,IsFMS,
+fpds_annual<-platpscintldef %>% filter(Fiscal_Year<2024) %>% group_by(Fiscal_Year,dFYear,IsFMS,
                                     ContractingCustomer,YTD) %>% summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE),
                                                                        Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))
 fpds_annual$Series<-"Contract Obligations"
@@ -207,7 +212,7 @@ fpds_annual$TOA<-"Total Obligation Authority"
 
 (topline<-build_plot(data=fpds_annual %>% filter(Fiscal_Year>=1990),#rbind(quarterly,q2021,e2021),
                      chart_geom="Bar Chart",
-                     x_var="dFYear",alpha_var="YTD",
+                     x_var="dFYear",#alpha_var="YTD",
                      y_var="Action_Obligation_OMB24_GDP22",
            color_var="FMS"
        )+
@@ -247,7 +252,7 @@ output_TY<-topline$data %>%
 log_plot(plot=topline, 
          df=output_TY   ,y_var="Then_Year_Dollars",#%>% filter(Fiscal_YQ<2024),
                      filename="acq_fig2_1_toa_annual",xlsx="DoD_Acq_Trends_Contracts.xlsx",
-                     sheet="2-1 TOA",path="../output/AcqTrends/",second_path=online_path, height=3,
+                     sheet="2-1 TOA",path="../output/AcqTrends/",second_path=online_path, height=3,excel_formulas = TRUE,
                      startRow=1,startCol=13,format=TRUE,var_list=c("source","FMS"),
          output_doc_svg=TRUE
          )
@@ -354,31 +359,31 @@ ToplineCompLine<-build_plot(
 def_data %>% filter(Competition.sum =="Unlabeled" & Fiscal_Year>=2019) %>% group_by(CompetitionClassification)%>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
 
-ggsave600dpi("..//Output//AcqTrends//topline_comp.png", ToplineComp,  
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_comp.png", ToplineComp,  
              width=11, height= 5.5, units="in",size=14, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_comp.emf", ToplineComp+theme(legend.position = "right"),  
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_comp.emf", ToplineComp+theme(legend.position = "right"),  
              width=6.5, height= 3, units="in",size=11, lineheight=1.2
              )
 
 
-ggsave600dpi("..//Output//AcqTrends//topline_comp_multi.png", ToplineCompMulti,  
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_comp_multi.png", ToplineCompMulti,  
              width=11, height= 5.5, units="in",size=14, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_comp_multi.svg", ToplineCompMulti,  
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_comp_multi.svg", ToplineCompMulti,  
              width=6.5, height= 4, units="in",size=12, lineheight=1.2
              )
 
 
 
-ggsave600dpi("..//Output//AcqTrends//topline_comp_multi.emf", ToplineCompMulti+theme(legend.position = "right"),  
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_comp_multi.emf", ToplineCompMulti+theme(legend.position = "right"),  
              width=6.5, height= 3, units="in",size=11, lineheight=1.2
              )
 
 
-ggsave600dpi("..//Output//AcqTrends//topline_comp_square.png", ToplineComp,  
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_comp_square.png", ToplineComp,  
              width=6, height= 5, units="in",size=14, lineheight=1.2
              )
 
@@ -429,7 +434,7 @@ UnlabeledComp<-build_plot(
 def_data %>% filter(Competition.sum =="Unlabeled" & Fiscal_Year>=2019) %>% group_by(CompetitionClassification)%>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
 
-ggsave600dpi("..//Output//AcqTrends//unlabeled_comp.png", UnlabeledComp,  
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="unlabeled_comp.png", UnlabeledComp,  
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
@@ -517,7 +522,7 @@ ToplineVehicle<-build_plot(
 )
 
 
-ggsave600dpi("..//Output//AcqTrends//topline_vehicle7.png", ToplineVehicle7, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_vehicle7.png", ToplineVehicle7, 
              width=13, height= 4.5, units="in",size=11
              )
 
@@ -530,7 +535,7 @@ write.csv(file="..//Output//AcqTrends//topline_vehicle7.csv",row.names = FALSE, 
             arrange(Vehicle.sum7,Vehicle.AwardTask))
 
 
-ggsave600dpi("..//Output//AcqTrends//topline_vehicle.png", ToplineVehicle, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_vehicle.png", ToplineVehicle, 
              width=13, height= 4.5, units="in",size=11
              )
 
@@ -662,15 +667,16 @@ ToplinePricing<-build_plot(
 
 
 
-ggsave600dpi("..//Output//AcqTrends//topline_pricing.png", ToplinePricing,  
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_pricing.png", ToplinePricing,  
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
 
 
-  ggsave600dpi("..//Output//AcqTrends//topline_pricing_keynote.svg", ToplinePricing+
+  ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,
+               filename="topline_pricing_keynote.svg", ToplinePricing+
                # facet_wrap(~SubCustomer.sum,nrow=1)+
-               labs(title="DOD Contract Obligations by Component, 2000–2023Q2"), 
+               labs(title="DOD Contract Obligations by Pricing Mechanism, 2000–2023"), 
              width=13, height= 5.5, units="in", size=20, lineheight = 0.75
              )  
 
@@ -731,12 +737,12 @@ PricingHistory<-build_plot(
 )
 
 
-  ggsave600dpi("..//Output//AcqTrends//Topline_Pricing_History.png", PricingHistory,  
+  ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="Topline_Pricing_History.png", PricingHistory,  
                width=6.5, height= 3, units="in",size=12, lineheight=1.2
                )
   
   
-  ggsave600dpi("..//Output//AcqTrends//Topline_Pricing_History.svg", PricingHistory,  
+  ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="Topline_Pricing_History.svg", PricingHistory,  
                width=6.5, height= 3, units="in",size=12, lineheight=1.2
                )
 
@@ -986,11 +992,11 @@ Commercial<-build_plot(
   date_x_year_breaks(2000,2022,2)#)#,partial_year=2024,partial_label="\nOct–Nov")
 )
 
-ggsave600dpi("..//Output//AcqTrends//topline_commercial.png", Commercial, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_commercial.png", Commercial, 
              width=11, height= 5.5, units="in",size=14,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_commercial.svg", Commercial+
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_commercial.svg", Commercial+
   labs(y="Obligations\n(Constant 2022 $s)"),#+facet_wrap(~SubCustomer.platform,nrow=1), 
              width=6.5, height= 2.25, units="in",size=11,lineheight = 1.2
              )
@@ -1086,19 +1092,19 @@ UnmDuration<-build_plot(
 )
 
 
-ggsave600dpi("..//Output//AcqTrends//topline_CurDuration.png", CurDuration, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_CurDuration.png", CurDuration, 
              width=11, height= 5.5, units="in",size=14,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_CurDuration.svg", CurDuration,#+facet_wrap(~SubCustomer.platform,nrow=1), 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_CurDuration.svg", CurDuration,#+facet_wrap(~SubCustomer.platform,nrow=1), 
              width=6.5, height= 3, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_UnmDuration.png", UnmDuration,#+facet_wrap(~SubCustomer.platform,nrow=1), 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_UnmDuration.png", UnmDuration,#+facet_wrap(~SubCustomer.platform,nrow=1), 
              width=6.5, height= 3, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_UnmDuration.svg", UnmDuration,#+facet_wrap(~SubCustomer.platform,nrow=1), 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_UnmDuration.svg", UnmDuration,#+facet_wrap(~SubCustomer.platform,nrow=1), 
              width=6.5, height= 3, units="in",size=11,lineheight = 1.2
              )
 
@@ -1143,11 +1149,11 @@ Multiyear<-build_plot(
   date_x_year_breaks(2000,2022,2)#)#,partial_year=2024,partial_label="\nOct–Nov")
 )
 
-ggsave600dpi("..//Output//AcqTrends//topline_Multiyear.png", Multiyear, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_Multiyear.png", Multiyear, 
              width=11, height= 5.5, units="in",size=14,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_Multiyear.svg", Multiyear+
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_Multiyear.svg", Multiyear+
   labs(y="Obligations\n(Constant 2022 $s)"),#+facet_wrap(~SubCustomer.platform,nrow=1), 
              width=6.5, height= 2.25, units="in",size=11,lineheight = 1.2
              )
@@ -1246,11 +1252,11 @@ VehicleMultiYearShare<-build_plot(
 )
 
 
-ggsave600dpi("..//Output//AcqTrends//Vehicle_MultiYear.png", VehicleMultiYear,  
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="Vehicle_MultiYear.png", VehicleMultiYear,  
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//Vehicle_MultiYearShare.png", VehicleMultiYearShare,  
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="Vehicle_MultiYearShare.png", VehicleMultiYearShare,  
              width=6.5, height= 4, units="in",size=12, lineheight=1.2
              )
 
@@ -1311,15 +1317,15 @@ GFEcomp<-build_plot(
                                                    date_labels="'%y")
 )
 
-ggsave600dpi("..//Output//AcqTrends//platform_GFE.png", GFEplat, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="platform_GFE.png", GFEplat, 
              width=12, height= 6, units="in",size=12,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//platform_GFE.svg", GFEplat, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="platform_GFE.svg", GFEplat, 
              width=6.5, height= 4.5, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//platform_GFE.emf", GFEplat, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="platform_GFE.emf", GFEplat, 
              width=6.5, height= 4.5, units="in",size=11,lineheight = 1.2
              )
 
@@ -1454,15 +1460,15 @@ CAS<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.png", SubCustomer, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_subcustomer.png", SubCustomer, 
              width=12, height= 6, units="in",size=12,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.svg", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_subcustomer.svg", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.emf", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_subcustomer.emf", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
@@ -1542,15 +1548,15 @@ EE<-build_plot(
 
 
 
-ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.png", SubCustomer, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_subcustomer.png", SubCustomer, 
              width=12, height= 6, units="in",size=12,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.svg", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_subcustomer.svg", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.emf", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_subcustomer.emf", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
@@ -1575,13 +1581,13 @@ summary(full_data$ContractingSubCustomer)
 
 (
 ToplinePSR<-build_plot(
-  data=def_data %>% filter(Fiscal_YQ<2024),
+  data=def_data %>% filter(Fiscal_YQ<2024 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
-  alpha_var="YTD",
+  # alpha_var="YTD",
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="SimpleArea", #color_var
   # facet_var="Competition.sum", #facet_var
@@ -1590,19 +1596,20 @@ ToplinePSR<-build_plot(
   ytextposition=FALSE
 )+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")+
-  date_x_year_breaks(1990,2020,5)#,partial_year=2024,partial_label="\nQ1")
+  labs(y="Obligations (Constant 2022 $s)",
+       caption="Note: Unlabeled product, service, and R&D areas not shown.\nSource: FPDS and CSIS analysis.")+
+  date_x_year_breaks(1990,2020,5)#,partial_year=2024,partial_label="\nQ1",)
 )
 
-ggsave600dpi("..//Output//AcqTrends//topline_psr.png", ToplinePSR, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_psr.png", ToplinePSR, 
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_psr.svg", ToplinePSR, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_psr.svg", ToplinePSR, 
              width=6.5, height= 3, units="in",size=11, lineheight=1.2
              )
 
-log_plot(plot=ToplinePSR, df=def_data %>% filter(Fiscal_YQ<2024),
+log_plot(plot=ToplinePSR+facet_wrap(~SimpleArea), df=def_data %>% filter(Fiscal_YQ<2024),
                      filename="acq_fig3_1_area",xlsx="DoD_Acq_Trends_Contracts.xlsx",
                      sheet="3-1 Area",path="../output/AcqTrends/",second_path=online_path, height=3.5,
                      startRow=1,startCol=12,format=TRUE,#var_list=c("SimpleArea","Competition.multisum"),
@@ -1611,6 +1618,51 @@ log_plot(plot=ToplinePSR, df=def_data %>% filter(Fiscal_YQ<2024),
 
 ```
 
+## PSR OTA
+```{r ToplinePSR}
+
+
+
+
+(
+OTAPSR<-build_plot(
+  data=def_kota %>% filter(Fiscal_Year>=2015 & Fiscal_YQ<2024 &
+                                 !is.na(AreaType) & AreaType!="Unlabeled") ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=kota_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  # alpha_var="YTD",
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="AreaType", #color_var
+  facet_var="SimpleAreaType", #facet_var
+  column_key=kota_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)",
+       caption="Note: Unlabeled contract product, service, and R&D areas\nas well as unlabeled OTA agreement types not shown.\nSource: FPDS and CSIS analysis.")+facet_wrap(~SimpleAreaType, nrow=1)+
+  date_x_year_breaks(2015,2023,2)#,partial_year=2024,partial_label="\nQ1",)
+)
+
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="OTA_psr.png", OTAPSR, 
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="OTA_psr.svg", OTAPSR, 
+             width=6.5, height= 3, units="in",size=11, lineheight=1.2
+             )
+
+log_plot(plot=OTAPSR, df=def_kota %>% filter(Fiscal_YQ<2024),
+                     filename="acq_fig3_1a_kota_areatype",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+                     sheet="3-1a K&Ota",path="../output/AcqTrends/",second_path=online_path, height=3.5,
+                     startRow=1,startCol=12,format=TRUE,#var_list=c("SimpleArea","Competition.multisum"),
+         excel_y_var = TRUE,excel_formulas = TRUE
+         )
+
+```
 
 ## PSR Plat Breakout
 ```{r PSRplatBreakout} 
@@ -1693,7 +1745,7 @@ for(c in subcustomer_levels){
 
 (
 PSR_Q<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2000&  Fiscal_YQ<2024 & SimpleArea!="Unlabeled"),
+  data=def_data %>% filter(Fiscal_Year>=2000&  Fiscal_YQ<=2024.1 & SimpleArea!="Unlabeled"),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -1710,11 +1762,11 @@ PSR_Q<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//AcqTrends//PSR_Q.png", PSR_Q, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="PSR_Q.png", PSR_Q, 
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//PSR_Q.svg", PSR_Q, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="PSR_Q.svg", PSR_Q, 
              width=6.5, height= 3, units="in",size=11, lineheight=1.2
              )
 
@@ -1765,7 +1817,7 @@ RnDphase<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//AcqTrends//psr_RnDPhase.png", RnDphase, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="psr_RnDPhase.png", RnDphase, 
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
@@ -1853,15 +1905,15 @@ RnDphasePlusOTA<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )+scale_x_date(date_labels="'%y",date_breaks="1 year")
 
-ggsave600dpi("..//Output//AcqTrends//RnDPhasePlusOTA.png", RnDphasePlusOTA+labs(caption="Source: FPDS and CSIS analysis."),
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="RnDPhasePlusOTA.png", RnDphasePlusOTA+labs(caption="Source: FPDS and CSIS analysis."),
              width=5, height= 4.75, units="in",size=11, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//RnDPhasePlusOTA.svg", RnDphasePlusOTA+labs(caption="Source: FPDS and CSIS analysis."),
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="RnDPhasePlusOTA.svg", RnDphasePlusOTA+labs(caption="Source: FPDS and CSIS analysis."),
              width=5, height= 4.75, units="in",size=11, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//RnDPhasePlusOTA.emf", RnDphasePlusOTA+labs(caption="Source: FPDS and CSIS analysis."),
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="RnDPhasePlusOTA.emf", RnDphasePlusOTA+labs(caption="Source: FPDS and CSIS analysis."),
              width=5, height= 4.75, units="in",size=11, lineheight=1.2
              )
 
@@ -1960,7 +2012,7 @@ RnDphase<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//AcqTrends//contractota_RnDPhase.png", RnDphase,
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="contractota_RnDPhase.png", RnDphase,
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 #                            
@@ -2005,11 +2057,11 @@ Services<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//AcqTrends//psr_Services.png", Services, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="psr_Services.png", Services, 
              width=12, height= 6, units="in",size=14, lineheight=1.2
              )
               
-ggsave600dpi("..//Output//AcqTrends//psr_Services.svg", Services, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="psr_Services.svg", Services, 
              width=6.5, height= 3.25, units="in",size=10, lineheight=1.2
              )             
 
@@ -2054,7 +2106,7 @@ PSRpricing_dollar<-build_plot(
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.")
 )
 
-ggsave600dpi("..//Output//AcqTrends//psr_pricing_dollar.png", PSRpricing_dollar, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="psr_pricing_dollar.png", PSRpricing_dollar, 
              width=6.5, height= 5, units="in",size=11, lineheight=1.2
              )
 
@@ -2087,7 +2139,7 @@ SimpleVendor_share<-build_plot(
 )
 
 
-ggsave600dpi("..//Output//AcqTrends//psr_pricing_share.png", SimpleVendor_share, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="psr_pricing_share.png", SimpleVendor_share, 
              width=6.5, height= 5, units="in",size=11, lineheight=1.2
              )
 
@@ -2124,7 +2176,7 @@ SimpleVendor_dollar<-build_plot(
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.\nMcDonnell Douglas is grouped with the Big-5.")
 )
 
-ggsave600dpi("..//Output//AcqTrends//psr_vendorsize_dollar.png", SimpleVendor_dollar, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="psr_vendorsize_dollar.png", SimpleVendor_dollar, 
              width=6.5, height= 5, units="in",size=11, lineheight=1.2
              )
 
@@ -2157,7 +2209,7 @@ SimpleVendor_share<-build_plot(
 )
 
 
-ggsave600dpi("..//Output//AcqTrends//psr_vendorsize_share.png", SimpleVendor_share, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="psr_vendorsize_share.png", SimpleVendor_share, 
              width=6.5, height= 5, units="in",size=11, lineheight=1.2
              )
 
@@ -2247,7 +2299,7 @@ PSRComp_line<-build_plot(
     date_x_year_breaks(1993,2023,by=6)#,partial_year=2024,partial_label="\nQ1")
 )
 
-ggsave600dpi("..//Output//AcqTrends//PSRComp_line.png", PSRComp_line, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="PSRComp_line.png", PSRComp_line, 
              width=6.5, height= 5, units="in",size=12, lineheight=1.2
              )
 
@@ -2271,7 +2323,7 @@ ggsave("..//Output//AcqTrends//PSRComp_both.png",
 ggsave("..//Output//AcqTrends//PSRComp_both_keynote.png", 
              gridExtra::grid.arrange(
                PSRComp_bar+labs(
-                 title="DOD Contract Obligations by Commercial Categorization, 2000–2023Q2",
+                 title="DOD Contract Obligations by Extent of Competition, 2000–2023",
                   y="Obligations\n(Const. 2022 $s)",
                caption = NULL,x=NULL)+theme(legend.position = "none",text=element_text(size=20)),
                PSRComp_line+labs(y="Share of\nObl.")+theme(text=element_text(size=20),
@@ -2283,7 +2335,7 @@ ggsave("..//Output//AcqTrends//PSRComp_both_keynote.png",
 ggsave("..//Output//AcqTrends//PSRComp_both_keynote.svg", 
              gridExtra::grid.arrange(
                PSRComp_bar+labs(
-                 title="DOD Contract Obligations by Commercial Categorization, 2000–2023Q2",
+                 title="DOD Contract Obligations by Extent of Competition, 2000–2023",
                   y="Obligations\n(Const. 2022 $s)",
                caption = NULL,x=NULL)+theme(legend.position = "none",text=element_text(size=20)),
                PSRComp_line+labs(y="Share of\nObl.")+theme(text=element_text(size=20),
@@ -2292,6 +2344,17 @@ ggsave("..//Output//AcqTrends//PSRComp_both_keynote.svg",
              width=13, height= 5.5, units="in" #, size=20, lineheight = 0.75
              )
 
+ggsave(file.path(online_path,"PSRComp_both_keynote.svg"), 
+             gridExtra::grid.arrange(
+               PSRComp_bar+labs(
+                 title="DOD Contract Obligations by Extent of Competition, 2000–2023",
+                  y="Obligations\n(Const. 2022 $s)",
+               caption = NULL,x=NULL)+theme(legend.position = "none",text=element_text(size=20)),
+               PSRComp_line+labs(y="Share of\nObl.")+theme(text=element_text(size=20),
+               plot.caption = element_text(size=round(20 * 5/6,0))
+               )),
+             width=13, height= 5.5, units="in" #, size=20, lineheight = 0.75
+             )
 
 ggsave("..//Output//AcqTrends//acq_fig6_6_PSR_competition.svg", 
              gridExtra::grid.arrange(
@@ -2388,11 +2451,11 @@ PSRMultiYearShare<-build_plot(
 )
 
 
-ggsave600dpi("..//Output//AcqTrends//PSR_MultiYear.png", PSRMultiYear,  
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="PSR_MultiYear.png", PSRMultiYear,  
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//PSR_MultiYearShare.png", PSRMultiYearShare,  
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="PSR_MultiYearShare.png", PSRMultiYearShare,  
              width=6.5, height= 4, units="in",size=12, lineheight=1.2
              )
 
@@ -2439,17 +2502,17 @@ SubCustomer<-build_plot(
   labs(y="Obligations (Constant 2022 $s)") +date_x_year_breaks(1990,2020,5)#,partial_year=2024,partial_label="\nQ1")
 )
 
-ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.png", SubCustomer, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_subcustomer.png", SubCustomer, 
              width=12, height= 6, units="in",size=12,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_subcustomer.svg", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_subcustomer.svg", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_subcustomer_keynote.svg", SubCustomer+
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_subcustomer_keynote.svg", SubCustomer+
                facet_wrap(~SubCustomer.sum,nrow=1)+
-               labs(title="DOD Contract Obligations by Component, 1990–2023Q2")+
+               labs(title="DOD Contract Obligations by Component, 1990–2023")+
                date_x_year_breaks(1990,2020,8),#,partial_year=2024,partial_label="\nQ1"), 
              width=13, height= 5.5, units="in", size=20, lineheight = 0.75
              )
@@ -2543,11 +2606,11 @@ SubCustomerCovid<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//AcqTrends//subcustomer_covid.png", SubCustomerCovid, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="subcustomer_covid.png", SubCustomerCovid, 
              width=12, height= 6, units="in",size=12,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//subcustomer_covid.svg", SubCustomerCovid+facet_wrap(~SubCustomer.sum,nrow=1), 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="subcustomer_covid.svg", SubCustomerCovid+facet_wrap(~SubCustomer.sum,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
@@ -2594,10 +2657,10 @@ SubCustomerPSR<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-# ggsave600dpi("..//Output//AcqTrends//subcustomer_PSR.png", SubCustomerPSR, 
+# ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="subcustomer_PSR.png", SubCustomerPSR, 
 #              width=6.5, height= 4, units="in",size=11
 #              )
-ggsave600dpi("..//Output//AcqTrends//subcustomer_PSR.png", SubCustomerPSR, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="subcustomer_PSR.png", SubCustomerPSR, 
              width=12, height= 6, units="in",size=12,lineheight = 1.2
              )
 ```
@@ -2632,10 +2695,10 @@ SubCustomerComp_line<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-# ggsave600dpi("..//Output//AcqTrends//subcustomer_PSR.png", SubCustomerPSR, 
+# ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="subcustomer_PSR.png", SubCustomerPSR, 
 #              width=6.5, height= 4, units="in",size=11
 #              )
-ggsave600dpi("..//Output//AcqTrends//subcustomer_Comp_line.png", SubCustomerComp_line, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="subcustomer_Comp_line.png", SubCustomerComp_line, 
              width=12, height= 6, units="in",size=12,lineheight = 1.2
              )
 
@@ -2666,7 +2729,7 @@ SubCustomerComp_bar<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//AcqTrends//subcustomer_Comp_bar.png", SubCustomerComp_bar, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="subcustomer_Comp_bar.png", SubCustomerComp_bar, 
              width=12, height= 6, units="in",size=12,lineheight = 1.2
              )
 
@@ -2712,17 +2775,17 @@ PricingHistoryCust<-build_plot(
        caption="Note: Uncategorized customer not shown.\nSource: FPDS and CSIS analysis.")
 )
 
-# ggsave600dpi("..//Output//AcqTrends//SubCustomer_Pricing_History.png", PricingHistory, 
+# ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="SubCustomer_Pricing_History.png", PricingHistory, 
 #              width=6.5, height= 4, units="in",size=11
 #              )
 
 
-ggsave600dpi("..//Output//AcqTrends//SubCustomer_Pricing_History.png", PricingHistoryCust,  
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="SubCustomer_Pricing_History.png", PricingHistoryCust,  
              width=6.5, height= 3, units="in",size=12, lineheight=1.2
              )
 
 
-ggsave600dpi("..//Output//AcqTrends//SubCustomer_Pricing_History.svg", PricingHistoryCust,  
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="SubCustomer_Pricing_History.svg", PricingHistoryCust,  
              width=6.5, height= 3, units="in",size=12, lineheight=1.2
              )
 
@@ -2778,22 +2841,23 @@ CommercialCust<-build_plot(
 )
  
 
-ggsave600dpi("..//Output//AcqTrends//subcustomer_commercial.png", CommercialCust, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="subcustomer_commercial.png", CommercialCust, 
              width=6, height= 5.5, units="in",size=12,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//subcustomer_commercial.svg", CommercialCust,#+facet_wrap(~SubCustomer.platform,nrow=1), 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="subcustomer_commercial.svg", CommercialCust,#+facet_wrap(~SubCustomer.platform,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//subcustomer_commercial_keynote.png", CommercialCust+
-               labs(title="DOD Contract Obligations by  Commercial Categorization, 2000–2023Q2"),
-             width=13, height= 5.5, units="in", size=20, lineheight = 0.75
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,
+             filename="subcustomer_commercial_keynote.png", CommercialCust+
+               labs(title="DOD Contract Obligations by  Commercial Categorization, 2000–2023"),
+             width=13, height= 5.5, units="in", size=20, lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//subcustomer_commercial_keynote.svg", CommercialCust+
-               labs(title="DOD Contract Obligations by  Commercial Categorization, 2000–2023Q2"),
-             width=13, height= 5.5, units="in", size=20, lineheight = 0.75
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="subcustomer_commercial_keynote.svg", CommercialCust+
+               labs(title="DOD Contract Obligations by  Commercial Categorization, 2000–2023"),
+             width=13, height= 5.5, units="in", size=20, lineheight = 1.2
              )
 
 
@@ -2870,15 +2934,15 @@ Platform<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//AcqTrends//topline_platform.png", Platform, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_platform.png", Platform, 
              width=12, height= 6, units="in",size=14,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_platform.svg", Platform, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_platform.svg", Platform, 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_platform.emf", Platform+geom_line(
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_platform.emf", Platform+geom_line(
   size=1,aes(x=dFYear,y=Action_Obligation_OMB24_GDP22,color=PlatformPortfolio)),
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
@@ -2903,16 +2967,16 @@ Platform_Bar<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//AcqTrends//topline_platform_bar.png", Platform_Bar, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_platform_bar.png", Platform_Bar, 
              width=11, height= 5.5, units="in",size=14,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_platform_bar.emf", Platform_Bar,
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_platform_bar.emf", Platform_Bar,
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_platform_bar_keynote.svg", Platform_Bar+
-               labs(title="DOD Contract Obligations by Platform Portfolio, 2000–2023Q2"),
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_platform_bar_keynote.svg", Platform_Bar+
+               labs(title="DOD Contract Obligations by Platform Portfolio, 2000–2023"),
              width=13, height= 5.5, units="in", size=20, lineheight = 0.75
              )
 
@@ -3035,11 +3099,11 @@ for(s in c("Army","Navy","Air Force")){
 #   labs(y="Obligations (Constant 2022 $s)")
 # )
 # 
-# ggsave600dpi("..//Output//AcqTrends//topline_platform_bar.png", Platform_Bar, 
+# ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_platform_bar.png", Platform_Bar, 
 #              width=12, height= 6, units="in",size=12,lineheight = 1.2
 #              )
 # 
-# ggsave600dpi("..//Output//AcqTrends//topline_platform_bar.emf", Platform_Bar,
+# ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_platform_bar.emf", Platform_Bar,
 #              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
 #              )
 # 
@@ -3086,7 +3150,7 @@ PlatformSubCustomer<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//AcqTrends//platform_subcustomer.png", PlatformSubCustomer, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="platform_subcustomer.png", PlatformSubCustomer, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
@@ -3122,7 +3186,7 @@ PlatformPSR<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//AcqTrends//platform_PSR.png", PlatformPSR, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="platform_PSR.png", PlatformPSR, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
@@ -3159,7 +3223,7 @@ PlatformProducts<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//AcqTrends//platform_products.png", PlatformProducts, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="platform_products.png", PlatformProducts, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
@@ -3205,7 +3269,7 @@ PlatformRnD<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//AcqTrends//PlatformRnD.png", PlatformRnD, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="PlatformRnD.png", PlatformRnD, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
@@ -3269,36 +3333,36 @@ OnMQ<-build_plot(
 )
 
 
-ggsave600dpi("..//Output//AcqTrends//PlatformQ.png", PlatformQ, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="PlatformQ.png", PlatformQ, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
-ggsave600dpi("..//Output//AcqTrends//PlatformQ_slide.svg", PlatformQ+
-               labs(title="Defense Contract Obligations by Platform Portfolio, FY2013-FY2023Q2")+
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="PlatformQ_slide.svg", PlatformQ+
+               labs(title="Defense Contract Obligations by Platform Portfolio, FY2013-FY2024 Oct-Nov")+
                theme(plot.title = element_text(margin=margin(t=0.1,r=0,b=0.1,l=0,"inches")),
                      plot.margin = margin(t=0,r=0.1,b=0.1,l=0.1,"inches")), 
              width=10, height= 5.5, units="in", size=11, lineheight = 0.75
              )
 
-ggsave600dpi("..//Output//AcqTrends//PlatformQ_keynote.svg", PlatformQ+
-               labs(title="Ordnance & Missile Contract Obligations, 2000–2023Q2"),
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="PlatformQ_keynote.svg", PlatformQ+
+               labs(title="Ordnance & Missile Contract Obligations, 2000–2023"),
              width=9, height= 5.5, units="in", size=20, lineheight = 0.75
              )
 
 
-ggsave600dpi("..//Output//AcqTrends//OnMQ_keynote.png", OnMQ+
-               labs(title="Ordnance & Missile Contract Obligations, 2000–2023Q2"),
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="OnMQ_keynote.png", OnMQ+
+               labs(title="Ordnance & Missile Contract Obligations, 2000–2023"),
              width=9, height= 5.5, units="in", size=20, lineheight = 0.75
              )
 
-ggsave600dpi("..//Output//AcqTrends//OnMQ_keynote.svg", OnMQ+
-               labs(title="Ordnance & Missile Contract Obligations, 2000–2023Q2"),
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="OnMQ_keynote.svg", OnMQ+
+               labs(title="Ordnance & Missile Contract Obligations, 2000–2023"),
              width=9, height= 5.5, units="in", size=20, lineheight = 0.75
              )
 
 
 
-ggsave600dpi("..//Output//AcqTrends//OnMQ.png", OnMQ, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="OnMQ.png", OnMQ, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
@@ -3362,7 +3426,7 @@ PlatformVendor_share<-build_plot(
     caption="Note: McDonnell Douglas is grouped with the Big-5.\nSource: FPDS and CSIS analysis.")
 )
 
-ggsave600dpi("..//Output//AcqTrends//platform_vendor_share.png", PlatformVendor_share, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="platform_vendor_share.png", PlatformVendor_share, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
@@ -3396,7 +3460,7 @@ PlatformVendor_dollar<-build_plot(
     caption="Note: The merger of Raytheon and United Technologies took place in April of 2020 and thus did not\nmake the cutoff for inclusion in FY2020. McDonnell Douglas is grouped with the Big-5.\n\nSource: FPDS and CSIS analysis.")
 )
 
-ggsave600dpi("..//Output//AcqTrends//platform_vendor_dollar.png", PlatformVendor_dollar, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="platform_vendor_dollar.png", PlatformVendor_dollar, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
@@ -3440,7 +3504,7 @@ PlatformVendorIntl_share<-build_plot(
     caption="Source: FPDS and CSIS analysis.")
 )
 
-ggsave600dpi("..//Output//AcqTrends//platform_vendor_intl_share.png", PlatformVendorIntl_share, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="platform_vendor_intl_share.png", PlatformVendorIntl_share, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
@@ -3544,12 +3608,12 @@ PlatformComp_line<-build_plot(
 )
 
 
-ggsave600dpi("..//Output//AcqTrends//platform_comp_bar.png", PlatformComp_bar, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="platform_comp_bar.png", PlatformComp_bar, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
 
-ggsave600dpi("..//Output//AcqTrends//platform_comp_line.png", PlatformComp_line, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="platform_comp_line.png", PlatformComp_line, 
              width=6.5, height= 4, units="in",size=11,lineheight = 0.75
              )
 
@@ -3604,15 +3668,15 @@ CommercialPlat<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//AcqTrends//platform_commercial.png", CommercialPlat, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="platform_commercial.png", CommercialPlat, 
              width=6, height= 5.5, units="in",size=12,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//platform_commercial.svg", CommercialPlat,#+facet_wrap(~SubCustomer.platform,nrow=1), 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="platform_commercial.svg", CommercialPlat,#+facet_wrap(~SubCustomer.platform,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//platform_commercial.emf", CommercialPlat,#+facet_wrap(~SubCustomer.platform,nrow=1), 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="platform_commercial.emf", CommercialPlat,#+facet_wrap(~SubCustomer.platform,nrow=1), 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
@@ -3695,28 +3759,28 @@ PlatformMultiYearShare<-build_plot(
     scale_y_continuous(labels = percent)
 )
 
-ggsave600dpi("..//Output//AcqTrends//Platform_MultiYear.png", PlatformMultiYear,  
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="Platform_MultiYear.png", PlatformMultiYear,  
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//Platform_MultiYearShare.png", PlatformMultiYearShare+facet_wrap(PlatformPortfolio~.,nrow=2)+
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="Platform_MultiYearShare.png", PlatformMultiYearShare+facet_wrap(PlatformPortfolio~.,nrow=2)+
                 labs(y="Share of Obligations",
        caption="Other products / services / R&D not shown. When the multiyear column is empty, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis."),  
              width=12, height= 6, units="in",size=16, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//Platform_MultiYearShare_keynote.png", 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="Platform_MultiYearShare_keynote.png", 
                PlatformMultiYearShare+labs(
-                 title="DOD Share of Contract Obligations to Multiyear Contracts, 2000–2023Q2")+
+                 title="DOD Share of Contract Obligations to Multiyear Contracts, 2000–2023")+
                  facet_wrap(PlatformPortfolio~.,nrow=2)+
                 labs(y="Share of Obligations",
        caption="Note: When the multiyear column is empty, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis.")+geom_line(aes(x=dFYear,y=pPlatFYear,group=YTD,linetype=YTD),linewidth=2),  
              width=13, height= 5.5, units="in",size=20, lineheight=1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//Platform_MultiYearShare_keynote.svg", 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="Platform_MultiYearShare_keynote.svg", 
                PlatformMultiYearShare+labs(
-                 title="DOD Share of Contract Obligations to Multiyear Contracts, 2000–2023Q2")+
+                 title="DOD Share of Contract Obligations to Multiyear Contracts, 2000–2023")+
                  facet_wrap(PlatformPortfolio~.,nrow=2)+
                 labs(y="Share of Obligations",
        caption="Note: When the multiyear column is empty, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis."),  
@@ -3774,11 +3838,11 @@ Platform_Ukr_Bar<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-ggsave600dpi("..//Output//AcqTrends//Munitions//ukraine_platform_bar.png", Platform_Ukr_Bar, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="Munitions//ukraine_platform_bar.png", Platform_Ukr_Bar, 
              width=11, height= 5.5, units="in",size=14,lineheight = 1.2
              )
 
-ggsave600dpi("..//Output//AcqTrends//Munitions//ukraine_platform_bar.emf", Platform_Ukr_Bar,
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="Munitions//ukraine_platform_bar.emf", Platform_Ukr_Bar,
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
@@ -3835,41 +3899,6 @@ GFEplat<-build_plot(
 
 # Vendor Size
 
-## Vendor Size Plat Breakout
-```{r CustomerPlatBreakout} 
-platform_levels<-levels(factor(def_data$PlatformPortfolio))
-for(p in platform_levels){
-  file_p<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",p)))
-  (Breakout<-build_plot(
-    data=full_data %>% filter(Fiscal_Year>=2000&PlatformPortfolio==p& Fiscal_YQ<2024),
-chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=def_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
-  color_var="Shiny.VendorSize", #color_var
-  # facet_var="SubCustomer.sum", #facet_var
-  column_key=def_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)") +date_x_year_breaks(1990,2020,5)#,partial_year=2024,partial_label="\nQ1")
-)
-  if(!dir.exists(file.path("../output/AcqTrends/Platform",file_p)))
-    dir.create(file.path("../output/AcqTrends/Platform",file_p))
-  
-  log_plot(plot=Breakout, df=full_data  %>% filter(Fiscal_YQ<2024&PlatformPortfolio==p),
-           filename=paste(file_p,"vendor",sep="_"),xlsx=paste("DoD",file_p,"Contracts.xlsx",sep="_"),
-           sheet="vend",path=file.path("../output/AcqTrends/Platform/",file_p), height=3.5,
-           startRow=1,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
-           output_doc_png=TRUE,excel_y_var=TRUE
-           )
-  
-}
-```
-
 
 ## Topline Vendor Size
 ```{r ToplineVendor}
@@ -3922,27 +3951,27 @@ ToplineVendor_line<-build_plot(
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
 )
 
-ggsave600dpi("..//Output//AcqTrends//topline_vendor_wide.png", ToplineVendor+
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_vendor_wide.png", ToplineVendor+
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020."), 
              width=12, height= 6, units="in",size=12,lineheight=1
              )
 
 
-ggsave600dpi("..//Output//AcqTrends//topline_vendor_cq.png", ToplineVendor+
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_vendor_cq.png", ToplineVendor+
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_vendor_cq.svg", ToplineVendor+
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_vendor_cq.svg", ToplineVendor+
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_vendor.png", ToplineVendor, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_vendor.png", ToplineVendor, 
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_vendor.eps", ToplineVendor+
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_vendor.eps", ToplineVendor+
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
@@ -3966,12 +3995,12 @@ log_plot(plot=ToplineVendor, df=full_data  %>% filter(Fiscal_YQ<2024 ),
 
 (
 ToplineVendorIntl<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=2000& Fiscal_YQ<2024 ),# & Fiscal_Year<=2021
+  data=full_data %>% filter(Fiscal_Year>=2000& Fiscal_YQ<=2023.2 ),# & Fiscal_Year<=2021
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
-  x_var="dFYear",#alpha_var="YTD", #x_var
+  x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
   color_var="VendorSize_Intl", #color_var
   # facet_var="Competition.sum", #facet_var
@@ -3980,21 +4009,25 @@ ToplineVendorIntl<-build_plot(
   ytextposition=FALSE,
   reverse_color=TRUE
 )+scale_x_date("Fiscal Year",labels = scales::date_format("'%y"))+
-  date_x_year_breaks(2000,2022,2)+#)#,partial_year=2024,partial_label="\nOct–Nov")
+  date_x_year_breaks(2000,2022,3,partial_year=2023,partial_label="\nQ1–Q2")+
     
   theme(legend.position = "right")+
   labs(y="Obligations (Constant 2022 $s)",
-       caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020.")
+       caption="Source: FPDS and CSIS analysis.")
 )
 
-ggsave600dpi("..//Output//AcqTrends//topline_vendor_intl_square.png", ToplineVendorIntl+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_vendor_intl_square.png", ToplineVendorIntl+
+  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis."), 
              width=6, height= 5, units="in",size=12,lineheight=1
              )
 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,
+             filename="topline_vendor_intl_keynote.svg", ToplineVendorIntl+
+               labs(title="DOD Contract Obligations, 2000–2023 Q2"),
+             width=9, height= 5.5, units="in", size=20, lineheight = 0.75
+             )
 
-
-log_plot(plot=ToplineVendorIntl, df=full_data  %>% filter(Fiscal_YQ<2024),
+log_plot(plot=ToplineVendorIntl, df=full_data  %>% filter(Fiscal_YQ<=2023.2),
                      filename="acq_fig6_1_vendor_intl",xlsx="DoD_Acq_Trends_Contracts.xlsx",
                      sheet="6-1 VendIntl",path="../output/AcqTrends/",second_path=online_path, height=3.5,
          excel_y_var = TRUE, excel_formulas = TRUE,
@@ -4083,27 +4116,27 @@ ToplineVendor_line<-build_plot(
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
 )
 
-ggsave600dpi("..//Output//AcqTrends//topline_vendor_wide.png", ToplineVendor+
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_vendor_wide.png", ToplineVendor+
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020."), 
              width=12, height= 6, units="in",size=12,lineheight=1
              )
 
 
-ggsave600dpi("..//Output//AcqTrends//topline_vendor_cq.png", ToplineVendor+
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_vendor_cq.png", ToplineVendor+
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_vendor_cq.svg", ToplineVendor+
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_vendor_cq.svg", ToplineVendor+
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_vendor.png", ToplineVendor, 
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_vendor.png", ToplineVendor, 
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
-ggsave600dpi("..//Output//AcqTrends//topline_vendor.eps", ToplineVendor+
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_vendor.eps", ToplineVendor+
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
@@ -4123,6 +4156,42 @@ write.csv(file="..//Output//AcqTrends//topline_vendor.csv",row.names = FALSE, na
                         names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%arrange(Shiny.VendorSize))
 
 ```
+
+## Vendor Size Plat Breakout
+```{r CustomerPlatBreakout} 
+platform_levels<-levels(factor(def_data$PlatformPortfolio))
+for(p in platform_levels){
+  file_p<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",p)))
+  (Breakout<-build_plot(
+    data=full_data %>% filter(Fiscal_Year>=2000&PlatformPortfolio==p& Fiscal_YQ<2024),
+chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="Shiny.VendorSize", #color_var
+  # facet_var="SubCustomer.sum", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)") +date_x_year_breaks(1990,2020,5)#,partial_year=2024,partial_label="\nQ1")
+)
+  if(!dir.exists(file.path("../output/AcqTrends/Platform",file_p)))
+    dir.create(file.path("../output/AcqTrends/Platform",file_p))
+  
+  log_plot(plot=Breakout, df=full_data  %>% filter(Fiscal_YQ<2024&PlatformPortfolio==p),
+           filename=paste(file_p,"vendor",sep="_"),xlsx=paste("DoD",file_p,"Contracts.xlsx",sep="_"),
+           sheet="vend",path=file.path("../output/AcqTrends/Platform/",file_p), height=3.5,
+           startRow=1,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
+           output_doc_png=TRUE,excel_y_var=TRUE
+           )
+  
+}
+```
+
 
 
 ## Vendor Size Vehicle
@@ -4216,24 +4285,24 @@ VendorSizeVehicleSumLine<-build_plot(
 )
 
 
-ggsave600dpi("..//Output//AcqTrends//vendorsize_vehicle.png", VendorSizeVehicle+
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="vendorsize_vehicle.png", VendorSizeVehicle+
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020.\nUnlabeled vendor size excluded."),
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
-ggsave600dpi("..//Output//AcqTrends//vendorsize_vehicle.svg", VendorSizeVehicle+
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="vendorsize_vehicle.svg", VendorSizeVehicle+
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020\nUnlabeled vendor size excluded.."),
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
-ggsave600dpi("..//Output//AcqTrends//vendorsize_awardtaskshare.svg", VendorSizeVehicleSumLine
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="vendorsize_awardtaskshare.svg", VendorSizeVehicleSumLine
 +
   labs(caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020.\nUnlabeled vendor size excluded."),
              width=6.5, height= 3.25, units="in",size=11,lineheight=1
              )
 
 
-ggsave600dpi("..//Output//AcqTrends//vendorsize_awardtask.svg", VendorSizeVehicleSum
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="vendorsize_awardtask.svg", VendorSizeVehicleSum
 +
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020.\nUnlabeled vendor size excluded."),
              width=6.5, height= 3.25, units="in",size=11,lineheight=1
@@ -4407,7 +4476,7 @@ log_plot(plot=VendorSizePricing20212022share+
          output_doc_svg=TRUE
          )
 
-ggsave600dpi("..//Output//AcqTrends//vendorsize_pricing.png", VendorSizePricing+
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="vendorsize_pricing.png", VendorSizePricing+
   labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis."),
              width=6, height= 5, units="in",size=12,lineheight=1
              )

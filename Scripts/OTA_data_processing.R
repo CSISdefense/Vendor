@@ -361,3 +361,49 @@ save(ota_contract,ota_lc,ota_ck, file="data/clean/OTA_contract.Rda")
 
 summary(fed_data$PlatformPortfolioUAV)
 
+
+if(!exists("def_data"))
+  load(file="FPDS_chart_maker/unaggregated_def.Rda")
+
+def_kota<-ota_def
+def_kota$IsOTA<-"OTA"
+def_data$IsOTA<-"Contract"
+def_data$AreaType<-paste("Contract for",def_data$SimpleArea)
+def_kota$AreaType<-paste("OTA for",def_kota$TypeOfAgreement)
+
+
+
+
+def_kota<-rbind(def_kota[,colnames(def_kota)[colnames(def_kota) %in% colnames(def_data)]],
+               def_data[,colnames(def_data)[colnames(def_data) %in% colnames(def_kota)]])%>%
+  filter(Fiscal_Year>=2015)
+
+
+def_kota$AreaType<-factor(def_kota$AreaType)
+levels(def_kota$AreaType)<-list(
+  "OTA for Production"="OTA for Production",
+  "Contract for Products"="Contract for Products (All)",
+  "OTA for Prototype"="OTA for Prototype" ,
+  "Contract for R&D"="Contract for R&D",
+  "Contract for Services"="Contract for Services (Non-R&D)",
+  "Unlabeled"=c("Contract for Unlabeled","OTA for NA")
+)
+def_kota$SimpleAreaType<-def_kota$AreaType
+levels(def_kota$SimpleAreaType)<-list(
+  "Products and Production"=c("Contract for Products",
+                              "OTA for Production"),
+  "R&D and Prototypes"=c("Contract for R&D",
+                         "OTA for Prototype"),
+  "Services"="Contract for Services",
+  "Unlabeled"="Unlabeled")
+
+def_kota<-def_kota %>% mutate(
+  SimpleAreaType=factor(SimpleAreaType),
+  AreaType=factor(AreaType)
+)
+
+summary(factor(def_kota$AreaType))
+
+kota_ck<-get_column_key(def_kota,path="offline")
+kota_lc<-prepare_labels_and_colors(def_kota,path="offline")
+save(def_kota,kota_lc,kota_ck, file="data/clean/def_kota.Rda")
