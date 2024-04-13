@@ -49,8 +49,11 @@ colnames(platpscintldef)[colnames(platpscintldef)=="Action_Obligation_Then_Year_
   "Action_Obligation_Then_Year"
 
 topplat<-platpscintldef %>% group_by (Project.Name,PlatformPortfolio) %>%
+  #Exclude NA from ranking and then create a recent only dollar amount
+  mutate(Action_Obligation_2023=if_else(is.na(Project.Name),Action_Obligation_2023,NA),
+    Action_Obligation_2023=if_else(Fiscal_Year>=2023,Action_Obligation_OMB24_GDP22,NA))%>%
   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm = TRUE),
-            Action_Obligation_2023=sum(ifelse(Fiscal_Year>=2023,Action_Obligation_OMB24_GDP22,NA),na.rm = TRUE))%>%
+            Action_Obligation_2023=sum(Action_Obligation_2023,na.rm = TRUE))%>%
               group_by (PlatformPortfolio) %>%
     mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
                         rank_2023=rank(desc(Action_Obligation_2023)))
@@ -72,10 +75,8 @@ summary(factor(platpscintldef$TopProject))
 
 colnames(platpscintldef)
 platpscintldef
-View(platpscintldef%>% group_by(PlatformPortfolio,TopProjectTest,TopProject,rank_total,TopProjectTest_rank_total,rank_2023,TopProjectTest_rank_recent,recent_weight) %>%  
-       filter(!TopProjectTest=="Other Labeled"& TopProject=="Other Labeled Project") %>%
-  summarise(n=length(Fiscal_Year)))
 
+write.csv(topplat,file=file.path("..","Output","AcqTrends","Topplat.csv"),row.names=FALSE)
 # debug(label_top)
 platpscintldef<-label_top(platpscintldef,
                     col="Project.Name",
@@ -83,9 +84,12 @@ platpscintldef<-label_top(platpscintldef,
                     top_name="TopProjectTest",
                     group_list="PlatformPortfolio",
                     recent=2023,
-                    retain_rank=TRUE)
+                    retain_rank=TRUE,
+                    write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv"))
 
-
+View(platpscintldef%>% group_by(PlatformPortfolio,TopProjectTest,TopProject,rank_total,TopProjectTest_rank_total,rank_2023,TopProjectTest_rank_recent) %>%  
+       filter(!TopProjectTest=="Other Labeled"& TopProject=="Other Labeled Project") %>%
+  summarise(n=length(Fiscal_Year)))
 ```
 ## PSC
 ```{r PreprocessPSC}
@@ -691,6 +695,66 @@ write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE, na = ""
 
 
 # Customers and all projects / PSC 
+## Topline SubCustomer 
+```{r SubCustomer}
+platpscintldef$SubCustomer
+
+platpscintldef %>% group_by(SubCustomer,Fiscal_Year) %>% filter(SubCustomer=="SDA") %>%
+  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)) %>% arrange(
+    Fiscal_Year
+  )
+
+(
+SubCustomer<-build_plot(
+  data=platpscintldef %>% filter(Fiscal_Year<2024),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="SubCustomer", #color_var
+  facet_var="SubCustomer.sum", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)") +date_x_year_breaks(1990,2020,5)#,partial_year=2024,partial_label="\nQ1")
+)
+
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_subcustomer.png", SubCustomer, 
+             width=12, height= 6, units="in",size=12,lineheight = 1.2
+             )
+
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_subcustomer.svg", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
+             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+             )
+
+ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_subcustomer_keynote.svg", SubCustomer+
+               facet_wrap(~SubCustomer.sum,nrow=1)+
+               labs(title="DOD Contract Obligations by Component, 1990–2023")+
+               date_x_year_breaks(1990,2020,8),#,partial_year=2024,partial_label="\nQ1"), 
+             width=13, height= 5.5, units="in", size=20, lineheight = 0.75
+             )
+
+log_plot(plot=SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1)+
+           date_x_year_breaks(1990,2020,8),#,partial_year=2024,partial_label="\nQ1"),
+         df=def_data %>% filter(Fiscal_YQ<2024),
+                     filename="acq_fig2_3_subcustomer",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+                     sheet="2-3 Cust",path="../output/AcqTrends/",second_path=online_path, height=3.5,
+                     startRow=1,startCol=13,format=TRUE,var_list=c("SubCustomer.sum","SubCustomer.JPO")
+         )
+
+```
 
 ### Project Customer Breakout
 ```{r ProjPlatBreakout} 
