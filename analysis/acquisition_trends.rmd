@@ -44,8 +44,8 @@ if(!exists("def_data"))
 load(file="../data/clean/Defense_OTA.Rda")
 
 
-if(!"Action_Obligation_OMB24_GDP22" %in% colnames(ota_def))
-  ota_def<-deflate(ota_def, "Dollars_Obligated_Then_Year",deflator_var="OMB24_GDP22")
+if(!"Action_Obligation_OMB25_GDP23" %in% colnames(ota_def))
+  ota_def<-deflate(ota_def, "Dollars_Obligated_Then_Year",deflator_var="OMB25_GDP23")
 colnames(ota_def)[colnames(ota_def)=="Dollars_Obligated_Then_Year_Then_Year"]<-"Dollars_Obligated_Then_Year"
 
 
@@ -61,7 +61,7 @@ colnames(toa)<-gsub("\r\nEnacted","",colnames(toa))
 colnames(toa)[colnames(toa)=="...2"]<-"Series"
 toa<-pivot_longer(toa,  cols=-Series, names_to="Fiscal_Year", values_to="Total_Obligation_Authority")
 toa$Total_Obligation_Authority<-toa$Total_Obligation_Authority*1000000
-toa<-deflate(toa,money_var = "Total_Obligation_Authority",deflator_var="OMB24_GDP22")
+toa<-deflate(toa,money_var = "Total_Obligation_Authority",deflator_var="OMB25_GDP23")
 toa$dFYear<-as.Date(paste(toa$Fiscal_Year,1,1,sep="-"))
 
 online_path<-file.path(get_local_sharepoint_path("DIIG Teamsite - Shared Documents"),"2024 - Acquisition Trends","Data and Figures")
@@ -84,7 +84,7 @@ load(file="../data/clean/Defense_OTA.Rda")
 (toplineq<-build_plot(data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2024.1),#rbind(quarterly,q2021,e2021),
                      chart_geom="Bar Chart",
                      x_var="dFYear",alpha_var="YTD",
-                     y_var="Action_Obligation_OMB24_GDP22",
+                     y_var="Action_Obligation_OMB25_GDP23",
            color_var="fiscal_quarter",
            format = TRUE,
            labels_and_colors = def_lc,
@@ -125,7 +125,7 @@ for(p in platform_levels){
     data=def_data %>% filter(Fiscal_Year>=2000&Fiscal_YQ<2024&PlatformPortfolio==p),
                      chart_geom="Bar Chart",
                      x_var="dFYear",alpha_var="YTD",
-                     y_var="Action_Obligation_OMB24_GDP22",
+                     y_var="Action_Obligation_OMB25_GDP23",
            color_var="fiscal_quarter",
            format = TRUE,
            labels_and_colors = def_lc,
@@ -157,7 +157,7 @@ for(c in subcustomer_levels){
     data=def_data %>% filter(Fiscal_Year>=2000&SubCustomer.sum==c& Fiscal_YQ<2024),
                     chart_geom="Bar Chart",
                      x_var="dFYear",alpha_var="YTD",
-                     y_var="Action_Obligation_OMB24_GDP22",
+                     y_var="Action_Obligation_OMB25_GDP23",
            color_var="fiscal_quarter",
            format = TRUE,
            labels_and_colors = def_lc,
@@ -185,24 +185,24 @@ for(c in subcustomer_levels){
 
 
 fpds_annual<-platpscintldef %>% filter(Fiscal_Year<2024) %>% group_by(Fiscal_Year,dFYear,IsFMS,
-                                    ContractingCustomer,YTD) %>% summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE),
+                                    ContractingCustomer,YTD) %>% summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE),
                                                                        Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))
 fpds_annual$Series<-"Contract Obligations"
 toa$ContractingCustomer<-"Defense"
-toa$Action_Obligation_OMB24_GDP22<-NA
+toa$Action_Obligation_OMB25_GDP23<-NA
 toa$Action_Obligation_Then_Year<-NA
 toa$Fiscal_Year<-text_to_number(toa$Fiscal_Year)
 toa$YTD<-NA
 toa$IsFMS<-0
 fpds_annual$Total_Obligation_Authority_Then_Year<-NA
-fpds_annual$Total_Obligation_Authority_OMB24_GDP22<-NA
+fpds_annual$Total_Obligation_Authority_OMB25_GDP23<-NA
 colnames(toa)[!colnames(toa) %in% colnames(fpds_annual)]
 colnames(fpds_annual)[!colnames(fpds_annual) %in% colnames(toa)]
 fpds_annual<-rbind(as.data.frame(fpds_annual),as.data.frame(toa))# %>% dplyr::select(-fiscal_quarter)
 
 fpds_annual$FMS<-as.character(fpds_annual$IsFMS)
 fpds_annual$FMS[fpds_annual$Fiscal_Year<2012 | is.na(fpds_annual$IsFMS)]<-"Obligations (reliable\nFMS labels not available)"
-fpds_annual$FMS[!is.na(fpds_annual$Total_Obligation_Authority_OMB24_GDP22)]<-"Obligations (no FMS)"
+fpds_annual$FMS[!is.na(fpds_annual$Total_Obligation_Authority_OMB25_GDP23)]<-"Obligations (no FMS)"
 fpds_annual$FMS<-factor(fpds_annual$FMS)
 levels(fpds_annual$FMS)<-list("Obligations (includes FMS)"=c("1","Obligations (includes FMS)"),
                               "Obligations (no FMS)"=c("0","Obligations (no FMS)"),
@@ -213,10 +213,10 @@ fpds_annual$TOA<-"Total Obligation Authority"
 (topline<-build_plot(data=fpds_annual %>% filter(Fiscal_Year>=1990),#rbind(quarterly,q2021,e2021),
                      chart_geom="Bar Chart",
                      x_var="dFYear",#alpha_var="YTD",
-                     y_var="Action_Obligation_OMB24_GDP22",
+                     y_var="Action_Obligation_OMB25_GDP23",
            color_var="FMS"
        )+
-    geom_path(aes(x=dFYear,y=Total_Obligation_Authority_OMB24_GDP22,color=TOA))+
+    geom_path(aes(x=dFYear,y=Total_Obligation_Authority_OMB25_GDP23,color=TOA))+
   # scale_alpha_discrete(range=c(0.4,1))+
     labs(x="Fiscal Year",y="Constant FY 2022 $",fill="Contract",color="Budget",
          caption="Source: FPDS, FY 2024 DoD Greenbook, CSIS Analysis")+
@@ -264,8 +264,8 @@ log_plot(plot=topline,
 
 ## Topline Competition
 ```{r ToplineComp}
-def_data %>% group_by(Fiscal_Year) %>% summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
-def_data %>% filter(Fiscal_Year==2021) %>% group_by(Competition.sum) %>% summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
+def_data %>% group_by(Fiscal_Year) %>% summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
+def_data %>% filter(Fiscal_Year==2021) %>% group_by(Competition.sum) %>% summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
 
 (
 ToplineCompMulti<-build_plot(
@@ -275,7 +275,7 @@ ToplineCompMulti<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Competition.multisum", #color_var
   # facet_var="Competition.sum", #facet_var
   column_key=column_key,
@@ -304,7 +304,7 @@ ToplineComp<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Competition.sum", #color_var
   # facet_var="Competition.sum", #facet_var
   column_key=column_key,
@@ -335,7 +335,7 @@ ToplineCompLine<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Competition.sum", #color_var
   # facet_var="Competition.sum", #facet_var
   column_key=column_key,
@@ -357,7 +357,7 @@ ToplineCompLine<-build_plot(
 )
 
 def_data %>% filter(Competition.sum =="Unlabeled" & Fiscal_Year>=2019) %>% group_by(CompetitionClassification)%>%
-  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
 
 ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_comp.png", ToplineComp,  
              width=11, height= 5.5, units="in",size=14, lineheight=1.2
@@ -390,7 +390,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="to
 write.csv(file="..//Output//AcqTrends//topline_competition.csv",row.names = FALSE, na = "",
           ToplineComp$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(Competition.sum),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23))
 
 log_plot(plot=ToplineComp, df=def_data %>% filter(Fiscal_YQ<2024),
                      filename="acq_fig6_5_competition",xlsx="DoD_Acq_Trends_Contracts.xlsx",
@@ -412,7 +412,7 @@ UnlabeledComp<-build_plot(
   # labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="Fiscal_Year", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="CompetitionClassification", #color_var
   facet_var="Vehicle.sum7", #facet_var
   # column_key=column_key,
@@ -432,7 +432,7 @@ UnlabeledComp<-build_plot(
 )
 
 def_data %>% filter(Competition.sum =="Unlabeled" & Fiscal_Year>=2019) %>% group_by(CompetitionClassification)%>%
-  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
 
 ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="unlabeled_comp.png", UnlabeledComp,  
              width=12, height= 6, units="in",size=12, lineheight=1.2
@@ -443,7 +443,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="un
 write.csv(file="..//Output//AcqTrends//unlabeled_competition.csv",row.names = FALSE, na = "",
           # ToplineComp$data%>% mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(UnlabeledComp$data,id_cols=c(CompetitionClassification,Vehicle.sum7),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23)
           %>% arrange(CompetitionClassification,Vehicle.sum7))
 
 
@@ -472,7 +472,7 @@ ToplineVehicle7<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Vehicle.sum7", #color_var
   facet_var="Vehicle.AwardTask", #facet_var
   column_key=column_key,
@@ -501,7 +501,7 @@ ToplineVehicle<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Vehicle.sum", #color_var
   facet_var="Vehicle.AwardTask", #facet_var
   column_key=column_key,
@@ -529,9 +529,9 @@ ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="to
 write.csv(file="..//Output//AcqTrends//topline_vehicle7.csv",row.names = FALSE, na = "",
           ToplineVehicle7$data%>% 
             mutate(Fiscal_Year=lubridate::year(dFYear),
-                   bAction_Obligation_OMB24_GDP22=Action_Obligation_OMB24_GDP22/1000000000)%>%
+                   bAction_Obligation_OMB25_GDP23=Action_Obligation_OMB25_GDP23/1000000000)%>%
             pivot_wider(id_cols=c(Vehicle.sum7,Vehicle.AwardTask),
-                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%
+                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB25_GDP23)%>%
             arrange(Vehicle.sum7,Vehicle.AwardTask))
 
 
@@ -541,9 +541,9 @@ ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="to
 
 write.csv(file="..//Output//AcqTrends//topline_vehicle.csv",row.names = FALSE, na = "",
           ToplineVehicle$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
-                                       bAction_Obligation_OMB24_GDP22=Action_Obligation_OMB24_GDP22/1000000000)%>%
+                                       bAction_Obligation_OMB25_GDP23=Action_Obligation_OMB25_GDP23/1000000000)%>%
             pivot_wider(id_cols=c(Vehicle.sum,Vehicle.AwardTask),
-                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%
+                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB25_GDP23)%>%
             arrange(Vehicle.sum,Vehicle.AwardTask))
 
 log_plot(plot=ToplineVehicle7, df=def_data %>% filter(Fiscal_YQ<2024),
@@ -567,7 +567,7 @@ for(p in platform_levels){
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Vehicle.sum7", #color_var
   facet_var="Vehicle.AwardTask", #facet_var
   column_key=column_key,
@@ -602,7 +602,7 @@ for(c in subcustomer_levels){
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Vehicle.sum7", #color_var
   facet_var="Vehicle.AwardTask", #facet_var
   column_key=column_key,
@@ -643,7 +643,7 @@ ToplinePricing<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PricingUCA", #color_var
   facet_var="PricingUCA.sumlong", #facet_var
   column_key=def_ck,
@@ -713,7 +713,7 @@ PricingHistory<-build_plot(
   labels_and_colors=hist_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PricingInflation", #color_var
   # facet_var="PricingUCA.sumlong", #facet_var
   column_key=hist_ck,
@@ -766,14 +766,14 @@ levels(full_data$ProductOrService)<-list("Products"="Products (All)",
 
 
 full_data<- full_data %>%      group_by(Fiscal_Year,IsFMS) %>%
-                               dplyr::mutate(Action_FMS_Share=Action_Obligation_OMB24_GDP22/
-                                           sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))%>% 
+                               dplyr::mutate(Action_FMS_Share=Action_Obligation_OMB25_GDP23/
+                                           sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))%>% 
                                group_by(Fiscal_Year,IsFMS,ProductOrService) %>%
-                               dplyr::mutate(Action_FMS_PS_Share=Action_Obligation_OMB24_GDP22/
-                                           sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))%>% 
+                               dplyr::mutate(Action_FMS_PS_Share=Action_Obligation_OMB25_GDP23/
+                                           sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))%>% 
                                group_by(Fiscal_Year,IsFMS,SimpleArea) %>%
-                               dplyr::mutate(Action_FMS_PSR_Share=Action_Obligation_OMB24_GDP22/
-                                           sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))
+                               dplyr::mutate(Action_FMS_PSR_Share=Action_Obligation_OMB25_GDP23/
+                                           sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
 
 
 
@@ -803,7 +803,7 @@ full_data<- full_data %>%      group_by(Fiscal_Year,IsFMS) %>%
 (fpds_pricing_bar <-  build_plot(data=full_data %>% filter(Fiscal_Year>=2012 & Fiscal_YQ<2024),
                             chart_geom="Bar Chart",
                             x_var="dFYear",
-                            y_var="Action_Obligation_OMB24_GDP22",
+                            y_var="Action_Obligation_OMB25_GDP23",
                             color_var="PricingUCA",
                             facet_var="IsFMS",
                             # second_var="StateRegion",
@@ -853,7 +853,7 @@ full_data<- full_data %>%      group_by(Fiscal_Year,IsFMS) %>%
                                        filter(Fiscal_Year>=2012 & Fiscal_YQ<2024),
                             chart_geom="Bar Chart",
                             x_var="dFYear",
-                            y_var="Action_Obligation_OMB24_GDP22",
+                            y_var="Action_Obligation_OMB25_GDP23",
                             color_var="PricingUCA",
                             facet_var="IsFMS",
                             second_var="ProductOrService",
@@ -894,7 +894,7 @@ for(p in platform_levels){
     labels_and_colors=labels_and_colors,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
-    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     color_var="PricingUCA", #color_var
     facet_var="PricingUCA.sumlong", #facet_var
     column_key=column_key,
@@ -930,7 +930,7 @@ for(c in subcustomer_levels){
     labels_and_colors=labels_and_colors,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
-    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     color_var="PricingUCA", #color_var
     facet_var="PricingUCA.sumlong", #facet_var
     column_key=column_key,
@@ -972,7 +972,7 @@ Commercial<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="AnyCommercialText", #color_var
   # facet_var="SubCustomer.platform", #facet_var
   column_key=def_ck,
@@ -1012,7 +1012,7 @@ log_plot(plot=Commercial+labs(y="Obligations\n(Constant 2022 $s)"), df=def_data 
 def_data %>% filter(SubCustomer.sum=="Army", PlatformPortfolio=="Other Products", Fiscal_Year==2021) %>%
   group_by(AnyCommercialText,Competition.multisum) %>% summarise(
     COVID19obligated=sum(COVID19obligated,na.rm=TRUE),
-    Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
+    Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
     Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year),
     
   )
@@ -1041,7 +1041,7 @@ CurDuration<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="CurrentDurationCategory", #color_var
   # facet_var="SubCustomer.platform", #facet_var
   column_key=def_ck,
@@ -1070,7 +1070,7 @@ UnmDuration<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="UnmodifiedUltimateDurationCategory", #color_var
   # facet_var="SubCustomer.platform", #facet_var
   column_key=def_ck,
@@ -1137,7 +1137,7 @@ Multiyear<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="multiyearcontract", #color_var
   # facet_var="SubCustomer.platform", #facet_var
   column_key=def_ck,
@@ -1162,7 +1162,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="to
 # full_data %>% filter(SubCustomer.sum=="Army", PlatformPortfolio=="Other Products", Fiscal_Year==2021) %>%
 #   group_by(AnyMultiyearText,Competition.multisum) %>% summarise(
 #     COVID19obligated=sum(COVID19obligated,na.rm=TRUE),
-#     Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
+#     Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
 #     Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year),
 #     
 #   )
@@ -1181,17 +1181,17 @@ full_data$multiyearcontracttext[is.na(full_data$multiyearcontract)&
 
 # full_data %>% group_by(Vehicle) %>%
 #   dplyr::summarise(multiyearcontracttext=sum(
-#     ifelse(multiyearcontracttext=="Multiyear Contract",Action_Obligation_OMB24_GDP22,0),na.rm=TRUE))
+#     ifelse(multiyearcontracttext=="Multiyear Contract",Action_Obligation_OMB25_GDP23,0),na.rm=TRUE))
 
 
 
 full_data<-full_data %>% group_by(Fiscal_Year,Vehicle.sum7)%>%
-  mutate(pPlatFYear=Action_Obligation_OMB24_GDP22/sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))
+  mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
 ```
 ### Multiyear Vehicle
 ```{r VehicleMultiyear}
 full_data %>% group_by(Vehicle,multiyearcontracttext) %>%
-  dplyr::summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))
+  dplyr::summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
 
 levels(factor(full_data$Vehicle))
 
@@ -1203,7 +1203,7 @@ VehicleMultiYear<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="multiyearcontracttext", #color_var
   facet_var="Vehicle",
   column_key=column_key,
@@ -1296,7 +1296,7 @@ GFEcomp<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Competition.detail", #color_var
   facet_var="gfe_gfp_value", #facet_var
   column_key=def_ck,
@@ -1332,7 +1332,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="pl
 
 # write.csv(file="..//Output//AcqTrends//platform_GFE.csv",row.names = FALSE, na = "",
 #           pivot_wider(GFEplat$data,id_cols=c(PlatformPortfolio,gfe_gfp_value),
-#                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
+#                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23))
 
 write.csv(file="..//Output//AcqTrends//platform_GFE_current.csv",row.names = FALSE, na = "",
           def_data %>% group_by(PlatformPortfolio,gfe_gfp_value,Fiscal_Year)%>%
@@ -1357,7 +1357,7 @@ CAS<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="costaccountingstandardsclause", #color_var
   facet_var="SubCustomer.platform", #facet_var
   column_key=def_ck,
@@ -1385,7 +1385,7 @@ CAS<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="costaccountingstandardsclause", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=def_ck,
@@ -1413,7 +1413,7 @@ CAS<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Competition.detail", #color_var
   facet_var="costaccountingstandardsclause", #facet_var
   column_key=def_ck,
@@ -1441,7 +1441,7 @@ CAS<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="AnyCommercial", #color_var
   facet_var="costaccountingstandardsclause", #facet_var
   column_key=def_ck,
@@ -1475,7 +1475,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="to
 
 write.csv(file="..//Output//AcqTrends//topline_subcustomer.csv",row.names = FALSE, na = "",
           pivot_wider(SubCustomer$data,id_cols=c(SubCustomer.sum,SubCustomer.platform),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23))
 
 write.csv(file="..//Output//AcqTrends//topline_subcustomer_current.csv",row.names = FALSE, na = "",
           full_data %>% group_by(SubCustomer.sum,ContractingSubCustomer,Fiscal_Year)%>%
@@ -1499,7 +1499,7 @@ EE<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="EnergyEfficient", #color_var
   facet_var="SubCustomer.platform", #facet_var
   column_key=def_ck,
@@ -1527,7 +1527,7 @@ EE<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="EnergyEfficient", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=def_ck,
@@ -1563,7 +1563,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="to
 
 write.csv(file="..//Output//AcqTrends//topline_subcustomer.csv",row.names = FALSE, na = "",
           pivot_wider(SubCustomer$data,id_cols=c(SubCustomer.sum,SubCustomer.platform),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23))
 
 write.csv(file="..//Output//AcqTrends//topline_subcustomer_current.csv",row.names = FALSE, na = "",
           full_data %>% group_by(SubCustomer.sum,ContractingSubCustomer,Fiscal_Year)%>%
@@ -1588,7 +1588,7 @@ ToplinePSR<-build_plot(
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
   # alpha_var="YTD",
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="SimpleArea", #color_var
   # facet_var="Competition.sum", #facet_var
   column_key=column_key,
@@ -1634,7 +1634,7 @@ OTAPSR<-build_plot(
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
   # alpha_var="YTD",
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="AreaType", #color_var
   facet_var="SimpleAreaType", #facet_var
   column_key=kota_ck,
@@ -1677,7 +1677,7 @@ for(p in platform_levels){
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
   alpha_var="YTD",
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="SimpleArea", #color_var
   # facet_var="Competition.sum", #facet_var
   column_key=column_key,
@@ -1715,7 +1715,7 @@ for(c in subcustomer_levels){
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
   alpha_var="YTD",
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="SimpleArea", #color_var
   # facet_var="Competition.sum", #facet_var
   column_key=column_key,
@@ -1751,7 +1751,7 @@ PSR_Q<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="fiscal_quarter", #color_var
   facet_var="SimpleArea", #facet_var
   column_key=def_ck,
@@ -1798,7 +1798,7 @@ RnDphase<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="Fiscal_Year", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="ProductServiceOrRnDarea", #color_var
   # facet_var="Competition.sum", #facet_var
   column_key=def_ck,
@@ -1839,7 +1839,7 @@ contract_merge<-def_data %>% filter(Fiscal_YQ<2024) %>%
   group_by(Fiscal_Year,
                          ProductServiceOrRnDarea,
                          SimpleArea)%>%
-  dplyr::summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
+  dplyr::summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
                    Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
 
 # 
@@ -1847,14 +1847,14 @@ contract_merge<-def_data %>% filter(Fiscal_YQ<2024) %>%
 
 #   format_data_for_plot(contract_data,
 #                      fy_var="Fiscal_Year", #x_var
-#                      y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+#                      y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
 #                      color_var="ProductServiceOrRnDarea", #color_var
 #                      facet_var = "SimpleArea",
 #                      labels_and_colors = labels_and_colors
 # )
 # ota_merge<-format_data_for_plot(ota_def,
 #                      fy_var="Fiscal_Year", #x_var
-#                      y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+#                      y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
 #                      color_var="ProductServiceOrRnDarea", #color_var
 #                      facet_var = "SimpleArea",
 #                      labels_and_colors = labels_and_colors
@@ -1862,13 +1862,13 @@ contract_merge<-def_data %>% filter(Fiscal_YQ<2024) %>%
 
 ota_merge<-ota_def%>%filter(Fiscal_Year >=2015 & Fiscal_Year <=2022) %>%
   group_by(Fiscal_Year,SimpleArea)%>%
-  dplyr::summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22),
+  dplyr::summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
                    Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year)
                    )
 
 #   format_data_for_plot(ota_def,
 #                      fy_var="Fiscal_Year", #x_var
-#                      y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+#                      y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
 #                      color_var="ProductServiceOrRnDarea", #color_var
 #                      facet_var = "SimpleArea",
 #                      labels_and_colors = labels_and_colors
@@ -1886,7 +1886,7 @@ RnDphasePlusOTA<-build_plot(
   labels_and_colors=prepare_labels_and_colors(merge),
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="ProductServiceOrRnDarea", #color_var
   column_key=column_key,
   format=TRUE,
@@ -1922,7 +1922,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="Rn
 # write.csv(file="..//Output//AcqTrends//RnDPhasePlusOTA.csv",row.names = FALSE, na = "",
 #           RnDphasePlusOTA$data%>% mutate(Fiscal_Year=year(dFYear)) %>%
 #           pivot_wider(id_cols=c(ProductServiceOrRnDarea),
-#                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
+#                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23)%>%
 #             arrange(ProductServiceOrRnDarea))
 # #             
 # #  
@@ -1947,19 +1947,19 @@ contract_merge<-def_data%>%filter(Fiscal_Year >=2015 & Fiscal_YQ<2022) %>%
   group_by(Fiscal_Year,
                          ProductServiceOrRnDarea,
                          SimpleArea)%>%
-  dplyr::summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
+  dplyr::summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
 
 # 
 #   format_data_for_plot(contract_data,
 #                      fy_var="Fiscal_Year", #x_var
-#                      y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+#                      y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
 #                      color_var="ProductServiceOrRnDarea", #color_var
 #                      facet_var = "SimpleArea",
 #                      labels_and_colors = labels_and_colors
 # )
 # ota_merge<-format_data_for_plot(ota_def,
 #                      fy_var="Fiscal_Year", #x_var
-#                      y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+#                      y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
 #                      color_var="ProductServiceOrRnDarea", #color_var
 #                      facet_var = "SimpleArea",
 #                      labels_and_colors = labels_and_colors
@@ -1969,12 +1969,12 @@ ota_merge<-standardize_variable_names(ota_def)%>%filter(Fiscal_Year >=2015) %>%
   group_by(Fiscal_Year,
                          ProductServiceOrRnDarea,
                          SimpleArea)%>%
-  dplyr::summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
+  dplyr::summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
 
 
 #   format_data_for_plot(ota_def,
 #                      fy_var="Fiscal_Year", #x_var
-#                      y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+#                      y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
 #                      color_var="ProductServiceOrRnDarea", #color_var
 #                      facet_var = "SimpleArea",
 #                      labels_and_colors = labels_and_colors
@@ -1993,7 +1993,7 @@ RnDphase<-build_plot(
   labels_and_colors=prepare_labels_and_colors(merge),#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\"
   # NA, #VAR.ncol
   x_var="Fiscal_Year", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Authority", #color_var
   facet_var="ProductServiceOrRnDarea", #facet_var
   column_key=column_key,
@@ -2019,7 +2019,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="co
 # 
 write.csv(file="..//Output//AcqTrends//contractota_RnDPhase.csv",row.names = FALSE, na = "",
           pivot_wider(RnDphase$data,id_cols=c(ProductServiceOrRnDarea,Authority),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23)%>%
             arrange(ProductServiceOrRnDarea,Authority))
 #             
 # 
@@ -2045,7 +2045,7 @@ Services<-build_plot(
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
   alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="ProductServiceOrRnDarea", #color_var
   # facet_var="Competition.sum", #facet_var
   column_key=column_key,
@@ -2086,7 +2086,7 @@ PSRpricing_dollar<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PricingUCA.sum", #color_var
   facet_var="SimpleArea", #facet_var
   column_key=column_key,
@@ -2118,7 +2118,7 @@ SimpleVendor_share<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PricingUCA.sum", #color_var
   facet_var="SimpleArea", #facet_var
   column_key=column_key,
@@ -2156,7 +2156,7 @@ SimpleVendor_dollar<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Shiny.VendorSize", #color_var
   facet_var="SimpleArea", #facet_var
   column_key=column_key,
@@ -2188,7 +2188,7 @@ SimpleVendor_share<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Shiny.VendorSize", #color_var
   facet_var="SimpleArea", #facet_var
   column_key=column_key,
@@ -2226,7 +2226,7 @@ PSRComp_line<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Competition.multisum", #color_var
   facet_var="SimpleArea", #facet_var
   column_key=def_ck,
@@ -2257,7 +2257,7 @@ PSRComp_bar<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Competition.multisum", #color_var
   facet_var="SimpleArea", #facet_var
   column_key=def_ck,
@@ -2279,7 +2279,7 @@ PSRComp_line<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Competition.multisum", #color_var
   facet_var="SimpleArea", #facet_var
   column_key=def_ck,
@@ -2400,7 +2400,7 @@ PSRMultiYear<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="multiyearcontracttext", #color_var
   facet_var="SimpleArea",
   column_key=column_key,
@@ -2420,7 +2420,7 @@ PSRMultiYear<-build_plot(
 )
 
 full_data<-full_data %>% group_by(Fiscal_Year,SimpleArea)%>%
-  mutate(pPlatFYear=Action_Obligation_OMB24_GDP22/sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))
+  mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
 (
 PSRMultiYearShare<-build_plot(
   data=full_data %>% filter(Fiscal_Year>=2000 & SimpleArea!="Unlabeled"&
@@ -2483,7 +2483,7 @@ SubCustomer<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="SubCustomer.JPO", #color_var
   facet_var="SubCustomer.sum", #facet_var
   column_key=def_ck,
@@ -2539,7 +2539,7 @@ chart_geom = "Bar Chart",
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="SubCustomer.JPO", #color_var
   facet_var="SubCustomer.sum", #facet_var
   column_key=def_ck,
@@ -2587,7 +2587,7 @@ SubCustomerCovid<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="Fiscal_Year", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="SubCustomer.COVID", #color_var
   facet_var="SubCustomer.sum", #facet_var
   column_key=def_ck,
@@ -2616,7 +2616,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="su
 
 write.csv(file="..//Output//AcqTrends//subcustomer_covid.csv",row.names = FALSE, na = "",
           pivot_wider(SubCustomerCovid$data,id_cols=c(SubCustomer.sum,SubCustomer.COVID),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23))
 
 write.csv(file="..//Output//AcqTrends//subcustomer_covid.csv",row.names = FALSE, na = "",
           cust_covid %>% group_by(SubCustomer.sum,SubCustomer.COVID,Fiscal_Year)%>%
@@ -2638,7 +2638,7 @@ SubCustomerPSR<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="Fiscal_Year", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="SimpleArea", #color_var
   facet_var="SubCustomer.sum", #facet_var
   column_key=column_key,
@@ -2676,7 +2676,7 @@ SubCustomerComp_line<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Competition.effective.only", #color_var
   facet_var="SubCustomer.platform", #facet_var
   column_key=column_key,
@@ -2710,7 +2710,7 @@ SubCustomerComp_bar<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="Fiscal_Year", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Competition.multisum", #color_var
   facet_var="SubCustomer.platform", #facet_var
   column_key=column_key,
@@ -2737,7 +2737,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="su
 write.csv(file="..//Output//AcqTrends//subcustomer_competition.csv",row.names = FALSE, na = "",
           SubCustomerComp_line$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(SubCustomer.platform,Competition.effective.only),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23)%>%
             arrange(SubCustomer.platform,Competition.effective.only))
 
 ```
@@ -2755,7 +2755,7 @@ PricingHistoryCust<-build_plot(
   labels_and_colors=hist_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PricingInflation", #color_var
   facet_var="SubCustomer.platform", #facet_var
   column_key=hist_ck,
@@ -2818,7 +2818,7 @@ CommercialCust<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="AnyCommercialText", #color_var
   facet_var="SubCustomer.platform", #facet_var
   column_key=def_ck,
@@ -2882,7 +2882,7 @@ GFEcust<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="gfe_gfp_value", #color_var
   facet_var="SubCustomer.platform", #facet_var
   column_key=def_ck,
@@ -2915,7 +2915,7 @@ Platform<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PlatformPortfolio", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=def_ck,
@@ -2943,7 +2943,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="to
              )
 
 ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="topline_platform.emf", Platform+geom_line(
-  size=1,aes(x=dFYear,y=Action_Obligation_OMB24_GDP22,color=PlatformPortfolio)),
+  size=1,aes(x=dFYear,y=Action_Obligation_OMB25_GDP23,color=PlatformPortfolio)),
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
@@ -2956,7 +2956,7 @@ Platform_Bar<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PlatformPortfolio", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=def_ck,
@@ -3001,7 +3001,7 @@ for(c in subcustomer_levels){
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PlatformPortfolio", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=def_ck,
@@ -3039,7 +3039,7 @@ for(s in c("Army","Navy","Air Force")){
       labels_and_colors=labels_and_colors,
       # NA, #VAR.ncol
       x_var="dFYear",#alpha_var="YTD", #x_var
-      y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+      y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
       color_var="PlatformPortfolio", #color_var
       facet_var="PlatformPortfolio", #facet_var
       column_key=column_key,
@@ -3067,7 +3067,7 @@ for(s in c("Army","Navy","Air Force")){
   )
   
   ggsave600dpi(paste("..//Output//AcqTrends//",s,"_platform.emf",sep=""), Platform+geom_line(
-    size=1,aes(x=dFYear,y=Action_Obligation_OMB24_GDP22,color=PlatformPortfolio)),
+    size=1,aes(x=dFYear,y=Action_Obligation_OMB25_GDP23,color=PlatformPortfolio)),
     width=6.5, height= 4, units="in",size=11,lineheight = 1.2
   )
 }
@@ -3080,7 +3080,7 @@ for(s in c("Army","Navy","Air Force")){
 #   labels_and_colors=labels_and_colors,
 #   # NA, #VAR.ncol
 #   x_var="dFYear",#alpha_var="YTD", #x_var
-#   y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+#   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
 #   color_var="PlatformPortfolio", #color_var
 #   facet_var="PlatformPortfolio", #facet_var
 #   column_key=column_key,
@@ -3131,7 +3131,7 @@ PlatformSubCustomer<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="SubCustomer.platform", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=column_key,
@@ -3167,7 +3167,7 @@ PlatformPSR<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="SimpleArea", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=column_key,
@@ -3204,7 +3204,7 @@ PlatformProducts<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="SimpleArea", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=column_key,
@@ -3250,7 +3250,7 @@ PlatformRnD<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="SimpleArea", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=column_key,
@@ -3285,7 +3285,7 @@ PlatformQ<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="fiscal_quarter", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=def_ck,
@@ -3313,7 +3313,7 @@ OnMQ<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="fiscal_quarter", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=def_ck,
@@ -3406,7 +3406,7 @@ PlatformVendor_share<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Shiny.VendorSize", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=column_key,
@@ -3440,7 +3440,7 @@ PlatformVendor_dollar<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Shiny.VendorSize", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=column_key,
@@ -3467,7 +3467,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="pl
 write.csv(file="..//Output//AcqTrends//platform_vendor.csv",row.names = FALSE, na = "",
           PlatformVendor_dollar$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(PlatformPortfolio,Shiny.VendorSize),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23)%>%
             arrange(PlatformPortfolio,Shiny.VendorSize))
 
 
@@ -3484,7 +3484,7 @@ PlatformVendorIntl_share<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="VendorSize_Intl", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=column_key,
@@ -3518,7 +3518,7 @@ PlatformVendorIntl_dollar<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="VendorSize_Intl", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=column_key,
@@ -3560,7 +3560,7 @@ PlatformComp_bar<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Competition.multisum", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=column_key,
@@ -3588,7 +3588,7 @@ PlatformComp_line<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Competition.effective.only", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=column_key,
@@ -3620,7 +3620,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="pl
 write.csv(file="..//Output//AcqTrends//platform_comp.csv",row.names = FALSE, na = "",
           PlatformComp_line$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(PlatformPortfolio,Competition.effective.only),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>%
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23)%>%
             arrange(PlatformPortfolio,Competition.effective.only))
 
 
@@ -3649,7 +3649,7 @@ CommercialPlat<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="Fiscal_Year", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="AnyCommercialText", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=def_ck,
@@ -3684,7 +3684,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="pl
 write.csv(file="..//Output//AcqTrends//platform_commercial.csv",row.names = FALSE, na = "",
           CommercialPlat$data%>%mutate(Fiscal_Year=year(dFYear)) %>%
           pivot_wider(id_cols=c(SubCustomer.platform,AnyCommercialText),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23))
 
 write.csv(file="..//Output//AcqTrends//platform_commercial_current.csv",row.names = FALSE, na = "",
           def_data %>% group_by(PlatformPortfolio,AnyCommercialText,Fiscal_Year)%>%
@@ -3712,7 +3712,7 @@ PlatformMultiYear<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="multiyearcontracttext", #color_var
   facet_var="PlatformPortfolio",
   column_key=column_key,
@@ -3732,7 +3732,7 @@ PlatformMultiYear<-build_plot(
 )
 
 full_data<-full_data %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
-  mutate(pPlatFYear=Action_Obligation_OMB24_GDP22/sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))
+  mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
 (
 PlatformMultiYearShare<-build_plot(
   data=full_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024 &
@@ -3797,7 +3797,7 @@ write.csv(file="..//Output//AcqTrends//PlatformMultiYearShare.csv",row.names = F
 log_plot(PlatformMultiYearShare, full_data %>% filter(Fiscal_YQ<2024) ,
                      filename="acq_fig4_2_multiyear",xlsx="DoD_Acq_Trends_Contracts.xlsx",
                      sheet="4-2 Multi",path="../output/AcqTrends/",second_path=online_path, height=3.5,excel_y_var = TRUE,excel_formulas = FALSE,
-                     startRow=1,startCol=13,format=TRUE,y_var="Action_Obligation_OMB24_GDP22",
+                     startRow=1,startCol=13,format=TRUE,y_var="Action_Obligation_OMB25_GDP23",
          var_list=c("PlatformPortfolio","multiyearcontracttext"),
          )
 
@@ -3810,7 +3810,7 @@ ukr_data$IsUkraine<-ifelse(ukr_data$nationalinterestactioncode=="O22U" &
                              !is.na(ukr_data$nationalinterestactioncode=="O22U"),"UKRAINE MISSION SUPPORT","All Other")
 
 ukr_data %>% group_by(nationalinterestactioncode)%>%
-  filter(Fiscal_Year==2022) %>% summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
+  filter(Fiscal_Year==2022) %>% summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
 
 (
 Platform_Ukr_Bar<-build_plot(
@@ -3820,7 +3820,7 @@ Platform_Ukr_Bar<-build_plot(
   labels_and_colors=ukr_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="IsUkraine", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=ukr_ck,
@@ -3874,7 +3874,7 @@ GFEplat<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="gfe_gfp_value", #color_var
   facet_var="PlatformPortfolio", #facet_var
   column_key=def_ck,
@@ -3911,7 +3911,7 @@ ToplineVendor<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Shiny.VendorSize", #color_var
   # facet_var="Competition.sum", #facet_var
   column_key=column_key,
@@ -3938,7 +3938,7 @@ ToplineVendor_line<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Shiny.VendorSize", #color_var
   # facet_var="Competition.sum", #facet_var
   column_key=column_key,
@@ -4001,7 +4001,7 @@ ToplineVendorIntl<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="VendorSize_Intl", #color_var
   # facet_var="Competition.sum", #facet_var
   column_key=column_key,
@@ -4069,7 +4069,7 @@ ToplineVendor<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Shiny.VendorSize", #color_var
   # facet_var="Competition.sum", #facet_var
   column_key=column_key,
@@ -4096,7 +4096,7 @@ ToplineVendor_line<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Shiny.VendorSize", #color_var
   # facet_var="Competition.sum", #facet_var
   column_key=column_key,
@@ -4151,9 +4151,9 @@ write.csv(file="..//Output//AcqTrends//topline_vendor_cur.csv",row.names = FALSE
 
 write.csv(file="..//Output//AcqTrends//topline_vendor.csv",row.names = FALSE, na = "",
           ToplineVendor$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
-                                       bAction_Obligation_OMB24_GDP22=Action_Obligation_OMB24_GDP22/1000000000)%>%
+                                       bAction_Obligation_OMB25_GDP23=Action_Obligation_OMB25_GDP23/1000000000)%>%
             pivot_wider(id_cols=c(Shiny.VendorSize),
-                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%arrange(Shiny.VendorSize))
+                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB25_GDP23)%>%arrange(Shiny.VendorSize))
 
 ```
 
@@ -4169,7 +4169,7 @@ chart_geom = "Bar Chart",
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Shiny.VendorSize", #color_var
   # facet_var="SubCustomer.sum", #facet_var
   column_key=def_ck,
@@ -4206,7 +4206,7 @@ VendorSizeVehicle<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Vehicle.sum", #color_var
   facet_var="Shiny.VendorSize", #facet_var
   column_key=column_key,
@@ -4235,7 +4235,7 @@ VendorSizeVehicleSum<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Vehicle.AwardTask", #color_var
   facet_var="Shiny.VendorSize", #facet_var
   column_key=column_key,
@@ -4264,7 +4264,7 @@ VendorSizeVehicleSumLine<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Vehicle.AwardTask", #color_var
   facet_var="Shiny.VendorSize", #facet_var
   column_key=column_key,
@@ -4339,7 +4339,7 @@ ToplineVendor_line<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Shiny.VendorSize", #color_var
   facet_var="AnyCommercial", #facet_var
   column_key=def_ck,
@@ -4366,7 +4366,7 @@ ToplineVendor_line<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="AnyCommercial", #color_var
   facet_var="Shiny.VendorSize", #facet_var
   column_key=def_ck,
@@ -4407,7 +4407,7 @@ VendorSizePricing<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PricingUCA.sum", #color_var
   facet_var="Shiny.VendorSize", #facet_var
   # second_var="CurrentDurationIsYear",
@@ -4440,7 +4440,7 @@ VendorSizePricing20212022share<-build_plot(
   share = TRUE,
   # NA, #VAR.ncol
   x_var="PricingUCA.1year", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PricingUCA.1year", #color_var
   facet_var="Shiny.VendorSize", #facet_var
   second_var="Fiscal_Year",
@@ -4525,7 +4525,7 @@ summary(full_data$foreign_funding_description)
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="Fiscal_Year",
-                            y_var="Action_Obligation_OMB24_GDP22",
+                            y_var="Action_Obligation_OMB25_GDP23",
                             color_var="foreign_funding_description",
                             facet_var="IsFMS",
                             # second_var="StateRegion",
@@ -4557,7 +4557,7 @@ summary(full_data$PlaceOfManufacture_Sum)
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="Fiscal_Year",
-                            y_var="Action_Obligation_OMB24_GDP22",
+                            y_var="Action_Obligation_OMB25_GDP23",
                             color_var="PlaceOfManufacture_Sum",
                             facet_var="SimpleArea",
                             # second_var="StateRegion",
@@ -4577,7 +4577,7 @@ summary(full_data$PlaceOfManufacture_Sum)
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="Fiscal_Year",
-                            y_var="Action_Obligation_OMB24_GDP22",
+                            y_var="Action_Obligation_OMB25_GDP23",
                             color_var="PlaceOfManufacture_Sum",
                             facet_var="PlaceIsForeign",
                             # second_var="StateRegion",
@@ -4597,7 +4597,7 @@ summary(full_data$PlaceOfManufacture_Sum)
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="Fiscal_Year",
-                            y_var="Action_Obligation_OMB24_GDP22",
+                            y_var="Action_Obligation_OMB25_GDP23",
                             color_var="PlaceOfManufacture_Sum",
                             facet_var="VendorIsForeign",
                             # second_var="StateRegion",
@@ -4631,8 +4631,8 @@ full_data$PlaceOfManufactureText20<-factor_wrap(full_data$PlaceOfManufactureText
 summary(factor(full_data$PlaceOfManufactureText20))
 
 write.csv(full_data %>% group_by(PlaceOfManufactureText,PlaceIsForeign,VendorIsForeign,OriginIsForeign) %>%
-  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)) %>% pivot_wider(names_from=PlaceOfManufactureText,
-                                                                                       values_from=Action_Obligation_OMB24_GDP22),
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23)) %>% pivot_wider(names_from=PlaceOfManufactureText,
+                                                                                       values_from=Action_Obligation_OMB25_GDP23),
   file="waiver_crossref.csv")
   
 
@@ -4678,7 +4678,7 @@ full_data$OriginManufactureVendor<-full_data$PlaceOfManufacture_DoD
 
   full_data %>% filter(OriginManufactureVendor=="Unlabeled Waiver" &
                          Service=="Services and R&D" )  %>% group_by(VendorIsForeign,OriginIsForeign) %>%
-    summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
+    summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
  
  
  full_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
@@ -4687,7 +4687,7 @@ full_data$OriginManufactureVendor<-full_data$PlaceOfManufacture_DoD
                                                    VendorIsForeign==1|OriginIsForeign==1) %>%
    filter(is.na(OriginManufactureVendor))%>%
    group_by(PlaceOfManufactureText,OriginManufactureVendor,Service,PlaceIsForeign,VendorIsForeign,OriginIsForeign) %>%
-  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)) 
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23)) 
 
  # full_data$OriginManufactureVendor[is.na(full_data$OriginManufactureVendor)&
  #                                     full_data$VendorIsForeign==1&full_data$OriginIsForeign==0]<-"U.S. Origin Intl Vendor"
@@ -4713,11 +4713,11 @@ full_data$OriginManufactureVendor<-full_data$PlaceOfManufacture_DoD
   
   full_data %>% filter(OriginManufactureVendor=="Unlabeled Waiver" &
                          Service=="Services and R&D" )  %>% group_by(VendorIsForeign,OriginIsForeign) %>%
-    summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
+    summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
   
    full_data %>% filter(is.na(OriginManufactureVendor) &
                          Service=="Services and R&D" )  %>% group_by(VendorIsForeign,OriginIsForeign) %>%
-    summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
+    summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
   
   labels_and_colors<-prepare_labels_and_colors(full_data)
   column_key<-get_column_key(full_data)
@@ -4730,7 +4730,7 @@ full_data$OriginManufactureVendor<-full_data$PlaceOfManufacture_DoD
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="dFYear",alpha_var="YTD",
-                            y_var="Action_Obligation_OMB24_GDP22",
+                            y_var="Action_Obligation_OMB25_GDP23",
                             color_var="PlaceOfManufacture_DoD",
                             facet_var="SimpleArea",
                             # second_var="OriginIsForeign",
@@ -4756,7 +4756,7 @@ full_data$OriginManufactureVendor<-full_data$PlaceOfManufacture_DoD
     write.csv(file="..//Output//AcqTrends//waiverdetail.csv",row.names = FALSE, na = "",
             waiverdetail$data %>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
               pivot_wider(id_cols=c(PlaceOfManufacture_DoD,SimpleArea),
-                          names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)
+                          names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23)
             %>% arrange(PlaceOfManufacture_DoD,SimpleArea))
 
 ```
@@ -4765,11 +4765,11 @@ full_data$OriginManufactureVendor<-full_data$PlaceOfManufacture_DoD
 full_data$PlaceOfManufacture_DoD09<-full_data$PlaceOfManufacture_DoD
 full_data %>% filter(OriginManufactureVendor=="Unlabeled Waiver" &
                          ProductOrService=="Services and R&D" )  %>% group_by(VendorIsForeign,OriginIsForeign) %>%
-    summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
+    summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
   
    full_data %>% filter(is.na(OriginManufactureVendor) &
                          ProductOrService=="Services and R&D" )  %>% group_by(VendorIsForeign,OriginIsForeign) %>%
-    summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
+    summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
   
   
  full_data$PlaceOfManufacture_DoD09[is.na(full_data$PlaceOfManufacture_DoD09)&                                    
@@ -4802,7 +4802,7 @@ full_data$PlaceOfManufacture_DoD09<-factor_wrap(full_data$PlaceOfManufacture_DoD
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="dFYear",alpha_var="YTD",
-                            y_var="Action_Obligation_OMB24_GDP22",
+                            y_var="Action_Obligation_OMB25_GDP23",
                             color_var="PlaceOfManufacture_DoD09",
                             facet_var="ProductOrService",
                             # second_var="OriginIsForeign",
@@ -4841,7 +4841,7 @@ log_plot(plot=waiversimple, df=full_data   %>% filter(Fiscal_YQ<2024 &
     write.csv(file="..//Output//AcqTrends//waiversimple.csv",row.names = FALSE, na = "",
             waiversimple$data %>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
               pivot_wider(id_cols=c(PlaceOfManufacture_DoD09,ProductOrService),
-                          names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)
+                          names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23)
             %>% arrange(PlaceOfManufacture_DoD09,ProductOrService))
     
     write.csv(full_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
@@ -4868,7 +4868,7 @@ log_plot(plot=waiversimple, df=full_data   %>% filter(Fiscal_YQ<2024 &
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="Fiscal_Year",
-                            y_var="Action_Obligation_OMB24_GDP22",
+                            y_var="Action_Obligation_OMB25_GDP23",
                             color_var="PlaceOfManufacture_DoD09",
                             facet_var="PlaceAcquisitionCooperation",
                             # second_var="StateRegion",
@@ -4919,7 +4919,7 @@ summary(factor(full_data$PlaceOfManufactureText20))
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="dFYear",alpha_var="YTD",
-                            y_var="Action_Obligation_OMB24_GDP22",
+                            y_var="Action_Obligation_OMB25_GDP23",
                             color_var="OriginManufactureVendor20",
                             facet_var="PlaceStateRegionSum",
                             # second_var="StateRegion",
@@ -4952,7 +4952,7 @@ full_data$PlaceMutualAcquisition
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="Fiscal_Year",
-                            y_var="Action_Obligation_OMB24_GDP22",
+                            y_var="Action_Obligation_OMB25_GDP23",
                             color_var="PlaceOfManufacture_Sum",
                             facet_var="PlaceMutualAcquisition",
                             # second_var="StateRegion",
@@ -4978,7 +4978,7 @@ full_data$PlaceAcquisitionCooperation
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="Fiscal_Year",
-                            y_var="Action_Obligation_OMB24_GDP22",
+                            y_var="Action_Obligation_OMB25_GDP23",
                             color_var="PlaceOfManufacture_Sum",
                             facet_var="PlaceAcquisitionCooperation",
                             # second_var="StateRegion",
@@ -5006,7 +5006,7 @@ full_data$place
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="Fiscal_Year",
-                            y_var="Action_Obligation_OMB24_GDP22",
+                            y_var="Action_Obligation_OMB25_GDP23",
                             color_var="PlaceOfManufacture_Sum",
                             facet_var="VendorStateRegion",
                             # second_var="VendorRegion",
@@ -5031,7 +5031,7 @@ full_data$place
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="dFYear",alpha_var="YTD",
-                            y_var="Action_Obligation_OMB24_GDP22",
+                            y_var="Action_Obligation_OMB25_GDP23",
                             color_var="PlaceOfManufacture_Sum",
                             facet_var="OriginStateRegion",
                             # second_var="VendorRegion",
@@ -5056,7 +5056,7 @@ ggsave600dpi(waiver,file="../Output//AcqTrends/place_of_manufacture_waiver.png",
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="Fiscal_Year",
-                            y_var="Action_Obligation_OMB24_GDP22",
+                            y_var="Action_Obligation_OMB25_GDP23",
                             color_var="PlaceOfManufacture_Sum",
                             facet_var="PlaceIsForeign",
                             # second_var="StateRegion",
@@ -5087,7 +5087,7 @@ ggsave600dpi(waiver,file="../Output//AcqTrends/place_of_manufacture_waiver.png",
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="Fiscal_Year",
-                            y_var="Action_Obligation_OMB24_GDP22",
+                            y_var="Action_Obligation_OMB25_GDP23",
                             color_var="PlaceOfManufacture_Sum",
                             facet_var="SimpleArea",
                             # second_var="StateRegion",
@@ -5111,7 +5111,7 @@ full_data$IsFMS
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="Fiscal_Year",
-                            y_var="Action_Obligation_OMB24_GDP22",
+                            y_var="Action_Obligation_OMB25_GDP23",
                             color_var="PlaceOfManufactureText20",
                             facet_var="IsFMS",
                             # second_var="StateRegion",
@@ -5156,7 +5156,7 @@ summary(ota_def$dFYear)
                                                                             Fiscal_Year>2011 & !is.na(VendorAddressISOalpha3)),#VendorAddressISOalpha3==TRUE                             
                                             chart_geom="Bar Chart",
                             x_var="dFYear",alpha_var="YTD",
-                            y_var="Action_Obligation_OMB24_GDP22",
+                            y_var="Action_Obligation_OMB25_GDP23",
                             color_var="PlatformPortfolioUAV",
                             facet_var="VendorNTIB",
                             # second_var="PlaceIsForeign",
@@ -5174,7 +5174,7 @@ summary(ota_def$dFYear)
                                                                             Fiscal_Year>2011 & !is.na(VendorAddressISOalpha3)),#VendorAddressISOalpha3==TRUE                             
                                             chart_geom="Bar Chart",
                             x_var="dFYear",alpha_var="YTD",
-                            y_var="Action_Obligation_OMB24_GDP22",
+                            y_var="Action_Obligation_OMB25_GDP23",
                             color_var="SubCustomer.OTA",
                             facet_var="VendorNTIB",
                             # second_var="PlaceIsForeign",
@@ -5192,7 +5192,7 @@ summary(ota_def$dFYear)
 write.csv(file="..//Output//AcqTrends//ota//ntibintl_plat.csv",row.names = FALSE,na = "",
           ntibintl_plat$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(VendorNTIB,PlatformPortfolioUAV),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(VendorNTIB,PlatformPortfolioUAV))
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23)%>% arrange(VendorNTIB,PlatformPortfolioUAV))
 
 ggsave600dpi(ntibintl_plat,file="../Output//AcqTrends/ota/ntibintl_plat.png",
              size = 12, lineheight=1, height =5.5, width=6.5)
