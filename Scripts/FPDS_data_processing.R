@@ -490,7 +490,8 @@ save(pricing,pricing_lc,pricing_ck, file="data/clean/pricing_historical.Rda")
 
 # ***** Handled in apply_standard_lookups
 ##### Recipient_UEI #######
-ruh<-read_delim(file.path("data","semi_clean","Vendor.RecipientUEIpartial.txt"),delim="\t")
+ruh<-read_delim(file.path("data","semi_clean","Vendor.RecipientUEIpartial.txt"),delim="\t",
+                na=c("NULL",""))
 ruh<-apply_standard_lookups(ruh)
 
 ruh<-deflate(ruh,money_var="DefenseObligated")
@@ -532,4 +533,18 @@ def_rpuh<-ruh %>% filter(AnyDefense==1) %>% mutate(Parent_UEI=if_else(!is.na(Par
     )  %>% group_by(Fiscal_Year)%>% mutate(count=1,
                                             hhi=(Defense_Action_Obligation_OMB25_GDP23/
                                                    sum(Defense_Action_Obligation_OMB25_GDP23,na.rm = TRUE))^2)
+
+def_rpuh <- def_rpuh %>%
+  mutate(AlwaysIsSmallLabel= case_when(
+    AlwaysIsSmall==1 ~ "Always Small",
+    AlwaysIsSmall==0 ~ "Sometimes or\nAlways Not Small"),
+    IsEntityTraditionalLabel= case_when(
+      IsEntityTraditional==1 | is.na(IsEntityTraditional) | IsEntityTraditional=="Unlabeled"~ "Traditional\nDefense Contractor",
+      IsEntityTraditional==0 ~ "Non-Traditional\nDefense Contractor")
+    
+    )
+
+summary(factor(def_rpuh$IsEntityTraditional))
+save(ruh,def_rpuh,file=file.path("data","clean","RecipientUEI.rda"))
+
 
