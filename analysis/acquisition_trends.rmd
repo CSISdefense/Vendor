@@ -1295,7 +1295,7 @@ levels(def_data$gfe_gfp_value)<-list(
 
 ### GFE Competition
 ```{r GFEcomp}
-
+summary(def_data$gfe_gfp_code)
 (
 GFEcomp<-build_plot(
   data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
@@ -1305,7 +1305,7 @@ GFEcomp<-build_plot(
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
-  color_var="Competition.detail", #color_var
+  color_var="No.Competition.sum", #color_var
   facet_var="gfe_gfp_value", #facet_var
   column_key=def_ck,
   format=TRUE,
@@ -2910,6 +2910,9 @@ GFEcust<-build_plot(
       date_x_year_breaks(2000,2022,2)#,partial_year=2024,partial_label="\nOct–Nov")
 
 )
+
+
+
 ```
 
 # Platform
@@ -3587,6 +3590,33 @@ PlatformComp_bar<-build_plot(
   # labs(y="Obligations (Constant 2022 $s)")
 )
 
+(
+PlatformComp_bar2007<-build_plot(
+  data=def_data %>% filter(PlatformPortfolio!="Unlabeled"  &Fiscal_Year>=2007 & Fiscal_YQ<2024),
+  chart_geom = "Bar Chart",
+  share = TRUE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="Competition.multisum", #color_var
+  facet_var="PlatformPortfolio", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2007,2023,4)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")#+
+  # labs(y="Obligations (Constant 2022 $s)")
+)
+
 
 (
 PlatformComp_line<-build_plot(
@@ -3637,6 +3667,39 @@ write.csv(file="..//Output//AcqTrends//platform_comp.csv",row.names = FALSE, na 
 
 
 
+### Platform Only One Source 
+```{r PlatNoComp}
+summary(def_data$gfe_gfp_code)
+(
+PlatNoComp<-build_plot(
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024 & !is.na(PlatformPortfolio)&
+                             PlatformPortfolio!="Unlabeled") ,
+  chart_geom = "Bar Chart",
+  share = TRUE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  color_var="No.Competition.sum", #color_var
+  facet_var="PlatformPortfolio", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)")+
+    scale_x_date(breaks=as.Date(c(paste(seq(2000,2021,3),"-01-01",sep=""))),
+                                                   date_labels="'%y")
+)
+```
 
 ## Platform Commercial
 ```{r Commercial}
@@ -3878,17 +3941,20 @@ write.csv(file="..//Output//AcqTrends//Munitions//ukraine_platform_current.csv",
 
 ## Platform GFE
 ```{r GFEplatform}
-
+def_data<-full_data %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
+  mutate(pPlatFYear=Action_Obligation_OMB24_GDP22/sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))
+def_data$gfe_gfp_code
 (
-GFEplat<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
-  chart_geom = "Bar Chart",
+PlatformGFEshare<-build_plot(
+  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024 & gfe_gfp_code=="Y"&
+                             !is.na(PlatformPortfolio) & PlatformPortfolio!="Unlabeled") ,
+  chart_geom = "Line Chart",
   share = FALSE,
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
-  color_var="gfe_gfp_value", #color_var
+  # color_var="gfe_gfp_value", #color_var
+  y_var="pPlatFYear", #VAR.y.variable
   facet_var="PlatformPortfolio", #facet_var
   column_key=def_ck,
   format=TRUE,
@@ -3902,11 +3968,37 @@ GFEplat<-build_plot(
   # x="Fiscal Year",
   # y="Percent of Obligations",
   # color="Competition")+
+  date_x_year_breaks(2007,2023,4)+#,partial_year=2024,partial_label="\nQ1")   
   theme(legend.position = "bottom")+
-  labs(y="Obligations (Constant 2022 $s)")+
-    scale_x_date(breaks=as.Date(c(paste(seq(2000,2021,4),"-01-01",sep=""))),
-                                                   date_labels="'%y")
+  labs(y="Share of Portfolio Obligations\nWith Government Furnished Equipment or Property"
+       # caption="Note: When the multiyear column is blank, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis."
+       )+
+    scale_y_continuous(labels = percent)
 )
+
+log_plot(PlatformGFEshare, def_data%>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024 & gfe_gfp_code=="Y"&
+                             !is.na(PlatformPortfolio) & PlatformPortfolio!="Unlabeled") ,
+                     filename="acq_fig4_3_gfe",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+                     sheet="4-3 GFE",path="../output/AcqTrends/",second_path=online_path, height=3,excel_y_var = TRUE,excel_formulas = FALSE,
+                     startRow=1,startCol=13,format=TRUE,y_var="Action_Obligation_OMB24_GDP22"
+         # var_list=c("PlatformPortfolio","gfe_gfp_value"),
+         )
+
+ggsave(file=file.path(online_path,"acq_fig4_3_com_gfe.svg"),
+       gridExtra::grid.arrange(
+         PlatformComp_bar2007+labs(
+           title=NULL,
+           y="Share of Obligations by \nExtent of Compatition\n",
+           caption = NULL,x=NULL)+theme(legend.position = "bottom",text=element_text(size=12),
+                                        plot.margin = margin(t=0,b=0,l=0.1,r=0.5,unit="inches")),
+         PlatformGFEshare+labs(
+           y="Share of Obligations\nWith Government Furnished\nEquipment or Property",caption=NULL)+theme(text=element_text(size=12),
+                                                                                                                                        plot.caption = element_text(size=round(20 * 5/6,0)),
+                                                                                                                                        plot.margin =
+                                                                                                                                          margin(t=0,b=0,l=0.1,r=0.5,unit="inches")),
+         layout_matrix = rbind(1,1,1,2,2)),
+       width=6.5, height= 6.5, units="in") #, size=20, lineheight = 0.75
+
 ```
 
 
