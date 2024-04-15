@@ -844,7 +844,7 @@ EXEC
 		
 
 --SELECT	'Return Value' = @return_value
-
+--38s
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
   SELECT  [UEI]
@@ -878,6 +878,8 @@ SET NOCOUNT ON;
       --,[TotalAmount]
       --,[TopDunsnumberCount]
       --,[TotalCount]
+	  ,AnyDefense
+	  ,DefenseObligated
 	  ,[IsEntityAbove1990constantMTAthreshold]
       ,[IsEntityAbove2016constantMTAthreshold]
       ,[IsEntityAbove2018constantMTAthreshold]

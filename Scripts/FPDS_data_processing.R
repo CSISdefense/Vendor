@@ -181,14 +181,14 @@ fed_data$YTD<-factor(ifelse(fed_data$Fiscal_Year==max(fed_data$Fiscal_Year),"YTD
 save(fed_data,fed_lc,fed_ck, file="data/clean/fed_summary_FPDS.Rda")
 
 
-#############Defense Data (faster query run)##########
+#############Defense Data##########
 def_data<- read_delim(
   "Data//semi_clean//Defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.txt",delim = "\t",
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
-problems(def_data[nrow(def_data),])
+problems(def_data)
 
 def_data<-initial_clean(def_data,only_defense = TRUE)
-def_data<-apply_standard_lookups(def_data)#,
+def_data<-apply_standard_lookups(def_data,path="offline")#,
 
 #def_data
 def_data %<>%
@@ -489,5 +489,44 @@ save(pricing,pricing_lc,pricing_ck, file="data/clean/pricing_historical.Rda")
 
 
 # ***** Handled in apply_standard_lookups
+##### Recipient_UEI #######
+ruh<-read_delim(file.path("data","semi_clean","Vendor.RecipientUEIpartial.txt"),delim="\t")
+ruh<-apply_standard_lookups(ruh)
 
+ruh<-deflate(ruh,money_var="DefenseObligated")
 
+def_rpuh<-ruh %>% filter(AnyDefense==1) %>% mutate(Parent_UEI=if_else(!is.na(Parent_UEI),Parent_UEI,UEI)) %>%
+  group_by(Parent_UEI,Fiscal_Year)%>%
+  summarise(
+    # ParentID=if_else(max(ParentID,na.rm=TRUE)==min(ParentID,na.rm=TRUE),
+    #                    ParentID,NA),
+    # 
+    # StandardizedTopContractor=if_else(max(StandardizedTopContractor,na.rm=TRUE)==
+    #                                     min(StandardizedTopContractor,na.rm=TRUE),
+    #                                   StandardizedTopContractor,NA),
+    Parent_UEIFirstDate=min(Parent_UEIFirstDate,na.rm=TRUE)
+    ,Defense_Action_Obligation_OMB25_GDP23=sum(DefenseObligated_OMB25_GDP23,na.rm=TRUE),
+    Defense_Action_Obligation_Then_Year=sum(DefenseObligated_Then_Year,na.rm=TRUE),
+    # StandardizedTopContractor=if_else(max(topISO3countrycode,na.rm=TRUE)==
+    #                                     min(topISO3countrycode,na.rm=TRUE),
+    #                                   topISO3countrycode,NA),
+    MaxOfCAUobligatedAmount=max(MaxOfCAUobligatedAmount,na.rm=TRUE)
+    ,AnyIsSmall=max(AnyIsSmall,na.rm=TRUE)
+    ,AlwaysIsSmall=min(AlwaysIsSmall)
+    ,ObligatedAmountIsSmall=sum(ObligatedAmountIsSmall,na.rm=TRUE)
+    ,IsOnePercentPlusSmall=max(IsOnePercentPlusSmall,na.rm=TRUE)
+    # ,EntitySizeCode      
+    ,IsEntityAbove1990constantMTAthreshold=max(IsEntityAbove1990constantMTAthreshold,na.rm=TRUE)
+    ,IsEntityAbove2016constantMTAthreshold=max(IsEntityAbove2016constantMTAthreshold,na.rm=TRUE)
+    ,IsEntityAbove2018constantMTAthreshold=max(IsEntityAbove2018constantMTAthreshold,na.rm=TRUE)
+    ,IsEntityAbove2016constantArbitrary1000k=max(IsEntityAbove2016constantArbitrary1000k,na.rm=TRUE)
+    ,IsEntityAbove2018constantSimplifedAcquisition250kThreshold=
+      max(IsEntityAbove2018constantSimplifedAcquisition250kThreshold,na.rm=TRUE)
+    ,IsEntityAbove2018constantCommercialItem7500k=max(IsEntityAbove2018constantCommercialItem7500k)
+    ,IsEntityAbove2018constantCostAccounting2000kThreshold=
+      max(IsEntityAbove2018constantCostAccounting2000kThreshold,na.rm=TRUE)
+    ,AnyEntityUSplaceOfPerformance=max(AnyEntityUSplaceOfPerformance,na.rm=TRUE)
+    ,AnyEntityForeignPlaceOfPerformance=max(AnyEntityForeignPlaceOfPerformance,na.rm=TRUE)
+    )  %>% group_by(Fiscal_Year)%>% mutate(count=1,
+                                            hhi=(Defense_Action_Obligation_OMB25_GDP23/
+                                                   sum(Defense_Action_Obligation_OMB25_GDP23,na.rm = TRUE))^2)
