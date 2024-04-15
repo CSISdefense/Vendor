@@ -400,6 +400,8 @@ EXEC	@return_value = Contract.SP_ContractBucketPlatformCustomer
 
 --6h26m 15,328,597 rows for federal
 --7h30m or so for defense only after postgres
+
+--7,833,306 rows; 9h39m. (Finished right when I got home, which seems odd. One or more errors).
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 EXEC	Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength
@@ -844,6 +846,7 @@ EXEC
 		
 
 --SELECT	'Return Value' = @return_value
+--1,122,215
 --38s
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
@@ -889,5 +892,6 @@ SET NOCOUNT ON;
       ,[IsEntityAbove2018constantCostAccounting2000kThreshold]
 	  ,[AnyEntityUSplaceOfPerformance]
       ,[AnyEntityForeignPlaceOfPerformance]
+      ,[IsEntityTraditional]
   FROM [Vendor].[UEIhistory]
    where Fiscal_Year>=2014 and IsPresent=1
