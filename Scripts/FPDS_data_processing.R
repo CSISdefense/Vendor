@@ -515,7 +515,9 @@ def_rpuh<-ruh %>% filter(AnyDefense==1) %>% mutate(Parent_UEI=if_else(!is.na(Par
     ,AlwaysIsSmall=min(AlwaysIsSmall)
     ,ObligatedAmountIsSmall=sum(ObligatedAmountIsSmall,na.rm=TRUE)
     ,IsOnePercentPlusSmall=max(IsOnePercentPlusSmall,na.rm=TRUE)
+    ,IsEntityTraditional=max(IsEntityTraditional,na.rm=TRUE)
     # ,EntitySizeCode      
+    ,IsEntityAbove1990constantMTAthreshold=max(IsEntityAbove1990constantMTAthreshold,na.rm=TRUE)
     ,IsEntityAbove1990constantMTAthreshold=max(IsEntityAbove1990constantMTAthreshold,na.rm=TRUE)
     ,IsEntityAbove2016constantMTAthreshold=max(IsEntityAbove2016constantMTAthreshold,na.rm=TRUE)
     ,IsEntityAbove2018constantMTAthreshold=max(IsEntityAbove2018constantMTAthreshold,na.rm=TRUE)
@@ -530,3 +532,4 @@ def_rpuh<-ruh %>% filter(AnyDefense==1) %>% mutate(Parent_UEI=if_else(!is.na(Par
     )  %>% group_by(Fiscal_Year)%>% mutate(count=1,
                                             hhi=(Defense_Action_Obligation_OMB25_GDP23/
                                                    sum(Defense_Action_Obligation_OMB25_GDP23,na.rm = TRUE))^2)
+
