@@ -496,54 +496,73 @@ ruh<-apply_standard_lookups(ruh)
 
 ruh<-deflate(ruh,money_var="DefenseObligated")
 
-def_rpuh<-ruh %>% filter(AnyDefense==1) %>% mutate(Parent_UEI=if_else(!is.na(Parent_UEI),Parent_UEI,UEI)) %>%
-  group_by(Parent_UEI,Fiscal_Year)%>%
-  summarise(
-    # ParentID=if_else(max(ParentID,na.rm=TRUE)==min(ParentID,na.rm=TRUE),
-    #                    ParentID,NA),
-    # 
-    # StandardizedTopContractor=if_else(max(StandardizedTopContractor,na.rm=TRUE)==
-    #                                     min(StandardizedTopContractor,na.rm=TRUE),
-    #                                   StandardizedTopContractor,NA),
-    Parent_UEIFirstDate=min(Parent_UEIFirstDate,na.rm=TRUE)
-    ,Defense_Action_Obligation_OMB25_GDP23=sum(DefenseObligated_OMB25_GDP23,na.rm=TRUE),
-    Defense_Action_Obligation_Then_Year=sum(DefenseObligated_Then_Year,na.rm=TRUE),
-    # StandardizedTopContractor=if_else(max(topISO3countrycode,na.rm=TRUE)==
-    #                                     min(topISO3countrycode,na.rm=TRUE),
-    #                                   topISO3countrycode,NA),
-    MaxOfCAUobligatedAmount=max(MaxOfCAUobligatedAmount,na.rm=TRUE)
-    ,AnyIsSmall=max(AnyIsSmall,na.rm=TRUE)
-    ,AlwaysIsSmall=min(AlwaysIsSmall)
-    ,ObligatedAmountIsSmall=sum(ObligatedAmountIsSmall,na.rm=TRUE)
-    ,IsOnePercentPlusSmall=max(IsOnePercentPlusSmall,na.rm=TRUE)
-    ,IsEntityTraditional=max(IsEntityTraditional,na.rm=TRUE)
-    # ,EntitySizeCode      
-    ,IsEntityAbove1990constantMTAthreshold=max(IsEntityAbove1990constantMTAthreshold,na.rm=TRUE)
-    ,IsEntityAbove1990constantMTAthreshold=max(IsEntityAbove1990constantMTAthreshold,na.rm=TRUE)
-    ,IsEntityAbove2016constantMTAthreshold=max(IsEntityAbove2016constantMTAthreshold,na.rm=TRUE)
-    ,IsEntityAbove2018constantMTAthreshold=max(IsEntityAbove2018constantMTAthreshold,na.rm=TRUE)
-    ,IsEntityAbove2016constantArbitrary1000k=max(IsEntityAbove2016constantArbitrary1000k,na.rm=TRUE)
-    ,IsEntityAbove2018constantSimplifedAcquisition250kThreshold=
-      max(IsEntityAbove2018constantSimplifedAcquisition250kThreshold,na.rm=TRUE)
-    ,IsEntityAbove2018constantCommercialItem7500k=max(IsEntityAbove2018constantCommercialItem7500k)
-    ,IsEntityAbove2018constantCostAccounting2000kThreshold=
-      max(IsEntityAbove2018constantCostAccounting2000kThreshold,na.rm=TRUE)
-    ,AnyEntityUSplaceOfPerformance=max(AnyEntityUSplaceOfPerformance,na.rm=TRUE)
-    ,AnyEntityForeignPlaceOfPerformance=max(AnyEntityForeignPlaceOfPerformance,na.rm=TRUE)
-    )  %>% group_by(Fiscal_Year)%>% mutate(count=1,
-                                            hhi=(Defense_Action_Obligation_OMB25_GDP23/
-                                                   sum(Defense_Action_Obligation_OMB25_GDP23,na.rm = TRUE))^2)
 
+rpuh<-read_delim(file.path("data","semi_clean","Vendor.Parent_UEIhistory.txt"),delim="\t",
+                na=c("NULL",""))
+rpuh<-apply_standard_lookups(rpuh)
+
+rpuh<-deflate(rpuh,money_var="DefenseObligated")
+def_rpuh<-rpuh %>% filter(AnyDefense==1) 
+
+  
+# def_rpuh<-ruh %>% filter(AnyDefense==1) %>% mutate(Parent_UEI=if_else(!is.na(Parent_UEI),Parent_UEI,UEI)) %>%
+#   group_by(Parent_UEI,Fiscal_Year)%>%
+#   summarise(
+#     # ParentID=if_else(max(ParentID,na.rm=TRUE)==min(ParentID,na.rm=TRUE),
+#     #                    ParentID,NA),
+#     # 
+#     # StandardizedTopContractor=if_else(max(StandardizedTopContractor,na.rm=TRUE)==
+#     #                                     min(StandardizedTopContractor,na.rm=TRUE),
+#     #                                   StandardizedTopContractor,NA),
+#     Parent_UEIFirstDate=min(Parent_UEIFirstDate,na.rm=TRUE)
+#     ,Defense_Action_Obligation_OMB25_GDP23=sum(DefenseObligated_OMB25_GDP23,na.rm=TRUE),
+#     Defense_Action_Obligation_Then_Year=sum(DefenseObligated_Then_Year,na.rm=TRUE),
+#     # StandardizedTopContractor=if_else(max(topISO3countrycode,na.rm=TRUE)==
+#     #                                     min(topISO3countrycode,na.rm=TRUE),
+#     #                                   topISO3countrycode,NA),
+#     MaxOfCAUobligatedAmount=max(MaxOfCAUobligatedAmount,na.rm=TRUE)
+#     ,AnyIsSmall=max(AnyIsSmall,na.rm=TRUE)
+#     ,AlwaysIsSmall=min(AlwaysIsSmall)
+#     ,ObligatedAmountIsSmall=sum(ObligatedAmountIsSmall,na.rm=TRUE)
+#     ,IsOnePercentPlusSmall=max(IsOnePercentPlusSmall,na.rm=TRUE)
+#     ,IsEntityTraditional=max(IsEntityTraditional,na.rm=TRUE)
+#     # ,EntitySizeCode      
+#     ,IsEntityAbove1990constantMTAthreshold=max(IsEntityAbove1990constantMTAthreshold,na.rm=TRUE)
+#     ,IsEntityAbove1990constantMTAthreshold=max(IsEntityAbove1990constantMTAthreshold,na.rm=TRUE)
+#     ,IsEntityAbove2016constantMTAthreshold=max(IsEntityAbove2016constantMTAthreshold,na.rm=TRUE)
+#     ,IsEntityAbove2018constantMTAthreshold=max(IsEntityAbove2018constantMTAthreshold,na.rm=TRUE)
+#     ,IsEntityAbove2016constantArbitrary1000k=max(IsEntityAbove2016constantArbitrary1000k,na.rm=TRUE)
+#     ,IsEntityAbove2018constantSimplifedAcquisition250kThreshold=
+#       max(IsEntityAbove2018constantSimplifedAcquisition250kThreshold,na.rm=TRUE)
+#     ,IsEntityAbove2018constantCommercialItem7500k=max(IsEntityAbove2018constantCommercialItem7500k)
+#     ,IsEntityAbove2018constantCostAccounting2000kThreshold=
+#       max(IsEntityAbove2018constantCostAccounting2000kThreshold,na.rm=TRUE)
+#     ,AnyEntityUSplaceOfPerformance=max(AnyEntityUSplaceOfPerformance,na.rm=TRUE)
+#     ,AnyEntityForeignPlaceOfPerformance=max(AnyEntityForeignPlaceOfPerformance,na.rm=TRUE)
+#     )  
 def_rpuh <- def_rpuh %>%
+  group_by(Fiscal_Year)%>% mutate(count=1,
+                                  hhi=(DefenseObligated_OMB25_GDP23/
+                                         sum(DefenseObligated_OMB25_GDP23,na.rm = TRUE))^2) %>%
+  
   mutate(AlwaysIsSmallLabel= case_when(
     AlwaysIsSmall==1 ~ "Always Small",
     AlwaysIsSmall==0 ~ "Sometimes or\nAlways Not Small"),
     IsEntityTraditionalLabel= case_when(
       IsEntityTraditional==1 | is.na(IsEntityTraditional) | IsEntityTraditional=="Unlabeled"~ "Traditional\nDefense Contractor",
-      IsEntityTraditional==0 ~ "Non-Traditional\nDefense Contractor")
-    
+      IsEntityTraditional==0 ~ "Non-Traditional\nDefense Contractor"),
+    LargestContract2018dollars=case_when(
+      IsEntityAbove2018constantCommercialItem7500k==1 ~ "[$7.5 M+]",
+      IsEntityAbove2018constantCostAccounting2000kThreshold==1 ~ "[$2.0 M - $7.5M)",
+      IsEntityAbove2018constantSimplifedAcquisition250kThreshold==1 ~ "[$250k K - $2.0 M)",
+      IsEntityAbove2018constantMTAthreshold==1 ~ "[$10k K - $250 K)"
+      
     )
+    
+  )
 
+  
+  
 summary(factor(def_rpuh$IsEntityTraditional))
 save(ruh,def_rpuh,file=file.path("data","clean","RecipientUEI.rda"))
 

@@ -895,3 +895,29 @@ SET NOCOUNT ON;
       ,[IsEntityTraditional]
   FROM [Vendor].[UEIhistory]
    where Fiscal_Year>=2014 and IsPresent=1
+
+
+   
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+   SELECT  [Parent_UEI]
+      ,[Fiscal_Year]
+      ,[ObligatedAmount]
+      ,[MaxOfCAUobligatedAmount]
+      ,[AnyIsSmall]
+      ,[AlwaysIsSmall]
+      ,[ObligatedAmountIsSmall]
+      ,[IsOnePercentPlusSmall]
+      ,[AnyDefense]
+      ,[DefenseObligated]
+      ,[IsEntityAbove1990constantMTAthreshold]
+      ,[IsEntityAbove2016constantMTAthreshold]
+      ,[IsEntityAbove2018constantMTAthreshold]
+      ,[IsEntityAbove2016constantArbitrary1000k]
+      ,[IsEntityAbove2018constantSimplifedAcquisition250kThreshold]
+      ,[IsEntityAbove2018constantCommercialItem7500k]
+      ,[IsEntityAbove2018constantCostAccounting2000kThreshold]
+      ,[AnyEntityUSplaceOfPerformance]
+      ,[AnyEntityForeignPlaceOfPerformance]
+      ,[IsEntityTraditional]
+  FROM [Vendor].[Parent_UEIhistory]
