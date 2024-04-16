@@ -14,6 +14,7 @@ library(ggplot2)
 library(csis360)
 load(file="../data/clean/FPDS_eid_fyear.rda")
 load(file="../data//clean//defense_naics_vendor.Rdata")
+load(file=file.path("..","data","clean","RecipientUEI.rda"))
 
 load(file="../data//clean//TopVendorUAVHistoryPlatformCustomer.rda")
 
@@ -174,51 +175,6 @@ defense_platform_vendor$entrant_2018T<-factor(defense_platform_vendor$entrant_20
 ```
 
 # Defense Recipient_UEI
-## Simplified
-
-```{r def_rpuh}
-def_rpuh<-def_rpuh%>%mutate(count=1)
-
-
-  (
-  all_10k_small_bar<-build_plot(
-    data=def_rpuh %>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
-                                          & Fiscal_Year>=2014& Fiscal_Year<2024), ##where is FPDS summary?
-    chart_geom = "Bar Chart",
-    share = FALSE,
-    x_var="Fiscal_Year",
-    y_var="count", #Name of variable to plot on y-axis
-    color_var="IsEntityAbove2018constantSimplifedAcquisition250kThreshold",       # name of coloration variable, as string
-    facet_var="AlwaysIsSmallLabel",        # name of facet variable, as string
-    legend=TRUE, #Include a legend
-    caption=TRUE, #Include a source caption
-    # labels_and_colors=eid_lc,
-    column_key=NULL,
-    format=TRUE
-  )+labs(y="Count of vendors with contracts above $10k in 2018 $s",x="Fiscal Year")
-  )
-
-
-
-  (
-  all_10k_small_dollar<-build_plot(
-    data=def_rpuh %>% dplyr::filter( Fiscal_Year>=2014 & Fiscal_Year<2024), ##where is FPDS summary?
-    chart_geom = "Bar Chart",
-    share = FALSE,
-    x_var="Fiscal_Year",
-    y_var="DefenseObligated_OMB25_GDP23", #Name of variable to plot on y-axis
-    color_var="IsEntityAbove2018constantSimplifedAcquisition250kThreshold",       # name of coloration variable, as string
-    facet_var="AlwaysIsSmallLabel",        # name of facet variable, as string
-    legend=TRUE, #Include a legend
-    caption=TRUE, #Include a source caption
-    # labels_and_colors=eid_lc,
-    column_key=NULL,
-    format=TRUE
-  )+labs(y="Count of vendors with contracts above $10k in 2018 $s",x="Fiscal Year")
-  )
-
-
-```
 
 ## CAS 2 million
 
@@ -241,8 +197,21 @@ def_rpuh<-def_rpuh%>%mutate(count=1)
     # labels_and_colors=eid_lc,
     column_key=NULL,
     format=TRUE
-  )+labs(y="Count of vendors with contracts above $10k in 2018 $s",x="Fiscal Year")
+  )+labs(y="Count of Vendors with Contracts\nAbove $10k in 2018 $s",x="Fiscal Year",
+         title="Number of Defense Contractors by Annual Small Business\nStatus and Size of Largest Federal Contract",
+         caption="Note: Threshold values are adjusted for inflation.\nSource: FPDS Unique Entity (UEI) reporting and CSIS analysis.")
   )
+
+
+log_plot(plot=all_10k_small_bar, df=def_rpuh %>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
+                                          & Fiscal_Year>=2014& Fiscal_Year<2024),#%>% filter(Fiscal_YQ<=2023.2)
+                     filename="def_vendor_count",xlsx="CSIS_DoD_DIB_Trends.xlsx",
+                     sheet="DIB count",path="../output/AcqTrends/", height=3.5,
+         csv_then_year=FALSE  ,excel_then_year=FALSE,excel_y_var=TRUE,
+         excel_formulas = TRUE,
+                     startRow=1,format=TRUE,#,var_list=c("SimpleArea","Competition.multisum"),
+         output_doc_png = TRUE
+         )
 
 (
   all_10k_small_line<-build_plot(
@@ -259,9 +228,13 @@ def_rpuh<-def_rpuh%>%mutate(count=1)
     # labels_and_colors=eid_lc,
     column_key=NULL,
     format=TRUE
-  )+labs(y="Count of vendors with contracts above $10k in 2018 $s",x="Fiscal Year")
+  )+labs(y="Count of Vendors with Contracts\nAbove $10k in 2018 $s",x="Fiscal Year",
+         title="Number of Defense Contractors by Annual Small Business\nStatus and Size of Largest Federal Contract",
+         caption="Note: Threshold values are adjusted for inflation.\nSource: FPDS Unique Entity (UEI) reporting and CSIS analysis.")
   )
 
+ggsave600dpi(all_10k_small_line,file="def_vendor_count_line.png",size = 12,height=3.5,width=6.5,
+             path="../output/AcqTrends/",lineheight = 1.2)
 
   (
   all_10k_small_dollar<-build_plot(
@@ -277,8 +250,18 @@ def_rpuh<-def_rpuh%>%mutate(count=1)
     # labels_and_colors=eid_lc,
     column_key=NULL,
     format=TRUE
-  )+labs(y="Count of vendors with contracts above $10k in 2018 $s",x="Fiscal Year")
+  )+labs(y="Obligations (2023 $s)",x="Fiscal Year",
+         title="Defense Obligations by Annual Contractor Small Business\nStatus and Size of Largest Federal Contract",
+         caption="Note: Threshold values are adjusted for inflation.\nSource: FPDS Unique Entity (UEI) reporting and CSIS analysis.")
   )
+
+# log_plot(plot=all_10k_small_dollar, df=def_rpuh %>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
+#                                           & Fiscal_Year>=2014& Fiscal_Year<2024),#%>% filter(Fiscal_YQ<=2023.2)
+#                      filename="def_vendor_obl",xlsx="CSIS_DoD_DIB_Trends.xlsx",
+#                      sheet="DIB dollars",path="../output/AcqTrends/", height=3.5,
+#                      startRow=1,startCol=3,format=TRUE,#,var_list=c("SimpleArea","Competition.multisum"),
+#          output_doc_png = TRUE
+#          )
 
 ```
 

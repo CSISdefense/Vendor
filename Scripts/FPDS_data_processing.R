@@ -555,11 +555,14 @@ def_rpuh <- def_rpuh %>%
       IsEntityAbove2018constantCommercialItem7500k==1 ~ "[$7.5 M+]",
       IsEntityAbove2018constantCostAccounting2000kThreshold==1 ~ "[$2.0 M - $7.5M)",
       IsEntityAbove2018constantSimplifedAcquisition250kThreshold==1 ~ "[$250k K - $2.0 M)",
-      IsEntityAbove2018constantMTAthreshold==1 ~ "[$10k K - $250 K)"
+      IsEntityAbove2018constantMTAthreshold==1 ~ "[$10k K - $250 K)",
+      IsEntityAbove2018constantMTAthreshold==0 ~ "[0 K - $10 K)"
       
     )
     
   )
+
+# t<-hMisc::cut2(def_rpuh$DefenseObligated_OMB25_GDP23,cuts=c(100000,20000))
 
   
   
