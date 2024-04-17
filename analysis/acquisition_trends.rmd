@@ -39,14 +39,20 @@ if(!exists("full_data"))
 if(!exists("def_data"))
   load(file="FPDS_chart_maker/unaggregated_def.Rda")
 
-# full_data<-deflate(full_data, "Action_Obligation_Then_Year",deflator_var="OMB23_GDP21")
-
+def_data<-deflate(def_data, "Action_Obligation_Then_Year",deflator_var="OMB25_GDP23")
+def_data<-deflate(platpscintldef, "Action_Obligation_Then_Year",deflator_var="OMB25_GDP23")
 load(file="../data/clean/Defense_OTA.Rda")
 
 
 if(!"Action_Obligation_OMB25_GDP23" %in% colnames(ota_def))
-  ota_def<-deflate(ota_def, "Dollars_Obligated_Then_Year",deflator_var="OMB25_GDP23")
-colnames(ota_def)[colnames(ota_def)=="Dollars_Obligated_Then_Year_Then_Year"]<-"Dollars_Obligated_Then_Year"
+  ota_def<-deflate(ota_def, "Action_Obligation_Then_Year",deflator_var="OMB25_GDP23")
+colnames(ota_def)[colnames(ota_def)=="Action_Obligation_Then_Year_Then_Year"]<-"Action_Obligation_Then_Year"
+
+
+if(!"Action_Obligation_OMB25_GDP23" %in% colnames(def_data))
+  def_data<-deflate(def_data, "Action_Obligation_Then_Year",deflator_var="OMB25_GDP23")
+colnames(def_data)[colnames(def_data)=="Action_Obligation_Then_Year_Then_Year"]<-"Action_Obligation_Then_Year"
+
 
 
 #Kludge
@@ -1127,11 +1133,13 @@ log_plot(plot=UnmDuration, df=def_data  %>% filter(Fiscal_YQ<2024),
 
 ## Topline Multiyear
 ```{r Multiyear}
+def_data<-def_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
+                              labels=c("Not Multiyear","Multiyear Contract")))
 
 
 (
 Multiyear<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024),
+  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -1190,16 +1198,22 @@ full_data<-full_data %>% group_by(Fiscal_Year,Vehicle.sum7)%>%
 ```
 ### Multiyear Vehicle
 ```{r VehicleMultiyear}
-full_data %>% group_by(Vehicle,multiyearcontracttext) %>%
+def_data %>% group_by(Vehicle,multiyearcontracttext) %>%
   dplyr::summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
 
-levels(factor(full_data$Vehicle))
+    def_data<-def_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
+                              labels=c("Not Multiyear","Multiyear Contract")))
+
+def_data<-def_data %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
+  mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
+
+levels(factor(def_data$Vehicle))
 
 (
 VehicleMultiYear<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024),
+  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024),
   chart_geom = "Bar Chart",
-  share = FALSE,
+  share = TRUE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
@@ -1224,14 +1238,14 @@ VehicleMultiYear<-build_plot(
 
 (
 VehicleMultiYearShare<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=2000 & Vehicle.sum7!="Unlabeled"&
+  data=def_data %>% filter(Fiscal_Year>=2000 & Vehicle.sum7!="Unlabeled"&
                              (is.na(multiyearcontract)|multiyearcontract==1)),
   chart_geom = "Line Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="pPlatFYear", #VAR.y.variable
+  y_var="pVehFYear", #VAR.y.variable
   color_var="multiyearcontracttext", #color_var
   facet_var="Vehicle.sum7",
   column_key=column_key,
@@ -1341,7 +1355,7 @@ write.csv(file="..//Output//AcqTrends//platform_GFE_current.csv",row.names = FAL
           pivot_wider(id_cols=c(PlatformPortfolio,gfe_gfp_value),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
 
-summary(full_data$ContractingSubCustomer)
+summary(def_data$ContractingSubCustomer)
 ```
 
 
@@ -1478,12 +1492,12 @@ write.csv(file="..//Output//AcqTrends//topline_subcustomer.csv",row.names = FALS
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23))
 
 write.csv(file="..//Output//AcqTrends//topline_subcustomer_current.csv",row.names = FALSE, na = "",
-          full_data %>% group_by(SubCustomer.sum,ContractingSubCustomer,Fiscal_Year)%>%
+          def_data %>% group_by(SubCustomer.sum,ContractingSubCustomer,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(SubCustomer.sum,ContractingSubCustomer),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
 
-summary(full_data$ContractingSubCustomer)
+summary(def_data$ContractingSubCustomer)
 ```
 
 ## Topline Energy Efficient
@@ -1566,12 +1580,12 @@ write.csv(file="..//Output//AcqTrends//topline_subcustomer.csv",row.names = FALS
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23))
 
 write.csv(file="..//Output//AcqTrends//topline_subcustomer_current.csv",row.names = FALSE, na = "",
-          full_data %>% group_by(SubCustomer.sum,ContractingSubCustomer,Fiscal_Year)%>%
+          def_data %>% group_by(SubCustomer.sum,ContractingSubCustomer,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(SubCustomer.sum,ContractingSubCustomer),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
 
-summary(full_data$ContractingSubCustomer)
+summary(def_data$ContractingSubCustomer)
 ```
 
 #Product/Service/R&D
@@ -3764,12 +3778,17 @@ write.csv(file="..//Output//AcqTrends//platform_commercial_current.csv",row.name
 ## Platform Multiyear
 ```{r PlatformMultiyear}
 
-    full_data<-full_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
+    def_data<-def_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
                               labels=c("Not Multiyear","Multiyear Contract")))
+
+
+
+def_data<-def_data %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
+  mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
 
 (
 PlatformMultiYear<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024 ),
+  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024 ),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -3794,11 +3813,11 @@ PlatformMultiYear<-build_plot(
   labs(y="Obligations (Constant 2022 $s)")
 )
 
-full_data<-full_data %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
+def_data<-def_data %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
   mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
 (
 PlatformMultiYearShare<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024 &
+  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024 &
                              (multiyearcontract==1)&
                               !is.na(PlatformPortfolio)&
                               PlatformPortfolio!="Unlabeled"), #is.na(multiyearcontract)|
