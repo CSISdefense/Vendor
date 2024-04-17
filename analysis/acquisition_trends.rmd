@@ -233,17 +233,20 @@ ggsave600dpi(topline,file=file.path("..","Output","AcqTrends","topline_toa_annua
 output_TY<-topline$data %>%
   mutate(source=ifelse(!is.na(Total_Obligation_Authority_Then_Year),
                        "TOA","Contract"),
-         Then_Year_Dollars=ifelse(source=="TOA",
-                        Total_Obligation_Authority_Then_Year,Action_Obligation_Then_Year))%>%
+         Dollars=ifelse(source=="TOA",
+                        Total_Obligation_Authority_Then_Year,Action_Obligation_Then_Year),
+         
+         ) %>%
   filter(Fiscal_Year>=1990)%>%
           format_data_for_plot(
                                fy_var="Fiscal_Year",
-                               y_var="Then_Year_Dollars",
+                               y_var="Dollars",
                                color_var="source",
                                facet="FMS",
                                # labels_and_colors = ota_lc,
                                group=TRUE) %>%
-            arrange(Fiscal_Year) 
+            arrange(Fiscal_Year) %>% deflate(money_var="Dollars",
+                                             deflator_var="OMB25_GDP23")
 
 #+theme(plot.margin =margin(t=0,b=0,l=0.1,r=0.25,"inches"))
 log_plot(plot=topline, 
@@ -255,14 +258,14 @@ log_plot(plot=topline,
          output_doc_svg=TRUE
          )
 
-log_plot(plot=topline, 
-         df=output_TY   ,y_var="Then_Year_Dollars",#%>% filter(Fiscal_YQ<2024),
-                     filename="nps_fig1_budg_annual",xlsx="DoD_2024_NPS.xlsx",
-                     sheet="1 Budg",path="../output/AcqTrends/NPS2024/",second_path=online_path,
-         height=3,excel_formulas = TRUE,include_YTD=false,
-                     startRow=1,format=TRUE,var_list=c("source","FMS"),
-         output_doc_svg=TRUE
-         )
+  log_plot(plot=topline, 
+           df=output_TY ,y_var="Dollars_OMB25_GDP23",#%>% filter(Fiscal_YQ<2024),
+                       filename="nps_fig1_budg_annual",xlsx="DoD_2024_NPS.xlsx",
+                       sheet="1 Budg",path="../output/AcqTrends/NPS2024/",second_path=online_path,
+           height=3,excel_formulas = TRUE,include_YTD=FALSE,
+                       startRow=1,format=TRUE,var_list=c("source","FMS"),excel_y_var = TRUE,
+           output_doc_svg=TRUE
+           )
 ```
 
 
@@ -1677,10 +1680,10 @@ log_plot(plot=OTAPSR, df=def_kota %>% filter(Fiscal_YQ<2024),
 
 
 log_plot(plot=OTAPSR, df=def_kota %>% filter(Fiscal_YQ<2024),
-                     filename="nps_fig2_kota_areatypel",xlsx="DoD_2024_NPS.xlsx",
+                     filename="nps_fig2_kota_areatype",xlsx="DoD_2024_NPS.xlsx",
                      sheet="1 K&Ota",path="../output/AcqTrends/NPS2024/",second_path=online_path,
-         height=3,excel_formulas = TRUE,include_YTD=false,
-                     startRow=1,format=TRUE,var_list=c("source","FMS"),
+         height=3,include_YTD=FALSE,
+                     startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
          output_doc_svg=TRUE
          )
 ```
