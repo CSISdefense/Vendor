@@ -502,8 +502,33 @@ rpuh<-read_delim(file.path("data","semi_clean","Vendor.Parent_UEIhistory.txt"),d
 rpuh<-apply_standard_lookups(rpuh)
 
 rpuh<-deflate(rpuh,money_var="DefenseObligated")
-def_rpuh<-rpuh %>% filter(AnyDefense==1) 
 
+rpuh <- rpuh %>%
+  mutate(AlwaysIsSmallLabel= case_when(
+    AlwaysIsSmall==1 ~ "Always Small",
+    AlwaysIsSmall==0 ~ "Sometimes or\nAlways Not Small"),
+    IsEntityTraditionalLabel= case_when(
+      IsEntityTraditional==1 | is.na(IsEntityTraditional) | IsEntityTraditional=="Unlabeled"~ "Traditional\nDefense Contractor",
+      IsEntityTraditional==0 ~ "Non-Traditional\nDefense Contractor"),
+    LargestContract2018dollars=case_when(
+      IsEntityAbove2018constantCommercialItem7500k==1 ~ "[$7.5 M+]",
+      IsEntityAbove2018constantCostAccounting2000kThreshold==1 ~ "[$2.0 M - $7.5M)",
+      IsEntityAbove2018constantSimplifedAcquisition250kThreshold==1 ~ "[$250k K - $2.0 M)",
+      IsEntityAbove2018constantMTAthreshold==1 ~ "[$10k K - $250 K)",
+      IsEntityAbove2018constantMTAthreshold==0 ~ "[0 K - $10 K)"
+      
+    )
+    
+  )
+def_rpuh<-rpuh %>% filter(AnyDefense==1) 
+def_rpuh <- def_rpuh %>%
+  group_by(Fiscal_Year)%>% mutate(count=1,
+                                  hhi=(DefenseObligated_OMB25_GDP23/
+                                         sum(DefenseObligated_OMB25_GDP23,na.rm = TRUE))^2) 
+  
+  rpuh<-rpuh %>%group_by(Fiscal_Year)%>% mutate(count=1,
+                                   hhi=(Action_Obligation_OMB25_GDP23/
+                                          sum(Action_Obligation_OMB25_GDP23,na.rm = TRUE))^2) 
   
 # def_rpuh<-ruh %>% filter(AnyDefense==1) %>% mutate(Parent_UEI=if_else(!is.na(Parent_UEI),Parent_UEI,UEI)) %>%
 #   group_by(Parent_UEI,Fiscal_Year)%>%
@@ -540,33 +565,12 @@ def_rpuh<-rpuh %>% filter(AnyDefense==1)
 #     ,AnyEntityUSplaceOfPerformance=max(AnyEntityUSplaceOfPerformance,na.rm=TRUE)
 #     ,AnyEntityForeignPlaceOfPerformance=max(AnyEntityForeignPlaceOfPerformance,na.rm=TRUE)
 #     )  
-def_rpuh <- def_rpuh %>%
-  group_by(Fiscal_Year)%>% mutate(count=1,
-                                  hhi=(DefenseObligated_OMB25_GDP23/
-                                         sum(DefenseObligated_OMB25_GDP23,na.rm = TRUE))^2) %>%
-  
-  mutate(AlwaysIsSmallLabel= case_when(
-    AlwaysIsSmall==1 ~ "Always Small",
-    AlwaysIsSmall==0 ~ "Sometimes or\nAlways Not Small"),
-    IsEntityTraditionalLabel= case_when(
-      IsEntityTraditional==1 | is.na(IsEntityTraditional) | IsEntityTraditional=="Unlabeled"~ "Traditional\nDefense Contractor",
-      IsEntityTraditional==0 ~ "Non-Traditional\nDefense Contractor"),
-    LargestContract2018dollars=case_when(
-      IsEntityAbove2018constantCommercialItem7500k==1 ~ "[$7.5 M+]",
-      IsEntityAbove2018constantCostAccounting2000kThreshold==1 ~ "[$2.0 M - $7.5M)",
-      IsEntityAbove2018constantSimplifedAcquisition250kThreshold==1 ~ "[$250k K - $2.0 M)",
-      IsEntityAbove2018constantMTAthreshold==1 ~ "[$10k K - $250 K)",
-      IsEntityAbove2018constantMTAthreshold==0 ~ "[0 K - $10 K)"
-      
-    )
-    
-  )
 
 # t<-hMisc::cut2(def_rpuh$DefenseObligated_OMB25_GDP23,cuts=c(100000,20000))
 
   
-  
-summary(factor(def_rpuh$IsEntityTraditional))
-save(ruh,def_rpuh,file=file.path("data","clean","RecipientUEI.rda"))
+    
+  summary(factor(def_rpuh$IsEntityTraditional))
+  save(ruh,rpuh,def_rpuh,file=file.path("data","clean","RecipientUEI.rda"))
 
 
