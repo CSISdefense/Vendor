@@ -368,7 +368,7 @@ if(!exists("def_data"))
 def_kota<-ota_def
 def_kota$IsOTA<-"OTA"
 def_data$IsOTA<-"Contract"
-def_data$AreaType<-paste("Contract for",def_data$SimpleArea)
+def_data$AreaType<-paste("Contract for",def_data $SimpleArea)
 def_kota$AreaType<-paste("OTA for",def_kota$TypeOfAgreement)
 
 
