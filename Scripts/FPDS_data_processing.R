@@ -45,6 +45,7 @@ initial_clean<-function(df,only_defense=TRUE){
 }
 
 
+
 #############Full Data and Fed Data##########
 
 full_data <- read_delim(
