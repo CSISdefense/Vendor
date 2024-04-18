@@ -919,5 +919,7 @@ SET NOCOUNT ON;
       ,[IsEntityAbove2018constantCostAccounting2000kThreshold]
       ,[AnyEntityUSplaceOfPerformance]
       ,[AnyEntityForeignPlaceOfPerformance]
+	  ,AnyCASclause
+	  ,AlwaysCAUisCASexemptOrWaived
       ,[IsEntityTraditional]
   FROM [Vendor].[Parent_UEIhistory]
