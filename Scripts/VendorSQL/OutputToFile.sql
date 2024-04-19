@@ -923,3 +923,28 @@ SET NOCOUNT ON;
 	  ,AlwaysCAUisCASexemptOrWaived
       ,[IsEntityTraditional]
   FROM [Vendor].[Parent_UEIhistory]
+
+  SET QUERY_GOVERNOR_COST_LIMIT 0
+  SELECT fiscal_year
+      ,[IsAbove2018constantCommercialItem7500k]
+      ,[IsAbove2018constantCostAccounting2000kThreshold]
+      ,[CostAccountingStandardsClause]
+      ,[costorpricingdata]
+      ,[IsSealedBid]
+      ,[IsCommercialitemacquisitionprocedures]
+      ,[isforeigngovernment]
+      ,[FixedPriceEffective]
+      ,[AlwaysCAUisCASexemptOrWaived]
+	  ,count([contract_award_unique_key]) as n_cau
+	  		,sum(obligatedamount) as obligatedamount		
+  FROM [Contract].[DefenseCostAccountingStandardCrosscheck]
+  group by fiscal_year
+      ,[IsAbove2018constantCommercialItem7500k]
+      ,[IsAbove2018constantCostAccounting2000kThreshold]
+      ,[CostAccountingStandardsClause]
+      ,[costorpricingdata]
+      ,[IsSealedBid]
+      ,[IsCommercialitemacquisitionprocedures]
+      ,[isforeigngovernment]
+      ,[FixedPriceEffective]
+      ,[AlwaysCAUisCASexemptOrWaived]
