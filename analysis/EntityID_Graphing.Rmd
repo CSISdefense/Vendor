@@ -1,5 +1,5 @@
 ---
-title: "Footing"
+title: "Entity Graphing"
 author: "Greg Sanders"
 date: "July 16, 2018"
 output: html_document
@@ -17,6 +17,10 @@ load(file="../data//clean//defense_naics_vendor.Rdata")
 load(file=file.path("..","data","clean","RecipientUEI.rda"))
 
 load(file="../data//clean//TopVendorUAVHistoryPlatformCustomer.rda")
+
+
+online_path<-file.path(get_local_sharepoint_path("DIIG Teamsite - Shared Documents"),"2024 - Acquisition Trends","Data and Figures")
+
 
 # style_path<-"https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/style/"
 # style_path<-"K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\"
@@ -176,7 +180,7 @@ defense_platform_vendor$entrant_2018T<-factor(defense_platform_vendor$entrant_20
 
 # Defense Recipient_UEI
 
-## CAS 2 million
+## Count by largest contract
 
 ```{r def_rpuh}
 
@@ -185,7 +189,7 @@ defense_platform_vendor$entrant_2018T<-factor(defense_platform_vendor$entrant_20
   (
   all_10k_small_bar<-build_plot(
     data=def_rpuh %>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
-                                          & Fiscal_Year>=2014& Fiscal_Year<2024), ##where is FPDS summary?
+                                          & Fiscal_Year>=2007& Fiscal_Year<2024), ##where is FPDS summary?
     chart_geom = "Bar Chart",
     share = FALSE,
     x_var="Fiscal_Year",
@@ -194,8 +198,8 @@ defense_platform_vendor$entrant_2018T<-factor(defense_platform_vendor$entrant_20
     facet_var="AlwaysIsSmallLabel",        # name of facet variable, as string
     legend=TRUE, #Include a legend
     caption=TRUE, #Include a source caption
-    # labels_and_colors=eid_lc,
-    column_key=NULL,
+        labels_and_colors=rpuh_lc,
+    column_key=rpuh_ck,
     format=TRUE
   )+labs(y="Count of Vendors with Contracts\nAbove $10k in 2018 $s",x="Fiscal Year",
          title="Number of Defense Contractors by Annual Small Business\nStatus and Size of Largest Federal Contract",
@@ -204,19 +208,37 @@ defense_platform_vendor$entrant_2018T<-factor(defense_platform_vendor$entrant_20
 
 
 log_plot(plot=all_10k_small_bar, df=def_rpuh %>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
-                                          & Fiscal_Year>=2014& Fiscal_Year<2024),#%>% filter(Fiscal_YQ<=2023.2)
+                                          & Fiscal_Year>=2007& Fiscal_Year<2024),#%>% filter(Fiscal_YQ<=2023.2)
                      filename="def_vendor_count",xlsx="CSIS_DoD_DIB_Trends.xlsx",
+                     sheet="DIB count",path="../output/AcqTrends/", 
+         second_path=online_path,
+         height=3.5,
+         csv_then_year=FALSE  ,excel_then_year=FALSE,excel_y_var=TRUE,
+         excel_formulas = TRUE,
+                     startRow=1,format=TRUE,#,var_list=c("SimpleArea","Competition.multisum"),
+         output_doc_png = TRUE,
+         include_YTD = FALSE,
+         num_format = "0.00,\"K\""
+         )
+
+
+log_plot(plot=all_10k_small_bar+labs(title=NULL), df=def_rpuh %>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
+                                          & Fiscal_Year>=2007& Fiscal_Year<2024),#%>% filter(Fiscal_YQ<=2023.2)
+                     filename="def_vendor_count",xlsx="CSIS_DoD_DIB_Trends.xlsx",second_path=online_path,
                      sheet="DIB count",path="../output/AcqTrends/", height=3.5,
          csv_then_year=FALSE  ,excel_then_year=FALSE,excel_y_var=TRUE,
          excel_formulas = TRUE,
                      startRow=1,format=TRUE,#,var_list=c("SimpleArea","Competition.multisum"),
-         output_doc_png = TRUE
+         output_doc_png = TRUE,
+         include_YTD = FALSE,
+         num_format = "0.00,\"K\""
          )
+
 
 (
   all_10k_small_line<-build_plot(
     data=def_rpuh %>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
-                                          & Fiscal_Year>=2014& Fiscal_Year<2024), ##where is FPDS summary?
+                                          & Fiscal_Year>=2007& Fiscal_Year<2024), ##where is FPDS summary?
     chart_geom = "Line Chart",
     share = FALSE,
     x_var="Fiscal_Year",
@@ -225,20 +247,20 @@ log_plot(plot=all_10k_small_bar, df=def_rpuh %>% dplyr::filter(IsEntityAbove2018
     facet_var="AlwaysIsSmallLabel",        # name of facet variable, as string
     legend=TRUE, #Include a legend
     caption=TRUE, #Include a source caption
-    # labels_and_colors=eid_lc,
-    column_key=NULL,
+    labels_and_colors=rpuh_lc,
+    column_key=rpuh_ck,
     format=TRUE
   )+labs(y="Count of Vendors with Contracts\nAbove $10k in 2018 $s",x="Fiscal Year",
          title="Number of Defense Contractors by Annual Small Business\nStatus and Size of Largest Federal Contract",
          caption="Note: Threshold values are adjusted for inflation.\nSource: FPDS Unique Entity (UEI) reporting and CSIS analysis.")
   )
 
-ggsave600dpi(all_10k_small_line,file="def_vendor_count_line.png",size = 12,height=3.5,width=6.5,
-             path="../output/AcqTrends/",lineheight = 1.2)
+ggsave600dpi(all_10k_small_line+labs(title=NULL),file="def_vendor_count_line.png",size = 12,height=3.5,width=6.5,
+             path="../output/AcqTrends/",lineheight = 1.2,second_path=online_path)
 
   (
   all_10k_small_dollar<-build_plot(
-    data=def_rpuh %>% dplyr::filter( Fiscal_Year>=2014 & Fiscal_Year<2024), ##where is FPDS summary?
+    data=def_rpuh %>% dplyr::filter( Fiscal_Year>=2007 & Fiscal_Year<2024), ##where is FPDS summary?
     chart_geom = "Bar Chart",
     share = FALSE,
     x_var="Fiscal_Year",
@@ -247,21 +269,23 @@ ggsave600dpi(all_10k_small_line,file="def_vendor_count_line.png",size = 12,heigh
     facet_var="AlwaysIsSmallLabel",        # name of facet variable, as string
     legend=TRUE, #Include a legend
     caption=TRUE, #Include a source caption
-    # labels_and_colors=eid_lc,
-    column_key=NULL,
+    labels_and_colors=rpuh_lc,
+    column_key=rpuh_ck,
     format=TRUE
   )+labs(y="Obligations (2023 $s)",x="Fiscal Year",
          title="Defense Obligations by Annual Contractor Small Business\nStatus and Size of Largest Federal Contract",
          caption="Note: Threshold values are adjusted for inflation.\nSource: FPDS Unique Entity (UEI) reporting and CSIS analysis.")
   )
-
-# log_plot(plot=all_10k_small_dollar, df=def_rpuh %>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
-#                                           & Fiscal_Year>=2014& Fiscal_Year<2024),#%>% filter(Fiscal_YQ<=2023.2)
-#                      filename="def_vendor_obl",xlsx="CSIS_DoD_DIB_Trends.xlsx",
-#                      sheet="DIB dollars",path="../output/AcqTrends/", height=3.5,
-#                      startRow=1,startCol=3,format=TRUE,#,var_list=c("SimpleArea","Competition.multisum"),
-#          output_doc_png = TRUE
-#          )
+  
+  log_plot(plot=all_10k_small_dollar+labs(title=NULL), df=def_rpuh %>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
+                                            & Fiscal_Year>=2007& Fiscal_Year<2024),#%>% filter(Fiscal_YQ<=2023.2)
+           second_path=online_path,
+                       filename="def_vendor_obl",xlsx="CSIS_DoD_DIB_Trends.xlsx",
+                       sheet="DIB dollars",path="../output/AcqTrends/", height=2.75,
+           excel_formulas=TRUE,
+                       startRow=1,format=TRUE,#,var_list=c("SimpleArea","Competition.multisum"),
+           output_doc_png = TRUE
+           )
 
 ```
 
@@ -275,38 +299,57 @@ ggsave600dpi(all_10k_small_line,file="def_vendor_count_line.png",size = 12,heigh
   (
   all_10k_small_bar<-build_plot(
     data=def_rpuh %>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
-                                          & Fiscal_Year>=2014& Fiscal_Year<2024), ##where is FPDS summary?
+                                          & Fiscal_Year>=2007& Fiscal_Year<2024), ##where is FPDS summary?
     chart_geom = "Bar Chart",
     share = FALSE,
     x_var="Fiscal_Year",
     y_var="count", #Name of variable to plot on y-axis
-    color_var="IsEntityAbove2018constantCostAccounting2000kThreshold",       # name of coloration variable, as string
+    color_var="LargestContract2018dollars",       # name of coloration variable, as string
     facet_var="AlwaysIsSmallLabel",        # name of facet variable, as string
     second_var="IsEntityTraditionalLabel",
     legend=TRUE, #Include a legend
     caption=TRUE, #Include a source caption
-    # labels_and_colors=eid_lc,
-    column_key=NULL,
+    labels_and_colors=rpuh_lc,
+    column_key=rpuh_ck,
     format=TRUE
   )+labs(y="Count of vendors with contracts above $10k in 2018 $s",x="Fiscal Year")
   )
 
 
+  (
+  all_10k_small_bar<-build_plot(
+    data=def_rpuh %>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
+                                          & Fiscal_Year>=2007& Fiscal_Year<2024), ##where is FPDS summary?
+    chart_geom = "Bar Chart",
+    share = FALSE,
+    x_var="Fiscal_Year",
+    y_var="count", #Name of variable to plot on y-axis
+    color_var="LargestContract2018dollars",       # name of coloration variable, as string
+    facet_var="AnyEntityForeignPlaceOfPerformance",        # name of facet variable, as string
+    second_var="IsEntityTraditionalLabel",
+    legend=TRUE, #Include a legend
+    caption=TRUE, #Include a source caption
+    labels_and_colors=rpuh_lc,
+    column_key=rpuh_ck,
+    format=TRUE
+  )+labs(y="Count of vendors with contracts above $10k in 2018 $s",x="Fiscal Year")
+  )
+
 
   (
   all_10k_small_dollar<-build_plot(
-    data=def_rpuh %>% dplyr::filter( Fiscal_Year>=2014 & Fiscal_Year<2024), ##where is FPDS summary?
+    data=def_rpuh %>% dplyr::filter( Fiscal_Year>=2001 & Fiscal_Year<2024), ##where is FPDS summary?
     chart_geom = "Bar Chart",
     share = FALSE,
     x_var="Fiscal_Year",
     y_var="DefenseObligated_OMB25_GDP23", #Name of variable to plot on y-axis
-    color_var="IsEntityAbove2018constantCostAccounting2000kThreshold",       # name of coloration variable, as string
+    color_var="LargestContract2018dollars",       # name of coloration variable, as string
     facet_var="AlwaysIsSmallLabel",        # name of facet variable, as string
     second_var="IsEntityTraditionalLabel",
     legend=TRUE, #Include a legend
     caption=TRUE, #Include a source caption
-    # labels_and_colors=eid_lc,
-    column_key=NULL,
+    labels_and_colors=rpuh_lc,
+    column_key=rpuh_ck,
     format=TRUE
   )+labs(y="Count of vendors with contracts above $10k in 2018 $s",x="Fiscal Year")
   )
@@ -321,7 +364,7 @@ ggsave600dpi(all_10k_small_line,file="def_vendor_count_line.png",size = 12,heigh
 
   (
   def_rpuh_hhi<-build_plot(
-    data=def_rpuh %>% dplyr::filter( Fiscal_Year>=2014& Fiscal_Year<2024), ##where is FPDS summary?
+    data=def_rpuh %>% dplyr::filter( Fiscal_Year>=2001& Fiscal_Year<2024), ##where is FPDS summary?
     chart_geom = "Line Chart",
     share = FALSE,
     x_var="Fiscal_Year",
