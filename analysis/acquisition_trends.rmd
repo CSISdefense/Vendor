@@ -39,7 +39,8 @@ if(!exists("full_data"))
 if(!exists("def_data"))
   load(file="FPDS_chart_maker/unaggregated_def.Rda")
 
-if(!exists("ota_def"))
+
+if(!exists("ota_def")|!exists("def_kota"))
   load(file="../data/clean/Defense_OTA.Rda")
 
 # def_data<-deflate(def_data, "Action_Obligation_Then_Year",deflator_var="OMB25_GDP23")
@@ -58,7 +59,8 @@ colnames(toa)<-gsub("\r\nEnacted","",colnames(toa))
 colnames(toa)[colnames(toa)=="...2"]<-"Series"
 toa<-pivot_longer(toa,  cols=-Series, names_to="Fiscal_Year", values_to="Total_Obligation_Authority")
 toa$Total_Obligation_Authority<-toa$Total_Obligation_Authority*1000000
-toa<-deflate(toa,money_var = "Total_Obligation_Authority",deflator_var="OMB25_GDP23")
+debug(deflate)
+toa<-deflate(toa,money_var = "Total_Obligation_Authority",deflator_var="OMB25_GDP23",path="offline")
 toa$dFYear<-as.Date(paste(toa$Fiscal_Year,1,1,sep="-"))
 
 online_path<-file.path(get_local_sharepoint_path("DIIG Teamsite - Shared Documents"),"2024 - Acquisition Trends","Data and Figures")
@@ -145,7 +147,7 @@ for(p in platform_levels){
 }
 ```
 
-### Quarterly Cust Breakout
+f### Quarterly Cust Breakout
 ```{r QuartCustBreakout} 
 subcustomer_levels<-levels(factor(def_data$SubCustomer.sum))
 for(c in subcustomer_levels){
@@ -180,6 +182,8 @@ for(c in subcustomer_levels){
 ## Topline and TOA
 ```{r TOAannual}
 
+if(!exists("platpscintldef"))
+  load(file="../data/clean/platpscintl_FPDS.Rda")
 
 fpds_annual<-platpscintldef %>% filter(Fiscal_Year<2024) %>% group_by(Fiscal_Year,dFYear,IsFMS,
                                     ContractingCustomer,YTD) %>% summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE),
@@ -1636,8 +1640,8 @@ log_plot(plot=ToplinePSR+facet_wrap(~SimpleArea), df=def_data %>% filter(Fiscal_
 
 ## PSR OTA
 ```{r ToplinePSR}
-
-
+if(!exists("def_kota"))
+  load(file="../data/clean/def_kota.Rda")
 
 
 (
@@ -1673,7 +1677,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="OTA_psr.svg", OTAPSR,
 
 log_plot(plot=OTAPSR, df=def_kota %>% filter(Fiscal_YQ<2024),
                      filename="acq_fig3_1a_kota_areatype",xlsx="DoD_Acq_Trends_Contracts.xlsx",
-                     sheet="3-1a K&Ota",path="../output/AcqTrends/", height=3.5,
+                     sheet="3-1a KOta",path="../output/AcqTrends/", height=3.5,
                      startRow=1,startCol=12,format=TRUE,#var_list=c("SimpleArea","Competition.multisum"),
          excel_y_var = TRUE,excel_formulas = TRUE
          )
@@ -4178,6 +4182,15 @@ log_plot(plot=ToplineVendorIntl, df=full_data  %>% filter(Fiscal_YQ<=2023.2),
                      sheet="6-1 VendIntl",path="../output/AcqTrends/", height=3.5,
          excel_y_var = TRUE, excel_formulas = TRUE,
                      format=TRUE,#,var_list=c("SimpleArea","Competition.multisum")
+         )
+
+
+log_plot(plot=OTAPSR, df=def_kota %>% filter(Fiscal_YQ<=2023.2),
+                     filename="nps_fig2_kota_areatype",xlsx="DoD_2024_NPS.xlsx",
+                     sheet="5 Vend",path="../output/AcqTrends/NPS2024/",second_path=online_path,
+         height=3.5,include_YTD=TRUE,
+                     startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
+         output_doc_svg=TRUE
          )
 
 ```
