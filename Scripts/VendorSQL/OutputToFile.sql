@@ -941,7 +941,9 @@ SET NOCOUNT ON;
       ,[FixedPriceEffective]
       ,[AlwaysCAUisCASexemptOrWaived]
 	  ,contractingofficerbusinesssizedetermination
-
+	  	,IsEntityTraditional 
+		,IsEntityAbove2018constantCommercialItem7500k 
+		,AlwaysIsSmall
 	  ,count([contract_award_unique_key]) as n_cau
 	  		,sum(obligatedamount) as obligatedamount		
   FROM [Contract].[DefenseCostAccountingStandardCrosscheck]
@@ -956,3 +958,6 @@ SET NOCOUNT ON;
       ,[FixedPriceEffective]
       ,[AlwaysCAUisCASexemptOrWaived]
 	  ,contractingofficerbusinesssizedetermination
+	  	,IsEntityTraditional 
+		,IsEntityAbove2018constantCommercialItem7500k 
+		,AlwaysIsSmall

@@ -526,11 +526,11 @@ rpuh <- rpuh %>%
 def_rpuh<-rpuh %>% filter(AnyDefense==1) 
 def_rpuh <- def_rpuh %>%
   group_by(Fiscal_Year)%>% mutate(count=1,
-                                  hhi=(DefenseObligated_OMB25_GDP23/
+                                  hhi=(100*DefenseObligated_OMB25_GDP23/
                                          sum(DefenseObligated_OMB25_GDP23,na.rm = TRUE))^2) 
   
   rpuh<-rpuh %>%group_by(Fiscal_Year)%>% mutate(count=1,
-                                   hhi=(Action_Obligation_OMB25_GDP23/
+                                   hhi=(100*Action_Obligation_OMB25_GDP23/
                                           sum(Action_Obligation_OMB25_GDP23,na.rm = TRUE))^2) 
   
 # def_rpuh<-ruh %>% filter(AnyDefense==1) %>% mutate(Parent_UEI=if_else(!is.na(Parent_UEI),Parent_UEI,UEI)) %>%
