@@ -393,7 +393,7 @@ cas <- cas %>%
     ~ "Consistently Small or\nLargest Contract\nUnder $7.5 M",
     TRUE ~ "Variably Small / Larger\nand Largest Contract\nOver $7.5 M"),
     cas_label=case_when(
-      CostAccountingStandardsClause=="Y"~"Cost Accounting Standards",
+      CostAccountingStandardsClause=="Y"~"Cost Accounting Standards Labeled",
   CostAccountingStandardsClause=="N"~"Waived",
    IsSealedBid==1 | (costorpricingdata %in% c("W","N") & FixedPriceEffective==1) ~ "Competition",
                                          IsCommercialitemacquisitionprocedures==1~"Commercial",
@@ -403,7 +403,7 @@ cas <- cas %>%
   IsAbove2018constantCommercialItem7500k==0 | AlwaysIsSmall==1~"Vendor Size or Largest Contract",
   CostAccountingStandardsClause=="X"~"Unidentified Exemption",
   # CostAccountingStandardsClause=="Y"~"Cost Accounting Standards (Labeled)")
-  TRUE~"Cost Accounting Standards")
+  TRUE~"Cost Accounting Standards Imputed")
     # LargestContract2018dollars=case_when(
     #   IsEntityAbove2018constantCommercialItem7500k==1 ~ "[$7.5 M+]",
     #   IsEntityAbove2018constantCostAccounting2000kThreshold==1 ~ "[$2.0 M - $7.5M)",
@@ -614,8 +614,8 @@ colnames(cas)
 
 
 (
-  ntdc_label<-build_plot(
-    data=cas %>% filter (Fiscal_Year>=2011& Fiscal_Year<2024), #%>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
+  ntdc_size_label<-build_plot(
+    data=cas %>% filter (Fiscal_Year>=2007& Fiscal_Year<2024), #%>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
                                           # & Fiscal_Year>=2007& Fiscal_Year<2024), ##where is FPDS summary?
     chart_geom = "Bar Chart",
     share = FALSE,
@@ -648,6 +648,40 @@ colnames(cas)
            output_doc_png = TRUE
            )
   
+(
+  ntdc_label<-build_plot(
+    data=cas %>% filter (Fiscal_Year>=2007& Fiscal_Year<2024), #%>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
+                                          # & Fiscal_Year>=2007& Fiscal_Year<2024), ##where is FPDS summary?
+    chart_geom = "Bar Chart",
+    share = FALSE,
+    x_var="Fiscal_Year",
+    y_var="Action_Obligation_OMB25_GDP23", #Name of variable to plot on y-axis
+    color_var="cas_label",       # name of coloration variable, as string
+    facet_var="IsEntityTraditionalLabel",        # name of facet variable, as string
+    # second_var="ntdc_label",
+    legend=TRUE, #Include a legend
+    caption=TRUE, #Include a source caption
+    labels_and_colors=cas_lc,
+    column_key=cas_ck,
+    format=TRUE
+  )+theme(legend.position = "right")+
+  labs(title="AlwaysCAUisCASexemptOrWaived",
+                                          y="Obligations (2023 $s)",x="Fiscal Year"))
+
+
+
+  log_plot(plot=ntdc_label+labs(title=NULL)+theme(legend.position = "right"),
+           df=cas %>% dplyr::filter(
+                                            Fiscal_Year>=2007& Fiscal_Year<2024),#%>% filter(Fiscal_YQ<=2023.2)
+           second_path=online_path,
+                       filename="nps_fig8a_ntdc_obl",xlsx="CSIS_DoD_DIB_Trends.xlsx",
+                       sheet="8 NTDC",path="../output/AcqTrends/",
+           height=4,
+           excel_formulas=TRUE,excel_y_var = TRUE,
+                       startRow=1,format=TRUE,#,var_list=c("SimpleArea","Competition.multisum"),
+           output_doc_png = TRUE
+           )
+  
 if(nrow(cas %>% filter(IsEntityTraditional==0 & CostAccountingStandardsClause=="Y"))>0){
   View(cas %>% filter(IsEntityTraditional==0 & CostAccountingStandardsClause=="Y"))
   stop("CAS contraction, CAS applied to non-traditional")
@@ -661,7 +695,7 @@ if(nrow(cas %>% filter(IsEntityTraditional==0 & CostAccountingStandardsClause=="
 
   (
   def_rpuh_hhi<-build_plot(
-    data=def_rpuh %>% dplyr::filter( Fiscal_Year>=2011& Fiscal_Year<2024), ##where is FPDS summary?
+    data=def_rpuh %>% dplyr::filter( Fiscal_Year>=2007& Fiscal_Year<2024), ##where is FPDS summary?
     chart_geom = "Line Chart",
     share = FALSE,
     x_var="Fiscal_Year",
