@@ -924,7 +924,9 @@ SET NOCOUNT ON;
       ,[IsEntityTraditional]
   FROM [Vendor].[Parent_UEIhistory]
 
-  SET QUERY_GOVERNOR_COST_LIMIT 0
+  SET QUERY_GOVERNOR_COST_LIMIT 0;
+  SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
   SELECT fiscal_year
       ,[IsAbove2018constantCommercialItem7500k]
       ,[IsAbove2018constantCostAccounting2000kThreshold]
