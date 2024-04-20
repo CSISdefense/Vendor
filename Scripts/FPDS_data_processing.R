@@ -99,6 +99,8 @@ if(all(is.na(full_data[nrow(full_data),]))){
   warning("Echo row dropped")
 }
 
+
+
 # if("ContractingCustomer" %in% colnames(full_data))
 # full_data %<>%  select(-ContractingCustomer)
 # set correct data types
