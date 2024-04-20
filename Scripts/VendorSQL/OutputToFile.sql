@@ -961,3 +961,27 @@ SET NOCOUNT ON;
 	  	,IsEntityTraditional 
 		,IsEntityAbove2018constantCommercialItem7500k 
 		,AlwaysIsSmall
+
+
+		SELECT fiscal_year
+      ,[IsAbove2018constantCommercialItem7500k]
+      ,[IsAbove2018constantCostAccounting2000kThreshold]
+      ,[CostAccountingStandardsClause]
+      ,[costorpricingdata]
+      ,[IsSealedBid]
+      ,[IsCommercialitemacquisitionprocedures]
+      ,[isforeigngovernment]
+      ,[FixedPriceEffective]
+      ,[AlwaysCAUisCASexemptOrWaived]
+	  ,contractingofficerbusinesssizedetermination
+	  	,IsEntityTraditional 
+		,IsEntityAbove2018constantCommercialItem7500k 
+		,AlwaysIsSmall
+	  ,[contract_award_unique_key]
+	  		,obligatedamount
+			,contract_award_unique_key
+			,recipient_uei
+			,recipient_parent_uei
+			,parent_uei
+  FROM [Contract].[DefenseCostAccountingStandardCrosscheck]
+  where [CostAccountingStandardsClause]='Y' and IsEntityTraditional=0
