@@ -36,14 +36,24 @@ if(!exists("full_data"))
   load(file="FPDS_chart_maker//unaggregated_FPDS.Rda")
 
 
+# if(!"Action_Obligation_OMB25_GDP23" %in% colnames(full_data))
+#   full_data<-deflate(full_data, "Action_Obligation_Then_Year",deflator_var="OMB25_GDP23",path="offline")
+# colnames(full_data)[colnames(full_data)=="Action_Obligation_Then_Year_Then_Year"]<-"Action_Obligation_Then_Year"
+
+
 if(!exists("def_data"))
   load(file="FPDS_chart_maker/unaggregated_def.Rda")
 
-if(!exists("ota_def"))
+
+if(!exists("ota_def")|!exists("def_kota"))
   load(file="../data/clean/Defense_OTA.Rda")
 
-# def_data<-deflate(def_data, "Action_Obligation_Then_Year",deflator_var="OMB25_GDP23")
-# colnames(def_data)[colnames(def_data)=="Action_Obligation_Then_Year_Then_Year"]<-"Action_Obligation_Then_Year"
+
+# if(!"Action_Obligation_OMB25_GDP23" %in% colnames(ota_def))
+#   ota_def<-deflate(ota_def, "Action_Obligation_Then_Year",deflator_var="OMB25_GDP23")
+# colnames(ota_def)[colnames(ota_def)=="Action_Obligation_Then_Year_Then_Year"]<-"Action_Obligation_Then_Year"
+
+
 
 
 #Kludge
@@ -58,16 +68,17 @@ colnames(toa)<-gsub("\r\nEnacted","",colnames(toa))
 colnames(toa)[colnames(toa)=="...2"]<-"Series"
 toa<-pivot_longer(toa,  cols=-Series, names_to="Fiscal_Year", values_to="Total_Obligation_Authority")
 toa$Total_Obligation_Authority<-toa$Total_Obligation_Authority*1000000
-toa<-deflate(toa,money_var = "Total_Obligation_Authority",deflator_var="OMB25_GDP23")
+debug(deflate)
+toa<-deflate(toa,money_var = "Total_Obligation_Authority",deflator_var="OMB25_GDP23",path="offline")
 toa$dFYear<-as.Date(paste(toa$Fiscal_Year,1,1,sep="-"))
 
 online_path<-file.path(get_local_sharepoint_path("DIIG Teamsite - Shared Documents"),"2024 - Acquisition Trends","Data and Figures")
 
 max(full_data$Fiscal_YQ)
+max(def_data$Fiscal_YQ)
 
 
-
-
+load(file="../data/clean/Defense_OTA.Rda")
 ```
 
 # Topline
@@ -88,7 +99,7 @@ max(full_data$Fiscal_YQ)
            column_key=def_ck
        )+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nOct–Nov")
        theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 ggsave600dpi(toplineq,file=file.path("..","Output","AcqTrends","toplineq.svg"),  
@@ -129,7 +140,7 @@ for(p in platform_levels){
            column_key=def_ck
        )+
       date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nOct–Nov")   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",title=p)
+  labs(y="Obligations (Constant 2023 $s)",title=p)
 )
   
   if(!dir.exists(file.path("../output/AcqTrends/Platform",file_p)))
@@ -145,7 +156,7 @@ for(p in platform_levels){
 }
 ```
 
-### Quarterly Cust Breakout
+f### Quarterly Cust Breakout
 ```{r QuartCustBreakout} 
 subcustomer_levels<-levels(factor(def_data$SubCustomer.sum))
 for(c in subcustomer_levels){
@@ -161,7 +172,7 @@ for(c in subcustomer_levels){
            column_key=def_ck
        )+
       date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nOct–Nov")   theme(legend.position = "right")+
-     labs(y="Obligations (Constant 2022 $s)",title=c))
+     labs(y="Obligations (Constant 2023 $s)",title=c))
   
   if(!dir.exists(file.path("../output/AcqTrends/Customer",file_c)))
     dir.create(file.path("../output/AcqTrends/Customer",file_c))
@@ -180,6 +191,8 @@ for(c in subcustomer_levels){
 ## Topline and TOA
 ```{r TOAannual}
 
+if(!exists("platpscintldef"))
+  load(file="../data/clean/platpscintl_FPDS.Rda")
 
 fpds_annual<-platpscintldef %>% filter(Fiscal_Year<2024) %>% group_by(Fiscal_Year,dFYear,IsFMS,
                                     ContractingCustomer,YTD) %>% summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE),
@@ -215,7 +228,7 @@ fpds_annual$TOA<-"Total Obligation Authority"
        )+
     geom_path(aes(x=dFYear,y=Total_Obligation_Authority_OMB25_GDP23,color=TOA))+
   # scale_alpha_discrete(range=c(0.4,1))+
-    labs(x="Fiscal Year",y="Constant FY 2022 $",fill="Contract",color="Budget",
+    labs(x="Fiscal Year",y="Constant FY 2023 $",fill="Contract",color="Budget",
          caption="Source: FPDS, FY 2024 DoD Greenbook, CSIS Analysis")+
     theme(legend.position = "right")+
     date_x_year_breaks(1990,2028,3)#,partial_year=2024,partial_label="\nQ1")
@@ -233,39 +246,28 @@ ggsave600dpi(topline,file=file.path("..","Output","AcqTrends","topline_toa_annua
 output_TY<-topline$data %>%
   mutate(source=ifelse(!is.na(Total_Obligation_Authority_Then_Year),
                        "TOA","Contract"),
-         Dollars=ifelse(source=="TOA",
-                        Total_Obligation_Authority_Then_Year,Action_Obligation_Then_Year),
-         
-         ) %>%
+         Then_Year_Dollars=ifelse(source=="TOA",
+                        Total_Obligation_Authority_Then_Year,Action_Obligation_Then_Year))%>%
   filter(Fiscal_Year>=1990)%>%
           format_data_for_plot(
                                fy_var="Fiscal_Year",
-                               y_var="Dollars",
+                               y_var="Then_Year_Dollars",
                                color_var="source",
                                facet="FMS",
                                # labels_and_colors = ota_lc,
                                group=TRUE) %>%
-            arrange(Fiscal_Year) %>% deflate(money_var="Dollars",
-                                             deflator_var="OMB25_GDP23")
+            arrange(Fiscal_Year) 
 
 #+theme(plot.margin =margin(t=0,b=0,l=0.1,r=0.25,"inches"))
 log_plot(plot=topline, 
          df=output_TY   ,y_var="Then_Year_Dollars",#%>% filter(Fiscal_YQ<2024),
                      filename="acq_fig2_1_toa_annual",xlsx="DoD_Acq_Trends_Contracts.xlsx",
-                     sheet="2-1 TOA",path="../output/AcqTrends/",
-         height=3,excel_formulas = TRUE,
+                     sheet="2-1 TOA",path="../output/AcqTrends/", height=3,excel_formulas = TRUE,
                      startRow=1,startCol=13,format=TRUE,var_list=c("source","FMS"),
          output_doc_svg=TRUE
          )
 
-  log_plot(plot=topline, 
-           df=output_TY ,y_var="Dollars_OMB25_GDP23",#%>% filter(Fiscal_YQ<2024),
-                       filename="nps_fig1_budg_annual",xlsx="DoD_2024_NPS.xlsx",
-                       sheet="1 Budg",path="../output/AcqTrends/NPS2024/",second_path=online_path,
-           height=3,excel_formulas = TRUE,include_YTD=FALSE,
-                       startRow=1,format=TRUE,var_list=c("source","FMS"),excel_y_var = TRUE,
-           output_doc_svg=TRUE
-           )
+
 ```
 
 
@@ -300,7 +302,7 @@ ToplineCompMulti<-build_plot(
   # color="Competition")+
   theme(legend.position = "bottom")+
   labs(x="Fiscal Year",
-       y="Obligations (Constant 2022 $s)")+
+       y="Obligations (Constant 2023 $s)")+
     date_x_year_breaks(1992,2022, by=2)#,partial_year=2024,partial_label="\nOct–Nov")
 )
 
@@ -329,7 +331,7 @@ ToplineComp<-build_plot(
   # color="Competition")+
   theme(legend.position = "bottom")+
   labs(x="Fiscal Year",
-       y="Obligations (Constant 2022 $s)")+
+       y="Obligations (Constant 2023 $s)")+
     date_x_year_breaks(1998,2022,2)#)#,partial_year=2024,partial_label="\nOct–Nov")
 )
 
@@ -360,7 +362,7 @@ ToplineCompLine<-build_plot(
   # color="Competition")+
   theme(legend.position = "bottom")+
   labs(x="Fiscal Year",
-       y="Obligations (Constant 2022 $s)")+
+       y="Obligations (Constant 2023 $s)")+
     date_x_year_breaks(1998,2022, by=2)
 )
 
@@ -436,7 +438,7 @@ UnlabeledComp<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 def_data %>% filter(Competition.sum =="Unlabeled" & Fiscal_Year>=2019) %>% group_by(CompetitionClassification)%>%
@@ -496,7 +498,7 @@ ToplineVehicle7<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",
+  labs(y="Obligations (Constant 2023 $s)",
        caption="Note: Unlabeled not shown. Source: FPDS and CSIS analysis.")
 )
 
@@ -525,7 +527,7 @@ ToplineVehicle<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",
+  labs(y="Obligations (Constant 2023 $s)",
        caption="Note: Unlabeled not shown. Source: FPDS and CSIS analysis.")
 )
 
@@ -583,7 +585,7 @@ for(p in platform_levels){
   ytextposition=FALSE
 )+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
   theme(legend.position = "right")+
-    labs(y="Obligations (Constant 2022 $s)",title=p))
+    labs(y="Obligations (Constant 2023 $s)",title=p))
 
   if(!dir.exists(file.path("../output/AcqTrends/Platform",file_p)))
     dir.create(file.path("../output/AcqTrends/Platform",file_p))
@@ -618,7 +620,7 @@ for(c in subcustomer_levels){
   ytextposition=FALSE
 )+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
   theme(legend.position = "right")+
-    labs(y="Obligations (Constant 2022 $s)",title=c))
+    labs(y="Obligations (Constant 2023 $s)",title=c))
   
   if(!dir.exists(file.path("../output/AcqTrends/Customer",file_c)))
     dir.create(file.path("../output/AcqTrends/Customer",file_c))
@@ -632,6 +634,40 @@ for(c in subcustomer_levels){
   
 }
 ```
+
+### Vehicle Cost 
+```{r VehCost} 
+
+(
+CAS<-build_plot(
+  data=def_data %>% filter(Fiscal_Year>=2001 & Fiscal_YQ<2024) ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="costaccountingstandardsclause", #color_var
+  facet_var="Vehicle.sum7", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2022 $s)")
+)
+  
+
+```
+
 
 ## Topline Pricing
 ```{r ToplinePricing}
@@ -668,7 +704,7 @@ ToplinePricing<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 
@@ -702,6 +738,10 @@ log_plot(plot=ToplinePricing+theme(plot.margin = margin(t=0,r=0.25,b=0.1,l=0.1,"
 ```{r ToplinePricing}
 if(!exists("pricing"))
   load(file="../data/clean/pricing_historical.Rda")
+
+
+if(!"Action_Obligation_OMB25_GDP23" %in% colnames(pricing))
+  pricing<-deflate(pricing, "Action_Obligation_Then_Year",deflator_var="OMB25_GDP23",path="offline")
 
 hist_lc<-prepare_labels_and_colors(pricing %>% select(-ContractingOfficeName,-PricingMechanism))#,path=local_path
 hist_ck<-get_column_key(pricing)#,path=local_path
@@ -751,7 +791,7 @@ PricingHistory<-build_plot(
   
   
   ggsave600dpi(path="..//Output//AcqTrends//",filename="Topline_Pricing_History.svg", PricingHistory,  
-               width=6.5, height= 3, units="in",size=12, lineheight=1.2
+               width=12 height= 5.5, units="in",size=, lineheight=1.2
                )
 
 log_plot(plot=PricingHistory, df=PricingUpdate  %>% filter(Fiscal_YQ<2024),
@@ -827,7 +867,7 @@ full_data<- full_data %>%      group_by(Fiscal_Year,IsFMS) %>%
 
 # +
 #   labs(#x="Year of Delivery (Calendar or Fiscal Varies by Source)",
-#        y="Constant 2022 $ Obligated (Variable Y-Scale)",
+#        y="Constant 2023 $ Obligated (Variable Y-Scale)",
 #        caption="Source: FPDS and CSIS analysis.")+
 #     theme(legend.position = "right"))
 
@@ -911,7 +951,7 @@ for(p in platform_levels){
     alpha_var="YTD",
   )+date_x_year_breaks(2000,2023,6)+#,partial_year=2024,partial_label="\nQ1")
     theme(legend.position = "right")+
-    labs(y="Obligations (Constant 2022 $s)",title=p))
+    labs(y="Obligations (Constant 2023 $s)",title=p))
 
   if(!dir.exists(file.path("../output/AcqTrends/Platform",file_p)))
     dir.create(file.path("../output/AcqTrends/Platform",file_p))
@@ -947,7 +987,7 @@ for(c in subcustomer_levels){
     alpha_var="YTD",
   )+date_x_year_breaks(2000,2023,6)+#,partial_year=2024,partial_label="\nQ1")
     theme(legend.position = "right")+
-    labs(y="Obligations (Constant 2022 $s)",title=c))
+    labs(y="Obligations (Constant 2023 $s)",title=c))
   
   if(!dir.exists(file.path("../output/AcqTrends/Customer",file_c)))
     dir.create(file.path("../output/AcqTrends/Customer",file_c))
@@ -996,7 +1036,7 @@ Commercial<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")+
+  labs(y="Obligations (Constant 2023 $s)")+
   date_x_year_breaks(2000,2022,2)#)#,partial_year=2024,partial_label="\nOct–Nov")
 )
 
@@ -1005,12 +1045,12 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_commercial.png", C
              )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_commercial.svg", Commercial+
-  labs(y="Obligations\n(Constant 2022 $s)"),#+facet_wrap(~SubCustomer.platform,nrow=1), 
+  labs(y="Obligations\n(Constant 2023 $s)"),#+facet_wrap(~SubCustomer.platform,nrow=1), 
              width=6.5, height= 2.25, units="in",size=11,lineheight = 1.2
              )
 
 
-log_plot(plot=Commercial+labs(y="Obligations\n(Constant 2022 $s)"), df=def_data %>% filter(Fiscal_YQ<2024),
+log_plot(plot=Commercial+labs(y="Obligations\n(Constant 2023 $s)"), df=def_data %>% filter(Fiscal_YQ<2024),
                      filename="acq_fig5_4_commercial",xlsx="DoD_Acq_Trends_Contracts.xlsx",
                      sheet="5-4 Comm",path="../output/AcqTrends/", height=2.5,
                      startRow=1,startCol=12,format=TRUE,#var_list=c("SimpleArea","Competition.multisum")
@@ -1131,6 +1171,14 @@ log_plot(plot=UnmDuration, df=def_data  %>% filter(Fiscal_YQ<2024),
                      startRow=1,startCol=12,format=TRUE#,var_list=c("PricingInflation")
          )
 
+
+log_plot(plot=UnmDuration, df=def_data  %>% filter(Fiscal_YQ<2024),
+                     filename="nps_fig9_UmdDuration",xlsx="DoD_2024_NPS.xlsx",
+                     sheet="9 Dur",path="../output/AcqTrends/NPS2024/",second_path=online_path,
+         height=2.75,include_YTD=FALSE,
+                     startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
+         output_doc_svg=TRUE
+         )
 ```
 
 ## Topline Multiyear
@@ -1155,7 +1203,7 @@ Multiyear<-build_plot(
   ytextposition=FALSE
 )+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")+
+  labs(y="Obligations (Constant 2023 $s)")+
   date_x_year_breaks(2000,2022,2)#)#,partial_year=2024,partial_label="\nOct–Nov")
 )
 
@@ -1164,7 +1212,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_Multiyear.png", Mu
              )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_Multiyear.svg", Multiyear+
-  labs(y="Obligations\n(Constant 2022 $s)"),#+facet_wrap(~SubCustomer.platform,nrow=1), 
+  labs(y="Obligations\n(Constant 2023 $s)"),#+facet_wrap(~SubCustomer.platform,nrow=1), 
              width=6.5, height= 2.25, units="in",size=11,lineheight = 1.2
              )
 
@@ -1235,7 +1283,7 @@ VehicleMultiYear<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 (
@@ -1328,7 +1376,7 @@ GFEcomp<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")+
+  labs(y="Obligations (Constant 2023 $s)")+
     scale_x_date(breaks=as.Date(c(paste(seq(2000,2021,3),"-01-01",sep=""))),
                                                    date_labels="'%y")
 )
@@ -1367,7 +1415,7 @@ summary(def_data$ContractingSubCustomer)
 
 (
 CAS<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
+  data=def_data %>% filter(Fiscal_Year>=2001 & Fiscal_YQ<2024) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -1389,7 +1437,7 @@ CAS<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 
@@ -1417,7 +1465,7 @@ CAS<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 
@@ -1445,7 +1493,7 @@ CAS<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 
@@ -1473,7 +1521,7 @@ CAS<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_subcustomer.png", SubCustomer, 
@@ -1531,7 +1579,7 @@ EE<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 
@@ -1559,7 +1607,7 @@ EE<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 
@@ -1612,7 +1660,7 @@ ToplinePSR<-build_plot(
   ytextposition=FALSE
 )+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",
+  labs(y="Obligations (Constant 2023 $s)",
        caption="Note: Unlabeled product, service, and R&D areas not shown.\nSource: FPDS and CSIS analysis.")+
   date_x_year_breaks(1990,2020,5)#,partial_year=2024,partial_label="\nQ1",)
 )
@@ -1636,8 +1684,8 @@ log_plot(plot=ToplinePSR+facet_wrap(~SimpleArea), df=def_data %>% filter(Fiscal_
 
 ## PSR OTA
 ```{r ToplinePSR}
-
-
+if(!exists("def_kota"))
+  load(file="../data/clean/def_kota.Rda")
 
 
 (
@@ -1658,7 +1706,7 @@ OTAPSR<-build_plot(
   ytextposition=FALSE
 )+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",
+  labs(y="Obligations (Constant 2023 $s)",
        caption="Note: Unlabeled contract product, service, and R&D areas\nas well as unlabeled OTA agreement types not shown.\nSource: FPDS and CSIS analysis.")+facet_wrap(~SimpleAreaType, nrow=1)+
   date_x_year_breaks(2015,2023,2)#,partial_year=2024,partial_label="\nQ1",)
 )
@@ -1673,10 +1721,11 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="OTA_psr.svg", OTAPSR,
 
 log_plot(plot=OTAPSR, df=def_kota %>% filter(Fiscal_YQ<2024),
                      filename="acq_fig3_1a_kota_areatype",xlsx="DoD_Acq_Trends_Contracts.xlsx",
-                     sheet="3-1a K&Ota",path="../output/AcqTrends/", height=3.5,
+                     sheet="3-1a KOta",path="../output/AcqTrends/", height=3.5,
                      startRow=1,startCol=12,format=TRUE,#var_list=c("SimpleArea","Competition.multisum"),
          excel_y_var = TRUE,excel_formulas = TRUE
          )
+
 
 
 log_plot(plot=OTAPSR, df=def_kota %>% filter(Fiscal_YQ<2024),
@@ -1686,6 +1735,7 @@ log_plot(plot=OTAPSR, df=def_kota %>% filter(Fiscal_YQ<2024),
                      startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
          output_doc_svg=TRUE
          )
+
 ```
 
 ## PSR Plat Breakout
@@ -1709,7 +1759,7 @@ for(p in platform_levels){
   ytextposition=FALSE
 )+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",title=p)+
+  labs(y="Obligations (Constant 2023 $s)",title=p)+
   date_x_year_breaks(1990,2020,5)#,partial_year=2024,partial_label="\nQ1")
 )
 
@@ -1747,7 +1797,7 @@ for(c in subcustomer_levels){
   ytextposition=FALSE
 )+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",title=c)+
+  labs(y="Obligations (Constant 2023 $s)",title=c)+
   date_x_year_breaks(1990,2020,5)#,partial_year=2024,partial_label="\nQ1")
 )
 
@@ -1783,7 +1833,7 @@ PSR_Q<-build_plot(
   ytextposition=FALSE
 )+date_x_year_breaks(2000,2023,3)+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="PSR_Q.png", PSR_Q, 
@@ -1838,7 +1888,7 @@ RnDphase<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="psr_RnDPhase.png", RnDphase, 
@@ -1926,7 +1976,7 @@ RnDphasePlusOTA<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )+scale_x_date(date_labels="'%y",date_breaks="1 year")
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="RnDPhasePlusOTA.png", RnDphasePlusOTA+labs(caption="Source: FPDS and CSIS analysis."),
@@ -2033,7 +2083,7 @@ RnDphase<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="contractota_RnDPhase.png", RnDphase,
@@ -2078,7 +2128,7 @@ Services<-build_plot(
 )+
   date_x_year_breaks(1990,2020,5)+#,partial_year=2024,partial_label="\nQ1")
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="psr_Services.png", Services, 
@@ -2127,7 +2177,7 @@ PSRpricing_dollar<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.")
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="psr_pricing_dollar.png", PSRpricing_dollar, 
@@ -2159,7 +2209,7 @@ SimpleVendor_share<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.")
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.")
 )
 
 
@@ -2197,7 +2247,7 @@ SimpleVendor_dollar<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.\nMcDonnell Douglas is grouped with the Big-5.")
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.\nMcDonnell Douglas is grouped with the Big-5.")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="psr_vendorsize_dollar.png", SimpleVendor_dollar, 
@@ -2229,7 +2279,7 @@ SimpleVendor_share<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020\n McDonnell Douglas is grouped with the Big-5.")
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020\n McDonnell Douglas is grouped with the Big-5.")
 )
 
 
@@ -2239,7 +2289,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="psr_vendorsize_share.png",
 
 ```
 
-## PSR Competition
+  ## PSR Competition
 ```{r PSRcomp_plat}
 summary(def_data$SimpleArea)
 (
@@ -2267,7 +2317,7 @@ PSRComp_line<-build_plot(
   # color="Competition")+
   theme(legend.position = "bottom")+
   labs(x="Fiscal Year",
-       y="Obligations (Constant 2022 $s)")+
+       y="Obligations (Constant 2023 $s)")+
     date_x_year_breaks(1993,2023,by=6)#,partial_year=2024,partial_label="\nQ1")
 )
 
@@ -2290,7 +2340,7 @@ PSRComp_bar<-build_plot(
 )+
   theme(legend.position = "bottom")+
   labs(x="Fiscal Year",
-       y="Obligations (Constant 2022 $s)")+
+       y="Obligations (Constant 2023 $s)")+
     date_x_year_breaks(1993,2023,by=6)#,partial_year=2024,partial_label="\nQ1")
 )
 
@@ -2348,7 +2398,7 @@ ggsave("..//Output//AcqTrends//PSRComp_both_keynote.png",
              gridExtra::grid.arrange(
                PSRComp_bar+labs(
                  title="DOD Contract Obligations by Extent of Competition, 2000–2023",
-                  y="Obligations\n(Const. 2022 $s)",
+                  y="Obligations\n(Const. 2023 $s)",
                caption = NULL,x=NULL)+theme(legend.position = "none",text=element_text(size=20)),
                PSRComp_line+labs(y="Share of\nObl.")+theme(text=element_text(size=20),
                plot.caption = element_text(size=round(20 * 5/6,0))
@@ -2360,7 +2410,7 @@ ggsave("..//Output//AcqTrends//PSRComp_both_keynote.svg",
              gridExtra::grid.arrange(
                PSRComp_bar+labs(
                  title="DOD Contract Obligations by Extent of Competition, 2000–2023",
-                  y="Obligations\n(Const. 2022 $s)",
+                  y="Obligations\n(Const. 2023 $s)",
                caption = NULL,x=NULL)+theme(legend.position = "none",text=element_text(size=20)),
                PSRComp_line+labs(y="Share of\nObl.")+theme(text=element_text(size=20),
                plot.caption = element_text(size=round(20 * 5/6,0))
@@ -2372,7 +2422,7 @@ ggsave(file.path(online_path,"PSRComp_both_keynote.svg"),
              gridExtra::grid.arrange(
                PSRComp_bar+labs(
                  title="DOD Contract Obligations by Extent of Competition, 2000–2023",
-                  y="Obligations\n(Const. 2022 $s)",
+                  y="Obligations\n(Const. 2023 $s)",
                caption = NULL,x=NULL)+theme(legend.position = "none",text=element_text(size=20)),
                PSRComp_line+labs(y="Share of\nObl.")+theme(text=element_text(size=20),
                plot.caption = element_text(size=round(20 * 5/6,0))
@@ -2384,7 +2434,7 @@ ggsave("..//Output//AcqTrends//acq_fig6_6_PSR_competition.svg",
              gridExtra::grid.arrange(
                PSRComp_bar+labs(
                  title=NULL,
-                  y="Obligations\n(Constant 2022 $s)",
+                  y="Obligations\n(Constant 2023 $s)",
                caption = NULL,x=NULL)+theme(legend.position = "none",text=element_text(size=12),
                                             plot.margin = margin(t=0,b=0,l=0.1,r=0.5,unit="inches")),
                PSRComp_line+labs(y="Share of\nObligations",caption=NULL)+theme(text=element_text(size=12),
@@ -2397,7 +2447,7 @@ ggsave(file.path(online_path,"acq_fig6_6_PSR_competition.svg"),
              gridExtra::grid.arrange(
                PSRComp_bar+labs(
                  title=NULL,
-                  y="Obligations\n(Constant 2022 $s)",
+                  y="Obligations\n(Constant 2023 $s)",
                caption = NULL,x=NULL)+theme(legend.position = "none",text=element_text(size=12),
                                             plot.margin = margin(t=0,b=0,l=0.1,r=0.5,unit="inches")),
                PSRComp_line+labs(y="Share of\nObligations",caption=NULL)+theme(text=element_text(size=12),
@@ -2440,7 +2490,7 @@ PSRMultiYear<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 full_data<-full_data %>% group_by(Fiscal_Year,SimpleArea)%>%
@@ -2523,7 +2573,7 @@ SubCustomer<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)") +date_x_year_breaks(1990,2020,5)#,partial_year=2024,partial_label="\nQ1")
+  labs(y="Obligations (Constant 2023 $s)") +date_x_year_breaks(1990,2020,5)#,partial_year=2024,partial_label="\nQ1")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_subcustomer.png", SubCustomer, 
@@ -2542,12 +2592,13 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_subcustomer_keynot
              )
 
 log_plot(plot=SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1)+
-           date_x_year_breaks(1990,2022,8),#,partial_year=2024,partial_label="\nQ1"),
+           date_x_year_breaks(1990,2020,8),#,partial_year=2024,partial_label="\nQ1"),
          df=def_data %>% filter(Fiscal_YQ<2024),
                      filename="acq_fig2_3_subcustomer",xlsx="DoD_Acq_Trends_Contracts.xlsx",
                      sheet="2-3 Cust",path="../output/AcqTrends/", height=3.5,
                      startRow=1,startCol=13,format=TRUE,var_list=c("SubCustomer.sum","SubCustomer.JPO")
          )
+
 
 
 
@@ -2559,6 +2610,7 @@ log_plot(plot=SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1)+
                      startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
          output_doc_svg=TRUE
          )
+
 ```
 
 ## SuCustomer Plat Breakout
@@ -2581,7 +2633,7 @@ chart_geom = "Bar Chart",
   ytextposition=FALSE
 )+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)") +date_x_year_breaks(1990,2020,5)#,partial_year=2024,partial_label="\nQ1")
+  labs(y="Obligations (Constant 2023 $s)") +date_x_year_breaks(1990,2020,5)#,partial_year=2024,partial_label="\nQ1")
 )
   if(!dir.exists(file.path("../output/AcqTrends/Platform",file_p)))
     dir.create(file.path("../output/AcqTrends/Platform",file_p))
@@ -2637,7 +2689,7 @@ SubCustomerCovid<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="subcustomer_covid.png", SubCustomerCovid, 
@@ -2688,7 +2740,7 @@ SubCustomerPSR<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "bottom")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 # ggsave600dpi(path="..//Output//AcqTrends//",filename="subcustomer_PSR.png", SubCustomerPSR, 
@@ -2726,7 +2778,7 @@ SubCustomerComp_line<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "bottom")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 # ggsave600dpi(path="..//Output//AcqTrends//",filename="subcustomer_PSR.png", SubCustomerPSR, 
@@ -2760,7 +2812,7 @@ SubCustomerComp_bar<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "bottom")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="subcustomer_Comp_bar.png", SubCustomerComp_bar, 
@@ -2805,7 +2857,7 @@ PricingHistoryCust<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",
+  labs(y="Obligations (Constant 2023 $s)",
        caption="Note: Uncategorized customer not shown.\nSource: FPDS and CSIS analysis.")
 )
 
@@ -2868,7 +2920,7 @@ CommercialCust<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")+
+  labs(y="Obligations (Constant 2023 $s)")+
       date_x_year_breaks(2000,2023,6)#,partial_year=2024,partial_label="\nQ1")
     
 
@@ -2902,7 +2954,6 @@ log_plot(plot=CommercialCust, df=def_data %>% filter(Fiscal_YQ<2024),
          var_list=c("SubCustomer.platform","AnyCommercialText"),
          output_doc_svg=TRUE
          )
-
 log_plot(plot=CommercialCust, df=def_data %>% filter(Fiscal_YQ<2024),
                      filename="nps_fig5_commercial_subcustomer",xlsx="DoD_2024_NPS_pt2.xlsx",
                      sheet="5 Comm",path="../output/AcqTrends/NPS2024/",second_path=online_path,
@@ -2910,6 +2961,8 @@ log_plot(plot=CommercialCust, df=def_data %>% filter(Fiscal_YQ<2024),
                      startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
          output_doc_svg=TRUE
          )
+
+
 ```
 
 ## Subcustomer GFE
@@ -2939,7 +2992,7 @@ GFEcust<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")+
+  labs(y="Obligations (Constant 2023 $s)")+
       date_x_year_breaks(2000,2022,2)#,partial_year=2024,partial_label="\nOct–Nov")
 
 )
@@ -2975,7 +3028,7 @@ Platform<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_platform.png", Platform, 
@@ -3008,7 +3061,7 @@ Platform_Bar<-build_plot(
   ytextposition=FALSE
 )+date_x_year_breaks(1990,2020,8)+#,partial_year=2024,partial_label="\nQ1")   
   theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_platform_bar.png", Platform_Bar, 
@@ -3031,6 +3084,7 @@ log_plot(plot=Platform_Bar+theme(plot.margin = margin(t=0,r=0.25,b=0.1,l=0.1,"in
                      startRow=1,startCol=12,format=TRUE#var_list=c("Source","fiscal_quarter"),
          )
 
+
 log_plot(plot=Platform_Bar+theme(plot.margin = margin(t=0,r=0.25,b=0.1,l=0.1,"inches")), df=def_data   %>% filter(Fiscal_YQ<2024),
                      filename="nps_fig3_platform",xlsx="DoD_2024_NPS.xlsx",
                      sheet="3 Plat",path="../output/AcqTrends/NPS2024/",second_path=online_path,
@@ -3038,6 +3092,7 @@ log_plot(plot=Platform_Bar+theme(plot.margin = margin(t=0,r=0.25,b=0.1,l=0.1,"in
                      startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
          output_doc_svg=TRUE
          )
+
 
 ```
 
@@ -3061,7 +3116,7 @@ for(c in subcustomer_levels){
   ytextposition=FALSE
 )+date_x_year_breaks(1990,2020,8)+#,partial_year=2024,partial_label="\nQ1")   
   theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
   
   if(!dir.exists(file.path("../output/AcqTrends/Customer",file_c)))
@@ -3107,7 +3162,7 @@ for(s in c("Army","Navy","Air Force")){
       # y="Percent of Obligations",
       # color="Competition")+
       theme(legend.position = "none")+
-      labs(y="Obligations (Constant 2022 $s)")
+      labs(y="Obligations (Constant 2023 $s)")
   )
   
   ggsave600dpi(paste("..//Output//AcqTrends//",s,"_platform.png",sep=""), Platform, 
@@ -3148,7 +3203,7 @@ for(s in c("Army","Navy","Air Force")){
 #   # y="Percent of Obligations",
 #   # color="Competition")+
 #   theme(legend.position = "none")+
-#   labs(y="Obligations (Constant 2022 $s)")
+#   labs(y="Obligations (Constant 2023 $s)")
 # )
 # 
 # ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_platform_bar.png", Platform_Bar, 
@@ -3177,7 +3232,7 @@ for(s in c("Army","Navy","Air Force")){
 
 (
 PlatformSubCustomer<-build_plot(
-  data=full_data,
+  data=def_data,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -3199,7 +3254,7 @@ PlatformSubCustomer<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "bottom")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="platform_subcustomer.png", PlatformSubCustomer, 
@@ -3235,7 +3290,7 @@ PlatformPSR<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "bottom")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="platform_PSR.png", PlatformPSR, 
@@ -3272,7 +3327,7 @@ PlatformProducts<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "bottom")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="platform_products.png", PlatformProducts, 
@@ -3318,7 +3373,7 @@ PlatformRnD<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="PlatformRnD.png", PlatformRnD, 
@@ -3353,7 +3408,7 @@ PlatformQ<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 (
@@ -3381,7 +3436,7 @@ OnMQ<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
     theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 
@@ -3628,7 +3683,7 @@ PlatformComp_bar<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "bottom")#+
-  # labs(y="Obligations (Constant 2022 $s)")
+  # labs(y="Obligations (Constant 2023 $s)")
 )
 
 (
@@ -3655,7 +3710,7 @@ PlatformComp_bar2007<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "bottom")#+
-  # labs(y="Obligations (Constant 2022 $s)")
+  # labs(y="Obligations (Constant 2023 $s)")
 )
 
 
@@ -3683,7 +3738,7 @@ PlatformComp_line<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "bottom")#+
-  # labs(y="Obligations (Constant 2022 $s)")
+  # labs(y="Obligations (Constant 2023 $s)")
 )
 
 
@@ -3736,7 +3791,7 @@ PlatNoComp<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")+
+  labs(y="Obligations (Constant 2023 $s)")+
     scale_x_date(breaks=as.Date(c(paste(seq(2000,2021,3),"-01-01",sep=""))),
                                                    date_labels="'%y")
 )
@@ -3777,7 +3832,7 @@ CommercialPlat<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="platform_commercial.png", CommercialPlat, 
@@ -3845,7 +3900,7 @@ PlatformMultiYear<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 def_data<-def_data %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
@@ -3911,13 +3966,21 @@ write.csv(file="..//Output//AcqTrends//PlatformMultiYearShare.csv",row.names = F
                       names_from=Fiscal_Year,values_from=pPlatFYear)%>%
   arrange(PlatformPortfolio))
   
-log_plot(PlatformMultiYearShare, full_data %>% filter(Fiscal_YQ<2024) ,
+log_plot(PlatformMultiYearShare, def_data %>% filter(Fiscal_YQ<2024) ,
                      filename="acq_fig4_2_multiyear",xlsx="DoD_Acq_Trends_Contracts.xlsx",
                      sheet="4-2 Multi",path="../output/AcqTrends/", height=3.5,excel_y_var = TRUE,excel_formulas = FALSE,
                      startRow=1,startCol=13,format=TRUE,y_var="Action_Obligation_OMB25_GDP23",
          var_list=c("PlatformPortfolio","multiyearcontracttext"),
          )
 
+
+log_plot(plot=PlatformMultiYearShare, df=def_data %>% filter(Fiscal_YQ<2024),
+                     filename="nps_fig8_multiyear",xlsx="DoD_2024_NPS.xlsx",
+                     sheet="8 Mult",path="../output/AcqTrends/NPS2024/",
+         height=3.5,include_YTD=FALSE,
+                     startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
+         output_doc_svg=TRUE
+         )
 ```
 
 ## Platform  Ukraine
@@ -3952,7 +4015,7 @@ Platform_Ukr_Bar<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "none")+
-  labs(y="Obligations (Constant 2022 $s)")
+  labs(y="Obligations (Constant 2023 $s)")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="Munitions//ukraine_platform_bar.png", Platform_Ukr_Bar, 
@@ -4073,7 +4136,7 @@ ToplineVendor<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",
+  labs(y="Obligations (Constant 2023 $s)",
        caption="Source: FPDS and CSIS analysis.")
 )
 
@@ -4094,22 +4157,22 @@ ToplineVendor_line<-build_plot(
 )+date_x_year_breaks(1990,2019,5)+#,partial_year=2024,partial_label="\nQ1")
     
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_vendor_wide.png", ToplineVendor+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020."), 
              width=12, height= 6, units="in",size=12,lineheight=1
              )
 
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_vendor_cq.png", ToplineVendor+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_vendor_cq.svg", ToplineVendor+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
@@ -4118,7 +4181,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_vendor.png", Topli
              )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_vendor.eps", ToplineVendor+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
@@ -4158,12 +4221,12 @@ ToplineVendorIntl<-build_plot(
   date_x_year_breaks(2000,2022,3,partial_year=2023,partial_label="\nQ1–Q2")+
     
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",
+  labs(y="Obligations (Constant 2023 $s)",
        caption="Source: FPDS and CSIS analysis.")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_vendor_intl_square.png", ToplineVendorIntl+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis."), 
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis."), 
              width=6, height= 5, units="in",size=12,lineheight=1
              )
 
@@ -4178,6 +4241,15 @@ log_plot(plot=ToplineVendorIntl, df=full_data  %>% filter(Fiscal_YQ<=2023.2),
                      sheet="6-1 VendIntl",path="../output/AcqTrends/", height=3.5,
          excel_y_var = TRUE, excel_formulas = TRUE,
                      format=TRUE,#,var_list=c("SimpleArea","Competition.multisum")
+         )
+
+
+log_plot(plot=ToplineVendorIntl, df=full_data %>% filter(Fiscal_YQ<=2023.2),
+                     filename="nps_fig5_vendor",xlsx="DoD_2024_NPS.xlsx",
+                     sheet="5 Vend",path="../output/AcqTrends/NPS2024/",
+         height=3.5,include_YTD=TRUE,
+                     startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
+         output_doc_svg=TRUE
          )
 
 ```
@@ -4231,7 +4303,7 @@ ToplineVendor<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",
+  labs(y="Obligations (Constant 2023 $s)",
        caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020.")
 )
 
@@ -4259,22 +4331,22 @@ ToplineVendor_line<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_vendor_wide.png", ToplineVendor+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020."), 
              width=12, height= 6, units="in",size=12,lineheight=1
              )
 
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_vendor_cq.png", ToplineVendor+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_vendor_cq.svg", ToplineVendor+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
@@ -4283,7 +4355,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_vendor.png", Topli
              )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_vendor.eps", ToplineVendor+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
@@ -4323,7 +4395,7 @@ chart_geom = "Bar Chart",
   ytextposition=FALSE
 )+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)") +date_x_year_breaks(1990,2020,5)#,partial_year=2024,partial_label="\nQ1")
+  labs(y="Obligations (Constant 2023 $s)") +date_x_year_breaks(1990,2020,5)#,partial_year=2024,partial_label="\nQ1")
 )
   if(!dir.exists(file.path("../output/AcqTrends/Platform",file_p)))
     dir.create(file.path("../output/AcqTrends/Platform",file_p))
@@ -4368,7 +4440,7 @@ VendorSizeVehicle<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",
+  labs(y="Obligations (Constant 2023 $s)",
        caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020.")
 )
 
@@ -4397,7 +4469,7 @@ VendorSizeVehicleSum<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+facet_wrap(~Shiny.VendorSize, nrow=1)+
-  labs(y="Obligations (Constant 2022 $s)",
+  labs(y="Obligations (Constant 2023 $s)",
        caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020.\nUnlabeled vendor size excluded.")
 )
 
@@ -4426,18 +4498,18 @@ VendorSizeVehicleSumLine<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",
+  labs(y="Obligations (Constant 2023 $s)",
        caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020.")+facet_wrap(~Shiny.VendorSize, nrow=1)
 )
 
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="vendorsize_vehicle.png", VendorSizeVehicle+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020.\nUnlabeled vendor size excluded."),
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020.\nUnlabeled vendor size excluded."),
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="vendorsize_vehicle.svg", VendorSizeVehicle+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020\nUnlabeled vendor size excluded.."),
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020\nUnlabeled vendor size excluded.."),
              width=6.5, height= 4, units="in",size=11,lineheight=1
              )
 
@@ -4450,7 +4522,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="vendorsize_awardtaskshare.
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="vendorsize_awardtask.svg", VendorSizeVehicleSum
 +
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020.\nUnlabeled vendor size excluded."),
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies is took place in \nApril 2020 and thus did not make the cutofff for inclusion in FY2020.\nUnlabeled vendor size excluded."),
              width=6.5, height= 3.25, units="in",size=11,lineheight=1
              )
 
@@ -4502,7 +4574,7 @@ ToplineVendor_line<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
 )
 
 (
@@ -4529,7 +4601,7 @@ ToplineVendor_line<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
 )
 
 
@@ -4570,7 +4642,7 @@ VendorSizePricing<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2022 $s)",
+  labs(y="Obligations (Constant 2023 $s)",
        caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020.")
 )
 
@@ -4623,7 +4695,7 @@ log_plot(plot=VendorSizePricing20212022share+
          )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="vendorsize_pricing.png", VendorSizePricing+
-  labs(y="Obligations (Constant 2022 $s)",caption="Source: FPDS and CSIS analysis."),
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis."),
              width=6, height= 5, units="in",size=12,lineheight=1
              )
 
@@ -5312,7 +5384,7 @@ summary(ota_def$dFYear)
                             caption=FALSE,
                             format=TRUE)+theme(legend.position = "right")+
     facet_grid( VendorNTIB~. )+labs(title="OTA obligations by Platform for Vendors with Addreses\nin Australia, Canada, and the United Kingdom",
-                                    y="Action Obligation (Constant 2022 $s")#, scales="free_y"#, scales="free_y"
+                                    y="Action Obligation (Constant 2023 $s")#, scales="free_y"#, scales="free_y"
   )+scale_x_date("Fiscal Year",labels = scales::date_format("'%y"))
 
 (ntibintl_cust <-  build_plot(data=ota_def%>% filter((#PlaceISOalpha3 %in% ntibisoalpha3|
@@ -5330,7 +5402,7 @@ summary(ota_def$dFYear)
                             caption=FALSE,
                             format=TRUE)+theme(legend.position = "right")+
     facet_grid( VendorNTIB~. )+labs(title="OTA obligations by Customer for Vendors with Addreses\nin Australia, Canada, and the United Kingdom",
-                                    y="Action Obligation (Constant 2022 $s")#, scales="free_y"#, scales="free_y"
+                                    y="Action Obligation (Constant 2023 $s")#, scales="free_y"#, scales="free_y"
   )+scale_x_date("Fiscal Year",labels = scales::date_format("'%y"))
 summary(ota_def$dFYear)
 

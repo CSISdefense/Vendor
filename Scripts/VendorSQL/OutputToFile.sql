@@ -290,6 +290,7 @@ SET NOCOUNT ON;
 --2h45m; 16,497,747 (new desktop?)
 --2h26m; 17,095,081 rows
 --2h28m; 17,102,058 rows
+--3h31m:18,864,534 rows 4/19/2023
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
  EXEC [Location].[SP_ProdServPlatformAgencyPlaceOriginVendor]
@@ -924,8 +925,10 @@ SET NOCOUNT ON;
       ,[IsEntityTraditional]
   FROM [Vendor].[Parent_UEIhistory]
 
-  SET QUERY_GOVERNOR_COST_LIMIT 0;
-  SET ANSI_WARNINGS OFF;
+
+  --18m13s
+  SET QUERY_GOVERNOR_COST_LIMIT 0
+SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
   SELECT fiscal_year
       ,[IsAbove2018constantCommercialItem7500k]
@@ -937,6 +940,8 @@ SET NOCOUNT ON;
       ,[isforeigngovernment]
       ,[FixedPriceEffective]
       ,[AlwaysCAUisCASexemptOrWaived]
+	  ,contractingofficerbusinesssizedetermination
+
 	  ,count([contract_award_unique_key]) as n_cau
 	  		,sum(obligatedamount) as obligatedamount		
   FROM [Contract].[DefenseCostAccountingStandardCrosscheck]
@@ -950,3 +955,4 @@ SET NOCOUNT ON;
       ,[isforeigngovernment]
       ,[FixedPriceEffective]
       ,[AlwaysCAUisCASexemptOrWaived]
+	  ,contractingofficerbusinesssizedetermination

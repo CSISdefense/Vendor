@@ -99,6 +99,8 @@ if(all(is.na(full_data[nrow(full_data),]))){
   warning("Echo row dropped")
 }
 
+
+
 # if("ContractingCustomer" %in% colnames(full_data))
 # full_data %<>%  select(-ContractingCustomer)
 # set correct data types
@@ -506,8 +508,8 @@ rpuh<-deflate(rpuh,money_var="DefenseObligated")
 
 rpuh <- rpuh %>%
   mutate(AlwaysIsSmallLabel= case_when(
-    AlwaysIsSmall==1 ~ "Always Small",
-    AlwaysIsSmall==0 ~ "Sometimes or\nAlways Not Small"),
+    AlwaysIsSmall==1 ~ "Consistently Small Vendor",
+    AlwaysIsSmall==0 ~ "Variably Small or Larger Vendor"),
     IsEntityTraditionalLabel= case_when(
       IsEntityTraditional==1 | is.na(IsEntityTraditional) | IsEntityTraditional=="Unlabeled"~ "Traditional\nDefense Contractor",
       IsEntityTraditional==0 ~ "Non-Traditional\nDefense Contractor"),
@@ -515,12 +517,12 @@ rpuh <- rpuh %>%
       IsEntityAbove2018constantCommercialItem7500k==1 ~ "[$7.5 M+]",
       IsEntityAbove2018constantCostAccounting2000kThreshold==1 ~ "[$2.0 M - $7.5M)",
       IsEntityAbove2018constantSimplifedAcquisition250kThreshold==1 ~ "[$250k K - $2.0 M)",
-      IsEntityAbove2018constantMTAthreshold==1 ~ "[$10k K - $250 K)",
+      IsEntityAbove2018constantMTAthreshold==1 ~ "[$10 K - $250 K)",
       IsEntityAbove2018constantMTAthreshold==0 ~ "[0 K - $10 K)"
-      
     )
-    
   )
+
+
 def_rpuh<-rpuh %>% filter(AnyDefense==1) 
 def_rpuh <- def_rpuh %>%
   group_by(Fiscal_Year)%>% mutate(count=1,
@@ -569,9 +571,10 @@ def_rpuh <- def_rpuh %>%
 
 # t<-hMisc::cut2(def_rpuh$DefenseObligated_OMB25_GDP23,cuts=c(100000,20000))
 
-  
-    
+rpuh_lc<-prepare_labels_and_colors(def_rpuh,path="Offline")  
+rpuh_ck<-get_column_key(def_rpuh,path="Offline")
+
   summary(factor(def_rpuh$IsEntityTraditional))
-  save(ruh,rpuh,def_rpuh,file=file.path("data","clean","RecipientUEI.rda"))
+  save(ruh,rpuh,def_rpuh,rpuh_lc,rpuh_ck,file=file.path("data","clean","RecipientUEI.rda"))
 
 
