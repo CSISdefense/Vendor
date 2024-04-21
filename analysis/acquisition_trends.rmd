@@ -68,7 +68,7 @@ colnames(toa)<-gsub("\r\nEnacted","",colnames(toa))
 colnames(toa)[colnames(toa)=="...2"]<-"Series"
 toa<-pivot_longer(toa,  cols=-Series, names_to="Fiscal_Year", values_to="Total_Obligation_Authority")
 toa$Total_Obligation_Authority<-toa$Total_Obligation_Authority*1000000
-debug(deflate)
+# debug(deflate)
 toa<-deflate(toa,money_var = "Total_Obligation_Authority",deflator_var="OMB25_GDP23",path="offline")
 toa$dFYear<-as.Date(paste(toa$Fiscal_Year,1,1,sep="-"))
 
@@ -3877,15 +3877,17 @@ def_data<-def_data %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
   mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
 
 (
-PlatformMultiYear<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024 ),
+PlatformMultiYearSubCust<-build_plot(
+  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024 &  (multiyearcontract==1)
+                           & !is.na(PlatformPortfolio)&
+                              PlatformPortfolio!="Unlabeled"),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",#alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
-  color_var="multiyearcontracttext", #color_var
+  color_var="SubCustomer.JPO", #color_var
   facet_var="PlatformPortfolio",
   column_key=column_key,
   format=TRUE,
@@ -3916,7 +3918,7 @@ PlatformMultiYearShare<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear",
-  alpha_var="YTD", #x_var
+  # alpha_var="YTD", #x_var
   y_var="pPlatFYear", #VAR.y.variable
   # color_var="multiyearcontracttext", #color_var
   facet_var="PlatformPortfolio",
@@ -3946,25 +3948,11 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="Platform_MultiYearShare_ke
                  title="DOD Share of Contract Obligations to Multiyear Contracts, 2000–2023")+
                  facet_wrap(PlatformPortfolio~.,nrow=2)+
                 labs(y="Share of Obligations",
-       caption="Note: When the multiyear column is empty, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis.")+geom_line(aes(x=dFYear,y=pPlatFYear,group=YTD,linetype=YTD),linewidth=2),  
-             width=13, height= 5.5, units="in",size=20, lineheight=1.2
+       caption="Note: When the multiyear column is empty, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis.")#+geom_line(aes(x=dFYear,y=pPlatFYear,group=YTD,linetype=YTD),linewidth=2),  
+             # width=13, height= 5.5, units="in",size=20, lineheight=1.2
              )
 
-ggsave600dpi(path="..//Output//AcqTrends//",filename="Platform_MultiYearShare_keynote.svg", 
-               PlatformMultiYearShare+labs(
-                 title="DOD Share of Contract Obligations to Multiyear Contracts, 2000–2023")+
-                 facet_wrap(PlatformPortfolio~.,nrow=2)+
-                labs(y="Share of Obligations",
-       caption="Note: When the multiyear column is empty, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis."),  
-             width=13, height= 5.5, units="in",size=20, lineheight=1.2
-             )
 
-write.csv(file="..//Output//AcqTrends//PlatformMultiYearShare.csv",row.names = FALSE, na = "",
-  pivot_wider(PlatformMultiYearShare$data %>% 
-                        arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
-                      id_cols=c(PlatformPortfolio,YTD),
-                      names_from=Fiscal_Year,values_from=pPlatFYear)%>%
-  arrange(PlatformPortfolio))
   
 log_plot(PlatformMultiYearShare, def_data %>% filter(Fiscal_YQ<2024) ,
                      filename="acq_fig4_2_multiyear",xlsx="DoD_Acq_Trends_Contracts.xlsx",
@@ -3975,12 +3963,32 @@ log_plot(PlatformMultiYearShare, def_data %>% filter(Fiscal_YQ<2024) ,
 
 
 log_plot(plot=PlatformMultiYearShare, df=def_data %>% filter(Fiscal_YQ<2024),
-                     filename="nps_fig8_multiyear",xlsx="DoD_2024_NPS.xlsx",
-                     sheet="8 Mult",path="../output/AcqTrends/NPS2024/",
-         height=3.5,include_YTD=FALSE,
+                     filename="nps_fig11_multiyear",xlsx="DoD_2024_NPS.xlsx",
+                     sheet="11 Mult",path="../output/AcqTrends/NPS2024/",
+         second_path = online_path,
+         height=3.5,include_YTD=FALSE,csv_then_year = FALSE,excel_then_year = FALSE,
                      startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
          output_doc_svg=TRUE
          )
+
+
+
+ggsave(file=file.path(online_path,"acq_fig4_3_com_gfe.svg"),
+       gridExtra::grid.arrange(
+         PlatformMultiYearShare  +labs(
+           title=NULL,
+           y="Share of Obligations by \nExtent of Competition\n",
+           caption = NULL,x=NULL)+theme(legend.position = "bottom",text=element_text(size=12),
+                                        plot.margin = margin(t=0,b=0,l=0.1,r=0.5,unit="inches")),
+         PlatformGFEshare+labs(
+           y="Share of Obligations\nwith Government Furnished\nEquipment or Property",caption=NULL)+theme(text=element_text(size=12),
+                                                                                                                                        plot.caption = element_text(size=round(20 * 5/6,0)),
+                                                                                                                                        plot.margin =
+                                                                                                                                          margin(t=0,b=0,l=0.1,r=0.5,unit="inches")),
+         layout_matrix = rbind(1,1,1,2,2)),
+       width=6.5, height= 6.5, units="in") #, size=20, lineheight = 0.75
+
+
 ```
 
 ## Platform  Ukraine
@@ -4074,7 +4082,7 @@ PlatformGFEshare<-build_plot(
   # color="Competition")+
   date_x_year_breaks(2007,2023,4)+#,partial_year=2024,partial_label="\nQ1")   
   theme(legend.position = "bottom")+
-  labs(y="Share of Portfolio Obligations\nWith Government Furnished Equipment or Property"
+  labs(y="Share of Portfolio Obligations\nwith Government Furnished Equipment or Property"
        # caption="Note: When the multiyear column is blank, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis."
        )+
     scale_y_continuous(labels = percent)
@@ -4088,15 +4096,29 @@ log_plot(PlatformGFEshare, def_data%>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024
          # var_list=c("PlatformPortfolio","gfe_gfp_value"),
          )
 
+log_plot(PlatformGFEshare+
+           labs(y="Share of Obligations\nwith Government Furnished\nEquipment or Property",
+                caption=NULL) , def_data%>% 
+           filter(Fiscal_Year>=2007 & Fiscal_YQ<2024 & gfe_gfp_code=="Y"&
+                    !is.na(PlatformPortfolio) & PlatformPortfolio!="Unlabeled"),
+                     filename="nps_fig9_gfe_plat",xlsx="DoD_2024_NPS.xlsx",
+         sheet="9 GFE",
+          path="../output/AcqTrends/NPS2024/",second_path=online_path,
+         height=3,include_YTD=FALSE,excel_then_year = FALSE, csv_then_year = FALSE,
+                     startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
+         output_doc_svg=TRUE
+         )
+         
+
 ggsave(file=file.path(online_path,"acq_fig4_3_com_gfe.svg"),
        gridExtra::grid.arrange(
          PlatformComp_bar2007+labs(
            title=NULL,
-           y="Share of Obligations by \nExtent of Compatition\n",
+           y="Share of Obligations by \nExtent of Competition\n",
            caption = NULL,x=NULL)+theme(legend.position = "bottom",text=element_text(size=12),
                                         plot.margin = margin(t=0,b=0,l=0.1,r=0.5,unit="inches")),
          PlatformGFEshare+labs(
-           y="Share of Obligations\nWith Government Furnished\nEquipment or Property",caption=NULL)+theme(text=element_text(size=12),
+           y="Share of Obligations\nwith Government Furnished\nEquipment or Property",caption=NULL)+theme(text=element_text(size=12),
                                                                                                                                         plot.caption = element_text(size=round(20 * 5/6,0)),
                                                                                                                                         plot.margin =
                                                                                                                                           margin(t=0,b=0,l=0.1,r=0.5,unit="inches")),
