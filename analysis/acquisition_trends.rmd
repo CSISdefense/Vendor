@@ -56,7 +56,7 @@ if(!exists("ota_def")|!exists("def_kota"))
 
 
 
-#Kludge, Greenbook data
+#Manual import Greenbook data
 toa<-readxl::read_excel(path=file.path("..","data_raw","FY24 6-1_DoD TOA by Title.xlsx"),skip=4)
 request<-readxl::read_excel(path=file.path("..","data_raw","FY24 1-1.xlsx"),skip=3)
 toa<-toa[sapply(toa[,2],function(x) substr(x,start=1,stop=21))==
@@ -70,13 +70,17 @@ toa$Total_Obligation_Authority<-toa$Total_Obligation_Authority*1000000
 toa<-deflate(toa,money_var = "Total_Obligation_Authority",deflator_var="OMB25_GDP23",path="offline")
 toa$dFYear<-as.Date(paste(toa$Fiscal_Year,1,1,sep="-"))
 
-#Public Budget Data
+#Manual import Public Budget Data
 outlay<-readxl::read_excel(path=file.path("..","data_raw","hist03z2_fy2025.xlsx"),skip=2,
                            na = c("...........","..........","N/A"))
 # outlay<-outlay[sapply(outlay[,2],function(x) substr(x,start=1,stop=21))==
 #             "Total Current Dollars" & !is.na(outlay[,2]),c(-1,-3)]
-View(outlay %>% filter(!is.na(outlay$`1962`)&is.na(text_to_number(outlay$`1962`))))
+
+colnames(outlay)<-gsub(" estimate","",colnames(outlay))
+# View(outlay %>% filter(!is.na(outlay$`1962`)&is.na(text_to_number(outlay$`1962`))))
 colnames(outlay)[colnames(outlay)=="Function and Subfunction"]<-"Series"
+outlay<- outlay %>% filter(Series %in% c("051 Subtotal, Department of Defense-Military"))
+#Could later add RDT&E, Procurement, and O&M to PSR
 outlay<-pivot_longer(outlay,  cols=-Series, names_to="Fiscal_Year", values_to="Outlays")
 if(nrow(outlay %>% filter(!is.na(outlay$Outlays)&is.na(text_to_number(outlay$Outlays))))>0)
    stop("Probably an NA value to remove")
@@ -255,32 +259,59 @@ ggsave600dpi(topline,file=file.path("..","Output","AcqTrends","topline_toa_annua
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
-ggsave600dpi(topline,file=file.path("..","Output","AcqTrends","topline_toa_annual.emf"),  
-             width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
-             )
 
 output_TY<-topline$data %>%
-  mutate(source=ifelse(!is.na(Total_Obligation_Authority_Then_Year),
+  mutate(source=ifelse(!is.na(Outlays_Then_Year),
                        "TOA","Contract"),
-         Then_Year_Dollars=ifelse(source=="TOA",
+         Dollars=ifelse(source=="TOA",
                         Total_Obligation_Authority_Then_Year,Action_Obligation_Then_Year))%>%
   filter(Fiscal_Year>=1990)%>%
           format_data_for_plot(
                                fy_var="Fiscal_Year",
-                               y_var="Then_Year_Dollars",
+                               y_var="Dollars",
                                color_var="source",
                                facet="FMS",
                                # labels_and_colors = ota_lc,
                                group=TRUE) %>%
             arrange(Fiscal_Year) 
 
+
+output_TY<-deflate(output_TY,money_var = "Dollars",deflator_var="OMB25_GDP23",path="offline")
+
+# 
+# output_TY<-topline$data %>%
+#   mutate(source=ifelse(!is.na(Total_Obligation_Authority_Then_Year),
+#                        "TOA","Contract"),
+#          Dollars=ifelse(source=="TOA",
+#                         Total_Obligation_Authority_Then_Year,Action_Obligation_Then_Year))%>%
+#   filter(Fiscal_Year>=1990)%>%
+#           format_data_for_plot(
+#                                fy_var="Fiscal_Year",
+#                                y_var="Then_Year_Dollars",
+#                                color_var="source",
+#                                facet="FMS",
+#                                # labels_and_colors = ota_lc,
+#                                group=TRUE) %>%
+#             arrange(Fiscal_Year) 
+
 #+theme(plot.margin =margin(t=0,b=0,l=0.1,r=0.25,"inches"))
 log_plot(plot=topline, 
-         df=output_TY   ,y_var="Then_Year_Dollars",#%>% filter(Fiscal_YQ<2024),
+         df=output_TY   ,y_var="Dollars_OMB25_GDP23",#%>% filter(Fiscal_YQ<2024),
                      filename="acq_fig2_1_toa_annual",xlsx="DoD_Acq_Trends_Contracts.xlsx",
                      sheet="2-1 TOA",path="../output/AcqTrends/", height=3,excel_formulas = TRUE,
                      startRow=1,startCol=13,format=TRUE,var_list=c("source","FMS"),
          output_doc_svg=TRUE
+         )
+
+
+
+log_plot(plot=topline, df=output_TY,y_var="Dollars_OMB25_GDP23",
+                     filename="nps_fig1_toa_fms",xlsx="DoD_2024_NPS.xlsx",
+                     sheet="1 TOA",path="../output/AcqTrends/NPS2024/",
+         second_path=online_path,
+         height=3,include_YTD=FALSE,
+                     format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
+         output_doc_svg=TRUE,var_list=c("source","FMS")
          )
 
 
@@ -315,7 +346,7 @@ fpds_annual$FMS<-factor(fpds_annual$FMS)
 levels(fpds_annual$FMS)<-list("Obligations (includes FMS)"=c("1","Obligations (includes FMS)"),
                               "Obligations (no FMS)"=c("0","Obligations (no FMS)"),
                               "Obligations (reliable\nFMS labels not available)"="Obligations (reliable\nFMS labels not available)")
-fpds_annual$TOA<-"Total Obligation Authority"
+fpds_annual$TOA<-"Outlays"
 
 
 (topline<-build_plot(data=fpds_annual %>% filter(Fiscal_Year>=1990),#rbind(quarterly,q2021,e2021),
@@ -327,9 +358,9 @@ fpds_annual$TOA<-"Total Obligation Authority"
     geom_path(aes(x=dFYear,y=Outlays_OMB25_GDP23,color=TOA))+
   # scale_alpha_discrete(range=c(0.4,1))+
     labs(x="Fiscal Year",y="Constant FY 2023 $",fill="Contract",color="Budget",
-         caption="Source: FPDS, FY 2024 DoD Greenbook, CSIS Analysis")+
+         caption="Source: FPDS, FY 2025 Office of Management\nand Budget Public Historical Tables, CSIS Analysis")+
     theme(legend.position = "right")+
-    date_x_year_breaks(1990,2028,3)#,partial_year=2024,partial_label="\nQ1")
+    date_x_year_breaks(1990,2029,3)#,partial_year=2024,partial_label="\nQ1")
 )
 
 
@@ -337,34 +368,42 @@ ggsave600dpi(topline,file=file.path("..","Output","AcqTrends","topline_outlay_an
              width=12, height= 6, units="in",size=12, lineheight=1.2
              )
 
-ggsave600dpi(topline,file=file.path("..","Output","AcqTrends","topline_outlay_annual.emf"),  
-             width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
-             )
 
 output_TY<-topline$data %>%
   mutate(source=ifelse(!is.na(Outlays_Then_Year),
-                       "TOA","Contract"),
-         Then_Year_Dollars=ifelse(source=="TOA",
+                       "Outlays","Contract"),
+         Dollars=ifelse(source=="Outlays",
                         Outlays_Then_Year,Action_Obligation_Then_Year))%>%
   filter(Fiscal_Year>=1990)%>%
           format_data_for_plot(
                                fy_var="Fiscal_Year",
-                               y_var="Then_Year_Dollars",
+                               y_var="Dollars",
                                color_var="source",
                                facet="FMS",
                                # labels_and_colors = ota_lc,
                                group=TRUE) %>%
             arrange(Fiscal_Year) 
 
+
+output_TY<-deflate(output_TY,money_var = "Dollars",deflator_var="OMB25_GDP23",path="offline")
+
 #+theme(plot.margin =margin(t=0,b=0,l=0.1,r=0.25,"inches"))
 log_plot(plot=topline, 
-         df=output_TY   ,y_var="Then_Year_Dollars",#%>% filter(Fiscal_YQ<2024),
+         df=output_TY   , y_var="Dollars_OMB25_GDP23",#%>% filter(Fiscal_YQ<2024),
                      filename="acq_fig2_1_outlay_annual",xlsx="DoD_Acq_Trends_Contracts.xlsx",
-                     sheet="2-1 TOA",path="../output/AcqTrends/", height=3,excel_formulas = TRUE,
+                     sheet="1 Outlay",path="../output/AcqTrends/", height=3,
+         excel_formulas = TRUE,
                      startRow=1,startCol=13,format=TRUE,var_list=c("source","FMS"),
          output_doc_svg=TRUE
          )
 
+log_plot(plot=topline, df=output_TY,y_var="Dollars_OMB25_GDP23",
+                     filename="nps_fig1_outlay_fms",xlsx="DoD_2024_NPS.xlsx",
+                     sheet="1 Outlay",path="../output/AcqTrends/NPS2024/",second_path=online_path,
+         height=3,include_YTD=FALSE,
+                     format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
+         output_doc_svg=TRUE,var_list=c("source","FMS")
+         )
 
 ```
 
@@ -1826,7 +1865,7 @@ log_plot(plot=OTAPSR, df=def_kota %>% filter(Fiscal_YQ<2024),
 
 log_plot(plot=OTAPSR, df=def_kota %>% filter(Fiscal_YQ<2024),
                      filename="nps_fig2_kota_areatype",xlsx="DoD_2024_NPS.xlsx",
-                     sheet="2 K&Ota",path="../output/AcqTrends/NPS2024/",second_path=online_path,
+                     sheet="2 KOta",path="../output/AcqTrends/NPS2024/",second_path=online_path,
          height=3,include_YTD=FALSE,
                      startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
          output_doc_svg=TRUE
