@@ -288,15 +288,15 @@ platpscintl<-apply_standard_lookups(platpscintl)#,path=local_path
 platpscintl<-initial_clean(platpscintl,only_defense=FALSE)
 platpscintldef<-initial_clean(platpscintl,only_defense=TRUE)
 
-write.csv(platpscintldef %>% filter(PlatformPortfolio=="Ordnance and Missiles"), 
-          file="Output//Munitions//OM.csv",
-          row.names = FALSE)
+# write.csv(platpscintldef %>% filter(PlatformPortfolio=="Ordnance and Missiles"), 
+#           file="Output//Munitions//OM.csv",
+#           row.names = FALSE)
 
 summary(platpscintldef$PlatformPortfolio)
 
-write.csv(platpscintldef %>% filter(PlatformPortfolio=="Other Products"&SubCustomer=="Army"), 
-          file="Output//Munitions//ArmyOtherProducts.csv",
-          row.names = FALSE)
+# write.csv(platpscintldef %>% filter(PlatformPortfolio=="Other Products"&SubCustomer=="Army"), 
+#           file="Output//Munitions//ArmyOtherProducts.csv",
+#           row.names = FALSE)
 
 # n<-platpscintl %>% group_by(IsFMS,IsFMSmac,IsFMSml,fundedbyforeignentity) %>%
 #   summarise(n=length(fiscal_year),min=min(fiscal_year),max=max(fiscal_year))

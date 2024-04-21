@@ -40,65 +40,79 @@ load(file=file.path("..","data","clean","defense_naics_vendor.rdata"))
 # detail_ck<-get_column_key(platpscintldef,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 ```
 # Preprocessing 
-## Project
+## Group By PlatformPortfolio
+### Project
 ```{r PreprocessProject}
 
-summary(factor(platpscintldef$ProjectPlatform))
-
-colnames(platpscintldef)[colnames(platpscintldef)=="Action_Obligation_Then_Year_Then_Year"]<-
-  "Action_Obligation_Then_Year"
-
-topplat<-platpscintldef %>% group_by (Project.Name,PlatformPortfolio) %>%
-  #Exclude NA from ranking and then create a recent only dollar amount
-  mutate(Action_Obligation_2023=if_else(is.na(Project.Name),Action_Obligation_OMB25_GDP23,NA),
-    Action_Obligation_2023=if_else(Fiscal_Year>=2023,Action_Obligation_OMB25_GDP23,NA))%>%
-  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm = TRUE),
-            Action_Obligation_2023=sum(Action_Obligation_2023,na.rm = TRUE))%>%
-              group_by (PlatformPortfolio) %>%
-    mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
-                        rank_2023=rank(desc(Action_Obligation_2023)))
-topplat %>% arrange(desc(Action_Obligation_OMB25_GDP23))
-
-
-topplat$TopProject<-
-  ifelse(topplat$rank_2023<=7 | topplat$rank_total<=7,topplat$Project.Name,NA)
-
-platpscintldef<-left_join(platpscintldef,topplat %>% dplyr::select(-Action_Obligation_OMB25_GDP23,Action_Obligation_2023),
-                          by=c("Project.Name","PlatformPortfolio"))
-
-platpscintldef$TopProject[is.na(platpscintldef$TopProject) & !is.na(platpscintldef$Project.Name)]<-
-  "Other Labeled Project"
-
-
-summary(factor(platpscintldef$TopProject))
-
-
-colnames(platpscintldef)
-platpscintldef
-
-write.csv(topplat,file=file.path("..","Output","AcqTrends","Topplat.csv"),row.names=FALSE)
+# summary(factor(platpscintldef$ProjectPlatform))
+# 
+# colnames(platpscintldef)[colnames(platpscintldef)=="Action_Obligation_Then_Year_Then_Year"]<-
+#   "Action_Obligation_Then_Year"
+# 
+# topplat<-platpscintldef %>% group_by (Project.Name,PlatformPortfolio) %>%
+#   #Exclude NA from ranking and then create a recent only dollar amount
+#   mutate(Action_Obligation_2023=if_else(is.na(Project.Name),Action_Obligation_OMB25_GDP23,NA),
+#     Action_Obligation_2023=if_else(Fiscal_Year>=2023,Action_Obligation_OMB25_GDP23,NA))%>%
+#   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm = TRUE),
+#             Action_Obligation_2023=sum(Action_Obligation_2023,na.rm = TRUE))%>%
+#               group_by (PlatformPortfolio) %>%
+#     mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
+#                         rank_2023=rank(desc(Action_Obligation_2023)))
+# topplat %>% arrange(desc(Action_Obligation_OMB25_GDP23))
+# 
+# 
+# topplat$TopProject<-
+#   ifelse(topplat$rank_2023<=7 | topplat$rank_total<=7,topplat$Project.Name,NA)
+# 
+# platpscintldef<-left_join(platpscintldef,topplat %>% dplyr::select(-Action_Obligation_OMB25_GDP23,Action_Obligation_2023),
+#                           by=c("Project.Name","PlatformPortfolio"))
+# 
+# platpscintldef$TopProject[is.na(platpscintldef$TopProject) & !is.na(platpscintldef$Project.Name)]<-
+#   "Other Labeled Project"
+# 
+# 
+# summary(factor(platpscintldef$TopProject))
+# 
+# 
+# colnames(platpscintldef)
+# platpscintldef
+# 
+# write.csv(topplat,file=file.path("..","Output","AcqTrends","Topplat.csv"),row.names=FALSE)
 # debug(label_top)
 platpscintldef<-label_top(platpscintldef,
                     col="Project.Name",
                     n=7,
-                    top_name="TopProjectTest",
+                    top_name="TopProject",
                     group_list="PlatformPortfolio",
-                    recent=2023,
-                    retain_rank=TRUE,
-                    write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv"))
+                    recent=2023
+                    #retain_rank=TRUE,
+                    #write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv")
+                    )
 
-View(platpscintldef%>% group_by(PlatformPortfolio,TopProjectTest,TopProject,rank_total,TopProjectTest_rank_total,rank_2023,TopProjectTest_rank_recent) %>%  
-       filter(!TopProjectTest=="Other Labeled"& TopProject=="Other Labeled Project") %>%
-  summarise(n=length(Fiscal_Year)))
+
 ```
-## PSC
+### PSC
 ```{r PreprocessPSC}
+
+
+# platpscintldef<-label_top(platpscintldef,
+#                     col="ProductOrServiceCode",
+#                     n=7,
+#                     top_name="TopPScode",
+#                     group_list="PlatformPortfolio",
+#                     recent=2023
+#                     #retain_rank=TRUE,
+#                     #write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv")
+#                     )
+
+
 
 summary(factor(platpscintldef$ProjectPlatform))
 
 topPSC<-platpscintldef %>% group_by (ProductOrServiceCode,ProductOrServiceCodeText,PlatformPortfolio) %>%
-  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-            Action_Obligation_2023=sum(ifelse(Fiscal_Year>=2023,Action_Obligation_OMB25_GDP23,0)))%>%
+  mutate(Action_Obligation_2023=ifelse(Fiscal_Year>=2023,Action_Obligation_OMB25_GDP23,NA))
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE),
+            Action_Obligation_2023=sum(Action_Obligation_2023,na.rm=TRUE))%>%
               group_by (PlatformPortfolio) %>%
     mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
                         rank_2023=rank(desc(Action_Obligation_2023)))
@@ -125,7 +139,8 @@ summary(factor(platpscintldef$TopPStext))
 
 ```
 
-## Place State
+## Group By ProductOrServiceArea
+### Place State
 ```{r PreprocessState}
 
 # platpscintldef$pop_isna<-is.na(platpscintldef$pop_state_code)
@@ -135,27 +150,39 @@ summary(factor(platpscintldef$TopPStext))
 
 # summary(factor(platpscintldef$ProductOrServiceArea))
 
-topState<-platpscintldef %>% group_by (pop_state_code,ProductOrServiceArea) %>%
-  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-            Action_Obligation_2023=sum(ifelse(Fiscal_Year==2023,Action_Obligation_OMB25_GDP23,0)))%>%
-              group_by (ProductOrServiceArea) %>%
-    mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
-                        rank_2023=rank(desc(Action_Obligation_2023)))
-topState %>% arrange(desc(Action_Obligation_OMB25_GDP23))
 
-topState$TopStateAbbr<-
-  ifelse(topState$rank_2023<=25 | topState$rank_total<=25,topState$pop_state_code,NA)
-# topState$TopStateName<-
-#   ifelse(topState$rank_2023<=7 | topState$rank_total<=7,topState$PlaceStateCodeText,NA)
-platpscintldef<-platpscintldef[,!colnames(platpscintldef) %in% c("Action_Obligation_OMB25_GDP23.x","Action_Obligation_OMB25_GDP23.y",
-                                   "Action_Obligation_2023.x","Action_Obligation_2023.y",
-  "rank_total.y","rank_total.x","rank_2023.y","rank_2023.x","TopStateAbbr.x","TopStateAbbr.y")]
+platpscintldef<-label_top(platpscintldef,
+                    col="pop_state_code",
+                    n=25,
+                    top_name="TopStateAbbr",
+                    group_list="ProductOrServiceArea",
+                    recent=2023
+                    #retain_rank=TRUE,
+                    #write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv")
+                    )
 
-platpscintldef<-left_join(platpscintldef,topState %>% select(-Action_Obligation_OMB25_GDP23,Action_Obligation_2023),
-          by=c("pop_state_code","ProductOrServiceArea"))
 
-platpscintldef$TopStateAbbr[is.na(platpscintldef$TopStateAbbr) & !is.na(platpscintldef$pop_state_code)]<-
-  "Other Labeled State"
+# topState<-platpscintldef %>% group_by (pop_state_code,ProductOrServiceArea) %>%
+#   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
+#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2023,Action_Obligation_OMB25_GDP23,0)))%>%
+#               group_by (ProductOrServiceArea) %>%
+#     mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
+#                         rank_2023=rank(desc(Action_Obligation_2023)))
+# topState %>% arrange(desc(Action_Obligation_OMB25_GDP23))
+# 
+# topState$TopStateAbbr<-
+#   ifelse(topState$rank_2023<=25 | topState$rank_total<=25,topState$pop_state_code,NA)
+# # topState$TopStateName<-
+# #   ifelse(topState$rank_2023<=7 | topState$rank_total<=7,topState$PlaceStateCodeText,NA)
+# platpscintldef<-platpscintldef[,!colnames(platpscintldef) %in% c("Action_Obligation_OMB25_GDP23.x","Action_Obligation_OMB25_GDP23.y",
+#                                    "Action_Obligation_2023.x","Action_Obligation_2023.y",
+#   "rank_total.y","rank_total.x","rank_2023.y","rank_2023.x","TopStateAbbr.x","TopStateAbbr.y")]
+# 
+# platpscintldef<-left_join(platpscintldef,topState %>% select(-Action_Obligation_OMB25_GDP23,Action_Obligation_2023),
+#           by=c("pop_state_code","ProductOrServiceArea"))
+# 
+# platpscintldef$TopStateAbbr[is.na(platpscintldef$TopStateAbbr) & !is.na(platpscintldef$pop_state_code)]<-
+#   "Other Labeled State"
 # platpscintldef$TopStateName[is.na(platpscintldef$TopStateName) & !is.na(platpscintldef$pop_state_code)]<-
 #   "Other Labeled State"
 
@@ -165,35 +192,48 @@ platpscintldef$TopStateAbbr[is.na(platpscintldef$TopStateAbbr) & !is.na(platpsci
 
 ```
 
-## Place Country
+### Place Country
 ```{r PreprocessCountry}
 
-# summary(factor(platpscintldef$ProductOrServiceArea))
-colnames(platpscintldef)[colnames(platpscintldef)=="Fiscal_Year"]<-"Fiscal_Year"
-topCountry<-platpscintldef %>% group_by (PlaceISOalpha3,ProductOrServiceArea) %>%
-  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-            Action_Obligation_2023=sum(ifelse(Fiscal_Year==2023,Action_Obligation_OMB25_GDP23,0)))%>%
-              group_by (ProductOrServiceArea) %>%
-    mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
-                        rank_2023=rank(desc(Action_Obligation_2023)))
-topCountry %>% arrange(desc(Action_Obligation_OMB25_GDP23))
-
-topCountry$TopCountryISO<-
-  ifelse(topCountry$rank_2023<=7 | topCountry$rank_total<=7,topCountry$PlaceISOalpha3,NA)
-# topCountry$TopCountryName<-
-#   ifelse(topCountry$rank_2023<=7 | topCountry$rank_total<=7,topCountry$PlaceCountryCodeText,NA)
 
 
-platpscintldef<-left_join(platpscintldef,topCountry %>% select(-Action_Obligation_OMB25_GDP23,Action_Obligation_2023),
-          by=c("PlaceISOalpha3","ProductOrServiceArea"))
+platpscintldef<-label_top(platpscintldef,
+                    col="PlaceISOalpha3",
+                    n=7,
+                    top_name="TopCountryISO",
+                    group_list="ProductOrServiceArea",
+                    recent=2023
+                    #retain_rank=TRUE,
+                    #write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv")
+                    )
 
-platpscintldef$TopCountryISO[is.na(platpscintldef$TopCountryISO) & !is.na(platpscintldef$PlaceISOalpha3)]<-
-  "Other Labeled Country"
-# platpscintldef$TopCountryName[is.na(platpscintldef$TopCountryName) & !is.na(platpscintldef$PlaceISOalpha3)]<-
+# 
+# # summary(factor(platpscintldef$ProductOrServiceArea))
+# colnames(platpscintldef)[colnames(platpscintldef)=="Fiscal_Year"]<-"Fiscal_Year"
+# topCountry<-platpscintldef %>% group_by (PlaceISOalpha3,ProductOrServiceArea) %>%
+#   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
+#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2023,Action_Obligation_OMB25_GDP23,0)))%>%
+#               group_by (ProductOrServiceArea) %>%
+#     mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
+#                         rank_2023=rank(desc(Action_Obligation_2023)))
+# topCountry %>% arrange(desc(Action_Obligation_OMB25_GDP23))
+# 
+# topCountry$TopCountryISO<-
+#   ifelse(topCountry$rank_2023<=7 | topCountry$rank_total<=7,topCountry$PlaceISOalpha3,NA)
+# # topCountry$TopCountryName<-
+# #   ifelse(topCountry$rank_2023<=7 | topCountry$rank_total<=7,topCountry$PlaceCountryCodeText,NA)
+# 
+# 
+# platpscintldef<-left_join(platpscintldef,topCountry %>% select(-Action_Obligation_OMB25_GDP23,Action_Obligation_2023),
+#           by=c("PlaceISOalpha3","ProductOrServiceArea"))
+# 
+# platpscintldef$TopCountryISO[is.na(platpscintldef$TopCountryISO) & !is.na(platpscintldef$PlaceISOalpha3)]<-
 #   "Other Labeled Country"
-
-
-# summary(factor(platpscintldef$TopCountryName))
+# # platpscintldef$TopCountryName[is.na(platpscintldef$TopCountryName) & !is.na(platpscintldef$PlaceISOalpha3)]<-
+# #   "Other Labeled Country"
+# 
+# 
+# # summary(factor(platpscintldef$TopCountryName))
 
 
 ```

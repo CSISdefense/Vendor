@@ -56,13 +56,11 @@ if(!exists("ota_def")|!exists("def_kota"))
 
 
 
-#Kludge
+#Kludge, Greenbook data
 toa<-readxl::read_excel(path=file.path("..","data_raw","FY24 6-1_DoD TOA by Title.xlsx"),skip=4)
 request<-readxl::read_excel(path=file.path("..","data_raw","FY24 1-1.xlsx"),skip=3)
 toa<-toa[sapply(toa[,2],function(x) substr(x,start=1,stop=21))==
             "Total Current Dollars" & !is.na(toa[,2]),c(-1,-3)]
-
-
 colnames(toa)<-gsub("FY ","",colnames(toa))
 colnames(toa)<-gsub("\r\nEnacted","",colnames(toa))
 colnames(toa)[colnames(toa)=="...2"]<-"Series"
@@ -71,6 +69,24 @@ toa$Total_Obligation_Authority<-toa$Total_Obligation_Authority*1000000
 # debug(deflate)
 toa<-deflate(toa,money_var = "Total_Obligation_Authority",deflator_var="OMB25_GDP23",path="offline")
 toa$dFYear<-as.Date(paste(toa$Fiscal_Year,1,1,sep="-"))
+
+#Public Budget Data
+outlay<-readxl::read_excel(path=file.path("..","data_raw","hist03z2_fy2025.xlsx"),skip=2,
+                           na = c("...........","..........","N/A"))
+# outlay<-outlay[sapply(outlay[,2],function(x) substr(x,start=1,stop=21))==
+#             "Total Current Dollars" & !is.na(outlay[,2]),c(-1,-3)]
+View(outlay %>% filter(!is.na(outlay$`1962`)&is.na(text_to_number(outlay$`1962`))))
+colnames(outlay)[colnames(outlay)=="Function and Subfunction"]<-"Series"
+outlay<-pivot_longer(outlay,  cols=-Series, names_to="Fiscal_Year", values_to="Outlays")
+if(nrow(outlay %>% filter(!is.na(outlay$Outlays)&is.na(text_to_number(outlay$Outlays))))>0)
+   stop("Probably an NA value to remove")
+outlay$Outlays<-text_to_number(outlay$Outlays)
+outlay$Outlays<-outlay$Outlays*1000000
+# debug(deflate)
+outlay<-deflate(outlay,money_var = "Outlays",deflator_var="OMB25_GDP23",path="offline")
+outlay$dFYear<-as.Date(paste(outlay$Fiscal_Year,1,1,sep="-"))
+
+
 
 online_path<-file.path(get_local_sharepoint_path("DIIG Teamsite - Shared Documents"),"2024 - Acquisition Trends","Data and Figures")
 
@@ -188,7 +204,7 @@ for(c in subcustomer_levels){
 ```
 
 
-## Topline and TOA
+## Topline and TOA (Greenbook)
 ```{r TOAannual}
 
 if(!exists("platpscintldef"))
@@ -270,7 +286,87 @@ log_plot(plot=topline,
 
 ```
 
+## Topline and Outlays (Public Budget Data)
+```{r TOAannual}
 
+if(!exists("platpscintldef"))
+  load(file="../data/clean/platpscintl_FPDS.Rda")
+
+fpds_annual<-platpscintldef %>% filter(Fiscal_Year<2024) %>% group_by(Fiscal_Year,dFYear,IsFMS,
+                                    ContractingCustomer,YTD) %>% summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE),
+                                                                       Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))
+fpds_annual$Series<-"Contract Obligations"
+outlay$ContractingCustomer<-"Defense"
+outlay$Action_Obligation_OMB25_GDP23<-NA
+outlay$Action_Obligation_Then_Year<-NA
+outlay$Fiscal_Year<-text_to_number(outlay$Fiscal_Year)
+outlay$YTD<-NA
+outlay$IsFMS<-0
+fpds_annual$Outlays_Then_Year<-NA
+fpds_annual$Outlays_OMB25_GDP23<-NA
+colnames(outlay)[!colnames(outlay) %in% colnames(fpds_annual)]
+colnames(fpds_annual)[!colnames(fpds_annual) %in% colnames(outlay)]
+fpds_annual<-rbind(as.data.frame(fpds_annual),as.data.frame(outlay))# %>% dplyr::select(-fiscal_quarter)
+
+fpds_annual$FMS<-as.character(fpds_annual$IsFMS)
+fpds_annual$FMS[fpds_annual$Fiscal_Year<2012 | is.na(fpds_annual$IsFMS)]<-"Obligations (reliable\nFMS labels not available)"
+fpds_annual$FMS[!is.na(fpds_annual$Outlays_OMB25_GDP23)]<-"Obligations (no FMS)"
+fpds_annual$FMS<-factor(fpds_annual$FMS)
+levels(fpds_annual$FMS)<-list("Obligations (includes FMS)"=c("1","Obligations (includes FMS)"),
+                              "Obligations (no FMS)"=c("0","Obligations (no FMS)"),
+                              "Obligations (reliable\nFMS labels not available)"="Obligations (reliable\nFMS labels not available)")
+fpds_annual$TOA<-"Total Obligation Authority"
+
+
+(topline<-build_plot(data=fpds_annual %>% filter(Fiscal_Year>=1990),#rbind(quarterly,q2021,e2021),
+                     chart_geom="Bar Chart",
+                     x_var="dFYear",#alpha_var="YTD",
+                     y_var="Action_Obligation_OMB25_GDP23",
+           color_var="FMS"
+       )+
+    geom_path(aes(x=dFYear,y=Outlays_OMB25_GDP23,color=TOA))+
+  # scale_alpha_discrete(range=c(0.4,1))+
+    labs(x="Fiscal Year",y="Constant FY 2023 $",fill="Contract",color="Budget",
+         caption="Source: FPDS, FY 2024 DoD Greenbook, CSIS Analysis")+
+    theme(legend.position = "right")+
+    date_x_year_breaks(1990,2028,3)#,partial_year=2024,partial_label="\nQ1")
+)
+
+
+ggsave600dpi(topline,file=file.path("..","Output","AcqTrends","topline_outlay_annual.png"),  
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+ggsave600dpi(topline,file=file.path("..","Output","AcqTrends","topline_outlay_annual.emf"),  
+             width=6.5, height= 3.5, units="in",size=11, lineheight=1.2
+             )
+
+output_TY<-topline$data %>%
+  mutate(source=ifelse(!is.na(Outlays_Then_Year),
+                       "TOA","Contract"),
+         Then_Year_Dollars=ifelse(source=="TOA",
+                        Outlays_Then_Year,Action_Obligation_Then_Year))%>%
+  filter(Fiscal_Year>=1990)%>%
+          format_data_for_plot(
+                               fy_var="Fiscal_Year",
+                               y_var="Then_Year_Dollars",
+                               color_var="source",
+                               facet="FMS",
+                               # labels_and_colors = ota_lc,
+                               group=TRUE) %>%
+            arrange(Fiscal_Year) 
+
+#+theme(plot.margin =margin(t=0,b=0,l=0.1,r=0.25,"inches"))
+log_plot(plot=topline, 
+         df=output_TY   ,y_var="Then_Year_Dollars",#%>% filter(Fiscal_YQ<2024),
+                     filename="acq_fig2_1_outlay_annual",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+                     sheet="2-1 TOA",path="../output/AcqTrends/", height=3,excel_formulas = TRUE,
+                     startRow=1,startCol=13,format=TRUE,var_list=c("source","FMS"),
+         output_doc_svg=TRUE
+         )
+
+
+```
 
 ## Topline Competition
 ```{r ToplineComp}
