@@ -90,6 +90,8 @@ platpscintldef<-label_top(platpscintldef,
                     )
 
 
+
+
 ```
 ### PSC
 ```{r PreprocessPSC}
@@ -540,7 +542,7 @@ ggsave600dpi(topline_q,file=file.path("..","Output","toa_quarterly.png"),
 ```
 
 # Top Projects Annual
-
+## Write Projects
 ```{r TopProject}
 summary(platpscintldef$PlatformPortfolio[platpscintldef$ProductOrServiceCode=='AC11'])
 
@@ -572,6 +574,281 @@ write.csv(topoverall %>% group_by(TopProject,Fiscal_Year) %>%
 
 
 ```
+
+## Platform Multiyear
+```{r PlatformMultiyear}
+
+platpscintldef<-label_top(platpscintldef,
+                    col="Project.Name",
+                    n=5,
+                    top_name="TopProjectMY",
+                    group_list=c("multiyearcontract"),
+                    recent=2023
+                    #retain_rank=TRUE,
+                    #write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv")
+                    )
+
+summary(factor(platpscintldef$TopProjectMY))
+    platpscintldef<-platpscintldef%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
+                              labels=c("Not Multiyear","Multiyear Contract")))
+
+platpscintldef<-platpscintldef %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
+  mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
+
+(
+PlatformMultiYearProject<-build_plot(
+  data=platpscintldef %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024 &  (multiyearcontract==1)
+                           & !is.na(PlatformPortfolio)&
+                              PlatformPortfolio!="Unlabeled"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=intl_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="TopProjectMY", #color_var
+  facet_var="PlatformPortfolio",
+  column_key=intl_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2022,6)+#,partial_year=2024,partial_label="\nQ1")   
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)")
+)
+
+platpscintldef<-platpscintldef %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
+  mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
+(
+PlatformMultiYearShare<-build_plot(
+  data=platpscintldef %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024 &
+                             (multiyearcontract==1)&
+                              !is.na(PlatformPortfolio)&
+                              PlatformPortfolio!="Unlabeled"), #is.na(multiyearcontract)|
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=intl_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",
+  # alpha_var="YTD", #x_var
+  y_var="pPlatFYear", #VAR.y.variable
+  color_var="TopProjectMY", #color_var
+  facet_var="PlatformPortfolio",
+  column_key=intl_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2022,6)+#,partial_year=2024,partial_label="\nQ1")   
+    
+  theme(legend.position = "bottom")+
+  labs(y="Share of Portfolio Obligations\nGoing to Multiyear Contracts",
+       caption="Note: When the multiyear column is blank, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis.")+
+    scale_y_continuous(labels = percent)
+)
+
+
+
+ggsave600dpi(path="..//Output//AcqTrends//",filename="Platform_MultiYearShare_keynote.png", 
+               PlatformMultiYearShare+labs(
+                 title="DOD Share of Contract Obligations to Multiyear Contracts, 2000–2023")+
+                 facet_wrap(PlatformPortfolio~.,nrow=2)+
+                labs(y="Share of Obligations",
+       caption="Note: When the multiyear column is empty, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis.")#+geom_line(aes(x=dFYear,y=pPlatFYear,group=YTD,linetype=YTD),linewidth=2),  
+             # width=13, height= 5.5, units="in",size=20, lineheight=1.2
+             )
+
+log_plot(plot=PlatformMultiYearShare, df=platpscintldef %>% filter(Fiscal_YQ<2024),
+                     filename="nps_fig11_multiyear",xlsx="DoD_2024_NPS.xlsx",
+                     sheet="11 Mult",path="../output/AcqTrends/NPS2024/",
+         second_path = online_path,
+         height=3.5,include_YTD=FALSE,csv_then_year = FALSE,excel_then_year = FALSE,
+                     startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
+         output_doc_svg=TRUE
+         )
+
+
+
+```
+## Platform GFE
+```{r GFEplatform}
+
+
+platpscintldef<-label_top(platpscintldef,
+                    col="Project.Name",
+                    n=5,
+                    top_name="TopProjectGFE",
+                    group_list=c("gfe_gfp_code"),
+                    recent=2023
+                    #retain_rank=TRUE,
+                    #write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv")
+                    )
+
+platpscintldef<-platpscintldef %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
+  mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
+
+(
+PlatformGFEshare<-build_plot(
+  data=platpscintldef %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024 & gfe_gfp_code=="Y"&
+                             !is.na(PlatformPortfolio) & PlatformPortfolio!="Unlabeled") ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  color_var="TopProjectGFE", #color_var
+  y_var="pPlatFYear", #VAR.y.variable
+  facet_var="PlatformPortfolio", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  date_x_year_breaks(2007,2023,4)+#,partial_year=2024,partial_label="\nQ1")   
+  theme(legend.position = "bottom")+
+  labs(y="Share of Portfolio Obligations\nwith Government Furnished Equipment or Property"
+       # caption="Note: When the multiyear column is blank, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis."
+       )+
+    scale_y_continuous(labels = percent)
+)
+
+log_plot(PlatformGFEshare, platpscintldef%>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024 & gfe_gfp_code=="Y"&
+                             !is.na(PlatformPortfolio) & PlatformPortfolio!="Unlabeled") ,
+                     filename="acq_fig4_3_gfe",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+                     sheet="4-3 GFEtop",path="../output/AcqTrends/", height=3,excel_y_var = TRUE,excel_formulas = FALSE,
+                     startRow=1,startCol=13,format=TRUE,y_var="Action_Obligation_OMB25_GDP23"
+         # var_list=c("PlatformPortfolio","gfe_gfp_value"),
+         )
+
+log_plot(PlatformGFEshare+
+           labs(y="Share of Obligations\nwith Government Furnished\nEquipment or Property",
+                caption=NULL) , platpscintldef%>% 
+           filter(Fiscal_Year>=2007 & Fiscal_YQ<2024 & gfe_gfp_code=="Y"&
+                    !is.na(PlatformPortfolio) & PlatformPortfolio!="Unlabeled"),
+                     filename="nps_fig9_gfe_plat",xlsx="DoD_2024_NPS.xlsx",
+         sheet="9 GFEtop",
+          path="../output/AcqTrends/NPS2024/",second_path=online_path,
+         height=3,include_YTD=FALSE,excel_then_year = FALSE, csv_then_year = FALSE,
+                     startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
+         output_doc_svg=TRUE
+         )
+         
+
+```
+
+# Top PSCs 
+## Platform Multiyear
+```{r PlatformMultiyear}
+
+platpscintldef<-label_top(platpscintldef,
+                    col="ProductOrServiceCodeText",
+                    n=5,
+                    top_name="TopPSCtextMY",
+                    group_list=c("multiyearcontract"),
+                    recent=2023
+                    #retain_rank=TRUE,
+                    #write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv")
+                    )
+
+intl_lc<-prepare_labels_and_colors(platpscintldef, path="offline")
+intl_ck<-get_column_key(platpscintldef, path="offline")
+
+summary(factor(platpscintldef$TopProjectMY))
+    platpscintldef<-platpscintldef%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
+                              labels=c("Not Multiyear","Multiyear Contract")))
+
+platpscintldef<-platpscintldef %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
+  mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
+
+(
+PlatformMultiyearPSC<-build_plot(
+  data=platpscintldef %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024 &  (multiyearcontract==1)
+                           & !is.na(PlatformPortfolio)&
+                              PlatformPortfolio!="Unlabeled"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=intl_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="TopPSCtextMY", #color_var
+  facet_var="PlatformPortfolio",
+  column_key=intl_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2022,6)+#,partial_year=2024,partial_label="\nQ1")   
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)")
+)
+
+platpscintldef<-platpscintldef %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
+  mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
+
+
+
+(
+PlatformMultiYearShare<-build_plot(
+  data=platpscintldef %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024 &
+                             (multiyearcontract==1)&
+                              !is.na(PlatformPortfolio)&
+                              PlatformPortfolio!="Unlabeled"), #is.na(multiyearcontract)|
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=intl_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",
+  # alpha_var="YTD", #x_var
+  y_var="pPlatFYear", #VAR.y.variable
+  color_var="TopPSCtextMY", #color_var
+  facet_var="PlatformPortfolio",
+  column_key=intl_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2022,6)+#,partial_year=2024,partial_label="\nQ1")   
+    
+  theme(legend.position = "right")+guides(fill=guide_legend(ncol=1))+
+  labs(y="Share of Portfolio Obligations\nGoing to Multiyear Contracts",
+       caption="Note: When the multiyear column is blank, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis.")+
+    scale_y_continuous(labels = percent)
+)
+
+
+
+ggsave600dpi(path="..//Output//AcqTrends//",filename="Platform_MultiYearShare_keynote.png", 
+               PlatformMultiYearShare+labs(
+                 title="DOD Share of Contract Obligations to Multiyear Contracts, 2000–2023")+
+                 facet_wrap(PlatformPortfolio~.,nrow=2)+
+                labs(y="Share of Obligations",
+       caption="Note: When the multiyear column is empty, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis.")#+geom_line(aes(x=dFYear,y=pPlatFYear,group=YTD,linetype=YTD),linewidth=2),  
+             # width=13, height= 5.5, units="in",size=20, lineheight=1.2
+             )
+
+log_plot(plot=PlatformMultiYearShare+facet_wrap(~PlatformPortfolio,ncol=4)+theme(legend.position = "bottom")+guides(fill=guide_legend(ncol=4)), df=platpscintldef %>% 
+           filter(Fiscal_YQ<2024 & multiyearcontract==1),
+                     filename="nps_fig11_multiyear",xlsx="DoD_2024_NPS.xlsx",
+                     sheet="11 Mult",path="../output/AcqTrends/NPS2024/",
+         second_path = online_path,y_var="Action_Obligation_OMB25_GDP23",
+         height=4.75,include_YTD=FALSE,csv_then_year = FALSE,excel_then_year = FALSE,
+                     startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
+         output_doc_svg=TRUE,var_list = c("PlatformPortfolio","TopPSCtextMY")
+         )
+
+
+
+```
+
 # Redundant Summaries
 ## Topline  Platform
 ```{r Platform}
@@ -587,7 +864,7 @@ Platform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PlatformPortfolio", #color_var
   facet_var="PlatformPortfolio", #facet_var
-  column_key=column_key,
+  column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -628,7 +905,7 @@ Platform_Bar<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PlatformPortfolio", #color_var
   facet_var="PlatformPortfolio", #facet_var
-  column_key=column_key,
+  column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -652,19 +929,9 @@ ggsave600dpi("..//Output//topline_platform_bar.emf", Platform_Bar,
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
-output_TY<-full_data %>% group_by(PlatformPortfolio,Fiscal_Year)%>%
-            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-          pivot_wider(id_cols=c(PlatformPortfolio),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%arrange(PlatformPortfolio)
 
-write.csv(file="..//Output//topline_platform_current.csv",row.names = FALSE, na = "",
-          output_TY)
 
-wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx")
-# addWorksheet(wb, sheetName = "Platform Portfolio")
- writeData(wb, output_TY, sheet = "Platform Portfolio", startRow = 1, startCol = 1)
-saveWorkbook(wb,file="..//Output//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
-rm(wb)
+
 
 ```
 
@@ -716,7 +983,7 @@ write.csv(file="..//Output//psr_RnDPhase.csv",row.names = FALSE, na = "",
             arrange(ProductServiceOrRnDarea))
             
 
-output_TY<-def_data %>% filter(Fiscal_YQ<2023) %>% filter(SimpleArea=="R&D") %>%
+output_TY<-platpscintldef %>% filter(Fiscal_YQ<2023) %>% filter(SimpleArea=="R&D") %>%
             format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
                                  labels_and_colors=labels_and_colors) %>%
           pivot_wider(id_cols=c(ProductServiceOrRnDarea),
@@ -732,6 +999,7 @@ write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE, na = ""
 # saveWorkbook(wb)
 
 ```
+
 
 
 # Customers and all projects / PSC 
@@ -788,7 +1056,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="to
 
 log_plot(plot=SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1)+
            date_x_year_breaks(1990,2020,8),#,partial_year=2024,partial_label="\nQ1"),
-         df=def_data %>% filter(Fiscal_YQ<2024),
+         df=platpscintldef %>% filter(Fiscal_YQ<2024),
                      filename="acq_fig2_3_subcustomer",xlsx="DoD_Acq_Trends_Contracts.xlsx",
                      sheet="2-3 Cust",path="../output/AcqTrends/",second_path=online_path, height=3.5,
                      startRow=1,startCol=13,format=TRUE,var_list=c("SubCustomer.sum","SubCustomer.JPO")
@@ -865,7 +1133,7 @@ for(p in platform_levels){
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopProject", #color_var
   facet_var="TopProject", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -913,7 +1181,7 @@ for(p in platform_levels){
     y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     color_var="TopPStext", #color_var
     facet_var="TopPStext", #facet_var
-    # column_key=column_key,
+    # column_key=intl_ck,
     format=TRUE,
     ytextposition=FALSE
   )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -977,7 +1245,7 @@ Platform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopProject", #color_var
   facet_var="TopProject", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1027,7 +1295,7 @@ Platform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopProject", #color_var
   facet_var="TopProject", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1087,7 +1355,7 @@ Platform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopProject", #color_var
   facet_var="TopProject", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1116,7 +1384,7 @@ PSC<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopPStext", #color_var
   facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1171,7 +1439,7 @@ Platform_Bar<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PlatformPortfolio", #color_var
   facet_var="PlatformPortfolio", #facet_var
-  column_key=column_key,
+  column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1242,7 +1510,7 @@ Platform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopProject", #color_var
   facet_var="TopProject", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1271,7 +1539,7 @@ PSC<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopPStext", #color_var
   facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1321,7 +1589,7 @@ Platform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopProject", #color_var
   facet_var="TopProject", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1350,7 +1618,7 @@ PSC<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopPStext", #color_var
   facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1400,7 +1668,7 @@ Platform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopProject", #color_var
   facet_var="TopProject", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1428,7 +1696,7 @@ PSC<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopPStext", #color_var
   facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1477,7 +1745,7 @@ Platform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopProject", #color_var
   facet_var="TopProject", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1505,7 +1773,7 @@ PSC<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopPStext", #color_var
   facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1664,7 +1932,7 @@ Platform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopProject", #color_var
   facet_var="TopProject", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1692,7 +1960,7 @@ PSC<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopPStext", #color_var
   facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1740,7 +2008,7 @@ State<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopStateAbbr", #color_var
   facet_var="TopStateAbbr", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1768,7 +2036,7 @@ State<-build_plot(
   color_var="TopStateAbbr", #color_var
   facet_var="TopStateAbbr", #facet_var
   second_var="SubCustomer",
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1796,7 +2064,7 @@ Country<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopCountryISO", #color_var
   facet_var="TopCountryISO", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1824,7 +2092,7 @@ PSC<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopPStext", #color_var
   facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1874,7 +2142,7 @@ Platform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopProject", #color_var
   facet_var="TopProject", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1902,7 +2170,7 @@ PSC<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopPStext", #color_var
   facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -2185,7 +2453,7 @@ psrfuel<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="SimpleArea.fuels", #color_var
   # facet_var="TopPStext", #facet_var
-  column_key=column_key,
+  column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -2227,7 +2495,7 @@ fuel<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PlaceStateRegion", #color_var
   # facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -2257,7 +2525,7 @@ fuel<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PlaceIsForeign", #color_var
   # facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -2297,7 +2565,7 @@ fuel_psc<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="ProductOrServiceCodeText", #color_var
   # facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -2398,7 +2666,7 @@ platpscintldef<-platpscintldef %>% mutate(
                                        #IsFMS==TRUE 
                                        chart_geom="Bar Chart",
                             x_var="Fiscal_Year",
-                            y_var="Action_Obligation_OMB24_GDP22",
+                            y_var="Action_Obligation_OMB25_GDP23",
                             color_var="IsFMS",
                             facet_var="IsJSF",
                             # second_var="IsFMS",
@@ -3028,7 +3296,7 @@ DLAplatform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PlatformPortfolio", #color_var
   facet_var="PlatformPortfolio", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -3244,7 +3512,7 @@ HimarsPSR<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Shiny.VendorSize", #color_var
   # facet_var="Competition.sum", #facet_var
-  column_key=column_key,
+  column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+
