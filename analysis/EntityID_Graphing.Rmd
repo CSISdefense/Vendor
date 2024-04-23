@@ -288,7 +288,7 @@ def_rpuh %>% dplyr::filter( Fiscal_Year>=2007 & Fiscal_Year<2024)  %>% group_by(
 
 
   (
-  all_10k_small_bar<-build_plot(
+  ntdc_count_bar<-build_plot(
     data=def_rpuh %>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
                                           & Fiscal_Year>=2007& Fiscal_Year<2024), ##where is FPDS summary?
     chart_geom = "Bar Chart",
@@ -305,11 +305,11 @@ def_rpuh %>% dplyr::filter( Fiscal_Year>=2007 & Fiscal_Year<2024)  %>% group_by(
   )+labs(y="Count of Vendors with\nContracts Above $10 K",x="Fiscal Year",
          title="Number of Defense Contractors by Annual Small Business\nStatus and Size of Largest Federal Contract",
          caption="Note: Threshold values are adjusted for inflation (in 2018 $s).\nSource: FPDS Unique Entity (UEI) reporting and CSIS analysis.")+
-    date_x_year_breaks(2007,2023,4)+date_x_year_breaks(2007,2023,4)
+    date_x_year_breaks(2007,2023,4)+date_x_year_breaks(2007,2023,4)+facet_wrap(~IsEntityTraditionalLabel, scales="free_y")
   )
 
 
-# log_plot(plot=all_10k_small_bar, df=def_rpuh %>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
+# log_plot(plot=ntdc_count_bar, df=def_rpuh %>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
 #                                           & Fiscal_Year>=2007& Fiscal_Year<2024),#%>% filter(Fiscal_YQ<=2023.2)
 #                      filename="def_vendor_count",xlsx="CSIS_DoD_DIB_Trends.xlsx",
 #                      sheet="DIB count",path="../output/AcqTrends/", 
@@ -325,7 +325,7 @@ def_rpuh %>% dplyr::filter( Fiscal_Year>=2007 & Fiscal_Year<2024)  %>% group_by(
 #          )
 
 (
-  all_10k_small_line<-build_plot(
+  ntdc_count_line<-build_plot(
     data=def_rpuh %>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
                                           & Fiscal_Year>=2007& Fiscal_Year<2024), ##where is FPDS summary?
     chart_geom = "Line Chart",
@@ -345,7 +345,7 @@ def_rpuh %>% dplyr::filter( Fiscal_Year>=2007 & Fiscal_Year<2024)  %>% group_by(
   )
 
 
-# ggsave600dpi(all_10k_small_line+labs(title=NULL),file="nps_fig6_vendor_count_line.svg",size=12,lineheight = 1.2,
+# ggsave600dpi(ntdc_count_line+labs(title=NULL),file="nps_fig6_vendor_count_line.svg",size=12,lineheight = 1.2,
 #              height=3,width=6.5, path="../output/AcqTrends/", 
 #          second_path=online_path)
 # 
@@ -495,8 +495,8 @@ cas <- cas %>%
       IsEntityTraditional==0 ~ "Non-Traditional\nDefense Contractor"),
     ntdc_label=case_when(
       AlwaysIsSmall==1 | IsEntityAbove2018constantCommercialItem7500k==0
-      ~ "Consistently Small or\nLargest Contract\nUnder $7.5 M",
-      TRUE ~ "Variably Small / Larger\nand Largest Contract\nOver $7.5 M"),
+    ~ "Consistently Small or\nLargest Contract\nUnder $7.5 M",
+    TRUE ~ "Variably Small / Larger\nand Largest Contract\nOver $7.5 M"),
     cas_label=case_when(
       CostAccountingStandardsClause=="Y"~"Cost Accounting Standards Labeled",
       CostAccountingStandardsClause=="N"~"Waived",
