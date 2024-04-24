@@ -402,7 +402,9 @@ EXEC	@return_value = Contract.SP_ContractBucketPlatformCustomer
 --6h26m 15,328,597 rows for federal
 --7h30m or so for defense only after postgres
 
+SET QUERY_GOVERNOR_COST_LIMIT 0
 --7,833,306 rows; 9h39m. (Finished right when I got home, which seems odd. One or more errors).
+--8,357,821 rows 9h04m 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 EXEC	Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength
@@ -895,7 +897,7 @@ SET NOCOUNT ON;
       ,[AnyEntityForeignPlaceOfPerformance]
       ,[IsEntityTraditional]
   FROM [Vendor].[UEIhistory]
-   where Fiscal_Year>=2021 and IsPresent=1
+   where IsPresent=1
 
 
    
