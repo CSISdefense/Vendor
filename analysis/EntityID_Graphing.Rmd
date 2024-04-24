@@ -182,7 +182,7 @@ defense_platform_vendor$entrant_2018T<-factor(defense_platform_vendor$entrant_20
 # Defense Recipient_UEI
 
 ## Count by largest contract
-
+### Consistently Small Breakout
 ```{r def_rpuh_uei}
 
 
@@ -216,6 +216,7 @@ log_plot(plot=all_10k_small_bar+labs(title=NULL)+theme(legend.position="right"),
          second_path=online_path,
          height=2.5,
          csv_then_year=FALSE  ,excel_then_year=FALSE,excel_y_var=TRUE,
+           output_doc_png = TRUE,
          excel_formulas = TRUE,
                      startRow=1,format=TRUE,#,var_list=c("SimpleArea","Competition.multisum"),
          output_doc_png = TRUE,
@@ -280,6 +281,107 @@ def_rpuh %>% dplyr::filter( Fiscal_Year>=2007 & Fiscal_Year<2024)  %>% group_by(
            )
 
 ```
+
+### NTDC break out
+```{r def_rpuh_uei}
+
+
+
+  (
+  ntdc_count_bar<-build_plot(
+    data=def_rpuh %>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
+                                          & Fiscal_Year>=2007& Fiscal_Year<2024), ##where is FPDS summary?
+    chart_geom = "Bar Chart",
+    share = FALSE,
+    x_var="dFYear",
+    y_var="count", #Name of variable to plot on y-axis
+    color_var="LargestContract2018dollars",       # name of coloration variable, as string
+    facet_var="IsEntityTraditionalLabel",        # name of facet variable, as string
+    legend=TRUE, #Include a legend
+    caption=TRUE, #Include a source caption
+        labels_and_colors=rpuh_lc,
+    column_key=rpuh_ck,
+    format=TRUE
+  )+labs(y="Count of Vendors with\nContracts Above $10 K",x="Fiscal Year",
+         title="Number of Defense Contractors by Annual Small Business\nStatus and Size of Largest Federal Contract",
+         caption="Note: Threshold values are adjusted for inflation (in 2018 $s).\nSource: FPDS Unique Entity (UEI) reporting and CSIS analysis.")+
+    date_x_year_breaks(2007,2023,4)+date_x_year_breaks(2007,2023,4)+facet_wrap(~IsEntityTraditionalLabel, scales="free_y")
+  )
+
+
+# log_plot(plot=ntdc_count_bar, df=def_rpuh %>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
+#                                           & Fiscal_Year>=2007& Fiscal_Year<2024),#%>% filter(Fiscal_YQ<=2023.2)
+#                      filename="def_vendor_count",xlsx="CSIS_DoD_DIB_Trends.xlsx",
+#                      sheet="DIB count",path="../output/AcqTrends/", 
+#          second_path=online_path,
+#          height=3.5,
+#          csv_then_year=FALSE  ,excel_then_year=FALSE,excel_y_var=TRUE,
+#            output_doc_png = TRUE,
+#          excel_formulas = TRUE,
+#                      startRow=1,format=TRUE,#,var_list=c("SimpleArea","Competition.multisum"),
+#          output_doc_png = TRUE,
+#          include_YTD = FALSE,
+#          num_format = "0.00,\"K\""
+#          )
+
+(
+  ntdc_count_line<-build_plot(
+    data=def_rpuh %>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
+                                          & Fiscal_Year>=2007& Fiscal_Year<2024), ##where is FPDS summary?
+    chart_geom = "Line Chart",
+    share = FALSE,
+    x_var="dFYear",
+    y_var="count", #Name of variable to plot on y-axis
+    color_var="LargestContract2018dollars",       # name of coloration variable, as string
+    facet_var="IsEntityTraditionalLabel",        # name of facet variable, as string
+    legend=TRUE, #Include a legend
+    caption=TRUE, #Include a source caption
+    labels_and_colors=rpuh_lc,
+    column_key=rpuh_ck,
+    format=TRUE
+  )+labs(y="Count of Vendors with\nContracts Above $10 K",x="Fiscal Year",
+         title="Number of Defense Contractors by Annual Small Business\nStatus and Size of Largest Federal Contract",
+         caption="Note: Threshold values are adjusted for inflation (in 2018 $s).\nSource: FPDS Unique Entity (UEI) reporting and CSIS analysis.")+date_x_year_breaks(2007,2023,4)
+  )
+
+
+# ggsave600dpi(ntdc_count_line+labs(title=NULL),file="nps_fig6_vendor_count_line.svg",size=12,lineheight = 1.2,
+#              height=3,width=6.5, path="../output/AcqTrends/", 
+#          second_path=online_path)
+# 
+# def_rpuh %>% dplyr::filter( Fiscal_Year>=2007 & Fiscal_Year<2024)  %>% group_by(LargestContract2018dollars) %>% summarise(DefenseObligated_OMB25_GDP23=sum(DefenseObligated_OMB25_GDP23))
+#   (
+#   all_10k_small_dollar<-build_plot(
+#     data=def_rpuh %>% dplyr::filter( Fiscal_Year>=2007 & Fiscal_Year<2024), ##where is FPDS summary?
+#     chart_geom = "Bar Chart",
+#     share = FALSE,
+#     x_var="dFYear",
+#     y_var="DefenseObligated_OMB25_GDP23", #Name of variable to plot on y-axis
+#     color_var="LargestContract2018dollars",       # name of coloration variable, as string
+#     facet_var="AlwaysIsSmallLabel",        # name of facet variable, as string
+#     legend=TRUE, #Include a legend
+#     caption=TRUE, #Include a source caption
+#     labels_and_colors=rpuh_lc,
+#     column_key=rpuh_ck,
+#     format=TRUE
+#   )+labs(y="Obligations (2023 $s)",x="Fiscal Year",
+#          title="Defense Obligations by Annual Contractor Small Business\nStatus and Size of Largest Federal Contract",
+#          caption="Note: Threshold values are adjusted for inflation (in 2018 $s).\nSource: FPDS Unique Entity (UEI) reporting and CSIS analysis.")+date_x_year_breaks(2007,2023,4)+
+#       theme(legend.position = "right")#guides(fill=guide_legend(nrow=2))
+#   )
+#   
+#   log_plot(plot=all_10k_small_dollar+labs(title=NULL), df=def_rpuh %>% dplyr::filter(IsEntityAbove2018constantMTAthreshold==1
+#                                             & Fiscal_Year>=2007& Fiscal_Year<2024),#%>% filter(Fiscal_YQ<=2023.2)
+#            second_path=online_path,
+#                        filename="nps_fig7_def_vendor_obl",xlsx="CSIS_DoD_DIB_Trends.xlsx",
+#                        sheet="DIB dollars",path="../output/AcqTrends/", height=3,
+#            excel_formulas=TRUE,
+#                        startRow=1,format=TRUE,#,var_list=c("SimpleArea","Competition.multisum"),
+#            output_doc_png = TRUE
+#            )
+
+```
+
 
 
 ## NTDC
@@ -393,8 +495,8 @@ cas <- cas %>%
       IsEntityTraditional==0 ~ "Non-Traditional\nDefense Contractor"),
     ntdc_label=case_when(
       AlwaysIsSmall==1 | IsEntityAbove2018constantCommercialItem7500k==0
-      ~ "Consistently Small or\nLargest Contract\nUnder $7.5 M",
-      TRUE ~ "Variably Small / Larger\nand Largest Contract\nOver $7.5 M"),
+    ~ "Consistently Small or\nLargest Contract\nUnder $7.5 M",
+    TRUE ~ "Variably Small / Larger\nand Largest Contract\nOver $7.5 M"),
     cas_label=case_when(
       CostAccountingStandardsClause=="Y"~"Cost Accounting Standards Labeled",
       CostAccountingStandardsClause=="N"~"Waived",
