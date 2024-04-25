@@ -402,7 +402,9 @@ EXEC	@return_value = Contract.SP_ContractBucketPlatformCustomer
 --6h26m 15,328,597 rows for federal
 --7h30m or so for defense only after postgres
 
+SET QUERY_GOVERNOR_COST_LIMIT 0
 --7,833,306 rows; 9h39m. (Finished right when I got home, which seems odd. One or more errors).
+--8,357,821 rows 9h04m 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 EXEC	Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength
@@ -895,7 +897,7 @@ SET NOCOUNT ON;
       ,[AnyEntityForeignPlaceOfPerformance]
       ,[IsEntityTraditional]
   FROM [Vendor].[UEIhistory]
-   where Fiscal_Year>=2014 and IsPresent=1
+   where IsPresent=1
 
 
    
@@ -927,6 +929,7 @@ SET NOCOUNT ON;
 
 
   --18m13s
+  --16m30s after changing over to a new parent rollup approach.
   SET QUERY_GOVERNOR_COST_LIMIT 0
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
@@ -941,7 +944,10 @@ SET NOCOUNT ON;
       ,[FixedPriceEffective]
       ,[AlwaysCAUisCASexemptOrWaived]
 	  ,contractingofficerbusinesssizedetermination
-
+	  	,IsEntityTraditional 
+		,IsEntityAbove2018constantCommercialItem7500k 
+		,AlwaysIsSmall
+		,AnyCASclause
 	  ,count([contract_award_unique_key]) as n_cau
 	  		,sum(obligatedamount) as obligatedamount		
   FROM [Contract].[DefenseCostAccountingStandardCrosscheck]
@@ -956,3 +962,66 @@ SET NOCOUNT ON;
       ,[FixedPriceEffective]
       ,[AlwaysCAUisCASexemptOrWaived]
 	  ,contractingofficerbusinesssizedetermination
+	  	,IsEntityTraditional 
+		,IsEntityAbove2018constantCommercialItem7500k 
+		,AlwaysIsSmall
+		,AnyCASclause
+
+--12m
+		SELECT fiscal_year
+      ,[IsAbove2018constantCommercialItem7500k]
+      ,[IsAbove2018constantCostAccounting2000kThreshold]
+      ,[CostAccountingStandardsClause]
+      ,[costorpricingdata]
+      ,[IsSealedBid]
+      ,[IsCommercialitemacquisitionprocedures]
+      ,[isforeigngovernment]
+      ,[FixedPriceEffective]
+      ,[AlwaysCAUisCASexemptOrWaived]
+	  ,contractingofficerbusinesssizedetermination
+	  	,IsEntityTraditional 
+		,IsEntityAbove2018constantCommercialItem7500k 
+		,AlwaysIsSmall
+	  ,[contract_award_unique_key]
+	  		,obligatedamount
+			,contract_award_unique_key
+			,recipient_uei
+			,recipient_parent_uei
+			,parent_uei
+			,AnyCASclause
+  FROM Contract.DefenseCostAccountingStandardCrosscheck
+  where [CostAccountingStandardsClause]='Y' and (IsEntityTraditional=0 or AnyCASclause=0)
+
+  select *
+   ,case 
+		when nullif([Parent_UEI],'') is not null
+		then nullif([Parent_UEI],'')
+		when nullif([topParent_UEI],'') is not null and topParent_UEIcount*2 >= TotalCount and abs(topParent_UEIamount)*2 >= abs(TotalAmount)  
+		then nullif([topParent_UEI],'')
+		else [UEI]
+		end as Parent_UEI
+  from vendor.UEIhistory
+  where 'F7NGF6NJFB96' in (uei,parent_uei) or 'NANFEH9AAH43' in (uei,parent_uei)
+
+
+select 
+  [recipient_uei] ,
+	[fiscal_year] ,
+[dunsnumber],[parentdunsnumber],[headquartercode],[CAGE],[recipient_parent_uei],[obligatedamount],[vendorcountrycode],[vendorname],[contractingofficerbusinesssizedetermination],[contract_award_unique_key],[manufacturingorganizationtype],[isforeigngovernment],[costaccountingstandardsclause]
+from contract.fpds
+where recipient_uei in('F7NGF6NJFB96','NANFEH9AAH43') or recipient_parent_uei in ('F7NGF6NJFB96','NANFEH9AAH43')
+
+
+select	[contract_award_unique_key] ,
+[fiscal_year],[obligatedamount],[baseandexercisedoptionsvalue],[baseandalloptionsvalue],[recipient_uei],[recipient_parent_uei],[dunsnumber],[parentdunsnumber],[contractingofficerbusinesssizedetermination],[placeofperformancecountrycode],[pop_state_code],[costaccountingstandardsclause],[costorpricingdata],[total_dollars_obligated],[current_total_value_of_award],[potential_total_value_of_award],[solicitationprocedures],[placeofmanufacture],[isforeigngovernment],[typeofcontractpricing],[extentcompeted],[statutoryexceptiontofairopportunity],[numberofoffersreceived],[signeddate],[award_or_idv_flag],[currentcompletiondate],[ultimatecompletiondate],[lastdatetoorder],[multiyearcontract],[commercialitemacquisitionprocedures]
+from contract.fpds
+where contract_award_unique_key='CONT_AWD_0001_9700_DACW4101D0001_9700'
+
+select *
+
+from vendor.Parent_UEIhistory
+where Parent_UEI  in('F7NGF6NJFB96','NANFEH9AAH43')
+
+select *
+from contract.contract_award_unique_key
+where contract_award_unique_key='CONT_AWD_0001_9700_DACW4101D0001_9700'

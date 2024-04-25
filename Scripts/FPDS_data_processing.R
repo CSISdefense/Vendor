@@ -288,15 +288,15 @@ platpscintl<-apply_standard_lookups(platpscintl)#,path=local_path
 platpscintl<-initial_clean(platpscintl,only_defense=FALSE)
 platpscintldef<-initial_clean(platpscintl,only_defense=TRUE)
 
-write.csv(platpscintldef %>% filter(PlatformPortfolio=="Ordnance and Missiles"), 
-          file="Output//Munitions//OM.csv",
-          row.names = FALSE)
+# write.csv(platpscintldef %>% filter(PlatformPortfolio=="Ordnance and Missiles"), 
+#           file="Output//Munitions//OM.csv",
+#           row.names = FALSE)
 
 summary(platpscintldef$PlatformPortfolio)
 
-write.csv(platpscintldef %>% filter(PlatformPortfolio=="Other Products"&SubCustomer=="Army"), 
-          file="Output//Munitions//ArmyOtherProducts.csv",
-          row.names = FALSE)
+# write.csv(platpscintldef %>% filter(PlatformPortfolio=="Other Products"&SubCustomer=="Army"), 
+#           file="Output//Munitions//ArmyOtherProducts.csv",
+#           row.names = FALSE)
 
 # n<-platpscintl %>% group_by(IsFMS,IsFMSmac,IsFMSml,fundedbyforeignentity) %>%
 #   summarise(n=length(fiscal_year),min=min(fiscal_year),max=max(fiscal_year))
@@ -526,11 +526,11 @@ rpuh <- rpuh %>%
 def_rpuh<-rpuh %>% filter(AnyDefense==1) 
 def_rpuh <- def_rpuh %>%
   group_by(Fiscal_Year)%>% mutate(count=1,
-                                  hhi=(DefenseObligated_OMB25_GDP23/
+                                  hhi=(100*DefenseObligated_OMB25_GDP23/
                                          sum(DefenseObligated_OMB25_GDP23,na.rm = TRUE))^2) 
   
   rpuh<-rpuh %>%group_by(Fiscal_Year)%>% mutate(count=1,
-                                   hhi=(Action_Obligation_OMB25_GDP23/
+                                   hhi=(100*Action_Obligation_OMB25_GDP23/
                                           sum(Action_Obligation_OMB25_GDP23,na.rm = TRUE))^2) 
   
 # def_rpuh<-ruh %>% filter(AnyDefense==1) %>% mutate(Parent_UEI=if_else(!is.na(Parent_UEI),Parent_UEI,UEI)) %>%

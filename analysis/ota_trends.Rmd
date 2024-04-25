@@ -72,10 +72,13 @@ This is also a tiny n, only 6 or so years, and thus an incredibly crude estimate
 ```{r Model}
 
 
-a<-OTAquarterly %>% group_by(Fiscal_Year) %>% filter(Fiscal_Year<2021 & !is.na(fiscal_quarter))%>% summarise(
-  q1toq3=sum(ifelse(fiscal_quarter<=3,Action_Obligation_OMB24_GDP22,0)),
-  q4=sum(ifelse(fiscal_quarter==4,Action_Obligation_OMB24_GDP22,0)),
-             total=sum(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
+a<-OTAquarterly %>% group_by(Fiscal_Year) %>% filter(Fiscal_Year<2021 & !is.na(fiscal_quarter))%>% mutate(
+  q1toq3=if_else(fiscal_quarter<=3,Action_Obligation_OMB24_GDP22,NA),
+  q4=if_else(fiscal_quarter==4,Action_Obligation_OMB24_GDP22,NA)) %>%
+  summarise(
+  q1toq3=sum(q1toq3,na.rm=TRUE),
+  q4=sum(q4,na.rm = TRUE),
+  total=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE)
 )
 
 
@@ -374,7 +377,7 @@ TypeSubCustomer<-build_plot(
   column_key=ota_ck,
   format=TRUE,
   ytextposition=FALSE
-)+date_x_year_breaks(2000,2022,2,partial_year=2024,partial_label="\nQ1")+
+)+date_x_year_breaks(2000,2023,3,partial_year=2024,partial_label="\nQ1")+
     facet_grid(TypeOfAgreement~., scales="free_y",space="free_y")+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
@@ -392,7 +395,7 @@ TypeSubCustomer<-build_plot(
 log_plot(plot=TypeSubCustomer, df=ota_def %>% filter(Fiscal_YQ<=2024.1),
                      filename="acq_ota_2_ota_type_cust",xlsx="DoD_Acq_Trends_OTA.xlsx",
                      sheet="TypeCust",path="..//Output//OTA//",second_path=online_path,
-         width=4.5,height=5.5,
+         width=4,height=5.5,
                      startRow=1,startCol=12,format=TRUE,#var_list=c("Source","fiscal_quarter"),
          )       
 

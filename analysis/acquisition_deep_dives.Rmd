@@ -40,65 +40,81 @@ load(file=file.path("..","data","clean","defense_naics_vendor.rdata"))
 # detail_ck<-get_column_key(platpscintldef,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 ```
 # Preprocessing 
-## Project
+## Group By PlatformPortfolio
+### Project
 ```{r PreprocessProject}
 
-summary(factor(platpscintldef$ProjectPlatform))
-
-colnames(platpscintldef)[colnames(platpscintldef)=="Action_Obligation_Then_Year_Then_Year"]<-
-  "Action_Obligation_Then_Year"
-
-topplat<-platpscintldef %>% group_by (Project.Name,PlatformPortfolio) %>%
-  #Exclude NA from ranking and then create a recent only dollar amount
-  mutate(Action_Obligation_2023=if_else(is.na(Project.Name),Action_Obligation_2023,NA),
-    Action_Obligation_2023=if_else(Fiscal_Year>=2023,Action_Obligation_OMB25_GDP23,NA))%>%
-  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm = TRUE),
-            Action_Obligation_2023=sum(Action_Obligation_2023,na.rm = TRUE))%>%
-              group_by (PlatformPortfolio) %>%
-    mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
-                        rank_2023=rank(desc(Action_Obligation_2023)))
-topplat %>% arrange(desc(Action_Obligation_OMB25_GDP23))
-
-
-topplat$TopProject<-
-  ifelse(topplat$rank_2023<=7 | topplat$rank_total<=7,topplat$Project.Name,NA)
-
-platpscintldef<-left_join(platpscintldef,topplat %>% select(-Action_Obligation_OMB25_GDP23,Action_Obligation_2023),
-          by=c("Project.Name","PlatformPortfolio"))
-
-platpscintldef$TopProject[is.na(platpscintldef$TopProject) & !is.na(platpscintldef$Project.Name)]<-
-  "Other Labeled Project"
-
-
-summary(factor(platpscintldef$TopProject))
-
-
-colnames(platpscintldef)
-platpscintldef
-
-write.csv(topplat,file=file.path("..","Output","AcqTrends","Topplat.csv"),row.names=FALSE)
+# summary(factor(platpscintldef$ProjectPlatform))
+# 
+# colnames(platpscintldef)[colnames(platpscintldef)=="Action_Obligation_Then_Year_Then_Year"]<-
+#   "Action_Obligation_Then_Year"
+# 
+# topplat<-platpscintldef %>% group_by (Project.Name,PlatformPortfolio) %>%
+#   #Exclude NA from ranking and then create a recent only dollar amount
+#   mutate(Action_Obligation_2023=if_else(is.na(Project.Name),Action_Obligation_OMB25_GDP23,NA),
+#     Action_Obligation_2023=if_else(Fiscal_Year>=2023,Action_Obligation_OMB25_GDP23,NA))%>%
+#   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm = TRUE),
+#             Action_Obligation_2023=sum(Action_Obligation_2023,na.rm = TRUE))%>%
+#               group_by (PlatformPortfolio) %>%
+#     mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
+#                         rank_2023=rank(desc(Action_Obligation_2023)))
+# topplat %>% arrange(desc(Action_Obligation_OMB25_GDP23))
+# 
+# 
+# topplat$TopProject<-
+#   ifelse(topplat$rank_2023<=7 | topplat$rank_total<=7,topplat$Project.Name,NA)
+# 
+# platpscintldef<-left_join(platpscintldef,topplat %>% dplyr::select(-Action_Obligation_OMB25_GDP23,Action_Obligation_2023),
+#                           by=c("Project.Name","PlatformPortfolio"))
+# 
+# platpscintldef$TopProject[is.na(platpscintldef$TopProject) & !is.na(platpscintldef$Project.Name)]<-
+#   "Other Labeled Project"
+# 
+# 
+# summary(factor(platpscintldef$TopProject))
+# 
+# 
+# colnames(platpscintldef)
+# platpscintldef
+# 
+# write.csv(topplat,file=file.path("..","Output","AcqTrends","Topplat.csv"),row.names=FALSE)
 # debug(label_top)
 platpscintldef<-label_top(platpscintldef,
                     col="Project.Name",
                     n=7,
-                    top_name="TopProjectTest",
+                    top_name="TopProject",
                     group_list="PlatformPortfolio",
-                    recent=2023,
-                    retain_rank=TRUE,
-                    write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv"))
+                    recent=2023
+                    #retain_rank=TRUE,
+                    #write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv")
+                    )
 
-View(platpscintldef%>% group_by(PlatformPortfolio,TopProjectTest,TopProject,rank_total,TopProjectTest_rank_total,rank_2023,TopProjectTest_rank_recent) %>%  
-       filter(!TopProjectTest=="Other Labeled"& TopProject=="Other Labeled Project") %>%
-  summarise(n=length(Fiscal_Year)))
+
+
+
 ```
-## PSC
+### PSC
 ```{r PreprocessPSC}
+
+
+# platpscintldef<-label_top(platpscintldef,
+#                     col="ProductOrServiceCode",
+#                     n=7,
+#                     top_name="TopPScode",
+#                     group_list="PlatformPortfolio",
+#                     recent=2023
+#                     #retain_rank=TRUE,
+#                     #write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv")
+#                     )
+
+
 
 summary(factor(platpscintldef$ProjectPlatform))
 
 topPSC<-platpscintldef %>% group_by (ProductOrServiceCode,ProductOrServiceCodeText,PlatformPortfolio) %>%
-  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-            Action_Obligation_2023=sum(ifelse(Fiscal_Year>=2023,Action_Obligation_OMB25_GDP23,0)))%>%
+  mutate(Action_Obligation_2023=ifelse(Fiscal_Year>=2023,Action_Obligation_OMB25_GDP23,NA))
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE),
+            Action_Obligation_2023=sum(Action_Obligation_2023,na.rm=TRUE))%>%
               group_by (PlatformPortfolio) %>%
     mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
                         rank_2023=rank(desc(Action_Obligation_2023)))
@@ -125,7 +141,8 @@ summary(factor(platpscintldef$TopPStext))
 
 ```
 
-## Place State
+## Group By ProductOrServiceArea
+### Place State
 ```{r PreprocessState}
 
 # platpscintldef$pop_isna<-is.na(platpscintldef$pop_state_code)
@@ -135,27 +152,39 @@ summary(factor(platpscintldef$TopPStext))
 
 # summary(factor(platpscintldef$ProductOrServiceArea))
 
-topState<-platpscintldef %>% group_by (pop_state_code,ProductOrServiceArea) %>%
-  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-            Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB25_GDP23,0)))%>%
-              group_by (ProductOrServiceArea) %>%
-    mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
-                        rank_2023=rank(desc(Action_Obligation_2023)))
-topState %>% arrange(desc(Action_Obligation_OMB25_GDP23))
 
-topState$TopStateAbbr<-
-  ifelse(topState$rank_2023<=25 | topState$rank_total<=25,topState$pop_state_code,NA)
-# topState$TopStateName<-
-#   ifelse(topState$rank_2023<=7 | topState$rank_total<=7,topState$PlaceStateCodeText,NA)
-platpscintldef<-platpscintldef[,!colnames(platpscintldef) %in% c("Action_Obligation_OMB25_GDP23.x","Action_Obligation_OMB25_GDP23.y",
-                                   "Action_Obligation_2023.x","Action_Obligation_2023.y",
-  "rank_total.y","rank_total.x","rank_2023.y","rank_2023.x","TopStateAbbr.x","TopStateAbbr.y")]
+platpscintldef<-label_top(platpscintldef,
+                    col="pop_state_code",
+                    n=25,
+                    top_name="TopStateAbbr",
+                    group_list="ProductOrServiceArea",
+                    recent=2023
+                    #retain_rank=TRUE,
+                    #write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv")
+                    )
 
-platpscintldef<-left_join(platpscintldef,topState %>% select(-Action_Obligation_OMB25_GDP23,Action_Obligation_2023),
-          by=c("pop_state_code","ProductOrServiceArea"))
 
-platpscintldef$TopStateAbbr[is.na(platpscintldef$TopStateAbbr) & !is.na(platpscintldef$pop_state_code)]<-
-  "Other Labeled State"
+# topState<-platpscintldef %>% group_by (pop_state_code,ProductOrServiceArea) %>%
+#   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
+#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2023,Action_Obligation_OMB25_GDP23,0)))%>%
+#               group_by (ProductOrServiceArea) %>%
+#     mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
+#                         rank_2023=rank(desc(Action_Obligation_2023)))
+# topState %>% arrange(desc(Action_Obligation_OMB25_GDP23))
+# 
+# topState$TopStateAbbr<-
+#   ifelse(topState$rank_2023<=25 | topState$rank_total<=25,topState$pop_state_code,NA)
+# # topState$TopStateName<-
+# #   ifelse(topState$rank_2023<=7 | topState$rank_total<=7,topState$PlaceStateCodeText,NA)
+# platpscintldef<-platpscintldef[,!colnames(platpscintldef) %in% c("Action_Obligation_OMB25_GDP23.x","Action_Obligation_OMB25_GDP23.y",
+#                                    "Action_Obligation_2023.x","Action_Obligation_2023.y",
+#   "rank_total.y","rank_total.x","rank_2023.y","rank_2023.x","TopStateAbbr.x","TopStateAbbr.y")]
+# 
+# platpscintldef<-left_join(platpscintldef,topState %>% select(-Action_Obligation_OMB25_GDP23,Action_Obligation_2023),
+#           by=c("pop_state_code","ProductOrServiceArea"))
+# 
+# platpscintldef$TopStateAbbr[is.na(platpscintldef$TopStateAbbr) & !is.na(platpscintldef$pop_state_code)]<-
+#   "Other Labeled State"
 # platpscintldef$TopStateName[is.na(platpscintldef$TopStateName) & !is.na(platpscintldef$pop_state_code)]<-
 #   "Other Labeled State"
 
@@ -165,35 +194,48 @@ platpscintldef$TopStateAbbr[is.na(platpscintldef$TopStateAbbr) & !is.na(platpsci
 
 ```
 
-## Place Country
+### Place Country
 ```{r PreprocessCountry}
 
-# summary(factor(platpscintldef$ProductOrServiceArea))
-colnames(platpscintldef)[colnames(platpscintldef)=="Fiscal_Year"]<-"Fiscal_Year"
-topCountry<-platpscintldef %>% group_by (PlaceISOalpha3,ProductOrServiceArea) %>%
-  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-            Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB25_GDP23,0)))%>%
-              group_by (ProductOrServiceArea) %>%
-    mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
-                        rank_2023=rank(desc(Action_Obligation_2023)))
-topCountry %>% arrange(desc(Action_Obligation_OMB25_GDP23))
-
-topCountry$TopCountryISO<-
-  ifelse(topCountry$rank_2023<=7 | topCountry$rank_total<=7,topCountry$PlaceISOalpha3,NA)
-# topCountry$TopCountryName<-
-#   ifelse(topCountry$rank_2023<=7 | topCountry$rank_total<=7,topCountry$PlaceCountryCodeText,NA)
 
 
-platpscintldef<-left_join(platpscintldef,topCountry %>% select(-Action_Obligation_OMB25_GDP23,Action_Obligation_2023),
-          by=c("PlaceISOalpha3","ProductOrServiceArea"))
+platpscintldef<-label_top(platpscintldef,
+                    col="PlaceISOalpha3",
+                    n=7,
+                    top_name="TopCountryISO",
+                    group_list="ProductOrServiceArea",
+                    recent=2023
+                    #retain_rank=TRUE,
+                    #write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv")
+                    )
 
-platpscintldef$TopCountryISO[is.na(platpscintldef$TopCountryISO) & !is.na(platpscintldef$PlaceISOalpha3)]<-
-  "Other Labeled Country"
-# platpscintldef$TopCountryName[is.na(platpscintldef$TopCountryName) & !is.na(platpscintldef$PlaceISOalpha3)]<-
+# 
+# # summary(factor(platpscintldef$ProductOrServiceArea))
+# colnames(platpscintldef)[colnames(platpscintldef)=="Fiscal_Year"]<-"Fiscal_Year"
+# topCountry<-platpscintldef %>% group_by (PlaceISOalpha3,ProductOrServiceArea) %>%
+#   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
+#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2023,Action_Obligation_OMB25_GDP23,0)))%>%
+#               group_by (ProductOrServiceArea) %>%
+#     mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
+#                         rank_2023=rank(desc(Action_Obligation_2023)))
+# topCountry %>% arrange(desc(Action_Obligation_OMB25_GDP23))
+# 
+# topCountry$TopCountryISO<-
+#   ifelse(topCountry$rank_2023<=7 | topCountry$rank_total<=7,topCountry$PlaceISOalpha3,NA)
+# # topCountry$TopCountryName<-
+# #   ifelse(topCountry$rank_2023<=7 | topCountry$rank_total<=7,topCountry$PlaceCountryCodeText,NA)
+# 
+# 
+# platpscintldef<-left_join(platpscintldef,topCountry %>% select(-Action_Obligation_OMB25_GDP23,Action_Obligation_2023),
+#           by=c("PlaceISOalpha3","ProductOrServiceArea"))
+# 
+# platpscintldef$TopCountryISO[is.na(platpscintldef$TopCountryISO) & !is.na(platpscintldef$PlaceISOalpha3)]<-
 #   "Other Labeled Country"
-
-
-# summary(factor(platpscintldef$TopCountryName))
+# # platpscintldef$TopCountryName[is.na(platpscintldef$TopCountryName) & !is.na(platpscintldef$PlaceISOalpha3)]<-
+# #   "Other Labeled Country"
+# 
+# 
+# # summary(factor(platpscintldef$TopCountryName))
 
 
 ```
@@ -218,7 +260,7 @@ platpscintldef$TopCountryISO[is.na(platpscintldef$TopCountryISO) & !is.na(platps
 # platpscintldef$SubCustomer[platpscintldef$SubCustomer.JPO=="F-35 Joint Program Office"&SubCustomer.sum!="Navy"]
 summary(factor(platpscintldef$SubCustomer.platform))
 summary(factor(platpscintldef$SubCustomer))
-platpscintldef %>% filter(Fiscal_Year==2022) %>% group_by(SubCustomer) %>% summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
+platpscintldef %>% filter(Fiscal_Year==2023) %>% group_by(SubCustomer) %>% summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
 summary(factor(platpscintldef$SubCustomer.JPO))
 platpscintldef$SubCustomer.JPO<-as.character(platpscintldef$SubCustomer.JPO)
 platpscintldef$SubCustomer.JPO[platpscintldef$SubCustomer.JPO %in% c("Other DoD","3","6","8")& platpscintldef$SubCustomer!="Uncategorized"]<-
@@ -500,7 +542,7 @@ ggsave600dpi(topline_q,file=file.path("..","Output","toa_quarterly.png"),
 ```
 
 # Top Projects Annual
-
+## Write Projects
 ```{r TopProject}
 summary(platpscintldef$PlatformPortfolio[platpscintldef$ProductOrServiceCode=='AC11'])
 
@@ -532,6 +574,281 @@ write.csv(topoverall %>% group_by(TopProject,Fiscal_Year) %>%
 
 
 ```
+
+## Platform Multiyear
+```{r PlatformMultiyear}
+
+platpscintldef<-label_top(platpscintldef,
+                    col="Project.Name",
+                    n=5,
+                    top_name="TopProjectMY",
+                    group_list=c("multiyearcontract"),
+                    recent=2023
+                    #retain_rank=TRUE,
+                    #write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv")
+                    )
+
+summary(factor(platpscintldef$TopProjectMY))
+    platpscintldef<-platpscintldef%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
+                              labels=c("Not Multiyear","Multiyear Contract")))
+
+platpscintldef<-platpscintldef %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
+  mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
+
+(
+PlatformMultiYearProject<-build_plot(
+  data=platpscintldef %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024 &  (multiyearcontract==1)
+                           & !is.na(PlatformPortfolio)&
+                              PlatformPortfolio!="Unlabeled"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=intl_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="TopProjectMY", #color_var
+  facet_var="PlatformPortfolio",
+  column_key=intl_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2022,6)+#,partial_year=2024,partial_label="\nQ1")   
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)")
+)
+
+platpscintldef<-platpscintldef %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
+  mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
+(
+PlatformMultiYearShare<-build_plot(
+  data=platpscintldef %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024 &
+                             (multiyearcontract==1)&
+                              !is.na(PlatformPortfolio)&
+                              PlatformPortfolio!="Unlabeled"), #is.na(multiyearcontract)|
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=intl_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",
+  # alpha_var="YTD", #x_var
+  y_var="pPlatFYear", #VAR.y.variable
+  color_var="TopProjectMY", #color_var
+  facet_var="PlatformPortfolio",
+  column_key=intl_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2022,6)+#,partial_year=2024,partial_label="\nQ1")   
+    
+  theme(legend.position = "bottom")+
+  labs(y="Share of Portfolio Obligations\nGoing to Multiyear Contracts",
+       caption="Note: When the multiyear column is blank, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis.")+
+    scale_y_continuous(labels = percent)
+)
+
+
+
+ggsave600dpi(path="..//Output//AcqTrends//",filename="Platform_MultiYearShare_keynote.png", 
+               PlatformMultiYearShare+labs(
+                 title="DOD Share of Contract Obligations to Multiyear Contracts, 2000–2023")+
+                 facet_wrap(PlatformPortfolio~.,nrow=2)+
+                labs(y="Share of Obligations",
+       caption="Note: When the multiyear column is empty, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis.")#+geom_line(aes(x=dFYear,y=pPlatFYear,group=YTD,linetype=YTD),linewidth=2),  
+             # width=13, height= 5.5, units="in",size=20, lineheight=1.2
+             )
+
+log_plot(plot=PlatformMultiYearShare, df=platpscintldef %>% filter(Fiscal_YQ<2024),
+                     filename="nps_fig11_multiyear",xlsx="DoD_2024_NPS.xlsx",
+                     sheet="11 Mult",path="../output/AcqTrends/NPS2024/",
+         second_path = online_path,
+         height=3.5,include_YTD=FALSE,csv_then_year = FALSE,excel_then_year = FALSE,
+                     startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
+         output_doc_svg=TRUE
+         )
+
+
+
+```
+## Platform GFE
+```{r GFEplatform}
+
+
+platpscintldef<-label_top(platpscintldef,
+                    col="Project.Name",
+                    n=5,
+                    top_name="TopProjectGFE",
+                    group_list=c("gfe_gfp_code"),
+                    recent=2023
+                    #retain_rank=TRUE,
+                    #write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv")
+                    )
+
+platpscintldef<-platpscintldef %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
+  mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
+
+(
+PlatformGFEshare<-build_plot(
+  data=platpscintldef %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024 & gfe_gfp_code=="Y"&
+                             !is.na(PlatformPortfolio) & PlatformPortfolio!="Unlabeled") ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  color_var="TopProjectGFE", #color_var
+  y_var="pPlatFYear", #VAR.y.variable
+  facet_var="PlatformPortfolio", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  date_x_year_breaks(2007,2023,4)+#,partial_year=2024,partial_label="\nQ1")   
+  theme(legend.position = "bottom")+
+  labs(y="Share of Portfolio Obligations\nwith Government Furnished Equipment or Property"
+       # caption="Note: When the multiyear column is blank, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis."
+       )+
+    scale_y_continuous(labels = percent)
+)
+
+log_plot(PlatformGFEshare, platpscintldef%>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024 & gfe_gfp_code=="Y"&
+                             !is.na(PlatformPortfolio) & PlatformPortfolio!="Unlabeled") ,
+                     filename="acq_fig4_3_gfe",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+                     sheet="4-3 GFEtop",path="../output/AcqTrends/", height=3,excel_y_var = TRUE,excel_formulas = FALSE,
+                     startRow=1,startCol=13,format=TRUE,y_var="Action_Obligation_OMB25_GDP23"
+         # var_list=c("PlatformPortfolio","gfe_gfp_value"),
+         )
+
+log_plot(PlatformGFEshare+
+           labs(y="Share of Obligations\nwith Government Furnished\nEquipment or Property",
+                caption=NULL) , platpscintldef%>% 
+           filter(Fiscal_Year>=2007 & Fiscal_YQ<2024 & gfe_gfp_code=="Y"&
+                    !is.na(PlatformPortfolio) & PlatformPortfolio!="Unlabeled"),
+                     filename="nps_fig9_gfe_plat",xlsx="DoD_2024_NPS.xlsx",
+         sheet="9 GFEtop",
+          path="../output/AcqTrends/NPS2024/",second_path=online_path,
+         height=3,include_YTD=FALSE,excel_then_year = FALSE, csv_then_year = FALSE,
+                     startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
+         output_doc_svg=TRUE
+         )
+         
+
+```
+
+# Top PSCs 
+## Platform Multiyear
+```{r PlatformMultiyear}
+
+platpscintldef<-label_top(platpscintldef,
+                    col="ProductOrServiceCodeText",
+                    n=5,
+                    top_name="TopPSCtextMY",
+                    group_list=c("multiyearcontract"),
+                    recent=2023
+                    #retain_rank=TRUE,
+                    #write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv")
+                    )
+
+intl_lc<-prepare_labels_and_colors(platpscintldef, path="offline")
+intl_ck<-get_column_key(platpscintldef, path="offline")
+
+summary(factor(platpscintldef$TopProjectMY))
+    platpscintldef<-platpscintldef%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
+                              labels=c("Not Multiyear","Multiyear Contract")))
+
+platpscintldef<-platpscintldef %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
+  mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
+
+(
+PlatformMultiyearPSC<-build_plot(
+  data=platpscintldef %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024 &  (multiyearcontract==1)
+                           & !is.na(PlatformPortfolio)&
+                              PlatformPortfolio!="Unlabeled"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=intl_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="TopPSCtextMY", #color_var
+  facet_var="PlatformPortfolio",
+  column_key=intl_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2022,6)+#,partial_year=2024,partial_label="\nQ1")   
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)")
+)
+
+platpscintldef<-platpscintldef %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
+  mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
+
+
+
+(
+PlatformMultiYearShare<-build_plot(
+  data=platpscintldef %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024 &
+                             (multiyearcontract==1)&
+                              !is.na(PlatformPortfolio)&
+                              PlatformPortfolio!="Unlabeled"), #is.na(multiyearcontract)|
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=intl_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",
+  # alpha_var="YTD", #x_var
+  y_var="pPlatFYear", #VAR.y.variable
+  color_var="TopPSCtextMY", #color_var
+  facet_var="PlatformPortfolio",
+  column_key=intl_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2022,6)+#,partial_year=2024,partial_label="\nQ1")   
+    
+  theme(legend.position = "right")+guides(fill=guide_legend(ncol=1))+
+  labs(y="Share of Portfolio Obligations\nGoing to Multiyear Contracts",
+       caption="Note: When the multiyear column is blank, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis.")+
+    scale_y_continuous(labels = percent)
+)
+
+
+
+ggsave600dpi(path="..//Output//AcqTrends//",filename="Platform_MultiYearShare_keynote.png", 
+               PlatformMultiYearShare+labs(
+                 title="DOD Share of Contract Obligations to Multiyear Contracts, 2000–2023")+
+                 facet_wrap(PlatformPortfolio~.,nrow=2)+
+                labs(y="Share of Obligations",
+       caption="Note: When the multiyear column is empty, transactions are treated as not multiyear.\nSource: FPDS and CSIS analysis.")#+geom_line(aes(x=dFYear,y=pPlatFYear,group=YTD,linetype=YTD),linewidth=2),  
+             # width=13, height= 5.5, units="in",size=20, lineheight=1.2
+             )
+
+log_plot(plot=PlatformMultiYearShare+facet_wrap(~PlatformPortfolio,ncol=4)+theme(legend.position = "bottom")+guides(fill=guide_legend(ncol=4)), df=platpscintldef %>% 
+           filter(Fiscal_YQ<2024 & multiyearcontract==1),
+                     filename="nps_fig11_multiyear",xlsx="DoD_2024_NPS.xlsx",
+                     sheet="11 Mult",path="../output/AcqTrends/NPS2024/",
+         second_path = online_path,y_var="Action_Obligation_OMB25_GDP23",
+         height=4.75,include_YTD=FALSE,csv_then_year = FALSE,excel_then_year = FALSE,
+                     startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
+         output_doc_svg=TRUE,var_list = c("PlatformPortfolio","TopPSCtextMY")
+         )
+
+
+
+```
+
 # Redundant Summaries
 ## Topline  Platform
 ```{r Platform}
@@ -547,7 +864,7 @@ Platform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PlatformPortfolio", #color_var
   facet_var="PlatformPortfolio", #facet_var
-  column_key=column_key,
+  column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -588,7 +905,7 @@ Platform_Bar<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PlatformPortfolio", #color_var
   facet_var="PlatformPortfolio", #facet_var
-  column_key=column_key,
+  column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -612,19 +929,9 @@ ggsave600dpi("..//Output//topline_platform_bar.emf", Platform_Bar,
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
-output_TY<-full_data %>% group_by(PlatformPortfolio,Fiscal_Year)%>%
-            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
-          pivot_wider(id_cols=c(PlatformPortfolio),
-                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%arrange(PlatformPortfolio)
 
-write.csv(file="..//Output//topline_platform_current.csv",row.names = FALSE, na = "",
-          output_TY)
 
-wb <- loadWorkbook("..//Output//DoD_Acq_Trends_Contracts.xlsx")
-# addWorksheet(wb, sheetName = "Platform Portfolio")
- writeData(wb, output_TY, sheet = "Platform Portfolio", startRow = 1, startCol = 1)
-saveWorkbook(wb,file="..//Output//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
-rm(wb)
+
 
 ```
 
@@ -676,7 +983,7 @@ write.csv(file="..//Output//psr_RnDPhase.csv",row.names = FALSE, na = "",
             arrange(ProductServiceOrRnDarea))
             
 
-output_TY<-def_data %>% filter(Fiscal_YQ<2023) %>% filter(SimpleArea=="R&D") %>%
+output_TY<-platpscintldef %>% filter(Fiscal_YQ<2023) %>% filter(SimpleArea=="R&D") %>%
             format_data_for_plot(fy_var="Fiscal_Year",y_var="Action_Obligation_Then_Year",color_var = "ProductServiceOrRnDarea",
                                  labels_and_colors=labels_and_colors) %>%
           pivot_wider(id_cols=c(ProductServiceOrRnDarea),
@@ -692,6 +999,7 @@ write.csv(file="..//Output//psr_RnDPhase_current.csv",row.names = FALSE, na = ""
 # saveWorkbook(wb)
 
 ```
+
 
 
 # Customers and all projects / PSC 
@@ -748,7 +1056,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",second_path=online_path,filename="to
 
 log_plot(plot=SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1)+
            date_x_year_breaks(1990,2020,8),#,partial_year=2024,partial_label="\nQ1"),
-         df=def_data %>% filter(Fiscal_YQ<2024),
+         df=platpscintldef %>% filter(Fiscal_YQ<2024),
                      filename="acq_fig2_3_subcustomer",xlsx="DoD_Acq_Trends_Contracts.xlsx",
                      sheet="2-3 Cust",path="../output/AcqTrends/",second_path=online_path, height=3.5,
                      startRow=1,startCol=13,format=TRUE,var_list=c("SubCustomer.sum","SubCustomer.JPO")
@@ -825,7 +1133,7 @@ for(p in platform_levels){
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopProject", #color_var
   facet_var="TopProject", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -873,7 +1181,7 @@ for(p in platform_levels){
     y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     color_var="TopPStext", #color_var
     facet_var="TopPStext", #facet_var
-    # column_key=column_key,
+    # column_key=intl_ck,
     format=TRUE,
     ytextposition=FALSE
   )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -913,7 +1221,7 @@ for(p in platform_levels){
 # 
 # topplat<-platpscintldef %>% filter(PlatformPortfolio=="Aircraft") %>% group_by (Project.Name) %>%
 #   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB25_GDP23,0))
+#             )
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
 #                         rank_2023=rank(desc(Action_Obligation_2023)))
 # topplat %>% arrange(desc(Action_Obligation_OMB25_GDP23))
@@ -937,7 +1245,7 @@ Platform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopProject", #color_var
   facet_var="TopProject", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -963,7 +1271,7 @@ Platform<-build_plot(
 # 
 # topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
 #   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB25_GDP23,0))
+#             )
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
 #                         rank_2023=rank(desc(Action_Obligation_2023)))
 # topplat %>% arrange(desc(Action_Obligation_OMB25_GDP23))
@@ -987,7 +1295,7 @@ Platform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopProject", #color_var
   facet_var="TopProject", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1023,7 +1331,7 @@ summary(factor(platpscintldef$ProjectPlatform))
 # 
 # topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
 #   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB25_GDP23,0))
+#             )
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
 #                         rank_2023=rank(desc(Action_Obligation_2023)))
 # topplat %>% arrange(desc(Action_Obligation_OMB25_GDP23))
@@ -1047,7 +1355,7 @@ Platform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopProject", #color_var
   facet_var="TopProject", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1076,7 +1384,7 @@ PSC<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopPStext", #color_var
   facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1131,7 +1439,7 @@ Platform_Bar<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PlatformPortfolio", #color_var
   facet_var="PlatformPortfolio", #facet_var
-  column_key=column_key,
+  column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1178,7 +1486,7 @@ summary(factor(platpscintldef$ProjectPlatform))
 # 
 # topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
 #   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB25_GDP23,0))
+#             )
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
 #                         rank_2023=rank(desc(Action_Obligation_2023)))
 # topplat %>% arrange(desc(Action_Obligation_OMB25_GDP23))
@@ -1202,7 +1510,7 @@ Platform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopProject", #color_var
   facet_var="TopProject", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1231,7 +1539,7 @@ PSC<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopPStext", #color_var
   facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1257,7 +1565,7 @@ summary(factor(platpscintldef$ProjectPlatform))
 # 
 # topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
 #   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB25_GDP23,0))
+#             )
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
 #                         rank_2023=rank(desc(Action_Obligation_2023)))
 # topplat %>% arrange(desc(Action_Obligation_OMB25_GDP23))
@@ -1281,7 +1589,7 @@ Platform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopProject", #color_var
   facet_var="TopProject", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1310,7 +1618,7 @@ PSC<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopPStext", #color_var
   facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1336,7 +1644,7 @@ summary(factor(platpscintldef$ProjectPlatform))
 # 
 # topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
 #   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB25_GDP23,0))
+#             )
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
 #                         rank_2023=rank(desc(Action_Obligation_2023)))
 # topplat %>% arrange(desc(Action_Obligation_OMB25_GDP23))
@@ -1360,7 +1668,7 @@ Platform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopProject", #color_var
   facet_var="TopProject", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1388,7 +1696,7 @@ PSC<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopPStext", #color_var
   facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1413,7 +1721,7 @@ summary(factor(platpscintldef$ProjectPlatform))
 # 
 # topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
 #   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB25_GDP23,0))
+#             )
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
 #                         rank_2023=rank(desc(Action_Obligation_2023)))
 # topplat %>% arrange(desc(Action_Obligation_OMB25_GDP23))
@@ -1437,7 +1745,7 @@ Platform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopProject", #color_var
   facet_var="TopProject", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1465,7 +1773,7 @@ PSC<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopPStext", #color_var
   facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1600,7 +1908,7 @@ summary(factor(platpscintldef$ProjectPlatform))
 # 
 # topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
 #   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB25_GDP23,0))
+#             )
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
 #                         rank_2023=rank(desc(Action_Obligation_2023)))
 # topplat %>% arrange(desc(Action_Obligation_OMB25_GDP23))
@@ -1624,7 +1932,7 @@ Platform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopProject", #color_var
   facet_var="TopProject", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1652,7 +1960,7 @@ PSC<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopPStext", #color_var
   facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1677,7 +1985,7 @@ summary(factor(platpscintldef$ProductOrServiceArea))
 # 
 # topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
 #   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB25_GDP23,0))
+#             )
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
 #                         rank_2023=rank(desc(Action_Obligation_2023)))
 # topplat %>% arrange(desc(Action_Obligation_OMB25_GDP23))
@@ -1700,7 +2008,7 @@ State<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopStateAbbr", #color_var
   facet_var="TopStateAbbr", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1728,7 +2036,7 @@ State<-build_plot(
   color_var="TopStateAbbr", #color_var
   facet_var="TopStateAbbr", #facet_var
   second_var="SubCustomer",
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1756,7 +2064,7 @@ Country<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopCountryISO", #color_var
   facet_var="TopCountryISO", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1784,7 +2092,7 @@ PSC<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopPStext", #color_var
   facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1810,7 +2118,7 @@ summary(factor(platpscintldef$PlatformPortfolio))
 # 
 # topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
 #   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2022,Action_Obligation_OMB25_GDP23,0))
+#             )
 #             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
 #                         rank_2023=rank(desc(Action_Obligation_2023)))
 # topplat %>% arrange(desc(Action_Obligation_OMB25_GDP23))
@@ -1834,7 +2142,7 @@ Platform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopProject", #color_var
   facet_var="TopProject", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1862,7 +2170,7 @@ PSC<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="TopPStext", #color_var
   facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -1882,7 +2190,7 @@ PSC<-build_plot(
 ### Army Investigation
 ```{r ArmyOtherProducts}
 armyDB<-platpscintldef %>% filter(SubCustomer=="Army" & PlatformPortfolio=="Other Products" & 
-                                    Fiscal_Year==2022 & ProductOrServiceCodeText.x=="DRUGS AND BIOLOGICALS")
+                                    Fiscal_Year==2023 & ProductOrServiceCodeText.x=="DRUGS AND BIOLOGICALS")
 
 
 # armyDB$off
@@ -2145,7 +2453,7 @@ psrfuel<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="SimpleArea.fuels", #color_var
   # facet_var="TopPStext", #facet_var
-  column_key=column_key,
+  column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -2187,7 +2495,7 @@ fuel<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PlaceStateRegion", #color_var
   # facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -2217,7 +2525,7 @@ fuel<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PlaceIsForeign", #color_var
   # facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -2257,7 +2565,7 @@ fuel_psc<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="ProductOrServiceCodeText", #color_var
   # facet_var="TopPStext", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -2866,7 +3174,7 @@ DLAplatform<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PlatformPortfolio", #color_var
   facet_var="PlatformPortfolio", #facet_var
-  # column_key=column_key,
+  # column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
@@ -3082,7 +3390,7 @@ HimarsPSR<-build_plot(
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Shiny.VendorSize", #color_var
   # facet_var="Competition.sum", #facet_var
-  column_key=column_key,
+  column_key=intl_ck,
   format=TRUE,
   ytextposition=FALSE
 )+

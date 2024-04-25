@@ -8,7 +8,7 @@ date: "Wednesday, February 8, 2017"
 ---
 
 #Setup
-First we load the data. The dataset used is a U.S. Defense Contracting dataset derived from   FPDS.
+First we load the data. The dataset used is a U.S. loans derived from FPDS.
 
 
 ```{r setup, echo = FALSE}
@@ -103,11 +103,13 @@ award_summary<-function(df){
     ifelse(min(x)==max(x),min(x),NA)
   }
   minmod<-function(x,mod){
-    min(ifelse(is.na(mod) | mod==min(mod,na.rm=FALSE),x,NA),na.rm = TRUE)
+    x = ifelse(is.na(mod) | mod==min(mod,na.rm=FALSE),x,NA)
+    min(x,na.rm = TRUE)
   }
   
   latest<-function(x,date){
-    min(ifelse(date==max(date),x,NA),na.rm = TRUE)
+    x = ifelse(date==max(date),x,NA)
+    min(x, na.rm = TRUE)
   }
   
     df<-read_and_join_experiment(df,directory="assistance//",lookup_file="action_type_code.csv",
@@ -290,11 +292,13 @@ project_summary<-function(df){
     ifelse(min(x)==max(x),min(x),NA)
   }
   minmod<-function(x,mod){
-    min(ifelse(is.na(mod) | mod==min(mod,na.rm=FALSE),x,NA),na.rm = TRUE)
+    x = ifelse(is.na(mod) | mod==min(mod,na.rm=FALSE),x,NA)
+    min(x,na.rm = TRUE)
   }
   
   latest<-function(x,date){
-    min(ifelse(date==max(date),x,NA),na.rm = TRUE)
+    x = ifelse(date==max(date),x,NA)
+    min(x, na.rm = TRUE)
   }
   
     df<-read_and_join_experiment(df,directory="assistance//",lookup_file="action_type_code.csv",
@@ -510,6 +514,13 @@ LPOproject<-project_summary(loanSelected %>% filter(awarding_agency_name =="Depa
 rwb<-loadWorkbook(file=file.path("..","Output","Assistance","DOE","DOE_assistance.xlsx"))
 swb<-loadWorkbook(file=file.path(sharepoint_log_path,"DOE","DOE_assistance.xlsx"))
 # writeData(wb, sheet="DOE-LPO-award",LPOaward)
+
+writeData_twice<-function(first_wb,second_wb,data,sheet){
+  writeData(first_wb, sheet=sheet,data)
+  writeData(second_wb, sheet=sheet,data)
+}
+
+
 writeData_twice(rwb,swb, sheet="DOE-LPO",LPOproject %>% 
             dplyr::select(project_name,			
                    transaction_count,
