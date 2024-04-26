@@ -218,80 +218,10 @@ write.csv(topoverall %>% group_by(TopProject,Fiscal_Year) %>%
 ### Topline FMS
 
 
-### NTIB
-```{r FPDS_vendor_Intl}
-ntibisoalpha3<-c("AUS","CAN","GBR")#"NZL",
-platpscintldef$VendorNTIB<-"All Other"
-platpscintldef$VendorNTIB[platpscintldef$VendorISOalpha3=="USA"]<-"United States"
-platpscintldef$VendorNTIB[platpscintldef$VendorISOalpha3=="AUS"]<-"Australia"
-platpscintldef$VendorNTIB[platpscintldef$VendorISOalpha3=="NZL"]<-"New Zealand"
-platpscintldef$VendorNTIB[platpscintldef$VendorISOalpha3=="CAN"]<-"Canada"
-platpscintldef$VendorNTIB[platpscintldef$VendorISOalpha3=="GBR"]<-"United Kingdom"
 
 
-summary(factor(platpscintldef$VendorNTIB))
-# undebug(format_data_for_plot)
 
-summary(platpscintldef$dFYear)
-
-(ntibintl <-  build_plot(data=platpscintldef%>% filter((#PlaceISOalpha3 %in% ntibisoalpha3|
-                                                                  VendorISOalpha3 %in% ntibisoalpha3)&!is.na(PlaceIsForeign) &
-                                                                            Fiscal_Year>2011 & !is.na(VendorISOalpha3)),#VendorISOalpha3==TRUE                             
-                                            chart_geom="Bar Chart",
-                            x_var="dFYear",
-                            y_var="Action_Obligation_OMB25_GDP23",
-                            color_var="ProductOrServiceArea",
-                            facet_var="VendorNTIB",
-                            second_var="PlaceIsForeign",
-                            labels_and_colors=intl_lc,
-                            column_key=intl_ck,
-                            legend=TRUE,
-                            caption=FALSE,
-                            format=TRUE)+theme(legend.position = "right")+
-    facet_grid( VendorNTIB~. )+labs(title="Present NTIB Vendor",
-                                    y="Action Obligation (Constant 2022 $s")#, scales="free_y"#, scales="free_y"
-  )+scale_x_date("Fiscal Year",labels = date_format("'%y"))
-summary(platpscintldef$dFYear)
-ntibintl$data$dFYear
-write.csv(file="..//Output//ntibintl_contract.csv",row.names = FALSE,na = "",
-          ntibintl$data%>%# mutate(Fiscal_Year=lubridate::year(dFYear))%>%
-            mutate(Fiscal_Year=year(dFYear)) %>%
-            pivot_wider(id_cols=c(PlaceIsForeign,VendorNTIB,ProductOrServiceArea),
-                        names_from=dFYear,values_from=Action_Obligation_OMB25_GDP23)%>% arrange(PlaceIsForeign,VendorNTIB,ProductOrServiceArea))
-
-ggsave600dpi(ntibintl,file="../output/ntibintl.png",
-             size = 12, lineheight=1, height =5.5, width=12)
-
-
-# (ntibintl_vendor <-  build_plot(data=platpscintldef%>% filter((PlaceISOalpha3 %in% ntibisoalpha3|VendorISOalpha3 %in% ntibisoalpha3)&!is.na(PlaceIsForeign) &
-#                                                                             Fiscal_Year>2011 & !is.na(VendorISOalpha3)),#VendorISOalpha3==TRUE                             
-#                                             chart_geom="Bar Chart",
-#                             x_var="dFYear",
-#                             y_var="Action_Obligation_OMB25_GDP23",
-#                             color_var="ProductOrServiceArea",
-#                             facet_var="PlaceIsForeign",
-#                             second_var="VendorSize_Intl",
-#                             labels_and_colors=intl_lc,
-#                             column_key=intl_ck,
-#                             legend=TRUE,
-#                             caption=FALSE,
-#                             format=TRUE)+theme(legend.position = "right")+
-#     facet_grid( PlaceIsForeign~VendorSize_Intl , scales="free_y", space="free_y")+labs(title="Vendor or Performed Internationally")+
-#     theme(  strip.text.y=element_text(angle=0))
-#   )
-# 
-# write.csv(file="..//Output//ntibintl_vendor.csv",row.names = FALSE,na = "",
-#           ntibintl_vendor$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
-#             pivot_wider(id_cols=c(VendorNTIB,VendorSize_Intl,ProductOrServiceArea),
-#                         names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23)%>% arrange(VendorNTIB,VendorSize_Intl,ProductOrServiceArea))
-
-# ggsave600dpi(ntibintl_vendor,file="../output/ntibintl_vendor.png",
-#              size = 12, lineheight=1, height =6, width=9)
-
-```
-
-
-###FMS identification
+####FMS identification
 ```{r contract_identification}
 
 
@@ -323,8 +253,9 @@ ggsave600dpi(contract_identification,file="../output/figure_03_contract_identifi
 
 ```
 
+### FMS or International
 
-### Service Category
+#### Service Category
 ```{r FPDS_vendor_Intl}
 
 summary(factor(platpscintldef$SimpleArea))
@@ -383,6 +314,64 @@ write.csv(file="..//Output//fmsintl_service_vendor.csv",row.names = FALSE,na = "
 ggsave600dpi(fmsintl_service_vendor,file="../output/fmsintl_service_vendor.png",
              size = 12, lineheight=1, height =6, width=9)
 
+```
+
+## Any International 
+### ** Setup **
+```{r vendor_label}
+
+
+aus_fpds %>% group_by(ausorgtype,ParentID,parentheadquarterscountrycode)%>%
+  filter(!is.na(parentheadquarterscountrycode))%>%
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))%>%
+  arrange(ausorgtype,-Action_Obligation_OMB25_GDP23)
+# "U.S. Owned Business"='A',
+#   "Other U.S. Entity (e.g. Government)"='B',
+  #   "Foreign-Owned Business Incorporated in the U.S."='C',
+#   "Foreign-Owned Business Not Incorporated in the U.S."='D',
+#   "Other Foreign Entity (e.g. Foreign Government)"='O'
+
+aus_fpds$ausorgtype[
+  aus_fpds$manufacturingorganizationtext=="U.S. Owned Business"&
+           !is.na(aus_fpds$manufacturingorganizationtext)&
+           aus_fpds$OriginIsoAlpha3=="AUS"&
+           !is.na(aus_fpds$OriginIsoAlpha3)&
+    is.na(aus_fpds$parentheadquarterscountrycode)]<-
+  "U.S. Owned Business (Good/Service has Australian Origin)"
+
+
+aus_fpds$ausorgtype[
+  aus_fpds$manufacturingorganizationtext %in%
+    c("U.S. Owned Business",
+      "Foreign-Owned Business Incorporated in the U.S.",
+      "Other Entities (e.g. Governments")&
+           !is.na(aus_fpds$manufacturingorganizationtext)&
+           aus_fpds$parentheadquarterscountrycode=="AUS"&
+           !is.na(aus_fpds$parentheadquarterscountrycode)]<-
+  "Australian-Owned Business Incorporated in the U.S."
+
+
+aus_fpds$ausorgtype[
+  aus_fpds$manufacturingorganizationtext %in%
+    c("Foreign-Owned Business Not Incorporated in the U.S.")&
+    !is.na(aus_fpds$ausorgtype)&
+    aus_fpds$VendorIsoAlpha3=="AUS"&
+    !is.na(aus_fpds$VendorIsoAlpha3)]<-
+  "Australian-Owned Business (Including Global Subsidiaries)"
+
+
+aus_fpds$PlaceIsForeignText<-factor(aus_fpds$PlaceIsForeign)
+levels(aus_fpds$PlaceIsForeignText)<-list(
+  "International\nLocation"=1,
+  "U.S.\nLocation"=0
+)
+
+write.csv(file="aus_list.csv",row.names = FALSE,
+          aus_fpds %>% filter(Fiscal_Year>=2011 & Customer=="Defense") %>%
+            group_by(ausorgtype,ParentID,VendorIsoAlpha3)%>%
+            summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))%>%
+            arrange(ausorgtype,-Action_Obligation_OMB25_GDP23)
+)
 ```
 
 ### FMS Vendor Size/Intl and Place
@@ -452,41 +441,55 @@ write.csv(file="..//Output//FMS_vendorplace_all.csv",row.names = FALSE,na = "",
 
 
 
-
-
-### Place
+### FMS Vendor Size/Intl and Place
 ```{r FPDS_vendor_Intl}
 
+summary(factor(aus_fpds$Shiny.VendorSize[aus_fpds$VendorIsForeign==1]))
 
+#(PlaceIsForeign==1|IsFMS==TRUE)&
 # undebug(format_data_for_plot)
-(fpds_manufacture_intl_place <-  build_plot(data=platpscintldef%>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign) &
-                                                                            Fiscal_Year>2011 & !is.na(IsFMS)),#IsFMS==TRUE                             
-                                            chart_geom="Bar Chart",
-                            x_var="Fiscal_Year",
+
+(fpds_aus_vendor_intl_place <-  build_plot(data=aus_fpds %>% filter(!is.na(PlaceIsForeignText)&
+                                                                      !is.na(isFMS)&
+                                                                      Customer=="Defense"&
+                                                                      Fiscal_Year>2011),
+                                       #IsFMS==TRUE 
+                                       chart_geom="Bar Chart",
+                            x_var="dFYear",
                             y_var="Action_Obligation_OMB25_GDP23",
-                            color_var="PlaceOfManufacture_Sum",
-                            facet_var="PlaceIsForeign",
-                            second_var="IsFMS",
-                            labels_and_colors=intl_lc,
-                            column_key=intl_ck,
+                            color_var="ausorgtype",
+                            facet_var="PlaceIsForeignText",
+                            # alpha_var="YTD",
+                            second_var="isFMS",
+                            labels_and_colors=aus_lc,
+                            column_key=aus_ck,
                             legend=TRUE,
                             caption=FALSE,
                             format=TRUE)+theme(legend.position = "right")+
-    facet_grid( .~IsFMS+PlaceIsForeign )+labs(title="FMS or Performed Internationally, Including JSF")#, scales="free_y"#, scales="free_y"
+    facet_grid( isFMS~PlaceIsForeignText )+labs(title="U.S. DoD Prime Contracts with Australian\nLocation, Origin, or Vendor")+
+    date_x_year_breaks(2012,2022,3,partial_year=2024,partial_label="\nQ1")#, scales="free_y"
   )
 
 
-write.csv(file="..//Output//FMS_BAAplaceintl_all.csv",row.names = FALSE,na = "",
-          fpds_manufacture_intl_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
-            pivot_wider(id_cols=c(PlaceIsForeign,IsFMS, PlaceOfManufacture_Sum),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23)%>% arrange(PlaceIsForeign,IsFMS,PlaceOfManufacture_Sum))
 
-ggsave600dpi(fpds_manufacture_intl_place,file="../output/FMS_BAAplaceintl_all.png",
-             size = 12, lineheight=1, height =4.5, width=9)
+
+
+ggsave600dpi(fpds_aus_vendor_intl_place+
+               theme(legend.position="bottom")+
+    guides(fill=guide_legend(ncol=1)),file="../output/ntib/fpds_aus_vendor_intl_place.png",
+             size = 12, lineheight=1, height =5.75, width=5.5)
+
+
+
+
 
 ```
 
-### JSF 
+
+
+
+
+## JSF 
 
 #### JSF-MDAP-FMS
 ```{r FPDS_JSF}

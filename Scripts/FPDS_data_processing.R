@@ -276,6 +276,8 @@ detail_ck<-csis360::get_column_key(platpsc)
 save(platpsc,detail_lc,detail_ck, file="data/clean/platpsc_FPDS.Rda")
 
 
+
+###########Plat PSC International ############
 platpscintl<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdServPlatformAgencyPlaceOriginVendor.txt"),delim="\t",na=c("NULL","NA"),
                         col_names = TRUE, guess_max = 10000000)
 problems(platpscintl)
@@ -288,11 +290,11 @@ platpscintl<-apply_standard_lookups(platpscintl)#,path=local_path
 platpscintl<-initial_clean(platpscintl,only_defense=FALSE)
 platpscintldef<-initial_clean(platpscintl,only_defense=TRUE)
 
+summary(platpscintldef$PlatformPortfolio)
+
 # write.csv(platpscintldef %>% filter(PlatformPortfolio=="Ordnance and Missiles"), 
 #           file="Output//Munitions//OM.csv",
 #           row.names = FALSE)
-
-summary(platpscintldef$PlatformPortfolio)
 
 # write.csv(platpscintldef %>% filter(PlatformPortfolio=="Other Products"&SubCustomer=="Army"), 
 #           file="Output//Munitions//ArmyOtherProducts.csv",
@@ -301,23 +303,12 @@ summary(platpscintldef$PlatformPortfolio)
 # n<-platpscintl %>% group_by(IsFMS,IsFMSmac,IsFMSml,fundedbyforeignentity) %>%
 #   summarise(n=length(fiscal_year),min=min(fiscal_year),max=max(fiscal_year))
 
-
 #Vendor Size
-# platpscintldef$VendorSize_Intl<-factor(platpscintldef$Shiny.VendorSize)
-# levels(platpscintldef$VendorSize_Intl)<-list(
-#   "Unlabeled"="Unlabeled",
-#   "International"="International",
-#   "U.S. Big Five"=c("Big Five","U.S. Big Five"),
-#   "U.S. Large"=c("Large","U.S. Large"),
-#   "U.S. Medium"=c("Medium","U.S. Medium"),
-#   "U.S. Small"=c("Small","U.S. Small")
-# )
+
 # platpscintldef$VendorSize_Intl[platpscintldef$VendorIsForeign==1]<-"International"
 # platpscintldef$VendorSize_Intl[is.na(platpscintldef$VendorIsForeign)]<-"Unlabeled"
 
 #foreign_funding_description
-
-
 
 platpscintldef$IsJSF[platpscintldef$ProjectID==87]<-"JSF (F-35)"
 platpscintldef$IsJSF[!is.na(platpscintldef$ProjectID)&platpscintldef$ProjectID!=87&platpscintldef$IsUnknown==0]<-"Other Project"
@@ -335,19 +326,6 @@ levels(platpscintldef$IsFMSplaceIntl)=list(
   "No FMS\nPerformed Domestically"="0\n0",
   "Unlabeled"=c("0\nNA","1\nNA",   "NA\n0" ,  "NA\n1"  ,"NA\nNA" )
 )
-
-# 
-# full_data$PricingUCA<-full_data$PricingFee
-# summary(factor(full_data$PricingUCA))
-# full_data$PricingUCA[is.na(full_data$IsUCA)]<-NA
-# full_data$PricingUCA[!is.na(full_data$IsUCA)&full_data$IsUCA==1]<-"UCA"
-
-
-
-# debug(csis360::prepare_labels_and_colors)
-# load("Shiny Apps/FPDS_chart_maker/2016_unaggregated_FPDS.Rda")
-
-
 
 
 platpscintl %<>%
