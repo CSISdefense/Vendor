@@ -2446,11 +2446,13 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="psr_vendorsize_share.png",
 
 (
 SimpleVendor_dollar<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<=2023.2 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
+  data=def_data %>% mutate(YTD=ifelse(Fiscal_Year>=2023,"YTD","Full Year")) %>%
+    filter(Fiscal_Year>=2007 & Fiscal_YQ<=2023.2 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
   chart_geom = "Bar Chart",
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
-  x_var="dFYear",#alpha_var="YTD", #x_var
+  x_var="dFYear",
+  alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="VendorSize.NTDC", #color_var
   facet_var="SimpleArea", #facet_var
@@ -2459,7 +2461,7 @@ SimpleVendor_dollar<-build_plot(
   ytextposition=FALSE,
   reverse_color = TRUE,
   share=FALSE
-)+
+)+date_x_year_breaks(2007,2020,4,partial_year=2023,partial_label="\nQ1-Q2")+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
@@ -3949,6 +3951,80 @@ log_plot(plot=PlatformVendorIntl_dollar, df=full_data  %>% filter(Fiscal_YQ<2024
 ```
 
 
+## Platform Vendor NTDC
+```{r PlatformVendorNTDC}
+
+(
+PlatformVendorNTDC_share<-build_plot(
+  data=def_data %>% filter(PlatformPortfolio!="Unlabeled" & Fiscal_YQ<=2023.2 & Fiscal_YQ>=2007) ,
+  chart_geom = "Bar Chart",
+  share = TRUE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="VendorSize.NTDC", #color_var
+  facet_var="PlatformPortfolio", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2022,6)+#,partial_year=2024,partial_label="\nQ1")   
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+
+  labs(y="Percent of Obligations",
+    caption="Source: FPDS and CSIS analysis.")
+)
+
+ggsave600dpi(path="..//Output//AcqTrends//",filename="platform_vendor_NTDC_share.png", PlatformVendorNTDC_share, 
+             width=6.5, height= 4, units="in",size=11,lineheight = 0.75
+             )
+
+
+
+(
+PlatformVendorNTDC_dollar<-build_plot(
+  data=def_data %>% filter(PlatformPortfolio!="Unlabeled" & Fiscal_YQ<=2023.2 & Fiscal_YQ>=2007) ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="VendorSize.NTDC", #color_var
+  facet_var="PlatformPortfolio", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2022,6)+#,partial_year=2024,partial_label="\nQ1")   
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+
+  labs(y="Percent of Obligations",
+    caption="Source: FPDS and CSIS analysis.")
+)
+# 
+# log_plot(plot=PlatformVendorNTDC_dollar, df=full_data  %>% filter(Fiscal_YQ<2024),
+#                      filename="acq_fig6_2_plat_vendor_NTDC",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+#                      sheet="6-2 PlatVend",path="../output/AcqTrends/", height=5,
+#          excel_y_var = TRUE, excel_formulas = TRUE,
+#                      format=TRUE,#,var_list=c("SimpleArea","Competition.multisum")
+#          )
+
+```
+
 ## Platform Comp
 ```{r PlatformComp}
 # labels_and_colors<-def_lc
@@ -4427,7 +4503,7 @@ ToplineVendor<-build_plot(
   format=TRUE,
   ytextposition=FALSE,
   reverse_color=TRUE
-)+date_x_year_breaks(1990,2020,5)+#,partial_year=2024,partial_label="\nQ1")
+)+date_x_year_breaks(1990,2020,5,partial_year=2023,partial_label="\nQ1-Q2")
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
  #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
