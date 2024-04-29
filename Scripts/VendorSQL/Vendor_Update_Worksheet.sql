@@ -1,17 +1,48 @@
+--Instructions ( https://github.com/CSISdefense/DIIGsql/blob/master/docs/vendor_update_instructions.md )
 
+--This is helpful for gliches on my home desktop
+set QUERY_GOVERNOR_COST_LIMIT  0
+
+--Identify problem UEIs ( https://github.com/CSISdefense/DIIGsql/blob/master/docs/vendor_update_instructions.md#identify-problem-ueis )
 
 EXEC	 [Vendor].[SP_UEIunlabeledToInvestigateContractOrderFast]
 
 
-EXEC	[Vendor].[SP_ParentIDToInvestigateFast]
+-- Determine the Actual Owner ( https://github.com/CSISdefense/DIIGsql/blob/master/docs/vendor_update_instructions.md#determine-the-actual-owner )
 
 
-GO
-	set QUERY_GOVERNOR_COST_LIMIT  0
+
+EXEC Vendor.sp_InvestigateUEI
+	@UEI = 'INSERT_UEI_HERE'
+
+--Slower, use only if results are puzzling.
+EXEC Vendor.sp_InvestigateUEIdetail	
+	@UEI = 'INSERT_UEI_HERE'
 
 
+-- Assign the ParentID to the UEI ( https://github.com/CSISdefense/DIIGsql/blob/master/docs/vendor_update_instructions.md#assign-the-parentid-to-the-uei )
 EXEC	 [Vendor].[sp_InvestigateParentID]
-		@parentid = N'United tech'
+		@parentid = N'INSERT_parentID_here'
+
+EXEC	 [Vendor].[sp_CreateParentIDuei]
+		@UEI = N'INSERT_UEI_here',
+		@parentid = N'INSERT_parentID_here',
+		@startyear = 1990, --Update if for fewer years
+		@endyear = 2024  --Update if for fewer years
+
+
+EXEC	@return_value = [Vendor].[sp_CreateParentIDstandardizedVendorName]
+		@standardizedVendorName = N'INSERT_NAME_here', --only use for non-generic names.
+		@parentid = N'INSERT_parentID_here',
+		@startyear = 1990, --Update if for fewer years
+		@endyear = 2024 --Update if for fewer years
+
+
+--
+GO
+
+
+
 
 
 		RAM-System GmbH is owned by MBDA Deutschland (50%), Diehl Stiftung (25%) and Diehl BGT Defence (25%).
@@ -23,11 +54,6 @@ EXEC	 [Vendor].[sp_AssignUEIparentID]
 		@endyear = 2023
 
 
-EXEC	 [Vendor].[sp_CreateParentIDuei]
-		@UEI = N'RXN6RGGRJD71',
-		@parentid = N'IPG DXTRA',
-		@startyear = 1990,
-		@endyear = 2023
 
 
 

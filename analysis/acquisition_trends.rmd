@@ -715,6 +715,141 @@ log_plot(plot=ToplineVehicle7, df=def_data %>% filter(Fiscal_YQ<2024),
 
 ```
 
+### Vehicle Transactions
+```{r ToplineVehicle}
+
+
+def_data %>% filter(Vehicle=="Unlabeled Indefinite Delivery Contract (IDC)" ) %>% group_by(ClassifyNumberOfOffers,No.Competition.sum)%>%
+  summarise(n=length(Vehicle))
+
+
+(
+ToplineVehicle7<-build_plot(
+  data=def_data %>% filter(!is.na(Vehicle.AwardTask)&Fiscal_YQ<2024),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="transactioncount", #VAR.y.variable
+  color_var="Vehicle.sum7", #color_var
+  facet_var="Vehicle.AwardTask", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)",
+       caption="Note: Unlabeled not shown. Source: FPDS and CSIS analysis.")
+)
+
+
+(
+SingleAward<-build_plot(
+  data=def_data %>% filter(!is.na(Vehicle.AwardTask)&Fiscal_YQ<2024&
+                             Vehicle.sum7=="Single-Awd." & SubCustomer.JPO=="DLA"&
+                             SimpleArea=="Products (All)"&
+                             ProductServiceOrRnDarea %in% 
+                             c("Clothing & Subsistence" ,"Fuels","Other")
+                             ),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="transactioncount", #VAR.y.variable
+  color_var="ProductServiceOrRnDarea", #color_var
+  facet_var="ProductServiceOrRnDarea", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Number of Transactions",
+       caption="Note: Unlabeled not shown. Source: FPDS and CSIS analysis.")
+)
+ggsave600dpi(path="..//Output//AcqTrends//",filename="dla_select_singleaward_transactions.png", SingleAward, 
+             width=13, height= 4.5, units="in",size=11
+             )
+
+
+
+(
+ToplineVehicle<-build_plot(
+  data=def_data %>% filter(!is.na(Vehicle.AwardTask)),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="transactioncount", #VAR.y.variable
+  color_var="Vehicle.sum", #color_var
+  facet_var="Vehicle.AwardTask", #facet_var
+  column_key=column_key,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)",
+       caption="Note: Unlabeled not shown. Source: FPDS and CSIS analysis.")
+)
+
+
+ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_vehicle7.png", ToplineVehicle7, 
+             width=13, height= 4.5, units="in",size=11
+             )
+
+write.csv(file="..//Output//AcqTrends//topline_vehicle7.csv",row.names = FALSE, na = "",
+          ToplineVehicle7$data%>% 
+            mutate(Fiscal_Year=lubridate::year(dFYear),
+                   bAction_Obligation_OMB25_GDP23=Action_Obligation_OMB25_GDP23/1000000000)%>%
+            pivot_wider(id_cols=c(Vehicle.sum7,Vehicle.AwardTask),
+                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB25_GDP23)%>%
+            arrange(Vehicle.sum7,Vehicle.AwardTask))
+
+
+ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_vehicle.png", ToplineVehicle, 
+             width=13, height= 4.5, units="in",size=11
+             )
+
+write.csv(file="..//Output//AcqTrends//topline_vehicle.csv",row.names = FALSE, na = "",
+          ToplineVehicle$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
+                                       bAction_Obligation_OMB25_GDP23=Action_Obligation_OMB25_GDP23/1000000000)%>%
+            pivot_wider(id_cols=c(Vehicle.sum,Vehicle.AwardTask),
+                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB25_GDP23)%>%
+            arrange(Vehicle.sum,Vehicle.AwardTask))
+
+log_plot(plot=ToplineVehicle7, df=def_data %>% filter(Fiscal_YQ<2024),
+                     filename="acq_fig4_X_vehicle",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+                     sheet="4-X Veh",path="../output/AcqTrends/", height=4,
+                     startRow=1,startCol=14,format=TRUE,
+         var_list=c("Vehicle.AwardTask","Vehicle.sum7"))
+
+```
 
 ### Vehicle Plat Breakout
 ```{r VehPlatBreakout} 
