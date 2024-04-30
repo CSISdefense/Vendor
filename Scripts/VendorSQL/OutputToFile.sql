@@ -404,7 +404,7 @@ EXEC	@return_value = Contract.SP_ContractBucketPlatformCustomer
 
 SET QUERY_GOVERNOR_COST_LIMIT 0
 --7,833,306 rows; 9h39m. (Finished right when I got home, which seems odd. One or more errors).
---8,357,821 rows 9h04m 
+--8,357,821 rows r9h04m 
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 EXEC	Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength
@@ -1025,3 +1025,19 @@ where Parent_UEI  in('F7NGF6NJFB96','NANFEH9AAH43')
 select *
 from contract.contract_award_unique_key
 where contract_award_unique_key='CONT_AWD_0001_9700_DACW4101D0001_9700'
+
+--Find biggest grandparent CAUs
+SET QUERY_GOVERNOR_COST_LIMIT 0
+select top 100 coalesce(pcau.parent_contract_award_unique_key,cau.parent_contract_award_unique_key, f.contract_award_unique_key) as 
+	grand_parent_contract_award_unique_key
+,count(contract_transaction_unique_key) n
+from contract.FPDS f
+inner join contract.contract_award_unique_key cau
+on f.contract_award_unique_key=cau.contract_award_unique_key
+left outer join contract.contract_award_unique_key pcau
+on cau.parent_contract_award_unique_key=pcau.contract_award_unique_key
+inner join FPDSTypeTable.AgencyID a
+on cau.AgencyID=a.AgencyID
+--where fiscal_year>=2013
+group by coalesce(pcau.parent_contract_award_unique_key,cau.parent_contract_award_unique_key, f.contract_award_unique_key)
+order by count(contract_transaction_unique_key) desc
