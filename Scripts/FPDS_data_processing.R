@@ -74,11 +74,11 @@ if(!"OriginIsForeign" %in% colnames(full_data) & "OriginISOalpha3" %in% colnames
   #                                     missing_file="missing_DSCA_iso.csv")
   # colnames(full_data)[colnames(full_data)=="isforeign"]<-"OriginIsForeign"
   
-  full_data <- full_data %>% dplyr::select(-PlaceIsForeign,-VendorIsForeign) 
-  full_data %<>% add_alliance(isoAlpha3_col= "PlaceISOalpha3", drop_col = TRUE,prefix="Place")
-  full_data$VendorISOalpha3[full_data$VendorISOalpha3=="~NJ"]<-NA
-  full_data %<>% add_alliance(isoAlpha3_col= "VendorISOalpha3", drop_col = TRUE,prefix="Vendor")
-  full_data %<>% add_alliance(isoAlpha3_col= "OriginISOalpha3", drop_col = TRUE,prefix="Origin")
+  # full_data <- full_data %>% dplyr::select(-PlaceIsForeign,-VendorIsForeign) 
+  # full_data %<>% add_alliance(isoAlpha3_col= "PlaceISOalpha3", drop_col = TRUE,prefix="Place")
+  # full_data$VendorISOalpha3[full_data$VendorISOalpha3=="~NJ"]<-NA
+  # full_data %<>% add_alliance(isoAlpha3_col= "VendorISOalpha3", drop_col = TRUE,prefix="Vendor")
+  # full_data %<>% add_alliance(isoAlpha3_col= "OriginISOalpha3", drop_col = TRUE,prefix="Origin")
   
   
   full_data$VendorSize_Intl<-factor(full_data$Shiny.VendorSize)
@@ -350,6 +350,39 @@ platpscintldef %<>%
   mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
   mutate(PlatformPortfolioUAV = factor(PlatformPortfolioUAV))
 
+# 
+platpscintldef<-standardize_variable_names(platpscintldef)
+
+platpscintldef<-read_and_join_experiment(platpscintldef,
+                             "ManufacturingOrganizationType.csv",
+                             by="ManufacturingOrganizationType",
+                             add_var=c("ManufacturingOrganizationText","ManufacturingOrganizationText_sum",
+                                       "IsForeignHeadquarters"),
+                             skip_check_var = c("ManufacturingOrganizationText","ManufacturingOrganizationText_sum",
+                                                "IsForeignHeadquarters"),
+                             path="offline",
+                             directory="location/",
+                             case_sensitive = FALSE
+)
+
+if("IsForeignHeadquarters" %in% colnames(platpscintldef)){
+  platpscintldef <- mutate(IsForeignMFGorPerform=case_when(
+    IsForeignHeadquarters==1~1,
+    VendorIsForeign==1~1,
+    TRUE~IsForeignHeadquarters
+  ))
+}
+
+platpscintldef<-platpscintldef %>% mutate(
+  AnyInternational(case_when(
+    IsFMS==1~1,
+    IsForeignOrganization==1~1,
+    PlaceIsForeign==1~1,
+    
+    
+    
+  ))
+)
 
 
 
