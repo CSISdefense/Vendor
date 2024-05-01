@@ -357,19 +357,20 @@ platpscintldef<-read_and_join_experiment(platpscintldef,
                              "ManufacturingOrganizationType.csv",
                              by="ManufacturingOrganizationType",
                              add_var=c("ManufacturingOrganizationText","ManufacturingOrganizationText_sum",
-                                       "IsForeignHeadquarters"),
+                                       "IsForeignHQ"),
                              skip_check_var = c("ManufacturingOrganizationText","ManufacturingOrganizationText_sum",
-                                                "IsForeignHeadquarters"),
+                                                "IsForeignHQ"),
                              path="offline",
                              directory="location/",
                              case_sensitive = FALSE
 )
 
-if("IsForeignHeadquarters" %in% colnames(platpscintldef)){
-  platpscintldef <- mutate(IsForeignMFGorPerform=case_when(
-    IsForeignHeadquarters==1~1,
+colnames(platpscintldef)[colnames(platpscintldef)=="IsForeignHeadquarters"]<-"IsForeignHQ"
+if("IsForeignHQ" %in% colnames(platpscintldef)){
+  platpscintldef <- platpscintldef%>% mutate(IsForeignHQ=case_when(
+    IsForeignHQ==1~1,
     VendorIsForeign==1~1,
-    TRUE~IsForeignHeadquarters
+    TRUE~IsForeignHQ
   ))
 }
 
