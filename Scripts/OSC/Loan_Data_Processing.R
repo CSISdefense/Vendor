@@ -171,6 +171,9 @@ sic1997complete<-sic1997 %>% filter(is.na(`Part Indicator`))
 colnames(sic1997complete)<-colnames(sic1997complete) %>% make.names()
 write_csv(sic1997complete,file.path("Data_Raw","Economic","1987_SIC_to_1997_NAICS_complete.csv"))
 colnames(sic1997complete)
+
+exim$Primary.Export.Product.SIC.code<-as.character(exim$Primary.Export.Product.SIC.code)
+
 exim<-read_and_join_experiment(exim,
                                lookup_file="1987_SIC_to_1997_NAICS_complete.csv",
                                directory="data_raw//economic//",
