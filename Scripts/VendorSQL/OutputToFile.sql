@@ -151,7 +151,7 @@ SET NOCOUNT ON;
 Exec [Location].[SP_CountryDetail]
  	@countryISOalpha3='AUS'
 
-
+--11h57, got cocky and tried all space companies plus CAU. Failed.
 --2h35m 2m620 rows. We could probably aggregate this to the CAU level easily enoough.
 --4h03m 4717 w/ boeing and is traditional
 SET ANSI_WARNINGS OFF;
