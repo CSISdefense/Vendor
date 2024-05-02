@@ -74,6 +74,450 @@ label_keyword<-function(x,keyword,col="transaction_description"){
 
 
 ```
+## Functions
+
+##### Award Summary
+```{r award_summary}
+award_summary<-function(df){
+  minmax<-function(x){
+    if(is.factor(x))
+      x<-as.character(x)
+    ifelse(min(x)==max(x),min(x),NA)
+  }
+  minmod<-function(x,mod){
+    x = ifelse(is.na(mod) | mod==min(mod,na.rm=FALSE),x,NA)
+    min(x,na.rm = TRUE)
+  }
+  
+  latest<-function(x,date){
+    x = ifelse(date==max(date),x,NA)
+    min(x, na.rm = TRUE)
+  }
+  
+    df<-read_and_join_experiment(df,directory="assistance//",lookup_file="action_type_code.csv",
+                               by="action_type_code")
+  df<-read_and_join_experiment(df,directory="assistance//",lookup_file="business_funds_indicator_code.csv",
+                               by="business_funds_indicator_code")
+  
+  df<-df %>% group_by(assistance_award_unique_key) %>%
+    summarise(
+      project_name=minmax(project_name),
+      # assistance_transaction_unique_key=minmax(assistance_transaction_unique_key),
+      assistance_award_unique_key=minmax(assistance_award_unique_key),
+      recipient_name=minmax(recipient_name),
+      transaction_count=n(),
+      cfda_num=minmax(cfda_num),
+      cfda_title=minmax(cfda_title),
+      # sai_number=minmax(sai_number),
+      assistance_type_code=minmax(assistance_type_code),
+      assistance_type_description=minmax(assistance_type_description),
+      prime_award_base_transaction_description=minmax(prime_award_base_transaction_description),
+      period_of_performance_start_date=minmod(period_of_performance_start_date,ModificationNumber),
+      initial_period_of_performance_current_end_date=minmod(period_of_performance_current_end_date,ModificationNumber),
+      # federal_action_obligation=sum(federal_action_obligation,na.rm=TRUE),
+      original_loan_subsidy_cost=sum(original_loan_subsidy_cost,na.rm=TRUE),
+      # latest_total_outlayed_amount_for_overall_award=latest(total_outlayed_amount_for_overall_award,action_date),
+      face_value_of_loan=sum(face_value_of_loan,na.rm=TRUE),
+      non_federal_funding_amount=sum(non_federal_funding_amount,na.rm=TRUE),
+      indirect_cost_federal_share_amount=sum(indirect_cost_federal_share_amount,na.rm=TRUE),
+      # latest_transaction_description=latest(transaction_description,action_date),
+      max_last_modified_date=max(last_modified_date),
+      award_id_fain=minmax(award_id_fain),
+      # ModificationNumber=minmax(ModificationNumber),
+      award_id_uri=minmax(award_id_uri),
+      sai_number=minmax(sai_number),
+      federal_action_obligation=minmax(federal_action_obligation),
+      total_obligated_amount=minmax(total_obligated_amount),
+      # total_outlayed_amount_for_overall_award=minmax(total_outlayed_amount_for_overall_award),
+      indirect_cost_federal_share_amount=minmax(indirect_cost_federal_share_amount),
+      non_federal_funding_amount=minmax(non_federal_funding_amount),
+      total_non_federal_funding_amount=minmax(total_non_federal_funding_amount),
+      face_value_of_loan=minmax(face_value_of_loan),
+      original_loan_subsidy_cost=minmax(original_loan_subsidy_cost),
+      total_face_value_of_loan=minmax(total_face_value_of_loan),
+      total_loan_subsidy_cost=minmax(total_loan_subsidy_cost),
+      # disaster_emergency_fund_codes_for_overall_award=minmax(disaster_emergency_fund_codes_for_overall_award),
+      # outlayed_amount_from_COVID.19_supplementals_for_overall_award=minmax(outlayed_amount_from_COVID.19_supplementals_for_overall_award),
+      # obligated_amount_from_COVID.19_supplementals_for_overall_award=minmax(obligated_amount_from_COVID.19_supplementals_for_overall_award),
+      # outlayed_amount_from_IIJA_supplemental_for_overall_award=minmax(outlayed_amount_from_IIJA_supplemental_for_overall_award),
+      # obligated_amount_from_IIJA_supplemental_for_overall_award=minmax(obligated_amount_from_IIJA_supplemental_for_overall_award),
+      action_date=minmax(action_date),
+      Fiscal_Year=minmax(Fiscal_Year),
+      period_of_performance_start_date=minmax(period_of_performance_start_date),
+      period_of_performance_current_end_date=minmax(period_of_performance_current_end_date),
+      awarding_agency_code=minmax(awarding_agency_code),
+      awarding_agency_name=minmax(awarding_agency_name),
+      awarding_sub_agency_code=minmax(awarding_sub_agency_code),
+      awarding_sub_agency_name=minmax(awarding_sub_agency_name),
+      awarding_office_code=minmax(awarding_office_code),
+      awarding_office_name=minmax(awarding_office_name),
+      funding_agency_code=minmax(funding_agency_code),
+      # Funding_Agency_Name=minmax(Funding_Agency_Name),
+      funding_sub_agency_code=minmax(funding_sub_agency_code),
+      funding_sub_agency_name=minmax(funding_sub_agency_name),
+      funding_office_code=minmax(funding_office_code),
+      funding_office_name=minmax(funding_office_name),
+      # treasury_accounts_funding_this_award=minmax(treasury_accounts_funding_this_award),
+      # federal_accounts_funding_this_award=minmax(federal_accounts_funding_this_award),
+      # object_classes_funding_this_award=minmax(object_classes_funding_this_award),
+      # program_activities_funding_this_award=minmax(program_activities_funding_this_award),
+      recipient_uei=minmax(recipient_uei),
+      recipient_duns=minmax(recipient_duns),
+      recipient_name_raw=minmax(recipient_name_raw),
+      recipient_parent_uei=minmax(recipient_parent_uei),
+      recipient_parent_duns=minmax(recipient_parent_duns),
+      recipient_parent_name=minmax(recipient_parent_name),
+      recipient_parent_name_raw=minmax(recipient_parent_name_raw),
+      recipient_country_code=minmax(recipient_country_code),
+      recipient_country_name=minmax(recipient_country_name),
+      recipient_address_line_1=minmax(recipient_address_line_1),
+      recipient_address_line_2=minmax(recipient_address_line_2),
+      recipient_city_code=minmax(recipient_city_code),
+      recipient_city_name=minmax(recipient_city_name),
+      prime_award_transaction_recipient_county_fips_code=minmax(prime_award_transaction_recipient_county_fips_code),
+      recipient_county_name=minmax(recipient_county_name),
+      prime_award_transaction_recipient_state_fips_code=minmax(prime_award_transaction_recipient_state_fips_code),
+      recipient_state_code=minmax(recipient_state_code),
+      recipient_state_name=minmax(recipient_state_name),
+      recipient_zip_code=minmax(recipient_zip_code),
+      recipient_zip_last_4_code=minmax(recipient_zip_last_4_code),
+      prime_award_transaction_recipient_cd_original=minmax(prime_award_transaction_recipient_cd_original),
+      prime_award_transaction_recipient_cd_current=minmax(prime_award_transaction_recipient_cd_current),
+      # recipient_foreign_city_name=minmax(recipient_foreign_city_name),
+      # recipient_foreign_province_name=minmax(recipient_foreign_province_name),
+      # recipient_foreign_postal_code=minmax(recipient_foreign_postal_code),
+      primary_place_of_performance_scope=minmax(primary_place_of_performance_scope),
+      primary_place_of_performance_country_code=minmax(primary_place_of_performance_country_code),
+      primary_place_of_performance_country_name=minmax(primary_place_of_performance_country_name),
+      primary_place_of_performance_code=minmax(primary_place_of_performance_code),
+      primary_place_of_performance_city_name=minmax(primary_place_of_performance_city_name),
+      prime_award_transaction_place_of_performance_county_fips_code=minmax(prime_award_transaction_place_of_performance_county_fips_code),
+      primary_place_of_performance_county_name=minmax(primary_place_of_performance_county_name),
+      prime_award_transaction_place_of_performance_state_fips_code=minmax(prime_award_transaction_place_of_performance_state_fips_code),
+      primary_place_of_performance_state_name=minmax(primary_place_of_performance_state_name),
+      primary_place_of_performance_zip_4=minmax(primary_place_of_performance_zip_4),
+      prime_award_transaction_place_of_performance_cd_original=minmax(prime_award_transaction_place_of_performance_cd_original),
+      prime_award_transaction_place_of_performance_cd_current=minmax(prime_award_transaction_place_of_performance_cd_current),
+      # primary_place_of_performance_foreign_location=minmax(primary_place_of_performance_foreign_location),
+      cfda_number=minmax(cfda_number),
+      cfda_title=minmax(cfda_title),
+      # funding_opportunity_number=minmax(funding_opportunity_number),
+      # funding_opportunity_goals_text=minmax(funding_opportunity_goals_text),
+      assistance_type_code=minmax(assistance_type_code),
+      transaction_description=minmax(transaction_description),
+      prime_award_base_transaction_description=minmax(prime_award_base_transaction_description),
+      business_funds_indicator_code=minmax(business_funds_indicator_code),
+      business_funds_indicator_description=minmax(business_funds_indicator_description),
+      business_types_code=minmax(business_types_code),
+      business_types_description=minmax(business_types_description),
+      correction_delete_indicator_code=minmax(correction_delete_indicator_code),
+      correction_delete_indicator_description=minmax(correction_delete_indicator_description),
+      action_type_code=minmax(action_type_code),
+      action_type_description=minmax(action_type_description),
+      record_type_code=minmax(record_type_code),
+      record_type_description=minmax(record_type_description),
+      # highly_compensated_officer_1_name=minmax(highly_compensated_officer_1_name),
+      # highly_compensated_officer_1_amount=minmax(highly_compensated_officer_1_amount),
+      # highly_compensated_officer_2_name=minmax(highly_compensated_officer_2_name),
+      # highly_compensated_officer_2_amount=minmax(highly_compensated_officer_2_amount),
+      # highly_compensated_officer_3_name=minmax(highly_compensated_officer_3_name),
+      # highly_compensated_officer_3_amount=minmax(highly_compensated_officer_3_amount),
+      # highly_compensated_officer_4_name=minmax(highly_compensated_officer_4_name),
+      # highly_compensated_officer_4_amount=minmax(highly_compensated_officer_4_amount),
+      # highly_compensated_officer_5_name=minmax(highly_compensated_officer_5_name),
+      # highly_compensated_officer_5_amount=minmax(highly_compensated_officer_5_amount),
+      usaspending_permalink=minmax(usaspending_permalink),
+      last_modified_date=minmax(last_modified_date),
+      USAspending_file_name=minmax(USAspending_file_name),
+      cfda_num=minmax(cfda_num),
+      assistance_type_description=minmax(assistance_type_description),
+    )
+  
+    df<-read_and_join_experiment(df,
+                         lookup_file="DOE_LPO_project.csv",
+                         path=file.path("..","..","Data","semi_clean","Assistance"),
+                         directory="",
+                         by=c("project_name"="project_name"),
+                         # add_var=c("project_name"),
+                         skip_check_var =c("Date_Repaid","Issuance_Date","Project_Statement",
+                                           "Loan_Amount","Location","Loan_Type",
+                                           "Loan_Program"),
+                         join_type="full"
+  ) %>% mutate(LPO_Tech_Sector=stringi::stri_trans_nfc(LPO_Tech_Sector),
+               project_url=stringi::stri_trans_nfc(project_url),
+               Loan_Type=stringi::stri_trans_nfc(Loan_Type),
+               Loan_Status=stringi::stri_trans_nfc(Loan_Status),
+               
+               
+               Issuance_Date=stringi::stri_trans_nfc(Issuance_Date),
+               Date_Repaid=stringi::stri_trans_nfc(Date_Repaid),
+               Project_Statement=stringi::stri_trans_nfc(Project_Statement),
+               Loan_Program=stringi::stri_trans_nfc(Loan_Program),
+               GAO_comments=stringi::stri_trans_nfc(GAO_comments),
+               Location=stringi::stri_trans_nfc(Location),
+               Owner=stringi::stri_trans_nfc(Owner))
+  
+  
+  df
+}
+
+```
+
+##### ProjectName summary
+```{r ProjectSummaryFunction}
+
+project_summary<-function(df){
+  minmax<-function(x){
+    if(is.factor(x))
+      x<-as.character(x)
+    ifelse(min(x)==max(x),min(x),NA)
+  }
+  minmod<-function(x,mod){
+    x = ifelse(is.na(mod) | mod==min(mod,na.rm=FALSE),x,NA)
+    min(x,na.rm = TRUE)
+  }
+  
+  latest<-function(x,date){
+    x = ifelse(date==max(date),x,NA)
+    min(x, na.rm = TRUE)
+  }
+  
+    df<-read_and_join_experiment(df,directory="assistance//",lookup_file="action_type_code.csv",
+                               by="action_type_code")
+  df<-read_and_join_experiment(df,directory="assistance//",lookup_file="business_funds_indicator_code.csv",
+                               by="business_funds_indicator_code")
+  
+  
+  df<-df %>% group_by(project_name) %>%
+    summarise(
+      # assistance_transaction_unique_key=minmax(assistance_transaction_unique_key),
+      assistance_award_unique_key=minmax(assistance_award_unique_key),
+      recipient_name=minmax(recipient_name),
+      transaction_count=n(),
+      cfda_num=minmax(cfda_num),
+      cfda_title=minmax(cfda_title),
+      # sai_number=minmax(sai_number),
+      assistance_type_code=minmax(assistance_type_code),
+      assistance_type_description=minmax(assistance_type_description),
+      prime_award_base_transaction_description=minmax(prime_award_base_transaction_description),
+      period_of_performance_start_date=minmod(period_of_performance_start_date,ModificationNumber),
+      initial_period_of_performance_current_end_date=minmod(period_of_performance_current_end_date,ModificationNumber),
+      # federal_action_obligation=sum(federal_action_obligation,na.rm=TRUE),
+      original_loan_subsidy_cost=sum(original_loan_subsidy_cost,na.rm=TRUE),
+      # latest_total_outlayed_amount_for_overall_award=latest(total_outlayed_amount_for_overall_award,action_date),
+      face_value_of_loan=sum(face_value_of_loan,na.rm=TRUE),
+      non_federal_funding_amount=sum(non_federal_funding_amount,na.rm=TRUE),
+      indirect_cost_federal_share_amount=sum(indirect_cost_federal_share_amount,na.rm=TRUE),
+      # latest_transaction_description=latest(transaction_description,action_date),
+      max_last_modified_date=max(last_modified_date),
+      award_id_fain=minmax(award_id_fain),
+      # ModificationNumber=minmax(ModificationNumber),
+      award_id_uri=minmax(award_id_uri),
+      sai_number=minmax(sai_number),
+      federal_action_obligation=minmax(federal_action_obligation),
+      total_obligated_amount=minmax(total_obligated_amount),
+      # total_outlayed_amount_for_overall_award=minmax(total_outlayed_amount_for_overall_award),
+      indirect_cost_federal_share_amount=minmax(indirect_cost_federal_share_amount),
+      non_federal_funding_amount=minmax(non_federal_funding_amount),
+      total_non_federal_funding_amount=minmax(total_non_federal_funding_amount),
+      face_value_of_loan=minmax(face_value_of_loan),
+      original_loan_subsidy_cost=minmax(original_loan_subsidy_cost),
+      total_face_value_of_loan=minmax(total_face_value_of_loan),
+      total_loan_subsidy_cost=minmax(total_loan_subsidy_cost),
+      # disaster_emergency_fund_codes_for_overall_award=minmax(disaster_emergency_fund_codes_for_overall_award),
+      # outlayed_amount_from_COVID.19_supplementals_for_overall_award=minmax(outlayed_amount_from_COVID.19_supplementals_for_overall_award),
+      # obligated_amount_from_COVID.19_supplementals_for_overall_award=minmax(obligated_amount_from_COVID.19_supplementals_for_overall_award),
+      # outlayed_amount_from_IIJA_supplemental_for_overall_award=minmax(outlayed_amount_from_IIJA_supplemental_for_overall_award),
+      # obligated_amount_from_IIJA_supplemental_for_overall_award=minmax(obligated_amount_from_IIJA_supplemental_for_overall_award),
+      action_date=minmax(action_date),
+      Fiscal_Year=minmax(Fiscal_Year),
+      # period_of_performance_current_end_date=minmax(period_of_performance_current_end_date),
+      awarding_agency_code=minmax(awarding_agency_code),
+      awarding_agency_name=minmax(awarding_agency_name),
+      awarding_sub_agency_code=minmax(awarding_sub_agency_code),
+      awarding_sub_agency_name=minmax(awarding_sub_agency_name),
+      awarding_office_code=minmax(awarding_office_code),
+      awarding_office_name=minmax(awarding_office_name),
+      funding_agency_code=minmax(funding_agency_code),
+      # Funding_Agency_Name=minmax(Funding_Agency_Name),
+      funding_sub_agency_code=minmax(funding_sub_agency_code),
+      funding_sub_agency_name=minmax(funding_sub_agency_name),
+      funding_office_code=minmax(funding_office_code),
+      funding_office_name=minmax(funding_office_name),
+      # treasury_accounts_funding_this_award=minmax(treasury_accounts_funding_this_award),
+      # federal_accounts_funding_this_award=minmax(federal_accounts_funding_this_award),
+      # object_classes_funding_this_award=minmax(object_classes_funding_this_award),
+      # program_activities_funding_this_award=minmax(program_activities_funding_this_award),
+      recipient_uei=minmax(recipient_uei),
+      recipient_duns=minmax(recipient_duns),
+      recipient_name_raw=minmax(recipient_name_raw),
+      recipient_parent_uei=minmax(recipient_parent_uei),
+      recipient_parent_duns=minmax(recipient_parent_duns),
+      recipient_parent_name=minmax(recipient_parent_name),
+      recipient_parent_name_raw=minmax(recipient_parent_name_raw),
+      recipient_country_code=minmax(recipient_country_code),
+      recipient_country_name=minmax(recipient_country_name),
+      recipient_address_line_1=minmax(recipient_address_line_1),
+      recipient_address_line_2=minmax(recipient_address_line_2),
+      recipient_city_code=minmax(recipient_city_code),
+      recipient_city_name=minmax(recipient_city_name),
+      prime_award_transaction_recipient_county_fips_code=minmax(prime_award_transaction_recipient_county_fips_code),
+      recipient_county_name=minmax(recipient_county_name),
+      prime_award_transaction_recipient_state_fips_code=minmax(prime_award_transaction_recipient_state_fips_code),
+      recipient_state_code=minmax(recipient_state_code),
+      recipient_state_name=minmax(recipient_state_name),
+      recipient_zip_code=minmax(recipient_zip_code),
+      recipient_zip_last_4_code=minmax(recipient_zip_last_4_code),
+      prime_award_transaction_recipient_cd_original=minmax(prime_award_transaction_recipient_cd_original),
+      prime_award_transaction_recipient_cd_current=minmax(prime_award_transaction_recipient_cd_current),
+      # recipient_foreign_city_name=minmax(recipient_foreign_city_name),
+      # recipient_foreign_province_name=minmax(recipient_foreign_province_name),
+      # recipient_foreign_postal_code=minmax(recipient_foreign_postal_code),
+      primary_place_of_performance_scope=minmax(primary_place_of_performance_scope),
+      primary_place_of_performance_country_code=minmax(primary_place_of_performance_country_code),
+      primary_place_of_performance_country_name=minmax(primary_place_of_performance_country_name),
+      primary_place_of_performance_code=minmax(primary_place_of_performance_code),
+      primary_place_of_performance_city_name=minmax(primary_place_of_performance_city_name),
+      prime_award_transaction_place_of_performance_county_fips_code=minmax(prime_award_transaction_place_of_performance_county_fips_code),
+      primary_place_of_performance_county_name=minmax(primary_place_of_performance_county_name),
+      prime_award_transaction_place_of_performance_state_fips_code=minmax(prime_award_transaction_place_of_performance_state_fips_code),
+      primary_place_of_performance_state_name=minmax(primary_place_of_performance_state_name),
+      primary_place_of_performance_zip_4=minmax(primary_place_of_performance_zip_4),
+      prime_award_transaction_place_of_performance_cd_original=minmax(prime_award_transaction_place_of_performance_cd_original),
+      prime_award_transaction_place_of_performance_cd_current=minmax(prime_award_transaction_place_of_performance_cd_current),
+      # primary_place_of_performance_foreign_location=minmax(primary_place_of_performance_foreign_location),
+      cfda_number=minmax(cfda_number),
+      cfda_title=minmax(cfda_title),
+      # funding_opportunity_number=minmax(funding_opportunity_number),
+      # funding_opportunity_goals_text=minmax(funding_opportunity_goals_text),
+      assistance_type_code=minmax(assistance_type_code),
+      transaction_description=minmax(transaction_description),
+      prime_award_base_transaction_description=minmax(prime_award_base_transaction_description),
+      business_funds_indicator_code=minmax(business_funds_indicator_code),
+      business_funds_indicator_description=minmax(business_funds_indicator_description),
+      business_types_code=minmax(business_types_code),
+      business_types_description=minmax(business_types_description),
+      correction_delete_indicator_code=minmax(correction_delete_indicator_code),
+      correction_delete_indicator_description=minmax(correction_delete_indicator_description),
+      action_type_code=minmax(action_type_code),
+      action_type_description=minmax(action_type_description),
+      record_type_code=minmax(record_type_code),
+      record_type_description=minmax(record_type_description),
+      # highly_compensated_officer_1_name=minmax(highly_compensated_officer_1_name),
+      # highly_compensated_officer_1_amount=minmax(highly_compensated_officer_1_amount),
+      # highly_compensated_officer_2_name=minmax(highly_compensated_officer_2_name),
+      # highly_compensated_officer_2_amount=minmax(highly_compensated_officer_2_amount),
+      # highly_compensated_officer_3_name=minmax(highly_compensated_officer_3_name),
+      # highly_compensated_officer_3_amount=minmax(highly_compensated_officer_3_amount),
+      # highly_compensated_officer_4_name=minmax(highly_compensated_officer_4_name),
+      # highly_compensated_officer_4_amount=minmax(highly_compensated_officer_4_amount),
+      # highly_compensated_officer_5_name=minmax(highly_compensated_officer_5_name),
+      # highly_compensated_officer_5_amount=minmax(highly_compensated_officer_5_amount),
+      usaspending_permalink=minmax(usaspending_permalink),
+      last_modified_date=minmax(last_modified_date),
+    )
+  df
+  
+  df<-read_and_join_experiment(df,
+                         lookup_file="DOE_LPO_project.csv",
+                         path=file.path("..","..","Data","semi_clean","Assistance"),
+                         directory="",
+                         by=c("project_name"="project_name"),
+                         # add_var=c("project_name"),
+                         skip_check_var =c("Date_Repaid","Issuance_Date","Project_Statement",
+                                           "Loan_Amount","Location","Loan_Type",
+                                           "Loan_Program"),
+                         join_type="full"
+  ) %>% mutate(LPO_Tech_Sector=stringi::stri_trans_nfc(LPO_Tech_Sector),
+               project_url=stringi::stri_trans_nfc(project_url),
+               Loan_Type=stringi::stri_trans_nfc(Loan_Type),
+               Loan_Status=stringi::stri_trans_nfc(Loan_Status),
+               
+               
+               Issuance_Date=stringi::stri_trans_nfc(Issuance_Date),
+               Date_Repaid=stringi::stri_trans_nfc(Date_Repaid),
+               Project_Statement=stringi::stri_trans_nfc(Project_Statement),
+               Loan_Program=stringi::stri_trans_nfc(Loan_Program),
+               GAO_comments=stringi::stri_trans_nfc(GAO_comments),
+               Location=stringi::stri_trans_nfc(Location),
+               Owner=stringi::stri_trans_nfc(Owner))
+  
+
+  
+  test<-as.Date(df$Issuance_Date,"%m/%d/%Y")
+  test[is.na(test)]<-as.Date(paste0("1-",df$Issuance_Date[is.na(test)]),"%d-%y-%b")
+  if(any(is.na(test)&!is.na(df$Issuance_Date))){
+    df$Issuance_Date[is.na(test)&!is.na(df$Issuance_Date)]
+    stop("Malformed date")
+  } else {
+    df$Issuance_Date<-test
+    df$IssuanceYear<-lubridate::year(df$Issuance_Date)
+    df$IssuanceFiscalYear<-get_fiscal_year(df$Issuance_Date)
+    
+    df$IssuanceYear[is.na(df$IssuanceYear)]<-
+      lubridate::year(df$Issuance_Date[is.na(df$IssuanceYear)])
+    df$IssuanceFiscalYear[is.na(df$period_of_performance_start_date)]<-
+      get_fiscal_year(df$Issuance_Date[is.na(df$period_of_performance_start_date)])
+    
+    rm(test)
+  }
+  
+  df$Loan_Program[is.na(df$Loan_Program) & df$LPO_Tech_Sector %in% c("Advanced Vehicles & Components",
+                                                                                           "Critical Materials")]<-"ATVM"
+df$Loan_Program[is.na(df$Loan_Program) & !df$LPO_Tech_Sector %in% c("Advanced Vehicles & Components",
+                                                                                           "Critical Materials")]<-"Title 17"
+
+if(any(is.na(text_to_number(df$Loan_Amount) & !is.na(df$Loan_Amount))))
+  stop("Loan_Amount conversion failure")
+
+df$Loan_Amount<-text_to_number(df$Loan_Amount)
+df$Loan_Amount[is.na(df$Loan_Amount)] <-
+  df$face_value_of_loan[is.na(df$Loan_Amount)]
+  df$Loan_Type[is.na(df$Loan_Type)]<-
+  df$assistance_type_description[is.na(df$Loan_Type)]
+    df
+}
+```
+
+### Case Study Support
+#### Functions
+##### Recipient Summary
+```{r award_summary}
+recipient_summary<-function(df){
+
+    minmax<-function(x){
+    if(is.factor(x))
+      x<-as.character(x)
+    ifelse(min(x)==max(x),min(x),NA)
+  }
+
+    df %>% group_by(recipient_uei) %>%
+    summarise(
+      project_name=minmax(project_name),
+      recipient_name=minmax(recipient_name),
+      recipient_duns=minmax(recipient_duns),
+      recipient_name_raw=minmax(recipient_name_raw),
+      recipient_parent_uei=minmax(recipient_parent_uei),
+      recipient_parent_duns=minmax(recipient_parent_duns),
+      recipient_parent_name=minmax(recipient_parent_name),
+      recipient_parent_name_raw=minmax(recipient_parent_name_raw),
+      recipient_country_code=minmax(recipient_country_code),
+      recipient_country_name=minmax(recipient_country_name),
+      recipient_address_line_1=minmax(recipient_address_line_1),
+      recipient_address_line_2=minmax(recipient_address_line_2),
+      recipient_city_code=minmax(recipient_city_code),
+      recipient_city_name=minmax(recipient_city_name),
+      prime_award_transaction_recipient_county_fips_code=minmax(prime_award_transaction_recipient_county_fips_code),
+      recipient_county_name=minmax(recipient_county_name),
+      prime_award_transaction_recipient_state_fips_code=minmax(prime_award_transaction_recipient_state_fips_code),
+      recipient_state_code=minmax(recipient_state_code),
+      recipient_state_name=minmax(recipient_state_name),
+      recipient_zip_code=minmax(recipient_zip_code),
+      recipient_zip_last_4_code=minmax(recipient_zip_last_4_code),
+    )
+}
+```
+
 
 
 # Assign labels
@@ -379,6 +823,83 @@ saveWorkbook(swb,file=file.path(sharepoint_log_path,"SBA","SBA_Bio.xlsx"),overwr
 
 ```
 
+### Innovative Energy Award
+```{r}
+  
+
+
+LPOaward<-award_summary(loanSelected %>% filter(awarding_agency_name =="Department of Energy"))
+LPOproject<-project_summary(loanSelected %>% filter(awarding_agency_name =="Department of Energy"))
+# LPOrecip<-project_summary(loanSelected %>% filter(awarding_agency_name =="Department of Energy"))
+# view(LPOrecip %>% arrange(recipient_name))
+# write.csv(file=file.path("..","data","semi_clean","Assistance","uei_innov_energy.csv"),LPOrecip%>% arrange(recipient_name),
+#           row.names = FALSE)
+
+
+rwb<-loadWorkbook(file=file.path("..","..","Output","Assistance","DOE","DOE_assistance.xlsx"))
+swb<-loadWorkbook(file=file.path(sharepoint_log_path,"DOE","DOE_assistance.xlsx"))
+# writeData(wb, sheet="DOE-LPO-award",LPOaward)
+
+writeData_twice<-function(first_wb,second_wb,data,sheet){
+  writeData(first_wb, sheet=sheet,data)
+  writeData(second_wb, sheet=sheet,data)
+}
+
+
+writeData_twice(rwb,swb, sheet="DOE-LPO",LPOproject %>% 
+            dplyr::select(project_name,			
+                   transaction_count,
+                   LPO_Tech_Sector,
+                   project_url,
+                   usaspending_permalink,
+                   Project_Statement,
+                   prime_award_base_transaction_description,
+                   Loan_Status,
+                   GAO_comments,
+                   Issuance_Date,
+                   period_of_performance_start_date,
+                   Date_Repaid,
+                   initial_period_of_performance_current_end_date,
+                   max_last_modified_date,
+                   Loan_Amount,
+                   original_loan_subsidy_cost,
+                   face_value_of_loan,
+                   non_federal_funding_amount,
+                   indirect_cost_federal_share_amount,
+                   Loan_Type,
+                  assistance_type_description,
+                   federal_action_obligation,
+                   # total_obligated_amount,
+                   # total_non_federal_funding_amount,
+                   # total_face_value_of_loan,
+                   # total_loan_subsidy_cost,
+                  recipient_name,
+                  recipient_state_name,
+                  recipient_parent_name,
+                  primary_place_of_performance_scope,
+                  Location,
+                  primary_place_of_performance_state_name,
+                  action_type_description,
+                  business_funds_indicator_description,
+                  business_types_description
+                   ))
+writeData_twice(rwb,swb, sheet="DOE-LPO-long",LPOproject)
+# writeData(wb, sheet="DOE-LPO-long",LPOproject %>% select())
+saveWorkbook(rwb,file=file.path("..","Output","Assistance","DOE","DOE_assistance.xlsx"),overwrite = TRUE)
+saveWorkbook(swb,file=file.path(sharepoint_log_path,"DOE","DOE_assistance.xlsx"),overwrite = TRUE)
+
+
+write.csv(file=file.path("..","..","Output","Assistance","critical_tech_csv",
+                         "usas_DOE_LPO_award.csv"),LPOaward,
+          row.names = FALSE)
+
+write.csv(file=file.path("..","..","Output","Assistance","critical_tech_csv",
+                         "usas_DOE_LPO_project.csv"),LPOproject,
+          row.names = FALSE)
+
+```
+
+
 # Output
 
 
@@ -458,7 +979,6 @@ write.csv(file=file.path(repo_output_path,"critical_tech_csv",
 write_csv(exim %>% filter(AnyTag==TRUE & !is.na(AnyTag) ),file="../../data/semi_clean/Assistance/EXIMtagged.csv",na = "")
 
 
-save(loanSelected,file="../../data/clean/Assistance/SelectedLoanDataSet.rda")
 save(exim,file="../../data/clean/Assistance/exim.rda")
 
 
@@ -466,31 +986,77 @@ agency_assist<-
   rbind(sba.504 %>% mutate(StartFiscalYear=ApprovalFiscalYear,
                            Amount=GrossApproval_Then_Year,
                            Agency="SBA",
-                           program="504") %>%
-          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
+                           program="504",
+                        FinancingType=DeliveryMethod,
+                        FinancingStatus=LoanStatus,
+                        State=ProjectState,
+                        PartnerCountry=NA) %>%
+          dplyr::select(StartFiscalYear, Amount,Agency,program,
+                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry),
         sba.7a %>% mutate(StartFiscalYear=ApprovalFiscalYear,
                           Amount=GrossApproval_Then_Year,
-                           Agency="SBA",
-                          program="7(A)") %>%
-          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
-       sba.sbg %>% mutate(StartFiscalYear=InstanceFiscalYear,
+                          Agency="SBA",
+                          program="7(A)",
+                        FinancingType=DeliveryMethod,
+                        FinancingStatus=LoanStatus,
+                        State=ProjectState,
+                        PartnerCountry=NA) %>%
+          dplyr::select(StartFiscalYear, Amount,Agency,program,
+                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry),
+        sba.sbg %>% mutate(StartFiscalYear=InstanceFiscalYear,
                            Amount=INSTANCE_CONTRACT_AMOUNT_Then_Year,
                            Agency="SBA",
-                           program="SBG") %>%
-          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
-       exim %>% mutate(StartFiscalYear=Fiscal.Year,
-                           Amount=Approved.Declined.Amount,
-                           Agency="EXIM",
-                           program="EXIM") %>%
-          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag)
-       ) %>% group_by(StartFiscalYear, CriticalTech,Agency,program,AnyTag) %>%
+                           program="SBG",
+                        FinancingType=PROGRAM,
+                        FinancingStatus=BOND_STATUS,
+                        State=BUSINESS_STATE,
+                        PartnerCountry=NA) %>%
+          dplyr::select(StartFiscalYear, Amount,Agency,program,
+                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry),
+        exim %>% mutate(StartFiscalYear=Fiscal.Year,
+                        Amount=Approved.Declined.Amount,
+                        Agency="EXIM",
+                        program="EXIM",
+                        FinancingType=Program,
+                        FinancingStatus=Deal.Cancelled,
+                        State=Primary.Exporter.State.Name,
+                        PartnerCountry=Country) %>%
+          dplyr::select(StartFiscalYear, Amount,Agency,program,
+                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry),
+        LPOproject %>% mutate(StartFiscalYear=IssuanceFiscalYear,
+                              Amount=Loan_Amount,
+                              Agency="DOE",
+                              program=Loan_Program,
+                              FinancingType=Loan_Type,
+                              FinancingStatus=Loan_Status,
+                              CriticalTech=LPO_Tech_Sector,
+                              AnyTag=TRUE,
+                              State=Location,
+                              PartnerCountry=NA) %>%
+          dplyr::select(StartFiscalYear, Amount,Agency,program,
+                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry),
+        dfc %>% mutate(StartFiscalYear=Year,
+                       Amount=Committment.level,
+                       Agency="DFC",
+                       program="DFC",
+                       FinancingType=Type,
+                       FinancingStatus=NA,
+                       CriticalTech=Sector,
+                       AnyTag=TRUE,
+                       State=NA,
+                       PartnerCountry=Country) %>%
+          dplyr::select(StartFiscalYear, Amount,Agency,program,
+                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry)
+  ) %>% group_by(StartFiscalYear,
+                 Agency,program,FinancingType,FinancingStatus,CriticalTech,AnyTag,
+                 State,PartnerCountry) %>%
   summarise(Amount=sum(Amount,na.rm = TRUE),
             Count=n())
 agency_assist<-deflate(agency_assist,money_var="Amount",fy_var="StartFiscalYear")
 
-colnames(exim)
 
 
+save(agency_assist,loanSelected,file="../../data/clean/Assistance/SelectedLoanDataSet.rda")
 save(sba.504,sba.7a,sba.sbg,sbic_providers,file=file.path("..","..","data","Clean","Assistance","sba_programs.rda"))
 
 ```
