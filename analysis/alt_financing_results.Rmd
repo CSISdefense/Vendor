@@ -42,12 +42,13 @@ load(file.path("..","data","Clean","Assistance","exim.rda"))
 agency_list<-data.frame(
   agency=c("DFC","SBA","EXIM","DOE"),
   source=c("DFC.gov and CSIS analysis.","SBA FOIA datasets and CSIS analysis.","EXIM dataset and CSIS analysis.","LPO Portfolio Projects, FAADS, and CSIS analysis."),
-  yaxis=c("Commitment Level (2022 $s)","Gross Amount or Instance Contract (2022 $s)","Approved or Declined Amount (2022 $s)","Loan Amount (2022 $s)"),
+  yaxis=c("Commitment Level (2023 $s)","Gross Amount or Instance Contract (2023 $s)","Approved or Declined Amount (2023 $s)","Loan Amount (2023 $s)"),
   statussource=c("Source: DFC.gov and CSIS analysis.","* 7A and 504 loans are exempt from reporting the status of loans that are not paid off, cancelled, or charged off.\nSource: SBA FOIA datasets and CSIS analysis.",
            "Source: EXIM dataset and CSIS analysis.","Source: LPO Portfolio Projects and FAADS and CSIS analysis.")
 )
 
-sharepoint_log_path<-file.path(get_local_sharepoint_path("Office of Strategic Capital - Documents"),"Data")
+sharepoint_log_path<-file.path(
+  get_local_sharepoint_path("Office of Strategic Capital - Documents"),"Data")
 ```
 
 
@@ -578,8 +579,8 @@ write.csv(file=file.path("..","Output","Assistance","critical_tech_csv",
 # Decriptive stats
 ## Prepare Unified Dataframe
 ```{r}
+colnames(exim)
 
-sba.504$CriticalTech
 agency_assist<-
   rbind(sba.504 %>% mutate(StartFiscalYear=ApprovalFiscalYear,
                            Amount=GrossApproval_Then_Year,
@@ -645,7 +646,8 @@ agency_assist<-
                        PartnerCountry=Country) %>%
           dplyr::select(StartFiscalYear, Amount,Agency,program,
                         FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry)
-  ) %>% group_by(StartFiscalYear, Agency,program,FinancingType,FinancingStatus,CriticalTech,AnyTag,
+  ) %>% group_by(StartFiscalYear,
+                 Agency,program,FinancingType,FinancingStatus,CriticalTech,AnyTag,
                  State,PartnerCountry) %>%
   summarise(Amount=sum(Amount,na.rm = TRUE),
             Count=n())
@@ -739,81 +741,6 @@ ToplineCFDA<-build_plot(
 
 
 
-### Office
-```{r grouped percent frequency/obligation barplot for all Office}
-#grouped bar plot for variable Office
-#Perpare data for plot
-Office_Freq <- def %>% group_by(Agency, Office) %>%
-  dplyr::summarise(
-    Count_Freq=length(CSIScontractID),
-    Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE)
-  )
-
-Office_Freq$Percent_Obligation <- Office_Freq$Action_Obligation_Then_Year/
-                                          sum(Office_Freq$Action_Obligation_Then_Year,na.rm=TRUE)
-
-Office_Freq$Percent_Freq <- Office_Freq$Count_Freq/
-                                          sum(Office_Freq$Count_Freq,na.rm=TRUE)
-
-#get the detailed desceription for Office by AgencyID and OfficeID
-
-Office_Freq<-read_and_join_experiment(Office_Freq,
-                                      lookup_file = "Office.ContractingOfficeCode.txt",
-                                      path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                                      dir="office/",
-                                      by=c("Agency"="AgencyID",
-                                       "Office"="ContractingOfficeCode"   
-                                      ),
-                                      add_var = "ContractingOfficeName",
-                                      skip_check_var = "ContractingOfficeName")
-
-
-colnames(Office_Freq)[colnames(Office_Freq)=="ContractingOfficeName"] <- "OfficeName"
-
-# Office_Freq[,1:2] <- lapply(Office_Freq[,1:2], function(x) as.character(x))
-#Generate a new name column by Combining Office and officeName
-Office_Freq$Office_Full <- ifelse(is.na(Office_Freq$OfficeName), Office_Freq$Office, 
-                                  paste(Office_Freq$Office, 
-                                            sep=" - ", Office_Freq$OfficeName))
-
-
-# Office_Freq$Percent_Obli <- Percent_Obli * 100
-
-Office_Freq_top10Freq <- Office_Freq[order(-Office_Freq$Percent_Freq),]
-Office_Freq_top10Freq <- Office_Freq_top10Freq[1:10, ]  #including NULL category
-Office_Freq_top10Obli <- Office_Freq[order(-Office_Freq$Percent_Obligation),]
-Office_Freq_top10Obli <- Office_Freq_top10Obli[1:10, ]  #including NULL category
-
-Office_Freq_TOP <- rbind(Office_Freq_top10Obli, Office_Freq_top10Freq)
-Office_Freq_TOP <- unique(Office_Freq_TOP)  #17 records in total
-
-Office_Freq_TOP$Office_Full <- factor(Office_Freq_TOP$Office_Full, 
-                                      levels = rev(Office_Freq_TOP$Office_Full))
-Office_Freq_TOP <- melt(Office_Freq_TOP, 
-                        id = c("Agency","Office", "OfficeName", "Office_Full", "Count_Freq", "Action_Obligation_Then_Year"))
-
-Office_barplot <- ggplot(data = Office_Freq_TOP,
-                         aes(x = Office_Full, 
-                             y = value,
-                             fill = factor(variable))) +
-                  geom_bar(stat = "identity", 
-                  position = "dodge", 
-                  width = 0.8) + 
-                  coord_flip() +
-                  xlab("") + 
-                  ylab("") + 
-                  theme_grey() + 
-                  scale_fill_grey(labels = c("% of records", "% of obligation"),
-                                  guide = guide_legend(reverse = TRUE)) + 
-                  ggtitle("Percent of Frequency and obligation for Office") +
-                  theme(text = element_text(size = 10), 
-                        legend.title = element_blank(),
-                        legend.position = "bottom",
-                        legend.margin = margin(t=-0.8, r=0, b=0.5, l=0, unit = "cm"),
-                        legend.text = element_text(margin = margin(r=0.5, unit = "cm")), 
-                        plot.margin = margin(t=0.3, r=0.5, b=0, l=0.5, unit = "cm"))
-Office_barplot
-```
 
 
 ## Critical Tech
@@ -909,7 +836,7 @@ sba.sbg_count<-build_plot(
 
 (
 sba_crosscut<-build_plot(
-  data=sba_unified  %>% filter(!is.na(StartFiscalYear)),
+  data=agency_assist  %>% filter(!is.na(StartFiscalYear) & Agency=="SBA"),
   chart_geom = "Bar Chart",
   share = FALSE,
   # labels_and_colors=loan_lc,
@@ -917,7 +844,7 @@ sba_crosscut<-build_plot(
   # NA, #VAR.ncol
   x_var="StartFiscalYear", 
   # alpha_var="YTD",  #x_var 
-  y_var="Amount_OMB24_GDP22", #VAR.y.variable
+  y_var="Amount_OMB25_GDP23", #VAR.y.variable
   color_var="CriticalTech", #color_var
   facet_var="program", #facet_var
   format=TRUE,
@@ -946,7 +873,7 @@ annual<-build_plot(
   # NA, #VAR.ncol
   x_var="StartFiscalYear", 
   # alpha_var="YTD",  #x_var 
-  y_var="Amount_OMB24_GDP22", #VAR.y.variable
+  y_var="Amount_OMB25_GDP23", #VAR.y.variable
   color_var="CriticalTech", #color_var
   facet_var="program", #facet_var
   format=TRUE,
@@ -968,7 +895,7 @@ overall<-build_plot(
   # NA, #VAR.ncol
   x_var="CriticalTech", 
   # alpha_var="YTD",  #x_var 
-  y_var="Amount_OMB24_GDP22", #VAR.y.variable
+  y_var="Amount_OMB25_GDP23", #VAR.y.variable
   color_var="program", #color_var
   facet_var="Agency", #facet_var
   format=TRUE,
@@ -993,7 +920,7 @@ for(i in 1:length(agency_list$agency)){
     # labels_and_colors=def_lc,
     # NA, #VAR.ncol
     x_var="CriticalTech",#alpha_var="YTD", #x_var
-    y_var="Amount_OMB24_GDP22", #VAR.y.variable
+    y_var="Amount_OMB25_GDP23", #VAR.y.variable
     color_var="program", #color_var
     # facet_var="PlatformPortfolio", #facet_var
     # column_key=def_ck,
@@ -1013,7 +940,7 @@ for(i in 1:length(agency_list$agency)){
   
   
   log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#Fiscal_YQ<=2023.2&
-           filename=paste(file_c,"Crit",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_text = FALSE,
+           filename=paste(file_c,"Crit",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_doc_svg_text = FALSE,
            sheet="Crit",path=file.path("../output/Assistance/",file_c),second_path=file.path(sharepoint_log_path,file_c),
            height=3.5,
            startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
@@ -1046,7 +973,7 @@ annual<-build_plot(
   # NA, #VAR.ncol
   x_var="StartFiscalYear", 
   # alpha_var="YTD",  #x_var 
-  y_var="Amount_OMB24_GDP22", #VAR.y.variable
+  y_var="Amount_OMB25_GDP23", #VAR.y.variable
   color_var="FinancingStatus.sum", #color_var
   facet_var="program", #facet_var
   format=TRUE,
@@ -1068,7 +995,7 @@ overall<-build_plot(
   # NA, #VAR.ncol
   x_var="FinancingStatus.sum", 
   # alpha_var="YTD",  #x_var 
-  y_var="Amount_OMB24_GDP22", #VAR.y.variable
+  y_var="Amount_OMB25_GDP23", #VAR.y.variable
   color_var="program", #color_var
   facet_var="Agency", #facet_var
   format=TRUE,
@@ -1095,7 +1022,7 @@ for(i in 1:length(agency_list$agency)){
     # labels_and_colors=def_lc,
     # NA, #VAR.ncol
     x_var="FinancingStatus.sum",#alpha_var="YTD", #x_var
-    y_var="Amount_OMB24_GDP22", #VAR.y.variable
+    y_var="Amount_OMB25_GDP23", #VAR.y.variable
     color_var="program", #color_var
     # facet_var="PlatformPortfolio", #facet_var
     # column_key=def_ck,
@@ -1114,7 +1041,7 @@ for(i in 1:length(agency_list$agency)){
     dir.create(file.path("../output/Assistance",file_c))
   
   log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#Fiscal_YQ<=2023.2&
-           filename=paste(file_c,"Status",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_text = FALSE,
+           filename=paste(file_c,"Status",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_doc_svg_text = FALSE,
            sheet="Status",path=file.path("../output/Assistance/",file_c),second_path=file.path(sharepoint_log_path,file_c), height=3.5,
            startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
            output_doc_png=TRUE,excel_y_var=TRUE
@@ -1144,7 +1071,7 @@ annual<-build_plot(
   # NA, #VAR.ncol
   x_var="StartFiscalYear", 
   # alpha_var="YTD",  #x_var 
-  y_var="Amount_OMB24_GDP22", #VAR.y.variable
+  y_var="Amount_OMB25_GDP23", #VAR.y.variable
   color_var="FinancingType.Sum", #color_var
   facet_var="program", #facet_var
   format=TRUE,
@@ -1166,7 +1093,7 @@ overall<-build_plot(
   # NA, #VAR.ncol
   x_var="FinancingType.Sum", 
   # alpha_var="YTD",  #x_var 
-  y_var="Amount_OMB24_GDP22", #VAR.y.variable
+  y_var="Amount_OMB25_GDP23", #VAR.y.variable
   color_var="program", #color_var
   facet_var="Agency", #facet_var
   format=TRUE,
@@ -1195,7 +1122,7 @@ for(i in 1:length(agency_list$agency)){
     # labels_and_colors=def_lc,
     # NA, #VAR.ncol
     x_var="FinancingType.Sum",#alpha_var="YTD", #x_var
-    y_var="Amount_OMB24_GDP22", #VAR.y.variable
+    y_var="Amount_OMB25_GDP23", #VAR.y.variable
     color_var="program", #color_var
     # facet_var="PlatformPortfolio", #facet_var
     # column_key=def_ck,
@@ -1214,7 +1141,7 @@ for(i in 1:length(agency_list$agency)){
     dir.create(file.path("../output/Assistance",file_c))
   
   log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#Fiscal_YQ<=2023.2&
-           filename=paste(file_c,"Type",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_text = FALSE,
+           filename=paste(file_c,"Type",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_doc_svg_text = FALSE,
            sheet="Type",path=file.path("../output/Assistance/",file_c),second_path=file.path(sharepoint_log_path,file_c), height=3.5,
            startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
            output_doc_png=TRUE,excel_y_var=TRUE
