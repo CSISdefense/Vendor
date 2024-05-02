@@ -153,6 +153,7 @@ Exec [Location].[SP_CountryDetail]
 
 
 --2h35m 2m620 rows. We could probably aggregate this to the CAU level easily enoough.
+--4h03m 4717 w/ boeing and is traditional
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 exec ProductOrServiceCode.SP_SpaceDetail
