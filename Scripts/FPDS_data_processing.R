@@ -424,8 +424,8 @@ space<-apply_standard_lookups(space)
 space$YTD<-factor(ifelse(space$Fiscal_Year==max(space$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
 space_lc<-prepare_labels_and_colors(space)
 space_ck<-get_column_key(space)
-
-save(space,space_lc,space_ck, file="data/clean/space_FPDS.Rda")
+spaceplatpscintl<-platpscintl%>%filter(PlatformPortfolio=="Space")
+save(spaceplatpscintl,space,space_lc,space_ck, file="data/clean/space_FPDS.Rda")
 
 
 ##############Software #############
