@@ -933,6 +933,77 @@ log_plot(plot=LaunchCAU, df=launch %>% filter(Fiscal_YQ<=2024 & Fiscal_YQ>=2007)
 ```
 
 
+### Vendor All CAU
+```{r LaunchTopCAU}
+
+launch %>% filter(SpaceParentID=="SPACEX",SimpleArea=="R&D") %>%group_by(contract_award_unique_key)%>%
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE)) %>%arrange(-Action_Obligation_OMB25_GDP23)
+
+write_csv(file="SpaceX_unique_contract_award_keys.csv",
+launch %>% filter(SpaceParentID=="SPACEX") %>%group_by(ParentID,contract_award_unique_key,PricingMechanism,
+                                                       ProductOrServiceCodeText,
+                                                       CompetitionClassification,
+                                                       ClassifyNumberOfOffers,
+                                                       anycommercial,Vehicle)%>%
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE),
+            baseandexercisedoptionsvalue=sum(baseandexercisedoptionsvalue,na.rm=TRUE),
+            baseandalloptionsvalue=sum(baseandalloptionsvalue,na.rm=TRUE),
+            MinOfsigneddate=min(signeddate),
+            ) %>%arrange(-Action_Obligation_OMB25_GDP23))
+
+colnames(launch)
+
+launch<-label_top(launch,
+                    col="contract_award_unique_key",
+                    n=3,
+                    top_name="TopCAU",
+                    # group_list=c("multiyearcontract"),
+                    recent=2023
+                    #retain_rank=TRUE,
+                    #write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv")
+                    )
+
+
+# launch<-launch %>% select(-TopPSCtextMY )
+launch_lc<-prepare_labels_and_colors(launch, path="offline")
+launch_ck<-get_column_key(launch, path="offline")
+
+   
+(
+LaunchCAU<-build_plot(
+  data=launch %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024 ),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=launch_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="TopCAU", #color_var
+  facet_var="SpaceParentID",
+  column_key=launch_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2007,2023,4)+#,partial_year=2024,partial_label="\nQ1")   
+  theme(legend.position = "bottom")+guides(fill=guide_legend(ncol=1))+facet_wrap(~SpaceParentID,nrow=2,
+                                                                                 scale="free_y")+
+  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for 10 Major Launch Providers,\nby Top Contract FY 2007-FY 2023",x="Fiscal Year",
+       caption="Note: The EELV and Russia Space Agency are entirely included, all other vendors are limited to launch product or service codes.\nNGC completed acquisition of Orbital ATK in June 2018, which is reflected in FY 2019.\nSource: FPDS and CSIS analysis")
+)
+
+
+log_plot(plot=LaunchCAU, df=launch %>% filter(Fiscal_YQ<=2024 & Fiscal_YQ>=2007),
+                     filename="launch_vend_psc",xlsx="Launch_Acq_Trends.xlsx",
+                     sheet="VendCAU",path="../output/Space/", height=4.25,width=8,
+         excel_y_var=TRUE,excel_formula=TRUE,format=TRUE,
+         output_slide_png = TRUE, slide_size=16 ,var_list=c("SpaceParentID","TopCAU")
+         )
+
+
+
+```
+
+
+
 ### Vendor Customer
 ```{r Launch}
 
