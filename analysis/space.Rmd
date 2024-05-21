@@ -27,7 +27,25 @@ note.text.size<-1.40
 
 
 load(file="../data/clean/space_FPDS.Rda")
+
+
 space$SpaceParentID<-space$ParentID
+
+
+space<-read_and_join_experiment(space,path="",dir=file.path("..","output","space"),lookup_file="space_psc.csv",
+                                add_var="SpaceArea",by=c("ProductOrServiceCode","ProductOrServiceCodeText",
+                                                         "ProductServiceOrRnDarea"))
+
+space_fedpsc<-read_and_join_experiment(space_fedpsc,path="",dir=file.path("..","output","space"),lookup_file="space_psc.csv",
+                                add_var="SpaceArea",by=c("ProductOrServiceCode","ProductOrServiceCodeText",
+                                                         "ProductServiceOrRnDarea"),
+                                missing_file = "../Output/Space//missing_space_PSC.csv")
+
+
+# space<-space %>% select(-TopPSCtextMY )
+space_lc<-prepare_labels_and_colors(space, path="offline")
+space_ck<-get_column_key(space, path="offline")
+
 ```
 
 
@@ -235,14 +253,6 @@ space %>% filter(SpaceParentID %in% c("RUSSIA SPACE AGENCY"))%>% group_by(Produc
 # write.csv(space %>% group_by(ProductOrServiceCode,ProductOrServiceCodeText,ProductServiceOrRnDarea) %>% summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23)) %>% arrange(ProductOrServiceCode),file="..\\output\\Space\\space_psc.csv",
 #           row.names = FALSE)
           
-space<-read_and_join_experiment(space,path="",dir=file.path("..","output","space"),lookup_file="space_psc.csv",
-                                add_var="SpaceArea",by=c("ProductOrServiceCode","ProductOrServiceCodeText",
-                                                         "ProductServiceOrRnDarea"))
-
-
-# space<-space %>% select(-TopPSCtextMY )
-space_lc<-prepare_labels_and_colors(space, path="offline")
-space_ck<-get_column_key(space, path="offline")
 
 summary(factor(space$SpacePSC))
    
@@ -661,7 +671,77 @@ launch<-space %>% filter(Project.Name=="EELV" | SpaceArea %in% c("R&D (Space Fli
 launch_lc<-prepare_labels_and_colors(launch, path="offline")
 launch_ck<-get_column_key(launch, path="offline")
 
+launch_fedpsc<-space_fedpsc %>% filter(Project.Name=="EELV" | SpaceArea %in% c("R&D (Space Flight)",
+                                                                "Space Transp. and Launch",
+                                                                "Space Vehicle Launchers"))
+
 summary(factor(space$SpaceParentID))
+summary(factor(launch_fedpsc$SpaceArea))
+
+colnames(launch_fedpsc)[!colnames(launch_fedpsc) %in% colnames(launch)]
+
+colnames(launch)[!colnames(launch) %in% colnames(launch_fedpsc)]
+
+common_cols<-colnames(launch)[colnames(launch) %in% colnames(launch_fedpsc)]
+launch_residual<-launch_fedpsc[,colnames(launch_fedpsc) %in% colnames(launch)]
+
+launch_residual<-launch_fedpsc[,colnames(launch_fedpsc) %in% colnames(launch)]
+launch_residual<-launch_residual%>%group_by_list(common_cols[!common_cols %in% c("Action_Obligation_Then_Year",
+  "Action_Obligation_OMB25_GDP23")])%>%summarise(
+    Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rum=TRUE),
+        Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rum=TRUE)
+  )
+
+colnames(launch_residual)[colnames(launch_residual)=="Action_Obligation_Then_Year"]<-"Total_Action_Obligation_Then_Year"
+colnames(launch_residual)[colnames(launch_residual)=="Action_Obligation_OMB25_GDP23"]<-"Total_Action_Obligation_OMB25_GDP23"
+
+launch_join<-launch[,colnames(launch) %in% colnames(launch_fedpsc)]
+launch_join<-launch_join%>%group_by_list(common_cols[!common_cols %in% c("Action_Obligation_Then_Year",
+  "Action_Obligation_OMB25_GDP23")])%>%summarise(
+    Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rum=TRUE),
+        Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rum=TRUE)
+  )
+
+
+launch_residual<-left_join(launch_residual,launch_join)
+
+launch_residual%>%group_by(Fiscal_Year) %>%
+  summarise(Total_Action_Obligation_OMB25_GDP23=sum(Total_Action_Obligation_OMB25_GDP23,na.rm=TRUE),
+    Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
+
+launch_residual %>% filter(Project.Name=="EELV") %>%group_by(Fiscal_Year) %>%
+  summarise(Total_Action_Obligation_OMB25_GDP23=sum(Total_Action_Obligation_OMB25_GDP23,na.rm=TRUE),
+    Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
+
+launch_residual<-launch_residual %>% mutate(
+  Residual_Action_Obligation_OMB25_GDP23=
+    ifelse(is.na(Action_Obligation_OMB25_GDP23),Total_Action_Obligation_OMB25_GDP23,
+           Total_Action_Obligation_OMB25_GDP23-Action_Obligation_OMB25_GDP23),
+  Action_Obligation_Then_Year=
+    ifelse(is.na(Action_Obligation_Then_Year),Total_Action_Obligation_Then_Year,
+           Total_Action_Obligation_Then_Year-Action_Obligation_Then_Year))
+
+
+
+launch_residual%>%group_by(Fiscal_Year) %>%
+  summarise(Total_Action_Obligation_OMB25_GDP23=sum(Total_Action_Obligation_OMB25_GDP23,na.rm=TRUE),
+    Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE),
+    Residual_Action_Obligation_OMB25_GDP23=sum(Residual_Action_Obligation_OMB25_GDP23,na.rm = TRUE))
+
+launch_residual %>% filter(Project.Name=="EELV") %>%group_by(Fiscal_Year) %>%
+  summarise(Total_Action_Obligation_OMB25_GDP23=sum(Total_Action_Obligation_OMB25_GDP23,na.rm=TRUE),
+    Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm = TRUE),
+    Residual_Action_Obligation_OMB25_GDP23=sum(Residual_Action_Obligation_OMB25_GDP23,na.rm = TRUE)
+    )
+
+launch_residual$SpaceParentID<-"Residual"
+launch_residual<-launch_residual %>% select(-Action_Obligation_OMB25_GDP23,-Action_Obligation_Then_Year,
+                                            -Total_Action_Obligation_OMB25_GDP23,-Total_Action_Obligation_Then_Year)
+
+colnames(launch_residual)[colnames(launch_residual)=="Action_Obligation_Then_Year"]<-"Action_Obligation_Then_Year"
+colnames(launch_residual)[colnames(launch_residual)=="Residual_Action_Obligation_OMB25_GDP23"]<-"Action_Obligation_OMB25_GDP23"
+launch_plus<-bind_rows(launch,launch_residual)
+
 ```
 
 
@@ -933,12 +1013,83 @@ log_plot(plot=LaunchCAU, df=launch %>% filter(Fiscal_YQ<=2024 & Fiscal_YQ>=2007)
 ```
 
 
+### Vendor All CAU
+```{r LaunchTopCAU}
+
+launch %>% filter(SpaceParentID=="SPACEX",SimpleArea=="R&D") %>%group_by(contract_award_unique_key)%>%
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE)) %>%arrange(-Action_Obligation_OMB25_GDP23)
+
+write_csv(file="SpaceX_unique_contract_award_keys.csv",
+launch %>% filter(SpaceParentID=="SPACEX") %>%group_by(ParentID,contract_award_unique_key,PricingMechanism,
+                                                       ProductOrServiceCodeText,
+                                                       CompetitionClassification,
+                                                       ClassifyNumberOfOffers,
+                                                       anycommercial,Vehicle)%>%
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE),
+            baseandexercisedoptionsvalue=sum(baseandexercisedoptionsvalue,na.rm=TRUE),
+            baseandalloptionsvalue=sum(baseandalloptionsvalue,na.rm=TRUE),
+            MinOfsigneddate=min(signeddate),
+            ) %>%arrange(-Action_Obligation_OMB25_GDP23))
+
+colnames(launch)
+
+launch<-label_top(launch,
+                    col="contract_award_unique_key",
+                    n=3,
+                    top_name="TopCAU",
+                    # group_list=c("multiyearcontract"),
+                    recent=2023
+                    #retain_rank=TRUE,
+                    #write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv")
+                    )
+
+
+# launch<-launch %>% select(-TopPSCtextMY )
+launch_lc<-prepare_labels_and_colors(launch, path="offline")
+launch_ck<-get_column_key(launch, path="offline")
+
+   
+(
+LaunchCAU<-build_plot(
+  data=launch %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024 ),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=launch_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="TopCAU", #color_var
+  facet_var="SpaceParentID",
+  column_key=launch_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2007,2023,4)+#,partial_year=2024,partial_label="\nQ1")   
+  theme(legend.position = "bottom")+guides(fill=guide_legend(ncol=1))+facet_wrap(~SpaceParentID,nrow=2,
+                                                                                 scale="free_y")+
+  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for 10 Major Launch Providers,\nby Top Contract FY 2007-FY 2023",x="Fiscal Year",
+       caption="Note: The EELV and Russia Space Agency are entirely included, all other vendors are limited to launch product or service codes.\nNGC completed acquisition of Orbital ATK in June 2018, which is reflected in FY 2019.\nSource: FPDS and CSIS analysis")
+)
+
+
+log_plot(plot=LaunchCAU, df=launch %>% filter(Fiscal_YQ<=2024 & Fiscal_YQ>=2007),
+                     filename="launch_vend_psc",xlsx="Launch_Acq_Trends.xlsx",
+                     sheet="VendCAU",path="../output/Space/", height=4.25,width=8,
+         excel_y_var=TRUE,excel_formula=TRUE,format=TRUE,
+         output_slide_png = TRUE, slide_size=16 ,var_list=c("SpaceParentID","TopCAU")
+         )
+
+
+
+```
+
+
+
 ### Vendor Customer
 ```{r Launch}
 
 (
 LaunchParentOnly<-build_plot(
-  data=launch %>% filter(Fiscal_YQ<2024 & Fiscal_YQ>=2007),
+  data=launch_plus %>% filter(Fiscal_YQ<2024 & Fiscal_YQ>=2007),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=launch_lc,
@@ -969,7 +1120,7 @@ LaunchParentOnly<-build_plot(
 
 (
 LaunchParent<-build_plot(
-  data=launch %>% filter(Fiscal_YQ<2024 & Fiscal_YQ>=2007),
+  data=launch_plus %>% filter(Fiscal_YQ<2024 & Fiscal_YQ>=2007),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=launch_lc,
@@ -1001,7 +1152,7 @@ LaunchParent<-build_plot(
 
 
   
-log_plot(plot=LaunchParent, df=launch %>% filter(Fiscal_YQ<=2024 & Fiscal_YQ>=2007),
+log_plot(plot=LaunchParent, df=launch_plus %>% filter(Fiscal_YQ<=2024 & Fiscal_YQ>=2007),
                      filename="launch_vend_cust",xlsx="Launch_Acq_Trends.xlsx",
                      sheet="VendCust",path="../output/Space/", height=4.25,width=8,
          excel_y_var=TRUE,excel_formula=TRUE,

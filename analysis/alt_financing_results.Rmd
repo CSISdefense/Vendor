@@ -310,7 +310,7 @@ dfc_iscrit<-build_plot(
   data=agency_assist  %>% filter(!is.na(StartFiscalYear) & Agency=="DFC"),
   chart_geom = "Bar Chart",
   share = FALSE,
-  # labels_and_colors=loan_lc,
+  labels_and_colors=aa_lc,
   column_key=aa_ck,
   # NA, #VAR.ncol
   x_var="StartFiscalYear", 
@@ -331,7 +331,7 @@ doe_crit<-build_plot(
   data=agency_assist  %>% filter(!is.na(StartFiscalYear) & Agency=="DOE"),
   chart_geom = "Bar Chart",
   share = FALSE,
-  # labels_and_colors=loan_lc,
+  labels_and_colors=aa_lc,
   column_key=aa_ck,
   # NA, #VAR.ncol
   x_var="StartFiscalYear", 
@@ -384,7 +384,7 @@ for(i in 1:length(agency_list$agency)){
       data=agency_assist %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]&!is.na(AnyTag)),#& Fiscal_YQ<=2023.2 Fiscal_Year>=2000& 
     chart_geom = "Bar Chart",
     share = FALSE,
-    # labels_and_colors=def_lc,
+    labels_and_colors=aa_lc,
     # NA, #VAR.ncol
     x_var="CriticalTech",#alpha_var="YTD", #x_var
     y_var="Amount_OMB25_GDP23", #VAR.y.variable
@@ -422,11 +422,21 @@ for(i in 1:length(agency_list$agency)){
 ## Financing
 ### Financing Status
 ```{r FinancingStatus}
-
+add_labels_and_colors(agency_assist,
+                                "FinancingStatus.sum",
+                                coloration.key="Performance",
+                                title="Financing Status",
+                                share.title="",
+                                period.title=""
+)
 
   agency_assist<-read_and_join_experiment(agency_assist,directory="assistance//",lookup_file="FinancingStatus.csv",
-                               by=c("program","FinancingStatus"),add_var="FinancingStatus.sum",
-                               case_sensitive = FALSE)
+                               by=c("program","FinancingStatus"),add_var=c("FinancingStatus.sum","FinancingStatus.cross"),
+                               case_sensitive = FALSE,path="offline")
+
+  
+  aa_lc<-prepare_labels_and_colors(agency_assist)
+aa_ck<-get_column_key(agency_assist)
 
 
   agency_assist<-replace_nas_with_unlabeled(agency_assist,"FinancingStatus.sum")
@@ -454,7 +464,7 @@ annual<-build_plot(
 
 (
 overall_status<-build_plot(
-  data=agency_assist  %>%  filter(AnyTag==TRUE & Agency!="DFC"),
+  data=agency_assist  %>%  filter(AnyTag==TRUE & Agency!="DFC" & program!="SBG"&FinancingStatus.sum!="Unlabeled"),
   chart_geom = "Bar Chart",
   share = FALSE,
    labels_and_colors=aa_lc,
@@ -463,25 +473,27 @@ overall_status<-build_plot(
   x_var="FinancingStatus.sum", 
   # alpha_var="YTD",  #x_var 
   y_var="Amount_OMB25_GDP23", #VAR.y.variable
-  color_var="program", #color_var
+  color_var="FinancingStatus.sum", #color_var
   facet_var="Agency", #facet_var
+  second_var = "program",
   format=TRUE,
   ytextposition=FALSE
 )+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
   theme(legend.position = "bottom")+
-  labs(y="Gross Amount or\nInstance Contract",
+  labs(y="Gross Amount or Instance Contract",
        x="Financing Status",
-           title="Financing to Critical Technology\nSectors by Status")+
-    coord_flip()+facet_wrap(~Agency,scale="free_x",nrow=1)
-    
+           title="Financing to Critical Technology Sectors by Status",
+       caption="Note: Unlabeled not shown.\tSource: Agency data sets and CSIS analysis.")+
+    coord_flip()+facet_grid(Agency+program~.,scales="free_x")+coord_flip()+
+    theme(legend.position="none")
 )
 
   log_plot(plot=overall_status, df=agency_assist  %>%  filter(AnyTag==TRUE & Agency!="DFC"),#Fiscal_YQ<=2023.2&
            filename="status_overall",xlsx=paste("Overall_Assistance.xlsx",sep="_"),suppress_doc_svg_text = FALSE,
            sheet="Status",path=file.path("../output/Assistance/"),second_path=file.path(sharepoint_log_path), height=3.5,
            format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
-           output_doc_png=TRUE,excel_y_var=TRUE,output_slide_png=TRUE,slide_width=6,
-           slide_size=16
+           output_doc_png=TRUE,excel_y_var=TRUE,output_slide_png=TRUE,slide_width=7.5,
+           slide_size=14
   )  
   
 summary(factor(agency_assist$FinancingStatus.sum[agency_assist$AnyTag==TRUE & !is.na(agency_assist$AnyTag)]))
@@ -495,7 +507,7 @@ for(i in 1:length(agency_list$agency)){
     data=agency_assist %>% filter(AnyTag==TRUE & !is.na(AnyTag)&Agency==agency_list$agency[i]),#& Fiscal_YQ<=2023.2 Fiscal_Year>=2000& 
     chart_geom = "Bar Chart",
     share = FALSE,
-    # labels_and_colors=def_lc,
+    labels_and_colors=aa_lc,
     # NA, #VAR.ncol
     x_var="FinancingStatus.sum",#alpha_var="YTD", #x_var
     y_var="Amount_OMB25_GDP23", #VAR.y.variable
@@ -595,7 +607,7 @@ for(i in 1:length(agency_list$agency)){
     data=agency_assist %>% filter(AnyTag==TRUE&!is.na(AnyTag)&Agency==agency_list$agency[i]),#& Fiscal_YQ<=2023.2 Fiscal_Year>=2000& 
     chart_geom = "Bar Chart",
     share = FALSE,
-    # labels_and_colors=def_lc,
+    labels_and_colors=aa_lc,
     # NA, #VAR.ncol
     x_var="FinancingType.Sum",#alpha_var="YTD", #x_var
     y_var="Amount_OMB25_GDP23", #VAR.y.variable
