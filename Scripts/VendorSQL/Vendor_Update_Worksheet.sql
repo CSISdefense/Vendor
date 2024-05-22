@@ -21,8 +21,10 @@ EXEC Vendor.sp_InvestigateUEIdetail
 
 
 -- Assign the ParentID to the UEI ( https://github.com/CSISdefense/DIIGsql/blob/master/docs/vendor_update_instructions.md#assign-the-parentid-to-the-uei )
+set QUERY_GOVERNOR_COST_LIMIT  0
 EXEC	 [Vendor].[sp_InvestigateParentID]
-		@parentid = N'INSERT_parentID_here'
+		@parentid = N'WYLE'
+		KBR WYLE SERVICES  LLC
 
 EXEC	 [Vendor].[sp_CreateParentIDuei]
 		@UEI = N'INSERT_UEI_here',
@@ -45,8 +47,6 @@ GO
 
 
 
-		RAM-System GmbH is owned by MBDA Deutschland (50%), Diehl Stiftung (25%) and Diehl BGT Defence (25%).
-
 EXEC	 [Vendor].[sp_AssignUEIparentID]
 		@uei = N'RXN6RGGRJD71',
 		@parentid = N'FLUOR-BWXT PORTSMOUTH',
@@ -62,9 +62,9 @@ EXEC	 [Vendor].[sp_AssignUEIparentID]
 
 
 GO
-
+set QUERY_GOVERNOR_COST_LIMIT  0
 EXEC	 [Vendor].[sp_InvestigateParentID]
-		@parentid = N'guidewell'
+		@parentid = N'martin'
 
 		--Assign revenue
 EXEC	[Vendor].[sp_AssignRevenue]
@@ -116,8 +116,8 @@ EXEC	 [Vendor].[sp_InvestigateParentID]
 --Duplication and subsidiaries
 		
 EXEC	[Vendor].[SP_MergeParentId]
-		@oldparentid = N'MAGELLAN HEALTH SERVICE',
-		@mergedparentid = N'MAGELLAN HEALTH'
+		@oldparentid = N'WYLE',
+		@mergedparentid = N'WYLE LABORATORIES'
 
 
 EXEC	 [Vendor].[sp_AssignUEIparentID]

@@ -34,7 +34,8 @@ space$SpaceParentID<-space$ParentID
 
 space<-read_and_join_experiment(space,path="",dir=file.path("..","output","space"),lookup_file="space_psc.csv",
                                 add_var="SpaceArea",by=c("ProductOrServiceCode","ProductOrServiceCodeText",
-                                                         "ProductServiceOrRnDarea"))
+                                                         "ProductServiceOrRnDarea"),
+                                missing_file = "space_psc2.txt")
 
 space_fedpsc<-read_and_join_experiment(space_fedpsc,path="",dir=file.path("..","output","space"),lookup_file="space_psc.csv",
                                 add_var="SpaceArea",by=c("ProductOrServiceCode","ProductOrServiceCodeText",
@@ -42,9 +43,12 @@ space_fedpsc<-read_and_join_experiment(space_fedpsc,path="",dir=file.path("..","
                                 missing_file = "../Output/Space//missing_space_PSC.csv")
 
 
+
 # space<-space %>% select(-TopPSCtextMY )
 space_lc<-prepare_labels_and_colors(space, path="offline")
 space_ck<-get_column_key(space, path="offline")
+
+
 
 ```
 
@@ -866,6 +870,10 @@ launch %>% filter(SpaceParentID %in% c("RUSSIA SPACE AGENCY"))%>% group_by(Produ
 launch<-read_and_join_experiment(launch,path="",dir=file.path("..","output","space"),lookup_file="space_psc.csv",
                                 add_var="SpaceArea",by=c("ProductOrServiceCode","ProductOrServiceCodeText",
                                                          "ProductServiceOrRnDarea"))
+launch_plus<-read_and_join_experiment(launch,path="",dir=file.path("..","output","space"),lookup_file="space_psc.csv",
+                                add_var="SpaceArea",by=c("ProductOrServiceCode","ProductOrServiceCodeText",
+                                                         "ProductServiceOrRnDarea"))
+
 
 
 # launch<-launch %>% select(-TopPSCtextMY )
@@ -876,7 +884,7 @@ summary(factor(launch$LaunchPSC))
    
 (
 SpaceArea<-build_plot(
-  data=launch %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024 ),
+  data=launch_plus %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024 ),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=launch_lc,
@@ -896,7 +904,7 @@ SpaceArea<-build_plot(
 )
 
 
-log_plot(plot=SpaceArea, df=launch %>% filter(Fiscal_YQ<=2024 & Fiscal_YQ>=2007),
+log_plot(plot=SpaceArea, df=launch_plus %>% filter(Fiscal_YQ<=2024 & Fiscal_YQ>=2007),
                      filename="launch_vend_area",xlsx="Launch_Acq_Trends.xlsx",
                      sheet="VendArea",path="../output/Space/", height=4.25,width=8,
          excel_y_var=TRUE,excel_formula=TRUE,format=TRUE,
