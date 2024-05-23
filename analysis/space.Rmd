@@ -697,9 +697,19 @@ colnames(launch_fedpsc)[!colnames(launch_fedpsc) %in% colnames(launch)]
 colnames(launch)[!colnames(launch) %in% colnames(launch_fedpsc)]
 
 common_cols<-colnames(launch)[colnames(launch) %in% colnames(launch_fedpsc)]
-launch_residual<-launch_fedpsc[,colnames(launch_fedpsc) %in% colnames(launch)]
+common_cols<-c("Fiscal_Year" ,
+              "dFYear",
+              "ProjectID",
+              "ProductOrServiceCode",
+              "Contracting_Agency_ID",
+              "Project.Name",
+              "Action_Obligation_OMB25_GDP23",
+              "Action_Obligation_Then_Year",
+              "SpaceArea",
+              "Fiscal_YQ"
+              )
 
-launch_residual<-launch_fedpsc[,colnames(launch_fedpsc) %in% colnames(launch)]
+launch_residual<-launch_fedpsc[,colnames(launch_fedpsc) %in% common_cols]
 launch_residual<-launch_residual%>%group_by_list(common_cols[!common_cols %in% c("Action_Obligation_Then_Year",
   "Action_Obligation_OMB25_GDP23")])%>%summarise(
     Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE),
@@ -712,7 +722,7 @@ if(sum(launch_residual$Action_Obligation_Then_Year)!=sum(launch_fedpsc$Action_Ob
 colnames(launch_residual)[colnames(launch_residual)=="Action_Obligation_Then_Year"]<-"Total_Action_Obligation_Then_Year"
 colnames(launch_residual)[colnames(launch_residual)=="Action_Obligation_OMB25_GDP23"]<-"Total_Action_Obligation_OMB25_GDP23"
 
-launch_join<-launch[,colnames(launch) %in% colnames(launch_fedpsc)]
+launch_join<-launch[,colnames(launch) %in% common_cols]
 launch_join<-launch_join%>%group_by_list(common_cols[!common_cols %in% c("Action_Obligation_Then_Year",
   "Action_Obligation_OMB25_GDP23")])%>%summarise(
     Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE),
@@ -731,7 +741,7 @@ if(sum(launch_join$Action_Obligation_Then_Year,na.rm=TRUE)!=sum(launch$Action_Ob
   stop("Checksum error")
 
 
-launch_residual<-full_join(launch_residual,launch_join)
+launch_residual<-left_join(launch_residual,launch_join)
 
 if(sum(launch_residual$Total_Action_Obligation_Then_Year,na.rm = TRUE)!=
    sum(launch_fedpsc$Action_Obligation_Then_Year,na.rm = TRUE) |
@@ -740,8 +750,12 @@ if(sum(launch_residual$Total_Action_Obligation_Then_Year,na.rm = TRUE)!=
    )
   stop("Checksum error")
 
-if(sum(launch_residual$Action_Obligation_Then_Year,na.rm=TRUE)!=sum(launch$Action_Obligation_Then_Year,na.rm=TRUE) |
-   sum(launch_residual$Action_Obligation_OMB25_GDP23,na.rm=TRUE)!=sum(launch$Action_Obligation_OMB25_GDP23,na.rm=TRUE)
+match_rows<-launch$Project.Name=="EELV" | launch$SpaceArea %in% c("R&D (Space Flight)",
+                                                                "Space Transp. and Launch",
+                                                                "Space Vehicle Launchers")
+
+if(sum(launch_residual$Action_Obligation_Then_Year,na.rm=TRUE)!=sum(launch$Action_Obligation_Then_Year[match_rows],na.rm=TRUE) |
+   sum(launch_residual$Action_Obligation_OMB25_GDP23,na.rm=TRUE)!=sum(launch$Action_Obligation_OMB25_GDP23[match_rows],na.rm=TRUE)
    )
   stop("Checksum error")
 
@@ -767,8 +781,8 @@ if(sum(launch_residual$Total_Action_Obligation_Then_Year,na.rm = TRUE)!=
    sum(launch_fedpsc$Action_Obligation_Then_Year,na.rm = TRUE) |
    sum(launch_residual$Total_Action_Obligation_OMB25_GDP23,na.rm = TRUE)!=
    sum(launch_fedpsc$Action_Obligation_OMB25_GDP23,na.rm = TRUE) |
-   sum(launch_residual$Action_Obligation_Then_Year,na.rm=TRUE)!=sum(launch$Action_Obligation_Then_Year,na.rm=TRUE) |
-   sum(launch_residual$Action_Obligation_OMB25_GDP23,na.rm=TRUE)!=sum(launch$Action_Obligation_OMB25_GDP23,na.rm=TRUE)
+   sum(launch_residual$Action_Obligation_Then_Year,na.rm=TRUE)!=sum(launch$Action_Obligation_Then_Year[match_rows],na.rm=TRUE) |
+   sum(launch_residual$Action_Obligation_OMB25_GDP23,na.rm=TRUE)!=sum(launch$Action_Obligation_OMB25_GDP23[match_rows],na.rm=TRUE)
    )
   stop("Checksum error")
 
@@ -783,7 +797,18 @@ if((sum(launch_residual$Residual_Action_Obligation_OMB25_GDP23,na.rm = TRUE)+
   stop("Checksum error")  
    
 
-sum(launch_residual$Total_Action_Obligation_OMB25_GDP23[launch$SpaceArea %in% c("R&D (Space Flight)",
+if((sum(launch_residual$Residual_Action_Obligation_OMB25_GDP23,na.rm = TRUE)+
+   sum(launch$Action_Obligation_OMB25_GDP23[match_rows],na.rm = TRUE))-
+   sum(launch_fedpsc$Action_Obligation_OMB25_GDP23,na.rm = TRUE)>0.1 |
+   (sum(launch_residual$Residual_Action_Obligation_Then_Year,na.rm = TRUE)+
+   sum(launch$Action_Obligation_Then_Year[match_rows],na.rm = TRUE))-
+   sum(launch_fedpsc$Action_Obligation_Then_Year,na.rm = TRUE)>
+   0.1)
+  stop("Checksum error")  
+   
+
+
+sum(launch_residual$Total_Action_Obligation_OMB25_GDP23[launch_residual$SpaceArea %in% c("R&D (Space Flight)",
                                                                 "Space Transp. and Launch",
                                                                 "Space Vehicle Launchers")],na.rm = TRUE)
 sum(launch_fedpsc$Action_Obligation_OMB25_GDP23[launch$SpaceArea %in% c("R&D (Space Flight)",
@@ -811,6 +836,21 @@ colnames(launch_residual)[colnames(launch_residual)=="Residual_Action_Obligation
 launch_plus<-bind_rows(launch,launch_residual)
 
 
+if(sum(launch_plus$Action_Obligation_OMB25_GDP23[launch_plus$SpaceArea %in% c("R&D (Space Flight)",
+                                                                "Space Transp. and Launch",
+                                                                "Space Vehicle Launchers")],na.rm = TRUE)!=
+   sum(launch_fedpsc$Action_Obligation_OMB25_GDP23[launch_fedpsc$SpaceArea %in% c("R&D (Space Flight)",
+                                                                "Space Transp. and Launch",
+                                                                "Space Vehicle Launchers")],na.rm = TRUE) |
+  sum(launch_plus$Action_Obligation_Then_Year[launch_plus$SpaceArea %in% c("R&D (Space Flight)",
+                                                                "Space Transp. and Launch",
+                                                                "Space Vehicle Launchers")],na.rm = TRUE)!=
+   sum(launch_fedpsc$Action_Obligation_Then_Year[launch_fedpsc$SpaceArea %in% c("R&D (Space Flight)",
+                                                                "Space Transp. and Launch",
+                                                                "Space Vehicle Launchers")],na.rm = TRUE))
+  stop("Checksum error")
+
+
 launch_plus$SpaceParentID.sum<-factor(launch_plus$SpaceParentID)
 levels(launch_plus$SpaceParentID.sum)<-
   list(
@@ -828,11 +868,18 @@ levels(launch_plus$SpaceParentID.sum)<-
 
 
 launch$SpaceAreaEELV<-launch$SpaceArea
-launch_plus$SpaceAreaEELV<-launch_plus$SpaceArea
 launch$SpaceAreaEELV[launch$Project.Name=="EELV" & 
                        !launch$SpaceArea %in% c("R&D (Space Flight)",
                                                                 "Space Transp. and Launch",
                                                                 "Space Vehicle Launchers")]<-"Other EELV"
+
+launch_plus$SpaceAreaEELV<-launch_plus$SpaceArea
+
+launch_plus$SpaceAreaEELV[launch_plus$Project.Name=="EELV" & 
+                       !launch_plus$SpaceArea %in% c("R&D (Space Flight)",
+                                                                "Space Transp. and Launch",
+                                                                "Space Vehicle Launchers")]<-"Other EELV"
+
 launch_fedpsc$SpaceAreaEELV<-launch_fedpsc$SpaceArea
 launch_fedpsc$SpaceAreaEELV[launch_fedpsc$Project.Name=="EELV" & 
                        !launch_fedpsc$SpaceArea %in% c("R&D (Space Flight)",
@@ -845,22 +892,6 @@ launch_lc<-prepare_labels_and_colors(launch_plus, path="offline")
 launch_ck<-get_column_key(launch_plus, path="offline")
 
 
-sum(launch_plus$Action_Obligation_OMB25_GDP23[launch$SpaceArea %in% c("R&D (Space Flight)",
-                                                                "Space Transp. and Launch",
-                                                                "Space Vehicle Launchers")],na.rm = TRUE)
-
-sum(launch_fedpsc$Action_Obligation_OMB25_GDP23[launch_fedpsc$SpaceArea %in% c("R&D (Space Flight)",
-                                                                "Space Transp. and Launch",
-                                                                "Space Vehicle Launchers")],na.rm = TRUE)
-
-
-    
-sum(launch$Action_Obligation_OMB25_GDP23[launch$SpaceArea %in% c("Space Transp. and Launch",
-                                                                "Space Vehicle Launchers")],na.rm = TRUE)
-
-sum(launch_fedpsc$Action_Obligation_OMB25_GDP23[launch_fedpsc$SpaceArea %in% c(
-                                                                "Space Transp. and Launch",
-                                                                "Space Vehicle Launchers")],na.rm = TRUE)
 ```
 
 ## Launch PSC
@@ -882,12 +913,12 @@ SpaceArea<-build_plot(
   ytextposition=FALSE
 )+date_x_year_breaks(2007,2023,4)+#,partial_year=2024,partial_label="\nQ1")   
   theme(legend.position = "right")+guides(fill=guide_legend(ncol=1))+#facet_wrap(~SpaceParentID,ncol=4,scale="free_y")+
-  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for Selected Launch Providers and Researches,\nby Area FY 2007-FY 2023",x="Fiscal Year",
+  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for Launch and Adjacent R&D,\nby Area FY 2007-FY 2023",x="Fiscal Year",
        caption="Note: The EELV and Russia Space Agency are entirely included, all other vendors are limited to launch product or service codes.\nSource: FPDS and CSIS analysis")
 )
 
 (
-SpaceArea<-build_plot(
+SpaceAreaLaunchPlus<-build_plot(
   data=launch_plus %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024 ),
   chart_geom = "Bar Chart",
   share = FALSE,
@@ -902,9 +933,20 @@ SpaceArea<-build_plot(
   ytextposition=FALSE
 )+date_x_year_breaks(2007,2023,4)+#,partial_year=2024,partial_label="\nQ1")   
   theme(legend.position = "right")+guides(fill=guide_legend(ncol=1))+#facet_wrap(~SpaceParentID,ncol=4,scale="free_y")+
-  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for Selected Launch Providers and Researches,\nby Area FY 2007-FY 2023",x="Fiscal Year",
+  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for Launch and Adjacent R&D,\nby Area FY 2007-FY 2023",x="Fiscal Year",
        caption="Note: The EELV and Russia Space Agency are entirely included, all other vendors are limited to launch product or service codes.\nSource: FPDS and CSIS analysis")
 )
+
+
+
+log_plot(plot=SpaceAreaLaunchPlus, df=launch_plus %>% filter(Fiscal_YQ<=2024 & Fiscal_YQ>=2007),
+                     filename="launch_area",xlsx="Launch_Acq_Trends.xlsx",
+                     sheet="Area",path="../output/Space/", height=4.25,width=8,
+         excel_y_var=TRUE,excel_formula=TRUE,
+                     startRow=1,startCol=12,format=TRUE,#,var_list=c("SimpleArea","Competition.multisum"),
+         output_slide_png = TRUE , slide_size=16
+         )
+
 
 
 (
@@ -923,7 +965,7 @@ SpaceArea<-build_plot(
   ytextposition=FALSE
 )+date_x_year_breaks(2007,2023,4)+#,partial_year=2024,partial_label="\nQ1")   
   theme(legend.position = "right")+guides(fill=guide_legend(ncol=1))+#facet_wrap(~SpaceParentID,ncol=4,scale="free_y")+
-  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for Selected Launch Providers and Researches,\nby Area FY 2007-FY 2023",x="Fiscal Year",
+  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for Launch and Adjacent R&D,\nby Area FY 2007-FY 2023",x="Fiscal Year",
        caption="Note: The EELV and Russia Space Agency are entirely included, all other vendors are limited to launch product or service codes.\nSource: FPDS and CSIS analysis")
 )
 
@@ -958,8 +1000,8 @@ LaunchParentOnly<-build_plot(
   # y="Percent of Obligations",
   # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for 9 Major Launch Providers,\nby Customer FY 2007-FY 2023",x="Fiscal Year",
-       caption="Note: Northrop Grumman (NGC) includes only launch platform portfolio; all other vendors are completely included.\nNGC completed acquisition of Orbital ATK in June 2018, which is reflected in FY 2019.\nSource: FPDS and CSIS analysis")+
+  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for Selected Launch Providers and Researchers,\nFY 2007-FY 2023",x="Fiscal Year",
+       caption="Note: The EELV and Russia Space Agency are entirely included, all other vendors are limited to launch product or service codes.\nNGC completed acquisition of Orbital ATK in June 2018, which is reflected in FY 2019.\nSource: FPDS and CSIS analysis")+
   date_x_year_breaks(2007,2023,3#,partial_year=2024,partial_label="\nQ1")
 ))
 
@@ -993,17 +1035,9 @@ LaunchParentOnlySum<-build_plot(
   format=TRUE,
   ytextposition=FALSE
 )+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", launch="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for 9 Major Launch Providers,\nby Customer FY 2007-FY 2023",x="Fiscal Year",
-       caption="Note: Northrop Grumman (NGC) includes only launch platform portfolio; all other vendors are completely included.\nNGC completed acquisition of Orbital ATK in June 2018, which is reflected in FY 2019.\nSource: FPDS and CSIS analysis")+
+  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for Top 7 Launch Providers,\nby Customer FY 2007-FY 2023",x="Fiscal Year",
+       caption="Note: The EELV and Russia Space Agency are entirely included, all other vendors are limited to launch product or service codes.\nSource: FPDS and CSIS analysis")+
   date_x_year_breaks(2007,2023,3#,partial_year=2024,partial_label="\nQ1")
 ))
 
@@ -1059,7 +1093,7 @@ SpaceArea<-build_plot(
 )+date_x_year_breaks(2007,2023,4)+#,partial_year=2024,partial_label="\nQ1")   
   theme(legend.position = "right")+guides(fill=guide_legend(ncol=1))+facet_wrap(~SpaceParentID,ncol=4,
                                                                                  scale="free_y")+
-  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for Selected Launch Providers and Researches,\nby Area FY 2007-FY 2023",x="Fiscal Year",
+  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for Selected Launch Providers and Researchers,\nFY 2007-FY 2023",x="Fiscal Year",
        caption="Note: The EELV and Russia Space Agency are entirely included, all other vendors are limited to launch product or service codes.\nSource: FPDS and CSIS analysis")
 )
 
@@ -1088,9 +1122,9 @@ SpaceAreaSum<-build_plot(
   format=TRUE,
   ytextposition=FALSE
 )+date_x_year_breaks(2007,2023,4)+#,partial_year=2024,partial_label="\nQ1")   
-  theme(legend.position = "right")+guides(fill=guide_legend(ncol=1))+facet_wrap(~SpaceParentID.sum,nrow=3,
-                                                                                 scale="free_y")+
-  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for Selected Major Launch Providers,\nby Area FY 2007-FY 2023",x="Fiscal Year",
+  theme(legend.position = "right")+guides(fill=guide_legend(ncol=1))+#facet_wrap(~SpaceParentID.sum,nrow=3,
+                                                                           #      scale="free_y")+
+  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for Top 7 Launch Providers,\nby Area FY 2007-FY 2023",x="Fiscal Year",
        caption="Note: The EELV and Russia Space Agency are entirely included, all other vendors are limited to launch product or service codes.\nSource: FPDS and CSIS analysis")
 )
 
@@ -1418,7 +1452,7 @@ LaunchParentOnly<-build_plot(
   # color="Competition")+
   theme(legend.position = "right")+
   labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for 9 Major Launch Providers,\nby Customer FY 2007-FY 2023",x="Fiscal Year",
-       caption="Note: Northrop Grumman (NGC) includes only launch platform portfolio; all other vendors are completely included.\nNGC completed acquisition of Orbital ATK in June 2018, which is reflected in FY 2019.\nSource: FPDS and CSIS analysis")+
+       caption="Note: The EELV and Russia Space Agency are entirely included, all other vendors are limited to launch product or service codes.\nNGC completed acquisition of Orbital ATK in June 2018, which is reflected in FY 2019.\nSource: FPDS and CSIS analysis")+
   date_x_year_breaks(2007,2023,3#,partial_year=2024,partial_label="\nQ1")
 ))
 
