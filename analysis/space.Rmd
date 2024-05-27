@@ -707,7 +707,8 @@ common_cols<-c("Fiscal_Year" ,
               "Action_Obligation_OMB25_GDP23",
               "Action_Obligation_Then_Year",
               "SpaceArea",
-              "Fiscal_YQ"
+              "Fiscal_YQ",
+              "AnyCommercial" 
               )
 
 launch_residual<-launch_fedpsc[,colnames(launch_fedpsc) %in% common_cols]
@@ -972,6 +973,87 @@ SpaceArea<-build_plot(
 
 
 ```
+### Area Commercial
+```{r Launch}
+launch_plus$AnyCommercialText<-factor(launch_plus$AnyCommercial)
+levels(launch_plus$AnyCommercialText)<-list(
+  "Not Classified\nas Commercial"="N",
+  "Non-development\nor Commercial Similar"= "NonDev",
+  "Any Commercial\nClassification"="Y"
+ 
+)
+
+(
+LaunchCommArea<-build_plot(
+  data=launch_plus %>% filter(Fiscal_YQ<2024 & Fiscal_YQ>=2007),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=launch_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="AnyCommercialText", #color_var
+  facet_var="SpaceAreaEELV", #facet_var
+  alpha_var="YTD",
+  column_key=launch_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for Launch Providers and Related R&D,\nby Commercial Contracting FY 2007-FY 2023",x="Fiscal Year",
+       caption="Note: The EELV and Russia Space Agency are entirely included, all other vendors are limited to launch product or service codes.\nNGC completed acquisition of Orbital ATK in June 2018, which is reflected in FY 2019.\nSource: FPDS and CSIS analysis")+
+  date_x_year_breaks(2007,2023,3#,partial_year=2024,partial_label="\nQ1")
+))
+
+
+
+```
+
+### Area Pricing
+```{r Launch}
+
+(
+LaunchPricingArea<-build_plot(
+  data=launch %>% filter(Fiscal_YQ<2024 & Fiscal_YQ>=2007),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=launch_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="PricingUCA", #color_var
+  facet_var="SpaceAreaEELV", #facet_var
+  alpha_var="YTD",
+  column_key=launch_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", launch="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for 10 Major Launch Providers,\nby Contract Pricing FY 2007-FY 2023",x="Fiscal Year",
+       caption="Note: The EELV and Russia Space Agency are entirely included, all other vendors are limited to launch product or service codes.\nNGC completed acquisition of Orbital ATK in June 2018, which is reflected in FY 2019.\nSource: FPDS and CSIS analysis")+
+  date_x_year_breaks(2007,2023,3#,partial_year=2024,partial_label="\nQ1")
+))
+
+
+  
+# log_plot(plot=LaunchPricingVar, df=launch %>% filter(Fiscal_YQ<=2024 & Fiscal_YQ>=2007),
+#                      filename="launch_vend_pricing",xlsx="Launch_Acq_Trends.xlsx",
+#                      sheet="VendPric",path="../output/Space/", height=4.25,width=8,
+#          excel_y_var=TRUE,excel_formula=TRUE,format=TRUE,
+#          output_slide_png = TRUE, slide_size=16 ,var_list=c("SpaceParentID","PricingUCA")
+#          )
+
+```
+
+
 ## Launch Vendor 
 ### Vendor
 ```{r Launch}
@@ -1372,6 +1454,18 @@ launch %>% filter(SpaceParentID=="SPACEX") %>%group_by(ParentID,contract_award_u
             MinOfsigneddate=min(signeddate),
             ) %>%arrange(-Action_Obligation_OMB25_GDP23))
 
+write_csv(file="Boeing_unique_contract_award_keys.csv",
+launch %>% filter(SpaceParentID=="Boeing") %>%group_by(ParentID,contract_award_unique_key,PricingMechanism,
+                                                       ProductOrServiceCodeText,
+                                                       CompetitionClassification,
+                                                       ClassifyNumberOfOffers,
+                                                       anycommercial,Vehicle)%>%
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE),
+            baseandexercisedoptionsvalue=sum(baseandexercisedoptionsvalue,na.rm=TRUE),
+            baseandalloptionsvalue=sum(baseandalloptionsvalue,na.rm=TRUE),
+            MinOfsigneddate=min(signeddate),
+            ) %>%arrange(-Action_Obligation_OMB25_GDP23))
+
 colnames(launch)
 
 launch<-label_top(launch,
@@ -1598,49 +1692,6 @@ log_plot(plot=LaunchPricingVar, df=launch %>% filter(Fiscal_YQ<=2024 & Fiscal_YQ
          )
 
 ```
-### Space Area Pricing
-```{r Launch}
-
-(
-LaunchPricingArea<-build_plot(
-  data=launch %>% filter(Fiscal_YQ<2024 & Fiscal_YQ>=2007),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=launch_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
-  color_var="PricingUCA", #color_var
-  facet_var="SpaceArea", #facet_var
-  alpha_var="YTD",
-  column_key=launch_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", launch="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for 10 Major Launch Providers,\nby Contract Pricing FY 2007-FY 2023",x="Fiscal Year",
-       caption="Note: The EELV and Russia Space Agency are entirely included, all other vendors are limited to launch product or service codes.\nNGC completed acquisition of Orbital ATK in June 2018, which is reflected in FY 2019.\nSource: FPDS and CSIS analysis")+
-  date_x_year_breaks(2007,2023,3#,partial_year=2024,partial_label="\nQ1")
-))
-
-
-  
-# log_plot(plot=LaunchPricingVar, df=launch %>% filter(Fiscal_YQ<=2024 & Fiscal_YQ>=2007),
-#                      filename="launch_vend_pricing",xlsx="Launch_Acq_Trends.xlsx",
-#                      sheet="VendPric",path="../output/Space/", height=4.25,width=8,
-#          excel_y_var=TRUE,excel_formula=TRUE,format=TRUE,
-#          output_slide_png = TRUE, slide_size=16 ,var_list=c("SpaceParentID","PricingUCA")
-#          )
-
-```
 
 
 ### Vendor Vehicle
@@ -1681,9 +1732,9 @@ log_plot(plot=LaunchVehicleVar, df=launch %>% filter(Fiscal_YQ<=2024 & Fiscal_YQ
 
 ```
 ### Vendor Commercial
-```{r Launch}
-launch$AnyCommercialText<-factor(launch$AnyCommercial)
-levels(launch$AnyCommercialText)<-list(
+```{r launch_plus}
+launch_plus$AnyCommercialText<-factor(launch_plus$AnyCommercial)
+levels(launch_plus$AnyCommercialText)<-list(
   "Not Classified\nas Commercial"="N",
   "Non-development\nor Commercial Similar"= "NonDev",
   "Any Commercial\nClassification"="Y"
@@ -1692,7 +1743,7 @@ levels(launch$AnyCommercialText)<-list(
 
 (
 LaunchComm<-build_plot(
-  data=launch %>% filter(Fiscal_YQ<2024 & Fiscal_YQ>=2007),
+  data=launch_plus %>% filter(Fiscal_YQ<2024 & Fiscal_YQ>=2007),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=launch_lc,
@@ -1707,16 +1758,36 @@ LaunchComm<-build_plot(
   ytextposition=FALSE
 )+
   theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for 10 Major Launch Providers,\nby Commercial Contracting FY 2007-FY 2023",x="Fiscal Year",
+  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for 10 Major Launc Providers,\nby Commercial Contracting FY 2007-FY 2023",x="Fiscal Year",
        caption="Note: The EELV and Russia Space Agency are entirely included, all other vendors are limited to launch product or service codes.\nNGC completed acquisition of Orbital ATK in June 2018, which is reflected in FY 2019.\nSource: FPDS and CSIS analysis")+
   date_x_year_breaks(2007,2023,3#,partial_year=2024,partial_label="\nQ1")
 ))
 
 (LaunchCommVar<-LaunchComm+facet_wrap(~SpaceParentID,scales="free_y")+labs(y="Obligations (Constant 2023 $s) Variable Scale"))
 
-
+(
+LaunchComm<-build_plot(
+  data=launch_plus %>% filter(Fiscal_YQ<2024 & Fiscal_YQ>=2007),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=launch_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="AnyCommercialText", #color_var
+  facet_var="SpaceParentID.sum", #facet_var
+  alpha_var="YTD",
+  column_key=launch_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for 10 Major Launc Providers,\nby Commercial Contracting FY 2007-FY 2023",x="Fiscal Year",
+       caption="Note: The EELV and Russia Space Agency are entirely included, all other vendors are limited to launch product or service codes.\nNGC completed acquisition of Orbital ATK in June 2018, which is reflected in FY 2019.\nSource: FPDS and CSIS analysis")+
+  date_x_year_breaks(2007,2023,3#,partial_year=2024,partial_label="\nQ1")
+))
   
-log_plot(plot=LaunchCommVar, df=launch %>% filter(Fiscal_YQ<=2024 & Fiscal_YQ>=2007),
+log_plot(plot=LaunchCommVar, df=launch_plus %>% filter(Fiscal_YQ<=2024 & Fiscal_YQ>=2007),
                      filename="launch_vend_commercial",xlsx="Launch_Acq_Trends.xlsx",
                      sheet="VendComm",path="../output/Space/", height=4.25,width=8,
          excel_y_var=TRUE,excel_formula=TRUE,format=TRUE,
@@ -1726,38 +1797,3 @@ log_plot(plot=LaunchCommVar, df=launch %>% filter(Fiscal_YQ<=2024 & Fiscal_YQ>=2
 ```
 
 
-### Area Commercial
-```{r Launch}
-launch$AnyCommercialText<-factor(launch$AnyCommercial)
-levels(launch$AnyCommercialText)<-list(
-  "Not Classified\nas Commercial"="N",
-  "Non-development\nor Commercial Similar"= "NonDev",
-  "Any Commercial\nClassification"="Y"
- 
-)
-
-(
-LaunchCommArea<-build_plot(
-  data=launch %>% filter(Fiscal_YQ<2024 & Fiscal_YQ>=2007),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=launch_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
-  color_var="AnyCommercialText", #color_var
-  facet_var="SpaceArea", #facet_var
-  alpha_var="YTD",
-  column_key=launch_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2023 $s)",title="Contract Obligations for 10 Major Launch Providers,\nby Commercial Contracting FY 2007-FY 2023",x="Fiscal Year",
-       caption="Note: The EELV and Russia Space Agency are entirely included, all other vendors are limited to launch product or service codes.\nNGC completed acquisition of Orbital ATK in June 2018, which is reflected in FY 2019.\nSource: FPDS and CSIS analysis")+
-  date_x_year_breaks(2007,2023,3#,partial_year=2024,partial_label="\nQ1")
-))
-
-
-
-```

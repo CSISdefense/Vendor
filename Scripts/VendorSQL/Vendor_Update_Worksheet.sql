@@ -138,3 +138,57 @@ EXEC	[Vendor].[sp_AssignParentIDtoSubsidiary]
 		@ownerparentid = N'CENTENE',
 		@startyear = 2022,
 		@endyear = 2023
+
+
+
+			EXEC	[Vendor].[sp_AssignParentHeadquartersCountry]
+		@parentid = N'ROCKWELL COLLINS',
+		@parentheadquarterscountrycodetext = N'United States'
+
+
+		insert into location.CountryCodes
+		([alpha-3],
+		name,
+		USAIDregion,
+StateRegion,
+		isforeign,
+		EUentryYear)
+		values ('EUE',
+		'European Union',
+		'Europe and Eurasia',
+		'Europe and Eurasia',
+		1,
+		1993
+		)
+
+
+			EXEC	[Vendor].[sp_AssignParentHeadquartersCountry]
+		@parentid = N'AIRBUS',
+		@parentheadquarterscountrycodetext = N'EUROPEAN UNION'
+
+	EXEC	[Vendor].[sp_AssignParentHeadquartersCountry]
+		@parentid = N'SUMITOMO HEAVY INDUSTRIES',
+		@parentheadquarterscountrycodetext = N'Japan'
+		
+			EXEC	[Vendor].[sp_AssignParentHeadquartersCountry]
+		@parentid = N'EADS NV',
+		@parentheadquarterscountrycodetext = N'France'
+
+
+			EXEC	[Vendor].[sp_AssignParentHeadquartersCountry]
+		@parentid = N'SIEMENS',
+		@parentheadquarterscountrycodetext = N'Germany'
+		
+		
+			
+	EXEC	[Vendor].[sp_AssignParentHeadquartersCountry]
+		@parentid = N'ULTRA ELECTRONICS',
+		@parentheadquarterscountrycodetext = N'United Kingdom'
+		
+			EXEC	[Vendor].[sp_AssignParentHeadquartersCountry]
+		@parentid = N'AUSTAL',
+		@parentheadquarterscountrycodetext = N'Australia'
+
+		
+
+
