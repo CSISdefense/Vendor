@@ -151,6 +151,12 @@ SET NOCOUNT ON;
 Exec [Location].[SP_CountryDetail]
  	@countryISOalpha3='AUS'
 
+		SET QUERY_GOVERNOR_COST_LIMIT 0
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+Exec [Location].[SP_CountryDetail]
+@countryISOalpha3=NULL
+
 	SET QUERY_GOVERNOR_COST_LIMIT 0
 --11h57, got cocky and tried all space companies plus CAU. Failed.
 --2h35m 2m620 rows. We could probably aggregate this to the CAU level easily enoough.

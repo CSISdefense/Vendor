@@ -111,7 +111,6 @@ EXEC	[Vendor].[sp_AssignJointVentureStatus]
 EXEC	 [Vendor].[sp_InvestigateParentID]
 		@parentid = N'v2x'
 
-		Battelle ; UNIVERSITY OF CALIFORNIA; UNIVERSITY OF TEXAS
 
 --Duplication and subsidiaries
 		
@@ -146,21 +145,7 @@ EXEC	[Vendor].[sp_AssignParentIDtoSubsidiary]
 		@parentheadquarterscountrycodetext = N'United States'
 
 
-		insert into location.CountryCodes
-		([alpha-3],
-		name,
-		USAIDregion,
-StateRegion,
-		isforeign,
-		EUentryYear)
-		values ('EUE',
-		'European Union',
-		'Europe and Eurasia',
-		'Europe and Eurasia',
-		1,
-		1993
-		)
-
+	
 
 			EXEC	[Vendor].[sp_AssignParentHeadquartersCountry]
 		@parentid = N'AIRBUS',
