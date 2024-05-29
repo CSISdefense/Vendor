@@ -420,7 +420,7 @@ save(economic, file="data/clean/ProdServPlatformNAICS.rda")
 if(!exists("platpscintl")) load(file="data/clean/Federal_platpscintl_FPDS.Rda")
 space<-read_delim(file.path("data","semi_clean","ProductOrServiceCode.SP_SpaceDetail.txt"),delim="\t",na=c("NULL","NA"),
                col_names = TRUE, guess_max = 10000000)
-
+space<-apply_standard_lookups(space,path="offline")
 colnames(space)[colnames(space)=="ProductOrServiceCode...7"]<-"ProductOrServiceCode"
 colnames(space)[colnames(space)=="ProjectID...9"]<-"ProjectID"
 space<-space %>% select(-ProductOrServiceCode...26,-ProjectID...29)
@@ -428,7 +428,6 @@ space<-apply_standard_lookups(space)
 space$YTD<-factor(ifelse(space$Fiscal_Year==max(space$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
 space_lc<-prepare_labels_and_colors(space)
 space_ck<-get_column_key(space)
-spaceplatpscintl<-platpscintl%>%filter(PlatformPortfolio=="Space")
 space_fedpsc<-platpscintl %>% filter(PlatformPortfolio=="Space Systems")
 
 
