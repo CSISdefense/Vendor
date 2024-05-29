@@ -227,7 +227,8 @@ def_data$PricingInflation.1yearUCA<-as.character(def_data$PricingInflation.1year
 def_data$PricingInflation.1yearUCA[def_data$PricingUCA.sum=="UCA"]<-"UCA"
 def_data$PricingMechanism<-as.character(def_data$PricingMechanism)
 def_lc<-prepare_labels_and_colors(def_data, path=file.path(local_path,"style\\"))
-
+# add_labels_and_colors(def_data,"PricingUCA")
+# add_labels_and_colors(def_data,"PricingUCA.sum","Pricing")
   def_ck<-get_column_key(def_data %>% select(-PricingMechanism),path="offline")
   def_data$YTD<-factor(ifelse(def_data$Fiscal_Year==max(def_data$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
   save(def_data,def_lc,def_ck, file="analysis/FPDS_chart_maker/unaggregated_def.Rda")

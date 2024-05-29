@@ -959,13 +959,13 @@ CAS<-build_plot(
 ## Topline Pricing
 ```{r ToplinePricing}
 
-def_data$PricingUCA.sumlong<-def_data$PricingUCA.sum
-levels(def_data$PricingUCA.sumlong)<-list("Firm Fixed-Price"="FFP",
-                                           "Less Common"="Less Common",
-                                           "Incentive"="Incentive",
-                                           "Other Cost-Based"="Other CB",
-                                           "Undefinitized\nContract Award"="UCA",
-                                           "Unclear"="Unclear"   )
+# def_data$PricingUCA.sumlong<-def_data$PricingUCA.sum
+# levels(def_data$PricingUCA.sumlong)<-list("Firm Fixed-Price"="FFP",
+#                                            "Less Common"="Less Common",
+#                                            "Incentive"="Incentive",
+#                                            "Other Cost-Based"="Other CB",
+#                                            "Undefinitized\nContract Award"="UCA",
+#                                            "Unclear"="Unclear"   )
 (
 ToplinePricing<-build_plot(
   data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024),
@@ -976,7 +976,7 @@ ToplinePricing<-build_plot(
   x_var="dFYear", #x_var
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PricingUCA", #color_var
-  facet_var="PricingUCA.sumlong", #facet_var
+  facet_var="PricingUCA.sum", #facet_var
   column_key=def_ck,
   format=TRUE,
   ytextposition=FALSE,
@@ -990,8 +990,10 @@ ToplinePricing<-build_plot(
   # x="Fiscal Year",
   # y="Percent of Obligations",
   # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2023 $s)")
+  theme(legend.position = "bottom")+facet_wrap(~PricingUCA.sum,nrow=1)+
+  labs(y="Obligations\n(Constant 2023 $s)",
+       title="DOD Contract Obligations by Pricing Mechanism, FY 2000–FY 2023",
+       caption="Note: CB=Cost-Based, FFP=Firm Fixed Price, FP=Fixed-Price, FPLOE=Fixed-Price Level-of-Effort,\nLH=Labor Hours,T&M=Time & Materials, UCA=Undefinitized Contract Award\nSource: FPDS and CSIS analysis.")
 )
 
 
@@ -1003,19 +1005,11 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_pricing.png", Topl
              )
 
 
-
-  ggsave600dpi(path="..//Output//AcqTrends//",
-               filename="topline_pricing_keynote.svg", ToplinePricing+
-               # facet_wrap(~SubCustomer.sum,nrow=1)+
-               labs(title="DOD Contract Obligations by Pricing Mechanism, FY 2000–FY 2023"), 
-             width=13, height= 5.5, units="in", size=20, lineheight = 0.75
-             )  
-
-
 log_plot(plot=ToplinePricing+theme(plot.margin = margin(t=0,r=0.25,b=0.1,l=0.1,"inches")), df=def_data  %>% filter(Fiscal_YQ<2024),
                      filename="acq_fig4_1_pricing",xlsx="DoD_Acq_Trends_Contracts.xlsx",
                      sheet="4-1 Price",path="../output/AcqTrends/", height=3.5,
-                     startRow=1,startCol=13,format=TRUE,var_list=c("PricingUCA.sumlong","PricingUCA")
+         output_slide_png = TRUE,
+                     format=TRUE,var_list=c("PricingUCA.sum","PricingUCA")
          )
 
 ```
@@ -2655,35 +2649,6 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="psr_vendorsize_share.png",
 ## PSR Competition
 ```{r PSRcomp_plat}
 summary(def_data$SimpleArea)
-(
-PSRComp_line<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=1991 & Fiscal_YQ<2024 & SimpleArea!="Unlabeled"),
-  chart_geom = "Line Chart",
-  share = TRUE,
-  labels_and_colors=def_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear",#alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
-  color_var="Competition.multisum", #color_var
-  facet_var="SimpleArea", #facet_var
-  column_key=def_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # 
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "bottom")+
-  labs(x="Fiscal Year",
-       y="Obligations (Constant 2023 $s)")+
-    date_x_year_breaks(1993,2023,by=6)#,partial_year=2024,partial_label="\nQ1")
-)
-
 
 
 (
@@ -2703,7 +2668,8 @@ PSRComp_bar<-build_plot(
 )+
   theme(legend.position = "bottom")+
   labs(x="Fiscal Year",
-       y="Obligations (Constant 2023 $s)")+
+       y="Obligations (Constant 2023 $s)",
+       title="DOD Contract Obligations by Extent of Competition, FY 1991–FY 2023")+
     date_x_year_breaks(1993,2023,by=6)#,partial_year=2024,partial_label="\nQ1")
 )
 
@@ -2723,14 +2689,6 @@ PSRComp_line<-build_plot(
   format=TRUE,
   ytextposition=FALSE
 )+
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # 
-  # y="Percent of Obligations",
-  # color="Competition")+
   theme(legend.position = "bottom")+
   labs(x="Fiscal Year",y="Share of Obligations")+
     date_x_year_breaks(1993,2023,by=6)#,partial_year=2024,partial_label="\nQ1")
@@ -2748,43 +2706,16 @@ write.csv(file="..//Output//AcqTrends//PSRComp_cur.csv",row.names = FALSE, na = 
           pivot_wider(id_cols=c(SimpleArea,Competition.multisum),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(SimpleArea,Competition.multisum))
 
-ggsave("..//Output//AcqTrends//PSRComp_both.png", 
+ggsave("..//Output//AcqTrends//PSRComp_both.svg", 
              gridExtra::grid.arrange(
-               PSRComp_bar+labs(caption = NULL,x=NULL)+theme(legend.position = "none"),
+               PSRComp_bar+labs(caption = NULL,x=NULL,title=NULL)+theme(legend.position = "none"),
                PSRComp_line), 
              width=6.5, height= 5, units="in"
 )
 
-
-
 ggsave("..//Output//AcqTrends//PSRComp_both_keynote.png", 
              gridExtra::grid.arrange(
                PSRComp_bar+labs(
-                 title="DOD Contract Obligations by Extent of Competition, FY 2000–FY 2023",
-                  y="Obligations\n(Const. 2023 $s)",
-               caption = NULL,x=NULL)+theme(legend.position = "none",text=element_text(size=20)),
-               PSRComp_line+labs(y="Share of\nObl.")+theme(text=element_text(size=20),
-               plot.caption = element_text(size=round(20 * 5/6,0))
-               )),
-             width=13, height= 5.5, units="in" #, size=20, lineheight = 0.75
-             )
-
-ggsave("..//Output//AcqTrends//PSRComp_both_keynote.svg", 
-             gridExtra::grid.arrange(
-               PSRComp_bar+labs(
-                 title="DOD Contract Obligations by Extent of Competition, FY 2000–FY 2023",
-                  y="Obligations\n(Const. 2023 $s)",
-               caption = NULL,x=NULL)+theme(legend.position = "none",text=element_text(size=20)),
-               PSRComp_line+labs(y="Share of\nObl.")+theme(text=element_text(size=20),
-               plot.caption = element_text(size=round(20 * 5/6,0))
-               )),
-             width=13, height= 5.5, units="in" #, size=20, lineheight = 0.75
-             )
-
-ggsave(file.path(online_path,"PSRComp_both_keynote.svg"), 
-             gridExtra::grid.arrange(
-               PSRComp_bar+labs(
-                 title="DOD Contract Obligations by Extent of Competition, FY 2000–FY 2023",
                   y="Obligations\n(Const. 2023 $s)",
                caption = NULL,x=NULL)+theme(legend.position = "none",text=element_text(size=20)),
                PSRComp_line+labs(y="Share of\nObl.")+theme(text=element_text(size=20),
@@ -2806,17 +2737,17 @@ ggsave("..//Output//AcqTrends//acq_fig6_6_PSR_competition.svg",
              width=6.5, height= 4.5, units="in" #, size=20, lineheight = 0.75
              )
 
-ggsave(file.path(online_path,"acq_fig6_6_PSR_competition.svg"), 
+
+ggsave(file.path(online_path,"acq_fig6_6_PSR_competition_slide.png"), 
              gridExtra::grid.arrange(
                PSRComp_bar+labs(
-                 title=NULL,
                   y="Obligations\n(Constant 2023 $s)",
                caption = NULL,x=NULL)+theme(legend.position = "none",text=element_text(size=12),
                                             plot.margin = margin(t=0,b=0,l=0.1,r=0.5,unit="inches")),
-               PSRComp_line+labs(y="Share of\nObligations",caption=NULL)+theme(text=element_text(size=12),
+               PSRComp_line+labs(y="Share of\nObligations",caption=NULL)+theme(text=element_text(size=20),
                plot.caption = element_text(size=round(20 * 5/6,0)),
                                            plot.margin = margin(t=0,b=0,l=0.1,r=0.5,unit="inches"))),
-             width=6.5, height= 4.5, units="in" #, size=20, lineheight = 0.75
+             width=13, height= 5.5, units="in" #, size=20, lineheight = 0.75
              )
 
 log_plot(plot=PSRComp_bar, df=def_data  %>% filter(Fiscal_YQ<2024),
