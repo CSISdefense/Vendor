@@ -151,6 +151,7 @@ SET NOCOUNT ON;
 Exec [Location].[SP_CountryDetail]
  	@countryISOalpha3='AUS'
 
+--7h25m 3,357,934 rows
 		SET QUERY_GOVERNOR_COST_LIMIT 0
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
