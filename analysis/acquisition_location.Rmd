@@ -27,7 +27,7 @@ geom.text.size<-12
 main.text.size<-1
 note.text.size<-1.40
 if(!exists("platpscintldef"))
-  load(file="../data/clean/platpscintl_FPDS.Rda")
+  load(file="../data/clean/platpscplatpscintldef.Rda")
 
 
 if(!exists("platpscdefcd"))
@@ -36,61 +36,93 @@ if(!exists("platpscdefcd"))
 ```
 
 # Preprocessing 
-
-## Project
+## Group By PlatformPortfolio
+### Project
 ```{r PreprocessProject}
 
-summary(factor(platpscintldef$ProjectPlatform))
+# summary(factor(platpscintldef$ProjectPlatform))
+# 
+# colnames(platpscintldef)[colnames(platpscintldef)=="Action_Obligation_Then_Year_Then_Year"]<-
+#   "Action_Obligation_Then_Year"
+# 
+# topplat<-platpscintldef %>% group_by (Project.Name,PlatformPortfolio) %>%
+#   #Exclude NA from ranking and then create a recent only dollar amount
+#   mutate(Action_Obligation_2023=if_else(is.na(Project.Name),Action_Obligation_OMB25_GDP23,NA),
+#     Action_Obligation_2023=if_else(Fiscal_Year>=2023,Action_Obligation_OMB25_GDP23,NA))%>%
+#   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm = TRUE),
+#             Action_Obligation_2023=sum(Action_Obligation_2023,na.rm = TRUE))%>%
+#               group_by (PlatformPortfolio) %>%
+#     mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
+#                         rank_2023=rank(desc(Action_Obligation_2023)))
+# topplat %>% arrange(desc(Action_Obligation_OMB25_GDP23))
+# 
+# 
+# topplat$TopProject<-
+#   ifelse(topplat$rank_2023<=7 | topplat$rank_total<=7,topplat$Project.Name,NA)
+# 
+# platpscintldef<-left_join(platpscintldef,topplat %>% dplyr::select(-Action_Obligation_OMB25_GDP23,Action_Obligation_2023),
+#                           by=c("Project.Name","PlatformPortfolio"))
+# 
+# platpscintldef$TopProject[is.na(platpscintldef$TopProject) & !is.na(platpscintldef$Project.Name)]<-
+#   "Other Labeled Project"
+# 
+# 
+# summary(factor(platpscintldef$TopProject))
+# 
+# 
+# colnames(platpscintldef)
+# platpscintldef
+# 
+# write.csv(topplat,file=file.path("..","Output","AcqTrends","Topplat.csv"),row.names=FALSE)
+# debug(label_top)
+platpscintldef<-label_top(platpscintldef,
+                    col="Project.Name",
+                    n=7,
+                    top_name="TopProject",
+                    group_list="PlatformPortfolio",
+                    recent=2023
+                    #retain_rank=TRUE,
+                    #write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv")
+                    )
 
-colnames(platpscintldef)[colnames(platpscintldef)=="Action_Obligation_Then_Year_Then_Year"]<-
-  "Action_Obligation_Then_Year"
 
-colnames(platpscintldef)[colnames(platpscintldef)=="Action_Obligation_Then_Year_OMB23_GDP21"]<-
-  "Action_Obligation_OMB25_GDP23"
-
-topplat<-platpscintldef %>% group_by (Project.Name,PlatformPortfolio) %>%
-  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-            Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB25_GDP23,0)))%>%
-              group_by (PlatformPortfolio) %>%
-    mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
-                        rank_2020=rank(desc(Action_Obligation_2020)))
-topplat %>% arrange(desc(Action_Obligation_OMB25_GDP23))
-
-
-topplat$TopProject<-
-  ifelse(topplat$rank_2020<=7 | topplat$rank_total<=7,topplat$Project.Name,NA)
-
-platpscintldef<-left_join(platpscintldef,topplat %>% select(-Action_Obligation_OMB25_GDP23,Action_Obligation_2020),
-          by=c("Project.Name","PlatformPortfolio"))
-
-platpscintldef$TopProject[is.na(platpscintldef$TopProject) & !is.na(platpscintldef$Project.Name)]<-
-  "Other Labeled Project"
-
-
-summary(factor(platpscintldef$TopProject))
 
 
 ```
-## PSC
+### PSC
 ```{r PreprocessPSC}
+
+
+# platpscintldef<-label_top(platpscintldef,
+#                     col="ProductOrServiceCode",
+#                     n=7,
+#                     top_name="TopPScode",
+#                     group_list="PlatformPortfolio",
+#                     recent=2023
+#                     #retain_rank=TRUE,
+#                     #write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv")
+#                     )
+
+
 
 summary(factor(platpscintldef$ProjectPlatform))
 
 topPSC<-platpscintldef %>% group_by (ProductOrServiceCode,ProductOrServiceCodeText,PlatformPortfolio) %>%
-  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-            Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB25_GDP23,0)))%>%
+  mutate(Action_Obligation_2023=ifelse(Fiscal_Year>=2023,Action_Obligation_OMB25_GDP23,NA))
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE),
+            Action_Obligation_2023=sum(Action_Obligation_2023,na.rm=TRUE))%>%
               group_by (PlatformPortfolio) %>%
     mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
-                        rank_2020=rank(desc(Action_Obligation_2020)))
+                        rank_2023=rank(desc(Action_Obligation_2023)))
 topPSC %>% arrange(desc(Action_Obligation_OMB25_GDP23))
 
 topPSC$TopPScode<-
-  ifelse(topPSC$rank_2020<=7 | topPSC$rank_total<=7,topPSC$ProductOrServiceCode,NA)
+  ifelse(topPSC$rank_2023<=7 | topPSC$rank_total<=7,topPSC$ProductOrServiceCode,NA)
 topPSC$TopPStext<-
-  ifelse(topPSC$rank_2020<=7 | topPSC$rank_total<=7,topPSC$ProductOrServiceCodeText,NA)
+  ifelse(topPSC$rank_2023<=7 | topPSC$rank_total<=7,topPSC$ProductOrServiceCodeText,NA)
 
 
-platpscintldef<-left_join(platpscintldef,topPSC %>% select(-Action_Obligation_OMB25_GDP23,Action_Obligation_2020),
+platpscintldef<-left_join(platpscintldef,topPSC %>% select(-Action_Obligation_OMB25_GDP23,Action_Obligation_2023),
           by=c("ProductOrServiceCode","PlatformPortfolio"))
 
 platpscintldef$TopPScode[is.na(platpscintldef$TopPScode) & !is.na(platpscintldef$ProductOrServiceCode)]<-
@@ -105,7 +137,8 @@ summary(factor(platpscintldef$TopPStext))
 
 ```
 
-## Place State
+## Group By ProductOrServiceArea
+### Place State
 ```{r PreprocessState}
 
 # platpscintldef$pop_isna<-is.na(platpscintldef$pop_state_code)
@@ -113,29 +146,41 @@ summary(factor(platpscintldef$TopPStext))
 # platpscintldef %>% group_by(Fiscal_Year,pop_isna,sc_isna) %>%
 #   summarise(n=length(Fiscal_Year))
 
-# summary(factor(platpscintldef$CrisisProductOrServiceArea))
+# summary(factor(platpscintldef$ProductOrServiceArea))
 
-topState<-platpscintldef %>% group_by (pop_state_code,CrisisProductOrServiceArea) %>%
-  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-            Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB25_GDP23,0)))%>%
-              group_by (CrisisProductOrServiceArea) %>%
-    mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
-                        rank_2020=rank(desc(Action_Obligation_2020)))
-topState %>% arrange(desc(Action_Obligation_OMB25_GDP23))
 
-topState$TopStateAbbr<-
-  ifelse(topState$rank_2020<=25 | topState$rank_total<=25,topState$pop_state_code,NA)
-# topState$TopStateName<-
-#   ifelse(topState$rank_2020<=7 | topState$rank_total<=7,topState$PlaceStateCodeText,NA)
-platpscintldef<-platpscintldef[,!colnames(platpscintldef) %in% c("Action_Obligation_OMB25_GDP23.x","Action_Obligation_OMB25_GDP23.y",
-                                   "Action_Obligation_2020.x","Action_Obligation_2020.y",
-  "rank_total.y","rank_total.x","rank_2020.y","rank_2020.x","TopStateAbbr.x","TopStateAbbr.y")]
+platpscintldef<-label_top(platpscintldef,
+                    col="pop_state_code",
+                    n=25,
+                    top_name="TopStateAbbr",
+                    group_list="ProductOrServiceArea",
+                    recent=2023
+                    #retain_rank=TRUE,
+                    #write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv")
+                    )
 
-platpscintldef<-left_join(platpscintldef,topState %>% select(-Action_Obligation_OMB25_GDP23,Action_Obligation_2020),
-          by=c("pop_state_code","CrisisProductOrServiceArea"))
 
-platpscintldef$TopStateAbbr[is.na(platpscintldef$TopStateAbbr) & !is.na(platpscintldef$pop_state_code)]<-
-  "Other Labeled State"
+# topState<-platpscintldef %>% group_by (pop_state_code,ProductOrServiceArea) %>%
+#   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
+#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2023,Action_Obligation_OMB25_GDP23,0)))%>%
+#               group_by (ProductOrServiceArea) %>%
+#     mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
+#                         rank_2023=rank(desc(Action_Obligation_2023)))
+# topState %>% arrange(desc(Action_Obligation_OMB25_GDP23))
+# 
+# topState$TopStateAbbr<-
+#   ifelse(topState$rank_2023<=25 | topState$rank_total<=25,topState$pop_state_code,NA)
+# # topState$TopStateName<-
+# #   ifelse(topState$rank_2023<=7 | topState$rank_total<=7,topState$PlaceStateCodeText,NA)
+# platpscintldef<-platpscintldef[,!colnames(platpscintldef) %in% c("Action_Obligation_OMB25_GDP23.x","Action_Obligation_OMB25_GDP23.y",
+#                                    "Action_Obligation_2023.x","Action_Obligation_2023.y",
+#   "rank_total.y","rank_total.x","rank_2023.y","rank_2023.x","TopStateAbbr.x","TopStateAbbr.y")]
+# 
+# platpscintldef<-left_join(platpscintldef,topState %>% select(-Action_Obligation_OMB25_GDP23,Action_Obligation_2023),
+#           by=c("pop_state_code","ProductOrServiceArea"))
+# 
+# platpscintldef$TopStateAbbr[is.na(platpscintldef$TopStateAbbr) & !is.na(platpscintldef$pop_state_code)]<-
+#   "Other Labeled State"
 # platpscintldef$TopStateName[is.na(platpscintldef$TopStateName) & !is.na(platpscintldef$pop_state_code)]<-
 #   "Other Labeled State"
 
@@ -145,83 +190,362 @@ platpscintldef$TopStateAbbr[is.na(platpscintldef$TopStateAbbr) & !is.na(platpsci
 
 ```
 
-## Place Country
+### Place Country
 ```{r PreprocessCountry}
 
-# summary(factor(platpscintldef$CrisisProductOrServiceArea))
-colnames(platpscintldef)[colnames(platpscintldef)=="Fiscal_Year"]<-"Fiscal_Year"
-topCountry<-platpscintldef %>% group_by (PlaceISOalpha3,CrisisProductOrServiceArea) %>%
-  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-            Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB25_GDP23,0)))%>%
-              group_by (CrisisProductOrServiceArea) %>%
-    mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
-                        rank_2020=rank(desc(Action_Obligation_2020)))
-topCountry %>% arrange(desc(Action_Obligation_OMB25_GDP23))
-
-topCountry$TopCountryISO<-
-  ifelse(topCountry$rank_2020<=7 | topCountry$rank_total<=7,topCountry$PlaceISOalpha3,NA)
-# topCountry$TopCountryName<-
-#   ifelse(topCountry$rank_2020<=7 | topCountry$rank_total<=7,topCountry$PlaceCountryCodeText,NA)
 
 
-platpscintldef<-left_join(platpscintldef,topCountry %>% select(-Action_Obligation_OMB25_GDP23,Action_Obligation_2020),
-          by=c("PlaceISOalpha3","CrisisProductOrServiceArea"))
+platpscintldef<-label_top(platpscintldef,
+                    col="PlaceISOalpha3",
+                    n=7,
+                    top_name="TopCountryISO",
+                    group_list="ProductOrServiceArea",
+                    recent=2023
+                    #retain_rank=TRUE,
+                    #write_file=file.path("..","Output","AcqTrends","TopProjectTest.csv")
+                    )
 
-platpscintldef$TopCountryISO[is.na(platpscintldef$TopCountryISO) & !is.na(platpscintldef$PlaceISOalpha3)]<-
-  "Other Labeled Country"
-# platpscintldef$TopCountryName[is.na(platpscintldef$TopCountryName) & !is.na(platpscintldef$PlaceISOalpha3)]<-
+# 
+# # summary(factor(platpscintldef$ProductOrServiceArea))
+# colnames(platpscintldef)[colnames(platpscintldef)=="Fiscal_Year"]<-"Fiscal_Year"
+# topCountry<-platpscintldef %>% group_by (PlaceISOalpha3,ProductOrServiceArea) %>%
+#   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
+#             Action_Obligation_2023=sum(ifelse(Fiscal_Year==2023,Action_Obligation_OMB25_GDP23,0)))%>%
+#               group_by (ProductOrServiceArea) %>%
+#     mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
+#                         rank_2023=rank(desc(Action_Obligation_2023)))
+# topCountry %>% arrange(desc(Action_Obligation_OMB25_GDP23))
+# 
+# topCountry$TopCountryISO<-
+#   ifelse(topCountry$rank_2023<=7 | topCountry$rank_total<=7,topCountry$PlaceISOalpha3,NA)
+# # topCountry$TopCountryName<-
+# #   ifelse(topCountry$rank_2023<=7 | topCountry$rank_total<=7,topCountry$PlaceCountryCodeText,NA)
+# 
+# 
+# platpscintldef<-left_join(platpscintldef,topCountry %>% select(-Action_Obligation_OMB25_GDP23,Action_Obligation_2023),
+#           by=c("PlaceISOalpha3","ProductOrServiceArea"))
+# 
+# platpscintldef$TopCountryISO[is.na(platpscintldef$TopCountryISO) & !is.na(platpscintldef$PlaceISOalpha3)]<-
 #   "Other Labeled Country"
-
-
-# summary(factor(platpscintldef$TopCountryName))
-
-
-```
-
-# Top Projects Annual
-
-```{r TopProject}
-summary(platpscintldef$PlatformPortfolio[platpscintldef$ProductOrServiceCode=='AC11'])
-
-topoverall<-platpscintldef %>% group_by (Project.Name,Fiscal_Year) %>%
-  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))%>%
-              group_by (Fiscal_Year) %>%
-    mutate(rank_annual=rank(desc(Action_Obligation_OMB25_GDP23))) %>%
-  arrange(desc(Fiscal_Year) ,desc(Action_Obligation_OMB25_GDP23))
-
-
-topoverall$TopProject<-
-  ifelse(topoverall$rank_annual<=11,topoverall$Project.Name,NA)
-#11 because NA counts as one.
-
-
-topoverall$TopProject[is.na(topoverall$TopProject) & !is.na(topoverall$Project.Name)]<-
-  "Other Labeled Project"
-
-
-write.csv(topoverall %>% group_by(TopProject,Fiscal_Year) %>%
-            summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))%>%
-            arrange(desc(Fiscal_Year) ,desc(Action_Obligation_OMB25_GDP23))
-          
-          ,file="TopAnnualDoDproject.csv",row.names = FALSE)
-
-
-# platpscintldef<-left_join(platpscintldef,topplat %>% select(-Action_Obligation_OMB25_GDP23,Action_Obligation_2020),
-#           by=c("Project.Name","PlatformPortfolio"))
+# # platpscintldef$TopCountryName[is.na(platpscintldef$TopCountryName) & !is.na(platpscintldef$PlaceISOalpha3)]<-
+# #   "Other Labeled Country"
+# 
+# 
+# # summary(factor(platpscintldef$TopCountryName))
 
 
 ```
 
 
-# International
-##FMS 
-### Topline FMS
+
+# Inflation
+## Fuel
+```{r Fuel}
+
+# PlaceIsForeign
+# full_data$PlaceStateRegion
+# replace_nas_with_unlabeled(factor(full_data$PlaceIsForeign,levels=c(1,0),labels=c("Performed Abroad","Performed in the U.S."))
+
+full_data$SimpleArea.fuels<- as.character( full_data$SimpleArea)
+full_data$SimpleArea.fuels[full_data$ProductServiceOrRnDarea=="Fuels"]<-"Fuels"
+summary(factor(full_data$SimpleArea.fuels))
+full_data$SimpleArea.fuels<-factor(full_data$SimpleArea.fuels,
+                                           levels=c("Services (Non-R&D)" ,
+                                                   "R&D",
+                                                   "Products (All)",
+                                                   "Fuels",
+                                                   "Unlabeled" ),
+                                           labels=c("Services (Non-R&D)" ,
+                                                   "R&D",
+                                                   "Products (Non-Fuels)",
+                                                   "Fuels",
+                                                   "Unlabeled" ))
+summary(factor(full_data$SimpleArea.fuels))
+labels_and_colors<-prepare_labels_and_colors(full_data,path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+column_key<-get_column_key(full_data,path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
+
+
+(
+psrfuel<-build_plot(
+  data=full_data,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="SimpleArea.fuels", #color_var
+  # facet_var="TopPStext", #facet_var
+  column_key=intl_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  # theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2023 $s)",
+              caption = "Source: FPDS, CSIS Analysis, OMB GDP deflators.")
+)
+
+  ggsave600dpi(filename = "..//Output//PSRfuels.png", psrfuel,  
+               width=12, height= 5.6, units="in",size=18, lineheight=1.2,
+               bg="transparent"
+               )
+
+write.csv(file="..//Output//PSRfuels.csv",row.names = FALSE, na = "",
+  pivot_wider(psrfuel$data %>% 
+                        arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
+                      id_cols=c(SimpleArea.fuels),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23)%>%
+    arrange(SimpleArea.fuels))
+
+
+(
+fuel<-build_plot(
+  data=full_data %>% filter(ProductOrServiceArea=="Fuels")%>% 
+    mutate(PlaceIsForeign=factor(PlaceIsForeign,levels=c(1,0),labels=c("Performed Abroad","Performed in the U.S."))),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="PlaceStateRegion", #color_var
+  # facet_var="TopPStext", #facet_var
+  # column_key=intl_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  # theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2023 $s)",
+       caption = "Source: FPDS, CSIS Analysis, OMB GDP deflators.")
+)
+
+
+(
+fuel<-build_plot(
+  data=full_data %>% filter(ProductOrServiceArea=="Fuels")%>% 
+    mutate(PlaceIsForeign=factor(PlaceIsForeign,levels=c(1,0),labels=c("Performed Abroad","Performed in the U.S."))),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="PlaceIsForeign", #color_var
+  # facet_var="TopPStext", #facet_var
+  # column_key=intl_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  # theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2023 $s)")
+)
+
+ggsave600dpi("..//Output//Deep_Dives/Inflation/defense_fuel_place.png", fuel+labs(title="DoD Contract Obligations for Fuels", caption="Source: FPDS and CSIS analysis."), 
+             width=6.5, height= 3.5, units="in",size=12,lineheight = 1
+             )
+
+
+write.csv(file="..//Output//Deep_Dives/Inflation/defense_fuel_place.csv",row.names = FALSE,na = "",
+          fuel$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
+          pivot_wider(id_cols=c(PlaceIsForeign),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23))
+
+
+
+(
+fuel_psc<-build_plot(
+  data=platpscintldef %>% filter(ProductOrServiceArea=="Fuels")%>% 
+    mutate(PlaceIsForeign=factor(PlaceIsForeign,levels=c(1,0),labels=c("Performed Abroad","Performed in the U.S."))),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="ProductOrServiceCodeText", #color_var
+  # facet_var="TopPStext", #facet_var
+  # column_key=intl_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  # theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2023 $s)")
+)
+
+```
+
+# Construction
+```{r FRSnC}
+summary(factor(platpscintldef$ProductOrServiceArea))
+# platpscintldef$Fiscal_Year
+# 
+# topplat<-platpscintldef %>% filter(PlatformPortfolio=="Ships & Submarines") %>% group_by (Project.Name) %>%
+#   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
+#             )
+#             )%>% mutate(rank_total=rank(desc(Action_Obligation_OMB25_GDP23)),
+#                         rank_2023=rank(desc(Action_Obligation_2023)))
+# topplat %>% arrange(desc(Action_Obligation_OMB25_GDP23))
+# 
+# platpscintldef$TopShipProject<-
+#   ifelse(platpscintldef$Project.Name %in% topplat$Project.Name[topplat$rank_2023<=7 | topplat$rank_total<=7],
+#          platpscintldef$Project.Name,NA)
+# platpscintldef$TopShipProject[is.na(platpscintldef$TopShipProject) & !is.na(platpscintldef$Project.Name)]<-
+#   "Other Labeled Project"
+# summary(factor(platpscintldef$TopShipProject))
+
+(
+State<-build_plot(
+  data=platpscintldef %>% filter(ProductOrServiceArea=="Construction"),
+  chart_geom = "Line Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="Fiscal_Year", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="TopStateAbbr", #color_var
+  facet_var="TopStateAbbr", #facet_var
+  # column_key=intl_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2023 $s)")
+)
+ggsave(State,file="construction_state.png")
+(
+State<-build_plot(
+  data=platpscintldef %>% filter(ProductOrServiceArea=="Construction"),
+  chart_geom = "Line Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="Fiscal_Year", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="TopStateAbbr", #color_var
+  facet_var="TopStateAbbr", #facet_var
+  second_var="SubCustomer",
+  # column_key=intl_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2023 $s)")
+)
+
+
+(
+Country<-build_plot(
+  data=platpscintldef %>% filter(ProductOrServiceArea=="Construction"),
+  chart_geom = "Line Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="Fiscal_Year", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="TopCountryISO", #color_var
+  facet_var="TopCountryISO", #facet_var
+  # column_key=intl_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+#scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2023 $s)")
+)
+
+
+(
+PSC<-build_plot(
+  data=platpscintldef %>% filter(PlatformPortfolio=="Construction"),
+  chart_geom = "Line Chart",
+  share = FALSE,
+  # labels_and_colors=labels_and_colors,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="TopPStext", #color_var
+  facet_var="TopPStext", #facet_var
+  # column_key=intl_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2023 $s)")
+)
+
+```
+
+#FMS 
+## Topline FMS
 
 
 
 
 
-####FMS identification
+###FMS identification
 ```{r contract_identification}
 
 
@@ -253,9 +577,9 @@ ggsave600dpi(contract_identification,file="../output/figure_03_contract_identifi
 
 ```
 
-### FMS or International
+# FMS or International
 
-#### Service Category
+## Service Category
 ```{r FPDS_vendor_Intl}
 
 summary(factor(platpscintldef$SimpleArea))
@@ -316,230 +640,11 @@ ggsave600dpi(fmsintl_service_vendor,file="../output/fmsintl_service_vendor.png",
 
 ```
 
-## Any International 
-### ** Setup **
-```{r vendor_label}
 
 
-aus_fpds %>% group_by(ausorgtype,ParentID,parentheadquarterscountrycode)%>%
-  filter(!is.na(parentheadquarterscountrycode))%>%
-  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))%>%
-  arrange(ausorgtype,-Action_Obligation_OMB25_GDP23)
-# "U.S. Owned Business"='A',
-#   "Other U.S. Entity (e.g. Government)"='B',
-  #   "Foreign-Owned Business Incorporated in the U.S."='C',
-#   "Foreign-Owned Business Not Incorporated in the U.S."='D',
-#   "Other Foreign Entity (e.g. Foreign Government)"='O'
+# JSF 
 
-aus_fpds$ausorgtype[
-  aus_fpds$manufacturingorganizationtext=="U.S. Owned Business"&
-           !is.na(aus_fpds$manufacturingorganizationtext)&
-           aus_fpds$OriginIsoAlpha3=="AUS"&
-           !is.na(aus_fpds$OriginIsoAlpha3)&
-    is.na(aus_fpds$parentheadquarterscountrycode)]<-
-  "U.S. Owned Business (Good/Service has Australian Origin)"
-
-
-aus_fpds$ausorgtype[
-  aus_fpds$manufacturingorganizationtext %in%
-    c("U.S. Owned Business",
-      "Foreign-Owned Business Incorporated in the U.S.",
-      "Other Entities (e.g. Governments")&
-           !is.na(aus_fpds$manufacturingorganizationtext)&
-           aus_fpds$parentheadquarterscountrycode=="AUS"&
-           !is.na(aus_fpds$parentheadquarterscountrycode)]<-
-  "Australian-Owned Business Incorporated in the U.S."
-
-
-aus_fpds$ausorgtype[
-  aus_fpds$manufacturingorganizationtext %in%
-    c("Foreign-Owned Business Not Incorporated in the U.S.")&
-    !is.na(aus_fpds$ausorgtype)&
-    aus_fpds$VendorIsoAlpha3=="AUS"&
-    !is.na(aus_fpds$VendorIsoAlpha3)]<-
-  "Australian-Owned Business (Including Global Subsidiaries)"
-
-
-aus_fpds$PlaceIsForeignText<-factor(aus_fpds$PlaceIsForeign)
-levels(aus_fpds$PlaceIsForeignText)<-list(
-  "International\nLocation"=1,
-  "U.S.\nLocation"=0
-)
-
-write.csv(file="aus_list.csv",row.names = FALSE,
-          aus_fpds %>% filter(Fiscal_Year>=2011 & Customer=="Defense") %>%
-            group_by(ausorgtype,ParentID,VendorIsoAlpha3)%>%
-            summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))%>%
-            arrange(ausorgtype,-Action_Obligation_OMB25_GDP23)
-)
-```
-
-### Manufacturing Organization
-```{r FPDS_vendor_Intl}
-
-summary(factor(platpscintldef))
-summary(platpscintldef$manufacturingorganizationtype)
-
-# undebug(format_data_for_plot)
-  (fpds_vendor_intl_place <-  build_plot(data=platpscintldef %>% filter(Fiscal_Year>=2005), #%>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign)&
-                                                                #        !is.na(IsFMS)& Fiscal_Year>2011),
-                                         #IsFMS==TRUE 
-                                         chart_geom="Bar Chart",
-                              x_var="Fiscal_Year",
-                              y_var="Action_Obligation_OMB25_GDP23",
-                              color_var="manufacturingorganizationText",
-                              # facet_var="manufacturingorganizationtype",
-                              # second_var="IsFMS",
-                              labels_and_colors=intl_lc,
-                              column_key=intl_ck,
-                              legend=TRUE,
-                              caption=FALSE,
-                              format=TRUE)+theme(legend.position = "right")#+
-      # facet_grid( .~manufacturingorganizationtype )#+labs(title="FMS or Performed Internationally, Including JSF")#, scales="free_y"
-    )
-
-platpscintldef$OriginIsForeign
-# undebug(format_data_for_plot)
-  (fpds_vendor_intl_place <-  build_plot(data=platpscintldef %>% filter(Fiscal_Year>=2012 & ParentHQisForeign==1
-                                                                        &!is.na(PlaceIsForeign) & !is.na(OriginIsForeign)), #%>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign)&
-                                                                #        !is.na(IsFMS)& Fiscal_Year>2011),
-                                         #IsFMS==TRUE 
-                                         chart_geom="Bar Chart",
-                              x_var="Fiscal_Year",
-                              y_var="Action_Obligation_OMB25_GDP23",
-                              color_var="ManufacturingOrganizationText",
-                              facet_var="OriginIsForeign",
-                              second_var="PlaceIsForeign",
-                              labels_and_colors=intl_lc,
-                              column_key=intl_ck,
-                              legend=TRUE,
-                              caption=FALSE,
-                              format=TRUE)+theme(legend.position = "right")#+
-      # facet_grid( .~manufacturingorganizationtype )#+labs(title="FMS or Performed Internationally, Including JSF")#, scales="free_y"
-    )
-
-
-```
-
-### FMS Vendor Size/Intl and Place
-```{r FPDS_vendor_Intl}
-
-summary(factor(platpscintldef$Shiny.VendorSize[platpscintldef$VendorIsForeign==1]))
-summary(platpscintldef$VendorSize_Intl)
-
-# undebug(format_data_for_plot)
-(fpds_vendor_intl_place <-  build_plot(data=platpscintldef %>% filter((PlaceIsForeign==1|IsFMS==TRUE|
-                                                                         )&!is.na(PlaceIsForeign)&
-                                                                      !is.na(IsFMS)& Fiscal_Year>2011),
-                                       #IsFMS==TRUE 
-                                       chart_geom="Bar Chart",
-                            x_var="Fiscal_Year",
-                            y_var="Action_Obligation_OMB25_GDP23",
-                            color_var="VendorSize_Intl",
-                            facet_var="PlaceIsForeign",
-                            second_var="IsFMS",
-                            labels_and_colors=intl_lc,
-                            column_key=intl_ck,
-                            legend=TRUE,
-                            caption=FALSE,
-                            format=TRUE)+theme(legend.position = "right")+
-    facet_grid( .~IsFMS+PlaceIsForeign )+labs(title="FMS or Performed Internationally, Including JSF")#, scales="free_y"
-  )
-
-
-write.csv(file="..//Output//FMS_vendorplaceintl_all.csv",row.names = FALSE,na = "",
-          fpds_vendor_intl_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
-            pivot_wider(id_cols=c(VendorSize_Intl,IsFMS, PlaceIsForeign),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23)%>% arrange(PlaceIsForeign,IsFMS,VendorSize_Intl))
-
-ggsave600dpi(fpds_vendor_intl_place,file="../output/FMS_vendorplaceintl_all.png",
-             size = 12, lineheight=1, height =4.5, width=9)
-
-
-# platpscintldef$Shiny.VendorSize
-(fpds_vendor_place <-  build_plot(data=platpscintldef %>% filter((PlaceIsForeign==1|IsFMS==TRUE)&!is.na(PlaceIsForeign)&
-                                                                      !is.na(IsFMS)&Fiscal_Year>2011 ),#IsFMS==TRUE  
-                            chart_geom="Bar Chart",
-                            x_var="Fiscal_Year",
-                            y_var="Action_Obligation_OMB25_GDP23",
-                            color_var="Shiny.VendorSize",
-                            facet_var="PlaceIsForeign",
-                            second_var="IsFMS",
-                            labels_and_colors=intl_lc,
-                            column_key=intl_ck,
-                            legend=TRUE,
-                            caption=FALSE,
-                            format=TRUE)+theme(legend.position = "right")+
-    facet_grid( .~IsFMS+PlaceIsForeign )+labs(title="FMS or Performed Internationally, Including JSF")#, scales="free_y"#, scales="free_y"
-  )
-
-ggsave600dpi(fpds_vendor_place,file="../output/FMS_vendorplace_all.png",
-             size = 12, lineheight=1, height =4.5, width=9)
-
-
-write.csv(file="..//Output//FMS_vendorplace_all.csv",row.names = FALSE,na = "",
-          fpds_vendor_place$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
-            pivot_wider(id_cols=c(Shiny.VendorSize,PlaceIsForeign,IsFMS),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23)%>% arrange(PlaceIsForeign,Shiny.VendorSize,IsFMS))
-
-
-```
-
-
-
-
-
-### FMS Vendor Size/Intl and Place
-```{r FPDS_vendor_Intl}
-
-summary(factor(aus_fpds$Shiny.VendorSize[aus_fpds$VendorIsForeign==1]))
-
-#(PlaceIsForeign==1|IsFMS==TRUE)&
-# undebug(format_data_for_plot)
-
-(fpds_aus_vendor_intl_place <-  build_plot(data=aus_fpds %>% filter(!is.na(PlaceIsForeignText)&
-                                                                      !is.na(isFMS)&
-                                                                      Customer=="Defense"&
-                                                                      Fiscal_Year>2011),
-                                       #IsFMS==TRUE 
-                                       chart_geom="Bar Chart",
-                            x_var="dFYear",
-                            y_var="Action_Obligation_OMB25_GDP23",
-                            color_var="ausorgtype",
-                            facet_var="PlaceIsForeignText",
-                            # alpha_var="YTD",
-                            second_var="isFMS",
-                            labels_and_colors=aus_lc,
-                            column_key=aus_ck,
-                            legend=TRUE,
-                            caption=FALSE,
-                            format=TRUE)+theme(legend.position = "right")+
-    facet_grid( isFMS~PlaceIsForeignText )+labs(title="U.S. DoD Prime Contracts with Australian\nLocation, Origin, or Vendor")+
-    date_x_year_breaks(2012,2022,3,partial_year=2024,partial_label="\nQ1")#, scales="free_y"
-  )
-
-
-
-
-
-ggsave600dpi(fpds_aus_vendor_intl_place+
-               theme(legend.position="bottom")+
-    guides(fill=guide_legend(ncol=1)),file="../output/ntib/fpds_aus_vendor_intl_place.png",
-             size = 12, lineheight=1, height =5.75, width=5.5)
-
-
-
-
-
-```
-
-
-
-
-
-## JSF 
-
-#### JSF-MDAP-FMS
+### JSF-MDAP-FMS
 ```{r FPDS_JSF}
 
 summary(factor(platpscintldef$Shiny.VendorSize[platpscintldef$VendorIsForeign==1]))
@@ -579,7 +684,7 @@ ggsave600dpi(fms_jsf,file="../output/jsf_vendor_intl_place.png",
 
 
 ```
-#### JSF National Origin
+### JSF National Origin
 ```{r FPDS_JSF}
 
 summary(factor(platpscintldef$Shiny.VendorSize[platpscintldef$VendorIsForeign==1]))
@@ -659,7 +764,7 @@ platpscintldef$OriginISOalpha3
 ```
 
 
-#### JSF Place
+### JSF Place
 ```{r FPDS_vendor_Intl}
 
 
@@ -683,7 +788,7 @@ platpscintldef$OriginISOalpha3
 
 ```
 
-#### FMS Vendor Size/Intl and Place No JSF
+### FMS Vendor Size/Intl and Place No JSF
 ```{r FPDS_vendor_Intl}
 
 
