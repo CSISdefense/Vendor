@@ -20,6 +20,7 @@ library(knitr)
 library(foreign)
 library(stargazer)
 library(texreg)
+library(tidyr)
 
 library(svglite)
 source("..\\scripts\\DIIGstat.r")
@@ -146,6 +147,79 @@ ToplineCFDA<-build_plot(
 
 
 ## Critical Tech
+### Region: DFC & EXIM
+```{r TechSum}
+
+
+(
+overall<-build_plot(
+  data=agency_assist  %>% filter(!is.na(StartFiscalYear)) %>% filter(AnyTag==TRUE),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+   labels_and_colors=aa_lc,
+  column_key=aa_ck,
+  # NA, #VAR.ncol
+  x_var="CriticalTech", 
+  # alpha_var="YTD",  #x_var 
+  y_var="Amount_OMB25_GDP23", #VAR.y.variable
+  color_var="program", #color_var
+  facet_var="Agency", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Gross Amount or Instance Contract",
+       x="Critical Technology Sector")+
+    coord_flip()+
+    facet_grid(.~Agency,scale="free_y") # (Constant 2022 $s)# (Constant 2022 $s)
+)
+
+
+agency_assist$CriticalTech[agency_assist$CriticalTech==""]<-"Not Critical Tech"
+
+for(i in 1:length(agency_list$agency)){
+  c<-agency_list$agency[i]
+  file_c<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",agency_list$agency[i])))
+  (Breakout<-build_plot(
+      data=agency_assist %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]&!is.na(AnyTag)),#& Fiscal_YQ<=2023.2 Fiscal_Year>=2000& 
+    chart_geom = "Bar Chart",
+    share = FALSE,
+    labels_and_colors=aa_lc,
+    # NA, #VAR.ncol
+    x_var="CriticalTech",#alpha_var="YTD", #x_var
+    y_var="Amount_OMB25_GDP23", #VAR.y.variable
+    color_var="program", #color_var
+    # facet_var="PlatformPortfolio", #facet_var
+    # column_key=def_ck,
+    format=TRUE,
+    ytextposition=FALSE
+  )+#date_x_year_breaks(1990,2020,8,partial_year=2023,partial_label="\nQ1–Q2")+   
+      # theme(legend.position = "none")+
+      labs(y=agency_list$yaxis[i],
+           x="Critical Technology Sector",
+           caption=paste("Source: ",agency_list$source[i]),
+           title=paste(agency_list$agency[i],"Financing to\nCritical Technology Sectors by Sector"))+
+      coord_flip()
+  )
+  # 
+  if(!dir.exists(file.path("../output/Assistance/",file_c)))
+    dir.create(file.path("../output/Assistance",file_c))
+  
+  
+  log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#Fiscal_YQ<=2023.2&
+           filename=paste(file_c,"Crit",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_doc_svg_text = TRUE,
+           sheet="Crit",path=file.path("../output/Assistance/",file_c),second_path=file.path(sharepoint_log_path,file_c),
+           height=3.5,
+           startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
+           output_doc_png=TRUE,excel_y_var=TRUE
+  )
+  
+}
+
+```
+
+
+
 ### Is Critical-SBA & Exim
 ```{r sba}
 
@@ -394,7 +468,7 @@ for(i in 1:length(agency_list$agency)){
     format=TRUE,
     ytextposition=FALSE
   )+#date_x_year_breaks(1990,2020,8,partial_year=2023,partial_label="\nQ1–Q2")+   
-      # theme(legend.position = "none")+
+      theme(legend.position = "none")+
       labs(y=agency_list$yaxis[i],
            x="Critical Technology Sector",
            caption=paste("Source: ",agency_list$source[i]),
@@ -407,7 +481,7 @@ for(i in 1:length(agency_list$agency)){
   
   
   log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#Fiscal_YQ<=2023.2&
-           filename=paste(file_c,"Crit",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_doc_svg_text = FALSE,
+           filename=paste(file_c,"Crit",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_doc_svg_text = TRUE,
            sheet="Crit",path=file.path("../output/Assistance/",file_c),second_path=file.path(sharepoint_log_path,file_c),
            height=3.5,
            startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
@@ -417,6 +491,7 @@ for(i in 1:length(agency_list$agency)){
 }
 
 ```
+
 
 
 ## Financing
@@ -529,7 +604,7 @@ for(i in 1:length(agency_list$agency)){
     dir.create(file.path("../output/Assistance",file_c))
   
   log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#Fiscal_YQ<=2023.2&
-           filename=paste(file_c,"Status",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_doc_svg_text = FALSE,
+           filename=paste(file_c,"Status",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_doc_svg_text = TRUE,
            sheet="Status",path=file.path("../output/Assistance/",file_c),second_path=file.path(sharepoint_log_path,file_c), height=3.5,
            startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
            output_doc_png=TRUE,excel_y_var=TRUE
@@ -629,7 +704,7 @@ for(i in 1:length(agency_list$agency)){
     dir.create(file.path("../output/Assistance",file_c))
   
   log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#Fiscal_YQ<=2023.2&
-           filename=paste(file_c,"Type",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_doc_svg_text = FALSE,
+           filename=paste(file_c,"Type",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_doc_svg_text = TRUE,
            sheet="Type",path=file.path("../output/Assistance/",file_c),second_path=file.path(sharepoint_log_path,file_c), height=3.5,
            startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
            output_doc_png=TRUE,excel_y_var=TRUE
