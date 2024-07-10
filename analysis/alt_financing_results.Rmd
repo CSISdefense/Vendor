@@ -147,19 +147,19 @@ ToplineCFDA<-build_plot(
 
 
 ## Critical Tech
-### Region: DFC & EXIM
+### PartnerRegion: DFC 
 ```{r TechSum}
 
 
 (
 overall<-build_plot(
-  data=agency_assist  %>% filter(!is.na(StartFiscalYear)) %>% filter(AnyTag==TRUE),
+  data=agency_assist  %>% filter(!is.na(StartFiscalYear)) %>% filter(AnyTag==TRUE & !is.na(PartnerRegion)),
   chart_geom = "Bar Chart",
   share = FALSE,
    labels_and_colors=aa_lc,
   column_key=aa_ck,
   # NA, #VAR.ncol
-  x_var="CriticalTech", 
+  x_var="PartnerRegion", 
   # alpha_var="YTD",  #x_var 
   y_var="Amount_OMB25_GDP23", #VAR.y.variable
   color_var="program", #color_var
@@ -169,15 +169,17 @@ overall<-build_plot(
 )+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
   theme(legend.position = "right")+
   labs(y="Gross Amount or Instance Contract",
-       x="Critical Technology Sector")+
+       x="PartnerRegion")+
     coord_flip()+
     facet_grid(.~Agency,scale="free_y") # (Constant 2022 $s)# (Constant 2022 $s)
 )
 
 
-agency_assist$CriticalTech[agency_assist$CriticalTech==""]<-"Not Critical Tech"
-
 for(i in 1:length(agency_list$agency)){
+  if(!any(
+    agency_assist %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]&!is.na(AnyTag)&!is.na(PartnerRegion))
+  ))
+    next
   c<-agency_list$agency[i]
   file_c<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",agency_list$agency[i])))
   (Breakout<-build_plot(
@@ -186,7 +188,7 @@ for(i in 1:length(agency_list$agency)){
     share = FALSE,
     labels_and_colors=aa_lc,
     # NA, #VAR.ncol
-    x_var="CriticalTech",#alpha_var="YTD", #x_var
+    x_var="PartnerRegion",#alpha_var="YTD", #x_var
     y_var="Amount_OMB25_GDP23", #VAR.y.variable
     color_var="program", #color_var
     # facet_var="PlatformPortfolio", #facet_var
@@ -198,7 +200,7 @@ for(i in 1:length(agency_list$agency)){
       labs(y=agency_list$yaxis[i],
            x="Critical Technology Sector",
            caption=paste("Source: ",agency_list$source[i]),
-           title=paste(agency_list$agency[i],"Financing to\nCritical Technology Sectors by Sector"))+
+           title=paste(agency_list$agency[i],"Financing to\nCritical Technology Sectors by Region"))+
       coord_flip()
   )
   # 
