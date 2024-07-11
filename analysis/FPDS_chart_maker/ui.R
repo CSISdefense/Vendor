@@ -19,9 +19,9 @@ shinyUI(fluidPage(
           inputId ="year",
           label = "Years",
           min = 1990,
-          max = 2024,
+          max = 2023,
           sep = "",
-          value = c(1990,2024)
+          value = c(1990,2023)
         )
       ),
       wellPanel(
@@ -60,8 +60,8 @@ shinyUI(fluidPage(
         selectInput(
           inputId = "y_var",
           label = "Y Variable",
-          choices = "Action_Obligation_OMB24_GDP22",
-          selected = "Action_Obligation_OMB24_GDP22",
+          choices = "Action_Obligation_OMB25_GDP23",
+          selected = "Action_Obligation_OMB25_GDP23",
           width = "100%",
           selectize = TRUE
         ),

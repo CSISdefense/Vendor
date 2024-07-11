@@ -776,30 +776,6 @@ nano_sbg<-sba.sbg %>% filter(PROJECT_NAICS %in% c(541713))
 nano_exim<-exim %>% filter(Primary.Export.Product.NAICS %in% c(541713))
 
 
-agency_assist<-
-  rbind(sba.504 %>% mutate(StartFiscalYear=ApprovalFiscalYear,
-                           Amount=GrossApproval_Then_Year,
-                           Agency="SBA",
-                           program="504") %>%
-          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
-        sba.7a %>% mutate(StartFiscalYear=ApprovalFiscalYear,
-                          Amount=GrossApproval_Then_Year,
-                           Agency="SBA",
-                          program="7(A)") %>%
-          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
-       sba.sbg %>% mutate(StartFiscalYear=InstanceFiscalYear,
-                           Amount=INSTANCE_CONTRACT_AMOUNT_Then_Year,
-                           Agency="SBA",
-                           program="SBG") %>%
-          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag),
-       exim %>% mutate(StartFiscalYear=Fiscal.Year,
-                           Amount=Approved.Declined.Amount,
-                           Agency="EXIM",
-                           program="EXIM") %>%
-          dplyr::select(StartFiscalYear, Amount,CriticalTech,Agency,program,AnyTag)
-       ) %>% group_by(StartFiscalYear, CriticalTech,Agency,program,AnyTag) %>%
-  summarise(Amount=sum(Amount,na.rm = TRUE),
-            Count=n())
 levels(factor(loanSelected$awarding_agency_name))
 sba.FPDS<-loanSelected %>% filter(awarding_agency_name=="Small Business Administration")
 bio_borrowers<-unique(c(bio_7a$BorrName,bio_504$BorrName))
@@ -988,9 +964,11 @@ agency_assist<-
                         FinancingType=DeliveryMethod,
                         FinancingStatus=LoanStatus,
                         State=ProjectState,
-                        PartnerCountry=NA) %>%
+                        PartnerCountry=NA,
+                        PartnerRegion=NA) %>%
           dplyr::select(StartFiscalYear, Amount,Agency,program,
-                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry),
+                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry,
+                        PartnerRegion),
         sba.7a %>% mutate(StartFiscalYear=ApprovalFiscalYear,
                           Amount=GrossApproval_Then_Year,
                           Agency="SBA",
@@ -998,9 +976,11 @@ agency_assist<-
                         FinancingType=DeliveryMethod,
                         FinancingStatus=LoanStatus,
                         State=ProjectState,
-                        PartnerCountry=NA) %>%
+                        PartnerCountry=NA,
+                        PartnerRegion=NA) %>%
           dplyr::select(StartFiscalYear, Amount,Agency,program,
-                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry),
+                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry,
+                        PartnerRegion),
         sba.sbg %>% mutate(StartFiscalYear=InstanceFiscalYear,
                            Amount=INSTANCE_CONTRACT_AMOUNT_Then_Year,
                            Agency="SBA",
@@ -1008,9 +988,11 @@ agency_assist<-
                         FinancingType=PROGRAM,
                         FinancingStatus=BOND_STATUS,
                         State=BUSINESS_STATE,
-                        PartnerCountry=NA) %>%
+                        PartnerCountry=NA,
+                        PartnerRegion=NA) %>%
           dplyr::select(StartFiscalYear, Amount,Agency,program,
-                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry),
+                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry,
+                        PartnerRegion),
         exim %>% mutate(StartFiscalYear=Fiscal.Year,
                         Amount=Approved.Declined.Amount,
                         Agency="EXIM",
@@ -1018,9 +1000,11 @@ agency_assist<-
                         FinancingType=Program,
                         FinancingStatus=Deal.Cancelled,
                         State=Primary.Exporter.State.Name,
-                        PartnerCountry=Country) %>%
+                        PartnerCountry=Country,
+                        PartnerRegion=NA) %>%
           dplyr::select(StartFiscalYear, Amount,Agency,program,
-                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry),
+                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry,
+                        PartnerRegion),
         LPOproject %>% mutate(StartFiscalYear=IssuanceFiscalYear,
                               Amount=Loan_Amount,
                               Agency="DOE",
@@ -1030,11 +1014,13 @@ agency_assist<-
                               CriticalTech=LPO_Tech_Sector,
                               AnyTag=TRUE,
                               State=Location,
-                              PartnerCountry=NA) %>%
+                              PartnerCountry=NA,
+                        PartnerRegion=NA) %>%
           dplyr::select(StartFiscalYear, Amount,Agency,program,
-                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry),
+                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry,
+                        PartnerRegion),
         dfc %>% mutate(StartFiscalYear=Year,
-                       Amount=Commitment.level,
+                       Amount=Committment.level,
                        Agency="DFC",
                        program="DFC",
                        FinancingType=Type,
@@ -1042,17 +1028,19 @@ agency_assist<-
                        CriticalTech=Sector,
                        AnyTag=TRUE,
                        State=NA,
-                       PartnerCountry=Country) %>%
+                       PartnerCountry=Country,
+                        PartnerRegion=Region) %>%
           dplyr::select(StartFiscalYear, Amount,Agency,program,
-                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry)
+                        FinancingType,FinancingStatus,CriticalTech,AnyTag,State,PartnerCountry,
+                        PartnerRegion)
   ) %>% group_by(StartFiscalYear,
                  Agency,program,FinancingType,FinancingStatus,CriticalTech,AnyTag,
-                 State,PartnerCountry) %>%
+                 State,PartnerCountry,PartnerRegion) %>%
   summarise(Amount=sum(Amount,na.rm = TRUE),
             Count=n())
 agency_assist<-deflate(agency_assist,money_var="Amount",fy_var="StartFiscalYear")
 
-
+agency_assist <- agency_assist %>% replace_nas_with_unlabeled("CriticalTech")
 
 save(agency_assist,loanSelected,file="../../data/clean/Assistance/SelectedLoanDataSet.rda")
 save(sba.504,sba.7a,sba.sbg,sbic_providers,file=file.path("..","..","data","Clean","Assistance","sba_programs.rda"))
