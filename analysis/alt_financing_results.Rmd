@@ -167,9 +167,8 @@ if(!any(agency_assist$PartnerRegion=="United States"& !is.na(agency_assist$Partn
                                by=c("program","FinancingStatus"),add_var=c("FinancingStatus.sum","FinancingStatus.cross"),
                                case_sensitive = FALSE,path="offline")
 
-    
-  agency_assist_US<-rbind(agency_assist,
-                       data.frame(StartFiscalYear=2023,
+    colnames(agency_assist)
+    USblank<-data.frame(StartFiscalYear=2023,
                                   Agency='DFC',
                                   program='DFC',
                                   FinancingType=NA,
@@ -183,8 +182,14 @@ if(!any(agency_assist$PartnerRegion=="United States"& !is.na(agency_assist$Partn
                                   Count=0,
                                   Amount_OMB25_GDP23=0,
                                   FinancingStatus.cross=NA,
-                                  FinancingStatus.sum=NA,
-                                  FinancingType.Sum=NA))
+                                  FinancingStatus.sum=NA)
+    
+    colnames(agency_assist)[!colnames(agency_assist) %in% colnames(USblank)]
+    colnames(USblank)[!colnames(USblank) %in% colnames(agency_assist)]
+    ncol(agency_assist)
+    ncol(USblank)
+  agency_assist_US<-rbind(agency_assist,USblank)
+                       
 }
 
 
@@ -214,6 +219,7 @@ if(!any(agency_assist$PartnerRegion=="United States"& !is.na(agency_assist$Partn
 )
 
 
+
 for(i in 1:length(agency_list$agency)){
   if(nrow(
     agency_assist_US %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]&!is.na(AnyTag)&!is.na(PartnerRegion))
@@ -222,7 +228,7 @@ for(i in 1:length(agency_list$agency)){
   c<-agency_list$agency[i]
   file_c<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",agency_list$agency[i])))
   (Breakout<-build_plot(
-      data=agency_assist %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]&!is.na(AnyTag)),#& Fiscal_YQ<=2023.2 Fiscal_Year>=2000& 
+      data=agency_assist_US %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]&!is.na(AnyTag)),#& Fiscal_YQ<=2023.2 Fiscal_Year>=2000& 
     chart_geom = "Bar Chart",
     share = FALSE,
     labels_and_colors=aa_lc,
