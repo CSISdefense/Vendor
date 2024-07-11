@@ -149,11 +149,48 @@ ToplineCFDA<-build_plot(
 ## Critical Tech
 ### PartnerRegion: DFC 
 ```{r TechSum}
+agency_assist$PartnerRegion<-factor(agency_assist$PartnerRegion)
+levels(agency_assist$PartnerRegion)<-list(
+  "Asia"=c("Asia","Asia "),
+  "Central Asia"="Central Asia",
+  "Africa"="Africa",
+  "Middle East North Africa"=c("Middle East North Africa","MENA"),
+  "Europe"="Europe",
+  "United States"="United States",
+  "Other Western Hem."=c("Western Hem","Other Western Hem."),
+  "Worldwide"=c("Worldwide")
+)
+
+colnames(agency_assist)
+if(!any(agency_assist$PartnerRegion=="United States"& !is.na(agency_assist$PartnerRegion))){
+    agency_assist<-read_and_join_experiment(agency_assist,directory="assistance//",lookup_file="FinancingStatus.csv",
+                               by=c("program","FinancingStatus"),add_var=c("FinancingStatus.sum","FinancingStatus.cross"),
+                               case_sensitive = FALSE,path="offline")
+
+    
+  agency_assist_US<-rbind(agency_assist,
+                       data.frame(StartFiscalYear=2023,
+                                  Agency='DFC',
+                                  program='DFC',
+                                  FinancingType=NA,
+                                  FinancingStatus=NA,
+                                  CriticalTech=NA,
+                                  AnyTag=TRUE ,
+                                  State=NA,
+                                  PartnerCountry="United States",
+                                  PartnerRegion="United States",
+                                  Amount_Then_Year=0,
+                                  Count=0,
+                                  Amount_OMB25_GDP23=0,
+                                  FinancingStatus.cross=NA,
+                                  FinancingStatus.sum=NA,
+                                  FinancingType.Sum=NA))
+}
 
 
-(
-overall<-build_plot(
-  data=agency_assist  %>% filter(!is.na(StartFiscalYear)) %>% filter(AnyTag==TRUE & !is.na(PartnerRegion)),
+
+(overall<-build_plot(
+  data=agency_assist_US  %>% filter(!is.na(StartFiscalYear)) %>% filter(AnyTag==TRUE & !is.na(PartnerRegion)),
   chart_geom = "Bar Chart",
   share = FALSE,
    labels_and_colors=aa_lc,
@@ -162,6 +199,8 @@ overall<-build_plot(
   x_var="PartnerRegion", 
   # alpha_var="YTD",  #x_var 
   y_var="Amount_OMB25_GDP23", #VAR.y.variable
+  
+    first_color_on_bottom = FALSE,
   color_var="program", #color_var
   facet_var="Agency", #facet_var
   format=TRUE,
@@ -176,9 +215,9 @@ overall<-build_plot(
 
 
 for(i in 1:length(agency_list$agency)){
-  if(!any(
-    agency_assist %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]&!is.na(AnyTag)&!is.na(PartnerRegion))
-  ))
+  if(nrow(
+    agency_assist_US %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]&!is.na(AnyTag)&!is.na(PartnerRegion))
+  )==0)
     next
   c<-agency_list$agency[i]
   file_c<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",agency_list$agency[i])))
@@ -191,6 +230,7 @@ for(i in 1:length(agency_list$agency)){
     x_var="PartnerRegion",#alpha_var="YTD", #x_var
     y_var="Amount_OMB25_GDP23", #VAR.y.variable
     color_var="program", #color_var
+    first_color_on_bottom = FALSE,
     # facet_var="PlatformPortfolio", #facet_var
     # column_key=def_ck,
     format=TRUE,
@@ -198,7 +238,7 @@ for(i in 1:length(agency_list$agency)){
   )+#date_x_year_breaks(1990,2020,8,partial_year=2023,partial_label="\nQ1–Q2")+   
       # theme(legend.position = "none")+
       labs(y=agency_list$yaxis[i],
-           x="Critical Technology Sector",
+           x="Critical Technology\nSector",
            caption=paste("Source: ",agency_list$source[i]),
            title=paste(agency_list$agency[i],"Financing to\nCritical Technology Sectors by Region"))+
       coord_flip()
@@ -209,9 +249,9 @@ for(i in 1:length(agency_list$agency)){
   
   
   log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#Fiscal_YQ<=2023.2&
-           filename=paste(file_c,"Crit",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_doc_svg_text = TRUE,
-           sheet="Crit",path=file.path("../output/Assistance/",file_c),second_path=file.path(sharepoint_log_path,file_c),
-           height=3.5,
+           filename=paste(file_c,"Region",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_doc_svg_text = TRUE,
+           sheet="Region",path=file.path("../output/Assistance/",file_c),second_path=file.path(sharepoint_log_path,file_c),
+           height=3,
            startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
            output_doc_png=TRUE,excel_y_var=TRUE
   )
@@ -354,7 +394,7 @@ exim<-build_plot(
 
 ```
 ### Tech Type: Annual
-```{tech_annual}
+```{r tech_annual}
 agency_assist<-replace_nas_with_unlabeled(agency_assist,"CriticalTech","To be classified")
 
 (
@@ -445,7 +485,7 @@ overall<-build_plot(
 )+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
   theme(legend.position = "right")+
   labs(y="Gross Amount or Instance Contract",
-       x="Critical Technology Sector")+
+       x="Critical Technology\nSector")+
     coord_flip()+
     facet_grid(.~Agency,scale="free_y") # (Constant 2022 $s)# (Constant 2022 $s)
 )
@@ -470,9 +510,9 @@ for(i in 1:length(agency_list$agency)){
     format=TRUE,
     ytextposition=FALSE
   )+#date_x_year_breaks(1990,2020,8,partial_year=2023,partial_label="\nQ1–Q2")+   
-      theme(legend.position = "none")+
+      # theme(legend.position = "none")+
       labs(y=agency_list$yaxis[i],
-           x="Critical Technology Sector",
+           x="Critical Technology\nSector",
            caption=paste("Source: ",agency_list$source[i]),
            title=paste(agency_list$agency[i],"Financing to\nCritical Technology Sectors by Sector"))+
       coord_flip()
@@ -485,7 +525,7 @@ for(i in 1:length(agency_list$agency)){
   log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#Fiscal_YQ<=2023.2&
            filename=paste(file_c,"Crit",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_doc_svg_text = TRUE,
            sheet="Crit",path=file.path("../output/Assistance/",file_c),second_path=file.path(sharepoint_log_path,file_c),
-           height=3.5,
+           height=2.5,
            startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
            output_doc_png=TRUE,excel_y_var=TRUE
   )
@@ -499,6 +539,12 @@ for(i in 1:length(agency_list$agency)){
 ## Financing
 ### Financing Status
 ```{r FinancingStatus}
+
+
+  agency_assist<-read_and_join_experiment(agency_assist,directory="assistance//",lookup_file="FinancingStatus.csv",
+                               by=c("program","FinancingStatus"),add_var=c("FinancingStatus.sum","FinancingStatus.cross"),
+                               case_sensitive = FALSE,path="offline")
+
 add_labels_and_colors(agency_assist,
                                 "FinancingStatus.sum",
                                 coloration.key="Performance",
@@ -507,9 +553,6 @@ add_labels_and_colors(agency_assist,
                                 period.title=""
 )
 
-  agency_assist<-read_and_join_experiment(agency_assist,directory="assistance//",lookup_file="FinancingStatus.csv",
-                               by=c("program","FinancingStatus"),add_var=c("FinancingStatus.sum","FinancingStatus.cross"),
-                               case_sensitive = FALSE,path="offline")
 
   
   aa_lc<-prepare_labels_and_colors(agency_assist)
@@ -556,18 +599,18 @@ overall_status<-build_plot(
   format=TRUE,
   ytextposition=FALSE
 )+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "bottom")+
+  # theme(legend.position = "none")+
   labs(y="Gross Amount or Instance Contract",
        x="Financing Status",
            title="Financing to Critical Technology Sectors by Status",
        caption="Note: Unlabeled not shown.\tSource: Agency data sets and CSIS analysis.")+
     coord_flip()+facet_grid(Agency+program~.,scales="free_x")+coord_flip()+
-    theme(legend.position="none")
+    theme(legend.position="bottom")
 )
 
   log_plot(plot=overall_status, df=agency_assist  %>%  filter(AnyTag==TRUE & Agency!="DFC"),#Fiscal_YQ<=2023.2&
-           filename="status_overall",xlsx=paste("Overall_Assistance.xlsx",sep="_"),suppress_doc_svg_text = FALSE,
-           sheet="Status",path=file.path("../output/Assistance/"),second_path=file.path(sharepoint_log_path), height=3.5,
+           filename="status_overall",xlsx=paste("Overall_Assistance.xlsx",sep="_"),suppress_doc_svg_text = TRUE,
+           sheet="Status",path=file.path("../output/Assistance/"),second_path=file.path(sharepoint_log_path), height=6,
            format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
            output_doc_png=TRUE,excel_y_var=TRUE,output_slide_png=TRUE,slide_width=7.5,
            slide_size=14
@@ -607,7 +650,7 @@ for(i in 1:length(agency_list$agency)){
   
   log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#Fiscal_YQ<=2023.2&
            filename=paste(file_c,"Status",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_doc_svg_text = TRUE,
-           sheet="Status",path=file.path("../output/Assistance/",file_c),second_path=file.path(sharepoint_log_path,file_c), height=3.5,
+           sheet="Status",path=file.path("../output/Assistance/",file_c),second_path=file.path(sharepoint_log_path,file_c), height=2.5,
            startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
            output_doc_png=TRUE,excel_y_var=TRUE
   )
@@ -707,7 +750,7 @@ for(i in 1:length(agency_list$agency)){
   
   log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#Fiscal_YQ<=2023.2&
            filename=paste(file_c,"Type",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_doc_svg_text = TRUE,
-           sheet="Type",path=file.path("../output/Assistance/",file_c),second_path=file.path(sharepoint_log_path,file_c), height=3.5,
+           sheet="Type",path=file.path("../output/Assistance/",file_c),second_path=file.path(sharepoint_log_path,file_c), height=2.5,
            startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
            output_doc_png=TRUE,excel_y_var=TRUE
   )
