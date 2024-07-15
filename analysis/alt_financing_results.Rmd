@@ -58,6 +58,10 @@ agency_assist$CriticalTech[agency_assist$CriticalTech =="Loan_Program"]<-NA
 aa_lc<-prepare_labels_and_colors(agency_assist)
 aa_ck<-get_column_key(agency_assist)
 
+agency_assist %>% group_by(Agency,program)%>%
+  summarise(StartFY=min(StartFiscalYear,na.rm=TRUE),
+            EndFY=max(StartFiscalYear,na.rm=TRUE))
+
 ```
 
 # Decriptive stats
@@ -143,8 +147,84 @@ ToplineCFDA<-build_plot(
 ```
 
 
+## Annual Program
+```{tech_annual}
+agency_assist<-replace_nas_with_unlabeled(agency_assist,"CriticalTech","To be classified")
+
+(
+annual<-build_plot(
+  data=agency_assist  %>% filter(!is.na(StartFiscalYear)) %>% filter(AnyTag==TRUE),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+   labels_and_colors=aa_lc,
+  column_key=aa_ck,
+  # NA, #VAR.ncol
+  x_var="StartFiscalYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="Amount_OMB25_GDP23", #VAR.y.variable
+  color_var="program", #color_var
+  facet_var="CriticalTech", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Gross Amount or Instance Contract")+
+    facet_wrap(~CriticalTech,scale="free_y")
+)
 
 
+
+
+(
+dfc_iscrit<-build_plot(
+  data=agency_assist  %>% filter(!is.na(StartFiscalYear) & Agency=="DFC"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=aa_lc,
+  column_key=aa_ck,
+  # NA, #VAR.ncol
+  x_var="StartFiscalYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="Amount_OMB25_GDP23", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  facet_var="program", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Gross Amount or Instance Contract")# (Constant 2022 $s)
+)
+
+agency_assist$dStartFY<-as.Date(paste("1/1/",as.character(agency_assist$StartFiscalYear),sep=""),"%m/%d/%Y")
+(
+doe_annual<-build_plot(
+  data=agency_assist  %>% filter(!is.na(StartFiscalYear) & Agency=="DOE"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=aa_lc,
+  column_key=aa_ck,
+  # NA, #VAR.ncol
+  x_var="dStartFY", 
+  # alpha_var="YTD",  #x_var 
+  y_var="Amount_OMB25_GDP23", #VAR.y.variable
+  color_var="program", #color_var
+  # facet_var="program", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2009,2023,5)+#scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Loan Amount", x="Start Fiscal Year", caption=NULL)# (Constant 2022 $s)
+)
+file_c<-"DOE"
+  log_plot(plot=doe_annual, df=agency_assist  %>% filter(!is.na(StartFiscalYear) & Agency=="DOE"),#Fiscal_YQ<=2023.2&
+           filename=paste(file_c,"Annual",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_doc_svg_text = TRUE,
+           sheet="Annual",path=file.path("../output/Assistance/",file_c),second_path=file.path(sharepoint_log_path,file_c),
+           height=3.5,
+           startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
+           output_doc_png=TRUE,excel_y_var=TRUE
+  )
+
+```
 
 ## Critical Tech
 ### PartnerRegion: DFC 
