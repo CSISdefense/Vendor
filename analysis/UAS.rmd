@@ -84,7 +84,7 @@ def_data<-fed_data %>% filter(ContractingCustomer=="Defense")
 # detail_ck<-get_column_key(platpscintl,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 
 
-# drone %>% group_by(ContractingCustomer) %>% summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))
+# drone %>% group_by(ContractingCustomer) %>% summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
 japan_log_path<-file.path(get_local_sharepoint_path("JAPAN-DIIG Project - Documents"),"General","Data")
 japan_repo_path<-"../../Trade/output/Japan/"
 ```
@@ -112,61 +112,50 @@ colnames(drone)[colnames(drone)=="ProductOrServiceCodeText.x"]<-"ProductOrServic
 colnames(drone)[colnames(drone)=="Project.Name"]<-"ProjectName"
 
 summary(factor(drone$ProjectName))
+drone$Action_Obligation_OMB25_GDP23
 
-droneplat<-drone %>%
-  mutate(ProjectName=ifelse(ProjectName=="Other UAS",NA,ProjectName)) %>%
+(drone %>%   mutate(ProjectName=ifelse(ProjectName=="Other UAS",NA,ProjectName)) %>%
   group_by(ProjectName) %>%
-  dplyr::summarise(Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB24_GDP22,0)),
-                                              Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22)
-                   )%>%
-  group_by () %>%#PlatformPortfolioUAV
-  mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-         rank_2020=rank(desc(Action_Obligation_2020)))
-droneplat %>% arrange(desc(Action_Obligation_OMB24_GDP22))
+  dplyr::summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23)) %>% 
+  arrange(desc(Action_Obligation_OMB25_GDP23)))
 
-
-droneplat$TopProject<-
-  ifelse(droneplat$rank_2020<=7 | droneplat$rank_total<=7,droneplat$ProjectName,NA)
-
-drone<-left_join(drone,droneplat %>% dplyr::select(-Action_Obligation_OMB24_GDP22,-Action_Obligation_2020),
-                 by=c("ProjectName"))
-
-drone$TopProject[is.na(drone$TopProject) & !is.na(drone$ProjectName)]<-
-  "Other Labeled Project"
-
+drone<-drone  %>%   label_top(
+                    "ProjectName",
+                    n=8,
+                    weight="Action_Obligation_OMB25_GDP23",
+                    top_name="TopProject",
+                    group_list=NA,
+                    time="Fiscal_Year",
+                    recent=2020,
+                    retain_rank=FALSE
+                    # write_file=NA
+                    )
 
 summary(factor(drone$TopProject))
 
-dronePSC<-drone %>% group_by (ProductOrServiceCode,ProductOrServiceCodeText) %>%
-  summarise(
-            Action_Obligation_2020=sum(ifelse(Fiscal_Year==2020,Action_Obligation_OMB24_GDP22,0)),
-                                       Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))%>%
-  group_by () %>%
-  mutate(rank_total=rank(desc(Action_Obligation_OMB24_GDP22)),
-         rank_2020=rank(desc(Action_Obligation_2020)))
-dronePSC %>% arrange(desc(Action_Obligation_OMB24_GDP22))
+(drone %>% group_by (ProductOrServiceCode,ProductOrServiceCodeText) %>%
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23)) %>%
+    arrange(desc(Action_Obligation_OMB25_GDP23))
+)
 
-dronePSC$dronePSCode<-
-  ifelse(dronePSC$rank_2020<=7 | dronePSC$rank_total<=7,dronePSC$ProductOrServiceCode,NA)
-dronePSC$TopPStext<-
-  ifelse(dronePSC$rank_2020<=7 | dronePSC$rank_total<=7,dronePSC$ProductOrServiceCodeText,NA)
+drone<-drone  %>%   label_top(
+                    "ProductOrServiceCodeText",
+                    n=8,
+                    weight="Action_Obligation_OMB25_GDP23",
+                    top_name="TopPStext",
+                    group_list=NA,
+                    time="Fiscal_Year",
+                    recent=2020,
+                    retain_rank=FALSE
+                    # write_file=NA
+                    )
 
 
-drone<-left_join(drone,dronePSC %>% select(-Action_Obligation_OMB24_GDP22,
-                                           -Action_Obligation_2020,-ProductOrServiceCodeText),
-                 by=c("ProductOrServiceCode"))
-
-drone$dronePSCode[is.na(drone$dronePSCode) & !is.na(drone$ProductOrServiceCode)]<-
-  "Other Labeled PSC"
-drone$TopPStext[is.na(drone$TopPStext) & !is.na(drone$ProductOrServiceCode)]<-
-  "Other Labeled PSC"
-
-drone$TopPStext<-factor_wrap(drone$TopPStext)
 
 summary(factor(drone$TopPStext))
 
-drone %>% dplyr::group_by(ProjectName, IsRemotelyOperated)  %>% dplyr::summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))%>%
-  arrange(-Action_Obligation_OMB24_GDP22)
+drone %>% dplyr::group_by(ProjectName, IsRemotelyOperated)  %>% dplyr::summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))%>%
+  arrange(-Action_Obligation_OMB25_GDP23)
                                                          
                                                                                  
 
@@ -253,7 +242,7 @@ write.csv(file="ArmyUAS.csv",(OTA_data[grep("DIU", OTA_data$Description_of_Requi
     # labels_and_colors=drone_lc,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
-    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     color_var="SimpleArea", #color_var
     facet_var="PlatformPortfolioUAV", #facet_var
     # second_var="IsOTA", #facet_var
@@ -283,7 +272,7 @@ write.csv(file="ArmyUAS.csv",(OTA_data[grep("DIU", OTA_data$Description_of_Requi
     # labels_and_colors=drone_lc,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
-    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     color_var="TypeOfAgreement", #color_var
     facet_var="PlatformPortfolioUAV", #facet_var
     # second_var="IsOTA", #facet_var
@@ -311,7 +300,7 @@ write.csv(file="ArmyUAS.csv",(OTA_data[grep("DIU", OTA_data$Description_of_Requi
     # labels_and_colors=drone_lc,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
-    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     color_var="NontraditionalGovernmentContractorParticipationDescription", #color_var
     facet_var="PlatformPortfolioUAV", #facet_var
     # second_var="IsOTA", #facet_var
@@ -341,7 +330,7 @@ write.csv(file="ArmyUAS.csv",(OTA_data[grep("DIU", OTA_data$Description_of_Requi
     # labels_and_colors=drone_lc,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
-    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     color_var="SubCustomer.OTA", #color_var
     facet_var="PlatformPortfolioUAV", #facet_var
     # second_var="IsOTA", #facet_var
@@ -376,7 +365,7 @@ write.csv(file="ArmyUAS.csv",(OTA_data[grep("DIU", OTA_data$Description_of_Requi
       labels_and_colors=ota_lc,
       # NA, #VAR.ncol
       x_var="dFYear", #x_var
-      y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+      y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
       color_var="SubCustomer.DoD", #color_var
       # facet_var="SubCustomer.DoD", #facet_var
       # second_var="IsOTA", #facet_var
@@ -414,7 +403,7 @@ write.csv(file="ArmyUAS.csv",(OTA_data[grep("DIU", OTA_data$Description_of_Requi
     labels_and_colors=ota_lc,
     # NA, #VAR.ncol
     x_var="Fiscal_Year", #x_var
-    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     color_var="SubCustomer.DoD", #color_var
     # facet_var="SubCustomer.DoD", #facet_var
     # second_var="IsOTA", #facet_var
@@ -446,10 +435,10 @@ ggsave600dpi(uas_ota_subcust,file="..//output//Remotely_Crewed//uas_ota_subcust.
 
 write.csv(file="..//Output//Remotely_Crewed//uas_ota_subcust.csv",row.names = FALSE,na = "",
           uas_ota_subcust$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
-            bAction_Obligation_OMB24_GDP22=Action_Obligation_OMB24_GDP22/1000000000)%>%
+            bAction_Obligation_OMB25_GDP23=Action_Obligation_OMB25_GDP23/1000000000)%>%
             arrange(Fiscal_Year)%>%
             pivot_wider(id_cols=c(SubCustomer.DoD),
-                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%
+                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB25_GDP23)%>%
             arrange(SubCustomer.DoD),na="")
 
 
@@ -467,7 +456,7 @@ write.csv(file="..//Output//Remotely_Crewed//uas_ota_subcust.csv",row.names = FA
     # labels_and_colors=drone_lc,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
-    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     color_var="SimpleArea", #color_var
     facet_var="SimpleArea", #facet_var
     # column_key=drone_ck,
@@ -496,10 +485,10 @@ ggsave600dpi(rc_psr,file="..//output//Remotely_Crewed//Remotely_Crewed_psr.eps",
 
 # write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_psr.csv",row.names = FALSE,na = "",
 #           rc_psr$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
-#             bAction_Obligation_OMB24_GDP22=Action_Obligation_OMB24_GDP22/1000000000)%>%
+#             bAction_Obligation_OMB25_GDP23=Action_Obligation_OMB25_GDP23/1000000000)%>%
 #             arrange(Fiscal_Year)%>%
 #             pivot_wider(id_cols=c(SimpleArea),
-#                         names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%
+#                         names_from=Fiscal_Year,values_from=bAction_Obligation_OMB25_GDP23)%>%
 #             arrange(SimpleArea),na="")
 
 output_TY<-drone %>%   group_by(SimpleArea,Fiscal_Year)%>%
@@ -531,7 +520,7 @@ write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_Customer_psr_cur.cs
     # labels_and_colors=drone_lc,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
-    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     color_var="SimpleArea", #color_var
     facet_var="CaseStudy", #facet_var
     second_var = "SimpleArea",
@@ -577,7 +566,7 @@ log_plot(plot=rceo_psr, df=droneEO %>% dplyr::filter(  lubridate::year(dFYear)>=
     labels_and_colors=fedpsc_lc,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
-    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     color_var="SimpleArea", #color_var
     facet_var="PlatformPortfolioUAV", #facet_var
     column_key=fedpsc_ck,
@@ -609,7 +598,7 @@ log_plot(plot=rceo_psr, df=droneEO %>% dplyr::filter(  lubridate::year(dFYear)>=
     labels_and_colors=fedpsc_lc,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
-    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     color_var="SimpleArea", #color_var
     facet_var="PlatformPortfolioUAV", #facet_var
     column_key=fedpsc_ck,
@@ -651,10 +640,10 @@ ggsave(gridExtra::grid.arrange(rc_psr_plat+labs(caption=NULL),
 
 write.csv(file="..//Output//Remotely_Crewed//def_platUAS_psr.csv",row.names = FALSE,na = "",
           rc_psr_plat$data %>% mutate(Fiscal_Year=lubridate::year(dFYear),
-            bAction_Obligation_OMB24_GDP22=Action_Obligation_OMB24_GDP22/1000000000)%>%
+            bAction_Obligation_OMB25_GDP23=Action_Obligation_OMB25_GDP23/1000000000)%>%
             arrange(Fiscal_Year)%>%
             pivot_wider(id_cols=c(PlatformPortfolioUAV,SimpleArea),
-                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%
+                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB25_GDP23)%>%
             arrange(PlatformPortfolioUAV,SimpleArea))
 
 output_TY<-fed_data %>% filter(ContractingCustomer=="Defense") %>%   group_by(SimpleArea,PlatformPortfolioUAV,Fiscal_Year)%>%
@@ -676,7 +665,7 @@ write.csv(file="..//Output//Remotely_Crewed//def_platUAS_cur.csv",row.names = FA
 ```{r drone_customer}
 
 # drone %>% group_by(claimantprogramcode,ClaimantProgramCodeText) %>% 
-#   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
+#   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
 # drone$SubCustomer
 (
   rc_customer<-build_plot(
@@ -687,7 +676,7 @@ write.csv(file="..//Output//Remotely_Crewed//def_platUAS_cur.csv",row.names = FA
     column_key=uav_ck,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
-    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     color_var="SubCustomer.DoD", #color_var
     facet_var="SubCustomer.DoD", #facet_var
     format=TRUE,
@@ -716,7 +705,7 @@ write.csv(file="..//Output//Remotely_Crewed//def_platUAS_cur.csv",row.names = FA
     column_key=uav_ck,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
-    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     color_var="SubCustomer.DoD", #color_var
     alpha_var="YTD",
     facet_var="CaseStudy", #facet_var
@@ -750,10 +739,10 @@ ggsave600dpi(rc_customer,file="..//output//Remotely_Crewed//Remotely_Crewed_Cust
 
 write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_Customer.csv",row.names = FALSE,na = "",
           rc_customer$data %>% mutate(Fiscal_Year=lubridate::year(dFYear),
-            bAction_Obligation_OMB24_GDP22=Action_Obligation_OMB24_GDP22/1000000000)%>%
+            bAction_Obligation_OMB25_GDP23=Action_Obligation_OMB25_GDP23/1000000000)%>%
             arrange(Fiscal_Year)%>%
             pivot_wider(id_cols=c(SubCustomer.DoD),
-                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%
+                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB25_GDP23)%>%
             arrange(SubCustomer.DoD))
 
 
@@ -783,7 +772,7 @@ log_plot(plot=eorc_customer, df=droneEO %>% dplyr::filter(
 ```{r drone_customer}
 
 # drone %>% group_by(claimantprogramcode,ClaimantProgramCodeText) %>% 
-#   summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
+#   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
 # drone$SubCustomer
 summary(factor(drone$TopProject))
 # drone$TopProject<-u
@@ -810,7 +799,7 @@ levels(drone$TopProjectLabel)<-list(
     column_key=fed_ck,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
-    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     color_var="TopProjectLabel", #color_var
     facet_var="SubCustomer.DoD", #facet_var
     format=TRUE,
@@ -842,10 +831,10 @@ ggsave600dpi(rc_custproj,file="..//output//Remotely_Crewed//Remotely_Crewed_Cust
 
 write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_Customer_Project.csv",row.names = FALSE,na = "",
           rc_custproj$data %>% mutate(Fiscal_Year=lubridate::year(dFYear),
-            bAction_Obligation_OMB24_GDP22=Action_Obligation_OMB24_GDP22/1000000000)%>%
+            bAction_Obligation_OMB25_GDP23=Action_Obligation_OMB25_GDP23/1000000000)%>%
             arrange(Fiscal_Year)%>%
             pivot_wider(id_cols=c(SubCustomer.DoD,TopProjectLabel),
-                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%
+                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB25_GDP23)%>%
             arrange(SubCustomer.DoD,TopProjectLabel))
 
 
@@ -872,7 +861,7 @@ log_plot(plot=rc_custproj, df=drone,
 ```{r drone_customer}
 
 droneEO %>% filter(CaseStudy=="EO Sensors") %>% group_by(ProductOrServiceCodeText) %>%
-  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
 
 droneEO$PSCsum<-factor(droneEO$ProductOrServiceCodeText)
 
@@ -908,7 +897,7 @@ levels(droneEO$PSCsum)<-list(
     column_key=fedpsc_ck,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
-    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     alpha_var="YTD",
     color_var="PSCsum", #color_var
     facet_var="SubCustomer.DoD", #facet_var
@@ -943,8 +932,8 @@ log_plot(plot=eo_custproj, df=droneEO %>% filter(CaseStudy=="EO Sensors"),
 ```{r drone_customer}
 
 droneEO %>% filter(CaseStudy=="EO Sensors") %>% group_by(Project.Name) %>%
-  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE)) %>%
-  arrange(-Action_Obligation_OMB24_GDP22)
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE)) %>%
+  arrange(-Action_Obligation_OMB25_GDP23)
   
 
 droneEO$PSCsum<-factor(droneEO$ProductOrServiceCodeText)
@@ -981,7 +970,7 @@ levels(droneEO$PSCsum)<-list(
     column_key=fedpsc_ck,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
-    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     alpha_var="YTD",
     color_var="PSCsum", #color_var
     facet_var="SubCustomer.DoD", #facet_var
@@ -1059,7 +1048,7 @@ fed_data<-fed_data %>% group_by(SubCustomer.DoD,Fiscal_Year) %>%
     labels_and_colors=fed_lc,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
-    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     color_var="SubCustomer.DoD", #color_var
     # facet_var="SubCustomer.DoD", #facet_var
     column_key=fed_ck,
@@ -1094,10 +1083,10 @@ ggsave600dpi(rc_commercial,file="..//output//Remotely_Crewed//Remotely_Crewed_Co
 # 
 # write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_Customer.csv",row.names = FALSE,na = "",
 #           rc_customer$data %>% mutate(#Fiscal_Year=lubridate::year(dFYear),
-#             bAction_Obligation_OMB24_GDP22=Action_Obligation_OMB24_GDP22/1000000000)%>%
+#             bAction_Obligation_OMB25_GDP23=Action_Obligation_OMB25_GDP23/1000000000)%>%
 #             arrange(Fiscal_Year)%>%
 #             pivot_wider(id_cols=c(SubCustomer.DoD),
-#                         names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%
+#                         names_from=Fiscal_Year,values_from=bAction_Obligation_OMB25_GDP23)%>%
 #             arrange(SubCustomer.DoD))
 # 
 # 
@@ -1120,7 +1109,7 @@ ggsave600dpi(rc_commercial,file="..//output//Remotely_Crewed//Remotely_Crewed_Co
       labels_and_colors=ota_lc,
       # NA, #VAR.ncol
       x_var="dFYear", #x_var
-      y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+      y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
       color_var="SubCustomer.DoD", #color_var
       # facet_var="SubCustomer.DoD", #facet_var
       # second_var="IsOTA", #facet_var
@@ -1152,7 +1141,7 @@ ggsave600dpi(rc_commercial,file="..//output//Remotely_Crewed//Remotely_Crewed_Co
       labels_and_colors=ota_contract_lc,
       # NA, #VAR.ncol
       x_var="dFYear", #x_var
-      y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+      y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
       color_var="IsOTA", #color_var
       facet_var="SubCustomer.DoD", #facet_var
       # second_var="IsOTA", #facet_var
@@ -1192,7 +1181,7 @@ log_plot(plot=uas_ota_contract_comm_sub, df=ota_contract %>% filter(PlatformPort
       labels_and_colors=ota_contract_lc,
       # NA, #VAR.ncol
       x_var="dFYear", #x_var
-      y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+      y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
       color_var="SubCustomer.DoD", #color_var
       facet_var="SubCustomer.DoD", #facet_var
       # second_var="IsOTA", #facet_var
@@ -1215,8 +1204,8 @@ log_plot(plot=uas_ota_contract_comm_sub, df=ota_contract %>% filter(PlatformPort
 OTA_data$LegalBusinessName
 OTA_data %>% filter(SubCustomer.DoD=="Army"& PlatformPortfolioUAV=="Remotely Crewed"& Fiscal_Year<=2014)%>%
   group_by(Description_of_Requirement,LegalBusinessName,NontraditionalGovernmentContractorParticipationDescription)%>%
-       summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))%>%
-  arrange(-Action_Obligation_OMB24_GDP22)
+       summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))%>%
+  arrange(-Action_Obligation_OMB25_GDP23)
 
 ggsave600dpi(uas_ota_contract_comm_sub,file="..//output//Remotely_Crewed//uas_ota_contract_comm_sub.png",
              width=6.5, height= 3, units="in",size=11, lineheight=1.2)
@@ -1233,10 +1222,10 @@ ggsave600dpi(uas_contract_comm_sub+theme(legend.position = "None"),file="..//out
 
 write.csv(file="..//Output//Remotely_Crewed//uas_ota_contract_comm_sub.csv",row.names = FALSE,na = "",
           uas_ota_contract_comm_sub$data %>% mutate(Fiscal_Year=lubridate::year(dFYear),
-            bAction_Obligation_OMB24_GDP22=Action_Obligation_OMB24_GDP22/1000000000)%>%
+            bAction_Obligation_OMB25_GDP23=Action_Obligation_OMB25_GDP23/1000000000)%>%
             arrange(Fiscal_Year)%>%
             pivot_wider(id_cols=c(SubCustomer.DoD,IsOTA),
-                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%
+                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB25_GDP23)%>%
             arrange(SubCustomer.DoD,IsOTA))
 ```
 
@@ -1251,7 +1240,7 @@ write.csv(file="..//Output//Remotely_Crewed//uas_ota_contract_comm_sub.csv",row.
       labels_and_colors=ota_lc,
       # NA, #VAR.ncol
       x_var="dFYear", #x_var
-      y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+      y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
       color_var="SubCustomer.DoD", #color_var
       # facet_var="SubCustomer.DoD", #facet_var
       # second_var="IsOTA", #facet_var
@@ -1283,7 +1272,7 @@ write.csv(file="..//Output//Remotely_Crewed//uas_ota_contract_comm_sub.csv",row.
 #       labels_and_colors=ota_contract_lc,
 #       # NA, #VAR.ncol
 #       x_var="dFYear", #x_var
-#       y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+#       y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
 #       color_var="IsOTA", #color_var
 #       facet_var="SubCustomer.DoD", #facet_var
 #       # second_var="IsOTA", #facet_var
@@ -1323,7 +1312,7 @@ log_plot(plot=uas_ota_contract_comm_sub, df=ota_contract %>% filter(PlatformPort
 #       labels_and_colors=ota_contract_lc,
 #       # NA, #VAR.ncol
 #       x_var="dFYear", #x_var
-#       y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+#       y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
 #       color_var="SubCustomer.DoD", #color_var
 #       facet_var="SubCustomer.DoD", #facet_var
 #       # second_var="IsOTA", #facet_var
@@ -1346,8 +1335,8 @@ log_plot(plot=uas_ota_contract_comm_sub, df=ota_contract %>% filter(PlatformPort
 # OTA_data$LegalBusinessName
 # OTA_data %>% filter(SubCustomer.DoD=="Army"& PlatformPortfolioUAV=="Remotely Crewed"& Fiscal_Year<=2014)%>%
 #   group_by(Description_of_Requirement,LegalBusinessName,NontraditionalGovernmentContractorParticipationDescription)%>%
-#        summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))%>%
-#   arrange(-Action_Obligation_OMB24_GDP22)
+#        summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))%>%
+#   arrange(-Action_Obligation_OMB25_GDP23)
 # 
 # ggsave600dpi(uas_ota_contract_comm_sub,file="..//output//Remotely_Crewed//uas_ota_contract_comm_sub.png",
 #              width=6.5, height= 3, units="in",size=11, lineheight=1.2)
@@ -1364,10 +1353,10 @@ log_plot(plot=uas_ota_contract_comm_sub, df=ota_contract %>% filter(PlatformPort
 # 
 # write.csv(file="..//Output//Remotely_Crewed//uas_ota_contract_comm_sub.csv",row.names = FALSE,na = "",
 #           uas_ota_contract_comm_sub$data %>% mutate(Fiscal_Year=lubridate::year(dFYear),
-#             bAction_Obligation_OMB24_GDP22=Action_Obligation_OMB24_GDP22/1000000000)%>%
+#             bAction_Obligation_OMB25_GDP23=Action_Obligation_OMB25_GDP23/1000000000)%>%
 #             arrange(Fiscal_Year)%>%
 #             pivot_wider(id_cols=c(SubCustomer.DoD,IsOTA),
-#                         names_from=Fiscal_Year,values_from=bAction_Obligation_OMB24_GDP22)%>%
+#                         names_from=Fiscal_Year,values_from=bAction_Obligation_OMB25_GDP23)%>%
 #             arrange(SubCustomer.DoD,IsOTA))
 ```
 
@@ -1414,7 +1403,7 @@ CommPlatUAVbar<-build_plot(
   labels_and_colors=fed_lc,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="AnyCommercial", #color_var
   facet_var="PlatformPortfolioUAV", #facet_var
   # second_var="SimpleArea",
@@ -1474,7 +1463,7 @@ ToplineCompMulti<-build_plot(
   labels_and_colors=fed_lc,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Competition.multisum", #color_var
   facet_var="SimpleArea", #facet_var
   column_key=fed_ck,
@@ -1505,7 +1494,7 @@ ToplineNoComp<-build_plot(
   labels_and_colors=fed_lc,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="No.Competition.sum", #color_var
   facet_var="SimpleArea", #facet_var
   column_key=fed_ck,
@@ -1539,7 +1528,7 @@ ggsave600dpi(ToplineNoComp,file="../output/Remotely_Crewed//uas_nocompetition.sv
 write.csv(file="..//Output//Remotely_Crewed//uas_nocompetition.csv",row.names = FALSE, na = "",
           ToplineNoComp$data%>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(SimpleArea,No.Competition.sum),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22))
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23))
 
 
 write.csv(file="..//Output//Remotely_Crewed//uas_nocompetition_cur.csv",row.names = FALSE, na = "",
@@ -1605,7 +1594,7 @@ PSReffCompPlatUAVbar<-build_plot(
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="Competition.effective.only", #color_var
   facet_var="PlatformPortfolioUAV", #facet_var
   second_var="SimpleArea",
@@ -1664,7 +1653,7 @@ write.csv(file="..//Output//Remotely_Crewed//PSReffCompPlatUAV.csv",row.names = 
     labels_and_colors=fedpsc_lc,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
-    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     color_var="VendorSize_Intl", #color_var
     # facet_var="Competition.sum", #facet_var
     column_key=fedpsc_ck,
@@ -1699,7 +1688,7 @@ ggsave600dpi("..//Output//Remotely_Crewed//remotely_crewed_vendor_intl_square.pn
     labels_and_colors=fedpsc_lc,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
-    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     color_var="VendorSize_Intl", #color_var
     facet_var="CaseStudy", #facet_var
     column_key=fedpsc_ck,
@@ -1771,7 +1760,7 @@ FMSplatUAVbar<-build_plot(
   labels_and_colors=fed_lc,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
-  y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="IsFMS", #color_var
   facet_var="PlatformPortfolioUAV", #facet_var
   # second_var="SimpleArea",
@@ -1830,7 +1819,7 @@ write.csv(file="..//Output//Remotely_Crewed//FMSplatUAV_cur.csv",row.names = FAL
                                            chart_geom="Bar Chart",
                                            share=FALSE,
                                            x_var="dFYear",
-                                           y_var="Action_Obligation_OMB24_GDP22",
+                                           y_var="Action_Obligation_OMB25_GDP23",
                                            color_var="foreign_funding_description",
                                            facet_var="CaseStudy",
                                            second_var="IsFMS",
@@ -1871,7 +1860,7 @@ summary(platpscintl$VendorSize_Intl)
                                              #IsFMS==TRUE 
                                              chart_geom="Bar Chart",
                                              x_var="dFYear",
-                                             y_var="Action_Obligation_OMB24_GDP22",
+                                             y_var="Action_Obligation_OMB25_GDP23",
                                              color_var="VendorSize_Intl",
                                              # facet_var="PlaceIsForeign",
                                              second_var="IsFMS",
@@ -1889,7 +1878,7 @@ summary(platpscintl$VendorSize_Intl)
                                                             !is.na(IsFMS)&Fiscal_Year>2011&Fiscal_Year<=2020),#IsFMS==TRUE  
                                     chart_geom="Bar Chart",
                                     x_var="dFYear",
-                                    y_var="Action_Obligation_OMB24_GDP22",
+                                    y_var="Action_Obligation_OMB25_GDP23",
                                     color_var="VendorSize_Intl",
                                     facet_var="PlaceIsForeign",
                                     second_var="IsFMS",
@@ -1905,7 +1894,7 @@ summary(platpscintl$VendorSize_Intl)
 write.csv(file="..//output//Remotely_Crewed//rc_vendor_place_FMS.csv",row.names = FALSE,na = "",
           rc_vendor_place_fms$data%>%# mutate(dFYear=lubridate::year(dFYear))%>%
             pivot_wider(id_cols=c(VendorSize_Intl,IsFMS, PlaceIsForeign),
-                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% arrange(PlaceIsForeign,IsFMS,VendorSize_Intl))
+                        names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23)%>% arrange(PlaceIsForeign,IsFMS,VendorSize_Intl))
 
 ggsave600dpi(rc_vendor_place_fms,file="../output/Remotely_Crewed//rc_vendor_place_FMS.png",
              size = 12, lineheight=1, height =4.5, width=9)
@@ -1924,7 +1913,7 @@ ggsave600dpi(rc_vendor_place_fms,file="../output/Remotely_Crewed//rc_vendor_plac
     labels_and_colors=fedpsc_lc,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
-    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     alpha_var="YTD",
     color_var="Shiny.VendorSize", #color_var
     facet_var="CaseStudy", #facet_var
@@ -1960,7 +1949,7 @@ log_plot(plot=rceo_psr, df=droneEO %>% dplyr::filter(  lubridate::year(dFYear)>=
 
 droneEO %>% filter(CaseStudy=="EO Sensors") %>% filter(VendorSize_Intl=="International") %>%
   group_by(VendorISOalpha3,OriginISOalpha3) %>%
-  summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE)) %>% arrange(-Action_Obligation_OMB24_GDP22)
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE)) %>% arrange(-Action_Obligation_OMB25_GDP23)
 
 droneEO$PSCsum<-factor(droneEO$ProductOrServiceCodeText)
 
@@ -1996,7 +1985,7 @@ levels(droneEO$PSCsum)<-list(
     column_key=fedpsc_ck,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
-    y_var="Action_Obligation_OMB24_GDP22", #VAR.y.variable
+    y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     alpha_var="YTD",
     color_var="VendorSize_Intl", #color_var
     facet_var="PSCsum", #facet_var
@@ -2117,7 +2106,7 @@ summary(factor(annual_platformUAV_top4big5$PlatformPortfolioUAV))
 (vsize<-build_plot(data=defense_platformUAV_vendor %>% filter(Fiscal_Year>=2010 & Fiscal_Year<=2020 &!is.na(PlatformPortfolioUAV)),
            chart_geom="Bar Chart",
            x_var="dFYear",
-           y_var="Action_Obligation_OMB24_GDP22",
+           y_var="Action_Obligation_OMB25_GDP23",
            color_var="EntitySizeText",
            facet_var="PlatformPortfolioUAV",
            # second_var="IsEntityAbove2018constant10ThousandThreshold",
@@ -2153,7 +2142,7 @@ ggsave600dpi(top4big5+
   #             NumberOfActions=sum(NumberOfActions,na.rm=TRUE)) %>% 
   #   deflate(money_var="Action_Obligation")  %>% 
   #   group_by(EntityID) %>% 
-  #   dplyr::mutate(TotalSpend=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))%>% group_by()%>%
+  #   dplyr::mutate(TotalSpend=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))%>% group_by()%>%
   #                   dplyr::mutate(TotalPos=rank(-TotalSpend,ties="min")) %>% arrange(EntityID)
   #               
   #               # TotalPos=rank(-TotalSpend)) %>% arrange(EntityID),
@@ -2168,7 +2157,7 @@ topUAVannual<-defense_UAV_vendor %>%
   dplyr::mutate(TopEntityText=ifelse(pos<=10,EntityText,"All Other"),
          Toppos=ifelse(pos<=10,pos,0)) %>%
   dplyr::group_by(Fiscal_Year,PlatformPortfolioUAV,TopEntityText,Toppos) %>%
-  dplyr::summarize(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE)) %>% arrange(Fiscal_Year,Toppos)
+  dplyr::summarize(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE)) %>% arrange(Fiscal_Year,Toppos)
 
 # topUAV<-deflate(topUAV,money_var="Action_Obligation")
 
@@ -2180,7 +2169,7 @@ topUAVunlabeled<-topUAV %>% filter(Fiscal_Year>=2000 & (is.na(EntityCategory) | 
 ```{r WideDisplay}
 defense_UAV_vendor<-defense_UAV_vendor %>%
   group_by(EntityID) %>% 
-  dplyr::mutate(TotalSpend=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE),
+  dplyr::mutate(TotalSpend=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE),
                 TotalPos=rank(-TotalSpend))
 
 vendorUAVwide<-defense_UAV_vendor %>%
@@ -2188,10 +2177,10 @@ vendorUAVwide<-defense_UAV_vendor %>%
   dplyr::mutate(TopEntityText=ifelse(pos<=10,EntityText,"All Other"),
          Toppos=ifelse(pos<=10,pos,0)) %>%
   dplyr::group_by(PlatformPortfolioUAV,EntityText,EntityID,EntityCategory) %>%
-  dplyr::mutate(TotalSpend=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE)) %>%
+  dplyr::mutate(TotalSpend=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE)) %>%
   arrange(Fiscal_Year)%>%
   pivot_wider(id_cols=c(PlatformPortfolioUAV,EntityText,EntityID,EntityCategory,TotalSpend),
-              names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% 
+              names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23)%>% 
     group_by() %>% dplyr::mutate(TotalPos=rank(-TotalSpend)) %>% arrange(TotalPos)
 
 
@@ -2203,7 +2192,7 @@ write.csv(vendorUAVwide %>% dplyr::select(-EntityCategory),file="../output/Remot
 View(vendorUAVwide %>% filter((TotalSpend>=50000000 & EntityCategory!="PID") | is.na(EntityCategory)))
 
 # (
-# vend_spark<-ggplot(defense_UAV_vendor %>% filter(TotalPos<=20),aes(x=Fiscal_Year,y=Action_Obligation_OMB24_GDP22))+
+# vend_spark<-ggplot(defense_UAV_vendor %>% filter(TotalPos<=20),aes(x=Fiscal_Year,y=Action_Obligation_OMB25_GDP23))+
 #   facet_grid(EntityID~.,scale="free_y")+geom_col()+
 #     theme_light()+
 #   theme(axis.title=element_blank(),
@@ -2277,7 +2266,7 @@ topUAVannualduns<-deflate(topUAVannualduns,money_var="Action_Obligation")
 defense_platformUAV_contractor<-deflate(defense_platformUAV_contractor,money_var="Action_Obligation")  %>%
   group_by(UnknownCompany,AllContractor,
            jointventure,WarningFlag) %>% 
-  dplyr::mutate(TotalSpend=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE),
+  dplyr::mutate(TotalSpend=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE),
                 TotalPos=rank(-TotalSpend))
 
 
@@ -2288,14 +2277,14 @@ contractorUAVwide<-defense_platformUAV_contractor %>%
   #        Toppos=ifelse(pos<=10,pos,0)) %>%
   group_by(PlatformPortfolioUAV,UnknownCompany,AllContractor,
            jointventure,Fiscal_Year,IsDefense) %>%
-  dplyr::summarize(Action_Obligation_OMB24_GDP22 = sum(Action_Obligation_OMB24_GDP22),
+  dplyr::summarize(Action_Obligation_OMB25_GDP23 = sum(Action_Obligation_OMB25_GDP23),
             NumberOfActions = sum(NumberOfActions)) %>%
   dplyr::group_by(PlatformPortfolioUAV,AllContractor,IsDefense) %>%
-  dplyr::mutate(TotalSpend=sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE)) %>%
+  dplyr::mutate(TotalSpend=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE)) %>%
   arrange(Fiscal_Year) %>%
   pivot_wider(id_cols=c(PlatformPortfolioUAV,IsDefense,UnknownCompany,AllContractor,
            jointventure,TotalSpend),
-              names_from=Fiscal_Year,values_from=Action_Obligation_OMB24_GDP22)%>% 
+              names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23)%>% 
   group_by(IsDefense) %>%
      dplyr::mutate(TotalPos=rank(-TotalSpend)) %>% arrange(-IsDefense,TotalPos)%>%dplyr::select(-PlatformPortfolioUAV)
 
@@ -2305,7 +2294,7 @@ write.csv(contractorUAVwide,file="../output/Remotely_Crewed//contractorUAVwide.c
 
 # 
 # (
-# vend_spark<-ggplot(defense_platformUAV_contractor %>% filter(TotalPos<=20),aes(x=Fiscal_Year,y=Action_Obligation_OMB24_GDP22))+
+# vend_spark<-ggplot(defense_platformUAV_contractor %>% filter(TotalPos<=20),aes(x=Fiscal_Year,y=Action_Obligation_OMB25_GDP23))+
 #   facet_grid(EntityID~.,scale="free_y")+geom_col()+
 #     theme_light()+
 #   theme(axis.title=element_blank(),
@@ -2345,7 +2334,7 @@ defense_UAV_vendor$EntitySizeText.GA[defense_UAV_vendor$EntityText=="GENERAL ATO
 uav_lc<-prepare_labels_and_colors(defense_UAV_vendor)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 uav_ck<-get_column_key(defense_UAV_vendor)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 
-defense_UAV_both<-defense_UAV_vendor %>% pivot_longer(cols=c(EntityCount,Action_Obligation_OMB24_GDP22),names_to = "Metric")
+defense_UAV_both<-defense_UAV_vendor %>% pivot_longer(cols=c(EntityCount,Action_Obligation_OMB25_GDP23),names_to = "Metric")
 
 
 
@@ -2380,7 +2369,7 @@ summary(factor(defense_UAV_vendor$EntitySizeText.GA))
 (b<-build_plot(data=defense_UAV_vendor %>% filter(Fiscal_Year>=2010 ),
            chart_geom="Bar Chart",
            x_var="dFYear",
-           y_var="Action_Obligation_OMB24_GDP22",
+           y_var="Action_Obligation_OMB25_GDP23",
            color_var="EntitySizeText.GA",
            # facet_var="PlatformPortfolioRemote",
            # second_var="IsEntityAbove2018constant10ThousandThreshold",
