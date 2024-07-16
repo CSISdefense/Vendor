@@ -127,7 +127,7 @@ levels(factor(OTA_data$PlatformPortfolio))
 # summary(factor(OTA_data$SubCustomer)
 
 OTA_data %>% group_by(ContractingAgencyName ,Contracting_Agency_ID) %>% 
-  filter(Customer=="Defense") %>%summarise(Action_Obligation_OMB24_GDP22=sum(Action_Obligation_OMB24_GDP22))
+  filter(Customer=="Defense") %>%summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
 OTA_data$SubCustomer.OTA<-OTA_data$SubCustomer
 OTA_data$SubCustomer.OTA[OTA_data$Contracting_Agency_ID=="97AE"]<-"DARPA"
 OTA_data$SubCustomer.OTA[OTA_data$Contracting_Agency_ID=="97F5"]<-"WHS"
@@ -204,7 +204,7 @@ OTA_data_current$TopCovid<-FALSE
 
 
 OTA_data_current %>% group_by(TopCovid,Fiscal_Year) %>% dplyr::summarize(n=length(Fiscal_Year),
-                                                                         o=sum(Action_Obligation_OMB24_GDP22))
+                                                                         o=sum(Action_Obligation_OMB25_GDP23))
 
 
 # OTA_data_current$MentionsCovid[grep("COVID-19",OTA_data_current$Description_of_Requirement,invert=TRUE)]<-FALSE
@@ -230,11 +230,11 @@ OTA_data$ProductServiceOrRnDarea.covid[OTA_data$TopCovid==TRUE]<-"R&D (Top OTAs 
 OTA_data$ProductServiceOrRnDarea.covid[OTA_data$ProductServiceOrRnDarea.covid=="R&D"]<-"R&D (Other)"
 
 #### Remotely Crewed labeling ####
-# sum( text_to_number(OTA_data_current$Action_Obligation_OMB24_GDP22[grep("UNMANNED",OTA_data_current$Description_of_Requirement)]),na.rm=TRUE)
+# sum( text_to_number(OTA_data_current$Action_Obligation_OMB25_GDP23[grep("UNMANNED",OTA_data_current$Description_of_Requirement)]),na.rm=TRUE)
 
 OTA_data$IsRemotelyOperated<-FALSE
 OTA_data$IsRemotelyOperated[OTA_data$ProductOrServiceCode=="1550"]<-TRUE
-sum(OTA_data$Action_Obligation_OMB24_GDP22[OTA_data$IsRemotelyOperated],na.rm=TRUE)
+sum(OTA_data$Action_Obligation_OMB25_GDP23[OTA_data$IsRemotelyOperated],na.rm=TRUE)
 
 
 
@@ -253,7 +253,7 @@ OTA_data_current<-read_and_join_experiment(OTA_data,
 
 
 OTA_data$IsRemotelyOperated[OTA_data$Remotely_Crewed %in% c("UAS","UAS/C-UAS")]<-TRUE
-sum(OTA_data$Action_Obligation_OMB24_GDP22[OTA_data$IsRemotelyOperated],na.rm=TRUE)
+sum(OTA_data$Action_Obligation_OMB25_GDP23[OTA_data$IsRemotelyOperated],na.rm=TRUE)
 
 OTA_data$ReferencedIDVAgencyID[is.na(OTA_data$ReferencedIDVAgencyID)]<-""
 OTA_data<-read_and_join_experiment(OTA_data,
@@ -267,7 +267,7 @@ summary(factor(OTA_data$Remotely_Crewed_CAU))
 
 OTA_data$IsRemotelyOperated[OTA_data$Remotely_Crewed_CAU %in% c("UAS","UAS/CUAS")]<-TRUE
 
-sum(OTA_data$Action_Obligation_OMB24_GDP22[OTA_data$IsRemotelyOperated],na.rm=TRUE)
+sum(OTA_data$Action_Obligation_OMB25_GDP23[OTA_data$IsRemotelyOperated],na.rm=TRUE)
 
 OTA_data$PlatformPortfolioUAV<-as.character(OTA_data$PlatformPortfolio)
 OTA_data$PlatformPortfolioUAV[OTA_data$IsRemotelyOperated==TRUE]<-"Remotely Crewed"

@@ -177,15 +177,15 @@ procurement_uas<-procurement_uas%>%dplyr::filter(Crew.Status==2 &
 
 
 rdte_uas<-readr::read_delim(file = file.path("..","data","semi_clean","RDTE_Remote_Labeled.txt"),delim="\t",guess_max=3000)
-colnames(rdte_uas)<-gsub(" ",".",colnames(rdte_remote))
+colnames(rdte_uas)<-gsub(" ",".",colnames(rdte_uas))
 summary(factor(rdte_uas$Domain))
 
 rdte_uas<-rdte_uas%>%dplyr::filter(Crew.Status==2&Domain %in% c("Aerial","Multi-Domain"))
 
 
 
-p_long<-procurement_remote %>% pivot_longer(cols=as.character(c(1999:2025)),names_to="Fiscal_Year",values_to="Funding_Const")
-r_long<-rdte_remote %>% pivot_longer(cols=as.character(c(1999:2025)),names_to="Fiscal_Year",values_to="Funding_Const")
+p_long<-procurement_uas %>% pivot_longer(cols=as.character(c(1999:2025)),names_to="Fiscal_Year",values_to="Funding_Const")
+r_long<-rdte_uas %>% pivot_longer(cols=as.character(c(1999:2025)),names_to="Fiscal_Year",values_to="Funding_Const")
 
 r_long$Funding_Const<-text_to_number(r_long$Funding_Const)
 p_long$Funding_Const<-text_to_number(p_long$Funding_Const)
@@ -234,19 +234,20 @@ write.csv(file="DIU.csv",(OTA_data[grep("DIU", OTA_data$Description_of_Requireme
 
 write.csv(file="ArmyUAS.csv",(OTA_data[grep("DIU", OTA_data$Description_of_Requirement),]%>% filter(PlatformPortfolioUAV=="Remotely Crewed")))
 
+debug(build_plot)
 (
   co_pp_simplearea<-build_plot(
     data=OTA_data,# %>% filter(IsOTA=="OTA") ,
     chart_geom = "Bar Chart",
     share = FALSE,
-    # labels_and_colors=drone_lc,
+    labels_and_colors=drone_lc,
     # NA, #VAR.ncol
     x_var="dFYear", #x_var
     y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
     color_var="SimpleArea", #color_var
     facet_var="PlatformPortfolioUAV", #facet_var
     # second_var="IsOTA", #facet_var
-    # column_key=drone_ck,
+    column_key=drone_ck,
     format=TRUE,
     ytextposition=FALSE
   )+
