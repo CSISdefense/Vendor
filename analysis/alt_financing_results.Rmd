@@ -192,7 +192,7 @@ dfc_iscrit<-build_plot(
   ytextposition=FALSE
 )+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
   theme(legend.position = "right")+
-  labs(y="Gross Amount or Instance Contract")# (Constant 2022 $s)
+  labs(y="Gross Amount or Instance Contract (2023 $s)")
 )
 
 agency_assist$dStartFY<-as.Date(paste("1/1/",as.character(agency_assist$StartFiscalYear),sep=""),"%m/%d/%Y")
@@ -453,7 +453,7 @@ sba_crosscut<-build_plot(
   ytextposition=FALSE
 )+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
   theme(legend.position = "right")+
-  labs(y="Gross Amount or Instance Contract")# (Constant 2022 $s)
+  labs(y="Gross Amount or Instance Contract (2023 $s)")
 )
 
 
@@ -475,7 +475,7 @@ exim<-build_plot(
   ytextposition=FALSE
 )+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
   theme(legend.position = "right")+
-  labs(y="Gross Amount or Instance Contract")# (Constant 2022 $s)
+  labs(y="Gross Amount or Instance Contract (2023 $s)")
 )
 
 ```
@@ -524,7 +524,7 @@ dfc_iscrit<-build_plot(
   ytextposition=FALSE
 )+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
   theme(legend.position = "right")+
-  labs(y="Gross Amount or Instance Contract")# (Constant 2022 $s)
+  labs(y="Gross Amount or Instance Contract (2023 $s)")
 )
 
 
@@ -545,9 +545,101 @@ doe_crit<-build_plot(
   ytextposition=FALSE
 )+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
   theme(legend.position = "right")+
-  labs(y="Gross Amount or Instance Contract")# (Constant 2022 $s)
+  labs(y="Gross Amount or Instance Contract (2023 $s)")
 )
 
+
+agency_assist$CriticalTech.sum<-agency_assist$CriticalTech
+
+levels(agency_assist$CriticalTech.sum)<-
+  list(
+    "Advanced Energy" =c("Advanced Fossil","Advanced Nuclear","Biofuels","Hydrogen","Transmission","Virtual Power Plants"),
+    "Advanced Vehicles & Components"="Advanced Vehicles & Components",
+     "Biotechnology"="Biotechnology",
+    "Computing"="Computing"  ,
+    "Data"="Data",
+     "Renewable Energy"=c("Renewable Energy","Renewable Energy (Concentrating Solar Power)",
+"Renewable Energy (Geothermal)","Renewable Energy (Onshore Wind)",
+ "Renewable Energy (Utility-Scale PV Solar)","Renewables","Solar Manufacturing","Storage"),
+  "Critical Materials"= "Critical Materials",
+ "High Technology"   ="High Technology"   ,
+"ICT"="ICT",
+"Microelectronics"="Microelectronics",
+ "Modern Telecom"=c("ICT","Modern Telecom"),
+ "SensorCyber"="SensorCyber",
+
+ "Space"="Space",
+"Remaining Sectors"="Remaining Sectors",
+ "Unlabeled"=c("To be classified"))
+                                       
+
+(
+sba_crit<-build_plot(
+  data=agency_assist  %>% filter(!is.na(StartFiscalYear) & Agency=="SBA" & AnyTag==TRUE ),
+  chart_geom = "Line Chart",
+  share = FALSE,
+  labels_and_colors=aa_lc,
+  column_key=aa_ck,
+  # NA, #VAR.ncol
+  x_var="StartFiscalYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="Amount_OMB25_GDP23", #VAR.y.variable
+  color_var="CriticalTech.sum", #color_var
+  # facet_var="program", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(title="SBA Assistance for Critical Tech Categories",
+  y="Gross Amount or Instance Contract (2023 $s)",
+       x="Fiscal Year")
+)
+
+
+  log_plot(plot=sba_crit, df=agency_assist  %>%  
+             filter(!is.na(StartFiscalYear) & Agency=="SBA" & AnyTag==TRUE ),#Fiscal_YQ<=2023.2&
+           filename=paste("SBA_Crit_Annual"),xlsx=paste("SBA","Assistance.xlsx",sep="_"),suppress_doc_svg_text = TRUE,
+           sheet="CritHist",path=file.path("../output/Assistance/","SBA"),second_path=file.path(sharepoint_log_path,"SBA"),
+           height=3.5,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
+           output_doc_png=TRUE,excel_y_var=TRUE
+  )
+  
+
+levels(factor(  agency_assist$program))
+(
+sba7a_crit<-build_plot(
+  data=agency_assist  %>% filter(!is.na(StartFiscalYear) & Agency=="SBA" & program=="7(A)" &
+                                   AnyTag==TRUE & StartFiscalYear>=2010 ),
+  chart_geom = "Line Chart",
+  share = FALSE,
+  labels_and_colors=aa_lc,
+  column_key=aa_ck,
+  # NA, #VAR.ncol
+  x_var="StartFiscalYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="Amount_OMB25_GDP23", #VAR.y.variable
+  color_var="CriticalTech.sum", #color_var
+  # facet_var="program", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(title="SBA Assistance for Critical Tech Categories",
+  y="Gross Amount or Instance Contract (2023 $s)",
+       x="Fiscal Year")
+)
+
+
+  log_plot(plot=sba7a_crit, df=agency_assist  %>%  
+             filter(!is.na(StartFiscalYear) & Agency=="SBA" & AnyTag==TRUE ),#Fiscal_YQ<=2023.2&
+           filename=paste("7a_Crit_Annual"),xlsx=paste("SBA","Assistance.xlsx",sep="_"),suppress_doc_svg_text = TRUE,
+           sheet="7aCritHist",path=file.path("../output/Assistance/","SBA"),second_path=file.path(sharepoint_log_path,"SBA"),
+           height=3.5,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
+           output_doc_png=TRUE,excel_y_var=TRUE
+  )
+  
+
+  
 ```
 ### Tech Type Sum
 ```{r TechSum}
@@ -666,7 +758,7 @@ annual<-build_plot(
   ytextposition=FALSE
 )+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
   theme(legend.position = "right")+
-  labs(y="Gross Amount or Instance Contract")# (Constant 2022 $s)
+  labs(y="Gross Amount or Instance Contract (2023 $s)")
 )
 
 
@@ -775,7 +867,7 @@ annual<-build_plot(
   ytextposition=FALSE
 )+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
   theme(legend.position = "right")+
-  labs(y="Gross Amount or Instance Contract")# (Constant 2022 $s)
+  labs(y="Gross Amount or Instance Contract (2023 $s)")
 )
 
 
