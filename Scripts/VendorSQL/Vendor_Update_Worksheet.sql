@@ -15,23 +15,34 @@ EXEC	 [Vendor].[SP_UEIunlabeledToInvestigateContractOrderFast]
 
 
 EXEC Vendor.sp_InvestigateUEI
-	@UEI = 'INSERT_UEI_HERE'
+	@UEI = 'J6LFYSFAMVN5'
+
+
+
+EXEC Vendor.sp_InvestigateUEI
+	@UEI = 'WMR6E5BGV967'
 
 --Slower, use only if results are puzzling.
 EXEC Vendor.sp_InvestigateUEIdetail	
 	@UEI = 'INSERT_UEI_HERE'
-
-
+	
 -- Assign the ParentID to the UEI ( https://github.com/CSISdefense/DIIGsql/blob/master/docs/vendor_update_instructions.md#assign-the-parentid-to-the-uei )
+
+EXEC	 [Vendor].[sp_AssignUEIparentID]
+		@uei = N'WMR6E5BGV967',
+		@parentid = N'CHEMRING GROUP PLC',
+		@startyear = 2010,
+		@endyear = 2024
+
 set QUERY_GOVERNOR_COST_LIMIT  0
 EXEC	 [Vendor].[sp_InvestigateParentID]
 		@parentid = N'WYLE'
 		KBR WYLE SERVICES  LLC
 
 EXEC	 [Vendor].[sp_CreateParentIDuei]
-		@UEI = N'INSERT_UEI_here',
-		@parentid = N'INSERT_parentID_here',
-		@startyear = 1990, --Update if for fewer years
+		@UEI = N'DTNNRMAK6WN1',
+		@parentid = N'CHEMRING GROUP PLC',
+		@startyear = 2009, --Update if for fewer years
 		@endyear = 2024  --Update if for fewer years
 
 
@@ -48,12 +59,6 @@ GO
 
 
 
-
-EXEC	 [Vendor].[sp_AssignUEIparentID]
-		@uei = N'RXN6RGGRJD71',
-		@parentid = N'FLUOR-BWXT PORTSMOUTH',
-		@startyear = 2000,
-		@endyear = 2023
 
 
 
@@ -112,7 +117,12 @@ EXEC	[Vendor].[sp_AssignJointVentureStatus]
 
 EXEC	 [Vendor].[sp_InvestigateParentID]
 		@parentid = N'v2x'
+--Fixing mistakes
 
+EXEC	 [Vendor].[sp_EraseUEIparentID]
+		@UEI = N'XNGAANYA3F95',
+		@startyear = 2004,
+		@endyear = 2006
 
 --Duplication and subsidiaries
 		
@@ -128,10 +138,10 @@ EXEC	 [Vendor].[sp_AssignUEIparentID]
 		@endyear = 2023
 
 	EXEC	[Vendor].[sp_AssignSubsidiaryStatus]
-		@parentidOfSubsidiary = N'MAGELLAN HEALTH',
+		@parentidOfSubsidiary = N'ADI TECHNOLOGIES',
 		@MergerDate = N'1/4/2022',
 		@MergerURL = N'https://www.centene.com/news/centene-completes-acquisition-of-magellan-health.html',
-		@parentidOfOwner = N'CENTENE'
+		@parentidOfOwner = N'THALES'
 
 		
 EXEC	[Vendor].[sp_AssignParentIDtoSubsidiary]
@@ -169,7 +179,7 @@ EXEC	[Vendor].[sp_AssignParentIDtoSubsidiary]
 		
 			
 	EXEC	[Vendor].[sp_AssignParentHeadquartersCountry]
-		@parentid = N'ULTRA ELECTRONICS',
+		@parentid = N'CHEMRING GROUP PLC',
 		@parentheadquarterscountrycodetext = N'United Kingdom'
 		
 			EXEC	[Vendor].[sp_AssignParentHeadquartersCountry]
