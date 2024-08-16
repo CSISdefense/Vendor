@@ -82,10 +82,12 @@ EXEC	[Vendor].[sp_AssignRevenue]
 
 --Handle a Joint venture
 --Find the parents
-
+set QUERY_GOVERNOR_COST_LIMIT  0
 EXEC	 [Vendor].[sp_InvestigateParentID]
-		@parentid = N'roche'
+		@parentid = N'Transfield'
 
+
+--ADAPTIVE TECHONOLOGY GSJ8SZHXWK21
 
 
 EXEC	[Vendor].[sp_CreateOwnerParentID]
@@ -112,6 +114,11 @@ EXEC	[Vendor].[sp_AssignJointVentureStatus]
 
 EXEC	 [Vendor].[sp_InvestigateParentID]
 		@parentid = N'v2x'
+--Fix mistakes
+EXEC	[Vendor].[sp_EraseUEIparentID]
+		@UEI = N'NSPETS74M3R5',
+		@startyear = 2000,
+		@endyear = 2021
 
 
 --Duplication and subsidiaries
