@@ -152,6 +152,7 @@ Exec [Location].[SP_CountryDetail]
  	@countryISOalpha3='AUS'
 
 --5h53m 4,517,133 rows
+--6h19m 4,517,133 rows
 		SET QUERY_GOVERNOR_COST_LIMIT 0
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;

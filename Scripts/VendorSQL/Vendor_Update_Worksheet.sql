@@ -87,10 +87,12 @@ EXEC	[Vendor].[sp_AssignRevenue]
 
 --Handle a Joint venture
 --Find the parents
-
+set QUERY_GOVERNOR_COST_LIMIT  0
 EXEC	 [Vendor].[sp_InvestigateParentID]
-		@parentid = N'roche'
+		@parentid = N'Transfield'
 
+
+--ADAPTIVE TECHONOLOGY GSJ8SZHXWK21
 
 
 EXEC	[Vendor].[sp_CreateOwnerParentID]
