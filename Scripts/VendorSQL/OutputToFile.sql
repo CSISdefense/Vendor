@@ -303,6 +303,7 @@ SET NOCOUNT ON;
 --2h26m; 17,095,081 rows
 --2h28m; 17,102,058 rows
 --3h31m:18,864,534 rows 4/19/2023
+--4h24m:18,964,297 rows
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
  EXEC [Location].[SP_ProdServPlatformAgencyPlaceOriginVendor]
