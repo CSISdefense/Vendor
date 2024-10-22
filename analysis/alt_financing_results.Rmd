@@ -62,6 +62,19 @@ agency_assist %>% group_by(Agency,program)%>%
   summarise(StartFY=min(StartFiscalYear,na.rm=TRUE),
             EndFY=max(StartFiscalYear,na.rm=TRUE))
 
+agency_assist<-replace_nas_with_unlabeled(agency_assist,"CriticalTech","To be classified")
+View(agency_assist %>% filter(CriticalTech=="To be classified" & AnyTag==TRUE))
+
+#Fix a corn chip category accidentally included
+#Corn chips, remove from sample
+agency_assist$AnyTag[agency_assist$CriticalTech=="To be classified" & agency_assist$AnyTag==TRUE & 
+                agency_assist$Agency=="EXIM" & agency_assist$Amount_Then_Year==540000]<-FALSE
+View(agency_assist %>% filter(CriticalTech=="To be classified" & AnyTag==TRUE))
+
+#Li-Cycle
+agency_assist$CriticalTech[agency_assist$CriticalTech=="To be classified" & agency_assist$AnyTag==TRUE & 
+                agency_assist$Agency=="DOE" & agency_assist$Amount_Then_Year==375000000]<-"Critical Materials"
+
 ```
 
 # Decriptive stats
@@ -147,9 +160,265 @@ ToplineCFDA<-build_plot(
 ```
 
 
-## Annual Program
+## Is Critical-SBA & Exim
+```{r sba}
+
+(
+sba.504tech<-build_plot(
+  data=sba.504,
+  chart_geom = "Bar Chart",
+  share = TRUE,
+  labels_and_colors=loan_lc,
+  column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="ApprovalFiscalYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="GrossApproval_OMB24_GDP22", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  # facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Gross Approval")# (Constant 2022 $s)
+)
+
+
+
+
+(
+sba.7atech<-build_plot(
+  data=sba.7a,
+  chart_geom = "Bar Chart",
+  share = TRUE,
+  labels_and_colors=loan_lc,
+  column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="ApprovalFiscalYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="GrossApproval_OMB24_GDP22", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  # facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Gross Approval")# (Constant 2022 $s)
+)
+
+
+sba.sbg$count<-1
+(
+sba.sbg_contract<-build_plot(
+  data=sba.sbg  %>% filter(!is.na(PROJECT_START_DATE)),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=loan_lc,
+  column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="ProjectStartYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="LARGEST_CONTRACT_OMB24_GDP22", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  # facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Largest Contract")# (Constant 2022 $s)
+)
+
+(
+sba.sbg_count<-build_plot(
+  data=sba.sbg  %>% filter(!is.na(PROJECT_START_DATE)),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=loan_lc,
+  column_key=loan_ck,
+  # NA, #VAR.ncol
+  x_var="ProjectStartYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="count", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  # facet_var="awarding_agency_name", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Count")# (Constant 2022 $s)
+)
+
+(
+sba_crosscut<-build_plot(
+  data=agency_assist  %>% filter(!is.na(StartFiscalYear) & Agency=="SBA"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=loan_lc,
+  column_key=aa_ck,
+  # NA, #VAR.ncol
+  x_var="StartFiscalYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="Amount_OMB25_GDP23", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  facet_var="program", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Gross Amount or Instance Contract (2023 $s)")
+)
+
+
+
+(
+exim<-build_plot(
+  data=agency_assist  %>% filter(!is.na(StartFiscalYear) & Agency=="EXIM"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=loan_lc,
+  column_key=aa_ck,
+  # NA, #VAR.ncol
+  x_var="StartFiscalYear", 
+  # alpha_var="YTD",  #x_var 
+  y_var="Amount_OMB25_GDP23", #VAR.y.variable
+  color_var="CriticalTech", #color_var
+  facet_var="program", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Gross Amount or Instance Contract (2023 $s)")
+)
+
+```
+
+## Critical Tech Only
+
+### PartnerRegion: DFC 
+```{r TechSum}
+agency_assist$PartnerRegion<-factor(agency_assist$PartnerRegion)
+levels(agency_assist$PartnerRegion)<-list(
+  "Asia"=c("Asia","Asia "),
+  "Central Asia"="Central Asia",
+  "Africa"="Africa",
+  "Middle East North Africa"=c("Middle East North Africa","MENA"),
+  "Europe"="Europe",
+  "United States"="United States",
+  "Other Western Hem."=c("Western Hem","Other Western Hem."),
+  "Worldwide"=c("Worldwide")
+)
+
+
+
+colnames(agency_assist)
+if(!any(agency_assist$PartnerRegion=="United States"& !is.na(agency_assist$PartnerRegion))){
+    agency_assist<-read_and_join_experiment(agency_assist,directory="assistance//",lookup_file="FinancingStatus.csv",
+                               by=c("program","FinancingStatus"),add_var=c("FinancingStatus.sum","FinancingStatus.cross"),
+                               case_sensitive = FALSE,path="offline")
+
+    colnames(agency_assist)
+    USblank<-data.frame(StartFiscalYear=2023,
+                                  Agency='DFC',
+                                  program='DFC',
+                                  FinancingType=NA,
+                                  FinancingStatus=NA,
+                                  CriticalTech=NA,
+                                  AnyTag=TRUE ,
+                                  State=NA,
+                                  PartnerCountry="United States",
+                                  PartnerRegion="United States",
+                                  Amount_Then_Year=0,
+                                  Count=0,
+                                  Amount_OMB25_GDP23=0,
+                                  FinancingStatus.cross=NA,
+                                  FinancingStatus.sum=NA)%>%
+      mutate(dStartFY=as.Date(paste(StartFiscalYear,10,1,sep="-")))
+    
+    colnames(agency_assist)[!colnames(agency_assist) %in% colnames(USblank)]
+    colnames(USblank)[!colnames(USblank) %in% colnames(agency_assist)]
+    ncol(agency_assist)
+    ncol(USblank)
+  agency_assist_US<-rbind(agency_assist,USblank)
+                       
+}
+
+agency_assist_US<-replace_nas_with_unlabeled(agency_assist_US,var="CriticalTech")
+
+  
+
+(overall<-build_plot(
+  data=agency_assist_US  %>% filter(!is.na(StartFiscalYear)) %>% filter(AnyTag==TRUE & !is.na(PartnerRegion)),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+   labels_and_colors=aa_lc,
+  column_key=aa_ck,
+  # NA, #VAR.ncol
+  x_var="PartnerRegion", 
+  # alpha_var="YTD",  #x_var 
+  y_var="Amount_OMB25_GDP23", #VAR.y.variable
+  
+    first_color_on_bottom = FALSE,
+  color_var="program", #color_var
+  facet_var="Agency", #facet_var
+  format=TRUE,
+  ytextposition=FALSE
+)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
+  theme(legend.position = "right")+
+  labs(y="Gross Amount or Instance Contract",
+       x="PartnerRegion")+
+    coord_flip()+
+    facet_grid(.~Agency,scale="free_y") # (Constant 2022 $s)# (Constant 2022 $s)
+)
+
+
+
+for(i in 1:length(agency_list$agency)){
+  if(nrow(
+    agency_assist_US %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]&!is.na(AnyTag)&
+                                !is.na(PartnerRegion)))==0)
+    next
+  c<-agency_list$agency[i]
+  file_c<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",agency_list$agency[i])))
+  (Breakout<-build_plot(
+      data=agency_assist_US %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]&!is.na(AnyTag)),#& Fiscal_YQ<=2023.2 Fiscal_Year>=2000& 
+    chart_geom = "Bar Chart",
+    share = FALSE,
+    labels_and_colors=aa_lc,
+    # NA, #VAR.ncol
+    x_var="PartnerRegion",#alpha_var="YTD", #x_var
+    y_var="Amount_OMB25_GDP23", #VAR.y.variable
+    color_var="program", #color_var
+    first_color_on_bottom = FALSE,
+    # facet_var="PlatformPortfolio", #facet_var
+    # column_key=def_ck,
+    format=TRUE,
+    ytextposition=FALSE
+  )+#date_x_year_breaks(1990,2020,8,partial_year=2023,partial_label="\nQ1–Q2")+   
+      # theme(legend.position = "none")+
+      labs(y=agency_list$yaxis[i],
+           x="Partner Region",
+           caption=paste("Source: ",agency_list$source[i]),
+           title=paste(agency_list$agency[i],"Financing to\nCritical Technology Sectors by Region"))+
+      coord_flip()
+  )
+  # 
+  if(!dir.exists(file.path("../output/Assistance/",file_c)))
+    dir.create(file.path("../output/Assistance",file_c))
+  
+  
+  log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#Fiscal_YQ<=2023.2&
+           filename=paste(file_c,"Region",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_doc_svg_text = TRUE,
+           sheet="Region",path=file.path("../output/Assistance/",file_c),second_path=file.path(sharepoint_log_path,file_c),
+           height=3,
+           startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
+           output_doc_png=TRUE,excel_y_var=TRUE
+  )
+  
+}
+
+```
+### Annual Program
 ```{r tech_annual}
-agency_assist<-replace_nas_with_unlabeled(agency_assist,"CriticalTech","To be classified")
 
 (
 annual<-build_plot(
@@ -226,260 +495,14 @@ file_c<-"DOE"
 
 ```
 
-## Critical Tech
-### PartnerRegion: DFC 
-```{r TechSum}
-agency_assist$PartnerRegion<-factor(agency_assist$PartnerRegion)
-levels(agency_assist$PartnerRegion)<-list(
-  "Asia"=c("Asia","Asia "),
-  "Central Asia"="Central Asia",
-  "Africa"="Africa",
-  "Middle East North Africa"=c("Middle East North Africa","MENA"),
-  "Europe"="Europe",
-  "United States"="United States",
-  "Other Western Hem."=c("Western Hem","Other Western Hem."),
-  "Worldwide"=c("Worldwide")
-)
-
-colnames(agency_assist)
-if(!any(agency_assist$PartnerRegion=="United States"& !is.na(agency_assist$PartnerRegion))){
-    agency_assist<-read_and_join_experiment(agency_assist,directory="assistance//",lookup_file="FinancingStatus.csv",
-                               by=c("program","FinancingStatus"),add_var=c("FinancingStatus.sum","FinancingStatus.cross"),
-                               case_sensitive = FALSE,path="offline")
-
-    colnames(agency_assist)
-    USblank<-data.frame(StartFiscalYear=2023,
-                                  Agency='DFC',
-                                  program='DFC',
-                                  FinancingType=NA,
-                                  FinancingStatus=NA,
-                                  CriticalTech=NA,
-                                  AnyTag=TRUE ,
-                                  State=NA,
-                                  PartnerCountry="United States",
-                                  PartnerRegion="United States",
-                                  Amount_Then_Year=0,
-                                  Count=0,
-                                  Amount_OMB25_GDP23=0,
-                                  FinancingStatus.cross=NA,
-                                  FinancingStatus.sum=NA)
-    
-    colnames(agency_assist)[!colnames(agency_assist) %in% colnames(USblank)]
-    colnames(USblank)[!colnames(USblank) %in% colnames(agency_assist)]
-    ncol(agency_assist)
-    ncol(USblank)
-  agency_assist_US<-rbind(agency_assist,USblank)
-                       
-}
 
 
 
-(overall<-build_plot(
-  data=agency_assist_US  %>% filter(!is.na(StartFiscalYear)) %>% filter(AnyTag==TRUE & !is.na(PartnerRegion)),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-   labels_and_colors=aa_lc,
-  column_key=aa_ck,
-  # NA, #VAR.ncol
-  x_var="PartnerRegion", 
-  # alpha_var="YTD",  #x_var 
-  y_var="Amount_OMB25_GDP23", #VAR.y.variable
-  
-    first_color_on_bottom = FALSE,
-  color_var="program", #color_var
-  facet_var="Agency", #facet_var
-  format=TRUE,
-  ytextposition=FALSE
-)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "right")+
-  labs(y="Gross Amount or Instance Contract",
-       x="PartnerRegion")+
-    coord_flip()+
-    facet_grid(.~Agency,scale="free_y") # (Constant 2022 $s)# (Constant 2022 $s)
-)
+### Critical Tech Type
 
 
 
-for(i in 1:length(agency_list$agency)){
-  if(nrow(
-    agency_assist_US %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]&!is.na(AnyTag)&!is.na(PartnerRegion))
-  )==0)
-    next
-  c<-agency_list$agency[i]
-  file_c<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",agency_list$agency[i])))
-  (Breakout<-build_plot(
-      data=agency_assist_US %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]&!is.na(AnyTag)),#& Fiscal_YQ<=2023.2 Fiscal_Year>=2000& 
-    chart_geom = "Bar Chart",
-    share = FALSE,
-    labels_and_colors=aa_lc,
-    # NA, #VAR.ncol
-    x_var="PartnerRegion",#alpha_var="YTD", #x_var
-    y_var="Amount_OMB25_GDP23", #VAR.y.variable
-    color_var="program", #color_var
-    first_color_on_bottom = FALSE,
-    # facet_var="PlatformPortfolio", #facet_var
-    # column_key=def_ck,
-    format=TRUE,
-    ytextposition=FALSE
-  )+#date_x_year_breaks(1990,2020,8,partial_year=2023,partial_label="\nQ1–Q2")+   
-      # theme(legend.position = "none")+
-      labs(y=agency_list$yaxis[i],
-           x="Critical Technology\nSector",
-           caption=paste("Source: ",agency_list$source[i]),
-           title=paste(agency_list$agency[i],"Financing to\nCritical Technology Sectors by Region"))+
-      coord_flip()
-  )
-  # 
-  if(!dir.exists(file.path("../output/Assistance/",file_c)))
-    dir.create(file.path("../output/Assistance",file_c))
-  
-  
-  log_plot(plot=Breakout, df=agency_assist  %>% filter(AnyTag==TRUE&Agency==agency_list$agency[i]),#Fiscal_YQ<=2023.2&
-           filename=paste(file_c,"Region",sep="_"),xlsx=paste(file_c,"Assistance.xlsx",sep="_"),suppress_doc_svg_text = TRUE,
-           sheet="Region",path=file.path("../output/Assistance/",file_c),second_path=file.path(sharepoint_log_path,file_c),
-           height=3,
-           startRow=1,startCol=13,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
-           output_doc_png=TRUE,excel_y_var=TRUE
-  )
-  
-}
-
-```
-
-
-
-### Is Critical-SBA & Exim
-```{r sba}
-
-(
-sba.504tech<-build_plot(
-  data=sba.504,
-  chart_geom = "Bar Chart",
-  share = TRUE,
-  # labels_and_colors=loan_lc,
-  # column_key=loan_ck,
-  # NA, #VAR.ncol
-  x_var="ApprovalFiscalYear", 
-  # alpha_var="YTD",  #x_var 
-  y_var="GrossApproval_OMB24_GDP22", #VAR.y.variable
-  color_var="CriticalTech", #color_var
-  # facet_var="awarding_agency_name", #facet_var
-  format=TRUE,
-  ytextposition=FALSE
-)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "right")+
-  labs(y="Gross Approval")# (Constant 2022 $s)
-)
-
-
-
-
-(
-sba.7atech<-build_plot(
-  data=sba.7a,
-  chart_geom = "Bar Chart",
-  share = TRUE,
-  # labels_and_colors=loan_lc,
-  # column_key=loan_ck,
-  # NA, #VAR.ncol
-  x_var="ApprovalFiscalYear", 
-  # alpha_var="YTD",  #x_var 
-  y_var="GrossApproval_OMB24_GDP22", #VAR.y.variable
-  color_var="CriticalTech", #color_var
-  # facet_var="awarding_agency_name", #facet_var
-  format=TRUE,
-  ytextposition=FALSE
-)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "right")+
-  labs(y="Gross Approval")# (Constant 2022 $s)
-)
-
-
-sba.sbg$count<-1
-(
-sba.sbg_contract<-build_plot(
-  data=sba.sbg  %>% filter(!is.na(PROJECT_START_DATE)),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  # labels_and_colors=loan_lc,
-  # column_key=loan_ck,
-  # NA, #VAR.ncol
-  x_var="ProjectStartYear", 
-  # alpha_var="YTD",  #x_var 
-  y_var="LARGEST_CONTRACT_OMB24_GDP22", #VAR.y.variable
-  color_var="CriticalTech", #color_var
-  # facet_var="awarding_agency_name", #facet_var
-  format=TRUE,
-  ytextposition=FALSE
-)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "right")+
-  labs(y="Largest Contract")# (Constant 2022 $s)
-)
-
-(
-sba.sbg_count<-build_plot(
-  data=sba.sbg  %>% filter(!is.na(PROJECT_START_DATE)),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  # labels_and_colors=loan_lc,
-  # column_key=loan_ck,
-  # NA, #VAR.ncol
-  x_var="ProjectStartYear", 
-  # alpha_var="YTD",  #x_var 
-  y_var="count", #VAR.y.variable
-  color_var="CriticalTech", #color_var
-  # facet_var="awarding_agency_name", #facet_var
-  format=TRUE,
-  ytextposition=FALSE
-)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "right")+
-  labs(y="Count")# (Constant 2022 $s)
-)
-
-(
-sba_crosscut<-build_plot(
-  data=agency_assist  %>% filter(!is.na(StartFiscalYear) & Agency=="SBA"),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  # labels_and_colors=loan_lc,
-  column_key=aa_ck,
-  # NA, #VAR.ncol
-  x_var="StartFiscalYear", 
-  # alpha_var="YTD",  #x_var 
-  y_var="Amount_OMB25_GDP23", #VAR.y.variable
-  color_var="CriticalTech", #color_var
-  facet_var="program", #facet_var
-  format=TRUE,
-  ytextposition=FALSE
-)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "right")+
-  labs(y="Gross Amount or Instance Contract (2023 $s)")
-)
-
-
-
-(
-exim<-build_plot(
-  data=agency_assist  %>% filter(!is.na(StartFiscalYear) & Agency=="EXIM"),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  # labels_and_colors=loan_lc,
-  column_key=aa_ck,
-  # NA, #VAR.ncol
-  x_var="StartFiscalYear", 
-  # alpha_var="YTD",  #x_var 
-  y_var="Amount_OMB25_GDP23", #VAR.y.variable
-  color_var="CriticalTech", #color_var
-  facet_var="program", #facet_var
-  format=TRUE,
-  ytextposition=FALSE
-)+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
-  theme(legend.position = "right")+
-  labs(y="Gross Amount or Instance Contract (2023 $s)")
-)
-
-```
-### Tech Type: Annual
+#### Tech Type: Annual
 ```{r tech_annual}
 agency_assist<-replace_nas_with_unlabeled(agency_assist,"CriticalTech","To be classified")
 
@@ -524,7 +547,7 @@ dfc_iscrit<-build_plot(
   ytextposition=FALSE
 )+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
   theme(legend.position = "right")+
-  labs(y="Gross Amount or Instance Contract (2023 $s)")
+  labs(y="Gross Amount or\nInstance Contract (2023 $s)")
 )
 
 
@@ -545,7 +568,7 @@ doe_crit<-build_plot(
   ytextposition=FALSE
 )+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
   theme(legend.position = "right")+
-  labs(y="Gross Amount or Instance Contract (2023 $s)")
+  labs(y="Gross Amount or\nInstance Contract (2023 $s)")
 )
 
 
@@ -571,6 +594,8 @@ levels(agency_assist$CriticalTech.sum)<-
  "Space"="Space",
 "Remaining Sectors"="Remaining Sectors",
  "Unlabeled"=c("To be classified"))
+aa_lc<-prepare_labels_and_colors(agency_assist)
+aa_ck<-get_column_key(agency_assist)
                                        
 
 (
@@ -591,7 +616,7 @@ sba_crit<-build_plot(
 )+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
   theme(legend.position = "right")+
   labs(title="SBA Assistance for Critical Tech Categories",
-  y="Gross Amount or Instance Contract (2023 $s)",
+  y="Gross Amount or\nInstance Contract (2023 $s)",
        x="Fiscal Year")
 )
 
@@ -624,8 +649,8 @@ sba7a_crit<-build_plot(
   ytextposition=FALSE
 )+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
   theme(legend.position = "right")+
-  labs(title="SBA Assistance for Critical Tech Categories",
-  y="Gross Amount or Instance Contract (2023 $s)",
+  labs(title="SBA 7(A) Assistance for Critical Tech Categories",
+  y="Gross Amount or\nInstance Contract (2023 $s)",
        x="Fiscal Year")
 )
 
@@ -641,7 +666,7 @@ sba7a_crit<-build_plot(
 
   
 ```
-### Tech Type Sum
+#### Tech Type Sum
 ```{r TechSum}
 
 
@@ -662,7 +687,7 @@ overall<-build_plot(
   ytextposition=FALSE
 )+#date_x_year_breaks(2000,2020,3,partial_year=2023,partial_label="\nQ1-Q2")+scale_alpha_ordinal(range=c(1,0.5))+
   theme(legend.position = "right")+
-  labs(y="Gross Amount or Instance Contract (2023 $s)",
+  labs(y="Gross Amount or\nInstance Contract (2023 $s)",
        x="Critical Technology\nSector")+
     coord_flip()+
     facet_grid(.~Agency,scale="free_y") # (Constant 2022 $s)# (Constant 2022 $s)
@@ -714,8 +739,8 @@ for(i in 1:length(agency_list$agency)){
 
 
 
-## Financing
-### Financing Status
+### Financing
+#### Financing Status
 ```{r FinancingStatus}
 
 
@@ -844,7 +869,7 @@ for(i in 1:length(agency_list$agency)){
 ```
 
 
-### Financing Type
+#### Financing Type
 ```{r LoanStatus}
 
 agency_assist$FinancingType<-trimws(agency_assist$FinancingType)
