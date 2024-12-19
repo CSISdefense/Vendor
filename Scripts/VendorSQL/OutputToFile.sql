@@ -213,11 +213,13 @@ SELECT  [EntityID]
       ,[UnknownCompany]
   FROM [Vendor].[EntityIDhistory]
   --where fiscal_year>=2000
-  
+
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;  
   --15m but probably not necessary
   select [EntityID]
   ,1 as AnyDefenseCustomer
-  ,fiscal_year
+  ,fiscal_year 
   from contract.fpdspartial
   where contractingcustomer='Defense' and fiscal_year>=2000
   group by fiscal_year, [EntityID]
