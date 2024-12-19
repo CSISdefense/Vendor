@@ -413,7 +413,8 @@ shippscintldef<-read_and_join_experiment(shippscintldef,
                              directory=""
 )
 
-shippscintldef<-shippscintldef %>% filter(ShipCategory == "Platform")
+shippscintldef %>% filter(ShipCategory == "") %>% group_by(ProductOrServiceCode, ProductOrServiceCodeText) %>% 
+  summarize(obl=sum(Action_Obligation_OMB25_GDP23)) %>% arrange(-obl)
 
 shippscintldef %>% group_by()
 
