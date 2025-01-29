@@ -413,8 +413,10 @@ shippscintldef<-read_and_join_experiment(shippscintldef,
                              directory=""
 )
 
-shippscintldef %>% filter(ShipCategory == "") %>% group_by(ProductOrServiceCode, ProductOrServiceCodeText) %>% 
-  summarize(obl=sum(Action_Obligation_OMB25_GDP23)) %>% arrange(-obl)
+#shippscintldef %>% filter(ShipCategory == "") %>% group_by(ProductOrServiceCode, ProductOrServiceCodeText) %>% 
+ # summarize(obl=sum(Action_Obligation_OMB25_GDP23)) %>% arrange(-obl) #Greg left this here, HHC removing for now, replacing with below
+shippscintldef %>% group_by(ProductOrServiceCode, ProductOrServiceCodeText) %>% 
+ summarize(obl=sum(Action_Obligation_OMB25_GDP23)) %>% arrange(-obl)
 
 shippscintldef %>% group_by()
 
