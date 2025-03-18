@@ -929,6 +929,72 @@ log_plot(plot=ShipCategory, df=shippscintldef %>% filter(Fiscal_YQ<2024),
          excel_y_var = TRUE,excel_formulas = TRUE
          )
 ```
+# ROK/Japan Specific Look
+##**Setup**
+```{r JapanROK}
+shippscintldef %>% filter(
+  #(ParentHQISOalpha3 %in% c("JPN", "ROK") & !is.na(ParentHQISOalpha3))|
+  ##NOTE: THIS DF IS CURRENTLY MISSING ParentHQ, which is tough for this work
+    (VendorISOalpha3 %in% c("JPN", "ROK") & !is.na(VendorISOalpha3)) |
+    (PlaceISOalpha3 %in% c("JPN", "ROK") & !is.na(PlaceISOalpha3)) |
+    (OriginISOalpha3 %in% c("JPN", "ROK") & !is.na(OriginISOalpha3)))%>%
+  group_by(ContractingAgencyName) %>%
+  summarise(Action_Obligation_OMB25_GDP23=
+              sum(Action_Obligation_OMB25_GDP23))
+
+
+
+```
+## Japan/ROK Aspected shipbuilding
+```{r JapanROKChart}
+(
+ShipCategory<-build_plot(
+  data=shippscintldef %>% filter(
+  #(ParentHQISOalpha3 %in% c("JPN", "ROK") & !is.na(ParentHQISOalpha3))|
+  ##NOTE: THIS DF IS CURRENTLY MISSING ParentHQ, which is tough for this work
+    (VendorISOalpha3 %in% c("JPN", "ROK") & !is.na(VendorISOalpha3)) |
+    (PlaceISOalpha3 %in% c("JPN", "ROK") & !is.na(PlaceISOalpha3)) |
+    (OriginISOalpha3 %in% c("JPN", "ROK") & !is.na(OriginISOalpha3)) &
+      Fiscal_YQ<2024 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+    labels_and_colors=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  # alpha_var="YTD",
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="ShipCategory", #color_var
+  #facet_var="VendorISOalpha3", #facet_var
+  column_key=fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)",
+       caption="Note: Unlabeled product, service, and R&D areas not shown.\n Currently does not include cases where ROK or Japanese firms own U.S. subsidiaries.\nSource: FPDS and CSIS analysis.")+
+  date_x_year_breaks(1990,2020,5)#,partial_year=2024,partial_label="\nQ1",)
+)
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="ROKJapanShipCategory_psr.png", ShipCategory, 
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="ROKJapanShipCategory_psr.svg", ShipCategory, 
+             width=6.5, height= 3, units="in",size=11, lineheight=1.2
+             )
+
+log_plot(plot=ShipCategory, df=shippscintldef %>% filter(
+              (VendorISOalpha3 %in% c("JPN", "ROK") & !is.na(VendorISOalpha3)) |
+              (PlaceISOalpha3 %in% c("JPN", "ROK") & !is.na(PlaceISOalpha3)) |
+              (OriginISOalpha3 %in% c("JPN", "ROK") & !is.na(OriginISOalpha3)) &
+              Fiscal_YQ<2024 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
+              filename="ShipCategory_breakout",xlsx="ROKJapanDOD_Shipbuilding_Contracts.xlsx",
+                     sheet="ShipCategory",path="../output/Shipbuilding/", height=3.5,
+                     startRow=1,startCol=12,format=TRUE,#var_list=c("SimpleArea","Competition.multisum"),
+         excel_y_var = TRUE,excel_formulas = TRUE
+         )
+
+```
 # SubCustomer
 ## Topline SubCustomer 
 ```{r SubCustomer}
@@ -1188,7 +1254,7 @@ labels_and_color=fedpsc_lc,
 column_key = fedpsc_ck,
   format=TRUE,
   ytextposition=FALSE,
-  reverse_color=TRUE
+  #reverse_color=TRUE
 )+date_x_year_breaks(1990,2020,5,partial_year=2023,partial_label="\nQ1-Q2")+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
@@ -1218,7 +1284,7 @@ column_key = fedpsc_ck,
   format=TRUE,
   ytextposition=FALSE,
   share=TRUE,
-  reverse_color=TRUE
+  #reverse_color=TRUE
 )+date_x_year_breaks(1990,2019,5)+#,partial_year=2024,partial_label="\nQ1")
     
   theme(legend.position = "right")+
@@ -1264,14 +1330,17 @@ log_plot(plot=ToplineVendor, df=shippscintldef  %>% filter(Fiscal_YQ<2024 ),
 
 
 
-### Topline Vendor International
+### Topline Vendor International for Shipbuilding (of MRO)
 ```{r ToplineVendor}
 
 
 (
 ToplineVendorIntl<-build_plot(
-  data=shippscintldef %>% filter(Fiscal_Year>=2000& Fiscal_YQ<=2023.2) %>%
-                              mutate(YTD=ifelse(Fiscal_Year==2023,"YTD","Full Year")),# & Fiscal_Year<=2021
+  #data=shippscintldef %>% filter(Fiscal_Year>=2000& Fiscal_YQ<=2024),
+ data=shippscintldef %>% filter(Fiscal_Year>=2000& Fiscal_YQ<=2024.2 
+                                #& ShipCategory == "MRO")
+                      )%>%
+                              mutate(YTD=ifelse(Fiscal_Year==2024,"YTD","Full Year")),# & Fiscal_Year<=2021
   chart_geom = "Bar Chart",
   share = FALSE,
     labels_and_colors=fedpsc_lc,
@@ -1279,16 +1348,16 @@ ToplineVendorIntl<-build_plot(
   x_var="dFYear",alpha_var="YTD", #x_var
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="VendorSize_Intl", #color_var
-  # facet_var="Competition.sum", #facet_var
+  facet_var="VendorSize_Intl", #facet_var
   column_key=fedpsc_ck,
   format=TRUE,
   ytextposition=FALSE
 )+scale_x_date("Fiscal Year",labels = scales::date_format("'%y"))+
-  date_x_year_breaks(2000,2022,3,partial_year=2023,partial_label="\nQ1–Q2")+
+  date_x_year_breaks(2000,2022,3,partial_year=2024,partial_label="\nQ1–Q2")+
     
   theme(legend.position = "right")+
   labs(y="Obligations (Constant 2023 $s)",
-       title="DOD Contract Obligations by Vendor Size, FY 2000–FY 2023 Q1-Q2",       caption="Source: FPDS and CSIS analysis.")
+       title="U.S. Navy MRO Contract Obligations by Vendor Size, FY 2000–FY 2024",       caption="Source: FPDS and CSIS analysis.")
 )
 
 ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_vendor_intl_square.png", ToplineVendorIntl+
@@ -1297,13 +1366,13 @@ ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_vendor_intl_squ
              )
 
 ggsave600dpi(path="..//Output//Shipbuilding//",
-             filename="topline_vendor_intl_keynote.svg", ToplineVendorIntl+
-               labs(title="DOD Contract Obligations, FY 2000–FY 2023 Q2"),
+             filename="topline_vendor_shipbuilding.svg", ToplineVendorIntl+
+               labs(title="Shipbuilding Contract Obligations, FY 2000–FY 2024"),
              width=9, height= 5.5, units="in", size=20, lineheight = 0.75
              )
 
 log_plot(plot=ToplineVendorIntl, df=shippscintldef  %>% filter(Fiscal_YQ<=2023.2),
-                     filename="acq_fig6_1_vendor_intl",xlsx="DOD_Shipbuilding_Contracts.xlsx",
+                     filename="shipbuilding_contracts_topline",xlsx="DOD_Shipbuilding_Contracts.xlsx",
                      sheet="6-1 VendIntl",path="../output/Shipbuilding/", height=3.5,
          excel_y_var = TRUE, excel_formulas = TRUE,
                      format=TRUE,#,var_list=c("SimpleArea","Competition.multisum")
@@ -1311,7 +1380,7 @@ log_plot(plot=ToplineVendorIntl, df=shippscintldef  %>% filter(Fiscal_YQ<=2023.2
 
 
 log_plot(plot=ToplineVendorIntl, df=shippscintldef %>% filter(Fiscal_YQ<=2023.2),
-                     filename="nps_fig08a_vendor_Intl",xlsx="DoD_2024_NPS.xlsx",
+                     filename="shipbuilding_logplot_toplinevendor",xlsx="DoD_2024_NPS.xlsx",
                      sheet="5a VendIntl",path="../output/Shipbuilding/NPS2024/",
          height=3,include_YTD=TRUE,second_path=online_path,
                      startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,

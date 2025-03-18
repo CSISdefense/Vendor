@@ -413,10 +413,23 @@ shippscintldef<-read_and_join_experiment(shippscintldef,
                              directory=""
 )
 
-shippscintldef %>% filter(ShipCategory == "") %>% group_by(ProductOrServiceCode, ProductOrServiceCodeText) %>% 
-  summarize(obl=sum(Action_Obligation_OMB25_GDP23)) %>% arrange(-obl)
+shippscintldef <- shippscintldef %>%
+  mutate(ShipCategory = ifelse(SimpleArea == "Products" & (is.na(ShipCategory)
+                         | ShipCategory == ""), "Other Products", ShipCategory))
+shippscintldef <- shippscintldef %>%
+  mutate(ShipCategory = ifelse(SimpleArea == "Services" & (is.na(ShipCategory) 
+                         | ShipCategory == ""), "Other Service", ShipCategory))
+
+#shippscintldef %>% filter(ShipCategory == "") %>% group_by(ProductOrServiceCode, ProductOrServiceCodeText) %>% 
+ # summarize(obl=sum(Action_Obligation_OMB25_GDP23)) %>% arrange(-obl) #Greg left this here, HHC removing for now, replacing with below
+
+shippscintldef %>% group_by(ProductOrServiceCode, ProductOrServiceCodeText) %>% 
+ summarize(obl=sum(Action_Obligation_OMB25_GDP23)) %>% arrange(-obl)
 
 shippscintldef %>% group_by()
+
+fedpsc_lc<-csis360::prepare_labels_and_colors(shippscintldef)
+fedpsc_ck<-csis360::get_column_key(shippscintldef)
 
 save(shippscintldef,fedpsc_lc, fedpsc_ck,file="data/clean/Defense_Ship_FPDS.Rda")
 write_csv(shippscintldef,file.path("output","shippscintldef.csv"))
