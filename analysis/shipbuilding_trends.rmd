@@ -1,0 +1,1583 @@
+---
+title: "Defense Acquisition Trends"
+output:
+  html_document:
+    keep_md: yes
+    toc: yes
+date: "Wednesday, October 6, 2021"
+---
+
+# Setup
+First we load the data. The dataset used is a U.S. DOD Contracting dataset derived from FPDS.
+
+```{r Libraries, echo = FALSE}
+library(csis360)
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(scales)
+library(svglite)
+library(readxl)
+
+library(openxlsx)
+
+axis.text.size<-10
+strip.text.size<-10
+legend.text.size<-8
+# table.text.size<-5.75
+title.text.size<-12
+geom.text.size<-12
+
+local_path<-get_local_lookup_path()
+
+main.text.size<-1
+note.text.size<-1.40
+if(!exists("shippscintldef"))
+  load(file="../data/clean/Defense_Ship_FPDS.Rda")
+
+
+
+# if(!"Action_Obligation_OMB25_GDP23" %in% colnames(shippscintldef))
+#   shippscintldef<-deflate(shippscintldef, "Action_Obligation_Then_Year",deflator_var="OMB25_GDP23",path="offline")
+# colnames(shippscintldef)[colnames(shippscintldef)=="Action_Obligation_Then_Year_Then_Year"]<-"Action_Obligation_Then_Year"
+
+
+
+
+if(!exists("ota_def")|!exists("def_kota"))
+  load(file="../data/clean/Defense_OTA.Rda")
+
+
+# if(!"Action_Obligation_OMB25_GDP23" %in% colnames(ota_def))
+#   ota_def<-deflate(ota_def, "Action_Obligation_Then_Year",deflator_var="OMB25_GDP23")
+# colnames(ota_def)[colnames(ota_def)=="Action_Obligation_Then_Year_Then_Year"]<-"Action_Obligation_Then_Year"
+
+
+
+
+#Manual import Greenbook data
+toa<-readxl::read_excel(path=file.path("..","data_raw","FY24 6-1_DoD TOA by Title.xlsx"),skip=4)
+request<-readxl::read_excel(path=file.path("..","data_raw","FY24 1-1.xlsx"),skip=3)
+toa<-toa[sapply(toa[,2],function(x) substr(x,start=1,stop=21))==
+            "Total Current Dollars" & !is.na(toa[,2]),c(-1,-3)]
+colnames(toa)<-gsub("FY ","",colnames(toa))
+colnames(toa)<-gsub("\r\nEnacted","",colnames(toa))
+colnames(toa)[colnames(toa)=="...2"]<-"Series"
+toa<-pivot_longer(toa,  cols=-Series, names_to="Fiscal_Year", values_to="Total_Obligation_Authority")
+toa$Total_Obligation_Authority<-toa$Total_Obligation_Authority*1000000
+# debug(deflate)
+
+online_path<-file.path(get_local_sharepoint_path("DIIG Teamsite - Shared Documents"),"2024 - Acquisition Trends","Data and Figures")
+
+
+
+load(file="../data/clean/Defense_OTA.Rda")
+```
+
+# Topline
+
+
+## Topline Competition
+```{r ToplineComp}
+shippscintldef %>% group_by(Fiscal_Year) %>% summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
+
+(
+ToplineCompMulti<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year>=1991&Fiscal_YQ<2024),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+    labels_and_colors=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="Competition.multisum", #color_var
+  # facet_var="Competition.sum", #facet_var
+  column_key=fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # 
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+
+  labs(x="Fiscal Year",
+       y="Obligations (Constant 2023 $s)")+
+    date_x_year_breaks(1992,2022, by=2)#,partial_year=2024,partial_label="\nOct–Nov")
+)
+
+(
+ToplineComp<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year>=1997&Fiscal_YQ<2024),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+    labels_and_colors=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="Competition.sum", #color_var
+  # facet_var="Competition.sum", #facet_var
+  column_key=fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # 
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+
+  labs(x="Fiscal Year",
+       y="Obligations (Constant 2023 $s)")+
+    date_x_year_breaks(1998,2022,2)#)#,partial_year=2024,partial_label="\nOct–Nov")
+)
+
+
+
+(
+ToplineCompLine<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year>=1997&Fiscal_YQ<2024),
+  chart_geom = "Line Chart",
+  share = TRUE,
+    labels_and_colors=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="Competition.sum", #color_var
+  # facet_var="Competition.sum", #facet_var
+  column_key=fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+
+  labs(x="Fiscal Year",
+       y="Obligations (Constant 2023 $s)")+
+    date_x_year_breaks(1998,2022, by=2)
+)
+
+shippscintldef %>% filter(Competition.sum =="Unlabeled" & Fiscal_Year>=2019) %>% group_by(CompetitionClassification)%>%
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_comp.png", ToplineComp,  
+             width=11, height= 5.5, units="in",size=14, lineheight=1.2
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_comp.emf", ToplineComp+theme(legend.position = "right"),  
+             width=6.5, height= 3, units="in",size=11, lineheight=1.2
+             )
+
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_comp_multi.png", ToplineCompMulti,  
+             width=11, height= 5.5, units="in",size=14, lineheight=1.2
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_comp_multi.svg", ToplineCompMulti,  
+             width=6.5, height= 4, units="in",size=12, lineheight=1.2
+             )
+
+
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_comp_multi.emf", ToplineCompMulti+theme(legend.position = "right"),  
+             width=6.5, height= 3, units="in",size=11, lineheight=1.2
+             )
+
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_comp_square.png", ToplineComp,  
+             width=6, height= 5, units="in",size=14, lineheight=1.2
+             )
+
+
+log_plot(plot=ToplineComp, df=shippscintldef %>% filter(Fiscal_YQ<2024),
+                     filename="acq_fig6_5_competition",xlsx="DOD_Shipbuilding_Contracts.xlsx",
+                     sheet="6-5 Comp",path="../output/Shipbuilding/", height=3.5,
+                     startRow=1,startCol=12,format=TRUE, excel_formulas = TRUE, excel_share = TRUE,
+         include_YTD=FALSE,second_path = online_path#,var_list=c("Vehicle.AwardTask","Vehicle.sum7"),z
+         )
+```
+
+
+
+
+
+
+
+
+## Topline Vehicle
+```{r ToplineVehicle}
+
+
+shippscintldef %>% filter(Vehicle=="Unlabeled Indefinite Delivery Contract (IDC)" ) %>% group_by(ClassifyNumberOfOffers,No.Competition.sum)%>%
+  summarise(n=length(Vehicle))
+
+
+(
+ToplineVehicle7<-build_plot(
+  data=shippscintldef %>% filter(!is.na(Vehicle.AwardTask)),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+    labels_and_colors=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="Vehicle.sum7", #color_var
+  facet_var="Vehicle.AwardTask", #facet_var
+  column_key=fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)",
+       caption="Note: Unlabeled not shown. Source: FPDS and CSIS analysis.")
+)
+
+
+(
+ToplineVehicle<-build_plot(
+  data=shippscintldef %>% filter(!is.na(Vehicle.AwardTask)),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+    labels_and_colors=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="Vehicle.sum", #color_var
+  facet_var="Vehicle.AwardTask", #facet_var
+  column_key=fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)",
+       caption="Note: Unlabeled not shown. Source: FPDS and CSIS analysis.")
+)
+
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_vehicle7.png", ToplineVehicle7, 
+             width=13, height= 4.5, units="in",size=11
+             )
+
+write.csv(file="..//Output//Shipbuilding//topline_vehicle7.csv",row.names = FALSE, na = "",
+          ToplineVehicle7$data%>% 
+            mutate(Fiscal_Year=lubridate::year(dFYear),
+                   bAction_Obligation_OMB25_GDP23=Action_Obligation_OMB25_GDP23/1000000000)%>%
+            pivot_wider(id_cols=c(Vehicle.sum7,Vehicle.AwardTask),
+                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB25_GDP23)%>%
+            arrange(Vehicle.sum7,Vehicle.AwardTask))
+
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_vehicle.png", ToplineVehicle, 
+             width=13, height= 4.5, units="in",size=11
+             )
+
+write.csv(file="..//Output//Shipbuilding//topline_vehicle.csv",row.names = FALSE, na = "",
+          ToplineVehicle$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
+                                       bAction_Obligation_OMB25_GDP23=Action_Obligation_OMB25_GDP23/1000000000)%>%
+            pivot_wider(id_cols=c(Vehicle.sum,Vehicle.AwardTask),
+                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB25_GDP23)%>%
+            arrange(Vehicle.sum,Vehicle.AwardTask))
+
+log_plot(plot=ToplineVehicle7, df=shippscintldef %>% filter(Fiscal_YQ<2024),
+                     filename="acq_fig4_X_vehicle",xlsx="DOD_Shipbuilding_Contracts.xlsx",
+                     sheet="4-X Veh",path="../output/Shipbuilding/", height=4,
+                     startRow=1,startCol=14,format=TRUE,
+         var_list=c("Vehicle.AwardTask","Vehicle.sum7"))
+
+```
+
+
+
+## Topline Pricing
+```{r ToplinePricing}
+
+# shippscintldef$PricingUCA.sumlong<-shippscintldef$PricingUCA.sum
+# levels(shippscintldef$PricingUCA.sumlong)<-list("Firm Fixed-Price"="FFP",
+#                                            "Less Common"="Less Common",
+#                                            "Incentive"="Incentive",
+#                                            "Other Cost-Based"="Other CB",
+#                                            "Undefinitized\nContract Award"="UCA",
+#                                            "Unclear"="Unclear"   )
+(
+ToplinePricing<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+labels_and_color=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="PricingUCA", #color_var
+  facet_var="PricingUCA.sum", #facet_var
+column_key = fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE,
+  alpha_var="YTD",
+)+date_x_year_breaks(2000,2023,7)+#,partial_year=2024,partial_label="\nQ1")
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+facet_wrap(~PricingUCA.sum,nrow=1)+
+  labs(y="Obligations\n(Constant 2023 $s)",
+       title="DOD Contract Obligations by Pricing Mechanism, FY 2000–FY 2023",
+       caption="Note: CB=Cost-Based, FFP=Firm Fixed Price, FP=Fixed-Price, FPLOE=Fixed-Price Level-of-Effort,\nLH=Labor Hours,T&M=Time & Materials, UCA=Undefinitized Contract Award\nSource: FPDS and CSIS analysis.")
+)
+
+
+
+
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_pricing.png", ToplinePricing,  
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+
+log_plot(plot=ToplinePricing+theme(plot.margin = margin(t=0,r=0.25,b=0.1,l=0.1,"inches")), df=shippscintldef  %>% filter(Fiscal_YQ<2024),
+                     filename="aila_fig54_pricing",xlsx="DOD_Shipbuilding_Contracts.xlsx",
+                     sheet="4-1 Price",path="../output/Shipbuilding/", height=3.5,second_path=online_path,
+         output_slide_png = TRUE,
+                     format=TRUE,var_list=c("PricingUCA.sum","PricingUCA"),
+         excel_formula=TRUE, excel_y_var = TRUE
+         )
+
+```
+
+
+
+
+
+## Topline Commercial
+```{r Commercial}
+shippscintldef$AnyCommercialText<-factor(shippscintldef$AnyCommercial)
+levels(shippscintldef$AnyCommercialText)<-list(
+  "Not Classified\nas Commercial"="N",
+  "Non-development\nor Commercial Similar"= "NonDev",
+  "Any Commercial\nClassification"="Y"
+  
+)
+
+(
+Commercial<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+labels_and_color=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="AnyCommercialText", #color_var
+  # facet_var="SubCustomer.platform", #facet_var
+column_key = fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)")+
+  date_x_year_breaks(2000,2022,2)#)#,partial_year=2024,partial_label="\nOct–Nov")
+)
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_commercial.png", Commercial, 
+             width=11, height= 5.5, units="in",size=14,lineheight = 1.2
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_commercial.svg", Commercial+
+  labs(y="Obligations\n(Constant 2023 $s)"),#+facet_wrap(~SubCustomer.platform,nrow=1), 
+             width=6.5, height= 2.25, units="in",size=11,lineheight = 1.2
+             )
+
+
+log_plot(plot=Commercial+labs(y="Obligations\n(Constant 2023 $s)"), df=shippscintldef %>% filter(Fiscal_YQ<2024),
+                     filename="acq_fig5_4_commercial",xlsx="DOD_Shipbuilding_Contracts.xlsx",
+                     sheet="5-4 Comm",path="../output/Shipbuilding/", height=2.5,
+                     startRow=1,startCol=12,format=TRUE,#var_list=c("SimpleArea","Competition.multisum")
+         )
+
+
+shippscintldef %>% filter(SubCustomer.sum=="Army", PlatformPortfolio=="Other Products", Fiscal_Year==2021) %>%
+  group_by(AnyCommercialText,Competition.multisum) %>% summarise(
+    COVID19obligated=sum(COVID19obligated,na.rm=TRUE),
+    Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
+    Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year),
+    
+  )
+
+```
+
+## Topline Duration
+```{r Duration}
+
+shippscintldef$CurrentDurationIsYear<-factor(shippscintldef$CurrentDurationCategory)
+levels(shippscintldef$CurrentDurationIsYear)<-list(
+   "<=1 year" =c("<=2 Months", ">2-7 Months"  ,">7-12 Months"),
+   ">1 year"=c(">1-2 Years",   ">2-4 Years",  ">4 years")
+)
+shippscintldef$UnmodifiedUltimateDurationIsYear<-factor(shippscintldef$UnmodifiedUltimateDurationCategory)
+levels(shippscintldef$UnmodifiedUltimateDurationIsYear)<-list(
+   "<=1 year" =c("<=2 Months", ">2-7 Months"  ,">7-12 Months"),
+   ">1 year"=c(">1-2 Years",   ">2-4 Years",  ">4 years")
+)
+
+(
+CurDuration<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024),
+  chart_geom = "Bar Chart",
+  share = TRUE,
+labels_and_color=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="CurrentDurationCategory", #color_var
+  # facet_var="SubCustomer.platform", #facet_var
+column_key = fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Share of Obligations")+
+     date_x_year_breaks(2007,2023,2)#)#,partial_year=2024,partial_label="\nOct–Nov")
+
+)
+
+(
+UnmDuration<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024),
+  chart_geom = "Bar Chart",
+  share = TRUE,
+labels_and_color=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="UnmodifiedUltimateDurationCategory", #color_var
+  # facet_var="SubCustomer.platform", #facet_var
+column_key = fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Share of Obligations",
+       title="Market Share of DOD Contracts by Initial Award\nor Task Order Ultimate Duration, FY 2007-FY 2023")+
+      date_x_year_breaks(2007,2023,2)#)#,partial_year=2024,partial_label="\nOct–Nov")
+
+)
+
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_CurDuration.png", CurDuration, 
+             width=11, height= 5.5, units="in",size=14,lineheight = 1.2
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_CurDuration.svg", CurDuration,#+facet_wrap(~SubCustomer.platform,nrow=1), 
+             width=6.5, height= 3, units="in",size=11,lineheight = 1.2
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_UnmDuration.png", UnmDuration,#+facet_wrap(~SubCustomer.platform,nrow=1), 
+             width=6.5, height= 3, units="in",size=11,lineheight = 1.2
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_UnmDuration.svg", UnmDuration,#+facet_wrap(~SubCustomer.platform,nrow=1), 
+             width=6.5, height= 3, units="in",size=11,lineheight = 1.2
+             )
+
+write.csv(file="..//Output//Shipbuilding//then_year_csv//topline_CurDuration_current.csv",row.names = FALSE, na = "",
+          shippscintldef %>% group_by(CurrentDurationCategory,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+            arrange(Fiscal_Year)%>%
+          pivot_wider(id_cols=c(CurrentDurationCategory),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%
+            arrange(CurrentDurationCategory))
+
+
+log_plot(plot=UnmDuration, df=shippscintldef  %>% filter(Fiscal_YQ<2024),
+                     filename="acq_fig8_3_UmdDuration",xlsx="DOD_Shipbuilding_Contracts.xlsx",
+                     sheet="8-3 Dur",path="../output/Shipbuilding/", height=3.5,
+                     startRow=1,startCol=12,format=TRUE,
+         output_slide_png = TRUE, suppress_doc_svg_text = "title"
+         #,var_list=c("PricingInflation"),
+         )
+
+
+log_plot(plot=UnmDuration, df=shippscintldef  %>% filter(Fiscal_YQ<2024),
+                     filename="nps_fig06_UmdDuration",xlsx="DoD_2024_NPS.xlsx",
+                     sheet="9 Dur",path="../output/Shipbuilding/NPS2024/",second_path=online_path,
+         height=2.75,include_YTD=FALSE,suppress_doc_svg_text = "title",output_slide_png=TRUE,
+                     startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
+         output_slide_png=TRUE,suppress_doc_svg_text = "title"
+         )
+```
+
+## Topline Multi-Year
+```{r Multi-Year}
+shippscintldef<-shippscintldef%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
+                              labels=c("Not Multi-Year","Multi-Year Contract")))
+
+
+(
+MultiYear<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<2024),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+labels_and_color=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="multiyearcontract", #color_var
+  # facet_var="SubCustomer.platform", #facet_var
+column_key = fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)")+
+  date_x_year_breaks(2000,2022,2)#)#,partial_year=2024,partial_label="\nOct–Nov")
+)
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_Multiyear.png", Multiyear, 
+             width=11, height= 5.5, units="in",size=14,lineheight = 1.2
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_Multiyear.svg", Multiyear+
+  labs(y="Obligations\n(Constant 2023 $s)"),#+facet_wrap(~SubCustomer.platform,nrow=1), 
+             width=6.5, height= 2.25, units="in",size=11,lineheight = 1.2
+             )
+
+
+# shippscintldef %>% filter(SubCustomer.sum=="Army", PlatformPortfolio=="Other Products", Fiscal_Year==2021) %>%
+#   group_by(AnyMultiyearText,Competition.multisum) %>% summarise(
+#     COVID19obligated=sum(COVID19obligated,na.rm=TRUE),
+#     Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
+#     Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year),
+#     
+#   )
+
+```
+
+
+```{r ToplinePricing}
+    shippscintldef<-shippscintldef%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
+                              labels=c("Not Multi-Year","Multi-Year Contract")))
+
+shippscintldef$multiyearcontracttext[is.na(shippscintldef$multiyearcontract)&
+                             shippscintldef$Vehicle %in% c("BOA","BPA","FSS","GWAC","PO","DO") ]<-"Not Multi-Year"
+  # "MULTIPLE AWARD IDC"  "SINGLE AWARD IDC"   "Unlabeled IDC"        "DCA"    "DO"   
+
+
+# shippscintldef %>% group_by(Vehicle) %>%
+#   dplyr::summarise(multiyearcontracttext=sum(
+#     ifelse(multiyearcontracttext=="Multi-Year Contract",Action_Obligation_OMB25_GDP23,0),na.rm=TRUE))
+
+
+
+shippscintldef<-shippscintldef %>% group_by(Fiscal_Year,Vehicle.sum7)%>%
+  mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
+```
+
+## Topline GFE
+```{r GFE}
+
+shippscintldef$gfe_gfp_value<-factor(shippscintldef$gfe_gfp_code)
+levels(shippscintldef$gfe_gfp_value)<-list(
+   "No Government Furnished"="N",
+  "Transaction uses\nGovernment Furnished\nEquipment or Property"="Y"
+ 
+)
+
+```
+
+
+
+### GFE Competition
+```{r GFEcomp}
+summary(shippscintldef$gfe_gfp_code)
+(
+GFEcomp<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+labels_and_color=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="No.Competition.sum", #color_var
+  facet_var="gfe_gfp_value", #facet_var
+column_key = fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)")+
+    scale_x_date(breaks=as.Date(c(paste(seq(2000,2021,3),"-01-01",sep=""))),
+                                                   date_labels="'%y")
+)
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="platform_GFE.png", GFEplat, 
+             width=12, height= 6, units="in",size=12,lineheight = 1.2
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="platform_GFE.svg", GFEplat, 
+             width=6.5, height= 4.5, units="in",size=11,lineheight = 1.2
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="platform_GFE.emf", GFEplat, 
+             width=6.5, height= 4.5, units="in",size=11,lineheight = 1.2
+             )
+
+
+# write.csv(file="..//Output//Shipbuilding//platform_GFE.csv",row.names = FALSE, na = "",
+#           pivot_wider(GFEplat$data,id_cols=c(PlatformPortfolio,gfe_gfp_value),
+#                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23))
+
+write.csv(file="..//Output//Shipbuilding//platform_GFE_current.csv",row.names = FALSE, na = "",
+          shippscintldef %>% group_by(PlatformPortfolio,gfe_gfp_value,Fiscal_Year)%>%
+            filter(Fiscal_Year>=2004 & Fiscal_YQ<2024)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(PlatformPortfolio,gfe_gfp_value),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
+
+summary(shippscintldef$ContractingSubCustomer)
+```
+
+
+## Topline Cost Accounting
+```{r SubCustomer}
+
+
+(
+CAS<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year>=2001 & Fiscal_YQ<2024) ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+labels_and_color=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="costaccountingstandardsclause", #color_var
+  facet_var="SubCustomer.platform", #facet_var
+column_key = fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)")
+)
+
+
+(
+CAS<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+labels_and_color=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="costaccountingstandardsclause", #color_var
+  facet_var="PlatformPortfolio", #facet_var
+column_key = fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)")
+)
+
+
+(
+CAS<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+labels_and_color=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="Competition.detail", #color_var
+  facet_var="costaccountingstandardsclause", #facet_var
+column_key = fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)")
+)
+
+
+(
+CAS<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<2024) ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+labels_and_color=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="AnyCommercial", #color_var
+  facet_var="costaccountingstandardsclause", #facet_var
+column_key = fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)")
+)
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_subcustomer.png", SubCustomer, 
+             width=12, height= 6, units="in",size=12,lineheight = 1.2
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_subcustomer.svg", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
+             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_subcustomer.emf", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
+             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+             )
+
+
+write.csv(file="..//Output//Shipbuilding//topline_subcustomer.csv",row.names = FALSE, na = "",
+          pivot_wider(SubCustomer$data,id_cols=c(SubCustomer.sum,SubCustomer.platform),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23))
+
+write.csv(file="..//Output//Shipbuilding//topline_subcustomer_current.csv",row.names = FALSE, na = "",
+          shippscintldef %>% group_by(SubCustomer.sum,ContractingSubCustomer,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(SubCustomer.sum,ContractingSubCustomer),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year))
+
+summary(shippscintldef$ContractingSubCustomer)
+```
+
+
+#Product/Service/R&D
+
+## Topline Product/Service/R&D
+```{r ToplinePSR}
+
+(
+ToplinePSR<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_YQ<2024 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+    labels_and_colors=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  # alpha_var="YTD",
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="SimpleArea", #color_var
+  # facet_var="Competition.sum", #facet_var
+  column_key=fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)",
+       caption="Note: Unlabeled product, service, and R&D areas not shown.\nSource: FPDS and CSIS analysis.")+
+  date_x_year_breaks(1990,2020,5)#,partial_year=2024,partial_label="\nQ1",)
+)
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_psr.png", ToplinePSR, 
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_psr.svg", ToplinePSR, 
+             width=6.5, height= 3, units="in",size=11, lineheight=1.2
+             )
+
+log_plot(plot=ToplinePSR+facet_wrap(~SimpleArea), df=shippscintldef %>% filter(Fiscal_YQ<2024),
+                     filename="acq_fig3_1_area",xlsx="DOD_Shipbuilding_Contracts.xlsx",
+                     sheet="3-1 Area",path="../output/Shipbuilding/", height=3.5,
+                     startRow=1,startCol=12,format=TRUE,#var_list=c("SimpleArea","Competition.multisum"),
+         excel_y_var = TRUE,excel_formulas = TRUE
+         )
+
+```
+
+
+## Topline Product/Service/R&D by ShipCategory
+```{r ToplinePSR}
+
+(
+ShipCategory<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_YQ<2024 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+    labels_and_colors=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  # alpha_var="YTD",
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="ShipCategory", #color_var
+  # facet_var="Competition.sum", #facet_var
+  column_key=fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)",
+       caption="Note: Unlabeled product, service, and R&D areas not shown.\nSource: FPDS and CSIS analysis.")+
+  date_x_year_breaks(1990,2020,5)#,partial_year=2024,partial_label="\nQ1",)
+)
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="ShipCategory_psr.png", ShipCategory, 
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="ShipCategory_psr.svg", ShipCategory, 
+             width=6.5, height= 3, units="in",size=11, lineheight=1.2
+             )
+
+log_plot(plot=ShipCategory, df=shippscintldef %>% filter(Fiscal_YQ<2024),
+                     filename="ShipCategory_breakout",xlsx="DOD_Shipbuilding_Contracts.xlsx",
+                     sheet="ShipCategory",path="../output/Shipbuilding/", height=3.5,
+                     startRow=1,startCol=12,format=TRUE,#var_list=c("SimpleArea","Competition.multisum"),
+         excel_y_var = TRUE,excel_formulas = TRUE
+         )
+```
+# ROK/Japan Specific Look
+##**Setup**
+```{r JapanROK}
+shippscintldef %>% filter(
+  #(ParentHQISOalpha3 %in% c("JPN", "ROK") & !is.na(ParentHQISOalpha3))|
+  ##NOTE: THIS DF IS CURRENTLY MISSING ParentHQ, which is tough for this work
+    (VendorISOalpha3 %in% c("JPN", "ROK") & !is.na(VendorISOalpha3)) |
+    (PlaceISOalpha3 %in% c("JPN", "ROK") & !is.na(PlaceISOalpha3)) |
+    (OriginISOalpha3 %in% c("JPN", "ROK") & !is.na(OriginISOalpha3)))%>%
+  group_by(ContractingAgencyName) %>%
+  summarise(Action_Obligation_OMB25_GDP23=
+              sum(Action_Obligation_OMB25_GDP23))
+
+
+
+```
+## Japan/ROK Aspected shipbuilding
+```{r JapanROKChart}
+(
+ShipCategory<-build_plot(
+  data=shippscintldef %>% filter(
+  #(ParentHQISOalpha3 %in% c("JPN", "ROK") & !is.na(ParentHQISOalpha3))|
+  ##NOTE: THIS DF IS CURRENTLY MISSING ParentHQ, which is tough for this work
+    (VendorISOalpha3 %in% c("JPN", "ROK") & !is.na(VendorISOalpha3)) |
+    (PlaceISOalpha3 %in% c("JPN", "ROK") & !is.na(PlaceISOalpha3)) |
+    (OriginISOalpha3 %in% c("JPN", "ROK") & !is.na(OriginISOalpha3)) &
+      Fiscal_YQ<2024 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+    labels_and_colors=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  # alpha_var="YTD",
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="ShipCategory", #color_var
+  #facet_var="VendorISOalpha3", #facet_var
+  column_key=fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)",
+       caption="Note: Unlabeled product, service, and R&D areas not shown.\n Currently does not include cases where ROK or Japanese firms own U.S. subsidiaries.\nSource: FPDS and CSIS analysis.")+
+  date_x_year_breaks(1990,2020,5)#,partial_year=2024,partial_label="\nQ1",)
+)
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="ROKJapanShipCategory_psr.png", ShipCategory, 
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="ROKJapanShipCategory_psr.svg", ShipCategory, 
+             width=6.5, height= 3, units="in",size=11, lineheight=1.2
+             )
+
+log_plot(plot=ShipCategory, df=shippscintldef %>% filter(
+              (VendorISOalpha3 %in% c("JPN", "ROK") & !is.na(VendorISOalpha3)) |
+              (PlaceISOalpha3 %in% c("JPN", "ROK") & !is.na(PlaceISOalpha3)) |
+              (OriginISOalpha3 %in% c("JPN", "ROK") & !is.na(OriginISOalpha3)) &
+              Fiscal_YQ<2024 & !is.na(SimpleArea) & SimpleArea!="Unlabeled"),
+              filename="ShipCategory_breakout",xlsx="ROKJapanDOD_Shipbuilding_Contracts.xlsx",
+                     sheet="ShipCategory",path="../output/Shipbuilding/", height=3.5,
+                     startRow=1,startCol=12,format=TRUE,#var_list=c("SimpleArea","Competition.multisum"),
+         excel_y_var = TRUE,excel_formulas = TRUE
+         )
+
+```
+# SubCustomer
+## Topline SubCustomer 
+```{r SubCustomer}
+
+(
+SubCustomer<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_YQ<2024),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+labels_and_color=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="SubCustomer.JPO", #color_var
+  facet_var="SubCustomer.sum", #facet_var
+column_key = fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)",
+       title="DOD Contract Obligations by DOD Component, FY 1990-FY 2023") +date_x_year_breaks(1990,2020,5)#,partial_year=2024,partial_label="\nQ1")
+)
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_subcustomer.png", SubCustomer, 
+             width=12, height= 6, units="in",size=12,lineheight = 1.2
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_subcustomer.svg", SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), 
+             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_subcustomer_keynote.svg", SubCustomer+
+               facet_wrap(~SubCustomer.sum,nrow=1)+
+               labs(title="DOD Contract Obligations by Component, 1990–2023")+
+               date_x_year_breaks(1990,2020,8),#,partial_year=2024,partial_label="\nQ1"), 
+             width=13, height= 5.5, units="in", size=20, lineheight = 0.75
+             )
+
+log_plot(plot=SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1)+
+           date_x_year_breaks(1990,2020,8),#,partial_year=2024,partial_label="\nQ1"),
+         df=shippscintldef %>% filter(Fiscal_YQ<2024),
+                     filename="acq_fig2_3_subcustomer",xlsx="DOD_Shipbuilding_Contracts.xlsx",
+                     sheet="2-3 Cust",path="../output/Shipbuilding/", height=3.5,
+                     startRow=1,startCol=13,format=TRUE,var_list=c("SubCustomer.sum","SubCustomer.JPO")
+         )
+
+
+
+
+log_plot(plot=SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1)+
+           date_x_year_breaks(1990,2022,8), df=shippscintldef %>% filter(Fiscal_YQ<2024),
+                     filename="nps_fig04_component",xlsx="DOD_2024_NPS.xlsx",
+                     sheet="4 Cust",path="../output/Shipbuilding/",second_path=online_path,
+         height=3,include_YTD=FALSE,suppress_doc_svg_text="title",
+                     startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
+         output_slide_png=TRUE
+         )
+
+```
+
+## Subcustomer Vendor size NTDC
+```{r Subcustomer_vendorsize}
+
+
+(
+CustVendor_dollar<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year>=2007 & Fiscal_YQ<=2023.2 & !is.na(SubCustomer.platform) & SubCustomer.platform!="Unlabeled"),
+  chart_geom = "Bar Chart",
+labels_and_color=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="VendorSize.NTDC", #color_var
+  facet_var="SubCustomer.platform", #facet_var
+column_key = fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE,
+  reverse_color = TRUE,
+  share=FALSE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.")
+)
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="Subcustomer_vendorsize_dollar.png", CustVendor_dollar, 
+             width=6.5, height= 5, units="in",size=11, lineheight=1.2
+             )
+
+
+(
+CustVendor_share<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year>=2007 &  Fiscal_YQ<=2023.2 & !is.na(SubCustomer.platform) & SubCustomer.platform!="Unlabeled"),
+  chart_geom = "Bar Chart",
+labels_and_color=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23",
+  color_var="VendorSize.NTDC", #color_var
+  facet_var="SubCustomer.platform", #facet_var
+column_key = fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE,
+  share=TRUE
+)+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.")
+)
+
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="Subcustomer_vendorsize_share.png", CustVendor_share, 
+             width=6.5, height= 5, units="in",size=11, lineheight=1.2
+             )
+
+```
+
+# Platform
+## Topline  Platform
+```{r Platform}
+(
+Platform<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year>=1990 & Fiscal_YQ<2024),
+  chart_geom = "Line Chart",
+  share = FALSE,
+labels_and_color=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="PlatformPortfolio", #color_var
+  facet_var="PlatformPortfolio", #facet_var
+column_key = fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(1990,2020,8)+#,partial_year=2024,partial_label="\nQ1")   
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2023 $s)",
+       title="DOD Contract Obligations by Platform Portfolio, FY 1990-FY 2023")
+)
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_platform.png", Platform, 
+             width=12, height= 6, units="in",size=14,lineheight = 1.2
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_platform.svg", Platform, 
+             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_platform.emf", Platform+geom_line(
+  size=1,aes(x=dFYear,y=Action_Obligation_OMB25_GDP23,color=PlatformPortfolio)),
+             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+             )
+
+
+(
+Platform_Bar<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year>=1990 & Fiscal_YQ<2024),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+labels_and_color=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="PlatformPortfolio", #color_var
+  facet_var="PlatformPortfolio", #facet_var
+column_key = fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(1990,2020,8)+#,partial_year=2024,partial_label="\nQ1")   
+  theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2023 $s)",
+       title="DOD Contract Obligations by Platform Portfolio, FY 1990-FY 2023")
+)
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_platform_bar.png", Platform_Bar, 
+             width=11, height= 5.5, units="in",size=14,lineheight = 1.2
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_platform_bar.emf", Platform_Bar,
+             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_platform_bar_keynote.svg", Platform_Bar+
+               labs(title="DOD Contract Obligations by Platform Portfolio, FY 2000–FY 2023"),
+             width=13, height= 5.5, units="in", size=20, lineheight = 0.75
+             )
+
+
+log_plot(plot=Platform_Bar+theme(plot.margin = margin(t=0,r=0.25,b=0.1,l=0.1,"inches")), df=shippscintldef   %>% filter(Fiscal_YQ<2024),
+                     filename="acq_fig3_2_platform",xlsx="DOD_Shipbuilding_Contracts.xlsx",
+                     sheet="3-2 Plat",path="../output/Shipbuilding/", height=3.5,
+                     startRow=1,startCol=12,format=TRUE#var_list=c("Source","fiscal_quarter"),
+         )
+
+
+log_plot(plot=Platform_Bar+theme(plot.margin = margin(t=0,r=0.25,b=0.1,l=0.1,"inches")), df=shippscintldef   %>% filter(Fiscal_YQ<2024),
+                     filename="nps_fig03_platform",xlsx="DoD_2024_NPS.xlsx",
+                     sheet="3 Plat",path="../output/Shipbuilding/NPS2024/",second_path=online_path,
+         height=3.5,include_YTD=FALSE,suppress_doc_svg_text="title",output_slide_png=TRUE,
+                     startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
+         output_doc_svg=TRUE
+         )
+
+
+```
+
+
+# Vendor Size
+
+
+## Topline Vendor Size
+```{r ToplineVendor}
+
+(
+ToplineVendor<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year>=1991& Fiscal_YQ<2024  ),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+labels_and_color=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="Shiny.VendorSize", #color_var
+  alpha_var="YTD",
+  # facet_var="Competition.sum", #facet_var
+column_key = fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE,
+  #reverse_color=TRUE
+)+date_x_year_breaks(1990,2020,5,partial_year=2023,partial_label="\nQ1-Q2")+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)",
+       caption="Source: FPDS and CSIS analysis.")
+)
+
+(
+ToplineVendor_line<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year>=1991&Fiscal_YQ<2024),
+  chart_geom = "Line Chart",
+labels_and_color=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="Shiny.VendorSize", #color_var
+  # facet_var="Competition.sum", #facet_var
+  alpha_var="YTD",
+column_key = fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE,
+  share=TRUE,
+  #reverse_color=TRUE
+)+date_x_year_breaks(1990,2019,5)+#,partial_year=2024,partial_label="\nQ1")
+    
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
+)
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_vendor_wide.png", ToplineVendor+
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=12, height= 6, units="in",size=12,lineheight=1
+             )
+
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_vendor_cq.png", ToplineVendor+
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_vendor_cq.svg", ToplineVendor+
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_vendor.png", ToplineVendor, 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_vendor.eps", ToplineVendor+
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+
+
+log_plot(plot=ToplineVendor, df=shippscintldef  %>% filter(Fiscal_YQ<2024 ),
+                     filename="acq_fig6_X_vendor",xlsx="DOD_Shipbuilding_Contracts.xlsx",
+                     sheet="6-X Vend",path="../output/Shipbuilding/", height=3.5,
+                     startRow=1,startCol=12,format=TRUE,#,var_list=c("SimpleArea","Competition.multisum")
+         )
+
+
+
+```
+
+
+
+### Topline Vendor International for Shipbuilding (of MRO)
+```{r ToplineVendor}
+
+
+(
+ToplineVendorIntl<-build_plot(
+  #data=shippscintldef %>% filter(Fiscal_Year>=2000& Fiscal_YQ<=2024),
+ data=shippscintldef %>% filter(Fiscal_Year>=2000& Fiscal_YQ<=2024.2 
+                                #& ShipCategory == "MRO")
+                      )%>%
+                              mutate(YTD=ifelse(Fiscal_Year==2024,"YTD","Full Year")),# & Fiscal_Year<=2021
+  chart_geom = "Bar Chart",
+  share = FALSE,
+    labels_and_colors=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="VendorSize_Intl", #color_var
+  facet_var="VendorSize_Intl", #facet_var
+  column_key=fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = scales::date_format("'%y"))+
+  date_x_year_breaks(2000,2022,3,partial_year=2024,partial_label="\nQ1–Q2")+
+    
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)",
+       title="U.S. Navy MRO Contract Obligations by Vendor Size, FY 2000–FY 2024",       caption="Source: FPDS and CSIS analysis.")
+)
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_vendor_intl_square.png", ToplineVendorIntl+
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis."), 
+             width=6, height= 5, units="in",size=12,lineheight=1
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",
+             filename="topline_vendor_shipbuilding.svg", ToplineVendorIntl+
+               labs(title="Shipbuilding Contract Obligations, FY 2000–FY 2024"),
+             width=9, height= 5.5, units="in", size=20, lineheight = 0.75
+             )
+
+log_plot(plot=ToplineVendorIntl, df=shippscintldef  %>% filter(Fiscal_YQ<=2023.2),
+                     filename="shipbuilding_contracts_topline",xlsx="DOD_Shipbuilding_Contracts.xlsx",
+                     sheet="6-1 VendIntl",path="../output/Shipbuilding/", height=3.5,
+         excel_y_var = TRUE, excel_formulas = TRUE,
+                     format=TRUE,#,var_list=c("SimpleArea","Competition.multisum")
+         )
+
+
+log_plot(plot=ToplineVendorIntl, df=shippscintldef %>% filter(Fiscal_YQ<=2023.2),
+                     filename="shipbuilding_logplot_toplinevendor",xlsx="DoD_2024_NPS.xlsx",
+                     sheet="5a VendIntl",path="../output/Shipbuilding/NPS2024/",
+         height=3,include_YTD=TRUE,second_path=online_path,
+                     startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
+         suppress_doc_svg_text="title",output_slide_png=TRUE,
+         output_doc_svg=TRUE
+         )
+
+
+```
+
+
+### Topline Vendor NTDC
+```{r ToplineVendor}
+
+summary(shippscintldef$Shiny.VendorSize)
+shippscintldef<-shippscintldef %>% mutate(VendorSize_NTDC=factor(case_when(
+  Shiny.VendorSize %in% c("Big Five","Small")~Shiny.VendorSize,
+  IsEntityTraditional==0~"Medium or Large Non-Traditional",
+  Shiny.VendorSize %in% c("Medium")~"Medium Traditional",
+  Shiny.VendorSize %in% c("Large")~"Large Traditional"
+)))
+
+fedpsc_lc<-prepare_labels_and_colors(shippscintldef,path="offline")
+fedpsc_ck<-get_column_key(shippscintldef,path="offline")
+
+(
+ToplineVendorNTDC<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year>=2007& Fiscal_YQ<=2023.2 )%>%
+                              mutate(YTD=ifelse(Fiscal_Year==2023,"YTD","Full Year")),# & Fiscal_Year<=2021
+  chart_geom = "Bar Chart",
+  share = FALSE,
+labels_and_color=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="VendorSize_NTDC", #color_var
+  # facet_var="Competition.sum", #facet_var
+column_key = fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE,
+  reverse_color=TRUE
+)+scale_x_date("Fiscal Year",labels = scales::date_format("'%y"))+
+  date_x_year_breaks(2007,2022,3,partial_year=2023,partial_label="\nQ1–Q2")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)",
+       title="DOD Contract Obligations by Vendor Size, FY 2000–FY 2023 Q1-Q2",
+       caption="Source: FPDS and CSIS analysis.")
+)
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_vendor_ntdc_square.png", ToplineVendorNTDC+
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis."), 
+             width=6, height= 5, units="in",size=12,lineheight=1
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",
+             filename="topline_vendor_NTDC_keynote.svg", ToplineVendorNTDC+
+               labs(title="DOD Contract Obligations, FY 2000–FY 2023 Q2"),
+             width=9, height= 5.5, units="in", size=20, lineheight = 0.75
+             )
+
+log_plot(plot=ToplineVendorNTDC, df=shippscintldef  %>% filter(Fiscal_YQ<=2023.2),
+                     filename="acq_fig6_1_vendor_NTDC",xlsx="DOD_Shipbuilding_Contracts.xlsx",
+                     sheet="6-1 VendNTDC",path="../output/Shipbuilding/", height=3.5,
+         excel_y_var = TRUE, excel_formulas = TRUE,
+                     format=TRUE,#,var_list=c("SimpleArea","Competition.multisum")
+         )
+
+
+log_plot(plot=ToplineVendorNTDC, df=shippscintldef %>% filter(Fiscal_YQ<=2023.2),
+                     filename="nps_fig08_vendor_NTDC",xlsx="DoD_2024_NPS.xlsx",
+                     sheet="5 VendNTDC",path="../output/Shipbuilding/NPS2024/",
+         height=3,include_YTD=TRUE,second_path=online_path,
+                     startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
+         suppress_doc_svg_text="title",output_slide_png=TRUE,
+         output_doc_svg=TRUE
+         )
+
+```
+
+## Big 5 Breakout
+```{r ToplineVendor}
+
+big5<-read.delim(file.path("..","data","semi_clean","Defense_Vendor.sp_TopVendorHistoryCustomer.txt"),sep="\t")
+big5<-read_and_join_experiment(big5,lookup_file="Lookup_ParentID.csv",
+                               path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\",
+                                 # "https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                               dir="vendor/",           
+                               add_var = c("Top6","IsPreTop6"),#"USAID region",
+                               by=c("ParentID"="ParentID"),
+                               skip_check_var=c("Top6","IsPreTop6"),
+                               # missing_file="missing_DSCA_iso.csv"
+)
+big5<-big5 %>% filter(Top6==1|IsPreTop6==1)
+big5$Big5<-big5$ParentID
+big5$Big5[big5$JointVenture==1]<-"Big 5 Joint Venture"
+big5$Big5[big5$Big5=="LOCKHEED"]<-"LOCKHEED MARTIN"
+big5$Big5[big5$Big5=="GRUMMAN"]<-"NORTHROP GRUMMAN"
+big5$SumOfobligatedAmount<-text_to_number(big5$SumOfobligatedAmount)
+big5_wide <-big5 %>% group_by(Big5,Fiscal_Year) %>% filter(Fiscal_Year>=1990) %>%
+  summarise(Action_Obligation=sum(SumOfobligatedAmount,na.rm=TRUE)) %>%
+  pivot_wider(id_cols=Big5,names_from=Fiscal_Year,values_from=Action_Obligation) 
+
+write.csv(big5_wide,file=file.path("..","Output","Shipbuilding","big5_wide.csv"),row.names=FALSE)
+
+(
+ToplineVendor<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year<=2020),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+    labels_and_colors=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="Shiny.VendorSize", #color_var
+  # facet_var="Competition.sum", #facet_var
+  column_key=fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"),date_breaks = "2 years")+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)",
+       caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020.")
+)
+
+(
+ToplineVendor_line<-build_plot(
+  data=shippscintldef %>% filter(Fiscal_Year<=2020),
+  chart_geom = "Line Chart",
+    labels_and_colors=fedpsc_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="Shiny.VendorSize", #color_var
+  # facet_var="Competition.sum", #facet_var
+  column_key=fedpsc_ck,
+  format=TRUE,
+  ytextposition=FALSE,
+  share=TRUE
+)+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
+)
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_vendor_wide.png", ToplineVendor+
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=12, height= 6, units="in",size=12,lineheight=1
+             )
+
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_vendor_cq.png", ToplineVendor+
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_vendor_cq.svg", ToplineVendor+
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_vendor.png", ToplineVendor, 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+ggsave600dpi(path="..//Output//Shipbuilding//",filename="topline_vendor.eps", ToplineVendor+
+  labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April\nof 2020 and thus did not make the cutofff for inclusion in FY2020."), 
+             width=6.5, height= 4, units="in",size=11,lineheight=1
+             )
+
+
+write.csv(file="..//Output//Shipbuilding//topline_vendor_cur.csv",row.names = FALSE, na = "",
+          shippscintldef %>% group_by(Shiny.VendorSize,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(Shiny.VendorSize),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(Shiny.VendorSize))
+
+
+write.csv(file="..//Output//Shipbuilding//topline_vendor.csv",row.names = FALSE, na = "",
+          ToplineVendor$data%>% mutate(Fiscal_Year=lubridate::year(dFYear),
+                                       bAction_Obligation_OMB25_GDP23=Action_Obligation_OMB25_GDP23/1000000000)%>%
+            pivot_wider(id_cols=c(Shiny.VendorSize),
+                        names_from=Fiscal_Year,values_from=bAction_Obligation_OMB25_GDP23)%>%arrange(Shiny.VendorSize))
+
+```
+

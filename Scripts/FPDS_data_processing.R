@@ -10,7 +10,7 @@
 #
 # Output: CSV file (unaggregated_FPDS.Rda)
 # with data in the minimal form needed by Shiny script
-################################################################################
+##########################################################################
 
 # install.packages("../csis360_0.0.0.9022.tar.gz")
 
@@ -46,7 +46,7 @@ initial_clean<-function(df,only_defense=TRUE){
 
 
 
-#############Full Data and Fed Data##########
+#Full Data and Fed Data##########
 
 full_data <- read_delim(
   # "Data//semi_clean//Defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.txt",
@@ -184,7 +184,7 @@ fed_data$YTD<-factor(ifelse(fed_data$Fiscal_Year==max(fed_data$Fiscal_Year),"YTD
 save(fed_data,fed_lc,fed_ck, file="data/clean/fed_summary_FPDS.Rda")
 
 
-#############Defense Data##########
+#Defense Data##########
 def_data<- read_delim(
   "Data//semi_clean//Defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.txt",delim = "\t",
   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
@@ -288,7 +288,7 @@ colnames(platpscintl)[colnames(platpscintl)=="Customer"]<-"ContractingCustomer"
 # View(platpscintldef[(nrow(platpscintldef)-3):nrow(platpscintldef),])
 # debug(initial_clean)
 platpscintl<-apply_standard_lookups(platpscintl)#,path=local_path
-platpscintl<-initial_clean(platpscintl,only_defense=FALSE)
+
 platpscintldef<-initial_clean(platpscintl,only_defense=TRUE)
 
 summary(platpscintldef$PlatformPortfolio)
@@ -398,8 +398,45 @@ fedpsc_ck<-csis360::get_column_key(platpscintl)
 platpscintl$YTD<-factor(ifelse(platpscintl$Fiscal_Year==max(platpscintl$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
 save(platpscintl,fedpsc_lc, fedpsc_ck,file="data/clean/Federal_platpscintl_FPDS.Rda")
 
+### Ship PSC Intial ####
 
-############## NAICS and High Tech Non-Trad #############
+load(file="data/clean/platpscintl_FPDS.Rda")
+shippscintldef<-platpscintldef %>% filter(PlatformPortfolio == "Ships & Submarines")
+nrow(shippscintldef)
+
+shippscintldef<-read_and_join_experiment(shippscintldef,
+                             "ProductOrServiceCodes.csv",
+                             by=c("ProductOrServiceCode"="ProductOrServiceCode"),
+                             path="offline",
+                             add_var=c("ShipCategory"),
+                             skip_check_var = c("ShipCategory"),
+                             directory=""
+)
+
+shippscintldef <- shippscintldef %>%
+  mutate(ShipCategory = ifelse(SimpleArea == "Products" & (is.na(ShipCategory)
+                         | ShipCategory == ""), "Other Products", ShipCategory))
+shippscintldef <- shippscintldef %>%
+  mutate(ShipCategory = ifelse(SimpleArea == "Services" & (is.na(ShipCategory) 
+                         | ShipCategory == ""), "Other Service", ShipCategory))
+
+#shippscintldef %>% filter(ShipCategory == "") %>% group_by(ProductOrServiceCode, ProductOrServiceCodeText) %>% 
+ # summarize(obl=sum(Action_Obligation_OMB25_GDP23)) %>% arrange(-obl) #Greg left this here, HHC removing for now, replacing with below
+
+shippscintldef %>% group_by(ProductOrServiceCode, ProductOrServiceCodeText) %>% 
+ summarize(obl=sum(Action_Obligation_OMB25_GDP23)) %>% arrange(-obl)
+
+shippscintldef %>% group_by()
+
+fedpsc_lc<-csis360::prepare_labels_and_colors(shippscintldef)
+fedpsc_ck<-csis360::get_column_key(shippscintldef)
+
+save(shippscintldef,fedpsc_lc, fedpsc_ck,file="data/clean/Defense_Ship_FPDS.Rda")
+write_csv(shippscintldef,file.path("output","shippscintldef.csv"))
+
+
+
+# NAICS and High Tech Non-Trad ####
 economic<-read_delim(file.path("data","semi_clean","Defense_Economic.SP_NAICSprodservNonTraditionalHistory.txt"),delim="\t",na=c("NULL","NA"),
                     col_names = TRUE, guess_max = 10000000)
 
@@ -417,7 +454,7 @@ economic_lc<-prepare_labels_and_colors(economic)
 economic_ck<-get_column_key(economic)
 save(economic, file="data/clean/ProdServPlatformNAICS.rda")
 
-##############Space ########
+#Space ########
 if(!exists("platpscintl")) load(file="data/clean/Federal_platpscintl_FPDS.Rda")
 space<-read_delim(file.path("data","semi_clean","ProductOrServiceCode.SP_SpaceDetail.txt"),delim="\t",na=c("NULL","NA"),
                col_names = TRUE, guess_max = 10000000)
@@ -435,7 +472,7 @@ space_fedpsc<-platpscintl %>% filter(PlatformPortfolio=="Space Systems")
 save(spaceplatpscintl,space,space_lc,space_ck,space_fedpsc,fedpsc_ck,fedpsc_lc, file="data/clean/space_FPDS.Rda")
 
 
-##############Software #############
+#Software #############
 sw<-read_delim(file.path("data","semi_clean","Summary.SP_SoftwareDetail.txt"),delim="\t",na=c("NULL","NA"),
                col_names = TRUE, guess_max = 10000000)
 
@@ -448,7 +485,7 @@ sw_ck<-get_column_key(sw)
 
 save(sw,sw_lc,sw_ck, file="data/clean/sw_FPDS.Rda")
 
-#############JADC2##########
+#JADC2##########
 
 jadc2 <- read_delim(
   "Data//semi_clean//Summary.SP_JADC2detail.txt",delim = "\t",
@@ -468,7 +505,7 @@ save(jadc2,jadc2_lc, jadc2_ck,file="data/clean/jadc2.Rda")
 
 
 
-##############Pricing History 1980-2021 #############
+#Pricing History 1980-2021 #############
 
 pricing<- read_csv(
   "Data_Raw//FPDS_Reports//Defense_Pricing_Mechanism_Agency.csv",
@@ -511,7 +548,7 @@ save(pricing,pricing_lc,pricing_ck, file="data/clean/pricing_historical.Rda")
 
 
 # ***** Handled in apply_standard_lookups
-##### Recipient_UEI #######
+## Recipient_UEI #######
 ruh<-read_delim(file.path("data","semi_clean","Vendor.RecipientUEIpartial.txt"),delim="\t",
                 na=c("NULL",""))
 ruh<-apply_standard_lookups(ruh)

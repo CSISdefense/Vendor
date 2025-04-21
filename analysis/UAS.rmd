@@ -66,7 +66,8 @@ OTA_data$SubCustomer.DoD[OTA_data$ContractingCustomer!="Defense"]<-"Civilian"
 ota_contract$SubCustomer.DoD<-as.character(ota_contract$SubCustomer.sum)
 ota_contract$SubCustomer.DoD<-as.character(ota_contract$SubCustomer.sum)
 
-ota_lc<-prepare_labels_and_colors(OTA_data %>% select(-ContractingOfficeName,-MajorCommandName  ))#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+ota_lc<-prepare_labels_and_colors(OTA_data %>% dplyr::select(-ContractingOfficeName,-MajorCommandName))
+#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 ota_ck<-get_column_key(OTA_data)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
 
 ota_contract_lc<-prepare_labels_and_colors(ota_contract)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
@@ -157,7 +158,7 @@ summary(factor(drone$TopPStext))
 drone %>% dplyr::group_by(ProjectName, IsRemotelyOperated)  %>% dplyr::summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))%>%
   arrange(-Action_Obligation_OMB25_GDP23)
                                                          
-                                                                                 
+#write.csv(drone, file="..//Output//Remotely_Crewed//dronesdata.csv")
 
 ```
 
@@ -196,8 +197,8 @@ colnames(r_long)[colnames(r_long)=="Service"]<-"Subcustomer"
 colnames(p_long)[colnames(p_long)=="Uncrewed.Domain"]<-"Domain"
 p_long$ColorOfMoney<-"Procurement"
 r_long$ColorOfMoney<-"RDT&E"
-inv_long<-rbind(p_long %>%select(Subcustomer,Fiscal_Year,Funding_Const,ColorOfMoney,Domain),
-      r_long %>%select(Subcustomer,Fiscal_Year,Funding_Const,ColorOfMoney,Domain))
+inv_long<-rbind(p_long %>% dplyr::select(Subcustomer,Fiscal_Year,Funding_Const,ColorOfMoney,Domain),
+      r_long %>% dplyr::select(Subcustomer,Fiscal_Year,Funding_Const,ColorOfMoney,Domain))
 inv_long$dFYear<-as.Date(paste(inv_long$Fiscal_Year,"1","1",sep="-"))
 inv_long$Domain<-factor(inv_long$Domain)
 levels(inv_long$Domain)<-list("Aerial"="Aerial"  ,
@@ -247,7 +248,7 @@ write.csv(file="ArmyUAS.csv",(OTA_data[grep("DIU", OTA_data$Description_of_Requi
     color_var="SimpleArea", #color_var
     facet_var="PlatformPortfolioUAV", #facet_var
     # second_var="IsOTA", #facet_var
-    column_key=ota_cks,
+    column_key=ota_ck,
     format=TRUE,
     ytextposition=FALSE
   )+
@@ -544,7 +545,8 @@ write.csv(file="..//Output//Remotely_Crewed//Remotely_Crewed_Customer_psr_cur.cs
 
 log_plot(plot=rceo_psr, df=droneEO %>% dplyr::filter(  lubridate::year(dFYear)>=1990 & 
                                                                             lubridate::year(dFYear)<=2023),
-           filename="UAS_EO_PSR",xlsx="Japan_Def_Coop.xlsx",suppress_text = FALSE,
+           filename="UAS_EO_PSR",xlsx="Japan_Def_Coop.xlsx",
+            #suppress_text = FALSE,
            sheet="PSR",path=japan_repo_path,second_path=japan_log_path, height=3.5,
            format=TRUE,#var_list=c("FlowText","StateRegionJapan"),
            output_doc_png=TRUE,excel_y_var=TRUE
