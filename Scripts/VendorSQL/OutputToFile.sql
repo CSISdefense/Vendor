@@ -292,6 +292,14 @@ select *
 from FPDSTypeTable.AgencyID
 where agencyid in ('5300')
 
+SET QUERY_GOVERNOR_COST_LIMIT 0
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+EXEC	[Contract].[SP_PBLcompetitionContractSizeHistorySubCustomer]
+		@Customer = N'Defense'
+
+
+
 
 
 SET ANSI_WARNINGS OFF;
