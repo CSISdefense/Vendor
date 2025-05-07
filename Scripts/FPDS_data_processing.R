@@ -18,6 +18,7 @@ library(tidyverse)
 library(magrittr)
 library(csis360)
 library(readr)
+library(fetch)
 #This is a kludge until the FMS repo is public
 source(file.path("..","Trade","Scripts","Trade_Standardize.r"))
 # read in data
@@ -47,97 +48,42 @@ initial_clean<-function(df,only_defense=TRUE){
 
 
 #Full Data and Fed Data##########
-
-full_data <- read_delim(
-  # "Data//semi_clean//Defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.txt",
-  # "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerInternational.txt",
-  # "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",
-  "Data//semi_clean//Federal_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",
-  # "Data//semi_clean//Defense_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",
-  delim = "\t",
-  col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
-
-colnames(full_data)[colnames(full_data)=="UnmodifiedUltimateDurationCategory...13"]<-"UnmodifiedUltimateDurationCategory"
-colnames(full_data)[colnames(full_data)=="CurrentDurationCategory...14"]<-"CurrentDurationCategory"
-
-# full_data<-initial_clean(full_data,only_defense=FALSE)
-fed_data<- apply_standard_lookups(full_data)#,
-full_data<-initial_clean(fed_data,only_defense=TRUE)
-# path="K:/Users/Greg/Repositories/Lookup-Tables/style")
-
-if(!"OriginIsForeign" %in% colnames(full_data) & "OriginISOalpha3" %in% colnames(full_data) ){
-  # full_data<-read_and_join_experiment(full_data,lookup_file="Location_CountryCodes.csv",
-  #                                     path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",dir="location/",
-  #                                     add_var = c("isforeign"),#"USAID region",
-  #                                     by=c("OriginISOalpha3"="alpha-3"),
-  #                                     # skip_check_var=c("NATOyear",	"MajorNonNATOyear","NTIByear"	,"SEATOendYear","RioTreatyStartYear","RioTreatyEndYear","FiveEyes","OtherTreatyName"	,"OtherTreatyStartYear","OtherTreatyEndYear","isforeign"),
-  #                                     missing_file="missing_DSCA_iso.csv")
-  # colnames(full_data)[colnames(full_data)=="isforeign"]<-"OriginIsForeign"
   
-  # full_data <- full_data %>% dplyr::select(-PlaceIsForeign,-VendorIsForeign) 
-  # full_data %<>% add_alliance(isoAlpha3_col= "PlaceISOalpha3", drop_col = TRUE,prefix="Place")
-  # full_data$VendorISOalpha3[full_data$VendorISOalpha3=="~NJ"]<-NA
-  # full_data %<>% add_alliance(isoAlpha3_col= "VendorISOalpha3", drop_col = TRUE,prefix="Vendor")
-  # full_data %<>% add_alliance(isoAlpha3_col= "OriginISOalpha3", drop_col = TRUE,prefix="Origin")
+  full_data <- read_delim(
+    # "Data//semi_clean//Defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.txt",
+    # "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerInternational.txt",
+    # "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",
+    "Data//semi_clean//Federal_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",
+    # "Data//semi_clean//Defense_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",
+    delim = "\t",
+    col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
+  
+  colnames(full_data)[colnames(full_data)=="UnmodifiedUltimateDurationCategory...13"]<-"UnmodifiedUltimateDurationCategory"
+  colnames(full_data)[colnames(full_data)=="CurrentDurationCategory...14"]<-"CurrentDurationCategory"
+  
+  # full_data<-initial_clean(full_data,only_defense=FALSE)
+  fed_data<- apply_standard_lookups(full_data)#,
+  full_data<-initial_clean(fed_data,only_defense=TRUE)
+  # path="K:/Users/Greg/Repositories/Lookup-Tables/style")
+  
+  if(all(is.na(full_data[nrow(full_data),]))){
+    full_data<-full_data[1:nrow(full_data)-1,]
+    warning("Echo row dropped")
+  }
   
   
-  full_data$VendorSize_Intl<-factor(full_data$Shiny.VendorSize)
-  levels(full_data$VendorSize_Intl)<-list(
-    "Unlabeled"="Unlabeled",
-    "International"="International",
-    "U.S. Big Five"=c("Big Five","U.S. Big Five"),
-    "U.S. Large"=c("Large","U.S. Large"),
-    "U.S. Medium"=c("Medium","U.S. Medium"),
-    "U.S. Small"=c("Small","U.S. Small")
-  )
-  full_data$VendorSize_Intl[full_data$VendorIsForeign==1]<-"International"
-  full_data$VendorSize_Intl[is.na(full_data$VendorIsForeign)]<-"Unlabeled"
-}
-
-if(all(is.na(full_data[nrow(full_data),]))){
-  full_data<-full_data[1:nrow(full_data)-1,]
-  warning("Echo row dropped")
-}
-
-
-
-# if("ContractingCustomer" %in% colnames(full_data))
-# full_data %<>%  select(-ContractingCustomer)
-# set correct data types
-full_data %<>%
-  # select(-ClassifyNumberOfOffers) %>%
-  mutate(ContractingSubCustomer = factor(ContractingSubCustomer)) %>%
-  mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
-  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
-  mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
-  # mutate(PlatformPortfolioUAV = factor(PlatformPortfolioUAV)) %>%
-  mutate(Shiny.VendorSize = factor(Shiny.VendorSize)) %>%
-  mutate(SimpleArea = factor(SimpleArea)) %>%
-  mutate(Competition.sum = factor(Competition.sum)) %>%
-  mutate(Competition.effective.only = factor(Competition.effective.only)) %>%
-  mutate(Competition.multisum = factor(Competition.multisum))  %>%
-  mutate(No.Competition.sum = factor(No.Competition.sum)) %>%
-  mutate(Vehicle = factor(Vehicle)) %>%
-  mutate(Vehicle.sum = factor(Vehicle.sum)) %>%
-  mutate(Vehicle.sum7 = factor(Vehicle.sum7)) %>%
-  mutate(Vehicle.AwardTask = factor(Vehicle.AwardTask)) %>%
-  mutate(PricingUCA = factor(PricingUCA)) %>%
-  mutate(IsFMS = factor(IsFMS)) %>%
-  mutate(PlaceOfManufacture_Sum = factor(PlaceOfManufacture_Sum)) %>%
-  mutate(VendorIsForeign = factor(VendorIsForeign))%>%
-  mutate(PlaceIsForeign = factor(PlaceIsForeign))
-
-
-labels_and_colors<-prepare_labels_and_colors(full_data %>% select(-recoveredmaterialclauses))
-
-column_key<-get_column_key(full_data)
-
-full_data$Fiscal_YQ[!is.na(full_data$fiscal_quarter_YTD)]<-text_to_number(paste(full_data$Fiscal_Year[!is.na(full_data$fiscal_quarter_YTD)],
-                                                                          text_to_number(full_data$fiscal_quarter_YTD[!is.na(full_data$fiscal_quarter_YTD)]),sep="."))
-full_data$Fiscal_YQ[is.na(full_data$Fiscal_YQ)]<-full_data$Fiscal_Year[is.na(full_data$Fiscal_YQ)]
-full_data$YTD<-factor(ifelse(full_data$Fiscal_Year==max(full_data$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
-save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
-
+  labels_and_colors<-prepare_labels_and_colors(full_data %>% select(-recoveredmaterialclauses))
+  
+  column_key<-get_column_key(full_data)
+  
+  full_data$Fiscal_YQ[!is.na(full_data$fiscal_quarter_YTD)]<-text_to_number(paste(full_data$Fiscal_Year[!is.na(full_data$fiscal_quarter_YTD)],
+                                                                            text_to_number(full_data$fiscal_quarter_YTD[!is.na(full_data$fiscal_quarter_YTD)]),sep="."))
+  full_data$Fiscal_YQ[is.na(full_data$Fiscal_YQ)]<-full_data$Fiscal_Year[is.na(full_data$Fiscal_YQ)]
+  full_data$YTD<-factor(ifelse(full_data$Fiscal_Year==max(full_data$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
+  save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
+  
+  full_datacat<-catalog("analysis/FPDS_chart_maker/", engines$rda,pattern="*FPDS*")
+  write.csv(full_datacat$unaggregated_FPDS,file=file.path("docs","catalog","unaggregated_FPDS.csv"))
 
 
 
@@ -332,39 +278,17 @@ levels(platpscintldef$IsFMSplaceIntl)=list(
 platpscintl %<>%
   # select(-ContractingCustomer) %>%
   # select(-ClassifyNumberOfOffers) %>%
-  mutate(SubCustomer = factor(SubCustomer)) %>%
-  mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
-  mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
-  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
-  mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
-  mutate(PlatformPortfolioUAV = factor(PlatformPortfolioUAV)) 
+  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) 
 
 
 
 platpscintldef %<>%
   # select(-ContractingCustomer) %>%
   # select(-ClassifyNumberOfOffers) %>%
-  mutate(SubCustomer = factor(SubCustomer)) %>%
-  mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
-  mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
-  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
-  mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
-  mutate(PlatformPortfolioUAV = factor(PlatformPortfolioUAV))
+  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea))
 
 # 
 platpscintldef<-standardize_variable_names(platpscintldef)
-
-platpscintldef<-read_and_join_experiment(platpscintldef,
-                             "ManufacturingOrganizationType.csv",
-                             by="ManufacturingOrganizationType",
-                             add_var=c("ManufacturingOrganizationText","ManufacturingOrganizationText_sum",
-                                       "IsForeignHQ"),
-                             skip_check_var = c("ManufacturingOrganizationText","ManufacturingOrganizationText_sum",
-                                                "IsForeignHQ"),
-                             path="offline",
-                             directory="location/",
-                             case_sensitive = FALSE
-)
 
 colnames(platpscintldef)[colnames(platpscintldef)=="IsForeignHeadquarters"]<-"IsForeignHQ"
 if("IsForeignHQ" %in% colnames(platpscintldef)){
@@ -376,13 +300,12 @@ if("IsForeignHQ" %in% colnames(platpscintldef)){
 }
 
 platpscintldef<-platpscintldef %>% mutate(
-  AnyInternational(case_when(
-    IsFMS==1~1,
-    IsForeignOrganization==1~1,
-    PlaceIsForeign==1~1,
-    
-    
-    
+  AnyInternational=as.logical(case_when(
+    IsFMS==1~T,
+    MFGorPerformIsForeign==1~T,
+    OriginIsForeign==1~T,
+    VendorIsForeign==1~T,
+    PlaceIsForeign==1~T
   ))
 )
 
@@ -397,6 +320,22 @@ fedpsc_lc<-csis360::prepare_labels_and_colors(platpscintl)
 fedpsc_ck<-csis360::get_column_key(platpscintl)
 platpscintl$YTD<-factor(ifelse(platpscintl$Fiscal_Year==max(platpscintl$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
 save(platpscintl,fedpsc_lc, fedpsc_ck,file="data/clean/Federal_platpscintl_FPDS.Rda")
+# load(file="data/clean/Federal_platpscintl_FPDS.Rda")
+file.exists("data/clean/Federal_platpscintl_FPDS.Rda")
+platpscintlcat<-catalog("data/clean/", engines$rda,pattern="*platpscintl*")
+write.csv(platpscintlcat$Federal_platpscintl_FPDS,file=file.path("docs","catalog","Federal_platpscintl_FPDS.csv"))
+write.csv(platpscintlcat$platpscintl_FPDS,file=file.path("docs","catalog","platpscintl_FPDS.csv"))
+
+
+platpscintlcat$Federal_platpscintl_FPDS
+platpscintlcat$Federal_platpscintl_FPDS$Co
+platpscintlcat<-catalog("data/semi_clean/", engines$csv)
+platpscintlcat<-catalog(file.path("data","semi_clean","Federal_Location.SP_ProdServPlatformAgencyPlaceOriginVendor.txt"), engines$csv)
+
+
+summary(engines)
+
+create_dictionary(platpscintl)
 
 ### Ship PSC Intial ####
 
