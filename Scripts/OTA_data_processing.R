@@ -320,7 +320,6 @@ if(!exists("fed_data")){
   load(file=file.path("data","clean","fed_summary_FPDS.rda"))
 }
 
-
 colnames(OTA_data)[colnames(OTA_data)=="Non-traditionalGovernmentContractorParticipationDescription"]<-
   "NontraditionalGovernmentContractorParticipationDescription"
 colnames(OTA_data)[colnames(OTA_data)=="Non-traditionalGovernmentContractorParticipationCode"]<-
@@ -364,7 +363,7 @@ summary(fed_data$PlatformPortfolioUAV)
 
 
 if(!exists("def_data"))
-  load(file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
+  load(file="FPDS_chart_maker/unaggregated_def.Rda")
 
 def_kota<-ota_def
 def_kota$IsOTA<-"OTA"

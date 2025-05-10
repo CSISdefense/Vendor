@@ -393,6 +393,94 @@ economic_lc<-prepare_labels_and_colors(economic)
 economic_ck<-get_column_key(economic)
 save(economic, file="data/clean/ProdServPlatformNAICS.rda")
 
+#PBL ######
+# pbl<-read_delim(file.path("Data","Semi_clean","Contract.SP_PBLfpdsPartial.txt"),delim="\t",guess_max=10000000)
+# pbl$transaction_description
+# problems(pbl)
+# colnames(pbl)
+login<-askpass("Please enter the SQL login account")
+pwd<-askpass("Please enter the SQL account password")
+
+vmcon <- dbConnect(odbc(),
+                   Driver = "SQL Server",
+                   Server = "vmsqldiig.database.windows.net",
+                   Database = "CSIS360",
+                   UID = login,
+                   PWD =pwd)
+
+#2203 2025/05/07. Expecting an 8 hour run.
+sql<-paste0("EXEC [Contract].SP_PBLfpdsPartial")
+
+pbl_partial<-dbGetQuery(vmcon,  sql)
+save(pbl_partial, file=file.path("data","semi_clean","Contract.SP_PBLfpdsPartial.rda"))
+
+path<-"Output"
+xlsx<-"PBL_full.xlsx"
+sheet<-"Full"
+if(file.exists(file.path(path,xlsx))){
+  wb <- openxlsx::loadWorkbook(file.path(path,xlsx))
+} else{
+  wb<-openxlsx::createWorkbook(file.path(path,xlsx))
+}
+if(!sheet %in% names(wb))
+  openxlsx::addWorksheet(wb,sheet)
+# numstyle<-openxlsx::createStyle(numFmt = num_format)
+# pstyle<-openxlsx::createStyle(numFmt = "PERCENTAGE")
+# if(excel_then_year){
+openxlsx::writeData(wb, pbl_partial, sheet = sheet)
+openxlsx::saveWorkbook(wb,file=(file.path(path,xlsx)),overwrite = TRUE)
+
+
+pbl_short<- pbl_partial %>% group_by(fiscal_year,
+                                     parent_contract_award_unique_key,
+                                     contract_award_unique_key,
+                                     contract_transaction_unique_key,
+                                     transaction_description,
+                                     ContractingCustomer,
+                                     SubCustomer,
+                                     PlatformPortfolio,
+                                     ProductOrServiceArea,
+                                     # ProductOrServiceCode,
+                                     ProjectID,
+                                     claimantprogramcode,
+                                     CompetitionClassification,
+                                     ClassifyNumberOfOffers,
+                                     VehicleClassification,
+                                     VendorSize,
+                                     # SizeOfSumOfObligatedAmount,
+                                     CurrentDurationCategory,
+                                     UnmodifiedUltimateDurationCategory,
+                                     performancebasedservicecontract,
+                                     typeofcontractpricing,
+                                     ContractLabelID,
+                                     ContractLabelText,
+                                     IsPerformanceBasedLogistics,
+                                     obligatedAmount,
+                                     numberOfActions  ) %>% summarise(obligatedAmount=sum(obligatedAmount),
+                                                                      numberOfActions=sum(numberOfActions))
+
+pbl_short<-apply_standard_lookups(pbl_short)
+
+
+path<-"Output"
+xlsx<-"PBL_select_columns.xlsx"
+sheet<-"Full"
+if(file.exists(file.path(path,xlsx))){
+  wb <- openxlsx::loadWorkbook(file.path(path,xlsx))
+} else{
+  wb<-openxlsx::createWorkbook(file.path(path,xlsx))
+}
+if(!sheet %in% names(wb))
+  openxlsx::addWorksheet(wb,sheet)
+# numstyle<-openxlsx::createStyle(numFmt = num_format)
+# pstyle<-openxlsx::createStyle(numFmt = "PERCENTAGE")
+# if(excel_then_year){
+openxlsx::writeData(wb, pbl_short, sheet = sheet)
+openxlsx::saveWorkbook(wb,file=(file.path(path,xlsx)),overwrite = TRUE)
+
+
+
+
 #Space ########
 if(!exists("platpscintl")) load(file="data/clean/Federal_platpscintl_FPDS.Rda")
 space<-read_delim(file.path("data","semi_clean","ProductOrServiceCode.SP_SpaceDetail.txt"),delim="\t",na=c("NULL","NA"),
