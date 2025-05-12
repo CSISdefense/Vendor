@@ -18,8 +18,8 @@ library(tidyverse)
 library(scales)
 library(svglite)
 library(readxl)
-
 library(openxlsx)
+
 
 axis.text.size<-10
 strip.text.size<-10
@@ -211,8 +211,17 @@ for(c in subcustomer_levels){
 ## Topline and TOA (Greenbook)
 ```{r TOAfms}
 
+
+
+
 if(!exists("platpscintldef"))
   load(file="../data/clean/platpscintl_FPDS.Rda")
+
+platpscintldef$
+
+View(platpscintldef %>% group_by(Project.Name) %>% summarise() %>% arrange(Project.Name))
+
+platpscintldef %>% filter(Project.Name=="ZBL") %>% group_by(Project.Name,Fiscal_Year) %>% summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23)) %>% arrange(Project.Name, Fiscal_Year)
 
 fpds_annual<-platpscintldef %>% filter(Fiscal_Year<2024) %>% group_by(Fiscal_Year,dFYear,IsFMS,
                                     ContractingCustomer,YTD) %>% summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE),
@@ -1013,28 +1022,254 @@ log_plot(plot=ToplinePricing+theme(plot.margin = margin(t=0,r=0.25,b=0.1,l=0.1,"
 ```
 
 
-### Pricing History
+### Pricing UCA History
 ```{r ToplinePricing}
 if(!exists("pricing"))
-  load(file="../data/clean/pricing_historical.Rda")
+  load(file="../data/clean/pricing_latest.Rda")
 
 
 if(!"Action_Obligation_OMB25_GDP23" %in% colnames(pricing))
   pricing<-deflate(pricing, "Action_Obligation_Then_Year",deflator_var="OMB25_GDP23",path="offline")
 
-hist_lc<-prepare_labels_and_colors(pricing %>% select(-ContractingOfficeName,-PricingMechanism))#,path=local_path
+hist_lc<-prepare_labels_and_colors(pricing %>% select(-ContractingOfficeName,-PricingMechanism,-MajorCommandName))#,path=local_path
 hist_ck<-get_column_key(pricing)#,path=local_path
-pricing$Fiscal_YQ<-pricing$Fiscal_Year
-pricing$YTD<-"Full Year"
-PricingUpdate<-rbind(pricing[pricing$Fiscal_Year<2022,colnames(pricing) %in% colnames(def_data)],
-                     def_data[def_data$Fiscal_Year>=2022,
+# pricing$Fiscal_YQ<-pricing$Fiscal_Year
+# pricing$YTD<-"Full Year"
+PricingUpdate<-rbind(pricing[pricing$Fiscal_Year>2022,colnames(pricing) %in% colnames(def_data)],
+                     def_data[def_data$Fiscal_Year<=2022,
+                              colnames(def_data) %in% colnames(pricing)]
+                     )
+
+
+(
+ToplinePricing<-build_plot(
+  data=PricingUpdate %>% filter(Fiscal_Year>=2000 & Fiscal_Year<2025),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="PricingUCA", #color_var
+  facet_var="PricingUCA.sum", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE,
+  # alpha_var="YTD",
+)+date_x_year_breaks(2000,2024,6)+#,partial_year=2024,partial_label="\nQ1")
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+facet_wrap(~PricingUCA.sum,nrow=1)+
+  labs(y="Obligations\n(Constant 2023 $s)",
+       title="DOD Contract Obligations by Pricing Mechanism, FY 2000–FY 2024",
+       caption="Note: CB=Cost-Based, FFP=Firm Fixed Price, FP=Fixed-Price, FPLOE=Fixed-Price Level-of-Effort,\nLH=Labor Hours,T&M=Time & Materials, UCA=Undefinitized Contract Award\nSource: FPDS and CSIS analysis.")
+)
+
+
+  ggsave600dpi(path="..//Output//AcqTrends//",filename="Topline_PricingUCA.png", ToplinePricing,  
+               width=6.5, height= 3, units="in",size=12, lineheight=1.2
+               )
+  
+  
+  ggsave600dpi(path="..//Output//AcqTrends//",filename="Topline_PricingUCA.svg", ToplinePricing,  
+               width=12, height= 5.5, units="in",size=, lineheight=1.2
+               )
+
+
+
+(
+PricingHistory<-build_plot(
+  data=PricingUpdate %>% filter(Fiscal_Year < 2025 & Fiscal_Year>=2000),
+  chart_geom = "Line Chart",
+  share = TRUE,
+  labels_and_colors=hist_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="PricingUCA.sum", #color_var
+  # facet_var="PricingUCA.sumlong", #facet_var
+  column_key=hist_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+#+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right",
+        plot.caption = element_text(hjust = 0,face="plain"))+
+    date_x_year_breaks(2000,2024,6)+#,partial_year=2024,partial_label="\nQ1")
+    # xlim(c(as.Date("1979-01-01"), as.Date("2023-12-30")))+
+    # coord_cartesian(xlim = c(as.Date("1980-01-01"), as.Date("2022-01-01"))
+  labs(y="Share of Obligations",caption="Source: Federal Procurement Data System (FPDS) and CSIS analysis.")
+)
+
+
+  ggsave600dpi(path="..//Output//AcqTrends//",filename="Topline_PricingUCA_Share.png", PricingHistory,  
+               width=6.5, height= 3, units="in",size=12, lineheight=1.2
+               )
+  
+  
+  ggsave600dpi(path="..//Output//AcqTrends//",filename="Topline_PricingUCA_Share.svg", PricingHistory,  
+               width=12, height= 5.5, units="in",size=, lineheight=1.2
+               )
+
+log_plot(plot=PricingHistory, df=PricingUpdate  %>% filter(Fiscal_Year<2025&Fiscal_Year>=2000),
+                     filename="acq_fig8_2_pricing_uca",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+                     sheet="8-2 PriceUCA",path="../output/AcqTrends/", height=3.5,
+                     format=TRUE,#,var_list=c("PricingInflation",
+         excel_y_var =TRUE,
+         excel_share =TRUE
+         )
+
+
+```
+### Pricing R&D UCA History
+```{r ToplinePricing}
+if(!exists("pricing"))
+  load(file="../data/clean/pricing_latest.Rda")
+
+
+if(!"Action_Obligation_OMB25_GDP23" %in% colnames(pricing))
+  pricing<-deflate(pricing, "Action_Obligation_Then_Year",deflator_var="OMB25_GDP23",path="offline")
+
+hist_lc<-prepare_labels_and_colors(pricing %>% select(-ContractingOfficeName,-PricingMechanism,-MajorCommandName))#,path=local_path
+hist_ck<-get_column_key(pricing)#,path=local_path
+# pricing$Fiscal_YQ<-pricing$Fiscal_Year
+# pricing$YTD<-"Full Year"
+PricingUpdate<-rbind(pricing[pricing$Fiscal_Year>2023,colnames(pricing) %in% colnames(def_data)],
+                     def_data[def_data$Fiscal_Year<=2023,
+                              colnames(def_data) %in% colnames(pricing)]
+                     )
+
+
+(
+ToplinePricing<-build_plot(
+  data=PricingUpdate %>% filter(Fiscal_Year>=2000 & Fiscal_Year<2025 & SimpleArea=="R&D") ,
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="PricingUCA", #color_var
+  facet_var="PricingUCA.sum", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE,
+  # alpha_var="YTD",
+)+date_x_year_breaks(2000,2024,6)+#,partial_year=2024,partial_label="\nQ1")
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+facet_wrap(~PricingUCA.sum,nrow=1)+
+  labs(y="Obligations\n(Constant 2023 $s)",
+       title="DOD R&D Contract Obligations by Pricing Mechanism, FY 2000–FY 2024",
+       caption="Note: CB=Cost-Based, FFP=Firm Fixed Price, FP=Fixed-Price, FPLOE=Fixed-Price Level-of-Effort,\nLH=Labor Hours,T&M=Time & Materials, UCA=Undefinitized Contract Award\nSource: FPDS and CSIS analysis.")
+)
+
+
+  ggsave600dpi(path="..//Output//AcqTrends//",filename="RnD_PricingUCA.png", ToplinePricing,  
+               width=6.5, height= 3, units="in",size=12, lineheight=1.2
+               )
+  
+  
+  ggsave600dpi(path="..//Output//AcqTrends//",filename="RnD_PricingUCA.svg", ToplinePricing,  
+               width=12, height= 5.5, units="in",size=, lineheight=1.2
+               )
+
+
+
+(
+PricingHistory<-build_plot(
+  data=PricingUpdate %>% filter(Fiscal_Year < 2025 & Fiscal_Year>=2000 & SimpleArea=="R&D"),
+  chart_geom = "Line Chart",
+  share = TRUE,
+  labels_and_colors=hist_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",#alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="PricingUCA.sum", #color_var
+  # facet_var="PricingUCA.sumlong", #facet_var
+  column_key=hist_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+#+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right",
+        plot.caption = element_text(hjust = 0,face="plain"))+
+    date_x_year_breaks(2000,2024,6)+#,partial_year=2024,partial_label="\nQ1")
+    # xlim(c(as.Date("1979-01-01"), as.Date("2023-12-30")))+
+    # coord_cartesian(xlim = c(as.Date("1980-01-01"), as.Date("2022-01-01"))
+  labs(y="Share of Obligations",caption="Source: Federal Procurement Data System (FPDS) and CSIS analysis.")
+)
+
+
+  ggsave600dpi(path="..//Output//AcqTrends//",filename="RnD_PricingUCA_Share.png", PricingHistory,  
+               width=6.5, height= 3, units="in",size=12, lineheight=1.2
+               )
+  
+  
+  ggsave600dpi(path="..//Output//AcqTrends//",filename="RnD_PricingUCA_Share.svg", PricingHistory,  
+               width=12, height= 5.5, units="in",size=, lineheight=1.2
+               )
+
+log_plot(plot=PricingHistory, df=PricingUpdate  %>% filter(Fiscal_Year<2025&Fiscal_Year>=2000 & SimpleArea=="R&D"),
+                     filename="acq_fig8_2_pricing_uca",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+                     sheet="8-2 RnD PriceUCA",path="../output/AcqTrends/", height=3.5,
+                     format=TRUE,#,var_list=c("PricingInflation",
+         excel_y_var =TRUE,
+         excel_share =TRUE
+         )
+
+
+```
+
+
+### Pricing History
+```{r ToplinePricing}
+if(!exists("pricing"))
+  load(file="../data/clean/pricing_latest.Rda")
+
+
+if(!"Action_Obligation_OMB25_GDP23" %in% colnames(pricing))
+  pricing<-deflate(pricing, "Action_Obligation_Then_Year",deflator_var="OMB25_GDP23",path="offline")
+
+hist_lc<-prepare_labels_and_colors(pricing %>% select(-ContractingOfficeName,-PricingMechanism,-MajorCommandName))#,path=local_path
+hist_ck<-get_column_key(pricing)#,path=local_path
+# pricing$Fiscal_YQ<-pricing$Fiscal_Year
+# pricing$YTD<-"Full Year"
+PricingUpdate<-rbind(pricing[pricing$Fiscal_Year>2022,colnames(pricing) %in% colnames(def_data)],
+                     def_data[def_data$Fiscal_Year<=2022,
                               colnames(def_data) %in% colnames(pricing)]
                      )
 
 
 (
 PricingHistory<-build_plot(
-  data=PricingUpdate %>% filter(Fiscal_YQ < 2024),
+  data=PricingUpdate %>% filter(Fiscal_Year < 2025),
   chart_geom = "Line Chart",
   share = TRUE,
   labels_and_colors=hist_lc,

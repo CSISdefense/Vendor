@@ -288,10 +288,14 @@ where ctid.csiscontractid in (
 )
 )
 
+
 select *
 from FPDSTypeTable.AgencyID
 where agencyid in ('5300')
 
+--6h58m
+--7h11m
+--103,313 rows
 SET QUERY_GOVERNOR_COST_LIMIT 0
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;

@@ -21,8 +21,13 @@ library(Hmisc)
 # read in data
 OTA_data_current <- read_delim(
   "data_raw//OTA_All_Fields.csv",delim = ",",
-  col_names = TRUE, guess_max = 500000,na=c("NA","NULL"),skip = 5)
+  col_names = TRUE, guess_max = 500000,na=c("NA","NULL"),skip = 2)
 
+OTA_data_historic <- read_delim(
+  "data_raw//OTA_all_fields_before_FY22.csv",delim = ",",
+  col_names = TRUE, guess_max = 500000,na=c("NA","NULL"),skip = 2)
+
+OTA_data_current<-rbind(OTA_data_historic,OTA_data_current)
 OTA_data_current<-standardize_variable_names(OTA_data_current)#,
                                              # path="C:\\Users\\gsand\\Repositories\\Lookup-Tables\\style\\")
 OTA_data_current$Date_Signed<-as.Date(OTA_data_current$Date_Signed,"%m/%d/%y")
@@ -320,6 +325,7 @@ if(!exists("fed_data")){
   load(file=file.path("data","clean","fed_summary_FPDS.rda"))
 }
 
+
 colnames(OTA_data)[colnames(OTA_data)=="Non-traditionalGovernmentContractorParticipationDescription"]<-
   "NontraditionalGovernmentContractorParticipationDescription"
 colnames(OTA_data)[colnames(OTA_data)=="Non-traditionalGovernmentContractorParticipationCode"]<-
@@ -363,7 +369,7 @@ summary(fed_data$PlatformPortfolioUAV)
 
 
 if(!exists("def_data"))
-  load(file="FPDS_chart_maker/unaggregated_def.Rda")
+  load(file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
 
 def_kota<-ota_def
 def_kota$IsOTA<-"OTA"
