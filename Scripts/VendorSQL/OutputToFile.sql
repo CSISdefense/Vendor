@@ -451,14 +451,12 @@ DECLARE	@return_value int
 
 set QUERY_GOVERNOR_COST_LIMIT  0
 --EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
-EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer
+EXEC	 Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer
 --EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
 		@Customer = 'Defense',-- [Summary].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer]
 		@SubCustomer = NULL,
 		@PlatformPortfolio =NULL,
-		@StartFiscalYear=2024
-		
-
+		@StartFiscal_Year=2024
 		
 
 		
