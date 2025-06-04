@@ -293,9 +293,12 @@ select *
 from FPDSTypeTable.AgencyID
 where agencyid in ('5300')
 
+<<<<<<< Updated upstream
 --6h58m
 --7h11m
 --103,313 rows
+=======
+>>>>>>> Stashed changes
 SET QUERY_GOVERNOR_COST_LIMIT 0
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
