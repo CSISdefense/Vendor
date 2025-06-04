@@ -449,15 +449,17 @@ DECLARE	@return_value int
 --8h55m 1m rows (5 cores)
 --3h21m 1637944 rows (with all national interest action codes
 
+set QUERY_GOVERNOR_COST_LIMIT  0
 --EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
 EXEC	@return_value = Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer
 --EXEC	@return_value = Contract.[SP_ContractBudgetDecisionTree]
 		@Customer = 'Defense',-- [Summary].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer]
 		@SubCustomer = NULL,
-		@PlatformPortfolio =NULL
+		@PlatformPortfolio =NULL,
+		@StartFiscalYear=2024
 		
 
-		set QUERY_GOVERNOR_COST_LIMIT  0
+		
 
 		
 SET ANSI_WARNINGS OFF;
