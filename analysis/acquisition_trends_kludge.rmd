@@ -111,7 +111,7 @@ load(file="../data/clean/Defense_OTA.Rda")
 ```{r ToplinePricing}
 if(!exists("pricing_latest")){
   load(file="../data/clean/pricing_latest.Rda")
-  pricing<-pricing_latest
+  pricing_latest<-pricing
   rm(pricing)
 }
 
@@ -209,10 +209,6 @@ hist_ck<-get_column_key(PricingUpdate)#,path=local_path
 
 levels(factor(PricingUpdate$PricingUCA))
 
-"CB-Incentive"         "Combination or Other" "FFP"                  "FP-Econ. Price Adj."  "FP-Incentive"         "Other CB"            
-[7] "Other FP"             "T&M/LH/FPLOE"         "UCA"  
-# pricing$Fiscal_YQ<-pricing$Fiscal_Year
-# pricing$YTD<-"Full Year"
 
 (
 PricingPSR<-build_plot(
@@ -441,7 +437,24 @@ log_plot(plot=PricingHistory, df=PricingUpdate  %>% filter(Fiscal_Year<2025&Fisc
 
 ### Pricing History
 ```{r ToplinePricing}
-load(file="../data/clean/pricing_historical.Rda")
+if(!exists("pricing_history")){
+  load(file="../data/clean/pricing_historical.Rda")
+  pricing_history<-pricing
+  rm(pricing)
+}
+
+
+
+PricingHistory<-rbind(pricing_history[pricing_history$Fiscal_Year>2023,colnames(pricing_history) %in% colnames(PricingUpdate)],
+                     PricingUpdate[PricingUpdate$Fiscal_Year<=2023 & PricingUpdate$Fiscal_Year>=2000,
+                              colnames(PricingUpdate) %in% colnames(pricing_history)])
+
+
+
+if(!"Action_Obligation_OMB25_GDP23" %in% colnames(PricingHistory))
+  PricingHistory<-deflate(PricingHistory, "Action_Obligation_Then_Year",deflator_var="OMB25_GDP23",path="offline")
+
+
 # full_data$PricingUCA.sumlong<-full_data$PricingUCA.sum
 # levels(full_data$PricingInflation)<-list("FFP"="FFP",
 #                                            "Less Common"="Less Common",
@@ -451,7 +464,7 @@ load(file="../data/clean/pricing_historical.Rda")
 #                                            "Unclear"="Unclear"   )
 (
 HistoricPricing<-build_plot(
-  data=pricing %>% filter(Fiscal_Year>=1979 & Fiscal_Year<=2021 ),
+  data=PricingHistory %>% filter(Fiscal_Year>=1979 & Fiscal_Year<=2021 ),
   chart_geom = "Line Chart",
   share = TRUE,
   labels_and_colors=pricing_lc,
@@ -494,6 +507,14 @@ write.csv(file="..//Output//HistoricPricing.csv",row.names = FALSE, na = "",
                       names_from=Fiscal_Year,values_from=Action_Obligation)%>%
     arrange(PricingInflation))
 
+
+log_plot(plot=HistoricPricing, df=PricingHistory  %>% filter(Fiscal_Year<2025&Fiscal_Year>=2000),
+                     filename="acq_fig8_2_pricing_uca_psr",xlsx="DoD_2025_Prelim.xlsx",
+                     sheet="8-2 PriceUCA PSR",path="../output/AcqTrends/Prelim2025", height=3.5,
+                     format=TRUE,output_slide_png=TRUE,include_YTD=FALSE,#,var_list=c("PricingInflation",
+         excel_y_var =TRUE,
+         excel_share =TRUE,excel_formulas = TRUE
+         )
 
 ```
 
