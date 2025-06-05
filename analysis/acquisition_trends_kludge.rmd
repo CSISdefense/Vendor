@@ -445,8 +445,8 @@ if(!exists("pricing_history")){
 
 
 
-PricingHistory<-rbind(pricing_history[pricing_history$Fiscal_Year>2023,colnames(pricing_history) %in% colnames(PricingUpdate)],
-                     PricingUpdate[PricingUpdate$Fiscal_Year<=2023 & PricingUpdate$Fiscal_Year>=2000,
+PricingHistory<-rbind(pricing_history[pricing_history$Fiscal_Year<2000,colnames(pricing_history) %in% colnames(PricingUpdate)],
+                     PricingUpdate[PricingUpdate$Fiscal_Year<=2024 & PricingUpdate$Fiscal_Year>=2000,
                               colnames(PricingUpdate) %in% colnames(pricing_history)])
 
 
@@ -464,14 +464,14 @@ if(!"Action_Obligation_OMB25_GDP23" %in% colnames(PricingHistory))
 #                                            "Unclear"="Unclear"   )
 (
 HistoricPricing<-build_plot(
-  data=PricingHistory %>% filter(Fiscal_Year>=1979 & Fiscal_Year<=2021 ),
+  data=PricingHistory %>% filter(Fiscal_Year>=1979 & Fiscal_Year<=2024 ),
   chart_geom = "Line Chart",
   share = TRUE,
   labels_and_colors=pricing_lc,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
   # y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
-  y_var="Action_Obligation", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="PricingInflation", #color_var
   # facet_var="PricingUCA.sumlong", #facet_var
   column_key=pricing_ck,
@@ -490,23 +490,45 @@ HistoricPricing<-build_plot(
   # labs(y="Obligations (Constant 2023 $s)")
 )
 
-# ggsave600dpi("..//Output//topline_pricing.png", ToplinePricing, 
-#              width=6.5, height= 4, units="in",size=11
-#              )
-
 
   ggsave600dpi("..//Output//HistoricPricing.png", HistoricPricing,  
                width=12, height= 5.6, units="in",size=18, lineheight=1.2,
                bg="transparent"
                )
 
-write.csv(file="..//Output//HistoricPricing.csv",row.names = FALSE, na = "",
-  pivot_wider(HistoricPricing$data %>% 
-                        arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
-                      id_cols=c(PricingInflation),
-                      names_from=Fiscal_Year,values_from=Action_Obligation)%>%
-    arrange(PricingInflation))
+(
+HistoricPricingBar<-build_plot(
+  data=PricingHistory %>% filter(Fiscal_Year>=1979 & Fiscal_Year<=2024 ),
+  chart_geom = "Line Chart",
+  share = FALSE,
+  labels_and_colors=pricing_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear", #x_var
+  # y_var="Action_Obligation_OMB20_GDP20", #VAR.y.variable
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="PricingInflation", #color_var
+  # facet_var="PricingUCA.sumlong", #facet_var
+  column_key=pricing_ck,
+  format=TRUE,
+  ytextposition=FALSE,
+)+scale_x_date("Fiscal Year",labels = date_format("'%y"))+
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right",rect = element_rect(fill = "transparent",))
+  # labs(y="Obligations (Constant 2023 $s)")
+)
 
+
+  ggsave600dpi("..//Output//HistoricPricing.png", HistoricPricing,  
+               width=12, height= 5.6, units="in",size=18, lineheight=1.2,
+               bg="transparent"
+               )
 
 log_plot(plot=HistoricPricing, df=PricingHistory  %>% filter(Fiscal_Year<2025&Fiscal_Year>=2000),
                      filename="acq_fig8_2_pricing_uca_psr",xlsx="DoD_2025_Prelim.xlsx",
