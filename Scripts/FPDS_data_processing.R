@@ -87,8 +87,7 @@ initial_clean<-function(df,only_defense=TRUE){
   
   full_datacat<-catalog("analysis/FPDS_chart_maker/", engines$rda,pattern="*FPDS*")
   write.csv(full_datacat$unaggregated_FPDS,file=file.path("docs","catalog","unaggregated_FPDS.csv"))
-
-
+  
 
 summary(factor(full_data$YTD))
 fpds_lc<-csis360::prepare_labels_and_colors(full_data %>% select(-recoveredmaterialclauses))
@@ -160,7 +159,7 @@ def_data %<>%
   mutate(Vehicle.sum = factor(Vehicle.sum)) %>%
   mutate(Vehicle.sum7 = factor(Vehicle.sum7)) %>%
   mutate(Vehicle.AwardTask = factor(Vehicle.AwardTask)) %>%
-  mutate(fiscal_quarter = factor(fiscal_quarter)) %>%
+  mutate(fiscal_quarter_YTD = factor(fiscal_quarter_YTD)) %>%
   mutate(PricingUCA = factor(PricingUCA)) #%>%
 # mutate(IsFMS = factor(IsFMS)) %>%
 # mutate(PlaceOfManufacture_Sum = factor(PlaceOfManufacture_Sum)) %>%
@@ -168,8 +167,8 @@ def_data %<>%
 # mutate(PlaceIsForeign = factor(PlaceIsForeign))
 
 def_data$Fiscal_YQ<-NA
-def_data$Fiscal_YQ[!is.na(def_data$fiscal_quarter)]<-text_to_number(paste(def_data$Fiscal_Year[!is.na(def_data$fiscal_quarter)],
-                                         text_to_number(def_data$fiscal_quarter[!is.na(def_data$fiscal_quarter)]),sep="."))
+def_data$Fiscal_YQ[!is.na(def_data$fiscal_quarter_YTD)]<-text_to_number(paste(def_data$Fiscal_Year[!is.na(def_data$fiscal_quarter_YTD)],
+                                         text_to_number(def_data$fiscal_quarter_YTD[!is.na(def_data$fiscal_quarter_YTD)]),sep="."))
 def_data$Fiscal_YQ[is.na(def_data$Fiscal_YQ)]<-def_data$Fiscal_Year[is.na(def_data$Fiscal_YQ)]
 
 def_data$PricingInflation.1yearUCA<-as.character(def_data$PricingInflation.1year)
@@ -180,11 +179,17 @@ def_lc<-prepare_labels_and_colors(def_data, path=file.path(local_path,"style\\")
 # add_labels_and_colors(def_data,"PricingUCA.sum","Pricing")
   def_ck<-get_column_key(def_data %>% select(-PricingMechanism),path="offline")
   def_data$YTD<-factor(ifelse(def_data$Fiscal_Year==max(def_data$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
-  save(def_data,def_lc,def_ck, file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
+
+    save(def_data,def_lc,def_ck, file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
+
+    def_data_cat<-catalog("analysis/FPDS_chart_maker/", engines$rda,pattern="*unaggregated_def*")
+    def_data_cat$unaggregated_FPDS%>%dplyr::filter(Class=="character")
+    
+    write.csv(def_data_cat$unaggregated_def,file=file.path("docs","catalog","unaggregated_def.csv"),row.names = FALSE)
 # load(file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
 
 
-###########Product Service Code, Agency, Platform ############
+###########Cong Dist: Product Service Code, Agency, Platform ############
 
 platpscdefcd<-read_delim(file.path("data","semi_clean","Defense_Location.SP_ProdServPlatformAgencyCongressionalDistrict.txt"),delim="\t",na=c("NULL","NA"),
                     col_names = TRUE, guess_max = 10000000)
@@ -326,8 +331,8 @@ save(platpscintl,fedpsc_lc, fedpsc_ck,file="data/clean/Federal_platpscintl_FPDS.
 # load(file="data/clean/Federal_platpscintl_FPDS.Rda")
 file.exists("data/clean/Federal_platpscintl_FPDS.Rda")
 platpscintlcat<-catalog("data/clean/", engines$rda,pattern="*platpscintl*")
-write.csv(platpscintlcat$Federal_platpscintl_FPDS,file=file.path("docs","catalog","Federal_platpscintl_FPDS.csv"))
-write.csv(platpscintlcat$platpscintl_FPDS,file=file.path("docs","catalog","platpscintl_FPDS.csv"))
+write.csv(platpscintlcat$Federal_platpscintl_FPDS,file=file.path("docs","catalog","Federal_platpscintl_FPDS.csv"),row.names = FALSE)
+write.csv(platpscintlcat$platpscintl_FPDS,file=file.path("docs","catalog","platpscintl_FPDS.csv"),row.names = FALSE)
 
 
 platpscintlcat$Federal_platpscintl_FPDS
@@ -340,7 +345,7 @@ summary(engines)
 
 create_dictionary(platpscintl)
 
-### Ship PSC Intial ####
+### Ship PSC Initial ####
 
 load(file="data/clean/platpscintl_FPDS.Rda")
 shippscintldef<-platpscintldef %>% filter(PlatformPortfolio == "Ships & Submarines")
@@ -412,6 +417,7 @@ vmcon <- dbConnect(odbc(),
                    PWD =pwd)
 
 #2203 2025/05/07. Expecting an 8 hour run.
+#0200 2025/06/07 Or so.
 sql<-paste0("EXEC [Contract].SP_PBLfpdsPartial")
 
 pbl_partial<-dbGetQuery(vmcon,  sql)

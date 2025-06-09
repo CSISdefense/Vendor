@@ -321,6 +321,7 @@ SET NOCOUNT ON;
 --2h28m; 17,102,058 rows
 --3h31m:18,864,534 rows 4/19/2023
 --4h24m:18,964,297 rows
+--4h32m: 20,088,352 rows 6/30/2025
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
  EXEC [Location].[SP_ProdServPlatformAgencyPlaceOriginVendor]
@@ -435,6 +436,7 @@ EXEC	@return_value = Contract.SP_ContractBucketPlatformCustomer
 SET QUERY_GOVERNOR_COST_LIMIT 0
 --7,833,306 rows; 9h39m. (Finished right when I got home, which seems odd. One or more errors).
 --8,357,821 rows r9h04m 
+--6,127,978 rows 8h59m.  Did I drop something? Perhaps the defense only version?
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 EXEC	Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength
