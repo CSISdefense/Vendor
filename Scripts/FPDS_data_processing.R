@@ -1,3 +1,4 @@
+###########################################
 # Data Pre-Processing for Vendor Size Shiny Graphic
 # UPDATED 2021/03/07
 #
@@ -10,7 +11,7 @@
 #
 # Output: CSV file (unaggregated_FPDS.Rda)
 # with data in the minimal form needed by Shiny script
-##########################################################################
+###############################################
 
 # install.packages("../csis360_0.0.0.9022.tar.gz")
 
@@ -141,39 +142,11 @@ problems(def_data)
 def_data<-initial_clean(def_data,only_defense = TRUE)
 def_data<-apply_standard_lookups(def_data,path="offline")#,
 
-#def_data
-def_data %<>%
-  # select(-ClassifyNumberOfOffers) %>%
-  mutate(ContractingSubCustomer = factor(ContractingSubCustomer)) %>%
-  mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
-  mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
-  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
-  mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
-  mutate(Shiny.VendorSize = factor(Shiny.VendorSize)) %>%
-  mutate(SimpleArea = factor(SimpleArea)) %>%
-  mutate(Competition.sum = factor(Competition.sum)) %>%
-  mutate(Competition.effective.only = factor(Competition.effective.only)) %>%
-  mutate(Competition.multisum = factor(Competition.multisum))  %>%
-  mutate(No.Competition.sum = factor(No.Competition.sum)) %>%
-  mutate(Vehicle = factor(Vehicle)) %>%
-  mutate(Vehicle.sum = factor(Vehicle.sum)) %>%
-  mutate(Vehicle.sum7 = factor(Vehicle.sum7)) %>%
-  mutate(Vehicle.AwardTask = factor(Vehicle.AwardTask)) %>%
-  mutate(fiscal_quarter_YTD = factor(fiscal_quarter_YTD)) %>%
-  mutate(PricingUCA = factor(PricingUCA)) #%>%
-# mutate(IsFMS = factor(IsFMS)) %>%
-# mutate(PlaceOfManufacture_Sum = factor(PlaceOfManufacture_Sum)) %>%
-# mutate(VendorIsForeign = factor(VendorIsForeign))%>%
-# mutate(PlaceIsForeign = factor(PlaceIsForeign))
-
-def_data$Fiscal_YQ<-NA
-def_data$Fiscal_YQ[!is.na(def_data$fiscal_quarter_YTD)]<-text_to_number(paste(def_data$Fiscal_Year[!is.na(def_data$fiscal_quarter_YTD)],
-                                         text_to_number(def_data$fiscal_quarter_YTD[!is.na(def_data$fiscal_quarter_YTD)]),sep="."))
-def_data$Fiscal_YQ[is.na(def_data$Fiscal_YQ)]<-def_data$Fiscal_Year[is.na(def_data$Fiscal_YQ)]
+summary(factor(def_data$PricingInflation.1yearUCA))
 
 def_data$PricingInflation.1yearUCA<-as.character(def_data$PricingInflation.1year)
 def_data$PricingInflation.1yearUCA[def_data$PricingUCA.sum=="UCA"]<-"UCA"
-def_data$PricingMechanism<-as.character(def_data$PricingMechanism)
+
 def_lc<-prepare_labels_and_colors(def_data, path=file.path(local_path,"style\\"))
 # add_labels_and_colors(def_data,"PricingUCA")
 # add_labels_and_colors(def_data,"PricingUCA.sum","Pricing")
@@ -186,7 +159,6 @@ def_lc<-prepare_labels_and_colors(def_data, path=file.path(local_path,"style\\")
     def_data_cat$unaggregated_FPDS%>%dplyr::filter(Class=="character")
     
     write.csv(def_data_cat$unaggregated_def,file=file.path("docs","catalog","unaggregated_def.csv"),row.names = FALSE)
-# load(file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
 
 
 ###########Cong Dist: Product Service Code, Agency, Platform ############
