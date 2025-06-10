@@ -459,7 +459,7 @@ EXEC	 Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer
 		@Customer = 'Defense',-- [Summary].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer]
 		@SubCustomer = NULL,
 		@PlatformPortfolio =NULL,
-		@StartFiscal_Year=2024
+		@StartFiscal_Year=NULL
 		
 
 		
