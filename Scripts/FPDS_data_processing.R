@@ -142,10 +142,10 @@ problems(def_data)
 def_data<-initial_clean(def_data,only_defense = TRUE)
 def_data<-apply_standard_lookups(def_data,path="offline")#,
 
-summary(factor(def_data$PricingInflation.1yearUCA))
+# summary(factor(def_data$PricingInflation.1yearUCA))
 
-def_data$PricingInflation.1yearUCA<-as.character(def_data$PricingInflation.1year)
-def_data$PricingInflation.1yearUCA[def_data$PricingUCA.sum=="UCA"]<-"UCA"
+# def_data$PricingInflation.1yearUCA<-as.character(def_data$PricingInflation.1year)
+# def_data$PricingInflation.1yearUCA[def_data$PricingUCA.sum=="UCA"]<-"UCA"
 
 def_lc<-prepare_labels_and_colors(def_data, path=file.path(local_path,"style\\"))
 # add_labels_and_colors(def_data,"PricingUCA")
@@ -156,7 +156,7 @@ def_lc<-prepare_labels_and_colors(def_data, path=file.path(local_path,"style\\")
     save(def_data,def_lc,def_ck, file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
 
     def_data_cat<-catalog("analysis/FPDS_chart_maker/", engines$rda,pattern="*unaggregated_def*")
-    def_data_cat$unaggregated_FPDS%>%dplyr::filter(Class=="character")
+    # def_data_cat$unaggregated_FPDS%>%dplyr::filter(Class=="character")
     
     write.csv(def_data_cat$unaggregated_def,file=file.path("docs","catalog","unaggregated_def.csv"),row.names = FALSE)
 
