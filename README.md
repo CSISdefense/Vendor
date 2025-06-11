@@ -4,11 +4,11 @@ Working repository for acquisition trends and defense-industrial base analysis t
 
 Copyright: [Center for Strategic and International Studies (CSIS)](https://www.csis.org/), [Defense-Industrial Initiatives Group (DIIG)](https://www.csis.org/diig/).
 
-Contributors: [Gregory Sanders](https://www.csis.org/people/gregory-sanders)
+Contributors: [Gregory Sanders](https://www.csis.org/people/gregory-sanders), Henry Carroll
 
 ## Data Sets
 
--   **platpscintl_def**: Range of acquisition characteristics for U.S. defense contract data.
+-   **platpscintl_def**: Detailed project, product or service type, and nationality date for U.S. defense contract data.
     -   SQL: 4h32m: 20,088,352 rows
         -   Stored Procedure: [Location.SP_ProdServPlatformAgencyPlaceOriginVendor](%22https://github.com/CSISdefense/DIIGsql/blob/master/SQL/Location.SP_ProdServPlatformAgencyPlaceOriginVendor.StoredProcedure.sql%22)
         -   Filters: @Customer=NULL
@@ -19,7 +19,7 @@ Contributors: [Gregory Sanders](https://www.csis.org/people/gregory-sanders)
         -   RDA file: [platpscintl_FPDS.Rda.Rda](%22data/clean/platpscintl_FPDS.Rda.Rda%22)
         -   Catalog file: [platpscintl_FPDS.Rda.csv](%22Docs/catalog/platpscintl_FPDS.csv%22)
     -   Supporting variables: column key: def_ck, labels and colors: def_lc,
--   **def_data**: Detailed project, product or service type, and nationality date for U.S. defense contract data.
+-   **def_data**: Range of acquisition characteristics for U.S. defense contract data.
     -   SQL: 6,127,978 rows 8h59m
         -   Stored Procedure: [Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength](%22https://github.com/CSISdefense/DIIGsql/blob/master/SQL/Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.StoredProcedure.sql%22)
         -   Filters: @Customer=='Defense', @SubCustomer = NULL, @PlatformPortfolio =NULL
