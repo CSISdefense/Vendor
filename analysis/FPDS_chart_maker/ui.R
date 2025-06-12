@@ -19,9 +19,9 @@ shinyUI(fluidPage(
           inputId ="year",
           label = "Years",
           min = 1990,
-          max = 2023,
+          max = 2025,
           sep = "",
-          value = c(1990,2023)
+          value = c(1990,2025)
         )
       ),
       wellPanel(
