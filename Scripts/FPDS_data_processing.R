@@ -353,6 +353,22 @@ fedpsc_ck<-csis360::get_column_key(shippscintldef)
 save(shippscintldef,fedpsc_lc, fedpsc_ck,file="data/clean/Defense_Ship_FPDS.Rda")
 write_csv(shippscintldef,file.path("output","shippscintldef.csv"))
 
+###Space ########
+if(!exists("platpscintl")) load(file="data/clean/Federal_platpscintl_FPDS.Rda")
+space<-read_delim(file.path("data","semi_clean","ProductOrServiceCode.SP_SpaceDetail.txt"),delim="\t",na=c("NULL","NA"),
+                  col_names = TRUE, guess_max = 10000000)
+space<-apply_standard_lookups(space,path="offline")
+colnames(space)[colnames(space)=="ProductOrServiceCode...7"]<-"ProductOrServiceCode"
+colnames(space)[colnames(space)=="ProjectID...9"]<-"ProjectID"
+space<-space %>% select(-ProductOrServiceCode...26,-ProjectID...29)
+space<-apply_standard_lookups(space)
+space$YTD<-factor(ifelse(space$Fiscal_Year==max(space$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
+space_lc<-prepare_labels_and_colors(space)
+space_ck<-get_column_key(space)
+space_fedpsc<-platpscintl %>% filter(PlatformPortfolio=="Space Systems")
+
+
+save(spaceplatpscintl,space,space_lc,space_ck,space_fedpsc,fedpsc_ck,fedpsc_lc, file="data/clean/space_FPDS.Rda")
 
 
 # NAICS and High Tech Non-Trad ####
@@ -373,7 +389,8 @@ economic_lc<-prepare_labels_and_colors(economic)
 economic_ck<-get_column_key(economic)
 save(economic, file="data/clean/ProdServPlatformNAICS.rda")
 
-#PBL ######
+# Detailed dive ####
+#### PBL ######
 # pbl<-read_delim(file.path("Data","Semi_clean","Contract.SP_PBLfpdsPartial.txt"),delim="\t",guess_max=10000000)
 # pbl$transaction_description
 # problems(pbl)
@@ -418,10 +435,10 @@ pbl_short<- pbl_partial %>% group_by(fiscal_year,
                                      contract_transaction_unique_key,
                                      transaction_description,
                                      ContractingCustomer,
-                                     SubCustomer,
+                                     ContractingSubCustomer,
                                      PlatformPortfolio,
-                                     ProductOrServiceArea,
-                                     # ProductOrServiceCode,
+                                     # ProductOrServiceArea,
+                                     ProductOrServiceCode,
                                      ProjectID,
                                      claimantprogramcode,
                                      CompetitionClassification,
@@ -433,14 +450,24 @@ pbl_short<- pbl_partial %>% group_by(fiscal_year,
                                      UnmodifiedUltimateDurationCategory,
                                      performancebasedservicecontract,
                                      typeofcontractpricing,
+                                     IsUndefinitizedAction,
                                      ContractLabelID,
                                      ContractLabelText,
                                      IsPerformanceBasedLogistics,
                                      obligatedAmount,
-                                     numberOfActions  ) %>% summarise(obligatedAmount=sum(obligatedAmount),
+                                     numberOfActions,
+                                     AnyCommercial,
+                                     gfe_gfp_code,
+                                     multiyearcontract,
+                                     #IsFMS,
+                                     IsOrganicPBL,
+                                     costaccountingstandardsclause) %>% summarise(obligatedAmount=sum(obligatedAmount),
                                                                       numberOfActions=sum(numberOfActions))
 
 pbl_short<-apply_standard_lookups(pbl_short)
+pbl_lc<-prepare_labels_and_colors(pbl_short)
+pbl_ck<-get_column_key(pbl_short)
+save(pbl_short, pbl_ck, pbl_lc,file=file.path("data","semi_clean","pbl_short.rda"))
 
 
 path<-"Output"
@@ -462,25 +489,9 @@ openxlsx::saveWorkbook(wb,file=(file.path(path,xlsx)),overwrite = TRUE)
 
 
 
-#Space ########
-if(!exists("platpscintl")) load(file="data/clean/Federal_platpscintl_FPDS.Rda")
-space<-read_delim(file.path("data","semi_clean","ProductOrServiceCode.SP_SpaceDetail.txt"),delim="\t",na=c("NULL","NA"),
-               col_names = TRUE, guess_max = 10000000)
-space<-apply_standard_lookups(space,path="offline")
-colnames(space)[colnames(space)=="ProductOrServiceCode...7"]<-"ProductOrServiceCode"
-colnames(space)[colnames(space)=="ProjectID...9"]<-"ProjectID"
-space<-space %>% select(-ProductOrServiceCode...26,-ProjectID...29)
-space<-apply_standard_lookups(space)
-space$YTD<-factor(ifelse(space$Fiscal_Year==max(space$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
-space_lc<-prepare_labels_and_colors(space)
-space_ck<-get_column_key(space)
-space_fedpsc<-platpscintl %>% filter(PlatformPortfolio=="Space Systems")
 
 
-save(spaceplatpscintl,space,space_lc,space_ck,space_fedpsc,fedpsc_ck,fedpsc_lc, file="data/clean/space_FPDS.Rda")
-
-
-#Software #############
+####Software #############
 sw<-read_delim(file.path("data","semi_clean","Summary.SP_SoftwareDetail.txt"),delim="\t",na=c("NULL","NA"),
                col_names = TRUE, guess_max = 10000000)
 
@@ -493,7 +504,7 @@ sw_ck<-get_column_key(sw)
 
 save(sw,sw_lc,sw_ck, file="data/clean/sw_FPDS.Rda")
 
-#JADC2##########
+####JADC2##########
 
 jadc2 <- read_delim(
   "Data//semi_clean//Summary.SP_JADC2detail.txt",delim = "\t",
@@ -509,8 +520,8 @@ save(jadc2,jadc2_lc, jadc2_ck,file="data/clean/jadc2.Rda")
 
 
 
-
-#Pricing History 1980-2021 #############
+# Sam.gov extracts####
+####Pricing History 1980-2021 #############
 
 pricing<- read_csv(
   "Data_Raw//FPDS_Reports//Defense_Pricing_Mechanism.csv",
@@ -543,7 +554,7 @@ save(pricing,pricing_lc,pricing_ck, file="data/clean/pricing_latest.Rda")
 
 
 
-#Pricing History 1980-2021 #############
+####Pricing History 1980-2021 #############
 
 pricing<- read_csv(
   "Data_Raw//FPDS_Reports//Defense_Pricing_Mechanism_Agency.csv",
@@ -589,7 +600,7 @@ save(pricing,pricing_lc,pricing_ck, file="data/clean/pricing_historical.Rda")
 
 
 # ***** Handled in apply_standard_lookups
-## Recipient_UEI #######
+# Recipient_UEI ####
 ruh<-read_delim(file.path("data","semi_clean","Vendor.RecipientUEIpartial.txt"),delim="\t",
                 na=c("NULL",""))
 ruh<-apply_standard_lookups(ruh)
