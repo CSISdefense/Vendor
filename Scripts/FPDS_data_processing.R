@@ -467,7 +467,7 @@ pbl_short<- pbl_partial %>% group_by(fiscal_year,
 pbl_short<-apply_standard_lookups(pbl_short)
 pbl_lc<-prepare_labels_and_colors(pbl_short)
 pbl_ck<-get_column_key(pbl_short)
-save(pbl_short, pbl_ck, pbl_lc,file=file.path("data","semi_clean","pbl_short.rda"))
+save(pbl_short, pbl_ck, pbl_lc,file=file.path("data","clean","pbl_short.rda"))
 
 
 path<-"Output"
