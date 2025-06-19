@@ -33,8 +33,10 @@ shinyServer(function(input, output, session) {
   source("FPDS_breakdowns_functions.R")
   
   # read data
-  load("unaggregated_FPDS.Rda")
-  original_data<-full_data
+  load("unaggregated_def.Rda")
+  original_data<-def_data
+  labels_and_colors<-def_lc
+  column_key<-def_ck
 
   # in case user renames the data-frame choosing variables
   vars <- reactiveValues(
