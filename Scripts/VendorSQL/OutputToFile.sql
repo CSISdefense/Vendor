@@ -444,6 +444,18 @@ EXEC	Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength
 		@SubCustomer = NULL,
 		@PlatformPortfolio =NULL
 
+SET QUERY_GOVERNOR_COST_LIMIT 0
+--7,833,306 rows; 9h39m. (Finished right when I got home, which seems odd. One or more errors).
+--8,357,821 rows r9h04m 
+--6,127,978 rows 8h59m.  I believe reduced size due to switch to fiscal_quarter_YTD
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+EXEC	Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength
+		@Customer = NULL, --'Defense',-- [Summary].[SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer]
+		@SubCustomer = NULL,
+		@PlatformPortfolio =NULL
+
+
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 DECLARE	@return_value int
