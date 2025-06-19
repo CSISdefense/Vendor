@@ -51,90 +51,41 @@ initial_clean<-function(df,only_defense=TRUE){
 
 
 
-#Full Data and Fed Data##########
+#Fed Data##########
   fed_data <- read_delim(
-    "Data//semi_clean//Defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.txt",
+    "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.txt",
     delim = "\t",
     col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
   
-  # full_data<-initial_clean(def_data,only_defense=FALSE)
+  # fed_data<-initial_clean(def_data,only_defense=FALSE)
   fed_data<- apply_standard_lookups(fed_data)#,
   
   fed_lc<-prepare_labels_and_colors(fed_data)
   
   fed_ck<-get_column_key(fed_data)
   
-  def_data<-initial_clean(fed_data,only_defense=TRUE)
-  # path="K:/Users/Greg/Repositories/Lookup-Tables/style")
+  save(fed_data,fed_lc,fed_ck, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
+  
+  fed_datacat<-catalog("analysis/FPDS_chart_maker/", engines$rda,pattern="*FPDS*")
+  write.csv(fed_datacat$unaggregated_FPDS,file=file.path("docs","catalog","unaggregated_FPDS.csv"),row.names=FALSE)
+  
+   
   
   if(all(is.na(def_data[nrow(def_data),]))){
     def_data<-def_data[1:nrow(def_data)-1,]
     warning("Echo row dropped")
   }
-  
-  
-  
-  full_data$Fiscal_YQ[!is.na(full_data$fiscal_quarter_YTD)]<-text_to_number(paste(full_data$Fiscal_Year[!is.na(full_data$fiscal_quarter_YTD)],
-                                                                            text_to_number(full_data$fiscal_quarter_YTD[!is.na(full_data$fiscal_quarter_YTD)]),sep="."))
-  full_data$Fiscal_YQ[is.na(full_data$Fiscal_YQ)]<-full_data$Fiscal_Year[is.na(full_data$Fiscal_YQ)]
-  full_data$YTD<-factor(ifelse(full_data$Fiscal_Year==max(full_data$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
-  save(full_data,labels_and_colors,column_key, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
-  
-  full_datacat<-catalog("analysis/FPDS_chart_maker/", engines$rda,pattern="*FPDS*")
-  write.csv(full_datacat$unaggregated_FPDS,file=file.path("docs","catalog","unaggregated_FPDS.csv"))
-  
-
-summary(factor(full_data$YTD))
-fpds_lc<-csis360::prepare_labels_and_colors(full_data %>% select(-recoveredmaterialclauses))
-
-fpds_ck<-csis360::get_column_key(full_data)
-
-fpds_data<-full_data %>% filter(ContractingCustomer=="Defense"&
-                                  Fiscal_Year>=2010)
-
-save(fpds_data,fpds_lc, fpds_ck,file = "..\\Trade\\data\\clean\\fpds_transaction_summary.rda")
-rm(fpds_data)
-
-fed_data %<>%
-  # select(-ClassifyNumberOfOffers) %>%
-  mutate(ContractingSubCustomer = factor(ContractingSubCustomer)) %>%
-  mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
-  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
-  mutate(PlatformPortfolio = factor(PlatformPortfolio)) %>%
-  mutate(PlatformPortfolioUAV = factor(PlatformPortfolioUAV)) %>%
-  mutate(Shiny.VendorSize = factor(Shiny.VendorSize)) %>%
-  mutate(SimpleArea = factor(SimpleArea)) %>%
-  mutate(Competition.sum = factor(Competition.sum)) %>%
-  mutate(Competition.effective.only = factor(Competition.effective.only)) %>%
-  mutate(Competition.multisum = factor(Competition.multisum))  %>%
-  mutate(No.Competition.sum = factor(No.Competition.sum)) %>%
-  mutate(Vehicle = factor(Vehicle)) %>%
-  mutate(Vehicle.sum = factor(Vehicle.sum)) %>%
-  mutate(Vehicle.sum7 = factor(Vehicle.sum7)) %>%
-  mutate(Vehicle.AwardTask = factor(Vehicle.AwardTask)) %>%
-  mutate(PricingUCA = factor(PricingUCA)) %>%
-  mutate(IsFMS = factor(IsFMS)) %>%
-  mutate(PlaceOfManufacture_Sum = factor(PlaceOfManufacture_Sum)) %>%
-  mutate(VendorIsForeign = factor(VendorIsForeign))%>%
-  mutate(PlaceIsForeign = factor(PlaceIsForeign))
-
-
-fed_lc<-csis360::prepare_labels_and_colors(fed_data)
-
-fed_ck<-csis360::get_column_key(fed_data)
-
-fed_data$YTD<-factor(ifelse(fed_data$Fiscal_Year==max(fed_data$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
-save(fed_data,fed_lc,fed_ck, file="data/clean/fed_summary_FPDS.Rda")
-
 
 #Defense Data##########
-def_data<- read_delim(
-  "Data//semi_clean//Defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.txt",delim = "\t",
-  col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
-problems(def_data)
+def_data<-initial_clean(fed_data,only_defense=TRUE)
 
-def_data<-initial_clean(def_data,only_defense = TRUE)
-def_data<-apply_standard_lookups(def_data,path="offline")#,
+# def_data<- read_delim(
+#   "Data//semi_clean//Defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.txt",delim = "\t",
+#   col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
+# problems(def_data)
+# 
+# def_data<-initial_clean(def_data,only_defense = TRUE)
+# def_data<-apply_standard_lookups(def_data,path="offline")#,
 
 # summary(factor(def_data$PricingInflation.1yearUCA))
 
@@ -154,7 +105,7 @@ def_lc<-prepare_labels_and_colors(def_data, path=file.path(local_path,"style\\")
     
     write.csv(def_data_cat$unaggregated_def,file=file.path("docs","catalog","unaggregated_def.csv"),row.names = FALSE)
 
-    load(file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
+    # load(file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
 sample_def_fpds<-def_data[sample(nrow(def_data),size=10000),]
 save(sample_def_fpds,file=file.path("output","sample10k_def_data.rda"))
 write_delim(sample_def_fpds,file=file.path("output","sample10k_def_data.txt"),delim="\t")
@@ -552,7 +503,7 @@ save(pricing,pricing_lc,pricing_ck, file="data/clean/pricing_latest.Rda")
 
 
 
-####Pricing History 1980-2021 #############
+####Pricing History Agency 1980-2021 #############
 
 pricing<- read_csv(
   "Data_Raw//FPDS_Reports//Defense_Pricing_Mechanism_Agency.csv",
@@ -575,26 +526,6 @@ pricing_lc<-csis360::prepare_labels_and_colors(pricing  %>% select(-ContractingO
 pricing_ck<-csis360::get_column_key(pricing)
 
 save(pricing,pricing_lc,pricing_ck, file="data/clean/pricing_historical.Rda")
-
-
-
-
-
-# 
-# 
-# 
-
-# write.csv(full_data%>%group_by(fiscal_year)%>%
-#       dplyr::summarize(Action_Obligation.Then.Year=sum(Action_Obligation.Then.Year,na.rm=TRUE),
-#                                                          Action_Obligation.OMB.2019=sum(Action_Obligation.OMB.2019,na.rm=TRUE),
-#                                                          NumberOfActions=sum(NumberOfActions,na.rm=TRUE)),
-#       file="topline_usaspending.csv"
-# )
-# 
-# 
-# full_data <- read_delim(
-#   "Data//2017_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",delim = "\t",
-#   col_names = TRUE, col_types = "cccccccccc",na=c("NA","NULL"))
 
 
 # ***** Handled in apply_standard_lookups
