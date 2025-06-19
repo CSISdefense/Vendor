@@ -52,33 +52,27 @@ initial_clean<-function(df,only_defense=TRUE){
 
 
 #Full Data and Fed Data##########
-  
-  full_data <- read_delim(
-    # "Data//semi_clean//Defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.txt",
-    # "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerInternational.txt",
-    # "Data//semi_clean//Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomer.txt",
-    "Data//semi_clean//Federal_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",
-    # "Data//semi_clean//Defense_Budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS.txt",
+  fed_data <- read_delim(
+    "Data//semi_clean//Defense_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.txt",
     delim = "\t",
     col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
   
-  colnames(full_data)[colnames(full_data)=="UnmodifiedUltimateDurationCategory...13"]<-"UnmodifiedUltimateDurationCategory"
-  colnames(full_data)[colnames(full_data)=="CurrentDurationCategory...14"]<-"CurrentDurationCategory"
+  # full_data<-initial_clean(def_data,only_defense=FALSE)
+  fed_data<- apply_standard_lookups(fed_data)#,
   
-  # full_data<-initial_clean(full_data,only_defense=FALSE)
-  fed_data<- apply_standard_lookups(full_data)#,
-  full_data<-initial_clean(fed_data,only_defense=TRUE)
+  fed_lc<-prepare_labels_and_colors(fed_data)
+  
+  fed_ck<-get_column_key(fed_data)
+  
+  def_data<-initial_clean(fed_data,only_defense=TRUE)
   # path="K:/Users/Greg/Repositories/Lookup-Tables/style")
   
-  if(all(is.na(full_data[nrow(full_data),]))){
-    full_data<-full_data[1:nrow(full_data)-1,]
+  if(all(is.na(def_data[nrow(def_data),]))){
+    def_data<-def_data[1:nrow(def_data)-1,]
     warning("Echo row dropped")
   }
   
   
-  labels_and_colors<-prepare_labels_and_colors(full_data %>% select(-recoveredmaterialclauses))
-  
-  column_key<-get_column_key(full_data)
   
   full_data$Fiscal_YQ[!is.na(full_data$fiscal_quarter_YTD)]<-text_to_number(paste(full_data$Fiscal_Year[!is.na(full_data$fiscal_quarter_YTD)],
                                                                             text_to_number(full_data$fiscal_quarter_YTD[!is.na(full_data$fiscal_quarter_YTD)]),sep="."))
@@ -160,6 +154,10 @@ def_lc<-prepare_labels_and_colors(def_data, path=file.path(local_path,"style\\")
     
     write.csv(def_data_cat$unaggregated_def,file=file.path("docs","catalog","unaggregated_def.csv"),row.names = FALSE)
 
+    load(file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
+sample_def_fpds<-def_data[sample(nrow(def_data),size=10000),]
+save(sample_def_fpds,file=file.path("output","sample10k_def_data.rda"))
+write_delim(sample_def_fpds,file=file.path("output","sample10k_def_data.txt"),delim="\t")
 
 ###########Cong Dist: Product Service Code, Agency, Platform ############
 
