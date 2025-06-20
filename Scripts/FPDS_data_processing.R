@@ -76,7 +76,7 @@ initial_clean<-function(df,only_defense=TRUE){
     warning("Echo row dropped")
   }
 
-#Defense Data##########
+##Defense Data##########
 def_data<-initial_clean(fed_data,only_defense=TRUE)
 
 # def_data<- read_delim(
@@ -106,11 +106,11 @@ def_lc<-prepare_labels_and_colors(def_data, path=file.path(local_path,"style\\")
     write.csv(def_data_cat$unaggregated_def,file=file.path("docs","catalog","unaggregated_def.csv"),row.names = FALSE)
 
     # load(file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
-sample_def_fpds<-def_data[sample(nrow(def_data),size=10000),]
-save(sample_def_fpds,file=file.path("output","sample10k_def_data.rda"))
-write_delim(sample_def_fpds,file=file.path("output","sample10k_def_data.txt"),delim="\t")
+# sample_def_fpds<-def_data[sample(nrow(def_data),size=10000),]
+# save(sample_def_fpds,file=file.path("output","sample10k_def_data.rda"))
+# write_delim(sample_def_fpds,file=file.path("output","sample10k_def_data.txt"),delim="\t")
 
-###########Cong Dist: Product Service Code, Agency, Platform ############
+#Cong Dist: Product Service Code, Agency, Platform ############
 
 platpscdefcd<-read_delim(file.path("data","semi_clean","Defense_Location.SP_ProdServPlatformAgencyCongressionalDistrict.txt"),delim="\t",na=c("NULL","NA"),
                     col_names = TRUE, guess_max = 10000000)
@@ -158,6 +158,16 @@ platpscintl<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdS
                         col_names = TRUE, guess_max = 10000000)
 problems(platpscintl)
 colnames(platpscintl)[colnames(platpscintl)=="Customer"]<-"ContractingCustomer"
+
+fedpsc_lc<-csis360::prepare_labels_and_colors(platpscintl)
+fedpsc_ck<-csis360::get_column_key(platpscintl)
+platpscintl$YTD<-factor(ifelse(platpscintl$Fiscal_Year==max(platpscintl$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
+save(platpscintl,fedpsc_lc, fedpsc_ck,file="data/clean/Federal_platpscintl_FPDS.Rda")
+# load(file="data/clean/Federal_platpscintl_FPDS.Rda")
+file.exists("data/clean/Federal_platpscintl_FPDS.Rda")
+
+######Plat PSC Def International #####
+
 
 # View(platpscintl[(nrow(platpscintl)-3):nrow(platpscintl),])
 # View(platpscintldef[(nrow(platpscintldef)-3):nrow(platpscintldef),])
@@ -245,12 +255,6 @@ intl_ck<-csis360::get_column_key(platpscintldef)
 platpscintldef$YTD<-factor(ifelse(platpscintldef$Fiscal_Year==max(platpscintldef$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
 save(platpscintldef,intl_lc, intl_ck,file="data/clean/platpscintl_FPDS.Rda")
 
-fedpsc_lc<-csis360::prepare_labels_and_colors(platpscintl)
-fedpsc_ck<-csis360::get_column_key(platpscintl)
-platpscintl$YTD<-factor(ifelse(platpscintl$Fiscal_Year==max(platpscintl$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
-save(platpscintl,fedpsc_lc, fedpsc_ck,file="data/clean/Federal_platpscintl_FPDS.Rda")
-# load(file="data/clean/Federal_platpscintl_FPDS.Rda")
-file.exists("data/clean/Federal_platpscintl_FPDS.Rda")
 platpscintlcat<-catalog("data/clean/", engines$rda,pattern="*platpscintl*")
 write.csv(platpscintlcat$Federal_platpscintl_FPDS,file=file.path("docs","catalog","Federal_platpscintl_FPDS.csv"),row.names = FALSE)
 write.csv(platpscintlcat$platpscintl_FPDS,file=file.path("docs","catalog","platpscintl_FPDS.csv"),row.names = FALSE)

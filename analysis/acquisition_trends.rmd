@@ -32,15 +32,13 @@ local_path<-get_local_lookup_path()
 
 main.text.size<-1
 note.text.size<-1.40
-if(!exists("full_data"))
-  load(file="FPDS_chart_maker//unaggregated_FPDS.Rda")
 if(!exists("def_data"))
   load(file="FPDS_chart_maker/unaggregated_def.Rda")
 
 
-# if(!"Action_Obligation_OMB25_GDP23" %in% colnames(full_data))
-#   full_data<-deflate(full_data, "Action_Obligation_Then_Year",deflator_var="OMB25_GDP23",path="offline")
-# colnames(full_data)[colnames(full_data)=="Action_Obligation_Then_Year_Then_Year"]<-"Action_Obligation_Then_Year"
+# if(!"Action_Obligation_OMB25_GDP23" %in% colnames(def_data))
+#   def_data<-deflate(def_data, "Action_Obligation_Then_Year",deflator_var="OMB25_GDP23",path="offline")
+# colnames(def_data)[colnames(def_data)=="Action_Obligation_Then_Year_Then_Year"]<-"Action_Obligation_Then_Year"
 
 
 
@@ -94,7 +92,7 @@ outlay$dFYear<-as.Date(paste(outlay$Fiscal_Year,1,1,sep="-"))
 
 online_path<-file.path(get_local_sharepoint_path("DIIG Teamsite - Shared Documents"),"2024 - Acquisition Trends","Data and Figures")
 
-max(full_data$Fiscal_YQ)
+max(def_data$Fiscal_YQ)
 max(def_data$Fiscal_YQ)
 
 
@@ -628,13 +626,13 @@ write.csv(file="..//Output//AcqTrends//unlabeled_competition.csv",row.names = FA
 ```{r ToplineVehicle}
 
 
-full_data %>% filter(Vehicle=="Unlabeled Indefinite Delivery Contract (IDC)" ) %>% group_by(ClassifyNumberOfOffers,No.Competition.sum)%>%
+def_data %>% filter(Vehicle=="Unlabeled Indefinite Delivery Contract (IDC)" ) %>% group_by(ClassifyNumberOfOffers,No.Competition.sum)%>%
   summarise(n=length(Vehicle))
 
 
 (
 ToplineVehicle7<-build_plot(
-  data=full_data %>% filter(!is.na(Vehicle.AwardTask)),
+  data=def_data %>% filter(!is.na(Vehicle.AwardTask)),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -663,7 +661,7 @@ ToplineVehicle7<-build_plot(
 
 (
 ToplineVehicle<-build_plot(
-  data=full_data %>% filter(!is.na(Vehicle.AwardTask)),
+  data=def_data %>% filter(!is.na(Vehicle.AwardTask)),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -1320,14 +1318,14 @@ log_plot(plot=PricingHistory, df=PricingUpdate  %>% filter(Fiscal_YQ<2025.2),
 
 ### Pricing FMS
 ```{r FPDS_pricingUCA}
-summary(full_data$IsFMS)
-full_data$ProductOrService<-factor(full_data$SimpleArea)
-levels(full_data$ProductOrService)<-list("Products"="Products (All)",
+summary(def_data$IsFMS)
+def_data$ProductOrService<-factor(def_data$SimpleArea)
+levels(def_data$ProductOrService)<-list("Products"="Products (All)",
                                          "Services & R&D"=c("R&D","Services (Non-R&D)"),
                                          "Unlabeled"="Unlabeled")
 
 
-full_data<- full_data %>%      group_by(Fiscal_Year,IsFMS) %>%
+def_data<- def_data %>%      group_by(Fiscal_Year,IsFMS) %>%
                                dplyr::mutate(Action_FMS_Share=Action_Obligation_OMB25_GDP23/
                                            sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))%>% 
                                group_by(Fiscal_Year,IsFMS,ProductOrService) %>%
@@ -1341,7 +1339,7 @@ full_data<- full_data %>%      group_by(Fiscal_Year,IsFMS) %>%
 
 # undebug(build_plot)
 # undebug(build_plot)
-(fpds_pricing <-  build_plot(data=full_data %>% filter(Fiscal_Year>=2012 & Fiscal_YQ<2025.2),
+(fpds_pricing <-  build_plot(data=def_data %>% filter(Fiscal_Year>=2012 & Fiscal_YQ<2025.2),
                             chart_geom="Line Chart",
                             x_var="dFYear",
                             y_var="Action_FMS_Share",
@@ -1362,7 +1360,7 @@ full_data<- full_data %>%      group_by(Fiscal_Year,IsFMS) %>%
 
 
 # undebug(format_data_for_plot)
-(fpds_pricing_bar <-  build_plot(data=full_data %>% filter(Fiscal_Year>=2012 & Fiscal_YQ<2025.2),
+(fpds_pricing_bar <-  build_plot(data=def_data %>% filter(Fiscal_Year>=2012 & Fiscal_YQ<2025.2),
                             chart_geom="Bar Chart",
                             x_var="dFYear",
                             y_var="Action_Obligation_OMB25_GDP23",
@@ -1385,7 +1383,7 @@ full_data<- full_data %>%      group_by(Fiscal_Year,IsFMS) %>%
 #        caption="Source: FPDS and CSIS analysis.")+
 #     theme(legend.position = "right"))
 
-(fpds_pricing_psr <-  build_plot(data=full_data %>% filter(Fiscal_Year>=2012 & Fiscal_YQ<2025.2) %>%
+(fpds_pricing_psr <-  build_plot(data=def_data %>% filter(Fiscal_Year>=2012 & Fiscal_YQ<2025.2) %>%
                                    filter(SimpleArea!="Unlabeled" & IsFMS!="Unlabeled" & !is.na(IsFMS)),
                             chart_geom="Line Chart",
                             x_var="dFYear",
@@ -1409,7 +1407,7 @@ full_data<- full_data %>%      group_by(Fiscal_Year,IsFMS) %>%
 
 
 # debug(buildaC_plot)
-(fpds_pricing_psr_bar <-  build_plot(data=full_data  %>% filter(SimpleArea!="Unlabeled"&
+(fpds_pricing_psr_bar <-  build_plot(data=def_data  %>% filter(SimpleArea!="Unlabeled"&
                                                                     IsFMS!="Unlabeled" & 
                                                                   !is.na(IsFMS))%>%
                                        filter(Fiscal_Year>=2012 & Fiscal_YQ<2025.2),
@@ -1435,7 +1433,7 @@ full_data<- full_data %>%      group_by(Fiscal_Year,IsFMS) %>%
 #        height = 4.5,
 #        size = 12, lineheight=1)
 
-log_plot(plot=fpds_pricing_psr_bar, df=full_data  %>% filter(Fiscal_YQ<2025.2),
+log_plot(plot=fpds_pricing_psr_bar, df=def_data  %>% filter(Fiscal_YQ<2025.2),
                      filename="acq_fig7_3_FMS_ps_pricing",xlsx="DoD_Acq_Trends_Contracts.xlsx",
                      sheet="7-3 FMSprice",path="../output/AcqTrends/", height=3.5,
                      startRow=1,startCol=15,format=TRUE,var_list=c("IsFMS","ProductOrService","PricingUCA.sum","PricingUCA")
@@ -1734,7 +1732,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_Multiyear.svg", Mu
              )
 
 
-# full_data %>% filter(SubCustomer.sum=="Army", PlatformPortfolio=="Other Products", Fiscal_Year==2021) %>%
+# def_data %>% filter(SubCustomer.sum=="Army", PlatformPortfolio=="Other Products", Fiscal_Year==2021) %>%
 #   group_by(AnyMultiyearText,Competition.multisum) %>% summarise(
 #     COVID19obligated=sum(COVID19obligated,na.rm=TRUE),
 #     Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
@@ -1746,21 +1744,21 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_Multiyear.svg", Mu
 
 
 ```{r ToplinePricing}
-    full_data<-full_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
+    def_data<-def_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
                               labels=c("Not Multi-Year","Multi-Year Contract")))
 
-full_data$multiyearcontracttext[is.na(full_data$multiyearcontract)&
-                             full_data$Vehicle %in% c("BOA","BPA","FSS","GWAC","PO","DO") ]<-"Not Multi-Year"
+def_data$multiyearcontracttext[is.na(def_data$multiyearcontract)&
+                             def_data$Vehicle %in% c("BOA","BPA","FSS","GWAC","PO","DO") ]<-"Not Multi-Year"
   # "MULTIPLE AWARD IDC"  "SINGLE AWARD IDC"   "Unlabeled IDC"        "DCA"    "DO"   
 
 
-# full_data %>% group_by(Vehicle) %>%
+# def_data %>% group_by(Vehicle) %>%
 #   dplyr::summarise(multiyearcontracttext=sum(
 #     ifelse(multiyearcontracttext=="Multi-Year Contract",Action_Obligation_OMB25_GDP23,0),na.rm=TRUE))
 
 
 
-full_data<-full_data %>% group_by(Fiscal_Year,Vehicle.sum7)%>%
+def_data<-def_data %>% group_by(Fiscal_Year,Vehicle.sum7)%>%
   mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
 ```
 ### Multi-Year Vehicle
@@ -2630,7 +2628,7 @@ write.csv(file="..//Output//AcqTrends//contractota_RnDPhase.csv",row.names = FAL
 summary(factor(def_data$ServicesCategory.sum))
 (
 Services<-build_plot(
-  data=full_data %>% filter(SimpleArea=="Services (Non-R&D)" & Fiscal_YQ<2025.2),
+  data=def_data %>% filter(SimpleArea=="Services (Non-R&D)" & Fiscal_YQ<2025.2),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -2659,7 +2657,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="psr_Services.svg", Service
 
 
             
-log_plot(plot=Services, df=full_data  %>% filter(Fiscal_YQ<2025.2 &SimpleArea=="Services (Non-R&D)"),
+log_plot(plot=Services, df=def_data  %>% filter(Fiscal_YQ<2025.2 &SimpleArea=="Services (Non-R&D)"),
                      filename="acq_fig3_3_services",xlsx="DoD_Acq_Trends_Contracts.xlsx",
                      sheet="3-3 Serv",path="../output/AcqTrends/", height=3.5,
                      startRow=1,startCol=12,format=TRUE,#,var_list=c("SimpleArea","Competition.multisum")
@@ -2728,7 +2726,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="psr_pricing_share.png", Si
              )
 
 
-log_plot(plot=Services, df=full_data  %>% filter(Fiscal_YQ<2025.2 &SimpleArea=="Services (Non-R&D)"),
+log_plot(plot=Services, df=def_data  %>% filter(Fiscal_YQ<2025.2 &SimpleArea=="Services (Non-R&D)"),
                      filename="aila30_pricing",xlsx="DoD_Acq_Trends_Contracts.xlsx",
                      sheet="PSR-price",path="../output/AcqTrends/", height=3.5,
                      format=TRUE,output_slide_png=TRUE #,var_list=c("SimpleArea","Competition.multisum")
@@ -2989,7 +2987,7 @@ log_plot(plot=PSRComp_bar, df=def_data  %>% filter(Fiscal_YQ<2025.2),
 
 (
 PSRMultiYear<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=2000 ),
+  data=def_data %>% filter(Fiscal_Year>=2000 ),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -3014,11 +3012,11 @@ PSRMultiYear<-build_plot(
   labs(y="Obligations (Constant 2023 $s)")
 )
 
-full_data<-full_data %>% group_by(Fiscal_Year,SimpleArea)%>%
+def_data<-def_data %>% group_by(Fiscal_Year,SimpleArea)%>%
   mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
 (
 PSRMultiYearShare<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=2000 & SimpleArea!="Unlabeled"&
+  data=def_data %>% filter(Fiscal_Year>=2000 & SimpleArea!="Unlabeled"&
                              (is.na(multiyearcontract)|multiyearcontract==1)),
   chart_geom = "Line Chart",
   share = FALSE,
@@ -3240,7 +3238,7 @@ write.csv(file="..//Output//AcqTrends//subcustomer_covid.csv",row.names = FALSE,
 
 (
 SubCustomerPSR<-build_plot(
-  data=full_data,
+  data=def_data,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -3735,7 +3733,7 @@ for(s in c("Army","Navy","Air Force")){
   
   (
     Platform<-build_plot(
-      data=full_data %>% filter(SubCustomer.sum==s),
+      data=def_data %>% filter(SubCustomer.sum==s),
       chart_geom = "Line Chart",
       share = FALSE,
       labels_and_colors=labels_and_colors,
@@ -3776,7 +3774,7 @@ for(s in c("Army","Navy","Air Force")){
 # 
 # (
 # Platform_Bar<-build_plot(
-#   data=full_data,
+#   data=def_data,
 #   chart_geom = "Bar Chart",
 #   share = FALSE,
 #   labels_and_colors=labels_and_colors,
@@ -3810,7 +3808,7 @@ for(s in c("Army","Navy","Air Force")){
 #              )
 # 
 # write.csv(file="..//Output//AcqTrends//topline_platform_current.csv",row.names = FALSE, na = "",
-#           full_data %>% group_by(PlatformPortfolio,Fiscal_Year)%>%
+#           def_data %>% group_by(PlatformPortfolio,Fiscal_Year)%>%
 #             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
 #           pivot_wider(id_cols=c(PlatformPortfolio),
 #                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%arrange(PlatformPortfolio))
@@ -3897,10 +3895,10 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="platform_PSR.png", Platfor
 
 ## Platform Products
 ```{r PlatformPSR}
-summary(full_data$SimpleArea)
+summary(def_data$SimpleArea)
 (
 PlatformProducts<-build_plot(
-  data=full_data %>% filter(SimpleArea=="Products (All)"),
+  data=def_data %>% filter(SimpleArea=="Products (All)"),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -3930,7 +3928,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="platform_products.png", Pl
              )
 
 write.csv(file="..//Output//AcqTrends//platform_products_cur.csv",row.names = FALSE, na = "",
-          full_data%>% filter(SimpleArea=="Products (All)") %>% 
+          def_data%>% filter(SimpleArea=="Products (All)") %>% 
             mutate(Fiscal_Year=lubridate::year(dFYear))%>%
             group_by(PlatformPortfolio, SimpleArea,Fiscal_Year) %>%
             summarise(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE)) %>%
@@ -4102,7 +4100,7 @@ write.csv(file="..//Output//AcqTrends//platform_quarter_current.csv",row.names =
 
 (
 PlatformVendor_share<-build_plot(
-  data=full_data %>% filter(PlatformPortfolio!="Unlabeled" & Fiscal_Year<=2020) ,
+  data=def_data %>% filter(PlatformPortfolio!="Unlabeled" & Fiscal_Year<=2020) ,
   chart_geom = "Bar Chart",
   share = TRUE,
   labels_and_colors=labels_and_colors,
@@ -4136,7 +4134,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="platform_vendor_share.png"
 
 (
 PlatformVendor_dollar<-build_plot(
-  data=full_data %>% filter(PlatformPortfolio!="Unlabeled" & Fiscal_Year<=2020) ,
+  data=def_data %>% filter(PlatformPortfolio!="Unlabeled" & Fiscal_Year<=2020) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -4180,7 +4178,7 @@ write.csv(file="..//Output//AcqTrends//platform_vendor.csv",row.names = FALSE, n
 
 (
 PlatformVendorIntl_share<-build_plot(
-  data=full_data %>% filter(PlatformPortfolio!="Unlabeled" & Fiscal_YQ<2025.2 & Fiscal_YQ>=2000) ,
+  data=def_data %>% filter(PlatformPortfolio!="Unlabeled" & Fiscal_YQ<2025.2 & Fiscal_YQ>=2000) ,
   chart_geom = "Bar Chart",
   share = TRUE,
   labels_and_colors=labels_and_colors,
@@ -4214,7 +4212,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="platform_vendor_intl_share
 
 (
 PlatformVendorIntl_dollar<-build_plot(
-  data=full_data %>% filter(PlatformPortfolio!="Unlabeled" & Fiscal_YQ<2025.2 & Fiscal_YQ>=2000) ,
+  data=def_data %>% filter(PlatformPortfolio!="Unlabeled" & Fiscal_YQ<2025.2 & Fiscal_YQ>=2000) ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -4240,7 +4238,7 @@ PlatformVendorIntl_dollar<-build_plot(
     caption="Source: FPDS and CSIS analysis.")
 )
 
-log_plot(plot=PlatformVendorIntl_dollar, df=full_data  %>% filter(Fiscal_YQ<2025.2),
+log_plot(plot=PlatformVendorIntl_dollar, df=def_data  %>% filter(Fiscal_YQ<2025.2),
                      filename="acq_fig6_2_plat_vendor_intl",xlsx="DoD_Acq_Trends_Contracts.xlsx",
                      sheet="6-2 PlatVend",path="../output/AcqTrends/", height=5,
          excel_y_var = TRUE, excel_formulas = TRUE,
@@ -4315,7 +4313,7 @@ PlatformVendorNTDC_dollar<-build_plot(
     caption="Source: FPDS and CSIS analysis.")
 )
 # 
-# log_plot(plot=PlatformVendorNTDC_dollar, df=full_data  %>% filter(Fiscal_YQ<2025.2),
+# log_plot(plot=PlatformVendorNTDC_dollar, df=def_data  %>% filter(Fiscal_YQ<2025.2),
 #                      filename="acq_fig6_2_plat_vendor_NTDC",xlsx="DoD_Acq_Trends_Contracts.xlsx",
 #                      sheet="6-2 PlatVend",path="../output/AcqTrends/", height=5,
 #          excel_y_var = TRUE, excel_formulas = TRUE,
@@ -4742,7 +4740,7 @@ write.csv(file="..//Output//AcqTrends//Munitions//ukraine_platform_current.csv",
 
 ## Platform GFE
 ```{r GFEplatform}
-def_data<-full_data %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
+def_data<-def_data %>% group_by(Fiscal_Year,PlatformPortfolio)%>%
   mutate(pPlatFYear=Action_Obligation_OMB24_GDP22/sum(Action_Obligation_OMB24_GDP22,na.rm=TRUE))
 def_data$gfe_gfp_code
 (
@@ -4902,7 +4900,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_vendor.eps", Topli
 
 
 
-log_plot(plot=ToplineVendor, df=full_data  %>% filter(Fiscal_YQ<2025.2 ),
+log_plot(plot=ToplineVendor, df=def_data  %>% filter(Fiscal_YQ<2025.2 ),
                      filename="acq_fig6_X_vendor",xlsx="DoD_Acq_Trends_Contracts.xlsx",
                      sheet="6-X Vend",path="../output/AcqTrends/", height=3.5,
                      startRow=1,startCol=12,format=TRUE,#,var_list=c("SimpleArea","Competition.multisum")
@@ -4920,7 +4918,7 @@ log_plot(plot=ToplineVendor, df=full_data  %>% filter(Fiscal_YQ<2025.2 ),
 
 (
 ToplineVendorIntl<-build_plot(
-  data=full_data %>% filter(Fiscal_Year>=2000& Fiscal_YQ<=2023.2) %>%
+  data=def_data %>% filter(Fiscal_Year>=2000& Fiscal_YQ<=2023.2) %>%
                               mutate(YTD=ifelse(Fiscal_Year==2023,"YTD","Full Year")),# & Fiscal_Year<=2021
   chart_geom = "Bar Chart",
   share = FALSE,
@@ -4953,7 +4951,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",
              width=9, height= 5.5, units="in", size=20, lineheight = 0.75
              )
 
-log_plot(plot=ToplineVendorIntl, df=full_data  %>% filter(Fiscal_YQ<=2023.2),
+log_plot(plot=ToplineVendorIntl, df=def_data  %>% filter(Fiscal_YQ<=2023.2),
                      filename="acq_fig6_1_vendor_intl",xlsx="DoD_Acq_Trends_Contracts.xlsx",
                      sheet="6-1 VendIntl",path="../output/AcqTrends/", height=3.5,
          excel_y_var = TRUE, excel_formulas = TRUE,
@@ -4961,7 +4959,7 @@ log_plot(plot=ToplineVendorIntl, df=full_data  %>% filter(Fiscal_YQ<=2023.2),
          )
 
 
-log_plot(plot=ToplineVendorIntl, df=full_data %>% filter(Fiscal_YQ<=2023.2),
+log_plot(plot=ToplineVendorIntl, df=def_data %>% filter(Fiscal_YQ<=2023.2),
                      filename="nps_fig08a_vendor_Intl",xlsx="DoD_2024_NPS.xlsx",
                      sheet="5a VendIntl",path="../output/AcqTrends/NPS2024/",
          height=3,include_YTD=TRUE,second_path=online_path,
@@ -5069,7 +5067,7 @@ write.csv(big5_wide,file=file.path("..","Output","AcqTrends","big5_wide.csv"),ro
 
 (
 ToplineVendor<-build_plot(
-  data=full_data %>% filter(Fiscal_Year<=2020),
+  data=def_data %>% filter(Fiscal_Year<=2020),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -5097,7 +5095,7 @@ ToplineVendor<-build_plot(
 
 (
 ToplineVendor_line<-build_plot(
-  data=full_data %>% filter(Fiscal_Year<=2020),
+  data=def_data %>% filter(Fiscal_Year<=2020),
   chart_geom = "Line Chart",
   labels_and_colors=labels_and_colors,
   # NA, #VAR.ncol
@@ -5149,7 +5147,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_vendor.eps", Topli
 
 
 write.csv(file="..//Output//AcqTrends//topline_vendor_cur.csv",row.names = FALSE, na = "",
-          full_data %>% group_by(Shiny.VendorSize,Fiscal_Year)%>%
+          def_data %>% group_by(Shiny.VendorSize,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
           pivot_wider(id_cols=c(Shiny.VendorSize),
                       names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>% arrange(Shiny.VendorSize))
@@ -5169,7 +5167,7 @@ platform_levels<-levels(factor(def_data$PlatformPortfolio))
 for(p in platform_levels){
   file_p<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",p)))
   (Breakout<-build_plot(
-    data=full_data %>% filter(Fiscal_Year>=2000&PlatformPortfolio==p& Fiscal_YQ<2025.2),
+    data=def_data %>% filter(Fiscal_Year>=2000&PlatformPortfolio==p& Fiscal_YQ<2025.2),
 chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -5188,7 +5186,7 @@ chart_geom = "Bar Chart",
   if(!dir.exists(file.path("../output/AcqTrends/Platform",file_p)))
     dir.create(file.path("../output/AcqTrends/Platform",file_p))
   
-  log_plot(plot=Breakout, df=full_data  %>% filter(Fiscal_YQ<2025.2&PlatformPortfolio==p),
+  log_plot(plot=Breakout, df=def_data  %>% filter(Fiscal_YQ<2025.2&PlatformPortfolio==p),
            filename=paste(file_p,"vendor",sep="_"),xlsx=paste("DoD",file_p,"Contracts.xlsx",sep="_"),
            sheet="vend",path=file.path("../output/AcqTrends/Platform/",file_p), height=3.5,
            startRow=1,format=TRUE,#,var_list=c("PricingUCA.sumlong","PricingUCA"),
@@ -5206,7 +5204,7 @@ chart_geom = "Bar Chart",
 
 (
 VendorSizeVehicle<-build_plot(
-  data=full_data %>% filter(Fiscal_Year<=2021 & Fiscal_Year>2000 & Shiny.VendorSize!="Unlabeled"),
+  data=def_data %>% filter(Fiscal_Year<=2021 & Fiscal_Year>2000 & Shiny.VendorSize!="Unlabeled"),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -5235,7 +5233,7 @@ VendorSizeVehicle<-build_plot(
 
 (
 VendorSizeVehicleSum<-build_plot(
-  data=full_data %>% filter(Fiscal_Year<=2021 & Fiscal_Year>2000 & !Shiny.VendorSize=="Unlabeled"),
+  data=def_data %>% filter(Fiscal_Year<=2021 & Fiscal_Year>2000 & !Shiny.VendorSize=="Unlabeled"),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=labels_and_colors,
@@ -5263,7 +5261,7 @@ VendorSizeVehicleSum<-build_plot(
 
 (
 VendorSizeVehicleSumLine<-build_plot(
-  data=full_data %>% filter(Fiscal_Year<=2021 & Fiscal_Year>2000 & !is.na(Shiny.VendorSize)&
+  data=def_data %>% filter(Fiscal_Year<=2021 & Fiscal_Year>2000 & !is.na(Shiny.VendorSize)&
                               Shiny.VendorSize!="Unlabeled"),
   chart_geom = "Line Chart",
   share = TRUE,
@@ -5315,7 +5313,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="vendorsize_awardtask.svg",
              )
 
 write.csv(file="..//Output//AcqTrends//vendorsize_vehicle_current.csv",row.names = FALSE, na = "",
-          full_data %>% group_by(Shiny.VendorSize,Vehicle.sum,Fiscal_Year)%>%
+          def_data %>% group_by(Shiny.VendorSize,Vehicle.sum,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
             arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(Shiny.VendorSize,Vehicle.sum),
@@ -5324,7 +5322,7 @@ write.csv(file="..//Output//AcqTrends//vendorsize_vehicle_current.csv",row.names
 
 
 write.csv(file="..//Output//AcqTrends//vendorsize_AwardTask_current.csv",row.names = FALSE, na = "",
-          full_data %>% group_by(Shiny.VendorSize,Vehicle.AwardTask,Fiscal_Year)%>%
+          def_data %>% group_by(Shiny.VendorSize,Vehicle.AwardTask,Fiscal_Year)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
             arrange(Fiscal_Year)%>%
           pivot_wider(id_cols=c(Shiny.VendorSize,Vehicle.AwardTask),
@@ -5399,14 +5397,14 @@ ToplineVendor_line<-build_plot(
 
 ## Vendor Size Pricing
 ```{r VendorSizePricing}
-full_data$PricingUCA.1year<-as.character(full_data$PricingUCA.sum)
-full_data$PricingUCA.1year[full_data$CurrentDurationIsYear=="<=1 year"]<-"<=1 Year (All Types)"
+def_data$PricingUCA.1year<-as.character(def_data$PricingUCA.sum)
+def_data$PricingUCA.1year[def_data$CurrentDurationIsYear=="<=1 year"]<-"<=1 Year (All Types)"
 
 
 
 (
 VendorSizePricing<-build_plot(
-  data=full_data %>% filter(Fiscal_YQ<2025.2 & Fiscal_Year>2000 & Shiny.VendorSize!="Unlabeled" &
+  data=def_data %>% filter(Fiscal_YQ<2025.2 & Fiscal_Year>2000 & Shiny.VendorSize!="Unlabeled" &
                              PricingUCA.sum!="Unclear"),
   chart_geom = "Bar Chart",
   share = FALSE,
@@ -5436,11 +5434,11 @@ VendorSizePricing<-build_plot(
 
 
   
-def_lc<-prepare_labels_and_colors(full_data,path=local_path)
+def_lc<-prepare_labels_and_colors(def_data,path=local_path)
 
 (
 VendorSizePricing20212022share<-build_plot(
-  data=full_data %>% filter(Fiscal_Year %in% c(2021, 2022)& Shiny.VendorSize!="Unlabeled" & CurrentDurationIsYear!="Unlabeled"&
+  data=def_data %>% filter(Fiscal_Year %in% c(2021, 2022)& Shiny.VendorSize!="Unlabeled" & CurrentDurationIsYear!="Unlabeled"&
                              PricingUCA.sum!="Unclear"),
   chart_geom = "Bar Chart",
   share = TRUE,
@@ -5474,7 +5472,7 @@ VendorSizePricing20212022share<-build_plot(
 )
 
 log_plot(plot=VendorSizePricing20212022share+
-               facet_grid(Fiscal_Year~Shiny.VendorSize), df=full_data   ,x_var="Fiscal_Year",
+               facet_grid(Fiscal_Year~Shiny.VendorSize), df=def_data   ,x_var="Fiscal_Year",
                      filename="acq_fig8_1_vend_price",xlsx="DoD_Acq_Trends_Contracts.xlsx",
                      sheet="8-1 VendPrice",path="../output/AcqTrends/", height=3.5,
                      format=TRUE,excel_y_var=TRUE,excel_formulas=TRUE,
@@ -5489,7 +5487,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="vendorsize_pricing.png", V
 
 
 write.csv(file="..//Output//AcqTrends//vendorsize_pricing_current.csv",row.names = FALSE, na = "",
-          full_data %>% group_by(Shiny.VendorSize,PricingUCA.sum,Fiscal_Year)%>%
+          def_data %>% group_by(Shiny.VendorSize,PricingUCA.sum,Fiscal_Year)%>%
             filter(Fiscal_Year>=2000 & Fiscal_YQ<2025.2)%>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
             arrange(Fiscal_Year)%>%
@@ -5499,7 +5497,7 @@ write.csv(file="..//Output//AcqTrends//vendorsize_pricing_current.csv",row.names
 
 
 write.csv(file="..//Output//AcqTrends//VendorSize_Pricing2021.csv",row.names = FALSE, na = "",
-          full_data %>% group_by(Shiny.VendorSize,PricingUCA.1year,Fiscal_Year)%>%
+          def_data %>% group_by(Shiny.VendorSize,PricingUCA.1year,Fiscal_Year)%>%
             filter(Fiscal_Year>=2007 & Fiscal_YQ<2025.2) %>%
             dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
             arrange(Fiscal_Year)%>%
@@ -5523,11 +5521,11 @@ write.csv(file="..//Output//AcqTrends//VendorSize_Pricing2021.csv",row.names = F
 ###FMS identification
 ```{r contract_identification}
 
-summary(full_data$foreign_funding_description)
+summary(def_data$foreign_funding_description)
 
 # undebug(build_plot)
 
-(contract_identification <-  build_plot(data=full_data ,
+(contract_identification <-  build_plot(data=def_data ,
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="Fiscal_Year",
@@ -5555,11 +5553,11 @@ ggsave600dpi(contract_identification,file="../Output//AcqTrends/figure_03_contra
 #### Contract identification
 ```{r contract_identification}
 
-summary(full_data$PlaceOfManufacture_Sum)
+summary(def_data$PlaceOfManufacture_Sum)
 
 # undebug(build_plot)
 
-(contract_identification <-  build_plot(data=full_data ,
+(contract_identification <-  build_plot(data=def_data ,
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="Fiscal_Year",
@@ -5579,7 +5577,7 @@ summary(full_data$PlaceOfManufacture_Sum)
     guides(fill=guide_legend(ncol=3)))
 
 
-(contract_identification <-  build_plot(data=full_data %>% filter(!is.na(PlaceIsForeign)),
+(contract_identification <-  build_plot(data=def_data %>% filter(!is.na(PlaceIsForeign)),
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="Fiscal_Year",
@@ -5599,7 +5597,7 @@ summary(full_data$PlaceOfManufacture_Sum)
     guides(fill=guide_legend(ncol=3)))
 
 
-(contract_identification <-  build_plot(data=full_data%>% filter(Fiscal_Year>=2000) ,
+(contract_identification <-  build_plot(data=def_data%>% filter(Fiscal_Year>=2000) ,
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="Fiscal_Year",
@@ -5631,26 +5629,26 @@ ggsave600dpi(contract_identification,file="../Output//AcqTrends/figure_03_contra
 
 ```{r contract_identification}
 
-summary(full_data$PlaceOfManufactureText)
-full_data$PlaceOfManufactureText20<-factor_wrap(full_data$PlaceOfManufactureText)
+summary(def_data$PlaceOfManufactureText)
+def_data$PlaceOfManufactureText20<-factor_wrap(def_data$PlaceOfManufactureText)
 # undebug(build_plot)
-summary(factor(full_data$PlaceOfManufactureText20))
+summary(factor(def_data$PlaceOfManufactureText20))
 
-write.csv(full_data %>% group_by(PlaceOfManufactureText,PlaceIsForeign,VendorIsForeign,OriginIsForeign) %>%
+write.csv(def_data %>% group_by(PlaceOfManufactureText,PlaceIsForeign,VendorIsForeign,OriginIsForeign) %>%
   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23)) %>% pivot_wider(names_from=PlaceOfManufactureText,
                                                                                        values_from=Action_Obligation_OMB25_GDP23),
   file="waiver_crossref.csv")
   
 
 
-full_data$OriginManufactureVendor<-NA
-# full_data$OriginManufactureVendor[full_data$PlaceOfManufacture_Sum=="Manufactured Outside U.S."]<-"Foreign Manufacture or Origin"
-full_data$OriginManufactureVendor[full_data$OriginIsForeign==1]<-"Foreign Manufacture or Origin"
-full_data$OriginManufactureVendor[is.na(full_data$OriginManufactureVendor)]<-
-  full_data$PlaceOfManufactureText[is.na(full_data$OriginManufactureVendor)]
+def_data$OriginManufactureVendor<-NA
+# def_data$OriginManufactureVendor[def_data$PlaceOfManufacture_Sum=="Manufactured Outside U.S."]<-"Foreign Manufacture or Origin"
+def_data$OriginManufactureVendor[def_data$OriginIsForeign==1]<-"Foreign Manufacture or Origin"
+def_data$OriginManufactureVendor[is.na(def_data$OriginManufactureVendor)]<-
+  def_data$PlaceOfManufactureText[is.na(def_data$OriginManufactureVendor)]
 
 
- full_data<-csis360::read_and_join_experiment(full_data,
+ def_data<-csis360::read_and_join_experiment(def_data,
                                           "Location_PlaceOfManufacture.csv",
                                           by="PlaceOfManufacture",
                                           add_var=c("PlaceOfManufactureText","PlaceOfManufacture_Sum",
@@ -5666,28 +5664,28 @@ full_data$OriginManufactureVendor[is.na(full_data$OriginManufactureVendor)]<-
     )
  
  # debug(factor_wrap)
- full_data$OriginManufactureVendor20<-factor_wrap(full_data$OriginManufactureVendor)
+ def_data$OriginManufactureVendor20<-factor_wrap(def_data$OriginManufactureVendor)
  
-full_data$Service<-factor(full_data$SimpleArea)
-levels(full_data$Service)<-list("Products"="Products (All)",
+def_data$Service<-factor(def_data$SimpleArea)
+levels(def_data$Service)<-list("Products"="Products (All)",
                                 "Services and R&D"=c("R&D", "Services (Non-R&D)"),
                                 "Unlabeled"="Unlabeled")
  
-full_data$OriginManufactureVendor<-full_data$PlaceOfManufacture_DoD
+def_data$OriginManufactureVendor<-def_data$PlaceOfManufacture_DoD
 
- full_data$OriginManufactureVendor[is.na(full_data$OriginManufactureVendor)&                                    
-                                     (full_data$Service=="Services and R&D" | 
-                                        full_data$PlaceOfManufactureText=="NOT A MANUFACTURED END PRODUCT") &
-                                     (full_data$VendorIsForeign==1 | full_data$OriginIsForeign==1)]<-"Not MFG, Foreign Vendor or Origin"
- full_data$OriginManufactureVendor[full_data$OriginManufactureVendor=="U.S. Manufactured" &
-                                    (full_data$VendorIsForeign==1 | full_data$OriginIsForeign==1)]<-"U.S. Manufactured, Foreign Vendor or Origin"
+ def_data$OriginManufactureVendor[is.na(def_data$OriginManufactureVendor)&                                    
+                                     (def_data$Service=="Services and R&D" | 
+                                        def_data$PlaceOfManufactureText=="NOT A MANUFACTURED END PRODUCT") &
+                                     (def_data$VendorIsForeign==1 | def_data$OriginIsForeign==1)]<-"Not MFG, Foreign Vendor or Origin"
+ def_data$OriginManufactureVendor[def_data$OriginManufactureVendor=="U.S. Manufactured" &
+                                    (def_data$VendorIsForeign==1 | def_data$OriginIsForeign==1)]<-"U.S. Manufactured, Foreign Vendor or Origin"
 
-  full_data %>% filter(OriginManufactureVendor=="Unlabeled Waiver" &
+  def_data %>% filter(OriginManufactureVendor=="Unlabeled Waiver" &
                          Service=="Services and R&D" )  %>% group_by(VendorIsForeign,OriginIsForeign) %>%
     summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
  
  
- full_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
+ def_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
                                                                           "Manufactured Outside U.S.",
                                                                           "Performed/Manufactured Outside U.S.")|
                                                    VendorIsForeign==1|OriginIsForeign==1) %>%
@@ -5695,41 +5693,41 @@ full_data$OriginManufactureVendor<-full_data$PlaceOfManufacture_DoD
    group_by(PlaceOfManufactureText,OriginManufactureVendor,Service,PlaceIsForeign,VendorIsForeign,OriginIsForeign) %>%
   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23)) 
 
- # full_data$OriginManufactureVendor[is.na(full_data$OriginManufactureVendor)&
- #                                     full_data$VendorIsForeign==1&full_data$OriginIsForeign==0]<-"U.S. Origin Intl Vendor"
+ # def_data$OriginManufactureVendor[is.na(def_data$OriginManufactureVendor)&
+ #                                     def_data$VendorIsForeign==1&def_data$OriginIsForeign==0]<-"U.S. Origin Intl Vendor"
  # 
- # full_data$OriginManufactureVendor[is.na(full_data$OriginManufactureVendor)&
- #                                     full_data$VendorIsForeign==0&full_data$OriginIsForeign==1]<-"Intl Vendor U.S. Origin"
+ # def_data$OriginManufactureVendor[is.na(def_data$OriginManufactureVendor)&
+ #                                     def_data$VendorIsForeign==0&def_data$OriginIsForeign==1]<-"Intl Vendor U.S. Origin"
  #  
- # full_data$OriginManufactureVendor[is.na(full_data$OriginManufactureVendor)&
- #                                     full_data$VendorIsForeign==1&full_data$OriginIsForeign==1]<-"Intl Vendor Intl Origin"
+ # def_data$OriginManufactureVendor[is.na(def_data$OriginManufactureVendor)&
+ #                                     def_data$VendorIsForeign==1&def_data$OriginIsForeign==1]<-"Intl Vendor Intl Origin"
  # 
- # full_data$OriginManufactureVendor[full_data$OriginManufactureVendor=="Unlabeled Waiver" &
- #                                     full_data$Service=="Services and R&D" &
- #                                     full_data$VendorIsForeign==0&full_data$OriginIsForeign==1]<-"Intl Vendor U.S. Origin"
+ # def_data$OriginManufactureVendor[def_data$OriginManufactureVendor=="Unlabeled Waiver" &
+ #                                     def_data$Service=="Services and R&D" &
+ #                                     def_data$VendorIsForeign==0&def_data$OriginIsForeign==1]<-"Intl Vendor U.S. Origin"
  #  
- # full_data$OriginManufactureVendor[full_data$OriginManufactureVendor=="Unlabeled Waiver" & 
- #                                     full_data$Service=="Services and R&D" &
- #                                     full_data$VendorIsForeign==1&full_data$OriginIsForeign==1]<-"Intl Vendor Intl Origin"
+ # def_data$OriginManufactureVendor[def_data$OriginManufactureVendor=="Unlabeled Waiver" & 
+ #                                     def_data$Service=="Services and R&D" &
+ #                                     def_data$VendorIsForeign==1&def_data$OriginIsForeign==1]<-"Intl Vendor Intl Origin"
  # 
- #  full_data$OriginManufactureVendor[full_data$OriginManufactureVendor=="Unlabeled Waiver" & 
- #                                     full_data$Service=="Services and R&D" &
- #                                     full_data$VendorIsForeign==1&full_data$OriginIsForeign==0]<-"U.S. Origin Intl Vendor"
+ #  def_data$OriginManufactureVendor[def_data$OriginManufactureVendor=="Unlabeled Waiver" & 
+ #                                     def_data$Service=="Services and R&D" &
+ #                                     def_data$VendorIsForeign==1&def_data$OriginIsForeign==0]<-"U.S. Origin Intl Vendor"
  #  
   
-  full_data %>% filter(OriginManufactureVendor=="Unlabeled Waiver" &
+  def_data %>% filter(OriginManufactureVendor=="Unlabeled Waiver" &
                          Service=="Services and R&D" )  %>% group_by(VendorIsForeign,OriginIsForeign) %>%
     summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
   
-   full_data %>% filter(is.na(OriginManufactureVendor) &
+   def_data %>% filter(is.na(OriginManufactureVendor) &
                          Service=="Services and R&D" )  %>% group_by(VendorIsForeign,OriginIsForeign) %>%
     summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
   
-  labels_and_colors<-prepare_labels_and_colors(full_data)
-  column_key<-get_column_key(full_data)
+  labels_and_colors<-prepare_labels_and_colors(def_data)
+  column_key<-get_column_key(def_data)
   
   
-(waiverdetail <-  build_plot(data=full_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
+(waiverdetail <-  build_plot(data=def_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
                                                                           "Manufactured Outside U.S.",
                                                                           "Performed/Manufactured Outside U.S.")|
                                                    VendorIsForeign==1|OriginIsForeign==1)  %>%filter(!is.na(SimpleArea) & SimpleArea!="Unlabeled"),
@@ -5768,38 +5766,38 @@ full_data$OriginManufactureVendor<-full_data$PlaceOfManufacture_DoD
 ```
 ##### Simple Waiver Type
 ```{r SimpleWaiver}
-full_data$PlaceOfManufacture_DoD09<-full_data$PlaceOfManufacture_DoD
-full_data %>% filter(OriginManufactureVendor=="Unlabeled Waiver" &
+def_data$PlaceOfManufacture_DoD09<-def_data$PlaceOfManufacture_DoD
+def_data %>% filter(OriginManufactureVendor=="Unlabeled Waiver" &
                          ProductOrService=="Services and R&D" )  %>% group_by(VendorIsForeign,OriginIsForeign) %>%
     summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
   
-   full_data %>% filter(is.na(OriginManufactureVendor) &
+   def_data %>% filter(is.na(OriginManufactureVendor) &
                          ProductOrService=="Services and R&D" )  %>% group_by(VendorIsForeign,OriginIsForeign) %>%
     summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
   
   
- full_data$PlaceOfManufacture_DoD09[is.na(full_data$PlaceOfManufacture_DoD09)&                                    
-                                     (full_data$ProductOrService=="Services and R&D" | 
-                                        full_data$PlaceOfManufactureText=="NOT A MANUFACTURED END PRODUCT") &
-                                     (full_data$VendorIsForeign==1 | full_data$OriginIsForeign==1)&
-                                    full_data$PlaceIsForeign==1]<-"Not MFG, Foreign Place of Performance"
- full_data$PlaceOfManufacture_DoD09[full_data$PlaceOfManufacture_DoD09=="U.S. Manufactured" &
-                                    (full_data$VendorIsForeign==1 | full_data$OriginIsForeign==1)]<-
+ def_data$PlaceOfManufacture_DoD09[is.na(def_data$PlaceOfManufacture_DoD09)&                                    
+                                     (def_data$ProductOrService=="Services and R&D" | 
+                                        def_data$PlaceOfManufactureText=="NOT A MANUFACTURED END PRODUCT") &
+                                     (def_data$VendorIsForeign==1 | def_data$OriginIsForeign==1)&
+                                    def_data$PlaceIsForeign==1]<-"Not MFG, Foreign Place of Performance"
+ def_data$PlaceOfManufacture_DoD09[def_data$PlaceOfManufacture_DoD09=="U.S. Manufactured" &
+                                    (def_data$VendorIsForeign==1 | def_data$OriginIsForeign==1)]<-
    "U.S. Manufactured, Foreign Vendor or Origin"
- full_data$PlaceOfManufacture_DoD09[is.na(full_data$PlaceOfManufacture_DoD09)&                                    
-                                     (full_data$ProductOrService=="Services and R&D" | 
-                                        full_data$PlaceOfManufactureText=="NOT A MANUFACTURED END PRODUCT") &
-                                     (full_data$VendorIsForeign==1 | full_data$OriginIsForeign==1)&
-                                    full_data$PlaceIsForeign==0]<-"Not MFG, U.S. Place of Performance"
-  full_data$PlaceOfManufacture_DoD09[full_data$PlaceOfManufacture_DoD09=="Foreign MFG, Perfomed, or Content, Unlabeled Waiver"]<-NA
+ def_data$PlaceOfManufacture_DoD09[is.na(def_data$PlaceOfManufacture_DoD09)&                                    
+                                     (def_data$ProductOrService=="Services and R&D" | 
+                                        def_data$PlaceOfManufactureText=="NOT A MANUFACTURED END PRODUCT") &
+                                     (def_data$VendorIsForeign==1 | def_data$OriginIsForeign==1)&
+                                    def_data$PlaceIsForeign==0]<-"Not MFG, U.S. Place of Performance"
+  def_data$PlaceOfManufacture_DoD09[def_data$PlaceOfManufacture_DoD09=="Foreign MFG, Perfomed, or Content, Unlabeled Waiver"]<-NA
  
-full_data$PlaceOfManufacture_DoD09<-factor_wrap(full_data$PlaceOfManufacture_DoD09,nwrap=45)
+def_data$PlaceOfManufacture_DoD09<-factor_wrap(def_data$PlaceOfManufacture_DoD09,nwrap=45)
  
   
-  labels_and_colors<-prepare_labels_and_colors(full_data)
-  column_key<-get_column_key(full_data)
+  labels_and_colors<-prepare_labels_and_colors(def_data)
+  column_key<-get_column_key(def_data)
   
-(waiversimple <-  build_plot(data=full_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
+(waiversimple <-  build_plot(data=def_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
                                                                           "Manufactured Outside U.S.",
                                                                           "Performed/Manufactured Outside U.S.")|
                                                    VendorIsForeign==1|OriginIsForeign==1)  %>%
@@ -5832,7 +5830,7 @@ full_data$PlaceOfManufacture_DoD09<-factor_wrap(full_data$PlaceOfManufacture_DoD
   ggsave600dpi(waiversimple,file="../Output//AcqTrends/waiversimple.svg",size=14,lineheight=1, height =5.75, width=7)
 
 
-log_plot(plot=waiversimple, df=full_data   %>% filter(Fiscal_YQ<2025.2 & 
+log_plot(plot=waiversimple, df=def_data   %>% filter(Fiscal_YQ<2025.2 & 
                                                         PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
                                                                           "Manufactured Outside U.S.",
                                                                           "Performed/Manufactured Outside U.S.")|
@@ -5850,7 +5848,7 @@ log_plot(plot=waiversimple, df=full_data   %>% filter(Fiscal_YQ<2025.2 &
                           names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23)
             %>% arrange(PlaceOfManufacture_DoD09,ProductOrService))
     
-    write.csv(full_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
+    write.csv(def_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
                                                                           "Manufactured Outside U.S.",
                                                                           "Performed/Manufactured Outside U.S.")|
                                                    VendorIsForeign==1|OriginIsForeign==1)  %>%
@@ -5864,10 +5862,10 @@ log_plot(plot=waiversimple, df=full_data   %>% filter(Fiscal_YQ<2025.2 &
 
 #### Waiverplace
 ```{r WaiverPlace}
-  labels_and_colors<-prepare_labels_and_colors(full_data)
-  column_key<-get_column_key(full_data)
+  labels_and_colors<-prepare_labels_and_colors(def_data)
+  column_key<-get_column_key(def_data)
   
-  (waiverally <-  build_plot(data=full_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
+  (waiverally <-  build_plot(data=def_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
                                                                           "Manufactured Outside U.S.",
                                                                           "Performed/Manufactured Outside U.S.")|
                                                    VendorIsForeign==1|OriginIsForeign==1) ,
@@ -5899,10 +5897,10 @@ log_plot(plot=waiversimple, df=full_data   %>% filter(Fiscal_YQ<2025.2 &
 #### Place
 ```{r buy_america_place}
 
-levels(factor(full_data$PlaceStateRegion))
-full_data$PlaceStateRegion<-factor(full_data$PlaceStateRegion)
-full_data$PlaceStateRegionSum<-factor(full_data$PlaceStateRegion)
-levels(full_data$PlaceStateRegionSum)<-
+levels(factor(def_data$PlaceStateRegion))
+def_data$PlaceStateRegion<-factor(def_data$PlaceStateRegion)
+def_data$PlaceStateRegionSum<-factor(def_data$PlaceStateRegion)
+levels(def_data$PlaceStateRegionSum)<-
   list("United States"="United States",
        "East Asia and Pacific"="East Asia and Pacific"  ,
        "Europe and Eurasia"="Europe and Eurasia"     ,
@@ -5912,12 +5910,12 @@ levels(full_data$PlaceStateRegionSum)<-
        )
 
 
-summary(full_data$PlaceStateRegionSum)
+summary(def_data$PlaceStateRegionSum)
 
-full_data$PlaceOfManufactureText20<-factor_wrap(full_data$PlaceOfManufactureText)
+def_data$PlaceOfManufactureText20<-factor_wrap(def_data$PlaceOfManufactureText)
 # undebug(build_plot)
-summary(factor(full_data$PlaceOfManufactureText20))
-(placeregion <-  build_plot(data=full_data %>% filter((PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
+summary(factor(def_data$PlaceOfManufactureText20))
+(placeregion <-  build_plot(data=def_data %>% filter((PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
                                                                           "Manufactured Outside U.S.",
                                                                           "Performed/Manufactured Outside U.S.")|
                                                    VendorIsForeign==1|OriginIsForeign==1)&!is.na(PlaceStateRegion)
@@ -5948,9 +5946,9 @@ ggsave600dpi(placeregion,file="../Output//AcqTrends/place_of_manufacture_place_r
 
 
 
-summary(full_data$vendor)
-full_data$PlaceMutualAcquisition
-(placeregion <-  build_plot(data=full_data %>% filter((PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
+summary(def_data$vendor)
+def_data$PlaceMutualAcquisition
+(placeregion <-  build_plot(data=def_data %>% filter((PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
                                                                           "Manufactured Outside U.S.",
                                                                           "Performed/Manufactured Outside U.S.")|
                                                    VendorIsForeign==1|OriginIsForeign==1)&!is.na(PlaceStateRegion)
@@ -5974,9 +5972,9 @@ full_data$PlaceMutualAcquisition
     theme(legend.position = "bottom")
     # guides(fill=guide_legend(ncol=2)
            )
-full_data$PlaceAcquisitionCooperation
+def_data$PlaceAcquisitionCooperation
 
-(placeregion <-  build_plot(data=full_data %>% filter((PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
+(placeregion <-  build_plot(data=def_data %>% filter((PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
                                                                           "Manufactured Outside U.S.",
                                                                           "Performed/Manufactured Outside U.S.")|
                                                    VendorIsForeign==1|OriginIsForeign==1)&!is.na(PlaceStateRegion)
@@ -6002,10 +6000,10 @@ full_data$PlaceAcquisitionCooperation
            )
 
 
-full_data$place
+def_data$place
 
 
-(vendorregion <-  build_plot(data=full_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
+(vendorregion <-  build_plot(data=def_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
                                                                           "Manufactured Outside U.S.",
                                                                           "Performed/Manufactured Outside U.S.")|
                                                    VendorIsForeign==1|OriginIsForeign==1) ,
@@ -6030,7 +6028,7 @@ full_data$place
            )
 
 
-(originregion <-  build_plot(data=full_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
+(originregion <-  build_plot(data=def_data %>% filter(PlaceOfManufacture_Sum %in% c("In U.S. but Foreign Services or Content",
                                                                           "Manufactured Outside U.S.",
                                                                           "Performed/Manufactured Outside U.S.")|
                                                    VendorIsForeign==1|OriginIsForeign==1) ,
@@ -6058,7 +6056,7 @@ full_data$place
 ggsave600dpi(waiver,file="../Output//AcqTrends/place_of_manufacture_waiver.png",size=8,lineheight=1, height =5, width=9)
 
 
-(contract_identification <-  build_plot(data=full_data %>% filter(!is.na(PlaceIsForeign)),
+(contract_identification <-  build_plot(data=def_data %>% filter(!is.na(PlaceIsForeign)),
                             chart_geom="Bar Chart",
                             share=FALSE,
                             x_var="Fiscal_Year",
@@ -6087,7 +6085,7 @@ ggsave600dpi(waiver,file="../Output//AcqTrends/place_of_manufacture_waiver.png",
 
 ```{r}
 
-(korea <-  build_plot(data=full_data %>% filter(PlaceISOalpha3=="KOR" |
+(korea <-  build_plot(data=def_data %>% filter(PlaceISOalpha3=="KOR" |
                                                   VendorISOalpha3=="KOR" |
                                                   OriginISOalpha3=="KOR"),
                             chart_geom="Bar Chart",
@@ -6110,8 +6108,8 @@ ggsave600dpi(waiver,file="../Output//AcqTrends/place_of_manufacture_waiver.png",
     # guides(fill=guide_legend(ncol=2)
 )
 
-full_data$IsFMS
-(korea <-  build_plot(data=full_data %>% filter(PlaceISOalpha3=="KOR" |
+def_data$IsFMS
+(korea <-  build_plot(data=def_data %>% filter(PlaceISOalpha3=="KOR" |
                                                   VendorISOalpha3=="KOR" |
                                                   OriginISOalpha3=="KOR"),
                             chart_geom="Bar Chart",
