@@ -110,58 +110,29 @@ def_lc<-prepare_labels_and_colors(def_data, path=file.path(local_path,"style\\")
 # save(sample_def_fpds,file=file.path("output","sample10k_def_data.rda"))
 # write_delim(sample_def_fpds,file=file.path("output","sample10k_def_data.txt"),delim="\t")
 
-#Cong Dist: Product Service Code, Agency, Platform ############
 
-platpscdefcd<-read_delim(file.path("data","semi_clean","Defense_Location.SP_ProdServPlatformAgencyCongressionalDistrict.txt"),delim="\t",na=c("NULL","NA"),
-                    col_names = TRUE, guess_max = 10000000)
-
-platpscdefcd<-apply_standard_lookups(platpscdefcd)
-any(duplicated(colnames(platpscdefcd)))
-
-platpscdefcd<-initial_clean(platpscdefcd)
-
-
-cd_lc<-csis360::prepare_labels_and_colors(platpscdefcd)
-cd_ck<-csis360::get_column_key(platpscdefcd)
-platpscdefcd$YTD<-factor(ifelse(platpscdefcd$Fiscal_Year==max(platpscdefcd$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
-save(platpscdefcd,cd_lc, cd_ck,file="data/clean/platpscdefcd.Rda")
-
-platpsc<-read_delim(file.path("data","semi_clean","Federal_ProdservPlatform.txt"),delim="\t",na=c("NULL","NA"),
-                    col_names = TRUE, guess_max = 10000000)
-
-platpsc<-initial_clean(platpsc)
-platpsc<-apply_standard_lookups(platpsc)
-
-
-
-platpsc %<>%
-  # select(-ContractingCustomer) %>%
-  # select(-ClassifyNumberOfOffers) %>%
-  mutate(SubCustomer = factor(SubCustomer)) %>%
-  mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
-  # mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
-  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
-  mutate(PlatformPortfolio = factor(PlatformPortfolio))
-
-
-
-
-detail_lc<-csis360::prepare_labels_and_colors(platpsc)
-detail_ck<-csis360::get_column_key(platpsc)
-
-save(platpsc,detail_lc,detail_ck, file="data/clean/platpsc_FPDS.Rda")
-
-
-
-###########Plat PSC International ############
+#Plat PSC International ############
 platpscintl<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdServPlatformAgencyPlaceOriginVendor.txt"),delim="\t",na=c("NULL","NA"),
                         col_names = TRUE, guess_max = 10000000)
 problems(platpscintl)
-colnames(platpscintl)[colnames(platpscintl)=="Customer"]<-"ContractingCustomer"
+platpscintl<-apply_standard_lookups(platpscintl,path="offline")#,path=local_path
+
+#Test for any new product or service codes for new annual updates
+read_and_join_experiment(platpscintl,
+                             "ProductOrServiceCodes.csv",
+                             by=c("ProductOrServiceCode"="ProductOrServiceCode"),
+                             add_var=c("ProductOrServiceCodeText"),
+                             path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
+                             skip_check_var = c("ProductServiceOrRnDarea"),
+                             directory="",
+                             lookup_char_as_factor = TRUE,
+                             missing_file = "output//new_product_or_service_codes.csv"
+)
+
 
 fedpsc_lc<-csis360::prepare_labels_and_colors(platpscintl)
 fedpsc_ck<-csis360::get_column_key(platpscintl)
-platpscintl$YTD<-factor(ifelse(platpscintl$Fiscal_Year==max(platpscintl$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
+
 save(platpscintl,fedpsc_lc, fedpsc_ck,file="data/clean/Federal_platpscintl_FPDS.Rda")
 # load(file="data/clean/Federal_platpscintl_FPDS.Rda")
 file.exists("data/clean/Federal_platpscintl_FPDS.Rda")
@@ -172,7 +143,6 @@ file.exists("data/clean/Federal_platpscintl_FPDS.Rda")
 # View(platpscintl[(nrow(platpscintl)-3):nrow(platpscintl),])
 # View(platpscintldef[(nrow(platpscintldef)-3):nrow(platpscintldef),])
 # debug(initial_clean)
-platpscintl<-apply_standard_lookups(platpscintl)#,path=local_path
 
 platpscintldef<-initial_clean(platpscintl,only_defense=TRUE)
 
@@ -322,6 +292,48 @@ space_fedpsc<-platpscintl %>% filter(PlatformPortfolio=="Space Systems")
 
 
 save(spaceplatpscintl,space,space_lc,space_ck,space_fedpsc,fedpsc_ck,fedpsc_lc, file="data/clean/space_FPDS.Rda")
+
+#Cong Dist: Product Service Code, Agency, Platform ############
+
+platpscdefcd<-read_delim(file.path("data","semi_clean","Defense_Location.SP_ProdServPlatformAgencyCongressionalDistrict.txt"),delim="\t",na=c("NULL","NA"),
+                         col_names = TRUE, guess_max = 10000000)
+
+platpscdefcd<-apply_standard_lookups(platpscdefcd)
+any(duplicated(colnames(platpscdefcd)))
+
+platpscdefcd<-initial_clean(platpscdefcd)
+
+
+cd_lc<-csis360::prepare_labels_and_colors(platpscdefcd)
+cd_ck<-csis360::get_column_key(platpscdefcd)
+platpscdefcd$YTD<-factor(ifelse(platpscdefcd$Fiscal_Year==max(platpscdefcd$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
+save(platpscdefcd,cd_lc, cd_ck,file="data/clean/platpscdefcd.Rda")
+
+platpsc<-read_delim(file.path("data","semi_clean","Federal_ProdservPlatform.txt"),delim="\t",na=c("NULL","NA"),
+                    col_names = TRUE, guess_max = 10000000)
+
+platpsc<-initial_clean(platpsc)
+platpsc<-apply_standard_lookups(platpsc)
+
+
+
+platpsc %<>%
+  # select(-ContractingCustomer) %>%
+  # select(-ClassifyNumberOfOffers) %>%
+  mutate(SubCustomer = factor(SubCustomer)) %>%
+  mutate(SubCustomer.platform = factor(SubCustomer.platform)) %>%
+  # mutate(SubCustomer.JPO = factor(SubCustomer.JPO)) %>%
+  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) %>%
+  mutate(PlatformPortfolio = factor(PlatformPortfolio))
+
+
+
+
+detail_lc<-csis360::prepare_labels_and_colors(platpsc)
+detail_ck<-csis360::get_column_key(platpsc)
+
+save(platpsc,detail_lc,detail_ck, file="data/clean/platpsc_FPDS.Rda")
+
 
 
 # NAICS and High Tech Non-Trad ####
