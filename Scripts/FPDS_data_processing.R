@@ -116,18 +116,7 @@ platpscintl<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdS
                         col_names = TRUE, guess_max = 10000000)
 problems(platpscintl)
 platpscintl<-apply_standard_lookups(platpscintl,path="offline")#,path=local_path
-
-#Test for any new product or service codes for new annual updates
-read_and_join_experiment(platpscintl,
-                             "ProductOrServiceCodes.csv",
-                             by=c("ProductOrServiceCode"="ProductOrServiceCode"),
-                             add_var=c("ProductOrServiceCodeText"),
-                             path="https://raw.githubusercontent.com/CSISdefense/Lookup-Tables/master/",
-                             skip_check_var = c("ProductServiceOrRnDarea"),
-                             directory="",
-                             lookup_char_as_factor = TRUE,
-                             missing_file = "output//new_product_or_service_codes.csv"
-)
+# Go over to lookup-tables repo, Scripts/Sync_ProductOrServiceCode.r to sync up with SQL if there are missing PScodes
 
 
 fedpsc_lc<-csis360::prepare_labels_and_colors(platpscintl)
@@ -135,18 +124,11 @@ fedpsc_ck<-csis360::get_column_key(platpscintl)
 
 save(platpscintl,fedpsc_lc, fedpsc_ck,file="data/clean/Federal_platpscintl_FPDS.Rda")
 # load(file="data/clean/Federal_platpscintl_FPDS.Rda")
-file.exists("data/clean/Federal_platpscintl_FPDS.Rda")
 
 ######Plat PSC Def International #####
 
-
-# View(platpscintl[(nrow(platpscintl)-3):nrow(platpscintl),])
-# View(platpscintldef[(nrow(platpscintldef)-3):nrow(platpscintldef),])
-# debug(initial_clean)
-
 platpscintldef<-initial_clean(platpscintl,only_defense=TRUE)
 
-summary(platpscintldef$PlatformPortfolio)
 
 # write.csv(platpscintldef %>% filter(PlatformPortfolio=="Ordnance and Missiles"), 
 #           file="Output//Munitions//OM.csv",
@@ -160,9 +142,6 @@ summary(platpscintldef$PlatformPortfolio)
 #   summarise(n=length(fiscal_year),min=min(fiscal_year),max=max(fiscal_year))
 
 #Vendor Size
-
-# platpscintldef$VendorSize_Intl[platpscintldef$VendorIsForeign==1]<-"International"
-# platpscintldef$VendorSize_Intl[is.na(platpscintldef$VendorIsForeign)]<-"Unlabeled"
 
 #foreign_funding_description
 
@@ -184,21 +163,6 @@ levels(platpscintldef$IsFMSplaceIntl)=list(
 )
 
 
-platpscintl %<>%
-  # select(-ContractingCustomer) %>%
-  # select(-ClassifyNumberOfOffers) %>%
-  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea)) 
-
-
-
-platpscintldef %<>%
-  # select(-ContractingCustomer) %>%
-  # select(-ClassifyNumberOfOffers) %>%
-  mutate(ProductServiceOrRnDarea = factor(ProductServiceOrRnDarea))
-
-# 
-platpscintldef<-standardize_variable_names(platpscintldef)
-
 colnames(platpscintldef)[colnames(platpscintldef)=="IsForeignHeadquarters"]<-"IsForeignHQ"
 if("IsForeignHQ" %in% colnames(platpscintldef)){
   platpscintldef <- platpscintldef%>% mutate(IsForeignHQ=case_when(
@@ -219,10 +183,8 @@ platpscintldef<-platpscintldef %>% mutate(
 )
 
 
-
 intl_lc<-csis360::prepare_labels_and_colors(platpscintldef)
 intl_ck<-csis360::get_column_key(platpscintldef)
-platpscintldef$YTD<-factor(ifelse(platpscintldef$Fiscal_Year==max(platpscintldef$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
 save(platpscintldef,intl_lc, intl_ck,file="data/clean/platpscintl_FPDS.Rda")
 
 platpscintlcat<-catalog("data/clean/", engines$rda,pattern="*platpscintl*")
@@ -230,15 +192,10 @@ write.csv(platpscintlcat$Federal_platpscintl_FPDS,file=file.path("docs","catalog
 write.csv(platpscintlcat$platpscintl_FPDS,file=file.path("docs","catalog","platpscintl_FPDS.csv"),row.names = FALSE)
 
 
-platpscintlcat$Federal_platpscintl_FPDS
-platpscintlcat$Federal_platpscintl_FPDS$Co
-platpscintlcat<-catalog("data/semi_clean/", engines$csv)
-platpscintlcat<-catalog(file.path("data","semi_clean","Federal_Location.SP_ProdServPlatformAgencyPlaceOriginVendor.txt"), engines$csv)
+# platpscintlcat<-catalog("data/semi_clean/", engines$csv)
+# platpscintlcat<-catalog(file.path("data","semi_clean","Federal_Location.SP_ProdServPlatformAgencyPlaceOriginVendor.txt"), engines$csv)
 
-
-summary(engines)
-
-create_dictionary(platpscintl)
+# create_dictionary(platpscintl)
 
 ### Ship PSC Initial ####
 
@@ -276,22 +233,6 @@ fedpsc_ck<-csis360::get_column_key(shippscintldef)
 save(shippscintldef,fedpsc_lc, fedpsc_ck,file="data/clean/Defense_Ship_FPDS.Rda")
 write_csv(shippscintldef,file.path("output","shippscintldef.csv"))
 
-###Space ########
-if(!exists("platpscintl")) load(file="data/clean/Federal_platpscintl_FPDS.Rda")
-space<-read_delim(file.path("data","semi_clean","ProductOrServiceCode.SP_SpaceDetail.txt"),delim="\t",na=c("NULL","NA"),
-                  col_names = TRUE, guess_max = 10000000)
-space<-apply_standard_lookups(space,path="offline")
-colnames(space)[colnames(space)=="ProductOrServiceCode...7"]<-"ProductOrServiceCode"
-colnames(space)[colnames(space)=="ProjectID...9"]<-"ProjectID"
-space<-space %>% select(-ProductOrServiceCode...26,-ProjectID...29)
-space<-apply_standard_lookups(space)
-space$YTD<-factor(ifelse(space$Fiscal_Year==max(space$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
-space_lc<-prepare_labels_and_colors(space)
-space_ck<-get_column_key(space)
-space_fedpsc<-platpscintl %>% filter(PlatformPortfolio=="Space Systems")
-
-
-save(spaceplatpscintl,space,space_lc,space_ck,space_fedpsc,fedpsc_ck,fedpsc_lc, file="data/clean/space_FPDS.Rda")
 
 #Cong Dist: Product Service Code, Agency, Platform ############
 
@@ -453,6 +394,21 @@ openxlsx::saveWorkbook(wb,file=(file.path(path,xlsx)),overwrite = TRUE)
 
 
 
+###Space ########
+space<-read_delim(file.path("data","semi_clean","ProductOrServiceCode.SP_SpaceDetail.txt"),delim="\t",na=c("NULL","NA"),
+                  col_names = TRUE, guess_max = 10000000)
+space<-apply_standard_lookups(space,path="offline")
+colnames(space)[colnames(space)=="ProductOrServiceCode...7"]<-"ProductOrServiceCode"
+colnames(space)[colnames(space)=="ProjectID...9"]<-"ProjectID"
+space<-space %>% select(-ProductOrServiceCode...26,-ProjectID...29)
+space<-apply_standard_lookups(space)
+space$YTD<-factor(ifelse(space$Fiscal_Year==max(space$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
+space_lc<-prepare_labels_and_colors(space)
+space_ck<-get_column_key(space)
+space_fedpsc<-platpscintl %>% filter(PlatformPortfolio=="Space Systems")
+
+
+save(spaceplatpscintl,space,space_lc,space_ck,space_fedpsc,fedpsc_ck,fedpsc_lc, file="data/clean/space_FPDS.Rda")
 
 
 
