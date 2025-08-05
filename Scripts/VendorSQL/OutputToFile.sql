@@ -97,7 +97,7 @@ order by fiscal_year,fiscal_quarter
 
 
 --2478175
---2j46m with errors
+--2h46m with errors
 --942,792 rows
 --3h30m
 SET ANSI_WARNINGS OFF;
@@ -293,12 +293,10 @@ select *
 from FPDSTypeTable.AgencyID
 where agencyid in ('5300')
 
-<<<<<<< Updated upstream
+
 --6h58m
 --7h11m
 --103,313 rows
-=======
->>>>>>> Stashed changes
 SET QUERY_GOVERNOR_COST_LIMIT 0
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
@@ -322,6 +320,7 @@ SET NOCOUNT ON;
 --3h31m:18,864,534 rows 4/19/2023
 --4h24m:18,964,297 rows
 --4h32m: 20,088,352 rows 6/08/2025
+--5h40m: 20,254,909 rows 8/4/2025
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
  EXEC [Location].[SP_ProdServPlatformAgencyPlaceOriginVendor]
@@ -445,9 +444,7 @@ EXEC	Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength
 		@PlatformPortfolio =NULL
 
 SET QUERY_GOVERNOR_COST_LIMIT 0
---7,833,306 rows; 9h39m. (Finished right when I got home, which seems odd. One or more errors).
---8,357,821 rows r9h04m 
---6,127,978 rows 8h59m.  I believe reduced size due to switch to fiscal_quarter_YTD
+--12,984.995 rows, 11h30m
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 EXEC	Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength
