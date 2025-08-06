@@ -486,6 +486,7 @@ SET NOCOUNT ON;
 --6h39m 11,007,974 post UEI implementation.
 --5h11m 11,343,896 more vendor classifications and 
 --7h46m 11,391,836 after more labeling.
+--11h52m 12m527m536 2025-08-06
 EXEC	budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS
 		@Customer = NULL
 		
