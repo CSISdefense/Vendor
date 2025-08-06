@@ -105,10 +105,10 @@ def_lc<-prepare_labels_and_colors(def_data, path=file.path(local_path,"style\\")
     
     write.csv(def_data_cat$unaggregated_def,file=file.path("docs","catalog","unaggregated_def.csv"),row.names = FALSE)
 
-    # load(file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
-# sample_def_fpds<-def_data[sample(nrow(def_data),size=10000),]
-# save(sample_def_fpds,file=file.path("output","sample10k_def_data.rda"))
-# write_delim(sample_def_fpds,file=file.path("output","sample10k_def_data.txt"),delim="\t")
+load(file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
+sample_def_fpds<-def_data[sample(nrow(def_data),size=1000),]
+save(sample_def_fpds,file=file.path("output","sample10k_def_data.rda"))
+write_delim(sample_def_fpds,file=file.path("output","sample10k_def_data.csv"),delim=",")
 
 
 #Plat PSC International ############
