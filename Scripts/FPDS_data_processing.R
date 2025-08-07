@@ -69,12 +69,6 @@ initial_clean<-function(df,only_defense=TRUE){
   fed_datacat<-catalog("analysis/FPDS_chart_maker/", engines$rda,pattern="*FPDS*")
   write.csv(fed_datacat$unaggregated_FPDS,file=file.path("docs","catalog","unaggregated_FPDS.csv"),row.names=FALSE)
   
-   
-  
-  if(all(is.na(def_data[nrow(def_data),]))){
-    def_data<-def_data[1:nrow(def_data)-1,]
-    warning("Echo row dropped")
-  }
 
 ##Defense Data##########
 def_data<-initial_clean(fed_data,only_defense=TRUE)
