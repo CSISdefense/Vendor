@@ -106,8 +106,10 @@ save(sample_def_fpds,file=file.path("output","sample10k_def_data.rda"))
 write_delim(sample_def_fpds,file=file.path("output","sample10k_def_data.csv"),delim=",")
 def_data$
 def_simple<-def_data %>% filter(Fiscal_Year>=2000)%>%
-  group_by(Fiscal_Year,dFYear,PlatformPortfolio,CompetitionClassification)%>%
-  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
+  group_by(Fiscal_Year,dFYear,PlatformPortfolio,CompetitionClassification,Competition.multisum,
+           SubCustomer.JPO)%>%
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
+            Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
 write_delim(def_simple,file=file.path("output","simple_def_data.csv"),delim=",")
 #Dates: dFYear
 
