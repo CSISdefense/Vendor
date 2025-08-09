@@ -100,10 +100,19 @@ def_lc<-prepare_labels_and_colors(def_data, path=file.path(local_path,"style\\")
     write.csv(def_data_cat$unaggregated_def,file=file.path("docs","catalog","unaggregated_def.csv"),row.names = FALSE)
 
 load(file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
+write_delim(def_data,file=file.path("output","def_data.csv"),delim=",")
 sample_def_fpds<-def_data[sample(nrow(def_data),size=1000),]
 save(sample_def_fpds,file=file.path("output","sample10k_def_data.rda"))
 write_delim(sample_def_fpds,file=file.path("output","sample10k_def_data.csv"),delim=",")
+def_data$
+def_simple<-def_data %>% filter(Fiscal_Year>=2000)%>%
+  group_by(Fiscal_Year,dFYear,PlatformPortfolio,CompetitionClassification)%>%
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
+write_delim(def_simple,file=file.path("output","simple_def_data.csv"),delim=",")
+#Dates: dFYear
 
+#Null Values: "Empty strings "",NULL, NA
+#null values not "None"
 
 #Plat PSC International ############
 platpscintl<-read_delim(file.path("data","semi_clean","Federal_Location.SP_ProdServPlatformAgencyPlaceOriginVendor.txt"),delim="\t",na=c("NULL","NA"),
