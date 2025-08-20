@@ -1020,7 +1020,7 @@ log_plot(plot=ToplinePricing+theme(plot.margin = margin(t=0,r=0.25,b=0.1,l=0.1,"
 ```
 
 
-### Pricing UCA History
+### Pricing UCA
 ```{r ToplinePricing}
 if(!exists("pricing"))
   load(file="../data/clean/pricing_latest.Rda")
@@ -1033,15 +1033,15 @@ hist_lc<-prepare_labels_and_colors(pricing %>% select(-ContractingOfficeName,-Pr
 hist_ck<-get_column_key(pricing)#,path=local_path
 # pricing$Fiscal_YQ<-pricing$Fiscal_Year
 # pricing$YTD<-"Full Year"
-PricingUpdate<-rbind(pricing[pricing$Fiscal_Year>2022,colnames(pricing) %in% colnames(def_data)],
-                     def_data[def_data$Fiscal_Year<=2022,
+PricingUpdate<-rbind(pricing[pricing$Fiscal_Year>=2000,colnames(pricing) %in% colnames(def_data)],
+                     def_data[def_data$Fiscal_Year<2000,
                               colnames(def_data) %in% colnames(pricing)]
                      )
 
 
 (
 ToplinePricing<-build_plot(
-  data=PricingUpdate %>% filter(Fiscal_Year>=2000 & Fiscal_Year<2025),
+  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2025.2),
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=def_lc,
@@ -1054,7 +1054,7 @@ ToplinePricing<-build_plot(
   format=TRUE,
   ytextposition=FALSE,
   # alpha_var="YTD",
-)+date_x_year_breaks(2000,2024,6)+#,partial_year=2024,partial_label="\nQ1")
+)+date_x_year_breaks(2000,2023,6,partial_year=2024,partial_label="\nQ1-Q2")+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
  #    scale_y_continuous("Percent of Obligations", labels = scales::percent_format(accuracy=1))+
@@ -1065,7 +1065,7 @@ ToplinePricing<-build_plot(
   # color="Competition")+
   theme(legend.position = "bottom")+facet_wrap(~PricingUCA.sum,nrow=1)+
   labs(y="Obligations\n(Constant 2023 $s)",
-       title="DOD Contract Obligations by Pricing Mechanism, FY 2000–FY 2024",
+       title="DOD Contract Obligations by Pricing Mechanism, FY 2000–FY 2025 Q2",
        caption="Note: CB=Cost-Based, FFP=Firm Fixed Price, FP=Fixed-Price, FPLOE=Fixed-Price Level-of-Effort,\nLH=Labor Hours,T&M=Time & Materials, UCA=Undefinitized Contract Award\nSource: FPDS and CSIS analysis.")
 )
 
@@ -1083,7 +1083,7 @@ ToplinePricing<-build_plot(
 
 (
 PricingHistory<-build_plot(
-  data=PricingUpdate %>% filter(Fiscal_Year < 2025 & Fiscal_Year>=2000),
+  data=def_data %>% filter(Fiscal_YQ <= 2025.2 & Fiscal_Year>=2000),
   chart_geom = "Line Chart",
   share = TRUE,
   labels_and_colors=hist_lc,
@@ -1106,7 +1106,7 @@ PricingHistory<-build_plot(
   # color="Competition")+
   theme(legend.position = "right",
         plot.caption = element_text(hjust = 0,face="plain"))+
-    date_x_year_breaks(2000,2024,6)+#,partial_year=2024,partial_label="\nQ1")
+    date_x_year_breaks(2000,2023,6,partial_year=2024,partial_label="\nQ1-Q2")+
     # xlim(c(as.Date("1979-01-01"), as.Date("2023-12-30")))+
     # coord_cartesian(xlim = c(as.Date("1980-01-01"), as.Date("2022-01-01"))
   labs(y="Share of Obligations",caption="Source: Federal Procurement Data System (FPDS) and CSIS analysis.")
@@ -1122,9 +1122,9 @@ PricingHistory<-build_plot(
                width=12, height= 5.5, units="in",size=, lineheight=1.2
                )
 
-log_plot(plot=PricingHistory, df=PricingUpdate  %>% filter(Fiscal_Year<2025&Fiscal_Year>=2000),
-                     filename="acq_fig8_2_pricing_uca",xlsx="DoD_Acq_Trends_Contracts.xlsx",
-                     sheet="8-2 PriceUCA",path="../output/AcqTrends/", height=3.5,
+log_plot(plot=PricingHistory, df=def_data  %>% filter(Fiscal_YQ<=2025.2 & Fiscal_Year>=2000), 
+                     filename="acq_fig8_2_pricing_uca",xlsx="DoD_2025_NPS.xlsx",
+                     sheet="8-2 PriceUCA",path="../output/AcqTrends/NPS2025/", height=3.5,
                      format=TRUE,#,var_list=c("PricingInflation",
          excel_y_var =TRUE,
          excel_share =TRUE
@@ -1166,7 +1166,7 @@ ToplinePricing<-build_plot(
   format=TRUE,
   ytextposition=FALSE,
   # alpha_var="YTD",
-)+date_x_year_breaks(2000,2024,6)+#,partial_year=2024,partial_label="\nQ1")
+)+date_x_year_breaks(2000,2023,6,partial_year=2024,partial_label="\nQ1-Q2")+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
  #    scale_y_continuous("Percent of Obligations", labels = scales::percent_format(accuracy=1))+
@@ -1177,7 +1177,7 @@ ToplinePricing<-build_plot(
   # color="Competition")+
   theme(legend.position = "bottom")+facet_wrap(~PricingUCA.sum,nrow=1)+
   labs(y="Obligations\n(Constant 2023 $s)",
-       title="DOD R&D Contract Obligations by Pricing Mechanism, FY 2000–FY 2024",
+       title="DOD R&D Contract Obligations by Pricing Mechanism, FY 2000–FY 2025 Q2",
        caption="Note: CB=Cost-Based, FFP=Firm Fixed Price, FP=Fixed-Price, FPLOE=Fixed-Price Level-of-Effort,\nLH=Labor Hours,T&M=Time & Materials, UCA=Undefinitized Contract Award\nSource: FPDS and CSIS analysis.")
 )
 
@@ -1218,7 +1218,7 @@ PricingHistory<-build_plot(
   # color="Competition")+
   theme(legend.position = "right",
         plot.caption = element_text(hjust = 0,face="plain"))+
-    date_x_year_breaks(2000,2024,6)+#,partial_year=2024,partial_label="\nQ1")
+    date_x_year_breaks(2000,2023,6,partial_year=2024,partial_label="\nQ1-Q2")+
     # xlim(c(as.Date("1979-01-01"), as.Date("2023-12-30")))+
     # coord_cartesian(xlim = c(as.Date("1980-01-01"), as.Date("2022-01-01"))
   labs(y="Share of Obligations",caption="Source: Federal Procurement Data System (FPDS) and CSIS analysis.")
@@ -2223,7 +2223,7 @@ OTAPSR<-build_plot(
   theme(legend.position = "right")+
   labs(y="Obligations (Constant 2023 $s)",
        caption="Note: Unlabeled contract product, service, and R&D areas\nas well as unlabeled OTA agreement types not shown.\nSource: FPDS and CSIS analysis.",
-       title="Defense Contract Obligations by Product, Service, and R&D and\nOTA Obligations by Agreement Type, FY 2015–FY 2024")+facet_wrap(~SimpleAreaType, nrow=1)+
+       title="Defense Contract Obligations by Product, Service, and R&D and\nOTA Obligations by Agreement Type, FY 2015–FY 2025 Q2")+facet_wrap(~SimpleAreaType, nrow=1)+
   date_x_year_breaks(2015,2024,3)#,partial_year=2024,partial_label="\nQ1",)
 )
 
@@ -3104,7 +3104,9 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_subcustomer.svg", 
              width=6.5, height= 4, units="in",size=11,lineheight = 1.2
              )
 
-log_plot(plot=SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1), df=def_data %>% filter(Fiscal_YQ<=2025.2),
+log_plot(plot=SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1)+
+           date_x_year_breaks(1990,2014,8,partial_year=2025,partial_label="\nQ1-Q2"),
+         df=def_data %>% filter(Fiscal_YQ<=2025.2),
                      filename="nps_fig04_component",xlsx="DoD_2025_NPS.xlsx",
                      sheet="4 Cust",path="../output/AcqTrends/NPS2025/",second_path=online_path,
          height=3,include_YTD=FALSE,suppress_doc_svg_text="title",
@@ -4849,7 +4851,7 @@ ToplineVendor_line<-build_plot(
   ytextposition=FALSE,
   share=TRUE#,
   # first_color_on_bottom = TRUE
-)+date_x_year_breaks(1990,2025,5,partial_year=2025,partial_label="\nQ1-Q2")+
+)+date_x_year_breaks(1990,2014,8,partial_year=2025,partial_label="\nQ1-Q2")+
     
   theme(legend.position = "right")+
   labs(y="Obligations (Constant 2023 $s)",caption="Source: FPDS and CSIS analysis.\nNote: The merger of Raytheon and United Technologies took place in April of 2020\n and thus did not make the cutofff for inclusion in FY2020.")
