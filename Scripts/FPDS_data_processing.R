@@ -104,7 +104,7 @@ write_delim(def_data,file=file.path("output","def_data.csv"),delim=",")
 sample_def_fpds<-def_data[sample(nrow(def_data),size=1000),]
 save(sample_def_fpds,file=file.path("output","sample10k_def_data.rda"))
 write_delim(sample_def_fpds,file=file.path("output","sample10k_def_data.csv"),delim=",")
-def_data$
+
 def_simple<-def_data %>% filter(Fiscal_Year>=2000)%>%
   group_by(Fiscal_Year,dFYear,PlatformPortfolio,CompetitionClassification,Competition.multisum,
            SubCustomer.JPO)%>%
@@ -510,6 +510,7 @@ save(pricing,pricing_lc,pricing_ck, file="data/clean/pricing_historical.Rda")
 ruh<-read_delim(file.path("data","semi_clean","Vendor.RecipientUEIpartial.txt"),delim="\t",
                 na=c("NULL",""))
 ruh<-apply_standard_lookups(ruh)
+ruh$YTD<-factor(ifelse(ruh$Fiscal_Year==max(ruh$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
 
 ruh<-deflate(ruh,money_var="DefenseObligated")
 
@@ -517,6 +518,8 @@ ruh<-deflate(ruh,money_var="DefenseObligated")
 rpuh<-read_delim(file.path("data","semi_clean","Vendor.Parent_UEIhistory.txt"),delim="\t",
                 na=c("NULL",""))
 rpuh<-apply_standard_lookups(rpuh)
+rpuh$YTD<-factor(ifelse(rpuh$Fiscal_Year==max(rpuh$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
+
 
 rpuh<-deflate(rpuh,money_var="DefenseObligated")
 
@@ -588,7 +591,53 @@ def_rpuh <- def_rpuh %>%
 rpuh_lc<-prepare_labels_and_colors(def_rpuh,path="Offline")  
 rpuh_ck<-get_column_key(def_rpuh,path="Offline")
 
+
+list.files(file.path("data","Semi_clean"))
+cas<-read_delim(file.path("data","Semi_clean","CAUcostAccountingChecking.txt"),na=c("NULL",""))
+
+cas<-apply_standard_lookups(cas)
+cas <- cas %>%
+  mutate(
+    # AlwaysIsSmallLabel= case_when(
+    # AlwaysIsSmall==1 ~ "Consistently Small Vendor",
+    # AlwaysIsSmall==0 ~ "Variably Small or Larger Vendor"),
+    IsEntityTraditionalLabel= case_when(
+      IsEntityTraditional==1 | is.na(IsEntityTraditional) | 
+        IsEntityTraditional=="Unlabeled"~ "Traditional\nDOD Contractor",
+      IsEntityTraditional==0 ~ "Non-Traditional\nDOD Contractor"),
+    ntdc_label=case_when(
+      AlwaysIsSmall==1 | IsEntityAbove2018constantCommercialItem7500k==0
+      ~ "Consistently Small or\nLargest Contract\nUnder $7.5 M",
+      TRUE ~ "Variably Small / Larger\nand Largest Contract\nOver $7.5 M"),
+    cas_label=case_when(
+      CostAccountingStandardsClause=="Y"~"Cost Accounting Standards Labeled",
+      CostAccountingStandardsClause=="N"~"Waived",
+      IsCommercialitemacquisitionprocedures==1~"Commercial",
+      IsSealedBid==1 | (costorpricingdata %in% c("W","N") &
+                          FixedPriceEffective==1) ~ "Competition",
+      IsAbove2018constantCostAccounting2000kThreshold==0~"Contract Size",
+      # IsForeignGovernment==1~"Foreign Government",
+      isforeigngovernment==1~"Other Exemption",
+      IsAbove2018constantCommercialItem7500k==0 | 
+        AlwaysIsSmall==1~"Vendor Size or Largest Contract",
+      CostAccountingStandardsClause=="X"~"Unidentified Exemption",
+      # CostAccountingStandardsClause=="Y"~"Cost Accounting Standards (Labeled)")
+      TRUE~"Cost Accounting Standards Imputed")
+    # LargestContract2018dollars=case_when(
+    #   IsEntityAbove2018constantCommercialItem7500k==1 ~ "[$7.5 M+]",
+    #   IsEntityAbove2018constantCostAccounting2000kThreshold==1 ~ "[$2.0 M - $7.5M)",
+    #   IsEntityAbove2018constantSimplifedAcquisition250kThreshold==1 ~ "[$250k K - $2.0 M)",
+    #   IsEntityAbove2018constantMTAthreshold==1 ~ "[$10 K - $250 K)",
+    #   IsEntityAbove2018constantMTAthreshold==0 ~ "[0 K - $10 K)"
+    # )
+  )
+cas$YTD<-factor(ifelse(cas$Fiscal_Year==max(cas$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
+
+cas_lc<-prepare_labels_and_colors(cas,path="offline")
+cas_ck<-get_column_key(cas,path="offline")
+
   summary(factor(def_rpuh$IsEntityTraditional))
-  save(ruh,rpuh,def_rpuh,rpuh_lc,rpuh_ck,file=file.path("data","clean","RecipientUEI.rda"))
+  save(ruh,rpuh,def_rpuh,rpuh_lc,rpuh_ck,
+       cas,cas_lc,cas_ck,file=file.path("data","clean","RecipientUEI.rda"))
 
 
