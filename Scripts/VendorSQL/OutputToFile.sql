@@ -446,6 +446,7 @@ EXEC	Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength
 
 SET QUERY_GOVERNOR_COST_LIMIT 0
 --12,984.995 rows, 11h30m
+--13,003,225 rows, 11u10m
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 EXEC	Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength
@@ -527,10 +528,11 @@ EXEC	@return_value = [Contract].[SP_ContractDefenseSubCustomer]
 
 
 
-
+set query_governor_cost_limit 0
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 --0h56m
+--4h12m 2,038,381 rows
 DECLARE	@return_value int
 
 EXEC	@return_value = [Vendor].[SP_EntityIDhistory]
@@ -893,6 +895,7 @@ EXEC
 
 --SELECT	'Return Value' = @return_value
 --1,122,215
+--2025-08-16 38s 3,212,907 rows more than double!
 --38s
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
@@ -943,7 +946,7 @@ SET NOCOUNT ON;
    where IsPresent=1
 
 
-   
+--2025-08-16 33s 3,430,296
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
    SELECT  [Parent_UEI]
@@ -970,9 +973,10 @@ SET NOCOUNT ON;
       ,[IsEntityTraditional]
   FROM [Vendor].[Parent_UEIhistory]
 
-
+  --CAUcostAccountingChecking.txt
   --18m13s
   --16m30s after changing over to a new parent rollup approach.
+  --8m46  38,074 rows. 
   SET QUERY_GOVERNOR_COST_LIMIT 0
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
@@ -1084,3 +1088,4 @@ on cau.AgencyID=a.AgencyID
 --where fiscal_year>=2013
 group by coalesce(pcau.parent_contract_award_unique_key,cau.parent_contract_award_unique_key, f.contract_award_unique_key)
 order by count(contract_transaction_unique_key) desc
+
