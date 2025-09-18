@@ -104,8 +104,11 @@ load(file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
 write_delim(def_data,file=file.path("output","def_data.csv"),delim=",")
 
 def_simple<-def_data %>% filter(Fiscal_Year>=2000)%>%
-  group_by(Fiscal_Year,dFYear,SimpleArea,PlatformPortfolio,CompetitionClassification,Competition.multisum,
-           SubCustomer.JPO,SubCustomer.sum,PricingUCA,PricingUCA.sum,VendorSize,multiyearcontract)%>%
+  group_by(Fiscal_Year,dFYear,PlatformPortfolio,
+           CompetitionClassification,Competition.multisum,
+           SubCustomer.JPO,SubCustomer.sum,
+           PricingUCA,PricingUCA.sum,
+           VendorSize,SimpleArea)%>%
   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
             Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
 write_delim(def_simple,file=file.path("output","simple_def_data.csv"),delim=",")

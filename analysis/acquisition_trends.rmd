@@ -1052,8 +1052,7 @@ ToplinePricing<-build_plot(
   facet_var="PricingUCA.sum", #facet_var
   column_key=def_ck,
   format=TRUE,
-  ytextposition=FALSE,
-  # alpha_var="YTD",
+  ytextposition=FALSE
 )+date_x_year_breaks(2000,2023,6,partial_year=2025,partial_label="\nQ1-Q2")+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
@@ -1082,7 +1081,7 @@ ToplinePricing<-build_plot(
 
 
 (
-PricingHistory<-build_plot(
+ToplinePricingLine<-build_plot(
   data=def_data %>% filter(Fiscal_YQ <= 2025.2 & Fiscal_Year>=2000),
   chart_geom = "Line Chart",
   share = TRUE,
@@ -1106,7 +1105,7 @@ PricingHistory<-build_plot(
   # color="Competition")+
   theme(legend.position = "right",
         plot.caption = element_text(hjust = 0,face="plain"))+
-    date_x_year_breaks(2000,2023,6,partial_year=2025,partial_label="\nQ1-Q2")+
+    date_x_year_breaks(2000,2023,5,partial_year=2025,partial_label="\nQ1-Q2")+
     # xlim(c(as.Date("1979-01-01"), as.Date("2023-12-30")))+
     # coord_cartesian(xlim = c(as.Date("1980-01-01"), as.Date("2022-01-01"))
   labs(y="Share of Obligations",caption="Source: Federal Procurement Data System (FPDS) and CSIS analysis.")
@@ -1122,12 +1121,13 @@ PricingHistory<-build_plot(
                width=12, height= 5.5, units="in",size=, lineheight=1.2
                )
 
-log_plot(plot=PricingHistory, df=def_data  %>% filter(Fiscal_YQ<=2025.2 & Fiscal_Year>=2000), 
+log_plot(plot=ToplinePricing, df=def_data  %>% filter(Fiscal_YQ<=2025.2 & Fiscal_Year>=2000), 
                      filename="acq_fig8_2_pricing_uca",xlsx="DoD_2025_NPS.xlsx",
                      sheet="8-2 PriceUCA",path="../output/AcqTrends/NPS2025/", height=3.5,
                      format=TRUE,#,var_list=c("PricingInflation",
          excel_y_var =TRUE,
-         excel_share =TRUE
+         excel_share =TRUE,
+         output_slide_png=TRUE
          )
 
 
@@ -1165,7 +1165,7 @@ ToplinePricing<-build_plot(
   column_key=def_ck,
   format=TRUE,
   ytextposition=FALSE,
-  # alpha_var="YTD",
+  alpha_var="YTD",
 )+date_x_year_breaks(2000,2023,6,partial_year=2025,partial_label="\nQ1-Q2")+
   # theme(strip.text.y = element_text(angle=0))+
  # theme(axis.text.x = element_text(angle=90))+
@@ -2166,7 +2166,7 @@ ToplinePSR<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
-  # alpha_var="YTD",
+  alpha_var="YTD",
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="SimpleArea", #color_var
   # facet_var="Competition.sum", #facet_var
@@ -2177,7 +2177,7 @@ ToplinePSR<-build_plot(
   theme(legend.position = "right")+
   labs(y="Obligations (Constant 2023 $s)",
        caption="Note: Unlabeled product, service, and R&D areas not shown.\nSource: FPDS and CSIS analysis.")+
-  date_x_year_breaks(1990,2020,5)#,partial_year=2024,partial_label="\nQ1",)
+  date_x_year_breaks(1990,2020,5,partial_year=2025,partial_label="\nQ1-Q2",)
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_psr.png", ToplinePSR, 
@@ -2205,14 +2205,14 @@ if(!exists("def_kota"))
 
 (
 OTAPSR<-build_plot(
-  data=def_kota %>% filter(Fiscal_Year>=2015 & Fiscal_YQ<2025 &
+  data=def_kota %>% filter(Fiscal_Year>=2015 & Fiscal_YQ<=2025.2 &
                                  !is.na(AreaType) & AreaType!="Unlabeled") ,
   chart_geom = "Bar Chart",
   share = FALSE,
   labels_and_colors=kota_lc,
   # NA, #VAR.ncol
   x_var="dFYear", #x_var
-  # alpha_var="YTD",
+  alpha_var="YTD",
   y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
   color_var="AreaType", #color_var
   facet_var="SimpleAreaType", #facet_var
@@ -2236,17 +2236,8 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="OTA_psr.svg", OTAPSR,
              )
 
 log_plot(plot=OTAPSR, df=def_kota %>% filter(Fiscal_YQ<=2025.2),
-                     filename="acq_fig3_1a_kota_areatype",xlsx="DoD_Acq_Trends_Contracts.xlsx",
-                     sheet="3-1a KOta",path="../output/AcqTrends/", height=3.5,
-                     startRow=1,startCol=12,format=TRUE,#var_list=c("SimpleArea","Competition.multisum"),
-         excel_y_var = TRUE,excel_formulas = TRUE
-         )
-
-
-
-log_plot(plot=OTAPSR, df=def_kota %>% filter(Fiscal_YQ<=2025.2),
                      filename="nps_fig02_kota_areatype",xlsx="DoD_2025_Prelim.xlsx",
-                     sheet="2 KOta",path="../output/AcqTrends/Prelim2025/",second_path=online_path,
+                     sheet="2 KOta",path="../output/AcqTrends/NPS2025/",#second_path=online_path,
          height=3,include_YTD=FALSE,output_slide_png=TRUE,suppress_doc_svg_text = "title",
                      startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
          output_doc_svg=TRUE
@@ -2901,7 +2892,7 @@ PSRComp_bar<-build_plot(
   labs(x="Fiscal Year",
        y="Obligations (Constant 2023 $s)",
        title="DOD Contract Obligations by Extent of Competition, FY 1991–FY 2025 Q2")+
-    date_x_year_breaks(1993,2023,by=6,partial_year=2025,partial_label="\nQ1-Q2")
+    date_x_year_breaks(1991,2023,by=6,partial_year=2025,partial_label="\nQ1-Q2")
 )
 
 
@@ -2922,7 +2913,7 @@ PSRComp_line<-build_plot(
 )+
   theme(legend.position = "bottom")+
   labs(x="Fiscal Year",y="Share of Obligations")+
-    date_x_year_breaks(1993,2023,by=6,partial_year=2025,partial_label="\nQ1-Q2")
+    date_x_year_breaks(1991,2023,by=6,partial_year=2025,partial_label="\nQ1-Q2")
 )
 
 ggsave600dpi(path="..//Output//AcqTrends//",filename="PSRComp_line.png", PSRComp_line, 
@@ -2937,7 +2928,7 @@ ggsave("..//Output//AcqTrends//PSRComp_both.svg",
              width=6.5, height= 5, units="in"
 )
 
-ggsave("..//Output//AcqTrends//PSRComp_both_keynote.png", 
+ggsave("..//Output//AcqTrends//NPS2025//PSRComp_both_keynote.png", 
              gridExtra::grid.arrange(
                PSRComp_bar+labs(
                   y="Obligations\n(Const. 2023 $s)",
@@ -2948,7 +2939,7 @@ ggsave("..//Output//AcqTrends//PSRComp_both_keynote.png",
              width=13, height= 5.5, units="in" #, size=20, lineheight = 0.75
              )
 
-ggsave("..//Output//AcqTrends//acq_fig6_6_PSR_competition.svg", 
+ggsave("..//Output//AcqTrends//NPS2025//acq_fig6_6_PSR_competition.svg", 
              gridExtra::grid.arrange(
                PSRComp_bar+labs(
                  title=NULL,
@@ -2961,7 +2952,22 @@ ggsave("..//Output//AcqTrends//acq_fig6_6_PSR_competition.svg",
              width=6.5, height= 4.5, units="in" #, size=20, lineheight = 0.75
              )
 
+# 
+# ggsave(file.path(online_path,"acq_fig6_6_PSR_competition_slide.png"), 
+#              gridExtra::grid.arrange(
+#                PSRComp_bar+labs(
+#                   y="Obligations\n(Constant 2023 $s)",
+#                caption = NULL,x=NULL)+theme(legend.position = "none",text=element_text(size=12),
+#                                             plot.margin = margin(t=0,b=0,l=0.1,r=0.5,unit="inches")),
+#                PSRComp_line+labs(y="Share of\nObligations",caption=NULL)+theme(text=element_text(size=20),
+#                plot.caption = element_text(size=round(20 * 5/6,0)),
+#                                            plot.margin = margin(t=0,b=0,l=0.1,r=0.5,unit="inches"))),
+#              width=13, height= 5.5, units="in" #, size=20, lineheight = 0.75
+#              )
 
+log_plot(plot=PSRComp_bar, df=def_data  %>% filter(Fiscal_YQ<=2025.2),
+                     filename="acq_fig6_6_PSR_competition",xlsx="DoD_2025_NPS.xlsx",
+                     sheet="6-6 PSRcomp",path="../output/AcqTrends/NPS2025", height=3.5,
 ggsave(file.path(online_path,"acq_fig6_6_PSR_competition_slide.png"), 
              gridExtra::grid.arrange(
                PSRComp_bar+labs(
@@ -2979,7 +2985,7 @@ log_plot(plot=PSRComp_bar, df=def_data  %>% filter(Fiscal_YQ<=2025.2),
                      sheet="6-6 PSRcomp",path="../output/AcqTrends/", height=3.5,
                      startRow=1,startCol=13,format=TRUE,var_list=c("SimpleArea","Competition.multisum"),
          output_doc_svg=FALSE,excel_y_var = TRUE, excel_formulas = TRUE, excel_share = TRUE,
-         include_YTD=FALSE,second_path = online_path
+         include_YTD=FALSE#,second_path = online_path
          )
 ```
 ## PSR Multi-Year
@@ -3591,16 +3597,10 @@ Platform<-build_plot(
   facet_var="PlatformPortfolio", #facet_var
   column_key=def_ck,
   format=TRUE,
-  ytextposition=FALSE
+  ytextposition=FALSE,
+  hide_unlabeled =TRUE
 )+date_x_year_breaks(1990,2020,8,partial_year=2025,partial_label="\nQ1-Q2") +  
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = scales::percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
+      facet_wrap(.~PlatformPortfolio ,nrow=2)+
   theme(legend.position = "none")+
   labs(y="Obligations (Constant 2023 $s)",
        title="DOD Contract Obligations by Platform Portfolio, FY 1990-FY 2025 Q2")
@@ -3633,8 +3633,10 @@ Platform_Bar<-build_plot(
   facet_var="PlatformPortfolio", #facet_var
   column_key=def_ck,
   format=TRUE,
-  ytextposition=FALSE
+  ytextposition=FALSE,
+  hide_unlabeled =TRUE
 )+date_x_year_breaks(1990,2020,8,partial_year=2025,partial_label="\nQ1-Q2") +  
+    facet_wrap(.~PlatformPortfolio ,nrow=2)+
   theme(legend.position = "none")+
   labs(y="Obligations (Constant 2023 $s)",
        title="DOD Contract Obligations by Platform Portfolio, FY 1990-FY 2025 Q2")
@@ -3653,17 +3655,9 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_platform_bar_keyno
              width=13, height= 5.5, units="in", size=20, lineheight = 0.75
              )
 
-
-log_plot(plot=Platform_Bar+theme(plot.margin = margin(t=0,r=0.25,b=0.1,l=0.1,"inches")), df=def_data   %>% filter(Fiscal_YQ<=2025.2),
-                     filename="acq_fig3_2_platform",xlsx="DoD_Acq_Trends_Contracts.xlsx",
-                     sheet="3-2 Plat",path="../output/AcqTrends/", height=3.5,
-                     startRow=1,startCol=12,format=TRUE#var_list=c("Source","fiscal_quarter"),
-         )
-
-
 log_plot(plot=Platform_Bar+theme(plot.margin = margin(t=0,r=0.25,b=0.1,l=0.1,"inches")), df=def_data   %>% filter(Fiscal_YQ<=2025.2),
                      filename="nps_fig03_platform",xlsx="DoD_2025_NPS.xlsx",
-                     sheet="3 Plat",path="../output/AcqTrends/NPS2025/",second_path=online_path,
+                     sheet="3 Plat",path="../output/AcqTrends/NPS2025/",#second_path=online_path,
          height=3.5,include_YTD=FALSE,suppress_doc_svg_text="title",output_slide_png=TRUE,
                      startRow=1,format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
          output_doc_svg=TRUE
@@ -4587,7 +4581,7 @@ PlatformMultiYearShare<-build_plot(
   labels_and_colors=def_lc,
   # NA, #VAR.ncol
   x_var="dFYear",
-  # alpha_var="YTD", #x_var
+  alpha_var="YTD", #x_var
   y_var="pPlatFYear", #VAR.y.variable
   # color_var="multiyearcontracttext", #color_var
   facet_var="PlatformPortfolio",
