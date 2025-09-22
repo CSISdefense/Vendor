@@ -397,7 +397,6 @@ summarize(obl=sum(Action_Obligation_OMB25_GDP23)) %>% arrange(-obl) #Greg left t
 
 ships_lc<-csis360::prepare_labels_and_colors(shipdef)
 ships_ck<-csis360::get_column_key(shipdef)
-load(file="data/clean/Defense_Ship_FPDS.Rda")
 save(shipdef,ships_lc, ships_ck,file="data/clean/Defense_Ship_FPDS.Rda")
 
 datacat<-catalog("data/clean/", engines$rda,pattern="Defense_Ship_FPDS.Rda")
@@ -406,42 +405,20 @@ write.csv(datacat$Defense_Ship_FPDS,file=file.path("docs","catalog","Defense_Shi
 
 
 ###Ordnance Missiles, and AMD ####
-munitiondef<-read_delim(file.path("data","semi_clean","Defense_ProductOrServiceCode_SP_Defense_ProductOrServiceCode_SP_OrdnanceMissilesAirAndMissileDefenseDetail.txt"),delim="\t",na=c("NULL","NA"),
+munitiondef<-read_delim(file.path("data","semi_clean","Defense_ProductOrServiceCode_SP_OrdnanceMissilesAirAndMissileDefenseDetail.txt"),delim="\t",na=c("NULL","NA"),
                     col_names = TRUE, guess_max = 10000000)
-munitiondef<-munitiondef %>% filter(PlatformPortfolio == "Ordnance and Missiles", "Missile Defense")
+munitiondef<-munitiondef %>% filter(PlatformPortfolio %in% c("Ordnance and Missiles", "Missile Defense"))
 nrow(munitiondef)
 
 munitiondef<-apply_standard_lookups(munitiondef)
 
-munitiondef<-read_and_join_experiment(munitiondef,
-                                  "ProductOrServiceCodes.csv",
-                                  by=c("ProductOrServiceCode"="ProductOrServiceCode"),
-                                  path="offline",
-                                  add_var=c("ShipCategory"),
-                                  skip_check_var = c("ShipCategory"),
-                                  directory=""
-)
-
-
-
-munitiondef <- munitiondef %>%
-  mutate(ShipCategory = ifelse(SimpleArea == "Products" & (is.na(ShipCategory)
-                                                           | ShipCategory == ""), "Other Products", ShipCategory))
-munitiondef <- munitiondef %>%
-  mutate(ShipCategory = ifelse(SimpleArea == "Services" & (is.na(ShipCategory) 
-                                                           | ShipCategory == ""), "Other Service", ShipCategory))
-
-munitiondef %>% filter(ShipCategory == "") %>% group_by(ProductOrServiceCode,ProductOrServiceCodeText) %>%
-  summarize(obl=sum(Action_Obligation_OMB25_GDP23)) %>% arrange(-obl) #Greg left this here, HHC removing for now, replacing with below
-
 
 munition_lc<-csis360::prepare_labels_and_colors(munitiondef)
 munition_ck<-csis360::get_column_key(munitiondef)
-load(file="data/clean/Defense_Ship_FPDS.Rda")
-save(munitiondef,munition_lc, munition_ck,file="data/clean/Defense_munition_FPDS.Rda")
+save(munitiondef,munition_lc, munition_ck,file="data/clean/Defense_Munition_FPDS.Rda")
 
-datacat<-catalog("data/clean/", engines$rda,pattern="Defense_Ship_FPDS.Rda")
-write.csv(datacat$Defense_Ship_FPDS,file=file.path("docs","catalog","Defense_Ship_FPDS.csv"),row.names=FALSE)
+datacat<-catalog("data/clean/", engines$rda,pattern="Defense_Munition_FPDS.Rda")
+write.csv(datacat$Defense_munition_FPDS,file=file.path("docs","catalog","Defense_Munition_FPDS.csv"),row.names=FALSE)
 
 
 
