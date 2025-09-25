@@ -513,7 +513,7 @@ SET NOCOUNT ON;
 --7h46m 11,391,836 after more labeling.
 --11h52m 12m527m536 2025-08-06
 --12h15m 12,622,208 2025-09-11
---12h19m 14,029,369 2025-09-19
+--12h19m 14,029,369 2025-09-19 adding contract size
 EXEC	budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS
 		@Customer = NULL
 		

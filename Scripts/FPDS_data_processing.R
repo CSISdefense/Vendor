@@ -416,7 +416,7 @@ munitiondef<-apply_standard_lookups(munitiondef)
 munition_lc<-csis360::prepare_labels_and_colors(munitiondef)
 munition_ck<-csis360::get_column_key(munitiondef)
 save(munitiondef,munition_lc, munition_ck,file="data/clean/Defense_Munition_FPDS.Rda")
-
+write.csv(munitiondef,file="data/clean/Defense_Munition_FPDS.txt",row.names=FALSE,na = "N/A")
 datacat<-catalog("data/clean/", engines$rda,pattern="Defense_Munition_FPDS.Rda")
 write.csv(datacat$Defense_munition_FPDS,file=file.path("docs","catalog","Defense_Munition_FPDS.csv"),row.names=FALSE)
 
