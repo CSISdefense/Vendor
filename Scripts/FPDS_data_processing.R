@@ -366,14 +366,14 @@ openxlsx::saveWorkbook(wb,file=(file.path(path,xlsx)),overwrite = TRUE)
 
 
 ###Ship and Submarines ####
-shipdef<-read_delim(file.path("data","semi_clean","Defense_ProductOrServiceCode_SP_ShipsAndSubmarinesDetail.txt"),delim="\t",na=c("NULL","NA"),
+maritimedef<-read_delim(file.path("data","semi_clean","Defense_ProductOrServiceCode_SP_ShipsAndSubmarinesDetail.txt"),delim="\t",na=c("NULL","NA"),
                         col_names = TRUE, guess_max = 10000000)
-shipdef<-shipdef %>% filter(PlatformPortfolio == "Ships & Submarines")
-nrow(shipdef)
+maritimedef<-maritimedef %>% filter(PlatformPortfolio == "Ships & Submarines")
+nrow(maritimedef)
 
-shipdef<-apply_standard_lookups(shipdef)
+maritimedef<-apply_standard_lookups(maritimedef)
 
-shipdef<-read_and_join_experiment(shipdef,
+maritimedef<-read_and_join_experiment(maritimedef,
                                          "ProductOrServiceCodes.csv",
                                          by=c("ProductOrServiceCode"="ProductOrServiceCode"),
                                          path="offline",
@@ -384,22 +384,24 @@ shipdef<-read_and_join_experiment(shipdef,
 
 
 
-shipdef <- shipdef %>%
+maritimedef <- maritimedef %>%
   mutate(ShipCategory = ifelse(SimpleArea == "Products" & (is.na(ShipCategory)
                                                            | ShipCategory == ""), "Other Products", ShipCategory))
-shipdef <- shipdef %>%
+maritimedef <- maritimedef %>%
   mutate(ShipCategory = ifelse(SimpleArea == "Services" & (is.na(ShipCategory) 
                                                            | ShipCategory == ""), "Other Service", ShipCategory))
 
-shipdef %>% filter(ShipCategory == "") %>% group_by(ProductOrServiceCode,ProductOrServiceCodeText) %>%
+maritimedef %>% filter(ShipCategory == "") %>% group_by(ProductOrServiceCode,ProductOrServiceCodeText) %>%
 summarize(obl=sum(Action_Obligation_OMB25_GDP23)) %>% arrange(-obl) #Greg left this here, HHC removing for now, replacing with below
 
 
-ships_lc<-csis360::prepare_labels_and_colors(shipdef)
-ships_ck<-csis360::get_column_key(shipdef)
-save(shipdef,ships_lc, ships_ck,file="data/clean/Defense_Ship_FPDS.Rda")
+maritime_lc<-csis360::prepare_labels_and_colors(maritimedef)
+maritime_ck<-csis360::get_column_key(maritimedef)
+save(maritimedef,maritime_lc, maritime_ck,file="data/clean/Defense_Maritime_FPDS.Rda")
 
-datacat<-catalog("data/clean/", engines$rda,pattern="Defense_Ship_FPDS.Rda")
+datacat<-catalog("data/clean/", engines$rda,pattern="Defense_Maritime_FPDS.Rda")
+
+write.csv(shipdef,file="data/clean/Defense_Maritime_FPDS.txt",row.names=FALSE,na = "N/A")
 write.csv(datacat$Defense_Ship_FPDS,file=file.path("docs","catalog","Defense_Ship_FPDS.csv"),row.names=FALSE)
 
 
@@ -417,6 +419,7 @@ munition_lc<-csis360::prepare_labels_and_colors(munitiondef)
 munition_ck<-csis360::get_column_key(munitiondef)
 save(munitiondef,munition_lc, munition_ck,file="data/clean/Defense_Munition_FPDS.Rda")
 write.csv(munitiondef,file="data/clean/Defense_Munition_FPDS.txt",row.names=FALSE,na = "N/A")
+
 datacat<-catalog("data/clean/", engines$rda,pattern="Defense_Munition_FPDS.Rda")
 write.csv(datacat$Defense_munition_FPDS,file=file.path("docs","catalog","Defense_Munition_FPDS.csv"),row.names=FALSE)
 

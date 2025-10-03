@@ -155,6 +155,7 @@ Exec [Location].[SP_CountryDetail]
 --Mistake due to ORing in all defense
 --With UEI, parentUEI, and entityID, ran for 24h and crashed due to tempDB size, trying w/o.
 --6h19, --9,504,214 rows
+--5h29m 1,312,476 rows
 SET QUERY_GOVERNOR_COST_LIMIT 0
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
@@ -162,8 +163,7 @@ Exec ProductOrServiceCode.SP_ShipsAndSubmarines
  	@IsDefense=1
 
 --Mistake due to ORing in all defense
---With UEI, parentUEI, and entityID, ran for 24h and crashed due to tempDB size, trying w/o.
---6h19, --9,504,214 rows
+--21h03m 327,705 rows.  Trying to include CSIScontractID led to it failing to finish.
 SET QUERY_GOVERNOR_COST_LIMIT 0
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
