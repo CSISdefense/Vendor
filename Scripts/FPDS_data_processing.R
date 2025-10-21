@@ -113,7 +113,7 @@ def_simple<-def_data %>% filter(Fiscal_Year>=2000)%>%
            VendorSize,SimpleArea)%>%
   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
             Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
-write_delim(def_simple,file=file.path("output","simple_def_data.csv"),delim=",")
+write_delim(def_simple,file=file.path("output","simple_def_data.csv"),delim=",", na="N/A")
 #Dates: dFYear
 
 #Null Values: "Empty strings "",NULL, NA
