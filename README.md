@@ -42,6 +42,9 @@ Contributors: [Gregory Sanders](https://www.csis.org/people/gregory-sanders), He
         -   RDA file: [platpscintl_FPDS.Rda](https://github.com/CSISdefense/Vendor/blob/master/Data/Clean/platpscintl_FPDS.Rda)
         -   Catalog file: [platpscintl_FPDS.csv](https://github.com/CSISdefense/Vendor/blob/master/Docs/catalog/platpscintl_FPDS.csv)
         -   Supporting variables: column key: def_ck, labels and colors: def_lc.
+-   **shipdef**: Detailed acquisition characteristic, project, product or service type, and nationality date for U.S. defense ships and submarines portfolio contract data.
+-   **munitiondef**: Detailed acquisition characteristic, project, product or service type, and nationality date for U.S. defense orndnance and missiles and air and missile defense portfolios contract data.
+-   **ota_def**: Defense OTA transaction as provided in its entirity by SAM.gov
 -   **def_kota**: Combined defense contract and defense OTA transactions for FY 2015 and later
     -   Merger: **ota_def** and **def_data** keeping overlapping columns.
     -   RDA file: [def_kota.Rda](https://github.com/CSISdefense/Vendor/blob/master/Data/Clean/def_kota.Rda)
