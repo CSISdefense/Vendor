@@ -162,8 +162,8 @@ SET NOCOUNT ON;
 Exec ProductOrServiceCode.SP_ShipsAndSubmarines
  	@IsDefense=1
 
---Mistake due to ORing in all defense
---21h03m 327,705 rows.  Trying to include CSIScontractID led to it failing to finish.
+--327,705 before adding 250k+ CAU and multiyear
+--17h08m 385,011 rows w/ the 250k+ CAU
 SET QUERY_GOVERNOR_COST_LIMIT 0
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
@@ -514,6 +514,7 @@ SET NOCOUNT ON;
 --11h52m 12m527m536 2025-08-06
 --12h15m 12,622,208 2025-09-11
 --12h19m 14,029,369 2025-09-19 adding contract size
+--11h58m 17,895,673 rows 2025-10-27 with CAUget250k
 EXEC	budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS
 		@Customer = NULL
 		

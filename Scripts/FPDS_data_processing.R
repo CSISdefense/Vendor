@@ -401,7 +401,7 @@ save(shipdef,ship_lc, ship_ck,file="data/clean/Defense_Ship_FPDS.Rda")
 
 datacat<-catalog("data/clean/", engines$rda,pattern="Defense_Ship_FPDS.Rda")
 
-write.csv(shipdef,file="data/clean/Defense_Ship_FPDS.txt",row.names=FALSE,na = "N/A")
+write.csv(shipdef,file="data/clean/Defense_Ship_FPDS.csv",row.names=FALSE,na = "N/A")
 write.csv(datacat$Defense_Ship_FPDS,file=file.path("docs","catalog","Defense_Ship_FPDS.csv"),row.names=FALSE)
 
 
