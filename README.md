@@ -19,12 +19,16 @@ Contributors: [Gregory Sanders](https://www.csis.org/people/gregory-sanders), He
         -   RDA file: [ analysis / Chartmaker / unaggregated_FPDS.Rda](https://github.com/CSISdefense/Vendor/blob/master/analysis/FPDS_chart_maker/unaggregated_FPDS.Rda)
         -   Catalog file: [ Docs / catalog / unaggregated_FPDS.csv](https://github.com/CSISdefense/Vendor/blob/master/Docs/catalog/unaggregated_FPDS.csv)
         -   Supporting variables: column Key: fed_ck, labels and colors: fed_lc.
+        -   Superset reduced dataset: simple_fed_data
+        -   Zip of csv for superset: [data / clean / simple_fed_data.zip](https://github.com/CSISdefense/Trade/blob/master/data/clean/simple_fed_data.zip)
     -   Subset: **def_data**:
         -   Range of acquisition characteristics for U.S. defense contract data.
         -   R Filters: Customer=="Defense"
         -   RDA file: [ analysis / Chartmaker / unaggregated_def.Rda](https://github.com/CSISdefense/Vendor/blob/master/analysis/FPDS_chart_maker/unaggregated_def.Rda)
         -   Catalog file: [ Docs / catalog / unaggregated_def.csv](https://github.com/CSISdefense/Vendor/blob/master/Docs/catalog/unaggregated_def.csv)
         -   Supporting variables: column Key: def_ck, labels and colors: def_lc.
+        -   Superset reduced dataset: simple_def_data
+        -   Zip of csv for superset: [data / clean / simple_def_data.zip](https://github.com/CSISdefense/Trade/blob/master/data/clean/simple_def_data.zip)
 -   **platpscintl**: Detailed project, product or service type, and nationality date for U.S. federal contract data.
     -   SQL: 4h32m: 20,088,352 rows
         -   Stored Procedure: [Location.SP_ProdServPlatformAgencyPlaceOriginVendor](https://github.com/CSISdefense/DIIGsql/blob/master/SQL/Location.SP_ProdServPlatformAgencyPlaceOriginVendor.StoredProcedure.sql)

@@ -70,7 +70,18 @@ initial_clean<-function(df,only_defense=TRUE){
   fed_datacat<-catalog("analysis/FPDS_chart_maker/", engines$rda,pattern="*FPDS*")
   write.csv(fed_datacat$unaggregated_FPDS,file=file.path("docs","catalog","unaggregated_FPDS.csv"),row.names=FALSE)
   
-
+  fed_simple<-fed_data %>% filter(Fiscal_Year>=2000)%>%
+    group_by(Fiscal_Year,dFYear,PlatformPortfolio,
+             CompetitionClassification,Competition.multisum,
+             ContractingCustomer,
+             PricingUCA,PricingUCA.sum,
+             VendorSize,Shiny.VendorSize,
+             multiyearcontract,
+             SimpleArea)%>%
+    summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
+              Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
+  write_delim(fed_simple,file=file.path("data","clean","simple_fed_data.csv"),delim=",",na = "N/A")
+  write_delim(fed_data,file=file.path("data","clean","fed_data.csv"),delim=",",na = "N/A")
 ##Defense Data##########
 def_data<-initial_clean(fed_data,only_defense=TRUE)
 
@@ -101,7 +112,7 @@ def_lc<-prepare_labels_and_colors(def_data, path=file.path(local_path,"style\\")
     write.csv(def_data_cat$unaggregated_def,file=file.path("docs","catalog","unaggregated_def.csv"),row.names = FALSE)
 
 load(file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
-write_delim(def_data,file=file.path("output","def_data.csv"),delim=",")
+write_delim(def_data,file=file.path("data","clean","def_data.csv"),delim=",",na = "N/A")
 
 def_simple<-def_data %>% filter(Fiscal_Year>=2000)%>%
   group_by(Fiscal_Year,dFYear,PlatformPortfolio,
@@ -113,7 +124,7 @@ def_simple<-def_data %>% filter(Fiscal_Year>=2000)%>%
            SimpleArea)%>%
   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
             Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
-write_delim(def_simple,file=file.path("output","simple_def_data.csv"),delim=",")
+write_delim(def_simple,file=file.path("data","clean","simple_def_data.csv"),delim=",",na = "N/A")
 #Dates: dFYear
 
 #Null Values: "Empty strings "",NULL, NA
