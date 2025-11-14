@@ -156,6 +156,8 @@ Exec [Location].[SP_CountryDetail]
 --With UEI, parentUEI, and entityID, ran for 24h and crashed due to tempDB size, trying w/o.
 --6h19, --9,504,214 rows
 --5h29m 1,312,476 rows
+--Msg 40544, Level 17, State 10, Procedure ProductOrServiceCode.SP_ShipsAndSubmarines, Line 17 [Batch Start Line 152]
+--The database 'TEMPDB' has reached its size quota. Partition or delete data, drop indexes, or consult the documentation for possible resolutions.
 SET QUERY_GOVERNOR_COST_LIMIT 0
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
