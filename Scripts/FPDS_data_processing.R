@@ -13,6 +13,7 @@
 # with data in the minimal form needed by Shiny script
 ###############################################
 
+## Setup ####
 # install.packages("../csis360_0.0.0.9022.tar.gz")
 
 library(tidyverse)
@@ -69,7 +70,18 @@ initial_clean<-function(df,only_defense=TRUE){
   fed_datacat<-catalog("analysis/FPDS_chart_maker/", engines$rda,pattern="*FPDS*")
   write.csv(fed_datacat$unaggregated_FPDS,file=file.path("docs","catalog","unaggregated_FPDS.csv"),row.names=FALSE)
   
-
+  simple_fed_data<-fed_data %>% filter(Fiscal_Year>=2000)%>%
+    group_by(Fiscal_Year,dFYear,PlatformPortfolio,
+             CompetitionClassification,Competition.multisum,
+             ContractingCustomer,
+             PricingUCA,PricingUCA.sum,
+             VendorSize,Shiny.VendorSize,
+             multiyearcontract,
+             SimpleArea)%>%
+    summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
+              Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
+  write_delim(simple_fed_data,file=file.path("data","clean","simple_fed_data.csv"),delim=",",na = "N/A")
+  write_delim(fed_data,file=file.path("data","clean","fed_data.csv"),delim=",",na = "N/A")
 ##Defense Data##########
 def_data<-initial_clean(fed_data,only_defense=TRUE)
 
@@ -100,20 +112,19 @@ def_lc<-prepare_labels_and_colors(def_data, path=file.path(local_path,"style\\")
     write.csv(def_data_cat$unaggregated_def,file=file.path("docs","catalog","unaggregated_def.csv"),row.names = FALSE)
 
 load(file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
-write_delim(def_data,file=file.path("output","def_data.csv"),delim=",")
-sample_def_fpds<-def_data[sample(nrow(def_data),size=1000),]
-save(sample_def_fpds,file=file.path("output","sample10k_def_data.rda"))
-write_delim(sample_def_fpds,file=file.path("output","sample10k_def_data.csv"),delim=",")
+write_delim(def_data,file=file.path("data","clean","def_data.csv"),delim=",",na = "N/A")
 
-def_simple<-def_data %>% filter(Fiscal_Year>=2000)%>%
+simple_def_data<-def_data %>% filter(Fiscal_Year>=2000)%>%
   group_by(Fiscal_Year,dFYear,PlatformPortfolio,
            CompetitionClassification,Competition.multisum,
            SubCustomer.JPO,SubCustomer.sum,
            PricingUCA,PricingUCA.sum,
-           VendorSize,SimpleArea)%>%
+           VendorSize,Shiny.VendorSize,
+           multiyearcontract,
+           SimpleArea)%>%
   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
             Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
-write_delim(def_simple,file=file.path("output","simple_def_data.csv"),delim=",", na="N/A")
+write_delim(simple_def_data,file=file.path("data","clean","simple_def_data.csv"),delim=",",na = "N/A")
 #Dates: dFYear
 
 #Null Values: "Empty strings "",NULL, NA
@@ -204,42 +215,6 @@ write.csv(platpscintlcat$platpscintl_FPDS,file=file.path("docs","catalog","platp
 # platpscintlcat<-catalog(file.path("data","semi_clean","Federal_Location.SP_ProdServPlatformAgencyPlaceOriginVendor.txt"), engines$csv)
 
 # create_dictionary(platpscintl)
-
-### Ship PSC Initial ####
-
-load(file="data/clean/platpscintl_FPDS.Rda")
-shippscintldef<-platpscintldef %>% filter(PlatformPortfolio == "Ships & Submarines")
-nrow(shippscintldef)
-
-shippscintldef<-read_and_join_experiment(shippscintldef,
-                             "ProductOrServiceCodes.csv",
-                             by=c("ProductOrServiceCode"="ProductOrServiceCode"),
-                             path="offline",
-                             add_var=c("ShipCategory"),
-                             skip_check_var = c("ShipCategory"),
-                             directory=""
-)
-
-shippscintldef <- shippscintldef %>%
-  mutate(ShipCategory = ifelse(SimpleArea == "Products" & (is.na(ShipCategory)
-                         | ShipCategory == ""), "Other Products", ShipCategory))
-shippscintldef <- shippscintldef %>%
-  mutate(ShipCategory = ifelse(SimpleArea == "Services" & (is.na(ShipCategory) 
-                         | ShipCategory == ""), "Other Service", ShipCategory))
-
-#shippscintldef %>% filter(ShipCategory == "") %>% group_by(ProductOrServiceCode, ProductOrServiceCodeText) %>% 
- # summarize(obl=sum(Action_Obligation_OMB25_GDP23)) %>% arrange(-obl) #Greg left this here, HHC removing for now, replacing with below
-
-shippscintldef %>% group_by(ProductOrServiceCode, ProductOrServiceCodeText) %>% 
- summarize(obl=sum(Action_Obligation_OMB25_GDP23)) %>% arrange(-obl)
-
-shippscintldef %>% group_by()
-
-fedpsc_lc<-csis360::prepare_labels_and_colors(shippscintldef)
-fedpsc_ck<-csis360::get_column_key(shippscintldef)
-
-save(shippscintldef,fedpsc_lc, fedpsc_ck,file="data/clean/Defense_Ship_FPDS.Rda")
-write_csv(shippscintldef,file.path("output","shippscintldef.csv"))
 
 
 #Cong Dist: Product Service Code, Agency, Platform ############
@@ -401,6 +376,65 @@ openxlsx::writeData(wb, pbl_short, sheet = sheet)
 openxlsx::saveWorkbook(wb,file=(file.path(path,xlsx)),overwrite = TRUE)
 
 
+###Ship and Submarines ####
+shipdef<-read_delim(file.path("data","semi_clean","Defense_ProductOrServiceCode_SP_ShipsAndSubmarinesDetail.txt"),delim="\t",na=c("NULL","NA"),
+                        col_names = TRUE, guess_max = 10000000)
+shipdef<-shipdef %>% filter(PlatformPortfolio == "Ships & Submarines")
+nrow(shipdef)
+
+shipdef<-apply_standard_lookups(shipdef)
+
+shipdef<-read_and_join_experiment(shipdef,
+                                         "ProductOrServiceCodes.csv",
+                                         by=c("ProductOrServiceCode"="ProductOrServiceCode"),
+                                         path="offline",
+                                         add_var=c("ShipCategory"),
+                                         skip_check_var = c("ShipCategory"),
+                                         directory=""
+)
+
+
+
+shipdef <- shipdef %>%
+  mutate(ShipCategory = ifelse(SimpleArea == "Products" & (is.na(ShipCategory)
+                                                           | ShipCategory == ""), "Other Products", ShipCategory))
+shipdef <- shipdef %>%
+  mutate(ShipCategory = ifelse(SimpleArea == "Services" & (is.na(ShipCategory) 
+                                                           | ShipCategory == ""), "Other Service", ShipCategory))
+
+shipdef %>% filter(ShipCategory == "") %>% group_by(ProductOrServiceCode,ProductOrServiceCodeText) %>%
+summarize(obl=sum(Action_Obligation_OMB25_GDP23)) %>% arrange(-obl) #Greg left this here, HHC removing for now, replacing with below
+
+
+ship_lc<-csis360::prepare_labels_and_colors(shipdef)
+ship_ck<-csis360::get_column_key(shipdef)
+save(shipdef,ship_lc, ship_ck,file="data/clean/Defense_Ship_FPDS.Rda")
+
+datacat<-catalog("data/clean/", engines$rda,pattern="Defense_Ship_FPDS.Rda")
+
+write.csv(shipdef,file="data/clean/Defense_Ship_FPDS.csv",row.names=FALSE,na = "N/A")
+write.csv(datacat$Defense_Ship_FPDS,file=file.path("docs","catalog","Defense_Ship_FPDS.csv"),row.names=FALSE)
+
+
+
+###Ordnance Missiles, and AMD ####
+munitiondef<-read_delim(file.path("data","semi_clean","Defense_ProductOrServiceCode_SP_OrdnanceMissilesAirAndMissileDefenseDetail.txt"),delim="\t",na=c("NULL","NA"),
+                    col_names = TRUE, guess_max = 10000000)
+munitiondef<-munitiondef %>% filter(PlatformPortfolio %in% c("Ordnance and Missiles", "Missile Defense"))
+nrow(munitiondef)
+
+munitiondef<-apply_standard_lookups(munitiondef)
+
+
+munition_lc<-csis360::prepare_labels_and_colors(munitiondef)
+munition_ck<-csis360::get_column_key(munitiondef)
+save(munitiondef,munition_lc, munition_ck,file="data/clean/Defense_Munition_FPDS.Rda")
+write.csv(munitiondef,file="data/clean/Defense_Munition_FPDS.txt",row.names=FALSE,na = "N/A")
+
+datacat<-catalog("data/clean/", engines$rda,pattern="Defense_Munition_FPDS.Rda")
+write.csv(datacat$Defense_munition_FPDS,file=file.path("docs","catalog","Defense_Munition_FPDS.csv"),row.names=FALSE)
+
+
 
 ###Space ########
 space<-read_delim(file.path("data","semi_clean","ProductOrServiceCode.SP_SpaceDetail.txt"),delim="\t",na=c("NULL","NA"),
@@ -433,7 +467,7 @@ sw_ck<-get_column_key(sw)
 
 save(sw,sw_lc,sw_ck, file="data/clean/sw_FPDS.Rda")
 
-####JADC2##########
+###JADC2##########
 
 jadc2 <- read_delim(
   "Data//semi_clean//Summary.SP_JADC2detail.txt",delim = "\t",

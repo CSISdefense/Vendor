@@ -151,6 +151,31 @@ SET NOCOUNT ON;
 Exec [Location].[SP_CountryDetail]
  	@countryISOalpha3='AUS'
 
+--Shipbuilding
+--Mistake due to ORing in all defense
+--With UEI, parentUEI, and entityID, ran for 24h and crashed due to tempDB size, trying w/o.
+--6h19, --9,504,214 rows
+--5h29m 1,312,476 rows
+--Msg 40544, Level 17, State 10, Procedure ProductOrServiceCode.SP_ShipsAndSubmarines, Line 17 [Batch Start Line 152]
+--The database 'TEMPDB' has reached its size quota. Partition or delete data, drop indexes, or consult the documentation for possible resolutions.
+SET QUERY_GOVERNOR_COST_LIMIT 0
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+Exec ProductOrServiceCode.SP_ShipsAndSubmarines
+ 	@IsDefense=1
+
+--327,705 before adding 250k+ CAU and multiyear
+--17h08m 385,011 rows w/ the 250k+ CAU
+SET QUERY_GOVERNOR_COST_LIMIT 0
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+Exec ProductOrServiceCode.SP_OrdnanceMissilesAirAndMissileDefense
+ 	@IsDefense=1
+
+
+select *
+from vendor.RecipientUEIpartial
+
 --5h53m 4,517,133 rows
 --6h19m 4,517,133 rows
 --8h02m 4,940,102 rows
@@ -489,6 +514,9 @@ SET NOCOUNT ON;
 --5h11m 11,343,896 more vendor classifications and 
 --7h46m 11,391,836 after more labeling.
 --11h52m 12m527m536 2025-08-06
+--12h15m 12,622,208 2025-09-11
+--12h19m 14,029,369 2025-09-19 adding contract size
+--11h58m 17,895,673 rows 2025-10-27 with CAUget250k
 EXEC	budget.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerFMS
 		@Customer = NULL
 		

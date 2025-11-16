@@ -362,6 +362,67 @@ UkraineRelevant<-build_plot(
   facet_wrap(facet=~UkraineDIBrelevant, scales="free_y")
 )
 ```
+## Platform  Ukraine
+```{r Platform}
+
+ukr_data$IsUkraine<-ifelse(fed_data$nationalinterestactioncode=="O22U" &
+                             !is.na(ukr_data$nationalinterestactioncode=="O22U"),"UKRAINE MISSION SUPPORT","All Other")
+
+ukr_data %>% group_by(nationalinterestactioncode)%>%
+  filter(Fiscal_Year==2022) %>% summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
+
+(
+Platform_Ukr_Bar<-build_plot(
+  data=ukr_data %>% filter(Fiscal_Year>=1990),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=ukr_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="IsUkraine", #color_var
+  facet_var="PlatformPortfolio", #facet_var
+  column_key=ukr_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = scales::percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "none")+
+  labs(y="Obligations (Constant 2023 $s)")
+)
+
+ggsave600dpi(path="..//Output//AcqTrends//",filename="Munitions//ukraine_platform_bar.png", Platform_Ukr_Bar, 
+             width=11, height= 5.5, units="in",size=14,lineheight = 1.2
+             )
+
+ggsave600dpi(path="..//Output//AcqTrends//",filename="Munitions//ukraine_platform_bar.emf", Platform_Ukr_Bar,
+             width=6.5, height= 4, units="in",size=11,lineheight = 1.2
+             )
+
+output_TY<-ukr_data %>% group_by(PlatformPortfolio,Fiscal_Year)%>%
+            dplyr::summarize(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))%>%
+          pivot_wider(id_cols=c(PlatformPortfolio,IsUkraine),
+                      names_from=Fiscal_Year,values_from=Action_Obligation_Then_Year)%>%arrange(PlatformPortfolio,IsUkraine)
+
+write.csv(file="..//Output//AcqTrends//Munitions//ukraine_platform_current.csv",row.names = FALSE, na = "",
+          output_TY)
+
+# wb <- loadWorkbook("..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx")
+# createSheet(wb, name = "Platform Portfolio")
+# writeData(wb, output_TY, sheet = "Platform Portfolio", startRow = 15, startCol = 1)
+# saveWorkbook(wb,file="..//Output//AcqTrends//DoD_Acq_Trends_Contracts.xlsx",overwrite = TRUE)
+# rm(wb)
+
+```
+
+
+
 ## Platform and Project
 ```{r ukr_psc}
 ukrplatpsc$Project.Name[ukrplatpsc$ProjectID==466]<-"PIM"
