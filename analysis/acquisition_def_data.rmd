@@ -872,13 +872,13 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="Vehicle_MultiYearShare.png
 ## Topline Pricing
 ```{r ToplinePricing}
 
-# def_data$PricingUCA.sumlong<-def_data$PricingUCA.sum
-# levels(def_data$PricingUCA.sumlong)<-list("Firm Fixed-Price"="FFP",
-#                                            "Less Common"="Less Common",
-#                                            "Incentive"="Incentive",
-#                                            "Other Cost-Based"="Other CB",
-#                                            "Undefinitized\nContract Award"="UCA",
-#                                            "Unclear"="Unclear"   )
+def_data$PricingUCA.sumlong<-def_data$PricingUCA.sum
+levels(def_data$PricingUCA.sumlong)<-list("Firm Fixed-Price"="FFP",
+                                           "Less Common"="Less Common",
+                                           "Incentive"="Incentive",
+                                           "Other Cost-Based"="Other CB",
+                                           "Undefinitized\nContract Award"="UCA",
+                                           "Unclear"="Unclear"   )
 (
 ToplinePricing<-build_plot(
   data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2025.2),
@@ -1916,8 +1916,8 @@ contract_merge<-def_data %>% filter(Fiscal_YQ<=2025.2) %>%
 #                      labels_and_colors = labels_and_colors
 # )
 
-ota_merge<-ota_def%>%filter(Fiscal_Year >=2015 & Fiscal_Year <=2022) %>%
-  group_by(Fiscal_Year,SimpleArea)%>%
+ota_merge<-ota_def%>%filter(Fiscal_Year >=2015) %>%
+  group_by(Fiscal_Year,SimpleArea,YTD)%>%
   dplyr::summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
                    Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year)
                    )
@@ -2000,9 +2000,10 @@ write.csv(file="..//Output//AcqTrends//RnDPhasePlusOTA_current.csv",row.names = 
 ```{r PhaseBoth}
 
 contract_merge<-def_data%>%filter(Fiscal_Year >=2015 & Fiscal_YQ<2022) %>%
-  group_by(Fiscal_Year,
+  group_by(dFYear,
                          ProductServiceOrRnDarea,
-                         SimpleArea)%>%
+                         SimpleArea,
+           YTD)%>%
   dplyr::summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
 
 # 
@@ -2022,9 +2023,9 @@ contract_merge<-def_data%>%filter(Fiscal_Year >=2015 & Fiscal_YQ<2022) %>%
 # )
 
 ota_merge<-standardize_variable_names(ota_def)%>%filter(Fiscal_Year >=2015) %>%
-  group_by(Fiscal_Year,
+  group_by(dFYear,
                          ProductServiceOrRnDarea,
-                         SimpleArea)%>%
+                         SimpleArea,YTD)%>%
   dplyr::summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23))
 
 
@@ -2037,7 +2038,7 @@ ota_merge<-standardize_variable_names(ota_def)%>%filter(Fiscal_Year >=2015) %>%
 # )
 
 ota_merge$Authority<-"OTA"
-colnames(ota_merge)[colnames(ota_merge)=="Fiscal_Year"]<-"Fiscal_Year"
+# colnames(ota_merge)[colnames(ota_merge)=="Fiscal_Year"]<-"Fiscal_Year"
 contract_merge$Authority<-"Contract"
 merge<-rbind(ota_merge,contract_merge)
 
@@ -2074,7 +2075,8 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="contractota_RnDPhase.png",
 #                            
 # 
 write.csv(file="..//Output//AcqTrends//contractota_RnDPhase.csv",row.names = FALSE, na = "",
-          pivot_wider(RnDphase$data,id_cols=c(ProductServiceOrRnDarea,Authority),
+           RnDphase$data %>% mutate(Fiscal_Year=lubridate::year(dFYear)) %>%
+          pivot_wider(id_cols=c(ProductServiceOrRnDarea,Authority),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23)%>%
             arrange(ProductServiceOrRnDarea,Authority))
 #             
@@ -2559,7 +2561,7 @@ chart_geom = "Bar Chart",
 
 ## SubCustomer Covid19
 ```{r SubCustomerCovid19}
-cust_covid<-def_data %>% filter(Fiscal_YQ<=2025.2) %>% group_by(SubCustomer.JPO,SubCustomer.sum,Fiscal_Year) %>%
+cust_covid<-def_data %>% filter(Fiscal_YQ<=2025.2) %>% group_by(SubCustomer.JPO,SubCustomer.sum,dFYear) %>%
   summarise(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm = TRUE),
             COVID19obligated=sum(COVID19obligated,na.rm = TRUE))%>%
   mutate(Action_other=Action_Obligation_Then_Year-COVID19obligated) 
