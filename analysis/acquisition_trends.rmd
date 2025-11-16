@@ -620,6 +620,73 @@ write.csv(file="..//Output//AcqTrends//unlabeled_competition.csv",row.names = FA
 
 
 
+## MultiYear Setup
+```{r MultiyearSetup}
+    def_data<-def_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
+                              labels=c("Not Multi-Year","Multi-Year Contract")))
+
+def_data$multiyearcontracttext[is.na(def_data$multiyearcontract)&
+                             def_data$Vehicle %in% c("BOA","BPA","FSS","GWAC","PO","DO") ]<-"Not Multi-Year"
+  # "MULTIPLE AWARD IDC"  "SINGLE AWARD IDC"   "Unlabeled IDC"        "DCA"    "DO"   
+
+
+# def_data %>% group_by(Vehicle) %>%
+#   dplyr::summarise(multiyearcontracttext=sum(
+#     ifelse(multiyearcontracttext=="Multi-Year Contract",Action_Obligation_OMB25_GDP23,0),na.rm=TRUE))
+
+
+
+def_data<-def_data %>% group_by(Fiscal_Year,Vehicle.sum7)%>%
+  mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
+```
+
+### Topline Multi-Year
+```{r Multi-Year}
+def_data<-def_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
+                              labels=c("Not Multi-Year","Multi-Year Contract")))
+
+
+(
+MultiYear<-build_plot(
+  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2025.2),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="multiyearcontract", #color_var
+  # facet_var="SubCustomer.platform", #facet_var
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)")+
+  date_x_year_breaks(2000,2022,2)#)#,partial_year=2024,partial_label="\nOct–Nov")
+)
+
+ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_Multiyear.png", MultiYear, 
+             width=11, height= 5.5, units="in",size=14,lineheight = 1.2
+             )
+
+ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_Multiyear.svg", MultiYear+
+  labs(y="Obligations\n(Constant 2023 $s)"),#+facet_wrap(~SubCustomer.platform,nrow=1), 
+             width=6.5, height= 2.25, units="in",size=11,lineheight = 1.2
+             )
+
+
+# def_data %>% filter(SubCustomer.sum=="Army", PlatformPortfolio=="Other Products", Fiscal_Year==2021) %>%
+#   group_by(AnyMultiyearText,Competition.multisum) %>% summarise(
+#     COVID19obligated=sum(COVID19obligated,na.rm=TRUE),
+#     Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
+#     Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year),
+#     
+#   )
+
+```
+
+
 
 
 ## Topline Vehicle
@@ -721,7 +788,7 @@ log_plot(plot=ToplineVehicle7, df=def_data %>% filter(Fiscal_YQ<=2025.2),
 ```
 
 ### Vehicle Transactions
-```{r ToplineVehicle}
+```{r ToplineVehicleTrans}
 
 
 def_data %>% filter(Vehicle=="Unlabeled Indefinite Delivery Contract (IDC)" ) %>% group_by(ClassifyNumberOfOffers,No.Competition.sum)%>%
@@ -947,6 +1014,94 @@ CAS<-build_plot(
 
 ```
 
+### Vehicle Multi-Year 
+```{r VehicleMultiyear}
+def_data %>% group_by(Vehicle,multiyearcontracttext) %>%
+  dplyr::summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
+
+    def_data<-def_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
+                              labels=c("Not Multi-Year","Multi-Year Contract")))
+
+def_data<-def_data %>% group_by(Fiscal_Year,Vehicle.sum7)%>%
+  mutate(pVehFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
+
+levels(factor(def_data$Vehicle))
+
+(
+VehicleMultiYear<-build_plot(
+  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2025.2),
+  chart_geom = "Bar Chart",
+  share = TRUE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="multiyearcontracttext", #color_var
+  facet_var="Vehicle",
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = scales::percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)")
+)
+
+(
+VehicleMultiYearShare<-build_plot(
+  data=def_data %>% filter(Fiscal_Year>=2000 & Vehicle.sum7!="Unlabeled"&
+                             (is.na(multiyearcontract)|multiyearcontract==1)),
+  chart_geom = "Line Chart",
+  share = FALSE,
+  labels_and_colors=def_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",alpha_var="YTD", #x_var
+  y_var="pVehFYear", #VAR.y.variable
+  color_var="multiyearcontracttext", #color_var
+  facet_var="Vehicle.sum7",
+  column_key=def_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = scales::percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+
+  labs(y="Share of Obligations")+
+    scale_y_continuous(labels = scales::percent)
+)
+
+
+ggsave600dpi(path="..//Output//AcqTrends//",filename="Vehicle_MultiYear.png", VehicleMultiYear,  
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+ggsave600dpi(path="..//Output//AcqTrends//",filename="Vehicle_MultiYearShare.png", VehicleMultiYearShare,  
+             width=6.5, height= 4, units="in",size=12, lineheight=1.2
+             )
+
+# write.csv(file="..//Output//AcqTrends//VehicleMultiYearShare.csv",row.names = FALSE, na = "",
+#   pivot_wider(VehicleMultiYearShare$data %>% 
+#                         arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
+#                       id_cols=c(Vehicle.sum7,multiyearcontracttext),
+#                       names_from=Fiscal_Year,values_from=pPlatFYear)%>%
+#   arrange(Vehicle.sum7,multiyearcontracttext))
+#   
+
+
+```
 
 ## Topline Pricing
 ```{r ToplinePricing}
@@ -1009,7 +1164,7 @@ log_plot(plot=ToplinePricing+theme(plot.margin = margin(t=0,r=0.25,b=0.1,l=0.1,"
 
 
 ### Pricing UCA
-```{r ToplinePricing}
+```{r ToplinePricingUCA}
 
 
 (
@@ -1106,7 +1261,7 @@ log_plot(plot=ToplinePricing, df=def_data  %>% filter(Fiscal_YQ<=2025.2 & Fiscal
 
 ```
 ### Pricing R&D UCA History
-```{r ToplinePricing}
+```{r ToplinePricingRnD}
 
 (
 ToplinePricing<-build_plot(
@@ -1203,8 +1358,8 @@ log_plot(plot=PricingHistory, df=def_data  %>% filter(Fiscal_Year<2025&Fiscal_Ye
 ```
 
 
-### Pricing History
-```{r ToplinePricing}
+### Pricing Inflation
+```{r ToplinePricingInflation}
 
 (
 PricingHistory<-build_plot(
@@ -1456,7 +1611,7 @@ for(c in subcustomer_levels){
 ```
 
 ## Topline Commercial
-```{r Commercial}
+```{r ToplineCommercial}
 def_data$AnyCommercialText<-factor(def_data$AnyCommercial)
 levels(def_data$AnyCommercialText)<-list(
   "Not Classified\nas Commercial"="N",
@@ -1636,161 +1791,8 @@ log_plot(plot=UnmDuration, df=def_data  %>% filter(Fiscal_YQ<=2025.2),
          )
 ```
 
-## Topline Multi-Year
-```{r Multi-Year}
-def_data<-def_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
-                              labels=c("Not Multi-Year","Multi-Year Contract")))
 
-
-(
-MultiYear<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2025.2),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=def_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear",alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
-  color_var="multiyearcontract", #color_var
-  # facet_var="SubCustomer.platform", #facet_var
-  column_key=def_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2023 $s)")+
-  date_x_year_breaks(2000,2022,2)#)#,partial_year=2024,partial_label="\nOct–Nov")
-)
-
-ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_Multiyear.png", MultiYear, 
-             width=11, height= 5.5, units="in",size=14,lineheight = 1.2
-             )
-
-ggsave600dpi(path="..//Output//AcqTrends//",filename="topline_Multiyear.svg", MultiYear+
-  labs(y="Obligations\n(Constant 2023 $s)"),#+facet_wrap(~SubCustomer.platform,nrow=1), 
-             width=6.5, height= 2.25, units="in",size=11,lineheight = 1.2
-             )
-
-
-# def_data %>% filter(SubCustomer.sum=="Army", PlatformPortfolio=="Other Products", Fiscal_Year==2021) %>%
-#   group_by(AnyMultiyearText,Competition.multisum) %>% summarise(
-#     COVID19obligated=sum(COVID19obligated,na.rm=TRUE),
-#     Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-#     Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year),
-#     
-#   )
-
-```
-
-
-```{r ToplinePricing}
-    def_data<-def_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
-                              labels=c("Not Multi-Year","Multi-Year Contract")))
-
-def_data$multiyearcontracttext[is.na(def_data$multiyearcontract)&
-                             def_data$Vehicle %in% c("BOA","BPA","FSS","GWAC","PO","DO") ]<-"Not Multi-Year"
-  # "MULTIPLE AWARD IDC"  "SINGLE AWARD IDC"   "Unlabeled IDC"        "DCA"    "DO"   
-
-
-# def_data %>% group_by(Vehicle) %>%
-#   dplyr::summarise(multiyearcontracttext=sum(
-#     ifelse(multiyearcontracttext=="Multi-Year Contract",Action_Obligation_OMB25_GDP23,0),na.rm=TRUE))
-
-
-
-def_data<-def_data %>% group_by(Fiscal_Year,Vehicle.sum7)%>%
-  mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
-```
-### Multi-Year Vehicle
-```{r VehicleMultiyear}
-def_data %>% group_by(Vehicle,multiyearcontracttext) %>%
-  dplyr::summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
-
-    def_data<-def_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
-                              labels=c("Not Multi-Year","Multi-Year Contract")))
-
-def_data<-def_data %>% group_by(Fiscal_Year,Vehicle.sum7)%>%
-  mutate(pVehFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
-
-levels(factor(def_data$Vehicle))
-
-(
-VehicleMultiYear<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2000 & Fiscal_YQ<=2025.2),
-  chart_geom = "Bar Chart",
-  share = TRUE,
-  labels_and_colors=def_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear",alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
-  color_var="multiyearcontracttext", #color_var
-  facet_var="Vehicle",
-  column_key=def_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = scales::percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2023 $s)")
-)
-
-(
-VehicleMultiYearShare<-build_plot(
-  data=def_data %>% filter(Fiscal_Year>=2000 & Vehicle.sum7!="Unlabeled"&
-                             (is.na(multiyearcontract)|multiyearcontract==1)),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  labels_and_colors=def_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear",alpha_var="YTD", #x_var
-  y_var="pVehFYear", #VAR.y.variable
-  color_var="multiyearcontracttext", #color_var
-  facet_var="Vehicle.sum7",
-  column_key=def_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = scales::percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "bottom")+
-  labs(y="Share of Obligations")+
-    scale_y_continuous(labels = scales::percent)
-)
-
-
-ggsave600dpi(path="..//Output//AcqTrends//",filename="Vehicle_MultiYear.png", VehicleMultiYear,  
-             width=12, height= 6, units="in",size=12, lineheight=1.2
-             )
-
-ggsave600dpi(path="..//Output//AcqTrends//",filename="Vehicle_MultiYearShare.png", VehicleMultiYearShare,  
-             width=6.5, height= 4, units="in",size=12, lineheight=1.2
-             )
-
-# write.csv(file="..//Output//AcqTrends//VehicleMultiYearShare.csv",row.names = FALSE, na = "",
-#   pivot_wider(VehicleMultiYearShare$data %>% 
-#                         arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
-#                       id_cols=c(Vehicle.sum7,multiyearcontracttext),
-#                       names_from=Fiscal_Year,values_from=pPlatFYear)%>%
-#   arrange(Vehicle.sum7,multiyearcontracttext))
-#   
-
-
-```
-
-## Topline GFE
+## GFE Setup
 ```{r GFE}
 
 def_data$gfe_gfp_value<-factor(def_data$gfe_gfp_code)
@@ -1865,7 +1867,7 @@ summary(def_data$ContractingSubCustomer)
 
 
 ## Topline Cost Accounting
-```{r SubCustomer}
+```{r CostAccounting}
 
 
 (
@@ -2029,7 +2031,7 @@ log_plot(plot=ToplinePSR+facet_wrap(~SimpleArea), df=def_data %>% filter(Fiscal_
 ```
 
 ## PSR OTA
-```{r ToplinePSR}
+```{r ToplinePSRota}
 if(!exists("def_kota"))
   load(file="../data/clean/def_kota.Rda")
 
@@ -2745,7 +2747,7 @@ log_plot(plot=PSRComp_bar, df=def_data  %>% filter(Fiscal_YQ<=2025.2),
          )
 ```
 ## PSR Multi-Year
-```{r ToplinePricing}
+```{r PSRmultiyear}
 
 (
 PSRMultiYear<-build_plot(
@@ -2879,7 +2881,7 @@ log_plot(plot=SubCustomer+facet_wrap(~SubCustomer.sum,nrow=1)+
 ```
 
 ## SubCustomer Plat Breakout
-```{r CustomerPlatBreakout} 
+```{r SubCustomerPlatBreakout} 
 platform_levels<-levels(factor(def_data$PlatformPortfolio))
 for(p in platform_levels){
   file_p<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",p)))
@@ -2914,7 +2916,7 @@ chart_geom = "Bar Chart",
 ```
 
 ## SubCustomer Covid19
-```{r SubCustomer}
+```{r SubCustomerCovid19}
 cust_covid<-def_data %>% filter(Fiscal_YQ<=2025.2) %>% group_by(SubCustomer.JPO,SubCustomer.sum,Fiscal_Year) %>%
   summarise(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm = TRUE),
             COVID19obligated=sum(COVID19obligated,na.rm = TRUE))%>%
@@ -3152,7 +3154,7 @@ log_plot(plot=PricingHistoryCust, df=def_data  %>% filter(!SubCustomer.platform 
 
 
 ## SubCustomer Commercial
-```{r Commercial}
+```{r SubCustomerCommercial}
 def_data$AnyCommercialText<-factor(def_data$AnyCommercial)
 levels(def_data$AnyCommercialText)<-list(
   "Not Classified\nas Commercial"="N",
@@ -3392,7 +3394,7 @@ for(c in subcustomer_levels){
 
 
 ## Platform by Service
-```{r Platform}
+```{r PlatformService}
 for(s in c("Army","Navy","Air Force")){
   
   (
@@ -3558,7 +3560,7 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="platform_PSR.png", Platfor
 
 
 ## Platform Products
-```{r PlatformPSR}
+```{r PlatformProduct}
 summary(def_data$SimpleArea)
 (
 PlatformProducts<-build_plot(
@@ -3605,7 +3607,7 @@ write.csv(file="..//Output//AcqTrends//platform_products_cur.csv",row.names = FA
 ```
 
 ## Platform R&D
-```{r PlatformPSR}
+```{r PlatformRnD}
 (
 PlatformRnD<-build_plot(
   data=def_data %>% filter(SimpleArea=="R&D"),
@@ -3982,7 +3984,7 @@ PlatNoComp<-build_plot(
 ```
 
 ## Platform Commercial
-```{r Commercial}
+```{r PlatformCommercial}
 def_data$AnyCommercialText<-factor(def_data$AnyCommercial)
 levels(def_data$AnyCommercialText)<-list(
   "Not Classified\nas Commercial"="N",
@@ -4373,7 +4375,7 @@ log_plot(plot=ToplineVendor, df=def_data  %>% filter(Fiscal_YQ<=2025.2 ),
 
 
 ## Vendor Size Plat Breakout
-```{r CustomerPlatBreakout} 
+```{r VendorSizePlatBreakout} 
 platform_levels<-levels(factor(def_data$PlatformPortfolio))
 for(p in platform_levels){
   file_p<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",p)))
@@ -4410,7 +4412,7 @@ chart_geom = "Bar Chart",
 
 
 ## Vendor Size Vehicle
-```{r ToplineVendor}
+```{r VendorSizeVehicle}
 
 
 (

@@ -337,6 +337,71 @@ write.csv(file="..//Output//FedAcqTrends//unlabeled_competition.csv",row.names =
 
 
 
+## Multiyear Setup
+```{r MultiyearSetup}
+    fed_data<-fed_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
+                              labels=c("Not Multi-Year","Multi-Year Contract")))
+
+fed_data$multiyearcontracttext[is.na(fed_data$multiyearcontract)&
+                             fed_data$Vehicle %in% c("BOA","BPA","FSS","GWAC","PO","DO") ]<-"Not Multi-Year"
+  # "MULTIPLE AWARD IDC"  "SINGLE AWARD IDC"   "Unlabeled IDC"        "DCA"    "DO"   
+
+
+# fed_data %>% group_by(Vehicle) %>%
+#   dplyr::summarise(multiyearcontracttext=sum(
+#     ifelse(multiyearcontracttext=="Multi-Year Contract",Action_Obligation_OMB25_GDP23,0),na.rm=TRUE))
+
+
+
+fed_data<-fed_data %>% group_by(Fiscal_Year,Vehicle.sum7)%>%
+  mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
+```
+
+### Topline Multi-Year
+```{r Multi-Year}
+fed_data<-fed_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
+                              labels=c("Not Multi-Year","Multi-Year Contract")))
+
+
+(
+MultiYear<-build_plot(
+  data=fed_data %>% filter(Fiscal_Year>=2000), #& Fiscal_YQ<=2025.2),
+  chart_geom = "Bar Chart",
+  share = FALSE,
+  labels_and_colors=fed_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="multiyearcontract", #color_var
+  # facet_var="ContractingCustomer", #facet_var
+  column_key=fed_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)")+
+  date_x_year_breaks(2000,2022,2)#)#,partial_year=2024,partial_label="\nOct–Nov")
+)
+
+ggsave600dpi(path="..//Output//FedAcqTrends//",filename="topline_Multiyear.png", MultiYear, 
+             width=11, height= 5.5, units="in",size=14,lineheight = 1.2
+             )
+
+ggsave600dpi(path="..//Output//FedAcqTrends//",filename="topline_Multiyear.svg", MultiYear+
+  labs(y="Obligations\n(Constant 2023 $s)"),#+facet_wrap(~ContractingCustomer,nrow=1), 
+             width=6.5, height= 2.25, units="in",size=11,lineheight = 1.2
+             )
+
+
+# fed_data %>% filter(ContractingCustomer=="Army", PlatformPortfolio=="Other Products", Fiscal_Year==2021) %>%
+#   group_by(AnyMultiyearText,Competition.multisum) %>% summarise(
+#     COVID19obligated=sum(COVID19obligated,na.rm=TRUE),
+#     Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
+#     Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year),
+#     
+#   )
+
+```
 
 
 
@@ -656,6 +721,94 @@ CAS<-build_plot(
 
 ```
 
+### Multi-Year Vehicle
+```{r VehicleMultiyear}
+fed_data %>% group_by(Vehicle,multiyearcontracttext) %>%
+  dplyr::summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
+
+    fed_data<-fed_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
+                              labels=c("Not Multi-Year","Multi-Year Contract")))
+
+fed_data<-fed_data %>% group_by(Fiscal_Year,Vehicle.sum7)%>%
+  mutate(pVehFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
+
+levels(factor(fed_data$Vehicle))
+
+(
+VehicleMultiYear<-build_plot(
+  data=fed_data %>% filter(Fiscal_Year>=2000), #& Fiscal_YQ<=2025.2),
+  chart_geom = "Bar Chart",
+  share = TRUE,
+  labels_and_colors=fed_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",alpha_var="YTD", #x_var
+  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
+  color_var="multiyearcontracttext", #color_var
+  facet_var="Vehicle",
+  column_key=fed_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = scales::percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "right")+
+  labs(y="Obligations (Constant 2023 $s)")
+)
+
+(
+VehicleMultiYearShare<-build_plot(
+  data=fed_data %>% filter(Fiscal_Year>=2000 & Vehicle.sum7!="Unlabeled"&
+                             (is.na(multiyearcontract)|multiyearcontract==1)),
+  chart_geom = "Line Chart",
+  share = FALSE,
+  labels_and_colors=fed_lc,
+  # NA, #VAR.ncol
+  x_var="dFYear",alpha_var="YTD", #x_var
+  y_var="pVehFYear", #VAR.y.variable
+  color_var="multiyearcontracttext", #color_var
+  facet_var="Vehicle.sum7",
+  column_key=fed_ck,
+  format=TRUE,
+  ytextposition=FALSE
+)+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
+  # theme(strip.text.y = element_text(angle=0))+
+ # theme(axis.text.x = element_text(angle=90))+
+ #    scale_y_continuous("Percent of Obligations", labels = scales::percent_format(accuracy=1))+
+ #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
+ #             )+labs(title=NULL,
+  # x="Fiscal Year",
+  # y="Percent of Obligations",
+  # color="Competition")+
+  theme(legend.position = "bottom")+
+  labs(y="Share of Obligations")+
+    scale_y_continuous(labels = scales::percent)
+)
+
+
+ggsave600dpi(path="..//Output//FedAcqTrends//",filename="Vehicle_MultiYear.png", VehicleMultiYear,  
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+ggsave600dpi(path="..//Output//FedAcqTrends//",filename="Vehicle_MultiYearShare.png", VehicleMultiYearShare,  
+             width=6.5, height= 4, units="in",size=12, lineheight=1.2
+             )
+
+# write.csv(file="..//Output//FedAcqTrends//VehicleMultiYearShare.csv",row.names = FALSE, na = "",
+#   pivot_wider(VehicleMultiYearShare$data %>% select(-YTD) %>%
+#                         arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
+#                       id_cols=c(Vehicle.sum7,multiyearcontracttext),
+#                       names_from=Fiscal_Year,values_from=pVehFYear)%>%
+#   arrange(Vehicle.sum7,multiyearcontracttext))
+
+
+
+```
 
 ## Topline Pricing
 ```{r ToplinePricing}
@@ -718,7 +871,7 @@ log_plot(plot=ToplinePricing+theme(plot.margin = margin(t=0,r=0.25,b=0.1,l=0.1,"
 
 
 ### Pricing UCA
-```{r ToplinePricing}
+```{r ToplinePricingUCA}
 
 (
 ToplinePricing<-build_plot(
@@ -1072,159 +1225,7 @@ log_plot(plot=UnmDuration, df=fed_data  %>% filter(Fiscal_YQ<=2025.2),
          )
 ```
 
-## Topline Multi-Year
-```{r Multi-Year}
-fed_data<-fed_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
-                              labels=c("Not Multi-Year","Multi-Year Contract")))
 
-
-(
-MultiYear<-build_plot(
-  data=fed_data %>% filter(Fiscal_Year>=2000), #& Fiscal_YQ<=2025.2),
-  chart_geom = "Bar Chart",
-  share = FALSE,
-  labels_and_colors=fed_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear",alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
-  color_var="multiyearcontract", #color_var
-  # facet_var="ContractingCustomer", #facet_var
-  column_key=fed_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2023 $s)")+
-  date_x_year_breaks(2000,2022,2)#)#,partial_year=2024,partial_label="\nOct–Nov")
-)
-
-ggsave600dpi(path="..//Output//FedAcqTrends//",filename="topline_Multiyear.png", MultiYear, 
-             width=11, height= 5.5, units="in",size=14,lineheight = 1.2
-             )
-
-ggsave600dpi(path="..//Output//FedAcqTrends//",filename="topline_Multiyear.svg", MultiYear+
-  labs(y="Obligations\n(Constant 2023 $s)"),#+facet_wrap(~ContractingCustomer,nrow=1), 
-             width=6.5, height= 2.25, units="in",size=11,lineheight = 1.2
-             )
-
-
-# fed_data %>% filter(ContractingCustomer=="Army", PlatformPortfolio=="Other Products", Fiscal_Year==2021) %>%
-#   group_by(AnyMultiyearText,Competition.multisum) %>% summarise(
-#     COVID19obligated=sum(COVID19obligated,na.rm=TRUE),
-#     Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
-#     Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year),
-#     
-#   )
-
-```
-
-
-```{r ToplinePricing}
-    fed_data<-fed_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
-                              labels=c("Not Multi-Year","Multi-Year Contract")))
-
-fed_data$multiyearcontracttext[is.na(fed_data$multiyearcontract)&
-                             fed_data$Vehicle %in% c("BOA","BPA","FSS","GWAC","PO","DO") ]<-"Not Multi-Year"
-  # "MULTIPLE AWARD IDC"  "SINGLE AWARD IDC"   "Unlabeled IDC"        "DCA"    "DO"   
-
-
-# fed_data %>% group_by(Vehicle) %>%
-#   dplyr::summarise(multiyearcontracttext=sum(
-#     ifelse(multiyearcontracttext=="Multi-Year Contract",Action_Obligation_OMB25_GDP23,0),na.rm=TRUE))
-
-
-
-fed_data<-fed_data %>% group_by(Fiscal_Year,Vehicle.sum7)%>%
-  mutate(pPlatFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
-```
-### Multi-Year Vehicle
-```{r VehicleMultiyear}
-fed_data %>% group_by(Vehicle,multiyearcontracttext) %>%
-  dplyr::summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
-
-    fed_data<-fed_data%>% mutate(multiyearcontracttext=factor(multiyearcontract,levels=c("0","1"),
-                              labels=c("Not Multi-Year","Multi-Year Contract")))
-
-fed_data<-fed_data %>% group_by(Fiscal_Year,Vehicle.sum7)%>%
-  mutate(pVehFYear=Action_Obligation_OMB25_GDP23/sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
-
-levels(factor(fed_data$Vehicle))
-
-(
-VehicleMultiYear<-build_plot(
-  data=fed_data %>% filter(Fiscal_Year>=2000), #& Fiscal_YQ<=2025.2),
-  chart_geom = "Bar Chart",
-  share = TRUE,
-  labels_and_colors=fed_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear",alpha_var="YTD", #x_var
-  y_var="Action_Obligation_OMB25_GDP23", #VAR.y.variable
-  color_var="multiyearcontracttext", #color_var
-  facet_var="Vehicle",
-  column_key=fed_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = scales::percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "right")+
-  labs(y="Obligations (Constant 2023 $s)")
-)
-
-(
-VehicleMultiYearShare<-build_plot(
-  data=fed_data %>% filter(Fiscal_Year>=2000 & Vehicle.sum7!="Unlabeled"&
-                             (is.na(multiyearcontract)|multiyearcontract==1)),
-  chart_geom = "Line Chart",
-  share = FALSE,
-  labels_and_colors=fed_lc,
-  # NA, #VAR.ncol
-  x_var="dFYear",alpha_var="YTD", #x_var
-  y_var="pVehFYear", #VAR.y.variable
-  color_var="multiyearcontracttext", #color_var
-  facet_var="Vehicle.sum7",
-  column_key=fed_ck,
-  format=TRUE,
-  ytextposition=FALSE
-)+date_x_year_breaks(2000,2022,2)+#,partial_year=2024,partial_label="\nQ1")   
-  # theme(strip.text.y = element_text(angle=0))+
- # theme(axis.text.x = element_text(angle=90))+
- #    scale_y_continuous("Percent of Obligations", labels = scales::percent_format(accuracy=1))+
- #      facet_grid(.~Competition.sum ,scales="free_x", space="free_x"
- #             )+labs(title=NULL,
-  # x="Fiscal Year",
-  # y="Percent of Obligations",
-  # color="Competition")+
-  theme(legend.position = "bottom")+
-  labs(y="Share of Obligations")+
-    scale_y_continuous(labels = scales::percent)
-)
-
-
-ggsave600dpi(path="..//Output//FedAcqTrends//",filename="Vehicle_MultiYear.png", VehicleMultiYear,  
-             width=12, height= 6, units="in",size=12, lineheight=1.2
-             )
-
-ggsave600dpi(path="..//Output//FedAcqTrends//",filename="Vehicle_MultiYearShare.png", VehicleMultiYearShare,  
-             width=6.5, height= 4, units="in",size=12, lineheight=1.2
-             )
-
-# write.csv(file="..//Output//FedAcqTrends//VehicleMultiYearShare.csv",row.names = FALSE, na = "",
-#   pivot_wider(VehicleMultiYearShare$data %>% select(-YTD) %>%
-#                         arrange(dFYear) %>% mutate(Fiscal_Year=lubridate::year(dFYear)),
-#                       id_cols=c(Vehicle.sum7,multiyearcontracttext),
-#                       names_from=Fiscal_Year,values_from=pVehFYear)%>%
-#   arrange(Vehicle.sum7,multiyearcontracttext))
-
-
-
-```
 
 ## Topline GFE
 ```{r GFE}
@@ -1301,7 +1302,7 @@ summary(fed_data$ContractingCustomer)
 
 
 ## Topline Cost Accounting
-```{r Customer}
+```{r CostAccounting}
 
 
 (
@@ -1934,7 +1935,7 @@ log_plot(plot=PSRComp_bar, df=fed_data  %>% filter(Fiscal_YQ<=2025.2),
          )
 ```
 ## PSR Multi-Year
-```{r ToplinePricing}
+```{r MSRmultiyear}
 
 (
 PSRMultiYear<-build_plot(
@@ -2105,7 +2106,7 @@ chart_geom = "Bar Chart",
 ```
 
 ## Customer Covid19
-```{r Customer}
+```{r CustomerCovid19}
 cust_covid<-fed_data %>% filter(Fiscal_YQ<=2025.2) %>% group_by(ContractingCustomer,Fiscal_Year) %>%
   summarise(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm = TRUE),
             COVID19obligated=sum(COVID19obligated,na.rm = TRUE))%>%
@@ -2343,7 +2344,7 @@ log_plot(plot=PricingHistoryCust, df=fed_data  %>% filter(!ContractingCustomer %
 
 
 ## Customer Commercial
-```{r Commercial}
+```{r CustomerCommercial}
 fed_data$AnyCommercialText<-factor(fed_data$AnyCommercial)
 levels(fed_data$AnyCommercialText)<-list(
   "Not Classified\nas Commercial"="N",
@@ -2583,7 +2584,7 @@ for(c in customer_levels){
 
 
 ## Platform by Service
-```{r Platform}
+```{r PlatformService}
 
 levels(fed_data$ContractingCustomer)
 
@@ -2752,7 +2753,7 @@ ggsave600dpi(path="..//Output//FedAcqTrends//",filename="platform_PSR.png", Plat
 
 
 ## Platform Products
-```{r PlatformPSR}
+```{r PlatformProduct}
 summary(fed_data$SimpleArea)
 (
 PlatformProducts<-build_plot(
@@ -2799,7 +2800,7 @@ write.csv(file="..//Output//FedAcqTrends//platform_products_cur.csv",row.names =
 ```
 
 ## Platform R&D
-```{r PlatformPSR}
+```{r PlatformRnD}
 (
 PlatformRnD<-build_plot(
   data=fed_data %>% filter(SimpleArea=="R&D"),
@@ -3175,7 +3176,7 @@ PlatNoComp<-build_plot(
 ```
 
 ## Platform Commercial
-```{r Commercial}
+```{r PlatformCommercial}
 fed_data$AnyCommercialText<-factor(fed_data$AnyCommercial)
 levels(fed_data$AnyCommercialText)<-list(
   "Not Classified\nas Commercial"="N",
@@ -3573,7 +3574,7 @@ log_plot(plot=ToplineVendor, df=fed_data  %>% filter(Fiscal_YQ<=2025.2 ),
 
 
 ## Vendor Size Plat Breakout
-```{r CustomerPlatBreakout} 
+```{r VendorSizePlatBreakout} 
 platform_levels<-levels(factor(fed_data$PlatformPortfolio))
 for(p in platform_levels){
   file_p<-gsub("__*","_",gsub("&","and",gsub("[ |,]","_",p)))
@@ -3611,7 +3612,7 @@ chart_geom = "Bar Chart",
 
 
 ## Vendor Size Vehicle
-```{r ToplineVendor}
+```{r VendorVehicle}
 
 
 (
