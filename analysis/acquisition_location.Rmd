@@ -539,12 +539,235 @@ PSC<-build_plot(
 ```
 
 #FMS 
-## Topline FMS
+## Budget
+
+
+
+### Topline and TOA (Greenbook)
+```{r TOAfms}
 
 
 
 
+if(!exists("platpscintldef"))
+  load(file="../data/clean/platpscintl_FPDS.Rda")
 
+View(platpscintldef %>% group_by(Project.Name) %>% summarise() %>% arrange(Project.Name))
+
+platpscintldef %>% filter(Project.Name=="ZBL") %>% group_by(Project.Name,Fiscal_Year) %>% summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23)) %>% arrange(Project.Name, Fiscal_Year)
+
+fpds_annual<-platpscintldef %>% filter(Fiscal_Year<2024) %>% group_by(Fiscal_Year,dFYear,IsFMS,
+                                    ContractingCustomer,YTD) %>% summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE),
+                                                                       Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))
+fpds_annual$Series<-"Contract Obligations"
+toa$ContractingCustomer<-"Defense"
+toa$Action_Obligation_OMB25_GDP23<-NA
+toa$Action_Obligation_Then_Year<-NA
+toa$Fiscal_Year<-text_to_number(toa$Fiscal_Year)
+toa$YTD<-NA
+toa$IsFMS<-0
+fpds_annual$Total_Obligation_Authority_Then_Year<-NA
+fpds_annual$Total_Obligation_Authority_OMB25_GDP23<-NA
+colnames(toa)[!colnames(toa) %in% colnames(fpds_annual)]
+colnames(fpds_annual)[!colnames(fpds_annual) %in% colnames(toa)]
+fpds_annual<-rbind(as.data.frame(fpds_annual),as.data.frame(toa))# %>% dplyr::select(-fiscal_quarter_YTD)
+
+fpds_annual$FMS<-as.character(fpds_annual$IsFMS)
+fpds_annual$FMS[fpds_annual$Fiscal_Year<2012 | is.na(fpds_annual$IsFMS)]<-"Obligations (reliable\nFMS labels not available)"
+fpds_annual$FMS[!is.na(fpds_annual$Total_Obligation_Authority_OMB25_GDP23)]<-"Obligations (no FMS)"
+fpds_annual$FMS<-factor(fpds_annual$FMS)
+levels(fpds_annual$FMS)<-list("Obligations (includes FMS)"=c("1","Obligations (includes FMS)"),
+                              "Obligations (no FMS)"=c("0","Obligations (no FMS)"),
+                              "Obligations (reliable\nFMS labels not available)"="Obligations (reliable\nFMS labels not available)")
+fpds_annual$Topline<-"Total Obligation Authority"
+
+fa_lc<-prepare_labels_and_colors(fpds_annual,path="offline")
+fa_ck<-get_column_key(fpds_annual,path="offline")
+
+
+(toplineTOA<-build_plot(data=fpds_annual %>% filter(Fiscal_Year>=1990),#rbind(quarterly,q2021,e2021),
+                     chart_geom="Bar Chart",
+                     x_var="dFYear",#alpha_var="YTD",
+                     y_var="Action_Obligation_OMB25_GDP23",
+           color_var="FMS",
+               labels_and_colors=fa_lc,
+  column_key=fa_ck
+       )+
+    geom_path(aes(x=dFYear,y=Total_Obligation_Authority_OMB25_GDP23,color=Topline))+
+    scale_color_manual(name="Budget",values="black")+
+  # scale_alpha_discrete(range=c(0.4,1))+
+    labs(x="Fiscal Year",y="Constant FY 2023 $",fill="Contract",color="Budget",
+         title="DOD Contract Obligations and Total Obligation Authority, FY 1990-FY 2025 Q2",
+         caption="Source: FPDS, FY 2024 DoD Greenbook, CSIS Analysis")+
+    theme(legend.position = "right")+
+    date_x_year_breaks(1990,2028,3)#,partial_year=2024,partial_label="\nQ1")
+)
+
+
+ggsave600dpi(toplineTOA,file=file.path("..","Output","AcqTrends","topline_toa_annual.png"),  
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+
+output_TY<-toplineTOA$data %>%
+  mutate(source=ifelse(!is.na(Total_Obligation_Authority_Then_Year),
+                       "TOA","Contract"),
+         Dollars=ifelse(source=="Budget",
+                        Total_Obligation_Authority_Then_Year,Action_Obligation_Then_Year))%>%
+  filter(Fiscal_Year>=1990)%>%
+          format_data_for_plot(
+                               fy_var="Fiscal_Year",
+                               y_var="Dollars",
+                               color_var="source",
+                               facet="FMS",
+                               # labels_and_colors = ota_lc,
+                               group=TRUE) %>%
+            arrange(Fiscal_Year) 
+
+
+output_TY<-deflate(output_TY,money_var = "Dollars",deflator_var="OMB25_GDP23",path="offline")
+
+# 
+# output_TY<-toplineTOA$data %>%
+#   mutate(source=ifelse(!is.na(Total_Obligation_Authority_Then_Year),
+#                        "TOA","Contract"),
+#          Dollars=ifelse(source=="TOA",
+#                         Total_Obligation_Authority_Then_Year,Action_Obligation_Then_Year))%>%
+#   filter(Fiscal_Year>=1990)%>%
+#           format_data_for_plot(
+#                                fy_var="Fiscal_Year",
+#                                y_var="Then_Year_Dollars",
+#                                color_var="source",
+#                                facet="FMS",
+#                                # labels_and_colors = ota_lc,
+#                                group=TRUE) %>%
+#             arrange(Fiscal_Year) 
+
+#+theme(plot.margin =margin(t=0,b=0,l=0.1,r=0.25,"inches"))
+log_plot(plot=toplineTOA, 
+         df=output_TY   ,y_var="Dollars_OMB25_GDP23",#%>% filter(Fiscal_YQ<=2025.2),
+                     filename="acq_fig2_1_toa_annual",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+                     sheet="2-1 TOA",path="../output/AcqTrends/", height=3,excel_formulas = TRUE,
+                     startRow=1,startCol=13,format=TRUE,var_list=c("source","FMS"),
+         output_doc_svg=TRUE
+         )
+
+log_plot(plot=toplineTOA, df=output_TY,y_var="Dollars_OMB25_GDP23",
+                     filename="nps_figXX_toa_fms",xlsx="DoD_2025_NPS.xlsx",
+                     sheet="1 TOA",path="../output/AcqTrends/NPS2025/",
+         second_path=online_path,
+         height=3,include_YTD=FALSE,
+                     format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
+         output_slide_png=TRUE,var_list=c("source","FMS")
+         )
+
+
+```
+
+
+### Topline and Outlays (Public Budget Data)
+```{r OutlayFMS}
+
+if(!exists("platpscintldef"))
+  load(file="../data/clean/platpscintl_FPDS.Rda")
+
+fpds_annual<-platpscintldef %>% filter(Fiscal_Year<2024) %>% 
+  group_by(Fiscal_Year,dFYear,IsFMS,ContractingCustomer,YTD) %>% 
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE),
+            Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm=TRUE))
+
+fpds_annual$Series<-"Contract Obligations"
+outlay$ContractingCustomer<-"Defense"
+outlay$Action_Obligation_OMB25_GDP23<-NA
+outlay$Action_Obligation_Then_Year<-NA
+outlay$Fiscal_Year<-text_to_number(outlay$Fiscal_Year)
+outlay$YTD<-NA
+outlay$IsFMS<-0
+fpds_annual$Outlays_Then_Year<-NA
+fpds_annual$Outlays_OMB25_GDP23<-NA
+colnames(outlay)[!colnames(outlay) %in% colnames(fpds_annual)]
+colnames(fpds_annual)[!colnames(fpds_annual) %in% colnames(outlay)]
+fpds_annual<-rbind(as.data.frame(fpds_annual),as.data.frame(outlay))# %>% dplyr::select(-fiscal_quarter_YTD)
+
+fpds_annual$FMS<-as.character(fpds_annual$IsFMS)
+fpds_annual$FMS[fpds_annual$Fiscal_Year<2012 | is.na(fpds_annual$IsFMS)]<-"Obligations (reliable\nFMS labels not available)"
+fpds_annual$FMS[!is.na(fpds_annual$Outlays_OMB25_GDP23)]<-"Obligations (no FMS)"
+fpds_annual$FMS<-factor(fpds_annual$FMS)
+levels(fpds_annual$FMS)<-list("Obligations (includes FMS)"=c("1","Obligations (includes FMS)"),
+                              "Obligations (no FMS)"=c("0","Obligations (no FMS)"),
+                              "Obligations (reliable\nFMS labels not available)"="Obligations (reliable\nFMS labels not available)")
+fpds_annual$Topline<-"Outlays"
+
+
+fa_lc<-prepare_labels_and_colors(fpds_annual,path="offline")
+fa_ck<-get_column_key(fpds_annual,path="offline")
+
+(toplineOutlay<-build_plot(data=fpds_annual %>% filter(Fiscal_Year>=1990),#rbind(quarterly,q2021,e2021),
+                     chart_geom="Bar Chart",
+                     x_var="dFYear",#alpha_var="YTD",
+                     y_var="Action_Obligation_OMB25_GDP23",
+           color_var="FMS",
+           labels_and_colors = fa_lc,
+           column_key = fa_ck
+       )+
+    geom_path(aes(x=dFYear,y=Outlays_OMB25_GDP23,color=Topline))+
+    scale_color_manual(name="Budget",values="black")+
+  # scale_alpha_discrete(range=c(0.4,1))+
+    labs(x="Fiscal Year",y="Constant FY 2023 $",fill="Contract",color="Budget",
+         caption="Source: FPDS, FY 2025 Office of Management\nand Budget Public Historical Tables, CSIS Analysis",
+         title="DOD Contract Obligations and Outlays, FY 1990-FY 2025 Q2")+
+    theme(legend.position = "right")+
+    date_x_year_breaks(1990,2029,3)#,partial_year=2024,partial_label="\nQ1")
+)
+
+
+ggsave600dpi(toplineOutlay,file=file.path("..","Output","AcqTrends","toplineOutlay_outlay_annual.png"),  
+             width=12, height= 6, units="in",size=12, lineheight=1.2
+             )
+
+
+output_TY<-toplineOutlay$data %>%
+  mutate(source=ifelse(!is.na(Outlays_Then_Year),
+                       "Outlays","Contract"),
+         Dollars=ifelse(source=="Outlays",
+                        Outlays_Then_Year,Action_Obligation_Then_Year))%>%
+  filter(Fiscal_Year>=1990)%>%
+          format_data_for_plot(
+                               fy_var="Fiscal_Year",
+                               y_var="Dollars",
+                               color_var="source",
+                               facet="FMS",
+                               # labels_and_colors = ota_lc,
+                               group=TRUE) %>%
+            arrange(Fiscal_Year) 
+
+
+output_TY<-deflate(output_TY,money_var = "Dollars",deflator_var="OMB25_GDP23",path="offline")
+
+#+theme(plot.margin =margin(t=0,b=0,l=0.1,r=0.25,"inches"))
+log_plot(plot=toplineOutlay, 
+         df=output_TY   , y_var="Dollars_OMB25_GDP23",#%>% filter(Fiscal_YQ<=2025.2),
+                     filename="acq_fig2_1_outlay_annual",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+                     sheet="1 Outlay",path="../output/AcqTrends/", height=3,
+         excel_formulas = TRUE,
+                     startRow=1,startCol=13,format=TRUE,var_list=c("source","FMS"),
+         output_doc_svg=TRUE
+         )
+
+
+log_plot(plot=toplineOutlay, df=output_TY,y_var="Dollars_OMB25_GDP23",
+                     filename="nps_fig01_outlay_fms",xlsx="DoD_2025_NPS.xlsx",
+                     sheet="1 Outlay",path="../output/AcqTrends/NPS2025/",second_path=online_path,
+         height=3,include_YTD=FALSE,
+                     format=TRUE,excel_y_var=TRUE,excel_formulas = TRUE,
+         output_slide_png=TRUE,var_list=c("source","FMS"),suppress_doc_svg_text = "title"
+         )
+summary(factor(platpscintldef$IsJSF))
+View(platpscintldef %>% group_by(Fiscal_Year,IsFMS,IsJSF) %>% filter(IsJSF=="JSF (F-35)") %>%
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE)))
+```
+
+##Top Line FMS
 ###FMS identification
 ```{r contract_identification}
 
