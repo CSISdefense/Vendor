@@ -800,6 +800,133 @@ ggsave600dpi(contract_identification,file="../output/figure_03_contract_identifi
 
 ```
 
+
+### Pricing FMS
+```{r FPDS_pricingUCA}
+summary(def_data$IsFMS)
+def_data$ProductOrService<-factor(def_data$SimpleArea)
+levels(def_data$ProductOrService)<-list("Products"="Products (All)",
+                                         "Services & R&D"=c("R&D","Services (Non-R&D)"),
+                                         "Unlabeled"="Unlabeled")
+
+
+def_data<- def_data %>%      group_by(Fiscal_Year,IsFMS) %>%
+                               dplyr::mutate(Action_FMS_Share=Action_Obligation_OMB25_GDP23/
+                                           sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))%>% 
+                               group_by(Fiscal_Year,IsFMS,ProductOrService) %>%
+                               dplyr::mutate(Action_FMS_PS_Share=Action_Obligation_OMB25_GDP23/
+                                           sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))%>% 
+                               group_by(Fiscal_Year,IsFMS,SimpleArea) %>%
+                               dplyr::mutate(Action_FMS_PSR_Share=Action_Obligation_OMB25_GDP23/
+                                           sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE))
+
+
+
+# undebug(build_plot)
+# undebug(build_plot)
+(fpds_pricing <-  build_plot(data=def_data %>% filter(Fiscal_Year>=2012 & Fiscal_YQ<=2025.2),
+                            chart_geom="Line Chart",
+                            x_var="dFYear",
+                            y_var="Action_FMS_Share",
+                            color_var="IsFMS",
+                            facet_var="PricingUCA",
+                            # second_var="StateRegion",
+                            labels_and_colors=def_lc,
+                            column_key=def_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE,
+                            alpha_var="YTD",
+)+date_x_year_breaks(2012,2022,2)+#,partial_year=2024,partial_label="\nQ1")
+    theme(legend.position = "right")+
+    facet_wrap( ~PricingUCA)+
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1)))
+
+
+
+# undebug(format_data_for_plot)
+(fpds_pricing_bar <-  build_plot(data=def_data %>% filter(Fiscal_Year>=2012 & Fiscal_YQ<=2025.2),
+                            chart_geom="Bar Chart",
+                            x_var="dFYear",
+                            y_var="Action_Obligation_OMB25_GDP23",
+                            color_var="PricingUCA",
+                            facet_var="IsFMS",
+                            # second_var="StateRegion",
+                            labels_and_colors=def_lc,
+                            column_key=def_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE,
+                            alpha_var="YTD",
+)+date_x_year_breaks(2012,2022,3)+#,partial_year=2024,partial_label="\nQ1")
+    theme(legend.position = "right")+
+    facet_grid( IsFMS~. , scales="free_y"))
+
+# +
+#   labs(#x="Year of Delivery (Calendar or Fiscal Varies by Source)",
+#        y="Constant 2023 $ Obligated (Variable Y-Scale)",
+#        caption="Source: FPDS and CSIS analysis.")+
+#     theme(legend.position = "right"))
+
+(fpds_pricing_psr <-  build_plot(data=def_data %>% filter(Fiscal_Year>=2012 & Fiscal_YQ<=2025.2) %>%
+                                   filter(SimpleArea!="Unlabeled" & IsFMS!="Unlabeled" & !is.na(IsFMS)),
+                            chart_geom="Line Chart",
+                            x_var="dFYear",
+                            y_var="Action_FMS_PSR_Share",
+                            color_var="IsFMS",
+                            facet_var="PricingUCA",
+                            second_var="SimpleArea",
+                            labels_and_colors=def_lc,
+                            column_key=def_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE,
+                            alpha_var="YTD",
+)+date_x_year_breaks(2012,2022,3)+#,partial_year=2024,partial_label="\nQ1")
+    theme(legend.position = "right")+
+    facet_grid(SimpleArea~PricingUCA)+
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1))+
+    labs(caption="Note: Excludes unlabeled product or service and unlabeled FMS.\nSource: FPDS and CSIS analysis."))#+
+
+     # theme(strip.text.y = element_text(angle=0)))
+
+
+# debug(buildaC_plot)
+(fpds_pricing_psr_bar <-  build_plot(data=def_data  %>% filter(SimpleArea!="Unlabeled"&
+                                                                    IsFMS!="Unlabeled" & 
+                                                                  !is.na(IsFMS))%>%
+                                       filter(Fiscal_Year>=2012 & Fiscal_YQ<=2025.2),
+                            chart_geom="Bar Chart",
+                            x_var="dFYear",
+                            y_var="Action_Obligation_OMB25_GDP23",
+                            color_var="PricingUCA",
+                            facet_var="IsFMS",
+                            second_var="ProductOrService",
+                            labels_and_colors=def_lc,
+                            column_key=def_ck,
+                            legend=TRUE,
+                            caption=FALSE,
+                            format=TRUE,
+                            alpha_var="YTD",
+)+date_x_year_breaks(2012,2022,3)+#,partial_year=2024,partial_label="\nQ1")
+    theme(legend.position = "right")+
+    facet_grid( IsFMS~ProductOrService , scales="free_y")+
+    labs(caption="Note: Excludes unlabeled product or service and unlabeled FMS.\nSource: FPDS and CSIS analysis."))
+# 
+# ggsave600dpi(fpds_pricing_psr_bar, filename = "..//output//figure_07_fpds_pricing_psr_bar.png", 
+#        width = 9,
+#        height = 4.5,
+#        size = 12, lineheight=1)
+
+log_plot(plot=fpds_pricing_psr_bar, df=def_data  %>% filter(Fiscal_YQ<=2025.2),
+                     filename="acq_fig7_3_FMS_ps_pricing",xlsx="DoD_Acq_Trends_Contracts.xlsx",
+                     sheet="7-3 FMSprice",path="../output/AcqTrends/", height=3.5,
+                     startRow=1,startCol=15,format=TRUE,var_list=c("IsFMS","ProductOrService","PricingUCA.sum","PricingUCA")
+         )
+
+
+```
+
 # FMS or International
 
 ## Service Category
