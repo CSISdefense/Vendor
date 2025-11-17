@@ -60,7 +60,16 @@ initial_clean<-function(df,only_defense=TRUE){
   
   # fed_data<-initial_clean(def_data,only_defense=FALSE)
   fed_data<- apply_standard_lookups(fed_data)#,
-  
+
+  fed_data<-read_and_join_experiment(fed_data,
+                               "Customer.csv",
+                               by=c("ContractingCustomer"="Customer"),
+                               add_var=c("Customer.sum"),
+                               path=path,
+                               prefix="Contracting",
+                               directory="office/",
+                               lookup_char_as_factor = TRUE)
+    
   fed_lc<-prepare_labels_and_colors(fed_data)
   
   fed_ck<-get_column_key(fed_data)
