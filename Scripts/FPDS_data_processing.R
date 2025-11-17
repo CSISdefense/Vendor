@@ -61,14 +61,17 @@ initial_clean<-function(df,only_defense=TRUE){
   # fed_data<-initial_clean(def_data,only_defense=FALSE)
   fed_data<- apply_standard_lookups(fed_data)#,
 
+  #Available for customer groupings if need.
   fed_data<-read_and_join_experiment(fed_data,
                                "Customer.csv",
                                by=c("ContractingCustomer"="Customer"),
                                add_var=c("Customer.sum"),
-                               path=path,
+                               # path=path,
                                prefix="Contracting",
                                directory="office/",
-                               lookup_char_as_factor = TRUE)
+                               missing_file = "missing_customer.csv",
+                               lookup_char_as_factor = TRUE
+                               )
     
   fed_lc<-prepare_labels_and_colors(fed_data)
   
