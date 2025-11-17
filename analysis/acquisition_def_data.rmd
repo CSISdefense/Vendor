@@ -2561,7 +2561,7 @@ chart_geom = "Bar Chart",
 
 ## SubCustomer Covid19
 ```{r SubCustomerCovid19}
-cust_covid<-def_data %>% filter(Fiscal_YQ<=2025.2) %>% group_by(SubCustomer.JPO,SubCustomer.sum,dFYear) %>%
+cust_covid<-def_data %>% filter(Fiscal_YQ<=2025.2) %>% group_by(SubCustomer.JPO,SubCustomer.sum,dFYear,Fiscal_Year) %>%
   summarise(Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year,na.rm = TRUE),
             COVID19obligated=sum(COVID19obligated,na.rm = TRUE))%>%
   mutate(Action_other=Action_Obligation_Then_Year-COVID19obligated) 
@@ -2612,7 +2612,8 @@ ggsave600dpi(path="..//Output//AcqTrends//",filename="subcustomer_covid.svg", Su
              )
 
 write.csv(file="..//Output//AcqTrends//subcustomer_covid.csv",row.names = FALSE, na = "",
-          pivot_wider(SubCustomerCovid$data,id_cols=c(SubCustomer.sum,SubCustomer.COVID),
+           SubCustomerCovid$data %>% mutate(Fiscal_Year=lubridate::year(dFYear))%>%
+          pivot_wider(id_cols=c(SubCustomer.sum,SubCustomer.COVID),
                       names_from=Fiscal_Year,values_from=Action_Obligation_OMB25_GDP23))
 
 write.csv(file="..//Output//AcqTrends//subcustomer_covid.csv",row.names = FALSE, na = "",
