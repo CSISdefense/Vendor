@@ -559,6 +559,48 @@ save(pricing,pricing_lc,pricing_ck, file="data/clean/pricing_historical.Rda")
 login<-askpass("Please enter the login account")
 pwd<-askpass("Please enter the account password")
 
+common_fields<-c(
+  ",[Fiscal_Year]",
+  ",[ObligatedAmount]",
+  ",[MaxOfCAUobligatedAmount]",
+  ",[AnyIsSmall]",
+  ",[AlwaysIsSmall]",
+  ",[ObligatedAmountIsSmall]",
+  ",[IsOnePercentPlusSmall]",
+  ",[AnyDefense]",
+  ",[DefenseObligated]",
+  ",[IsEntityAbove1990constantMTAthreshold]",
+  ",[IsEntityAbove2016constantMTAthreshold]",
+  ",[IsEntityAbove2018constantMTAthreshold]",
+  ",[IsEntityAbove2016constantArbitrary1000k]",
+  ",[IsEntityAbove2018constantSimplifedAcquisition250kThreshold]",
+  ",[IsEntityAbove2018constantCommercialItem7500k]",
+  ",[IsEntityAbove2018constantCostAccounting2000kThreshold]",
+  ",[AnyEntityUSplaceOfPerformance]",
+  ",[AnyEntityForeignPlaceOfPerformance]",
+  ",[IsEntityTraditional]")
+
+ruh_sql<-paste("SELECT  [UEI]",
+                paste(common_fields,collapse=" "),
+                ",[topISO3countrycode]",
+                ",[ParentID]",
+                ",[StandardizedTopContractor]",
+                ",[Parent_UEI]",
+                ",[Parent_UEIFirstDate]",
+                ",[EntitySizeCode]",
+            "FROM [Vendor].[UEIhistory]",
+            "where [IsPresent]=1"
+)
+
+
+rpuh_sql<-paste("SELECT [Parent_UEI]",
+                 paste(common_fields,collapse=" "),
+                 ",AnyCASclause",
+                 ",AlwaysCAUisCASexemptOrWaived",
+                 "FROM [Vendor].[Parent_UEIhistory]"
+)
+
+
 con <- dbConnect(odbc(),
                  Driver = "SQL Server",
                  Server = "vmsqldiig.database.windows.net",
@@ -566,42 +608,16 @@ con <- dbConnect(odbc(),
                  UID = login,
                  PWD =pwd)
 
-sql<-paste0("SELECT  [UEI]",
-            ",[Fiscal_Year]",
-            ",[ParentID]",
-            ",[StandardizedTopContractor]",
-            ",[Parent_UEI]",
-            ",[Parent_UEIFirstDate]",
-            ",[ObligatedAmount]",
-            ",[topISO3countrycode]",
-            ",[MaxOfCAUobligatedAmount]",
-            ",[AnyIsSmall]",
-            ",[AlwaysIsSmall]",
-            ",[ObligatedAmountIsSmall]",
-            ",[IsOnePercentPlusSmall]",
-            ",[EntitySizeCode]",
-            ",[AnyDefense]",
-            ",[DefenseObligated]",
-            ",[IsEntityAbove1990constantMTAthreshold]",
-            ",[IsEntityAbove2016constantMTAthreshold]",
-            ",[IsEntityAbove2018constantMTAthreshold]",
-            ",[IsEntityAbove2016constantArbitrary1000k]",
-            ",[IsEntityAbove2018constantSimplifedAcquisition250kThreshold]",
-            ",[IsEntityAbove2018constantCommercialItem7500k]",
-            ",[IsEntityAbove2018constantCostAccounting2000kThreshold]",
-            ",[AnyEntityUSplaceOfPerformance]",
-            ",[AnyEntityForeignPlaceOfPerformance]",
-            ",[IsEntityTraditional]",
-            "FROM [Vendor].[UEIhistory] ",
-            "where [IsPresent]=1"
-)
 
 #Note that the first run may be slower
-#"[Vendor].[UEIhistory] PartialPresent" "Download Start"                       "Fri Nov 21 09:27:11 2025"   
-#[1] "[Vendor].[UEIhistory] PartialPresent" "Download End"                         "Fri Nov 21 09:27:24 2025"  
-print(c("[Vendor].[UEIhistory] PartialPresent","Download Start", format(Sys.time(), "%c")))
-ruh<-dbGetQuery(con,  sql)
-print(c("[Vendor].[UEIhistory] Present","Download End", format(Sys.time(), "%c")))
+# --1,122,215
+# --2025-08-16 38s 3,212,907 rows more than double!
+#   --38s
+#"[Vendor].[UEIhistory]" "Download Start"                       "Fri Nov 21 09:27:11 2025"   
+#[1] "[Vendor].[UEIhistory]" "Download End"                         "Fri Nov 21 09:27:24 2025"  
+print(c("[Vendor].[UEIhistory]","Download Start", format(Sys.time(), "%c")))
+ruh<-dbGetQuery(con,  ruh_sql)
+print(c("[Vendor].[UEIhistory]","Download End", format(Sys.time(), "%c")))
 
 write_delim(ruh,file.path("data","semi_clean","RecipientUEIhistory.txt"),delim="\t",
                 na=c("NULL"))
@@ -610,9 +626,13 @@ ruh$YTD<-factor(ifelse(ruh$Fiscal_Year==max(ruh$Fiscal_Year),"YTD","Full Year"),
 
 ruh<-deflate(ruh,money_var="DefenseObligated")
 
+#2025-08-16 33s 3,430,296
+print(c("[Vendor].[Parent_UEIhistory]","Download Start", format(Sys.time(), "%c")))
+rpuh<-dbGetQuery(con,  rpuh_sql)
+print(c("[Vendor].[Parent_UEIhistory]","Download End", format(Sys.time(), "%c")))
+write_delim(rpuh,file.path("data","semi_clean","Parent_UEIhistory.txt"),delim="\t",
+            na=c("NULL"))
 
-rpuh<-read_delim(file.path("data","semi_clean","Vendor.Parent_UEIhistory.txt"),delim="\t",
-                na=c("NULL",""))
 rpuh<-apply_standard_lookups(rpuh)
 rpuh$YTD<-factor(ifelse(rpuh$Fiscal_Year==max(rpuh$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
 
@@ -688,11 +708,60 @@ rpuh_lc<-prepare_labels_and_colors(def_rpuh,path="Offline")
 rpuh_ck<-get_column_key(def_rpuh,path="Offline")
 
 
-list.files(file.path("data","Semi_clean"))
-cas<-read_delim(file.path("data","Semi_clean","CAUcostAccountingChecking.txt"),na=c("NULL",""))
+### CAUcostAccountingChecking.txt ####
+cas_fields<-c("Fiscal_Year",
+  ",[IsAbove2018constantCommercialItem7500k]",
+  ",[IsAbove2018constantCostAccounting2000kThreshold]",
+  ",[CostAccountingStandardsClause]",
+  ",[costorpricingdata]",
+  ",[IsSealedBid]",
+  ",[IsCommercialitemacquisitionprocedures]",
+  ",[isforeigngovernment]",
+  ",[FixedPriceEffective]",
+  ",[AlwaysCAUisCASexemptOrWaived]",
+  ",contractingofficerbusinesssizedetermination",
+  ",IsEntityTraditional ",
+  ",IsEntityAbove2018constantCommercialItem7500k ",
+  ",AlwaysIsSmall",
+  ",AnyCASclause"
+)
+  
+cas_sql<-paste("SELECT ",
+               paste(cas_fields,collapse=" "),
+               ",count([contract_award_unique_key]) as n_cau",
+               ",sum(obligatedamount) as obligatedamount",
+               "FROM [Contract].[DefenseCostAccountingStandardCrosscheck]",
+               "GROUP BY",paste(cas_fields,collapse=" ")
+)
+
+
+con <- dbConnect(odbc(),
+                 Driver = "SQL Server",
+                 Server = "vmsqldiig.database.windows.net",
+                 Database = "CSIS360",
+                 UID = login,
+                 PWD =pwd)
+
+
+
+# --CAUcostAccountingChecking.txt
+# --18m13s
+# --16m30s after changing over to a new parent rollup approach.
+# --8m46  38,074 rows. 
+#"[Contract].[DefenseCostAccountingStandardCrosscheck]" "Download Start" "Fri Nov 21 11:52:28 2025" 
+#"[Contract].[DefenseCostAccountingStandardCrosscheck]" "Download End" "Fri Nov 21 12:06:36 2025" 
+print(c("[Contract].[DefenseCostAccountingStandardCrosscheck]","Download Start", format(Sys.time(), "%c")))
+cas<-dbGetQuery(con,  cas_sql)
+print(c("[Contract].[DefenseCostAccountingStandardCrosscheck]","Download End", format(Sys.time(), "%c")))
+cas$CostAccountingStandardsClause[cas$CostAccountingStandardsClause==""]<-NA
+cas$contractingofficerbusinesssizedetermination[cas$contractingofficerbusinesssizedetermination==""]<-NA
+cas$costorpricingdata[cas$costorpricingdata==""]<-NA
+write_delim(rpuh,file.path("data","semi_clean","CAUcostAccountingChecking.txt"),delim="\t",
+            na=c("NULL"))
+summary(cas)
 
 cas<-apply_standard_lookups(cas)
-cas <- cas %>%
+cas <- cas %>% 
   mutate(
     # AlwaysIsSmallLabel= case_when(
     # AlwaysIsSmall==1 ~ "Consistently Small Vendor",
