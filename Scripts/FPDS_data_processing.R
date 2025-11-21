@@ -707,8 +707,10 @@ def_rpuh <- def_rpuh %>%
 rpuh_lc<-prepare_labels_and_colors(def_rpuh,path="Offline")  
 rpuh_ck<-get_column_key(def_rpuh,path="Offline")
 
+save(ruh,rpuh,def_rpuh,rpuh_lc,rpuh_ck,
+     file=file.path("data","clean","RecipientUEI.rda"))
 
-### CAUcostAccountingChecking.txt ####
+## CAU_CAS (costAccountingStandads) ####
 cas_fields<-c("Fiscal_Year",
   ",[IsAbove2018constantCommercialItem7500k]",
   ",[IsAbove2018constantCostAccounting2000kThreshold]",
@@ -802,7 +804,6 @@ cas_lc<-prepare_labels_and_colors(cas,path="offline")
 cas_ck<-get_column_key(cas,path="offline")
 
   summary(factor(def_rpuh$IsEntityTraditional))
-  save(ruh,rpuh,def_rpuh,rpuh_lc,rpuh_ck,
-       cas,cas_lc,cas_ck,file=file.path("data","clean","RecipientUEI.rda"))
+  save(cas,cas_lc,cas_ck,file=file.path("data","clean","cau_cas.rda"))
 
 
