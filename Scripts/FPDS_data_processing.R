@@ -603,9 +603,7 @@ print(c("[Vendor].[UEIhistory] PartialPresent","Download Start", format(Sys.time
 ruh<-dbGetQuery(con,  sql)
 print(c("[Vendor].[UEIhistory] Present","Download End", format(Sys.time(), "%c")))
 
-
-
-write_delim(ruh,file.path("data","semi_clean","Vendor.RecipientUEIhistoryPresent.txt"),delim="\t",
+write_delim(ruh,file.path("data","semi_clean","RecipientUEIhistory.txt"),delim="\t",
                 na=c("NULL"))
 ruh<-apply_standard_lookups(ruh)
 ruh$YTD<-factor(ifelse(ruh$Fiscal_Year==max(ruh$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
