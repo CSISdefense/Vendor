@@ -556,8 +556,57 @@ save(pricing,pricing_lc,pricing_ck, file="data/clean/pricing_historical.Rda")
 
 # ***** Handled in apply_standard_lookups
 # Recipient_UEI ####
-ruh<-read_delim(file.path("data","semi_clean","Vendor.RecipientUEIpartial.txt"),delim="\t",
-                na=c("NULL",""))
+login<-askpass("Please enter the login account")
+pwd<-askpass("Please enter the account password")
+
+con <- dbConnect(odbc(),
+                 Driver = "SQL Server",
+                 Server = "vmsqldiig.database.windows.net",
+                 Database = "CSIS360",
+                 UID = login,
+                 PWD =pwd)
+
+sql<-paste0("SELECT  [UEI]",
+            ",[Fiscal_Year]",
+            ",[ParentID]",
+            ",[StandardizedTopContractor]",
+            ",[Parent_UEI]",
+            ",[Parent_UEIFirstDate]",
+            ",[ObligatedAmount]",
+            ",[topISO3countrycode]",
+            ",[MaxOfCAUobligatedAmount]",
+            ",[AnyIsSmall]",
+            ",[AlwaysIsSmall]",
+            ",[ObligatedAmountIsSmall]",
+            ",[IsOnePercentPlusSmall]",
+            ",[EntitySizeCode]",
+            ",[AnyDefense]",
+            ",[DefenseObligated]",
+            ",[IsEntityAbove1990constantMTAthreshold]",
+            ",[IsEntityAbove2016constantMTAthreshold]",
+            ",[IsEntityAbove2018constantMTAthreshold]",
+            ",[IsEntityAbove2016constantArbitrary1000k]",
+            ",[IsEntityAbove2018constantSimplifedAcquisition250kThreshold]",
+            ",[IsEntityAbove2018constantCommercialItem7500k]",
+            ",[IsEntityAbove2018constantCostAccounting2000kThreshold]",
+            ",[AnyEntityUSplaceOfPerformance]",
+            ",[AnyEntityForeignPlaceOfPerformance]",
+            ",[IsEntityTraditional]",
+            "FROM [Vendor].[UEIhistory] ",
+            "where [IsPresent]=1"
+)
+
+#Note that the first run may be slower
+#"[Vendor].[UEIhistory] PartialPresent" "Download Start"                       "Fri Nov 21 09:27:11 2025"   
+#[1] "[Vendor].[UEIhistory] PartialPresent" "Download End"                         "Fri Nov 21 09:27:24 2025"  
+print(c("[Vendor].[UEIhistory] PartialPresent","Download Start", format(Sys.time(), "%c")))
+ruh<-dbGetQuery(con,  sql)
+print(c("[Vendor].[UEIhistory] Present","Download End", format(Sys.time(), "%c")))
+
+
+
+write_delim(ruh,file.path("data","semi_clean","Vendor.RecipientUEIhistoryPresent.txt"),delim="\t",
+                na=c("NULL"))
 ruh<-apply_standard_lookups(ruh)
 ruh$YTD<-factor(ifelse(ruh$Fiscal_Year==max(ruh$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
 

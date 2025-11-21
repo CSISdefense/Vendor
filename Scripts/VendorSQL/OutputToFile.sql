@@ -472,6 +472,7 @@ EXEC	Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength
 SET QUERY_GOVERNOR_COST_LIMIT 0
 --12,984.995 rows, 11h30m
 --13,003,225 rows, 11u10m
+--13,109,697 rows, 11h53m
 SET ANSI_WARNINGS OFF;
 SET NOCOUNT ON;
 EXEC	Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength
