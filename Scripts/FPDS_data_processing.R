@@ -756,7 +756,7 @@ print(c("[Contract].[DefenseCostAccountingStandardCrosscheck]","Download End", f
 cas$CostAccountingStandardsClause[cas$CostAccountingStandardsClause==""]<-NA
 cas$contractingofficerbusinesssizedetermination[cas$contractingofficerbusinesssizedetermination==""]<-NA
 cas$costorpricingdata[cas$costorpricingdata==""]<-NA
-write_delim(rpuh,file.path("data","semi_clean","CAUcostAccountingChecking.txt"),delim="\t",
+write_delim(cas,file.path("data","semi_clean","CAUcostAccountingChecking.txt"),delim="\t",
             na=c("NULL"))
 summary(cas)
 
