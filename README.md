@@ -101,13 +101,13 @@ Contributors: [Gregory Sanders](https://www.csis.org/people/gregory-sanders), He
         -   Last downloaded: November 21, 2025
         -   Processing File: [Scripts / FPDS_data_processing.R](https://github.com/CSISdefense/Vendor/blob/master/Scripts/FPDS_data_processing.R)
     -   Complete:
-        -   RDA file: [Data / Clean / RecipientUEI.Rda](https://github.com/CSISdefense/Vendor/blob/master/Data/Clean/RecipientUEI.Rda)
+        -   RDA file: [Data / Clean / RecipientUEI.rda](https://github.com/CSISdefense/Vendor/blob/master/Data/Clean/RecipientUEI.rda)
         -   Catalog file: [Docs / catalog / pruh.csv](https://github.com/CSISdefense/Vendor/blob/master/Docs/catalog/pruh.csv)
         -   Supporting variables: column key: pruh_ck, labels and colors: pruh_lc.
 
 ## Analysis
 
-  - **industrial_base_ruh_pruh**: Analyzes parent vendor counts, as measured by parent UEIs. Applies minimum thresholds for reporting to adjust for inconsistent standards over the years.
+-   **industrial_base_ruh_pruh**: Analyzes parent vendor counts, as measured by parent UEIs. Applies minimum thresholds for reporting to adjust for inconsistent standards over the years.
     -   Datasets employed: puh, pruh
     -   Analysis file: [Analysis / industrial_base_ruh_pruh.Rmd](https://github.com/CSISdefense/Vendor/blob/master/analysis/industrial_base_ruh_pruh.Rmd)
     -   Knit markdown file: [Analysis / industrial_base_ruh_pruh.md](https://github.com/CSISdefense/Vendor/blob/master/analysis/industrial_base_ruh_pruh.md)
