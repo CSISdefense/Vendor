@@ -710,6 +710,10 @@ rpuh_ck<-get_column_key(def_rpuh,path="Offline")
 save(ruh,rpuh,def_rpuh,rpuh_lc,rpuh_ck,
      file=file.path("data","clean","RecipientUEI.rda"))
 
+ruh_datacat<-catalog("data/clean/", engines$rda,pattern="*RecipientUEI*")
+write.csv(ruh_datacat$RecipientUEI,file=file.path("docs","catalog","ruh.csv"),row.names=FALSE)
+write.csv(ruh_datacat$RecipientUEI,file=file.path("docs","catalog","pruh.csv"),row.names=FALSE)
+
 ## CAU_CAS (costAccountingStandads) ####
 cas_fields<-c("Fiscal_Year",
   ",[IsAbove2018constantCommercialItem7500k]",
