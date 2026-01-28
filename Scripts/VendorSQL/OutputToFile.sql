@@ -329,7 +329,13 @@ SET NOCOUNT ON;
 EXEC	[Contract].[SP_PBLcompetitionContractSizeHistorySubCustomer]
 		@Customer = N'Defense'
 
-
+--5h02m
+--1,087,725 rows
+SET QUERY_GOVERNOR_COST_LIMIT 0
+SET ANSI_WARNINGS OFF;
+SET NOCOUNT ON;
+EXEC	Vendor.[sp_SmallBusinessClassificationCustomer]
+		@Customer = NULL
 
 
 

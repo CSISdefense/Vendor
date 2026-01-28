@@ -493,7 +493,19 @@ jadc2_ck<-csis360::get_column_key(jadc2)
 save(jadc2,jadc2_lc, jadc2_ck,file="data/clean/jadc2.Rda")
 
 
+### Set Asides ####
 
+setasides <- read_delim(
+  "Data//semi_clean//Federal_Vendor.sp_SmallBusinessClassificationCustomer.txt",delim = "\t",
+  col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
+colnames(setasides)[colnames(setasides)=="...35"]<-"ObligatedAmount"
+setasides<-apply_standard_lookups(setasides)#,
+
+
+setasides_lc<-csis360::prepare_labels_and_colors(setasides)
+setasides_ck<-csis360::get_column_key(setasides)
+save(setasides,setasides_lc, setasides_ck,file="data/clean/setasides.Rda")
+write_delim(setasides,file=file.path("data","clean","setasides.csv"),delim=",",na = "N/A")
 
 # Sam.gov extracts####
 ####Pricing History 1980-2021 #############
