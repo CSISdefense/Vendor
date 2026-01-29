@@ -501,11 +501,27 @@ setasides <- read_delim(
 colnames(setasides)[colnames(setasides)=="...35"]<-"ObligatedAmount"
 setasides<-apply_standard_lookups(setasides)#,
 
+setasides$NativeGroupOwned<-NA
+setasides<-setasides %>% mutate(NativeGroupOwned=
+                                  dplyr::case_when(isalaskannativeownedcorporationorfirm==1 & isnativehawaiianownedorganizationorfirm==1 ~ 'Multi-Category Native Owned',
+                                                   isalaskannativeownedcorporationorfirm==1 & (istriballyownedfirm==1 | isindiantribe==1)  ~ 'Alaskan Native Tribe Owned',
+                                                   isalaskannativeownedcorporationorfirm==1  ~ 'Alaskan Native Owned',
+                                                   isnativehawaiianownedorganizationorfirm==1 & (istriballyownedfirm==1 | isindiantribe==1)  ~ 'Native Hawaiian Tribe Owned',
+                                                   isnativehawaiianownedorganizationorfirm==1  ~ 'Native Hawaiian Owned',
+                                                   istriballyownedfirm==1 | isindiantribe==1  ~ 'Other Native American Tribe Owned',
+                                                   naobflag==1   ~ 'Other Native American Owned',
+                                                   T ~ 'No Native Owned Flag'))
+(nativeowned<-setasides %>% group_by(NativeGroupOwned,isnativehawaiianownedorganizationorfirm,isalaskannativeownedcorporationorfirm,
+                                     istriballyownedfirm,isindiantribe,naobflag) %>%
+    summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23)) %>%
+    arrange(NativeGroupOwned,-Action_Obligation_OMB25_GDP23)
+)
+write.csv(nativeowned,file.path("Output","setasides","NativeOwned.csv"),row.names=FALSE)                                              
+
 
 setasides_lc<-csis360::prepare_labels_and_colors(setasides)
 setasides_ck<-csis360::get_column_key(setasides)
 save(setasides,setasides_lc, setasides_ck,file="data/clean/setasides.Rda")
-write_delim(setasides,file=file.path("data","clean","setasides.csv"),delim=",",na = "N/A")
 
 # Sam.gov extracts####
 ####Pricing History 1980-2021 #############

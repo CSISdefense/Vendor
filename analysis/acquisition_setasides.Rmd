@@ -1,0 +1,69 @@
+---
+title: "Defense Acquisition Trends"
+output:
+  html_document:
+    keep_md: yes
+    toc: yes
+date: "Wednesday, October 6, 2021"
+---
+
+# Setup
+First we load the data. The dataset used is a U.S. Defense Contracting dataset derived from FPDS.
+
+```{r Libraries, echo = FALSE}
+library(csis360)
+library(ggplot2)
+library(dplyr)
+library(openxlsx)
+library(tidyverse)
+library(scales)
+library(openxlsx)
+axis.text.size<-10
+strip.text.size<-10
+legend.text.size<-8
+# table.text.size<-5.75
+title.text.size<-12
+geom.text.size<-12
+
+main.text.size<-1
+note.text.size<-1.40
+if(!exists("setasides"))
+  load(file="..//data//clean//setasides.Rda")
+
+# detail_lc<-prepare_labels_and_colors(platpscintldef)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+# detail_ck<-get_column_key(platpscintldef)#,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+# column_key<-get_column_key(platpscintldef,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+# detail_lc<-prepare_labels_and_colors(platpscintldef,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+# detail_ck<-get_column_key(platpscintldef,path="K:\\Users\\Greg\\Repositories\\Lookup-Tables\\style\\")
+```
+# Preprocessing 
+## Group By PlatformPortfolio
+### Project
+```{r PreprocessSetaside}
+
+(nativeowned<-setasides %>% group_by(NativeGroupOwned,isnativehawaiianownedorganizationorfirm,isalaskannativeownedcorporationorfirm,
+  istriballyownedfirm,isindiantribe,naobflag) %>%
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23)) %>%
+  arrange(NativeGroupOwned,-Action_Obligation_OMB25_GDP23)
+)
+
+write.csv(nativeowned,file.path("..","Output","setasides","NativeOwned.csv"),row.names=FALSE)
+
+setasides$NativeGroupOwned<-NA
+setasides<-setasides %>% mutate(NativeGroupOwned=
+                       dplyr::case_when(isalaskannativeownedcorporationorfirm==1 & isnativehawaiianownedorganizationorfirm==1 ~ 'Multi-Category Native Owned',
+                                 isalaskannativeownedcorporationorfirm==1 & (istriballyownedfirm==1 | isindiantribe==1)  ~ 'Alaskan Native Tribe Owned',
+                                 isalaskannativeownedcorporationorfirm==1  ~ 'Alaskan Native Owned',
+                                 isnativehawaiianownedorganizationorfirm==1 & (istriballyownedfirm==1 | isindiantribe==1)  ~ 'Native Hawaiian Tribe Owned',
+                                 isnativehawaiianownedorganizationorfirm==1  ~ 'Native Hawaiian Owned',
+                                 istriballyownedfirm==1 | isindiantribe==1  ~ 'Other Native American Tribe Owned',
+                                 naobflag==1   ~ 'Other Native American Owned',
+                                 T ~ 'No Native Owned Flag'))
+(nativeowned<-setasides %>% group_by(NativeGroupOwned,isnativehawaiianownedorganizationorfirm,isalaskannativeownedcorporationorfirm,
+  istriballyownedfirm,isindiantribe,naobflag) %>%
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23)) %>%
+  arrange(NativeGroupOwned,-Action_Obligation_OMB25_GDP23)
+)
+write.csv(nativeowned,file.path("..","Output","setasides","NativeOwned.csv"),row.names=FALSE)                                              
+  
+```
