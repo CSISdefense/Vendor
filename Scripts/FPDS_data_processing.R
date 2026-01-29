@@ -513,11 +513,17 @@ setasides<-setasides %>% mutate(NativeGroupOwned=
                                                    T ~ 'No Native Owned Flag'))
 (nativeowned<-setasides %>% group_by(NativeGroupOwned,isnativehawaiianownedorganizationorfirm,isalaskannativeownedcorporationorfirm,
                                      istriballyownedfirm,isindiantribe,naobflag) %>%
-    summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23)) %>%
+    summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE)) %>%
     arrange(NativeGroupOwned,-Action_Obligation_OMB25_GDP23)
 )
 write.csv(nativeowned,file.path("Output","setasides","NativeOwned.csv"),row.names=FALSE)                                              
 
+setasides<-setasides %>% mutate(IsSetAside=
+                                  case_when(is.na(typeofsetaside)~NA,
+                                            typeofsetaside %in% c(":","638","")~NA,
+                                            typeofsetaside=="NONE"~F,
+                                            T~T))
+setasides <-setasides[,colnames(setasides)!="MinorityOwned"]
 
 setasides_lc<-csis360::prepare_labels_and_colors(setasides)
 setasides_ck<-csis360::get_column_key(setasides)

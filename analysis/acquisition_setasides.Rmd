@@ -43,7 +43,7 @@ if(!exists("setasides"))
 
 (nativeowned<-setasides %>% group_by(NativeGroupOwned,isnativehawaiianownedorganizationorfirm,isalaskannativeownedcorporationorfirm,
   istriballyownedfirm,isindiantribe,naobflag) %>%
-  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23)) %>%
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE)) %>%
   arrange(NativeGroupOwned,-Action_Obligation_OMB25_GDP23)
 )
 
@@ -61,9 +61,20 @@ setasides<-setasides %>% mutate(NativeGroupOwned=
                                  T ~ 'No Native Owned Flag'))
 (nativeowned<-setasides %>% group_by(NativeGroupOwned,isnativehawaiianownedorganizationorfirm,isalaskannativeownedcorporationorfirm,
   istriballyownedfirm,isindiantribe,naobflag) %>%
-  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23)) %>%
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE)) %>%
   arrange(NativeGroupOwned,-Action_Obligation_OMB25_GDP23)
 )
+
+setasides<-setasides %>% mutate(IsSetAside=
+                       case_when(is.na(typeofsetaside)~NA,
+                                 typeofsetaside %in% c(":","638","")~NA,
+                                 typeofsetaside=="NONE"~F,
+                                 T~T))
+setasides %>% group_by(typeofsetaside,IsSetAside) %>%
+  summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23,na.rm=TRUE)) %>%
+  arrange(-Action_Obligation_OMB25_GDP23)
+
+
 write.csv(nativeowned,file.path("..","Output","setasides","NativeOwned.csv"),row.names=FALSE)                                              
   
 ```
