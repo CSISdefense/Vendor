@@ -525,8 +525,12 @@ setasides<-setasides %>% mutate(IsSetAside=
                                             T~T))
 setasides <-setasides[,colnames(setasides)!="MinorityOwned"]
 
+
+
 setasides_lc<-csis360::prepare_labels_and_colors(setasides)
 setasides_ck<-csis360::get_column_key(setasides)
+write.csv(setasides,file.path("Data","Clean","setasides.csv"),row.names=FALSE,na = "N/A")                                              
+
 save(setasides,setasides_lc, setasides_ck,file="data/clean/setasides.Rda")
 
 # Sam.gov extracts####
