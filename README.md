@@ -12,7 +12,7 @@ Contributors: [Gregory Sanders](https://www.csis.org/people/gregory-sanders), He
     -   SQL: 10h59m 12,872,101 rows
         -   Stored Procedure: [Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength](https://github.com/CSISdefense/DIIGsql/blob/master/SQL/Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.StoredProcedure.sql)
         -   SQL Filters: @Customer==NULL, @SubCustomer = NULL, @PlatformPortfolio =NULL
-        -   Download file: [Scripts / VendorSQL / OutputToFile.sql](https://github.com/CSISdefense/Vendor/blob/master/Scripts/VendorSQL/OutputToFile.sql)
+        -   Download file: [ETL.SP_OutputCoreDatasets](https://github.com/CSISdefense/Vendor/blob/master/Scripts/VendorSQL/ETL.SP_OutputCoreDatasets.sql)
         -   Zip from SQL: [Data / semi_clean / Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.zip](https://github.com/CSISdefense/Vendor/blob/master/Data/semi_clean/Federal_Summary.SP_CompetitionVendorSizeHistoryBucketPlatformSubCustomerLength.zip)
         -   Last downloaded: June 19, 2025
         -   Processing File: [Scripts / FPDS_data_processing.R](https://github.com/CSISdefense/Vendor/blob/master/Scripts/FPDS_data_processing.R)
@@ -30,11 +30,11 @@ Contributors: [Gregory Sanders](https://www.csis.org/people/gregory-sanders), He
         -   Supporting variables: column Key: def_ck, labels and colors: def_lc.
         -   Superset reduced dataset: simple_def_data
         -   Zip of csv for superset: [data / clean / simple_def_data.zip](https://github.com/CSISdefense/Trade/blob/master/data/clean/simple_def_data.zip)
--   **platpscintl**: Detailed project, product or service type, and nationality date for U.S. federal contract data.
+-   **platpscintl**: Detailed project, product or service type, and nationality data for U.S. federal contract data.
     -   SQL: 4h32m: 20,088,352 rows
         -   Stored Procedure: [Location.SP_ProdServPlatformAgencyPlaceOriginVendor](https://github.com/CSISdefense/DIIGsql/blob/master/SQL/Location.SP_ProdServPlatformAgencyPlaceOriginVendor.StoredProcedure.sql)
         -   SQL Filters: @Customer=NULL
-        -   Download file: [Scripts / VendorSQL / OutputToFile.sql](https://github.com/CSISdefense/Vendor/blob/master/Scripts/VendorSQL/OutputToFile.sql)
+        -   Download file: [ETL.SP_OutputCoreDatasets](https://github.com/CSISdefense/Vendor/blob/master/Scripts/VendorSQL/ETL.SP_OutputCoreDatasets.sql)
         -   Zip from SQL: [Data / semi_clean / Federal_Location.SP_ProdServPlatformAgencyPlaceOriginVendor.zip](https://github.com/CSISdefense/Vendor/blob/master/Data//semi_clean//Federal_Location.SP_ProdServPlatformAgencyPlaceOriginVendor.zip)
         -   Last downloaded: June 7, 2025
         -   Processing File: [Scripts / FPDS_data_processing.R](https://github.com/CSISdefense/Vendor/blob/master/Scripts/FPDS_data_processing.R)
@@ -51,7 +51,7 @@ Contributors: [Gregory Sanders](https://www.csis.org/people/gregory-sanders), He
 -   **shipdef**: Detailed acquisition characteristic, project, product or service type, and nationality date for U.S. defense ships and submarines portfolio contract data.
     -   SQL: 5h29m: 1,312,476 rows
         -   Stored Procedure: [ProductOrServiceCode.SP_ShipsAndSubmarines](https://github.com/CSISdefense/DIIGsql/blob/master/SQL/ProductOrServiceCode.SP_ShipsAndSubmarines.sql)
-        -   Download file: [Scripts / VendorSQL / OutputToFile.sql](https://github.com/CSISdefense/Vendor/blob/master/Scripts/VendorSQL/OutputToFile.sql)
+        -   Download file: [ETL.SP_OutputCoreDatasets](https://github.com/CSISdefense/Vendor/blob/master/Scripts/VendorSQL/ETL.SP_OutputCoreDatasets.sql)
         -   SQL Filters: @IsDefense=1
         -   Zip from SQL: [Data / semi_clean / Defense_ProductOrServiceCode_SP_ShipsAndSubmarinesDetail.zip](https://github.com/CSISdefense/Vendor/blob/master/Data//semi_clean//Defense_ProductOrServiceCode_SP_ShipsAndSubmarinesDetail.zip)
         -   Last downloaded: September 25, 2025
@@ -65,7 +65,7 @@ Contributors: [Gregory Sanders](https://www.csis.org/people/gregory-sanders), He
 -   **munitiondef**: Detailed acquisition characteristic, project, product or service type, and nationality date for U.S. defense orndnance and missiles and air and missile defense portfolios contract data. Detailed project, product or service type, and nationality date for U.S. federal contract data.
     -   SQL: 17h08m: 385,011 rows
         -   Stored Procedure: [ProductOrServiceCode.SP_OrdnanceMissilesAirAndMissileDefense](https://github.com/CSISdefense/DIIGsql/blob/master/SQL/ProductOrServiceCode.SP_OrdnanceMissilesAirAndMissileDefense.sql)
-        -   Download file: [Scripts / VendorSQL / OutputToFile.sql](https://github.com/CSISdefense/Vendor/blob/master/Scripts/VendorSQL/OutputToFile.sql)
+        -   Download file: [ETL.SP_OutputCoreDatasets](https://github.com/CSISdefense/Vendor/blob/master/Scripts/VendorSQL/ETL.SP_OutputCoreDatasets.sql)
         -   SQL Filters: @IsDefense=1
         -   Zip from SQL: [Data / semi_clean / Defense_ProductOrServiceCode_SP_OrdnanceMissilesAirAndMissileDefenseDetail.zip](https://github.com/CSISdefense/Vendor/blob/master/Data//semi_clean//Defense_ProductOrServiceCode_SP_OrdnanceMissilesAirAndMissileDefenseDetail.zip)
         -   Last downloaded: October 25, 2025

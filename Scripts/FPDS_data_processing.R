@@ -59,8 +59,9 @@ initial_clean<-function(df,only_defense=TRUE){
     col_names = TRUE, guess_max = 2000000,na=c("NA","NULL"))
   
   # fed_data<-initial_clean(def_data,only_defense=FALSE)
+fed_data$ContractingCustomer[fed_data$ContractingCustomer =="OFFICE OF THE ASSISTANT SECRETARY FOR FINANCIAL RE"] <-"HHS"
   fed_data<- apply_standard_lookups(fed_data)#,
-  fed_data$ContractingCustomer[fed_data$ContractingCustomer =="OFFICE OF THE ASSISTANT SECRETARY FOR FINANCIAL RE"] <-"HHS"
+  
   #Available for customer groupings if need.
   fed_data<-read_and_join_experiment(fed_data,
                                "Customer.csv",
