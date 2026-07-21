@@ -85,7 +85,7 @@ Contributors: [Gregory Sanders](https://www.csis.org/people/gregory-sanders), He
         -   RDA file:  [Data / Clean / Federal_OTA.Rda](https://github.com/CSISdefense/Vendor/blob/master/Data/Clean/Federal_OTA.Rda)
         -   Supporting variables: column key: ota_ck, labels and colors: ota_lc.
     -   Subset: **def_ota** Defense OTA transaction as provided in its entirity by SAM.gov
-        -   RDA file:  [Data / Clean / Federal_OTA.Rda](https://github.com/CSISdefense/Vendor/blob/master/Data/Clean/Federal_OTA.Rda)
+        -   RDA file:  [Data / Clean / Defense_OTA.Rda](https://github.com/CSISdefense/Vendor/blob/master/Data/Clean/Defense_OTA.Rda)
         -   Supporting variables: column key: ota_ck, labels and colors: ota_lc.
 -   **def_kota**: Combined defense contract and defense OTA transactions for FY 2015 and later
     -   Merger: **ota_def** and **def_data** keeping overlapping columns.
