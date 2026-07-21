@@ -76,7 +76,17 @@ Contributors: [Gregory Sanders](https://www.csis.org/people/gregory-sanders), He
         -   Supporting variables: column key: munition_ck, labels and colors: munition_lc.
         -   Superset dataset: Defense_Munition_FPDS
         -   Zip of csv for superset: [data / clean / Defense_Munition_FPDS.zip](https://github.com/CSISdefense/Trade/blob/master/data/clean/Defense_Munition_FPDS.zip)
--   **ota_def**: Defense OTA transaction as provided in its entirity by SAM.gov
+-   **OTA_data**: Federal OTA transaction as provided in its entirity by SAM.gov
+    -   Complete:
+        -   Source URL: [https://sam.gov/reports/awards/adhoc](https://sam.gov/reports/awards/adhoc) Sign in and select Other Transaction Information Report
+        -   Download file: [data_raw / OTA_all_fields_before_FY22.csv](https://github.com/CSISdefense/Vendor/blob/master/data_raw//OTA_all_fields_before_FY22.csv)
+        -   Historic download file: [data_raw / OTA_All_Fields.csv](https://github.com/CSISdefense/Vendor/blob/master/data_raw//OTA_All_Fields.csv)
+        -   Processing File: [Scripts / OTA_data_processing.R](https://github.com/CSISdefense/Vendor/blob/master/Scripts/OTA_data_processing.R)
+        -   RDA file:  [Data / Clean / Federal_OTA.Rda](https://github.com/CSISdefense/Vendor/blob/master/Data/Clean/Federal_OTA.Rda)
+        -   Supporting variables: column key: ota_ck, labels and colors: ota_lc.
+    -   Subset: **def_ota** Defense OTA transaction as provided in its entirity by SAM.gov
+        -   RDA file:  [Data / Clean / Federal_OTA.Rda](https://github.com/CSISdefense/Vendor/blob/master/Data/Clean/Federal_OTA.Rda)
+        -   Supporting variables: column key: ota_ck, labels and colors: ota_lc.
 -   **def_kota**: Combined defense contract and defense OTA transactions for FY 2015 and later
     -   Merger: **ota_def** and **def_data** keeping overlapping columns.
     -   RDA file: [Data / Clean / def_kota.Rda](https://github.com/CSISdefense/Vendor/blob/master/Data/Clean/def_kota.Rda)
