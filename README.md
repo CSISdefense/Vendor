@@ -79,7 +79,7 @@ Contributors: [Gregory Sanders](https://www.csis.org/people/gregory-sanders), He
 -   **OTA_data**: Federal OTA transaction as provided in its entirity by SAM.gov
     -   Complete:
         -   Source URL: [https://sam.gov/reports/awards/adhoc](https://sam.gov/reports/awards/adhoc) Sign in and select Other Transaction Information Report
-        -   Zip fom Sam.Gov csv export: [data_raw / OTA_All_Fields.zip](https://github.com/CSISdefense/Vendor/blob/master/data_raw//OTA_All_Fields.zip)
+        -   Zip fom Sam.Gov csv export: [data_raw / OTA_all_fields.zip](https://github.com/CSISdefense/Vendor/blob/master/data_raw//OTA_all_fields.zip)
         -   Historic zip from Sam.gov csv export: [data_raw / OTA_all_fields_before_FY22.zip](https://github.com/CSISdefense/Vendor/blob/master/data_raw//OTA_all_fields_before_FY22.zip)
         -   Processing File: [Scripts / OTA_data_processing.R](https://github.com/CSISdefense/Vendor/blob/master/Scripts/OTA_data_processing.R)
         -   RDA file:  [Data / Clean / Federal_OTA.Rda](https://github.com/CSISdefense/Vendor/blob/master/Data/Clean/Federal_OTA.Rda)
