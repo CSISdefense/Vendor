@@ -83,6 +83,7 @@ Contributors: [Gregory Sanders](https://www.csis.org/people/gregory-sanders), He
         -   Historic Sam.gov csv export: [data_raw / OTA_all_fields_before_FY22.csv](https://github.com/CSISdefense/Vendor/blob/master/Data_Raw/OTA_all_fields_before_FY22.csv)
         -   Processing File: [Scripts / OTA_data_processing.R](https://github.com/CSISdefense/Vendor/blob/master/Scripts/OTA_data_processing.R)
         -   RDA file:  [Data / Clean / Federal_OTA.Rda](https://github.com/CSISdefense/Vendor/blob/master/Data/Clean/Federal_OTA.Rda)
+        -   Last download: August 20, 2025
         -   Supporting variables: column key: ota_ck, labels and colors: ota_lc.
     -   Subset: **def_ota** Defense OTA transaction as provided in its entirity by SAM.gov
         -   RDA file:  [Data / Clean / Defense_OTA.Rda](https://github.com/CSISdefense/Vendor/blob/master/Data/Clean/Defense_OTA.Rda)
