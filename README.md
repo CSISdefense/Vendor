@@ -79,8 +79,8 @@ Contributors: [Gregory Sanders](https://www.csis.org/people/gregory-sanders), He
 -   **OTA_data**: Federal OTA transaction as provided in its entirity by SAM.gov
     -   Complete:
         -   Source URL: [https://sam.gov/reports/awards/adhoc](https://sam.gov/reports/awards/adhoc) Sign in and select Other Transaction Information Report
-        -   Download file: [data_raw / OTA_all_fields_before_FY22.csv](https://github.com/CSISdefense/Vendor/blob/master/data_raw//OTA_all_fields_before_FY22.csv)
-        -   Historic download file: [data_raw / OTA_All_Fields.csv](https://github.com/CSISdefense/Vendor/blob/master/data_raw//OTA_All_Fields.csv)
+        -   Download file: [data_raw / OTA_All_Fields.csv](https://github.com/CSISdefense/Vendor/blob/master/data_raw//OTA_All_Fields.csv)
+        -   Historic download file: [data_raw / OTA_all_fields_before_FY22.csv](https://github.com/CSISdefense/Vendor/blob/master/data_raw//OTA_all_fields_before_FY22.csv)
         -   Processing File: [Scripts / OTA_data_processing.R](https://github.com/CSISdefense/Vendor/blob/master/Scripts/OTA_data_processing.R)
         -   RDA file:  [Data / Clean / Federal_OTA.Rda](https://github.com/CSISdefense/Vendor/blob/master/Data/Clean/Federal_OTA.Rda)
         -   Supporting variables: column key: ota_ck, labels and colors: ota_lc.
