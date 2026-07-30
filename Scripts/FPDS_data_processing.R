@@ -79,7 +79,7 @@ fed_data$ContractingCustomer[fed_data$ContractingCustomer =="OFFICE OF THE ASSIS
   fed_ck<-get_column_key(fed_data)
   
   save(fed_data,fed_lc,fed_ck, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
-  
+  load(file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
   fed_datacat<-catalog("analysis/FPDS_chart_maker/", engines$rda,pattern="*FPDS*")
   write.csv(fed_datacat$unaggregated_FPDS,file=file.path("docs","catalog","unaggregated_FPDS.csv"),row.names=FALSE)
   
@@ -90,7 +90,8 @@ fed_data$ContractingCustomer[fed_data$ContractingCustomer =="OFFICE OF THE ASSIS
              PricingUCA,PricingUCA.sum,
              VendorSize,Shiny.VendorSize,
              multiyearcontract,
-             SimpleArea)%>%
+             SimpleArea,
+             contract_award_unique_key_gt2000k)%>%
     summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
               Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
   write_delim(simple_fed_data,file=file.path("data","clean","simple_fed_data.csv"),delim=",",na = "N/A")
@@ -134,10 +135,11 @@ simple_def_data<-def_data %>% filter(Fiscal_Year>=2000)%>%
            PricingUCA,PricingUCA.sum,
            VendorSize,Shiny.VendorSize,
            multiyearcontract,
-           SimpleArea)%>%
+           SimpleArea,
+           contract_award_unique_key_gt2000k)%>%
   summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
             Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
-write_delim(simple_def_data,file=file.path("data","clean","simple_def_data.csv"),delim=",",na = "N/A")
+write_delim(simple_def_data,file=file.path("data","clean","simple_def_data_cau.csv"),delim=",",na = "N/A")
 #Dates: dFYear
 
 #Null Values: "Empty strings "",NULL, NA
