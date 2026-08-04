@@ -94,7 +94,7 @@ fed_data$ContractingCustomer[fed_data$ContractingCustomer =="OFFICE OF THE ASSIS
              contract_award_unique_key_gt2000k)%>%
     summarise(Action_Obligation_OMB25_GDP23=sum(Action_Obligation_OMB25_GDP23),
               Action_Obligation_Then_Year=sum(Action_Obligation_Then_Year))
-  write_delim(simple_fed_data,file=file.path("data","clean","simple_fed_data.csv"),delim=",",na = "N/A")
+  write_delim(simple_fed_data,file=file.path("data","clean","simple_fed_data_cau.csv"),delim=",",na = "N/A")
   write_delim(fed_data,file=file.path("data","clean","fed_data.csv"),delim=",",na = "N/A")
 ##Defense Data##########
 def_data<-initial_clean(fed_data,only_defense=TRUE)
