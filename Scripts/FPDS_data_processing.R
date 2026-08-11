@@ -24,6 +24,8 @@ library(fetch)
 library(askpass)
 library(odbc)
 library(DBI)
+library(arrow)
+
 #This is a kludge until the FMS repo is public
 source(file.path("..","Trade","Scripts","Trade_Standardize.r"))
 # read in data
@@ -79,6 +81,8 @@ fed_data$ContractingCustomer[fed_data$ContractingCustomer =="OFFICE OF THE ASSIS
   fed_ck<-get_column_key(fed_data)
   
   save(fed_data,fed_lc,fed_ck, file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
+  write_parquet(fed_data, sink="analysis/FPDS_chart_maker/unaggregated_FPDS.parquet")
+
   load(file="analysis/FPDS_chart_maker/unaggregated_FPDS.Rda")
   fed_datacat<-catalog("analysis/FPDS_chart_maker/", engines$rda,pattern="*FPDS*")
   write.csv(fed_datacat$unaggregated_FPDS,file=file.path("docs","catalog","unaggregated_FPDS.csv"),row.names=FALSE)
@@ -119,6 +123,7 @@ def_lc<-prepare_labels_and_colors(def_data, path=file.path(local_path,"style\\")
   def_data$YTD<-factor(ifelse(def_data$Fiscal_Year==max(def_data$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
 
     save(def_data,def_lc,def_ck, file="analysis/FPDS_chart_maker/unaggregated_def.Rda")
+    write_parquet(def_data, sink="analysis/FPDS_chart_maker/unaggregated_def.parquet")
 
     def_data_cat<-catalog("analysis/FPDS_chart_maker/", engines$rda,pattern="*unaggregated_def*")
     # def_data_cat$unaggregated_FPDS%>%dplyr::filter(Class=="character")
@@ -157,6 +162,7 @@ fedpsc_lc<-csis360::prepare_labels_and_colors(platpscintl)
 fedpsc_ck<-csis360::get_column_key(platpscintl)
 
 save(platpscintl,fedpsc_lc, fedpsc_ck,file="data/clean/Federal_platpscintl_FPDS.Rda")
+write_parquet(platpscintl,sink="data/clean/Federal_platpscintl_FPDS.parquet")
 # load(file="data/clean/Federal_platpscintl_FPDS.Rda")
 
 ######Plat PSC Def International #####
@@ -219,7 +225,9 @@ platpscintldef<-platpscintldef %>% mutate(
 
 intl_lc<-csis360::prepare_labels_and_colors(platpscintldef)
 intl_ck<-csis360::get_column_key(platpscintldef)
+load(="data/clean/platpscintl_FPDS.Rda")
 save(platpscintldef,intl_lc, intl_ck,file="data/clean/platpscintl_FPDS.Rda")
+write_parquet(platpscintl,sink="data/clean/Federal_platpscintl_FPDS.parquet")
 
 platpscintlcat<-catalog("data/clean/", engines$rda,pattern="*platpscintl*")
 write.csv(platpscintlcat$Federal_platpscintl_FPDS,file=file.path("docs","catalog","Federal_platpscintl_FPDS.csv"),row.names = FALSE)
@@ -247,6 +255,7 @@ cd_lc<-csis360::prepare_labels_and_colors(platpscdefcd)
 cd_ck<-csis360::get_column_key(platpscdefcd)
 platpscdefcd$YTD<-factor(ifelse(platpscdefcd$Fiscal_Year==max(platpscdefcd$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
 save(platpscdefcd,cd_lc, cd_ck,file="data/clean/platpscdefcd.Rda")
+write_parquet(platpscdefcd, sink="data/clean/platpscdefcd.parquet")
 
 platpsc<-read_delim(file.path("data","semi_clean","Federal_ProdservPlatform.txt"),delim="\t",na=c("NULL","NA"),
                     col_names = TRUE, guess_max = 10000000)
@@ -272,6 +281,7 @@ detail_lc<-csis360::prepare_labels_and_colors(platpsc)
 detail_ck<-csis360::get_column_key(platpsc)
 
 save(platpsc,detail_lc,detail_ck, file="data/clean/platpsc_FPDS.Rda")
+write_parquet(platpsc,sink="data/clean/platpsc_FPDS.parquet")
 
 
 
@@ -291,7 +301,9 @@ economic<-read_and_join_experiment(economic,
 
 economic_lc<-prepare_labels_and_colors(economic)
 economic_ck<-get_column_key(economic)
+load("data/clean/ProdServPlatformNAICS.rda")
 save(economic, file="data/clean/ProdServPlatformNAICS.rda")
+write_parquet(economic,sink="data/clean/ProdServPlatformNAICS.rda.parquet")
 
 # Detailed dive ####
 #### PBL ######
@@ -315,6 +327,7 @@ sql<-paste0("EXEC [Contract].SP_PBLfpdsPartial")
 
 pbl_partial<-dbGetQuery(vmcon,  sql)
 save(pbl_partial, file=file.path("data","semi_clean","Contract.SP_PBLfpdsPartial.rda"))
+write_parqiet(pbl_partial,sink=file.path("data","semi_clean","Contract.SP_PBLfpdsPartial.rda"))
 
 path<-"Output"
 xlsx<-"PBL_full.xlsx"
@@ -372,6 +385,7 @@ pbl_short<-apply_standard_lookups(pbl_short)
 pbl_lc<-prepare_labels_and_colors(pbl_short)
 pbl_ck<-get_column_key(pbl_short)
 save(pbl_short, pbl_ck, pbl_lc,file=file.path("data","clean","pbl_short.rda"))
+write_parquet(pbl_short, sink=file.path("data","clean","pbl_short.parquet"))
 
 
 path<-"Output"
@@ -424,6 +438,7 @@ summarize(obl=sum(Action_Obligation_OMB25_GDP23)) %>% arrange(-obl) #Greg left t
 ship_lc<-csis360::prepare_labels_and_colors(shipdef)
 ship_ck<-csis360::get_column_key(shipdef)
 save(shipdef,ship_lc, ship_ck,file="data/clean/Defense_Ship_FPDS.Rda")
+write_parquet(shipdef, sink=file.path("data","clean","Defense_Ship_FPDS.parquet"))
 
 datacat<-catalog("data/clean/", engines$rda,pattern="Defense_Ship_FPDS.Rda")
 
@@ -446,6 +461,7 @@ munition_ck<-csis360::get_column_key(munitiondef)
 
 
 save(munitiondef,munition_lc, munition_ck,file="data/clean/Defense_Munition_FPDS.Rda")
+write_parquet(munitiondef, sink=file.path("data","clean","Defense_Munition_FPDS.parquet"))
 write.csv(munitiondef,file="data/clean/Defense_Munition_FPDS.txt",row.names=FALSE,na = "N/A")
 
 colnames(munitiondef)
@@ -472,7 +488,7 @@ space_fedpsc<-platpscintl %>% filter(PlatformPortfolio=="Space Systems")
 
 
 save(spaceplatpscintl,space,space_lc,space_ck,space_fedpsc,fedpsc_ck,fedpsc_lc, file="data/clean/space_FPDS.Rda")
-
+write_parquet(spaceplatpscintl, sink=file.path("data","clean","space_FPDS.parquet"))
 
 
 ####Software #############
@@ -487,6 +503,7 @@ sw_lc<-prepare_labels_and_colors(sw)
 sw_ck<-get_column_key(sw)
 
 save(sw,sw_lc,sw_ck, file="data/clean/sw_FPDS.Rda")
+write_parquet(sw, sink=file.path("data","clean","sw_FPDS.parquet"))
 
 ###JADC2##########
 
@@ -500,7 +517,7 @@ jadc2<-apply_standard_lookups(jadc2)#,
 jadc2_lc<-csis360::prepare_labels_and_colors(jadc2)
 jadc2_ck<-csis360::get_column_key(jadc2)
 save(jadc2,jadc2_lc, jadc2_ck,file="data/clean/jadc2.Rda")
-
+write_parquet(jadc2, sink=file.path("data","clean","jadc2.parquet"))
 
 ### Set Asides ####
 
@@ -541,6 +558,7 @@ setasides_ck<-csis360::get_column_key(setasides)
 write.csv(setasides,file.path("Data","Clean","setasides.csv"),row.names=FALSE,na = "N/A")                                              
 
 save(setasides,setasides_lc, setasides_ck,file="data/clean/setasides.Rda")
+write_parquet(setasides,sink="data/clean/setasides.parquet")
 
 # Sam.gov extracts####
 ####Pricing History 1980-2021 #############
@@ -570,7 +588,7 @@ pricing_lc<-csis360::prepare_labels_and_colors(pricing %>% select(-ContractingOf
 pricing_ck<-csis360::get_column_key(pricing)
 
 save(pricing,pricing_lc,pricing_ck, file="data/clean/pricing_latest.Rda")
-
+write_parquet(pricing,sink="data/clean/pricing_latest.parquet")
 
 
 
@@ -599,7 +617,7 @@ pricing_lc<-csis360::prepare_labels_and_colors(pricing  %>% select(-ContractingO
 pricing_ck<-csis360::get_column_key(pricing)
 
 save(pricing,pricing_lc,pricing_ck, file="data/clean/pricing_historical.Rda")
-
+write_parquet(pricing,sink="data/clean/pricing_historical.parquet")
 
 # ***** Handled in apply_standard_lookups
 # Recipient_UEI ####
@@ -856,5 +874,6 @@ cas_ck<-get_column_key(cas,path="offline")
 
   summary(factor(def_rpuh$IsEntityTraditional))
   save(cas,cas_lc,cas_ck,file=file.path("data","clean","cau_cas.rda"))
+  write_parquet(cas,sink=file.path("data","clean","cau_cas.parquet"))
 
 
