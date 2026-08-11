@@ -225,7 +225,7 @@ platpscintldef<-platpscintldef %>% mutate(
 
 intl_lc<-csis360::prepare_labels_and_colors(platpscintldef)
 intl_ck<-csis360::get_column_key(platpscintldef)
-load(="data/clean/platpscintl_FPDS.Rda")
+# load("data/clean/platpscintl_FPDS.Rda")
 save(platpscintldef,intl_lc, intl_ck,file="data/clean/platpscintl_FPDS.Rda")
 write_parquet(platpscintl,sink="data/clean/Federal_platpscintl_FPDS.parquet")
 
