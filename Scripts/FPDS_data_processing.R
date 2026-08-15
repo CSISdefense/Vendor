@@ -442,7 +442,6 @@ write_parquet(shipdef, sink=file.path("data","clean","Defense_Ship_FPDS.parquet"
 
 datacat<-catalog("data/clean/", engines$rda,pattern="Defense_Ship_FPDS.Rda")
 
-write.csv(shipdef,file="data/clean/Defense_Ship_FPDS.csv",row.names=FALSE,na = "N/A")
 write.csv(datacat$Defense_Ship_FPDS,file=file.path("docs","catalog","Defense_Ship_FPDS.csv"),row.names=FALSE)
 
 
@@ -476,34 +475,21 @@ write.csv(datacat$Defense_munition_FPDS,file=file.path("docs","catalog","Defense
 ###Space ########
 space<-read_delim(file.path("data","semi_clean","ProductOrServiceCode.SP_SpaceDetail.txt"),delim="\t",na=c("NULL","NA"),
                   col_names = TRUE, guess_max = 10000000)
-space<-apply_standard_lookups(space,path="offline")
 colnames(space)[colnames(space)=="ProductOrServiceCode...7"]<-"ProductOrServiceCode"
 colnames(space)[colnames(space)=="ProjectID...9"]<-"ProjectID"
 space<-space %>% select(-ProductOrServiceCode...26,-ProjectID...29)
-space<-apply_standard_lookups(space)
+
+space<-apply_standard_lookups(space,path="offline")
 space$YTD<-factor(ifelse(space$Fiscal_Year==max(space$Fiscal_Year),"YTD","Full Year"),levels=c("Full Year","YTD"))
 space_lc<-prepare_labels_and_colors(space)
 space_ck<-get_column_key(space)
+
+load(file="data/clean/Federal_platpscintl_FPDS.Rda")
 space_fedpsc<-platpscintl %>% filter(PlatformPortfolio=="Space Systems")
 
 
-save(spaceplatpscintl,space,space_lc,space_ck,space_fedpsc,fedpsc_ck,fedpsc_lc, file="data/clean/space_FPDS.Rda")
-write_parquet(spaceplatpscintl, sink=file.path("data","clean","space_FPDS.parquet"))
-
-
-####Software #############
-sw<-read_delim(file.path("data","semi_clean","Summary.SP_SoftwareDetail.txt"),delim="\t",na=c("NULL","NA"),
-               col_names = TRUE, guess_max = 10000000)
-
-
-
-sw<-apply_standard_lookups(sw)
-
-sw_lc<-prepare_labels_and_colors(sw)
-sw_ck<-get_column_key(sw)
-
-save(sw,sw_lc,sw_ck, file="data/clean/sw_FPDS.Rda")
-write_parquet(sw, sink=file.path("data","clean","sw_FPDS.parquet"))
+save(space,space_lc,space_ck,space_fedpsc,fedpsc_ck,fedpsc_lc, file="data/clean/space_FPDS.Rda")
+write_parquet(space, sink=file.path("data","clean","space_FPDS.parquet"))
 
 ###JADC2##########
 

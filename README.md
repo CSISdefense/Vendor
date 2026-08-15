@@ -48,6 +48,7 @@ Contributors: [Gregory Sanders](https://www.csis.org/people/gregory-sanders), He
         -   Detailed project, product or service type, and nationality date for U.S. defense contract data.
         -   R Filters: ContractingCustomer=="Defense" after download
         -   RDA file: [Data / Clean / platpscintl_FPDS.Rda](https://github.com/CSISdefense/Vendor/blob/master/Data/Clean/platpscintl_FPDS.Rda)
+        -   Parquet file: [Data / Clean / platpscintl_FPDS.parquet](https://github.com/CSISdefense/Vendor/blob/master/Data/Clean/platpscintl_FPDS.parquet)
         -   Catalog file: [Docs / catalog / platpscintl_FPDS.csv](https://github.com/CSISdefense/Vendor/blob/master/Docs/catalog/platpscintl_FPDS.csv)
         -   Supporting variables: column key: def_ck, labels and colors: def_lc.
 -   **shipdef**: Detailed acquisition characteristic, project, product or service type, and nationality date for U.S. defense ships and submarines portfolio contract data.
