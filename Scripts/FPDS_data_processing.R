@@ -303,7 +303,7 @@ economic_lc<-prepare_labels_and_colors(economic)
 economic_ck<-get_column_key(economic)
 load("data/clean/ProdServPlatformNAICS.rda")
 save(economic, file="data/clean/ProdServPlatformNAICS.rda")
-write_parquet(economic,sink="data/clean/ProdServPlatformNAICS.rda.parquet")
+write_parquet(economic,sink="data/clean/ProdServPlatformNAICS.parquet")
 
 # Detailed dive ####
 #### PBL ######
